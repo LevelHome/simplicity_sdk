@@ -169,7 +169,7 @@
   - name: device_supports_zwave
   - name: device_supports_zwave_end_device
   - name: device_supports_wisun
-  - name: device_compute_basic
+  - name: device_supports_thread
 - recommends:
   - id: trustzone_unaware
 - requires:
