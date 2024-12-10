@@ -168,6 +168,7 @@
   - name: device_supports_rail_stack
   - name: device_supports_connect
   - name: device_supports_wisun
+  - name: device_supports_thread
   - name: device_compute_mvp
 - recommends:
   - id: trustzone_unaware

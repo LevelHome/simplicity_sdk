@@ -171,6 +171,7 @@
   - name: device_supports_bluetooth
   - name: device_supports_connect
   - name: device_supports_wisun
+  - name: device_supports_thread
   - name: device_compute_basic
 - recommends:
   - id: trustzone_unaware
