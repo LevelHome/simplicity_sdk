@@ -47,7 +47,7 @@
 
 // <gpio> SL_SIMPLE_LED_LED3
 // $[GPIO_SL_SIMPLE_LED_LED3]
-#define SL_SIMPLE_LED_LED3_PORT                  gpioPortD
+#define SL_SIMPLE_LED_LED3_PORT                  SL_GPIO_PORT_D
 #define SL_SIMPLE_LED_LED3_PIN                   2
 
 // [GPIO_SL_SIMPLE_LED_LED3]$

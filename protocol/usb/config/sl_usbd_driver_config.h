@@ -22,7 +22,7 @@
 // <gpio> SL_USBD_DRIVER_VBUS_SENSE
 // $[GPIO_SL_USBD_DRIVER_VBUS_SENSE]
 // TODO #warning "USB Device VBUS GPIO pin not configured"
- #define SL_USBD_DRIVER_VBUS_SENSE_PORT       gpioPortC
+ #define SL_USBD_DRIVER_VBUS_SENSE_PORT       SL_GPIO_PORT_C
  #define SL_USBD_DRIVER_VBUS_SENSE_PIN        2
 // [GPIO_SL_USBD_DRIVER_VBUS_SENSE]$
 // <<< sl:end pin_tool >>>

@@ -84,7 +84,7 @@ uint16_t sli_zigbee_af_copy_additional_info_block_structure_to_array(uint8_t com
                                  (uint16_t)(additionalInfoBlockIn->optionData.compactAttr.manufacturerID));
         additionalInfoBlockOutPtr += sizeof(uint16_t);
       }
-      sl_zigbee_af_green_power_cluster_println("%d %d %d 0x%2X 0x%2X %d %d 0x%2X",
+      sl_zigbee_af_green_power_cluster_println("%d %d %d 0x%04X 0x%04X %d %d 0x%04X",
                                                additionalInfoBlockIn->optionSelector,
                                                additionalInfoBlockIn->optionData.compactAttr.reportIdentifier,
                                                additionalInfoBlockIn->optionData.compactAttr.attrOffsetWithinReport,
@@ -104,7 +104,7 @@ uint16_t sli_zigbee_af_copy_additional_info_block_structure_to_array(uint8_t com
       additionalInfoBlockOutPtr += sizeof(uint8_t);
     }
 
-    sl_zigbee_af_green_power_cluster_println("%d 0x%2X 0x%2X",
+    sl_zigbee_af_green_power_cluster_println("%d 0x%04X 0x%04X",
                                              additionalInfoBlockIn->optionSelector,
                                              additionalInfoBlockIn->optionData.genericSwitch.contactBitmask,
                                              additionalInfoBlockIn->optionData.genericSwitch.contactStatus);

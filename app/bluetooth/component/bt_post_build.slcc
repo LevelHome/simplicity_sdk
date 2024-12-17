@@ -2,7 +2,10 @@ id: bt_post_build
 package: Bluetooth
 label: BLE Post Build
 description: Post build scripts for BLE applications.
-category: Bluetooth|Application|Miscellaneous
+category: Bluetooth|Application|Firmware Update
+metadata:
+  sbom:
+    license: Zlib
 quality: production
 root_path: app/bluetooth/script
 tag:

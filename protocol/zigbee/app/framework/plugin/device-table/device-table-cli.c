@@ -44,7 +44,7 @@ void sli_zigbee_af_device_table_print_eui64(uint8_t *eui64)
 {
   uint8_t i;
   for (i = 8; i > 0; i--) {
-    sl_zigbee_af_core_print("%X", eui64[i - 1]);
+    sl_zigbee_af_core_print("%02X", eui64[i - 1]);
   }
 }
 
@@ -254,12 +254,12 @@ void sl_zigbee_af_device_table_print_device_table(void)
        index < SL_ZIGBEE_AF_PLUGIN_DEVICE_TABLE_DEVICE_TABLE_SIZE;
        index++) {
     if (deviceTable[index].nodeId != SL_ZIGBEE_AF_PLUGIN_DEVICE_TABLE_NULL_NODE_ID) {
-      sl_zigbee_af_core_print("%d %2x:  ", totalDevices, deviceTable[index].nodeId);
+      sl_zigbee_af_core_print("%d %04X:  ", totalDevices, deviceTable[index].nodeId);
       sli_zigbee_af_device_table_print_eui64(deviceTable[index].eui64);
       sl_zigbee_af_core_print(" %d ", deviceTable[index].endpoint);
       printDeviceId(deviceTable[index].deviceId);
       printState(deviceTable[index].state);
-      sl_zigbee_af_core_println(" %l", sl_zigbee_af_device_table_time_since_last_message(index));
+      sl_zigbee_af_core_println(" %ld", sl_zigbee_af_device_table_time_since_last_message(index));
       totalDevices++;
     }
   }
@@ -270,7 +270,7 @@ void sli_zigbee_af_device_table_print_buffer(uint8_t *buffer, uint16_t bufLen)
 {
   int i;
   for (i = 0; i < bufLen; i++) {
-    sl_zigbee_af_core_print("%x ", buffer[i]);
+    sl_zigbee_af_core_print("%02X ", buffer[i]);
   }
   sl_zigbee_af_core_println("");
 }

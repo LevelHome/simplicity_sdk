@@ -356,19 +356,17 @@ static int32_t gbl_parseHeader(ParserContext_t  *context,
   gblTagHeader->tagId = GBL_PARSER_ARRAY_TO_U32(tagBuffer, 0);
   gblTagHeader->length = GBL_PARSER_ARRAY_TO_U32(tagBuffer, 4);
 
-  // *INDENT-OFF*
 #ifndef BTL_PARSER_NO_SUPPORT_ENCRYPTION
   if (!(context->inEncryptedContainer)) {
 #endif
-    // Update SHA hash if tag is not signature or end tag
-    if ((gblTagHeader->tagId != GBL_TAG_ID_SIGNATURE_ECDSA_P256)
-        && (gblTagHeader->tagId != GBL_TAG_ID_END)) {
-      btl_updateSha256(context->shaContext, tagBuffer, tagSize);
-    }
-#ifndef BTL_PARSER_NO_SUPPORT_ENCRYPTION
+  // Update SHA hash if tag is not signature or end tag
+  if ((gblTagHeader->tagId != GBL_TAG_ID_SIGNATURE_ECDSA_P256)
+      && (gblTagHeader->tagId != GBL_TAG_ID_END)) {
+    btl_updateSha256(context->shaContext, tagBuffer, tagSize);
   }
+#ifndef BTL_PARSER_NO_SUPPORT_ENCRYPTION
+}
 #endif
-  // *INDENT-ON*
 
   // Save length of this tag
   context->lengthOfTag = gblTagHeader->length;
@@ -485,7 +483,10 @@ int32_t gbl_writeProgData(ParserContext_t *context,
                           size_t length,
                           const BootloaderParserCallbacks_t *callbacks)
 {
-  uint32_t startWithhold, endWithhold, withholdSrcOffset, withholdDstOffset;
+  uint32_t startWithhold;
+  uint32_t endWithhold;
+  uint32_t withholdSrcOffset;
+  uint32_t withholdDstOffset;
   if (callbacks->applicationCallback == NULL) {
     // Nothing to do
     return BOOTLOADER_OK;
@@ -602,11 +603,11 @@ int32_t parser_init(void *context, void *decryptContext, void *authContext, uint
   parserContext->endOfStorageSlot = 0U;
 #endif
 
-  if ((PARSER_REQUIRE_CONFIDENTIALITY) && (decryptContext == NULL)) {
+  if (PARSER_REQUIRE_CONFIDENTIALITY && (decryptContext == NULL)) {
     return BOOTLOADER_ERROR_PARSER_INIT;
   }
 
-  if ((PARSER_REQUIRE_AUTHENTICITY) && (authContext == NULL)) {
+  if (PARSER_REQUIRE_AUTHENTICITY && (authContext == NULL)) {
     return BOOTLOADER_ERROR_PARSER_INIT;
   }
 
@@ -842,18 +843,15 @@ int32_t parser_parse(void                              *context,
                                  imageProperties,
                                  callbacks);
         return retval;
-        break;
 
       // Completely done with the file, in this state we'll stop processing.
       case GblParserStateDone:
         return BOOTLOADER_ERROR_PARSER_EOF;
-        break;
 
       case GblParserStateError:
         // To be on the safe side, in case anything unexpected happens
         imageProperties->imageVerified = false;
         return BOOTLOADER_ERROR_PARSER_EOF;
-        break;
         // No default statement here guarantees a compile-time check
         // that we caught all states
     }
@@ -1085,7 +1083,7 @@ static int32_t parser_parseGblHeader(ParserContext_t  *parserContext,
     }
 #endif
 
-    if ((PARSER_REQUIRE_AUTHENTICITY)
+    if (PARSER_REQUIRE_AUTHENTICITY
         && ((temporaryWord & GBL_TYPE_SIGNATURE_ECDSA) == 0U)) {
       parserContext->internalState = GblParserStateError;
       return BOOTLOADER_ERROR_PARSER_FILETYPE;
@@ -1124,8 +1122,12 @@ static int32_t parser_parseVersionDependency(ParserContext_t  *parserContext,
   uint8_t resultSe         = 1U;
   uint8_t *resultPtr       = NULL;
   uint8_t tmpResult;
-  uint8_t operator, operatorType, operatorNegatorBit;
-  uint8_t connective, connectiveType, connectiveNegatorBit;
+  uint8_t operator;
+  uint8_t operatorType;
+  uint8_t operatorNegatorBit;
+  uint8_t connective;
+  uint8_t connectiveType;
+  uint8_t connectiveNegatorBit;
   VersionDependency_t *versionDependency = NULL;
 
   while (parserContext->offsetInTag < parserContext->lengthOfTag) {
@@ -1345,7 +1347,7 @@ static int32_t parser_parseNewTagHeader(ParserContext_t  *parserContext,
     parserContext->customTagId = gblTagHeader.tagId;
     customTag = gbl_getCustomTagProperties(gblTagHeader.tagId);
     if ((parserContext->flags & PARSER_FLAG_PARSE_CUSTOM_TAGS)
-        && (customTag) && (customTag->enterTag)) {
+        && customTag && customTag->enterTag) {
       retval = customTag->enterTag(parserContext);
       if (retval != BOOTLOADER_OK) {
         return BOOTLOADER_ERROR_PARSER_UNEXPECTED;
@@ -1519,7 +1521,7 @@ static int32_t parser_parseSe(ParserContext_t                   *parserContext,
       parserContext->receivedFlags |= BTL_PARSER_RECEIVED_SE;
 
       // Pass 4 first words to SE upgrade
-      if ((callbacks->bootloaderCallback != NULL)) {
+      if (callbacks->bootloaderCallback != NULL) {
         // SE data
 #if !defined(BOOTLOADER_SE_UPGRADE_NO_STAGING) \
         || (BOOTLOADER_SE_UPGRADE_NO_STAGING == 0)
@@ -1960,12 +1962,10 @@ static int32_t parser_parseCustomTag(ParserContext_t                   *parserCo
     }
   }
 
-  if (parserContext->flags & PARSER_FLAG_PARSE_CUSTOM_TAGS) {
-    if (customTag && (customTag->exitTag)) {
-      retval = customTag->exitTag(parserContext, callbacks);
-      if (retval != BOOTLOADER_OK) {
-        return retval;
-      }
+  if ((parserContext->flags & PARSER_FLAG_PARSE_CUSTOM_TAGS) && customTag && customTag->exitTag) {
+    retval = customTag->exitTag(parserContext, callbacks);
+    if (retval != BOOTLOADER_OK) {
+      return retval;
     }
   }
 
@@ -2149,7 +2149,7 @@ static int32_t parser_finalize(ParserContext_t                   *parserContext,
   }
 
   // and fail if authenticity is required but no signature present in GBL
-  if ((PARSER_REQUIRE_AUTHENTICITY) && (!parserContext->gotSignature)) {
+  if (PARSER_REQUIRE_AUTHENTICITY && (!parserContext->gotSignature)) {
     imageProperties->imageVerified = false;
     parserContext->internalState = GblParserStateError;
     return BOOTLOADER_ERROR_PARSER_SIGNATURE;

@@ -19,6 +19,9 @@
 // TODO: we should update the EZSP generation script so that EZSP API wrappers are named just
 // like the SoC API.
 
+// Configuration Frames
+#define sl_zigbee_set_passive_ack_config        sl_zigbee_ezsp_set_passive_ack_config
+
 //Utility Frames
 #define sl_zigbee_get_library_status               sl_zigbee_ezsp_get_library_status
 #define sl_zigbee_get_phy_interface_count           sl_zigbee_ezsp_get_phy_interface_count
@@ -122,6 +125,7 @@
 #define sl_zigbee_proxy_next_broadcast_from_long    sl_zigbee_ezsp_proxy_next_broadcast_from_long
 #define sl_zigbee_ezsp_message_sent_handler        sl_zigbee_message_sent_handler
 #define sl_zigbee_ezsp_incoming_message_handler    sl_zigbee_incoming_message_handler
+#define sl_zigbee_pending_acked_messages           sl_zigbee_ezsp_pending_acked_messages
 
 //Token Interface Frames
 #define sl_zigbee_get_token_count                  sl_zigbee_ezsp_get_token_count

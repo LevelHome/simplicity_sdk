@@ -219,7 +219,7 @@ uint8_t sl_zigbee_af_esi_management_update_esi_and_get_index(const sl_zigbee_af_
                                                                              cmd->apsFrame->sourceEndpoint);
   // The source ESI is not in the ESI table.
   if (esiEntry == NULL) {
-    sl_zigbee_af_debug_println("source ESI 0x%x not found in table", cmd->source);
+    sl_zigbee_af_debug_println("source ESI 0x%02X not found in table", cmd->source);
     // We add the ESI to the table.
     esiEntry = sl_zigbee_af_esi_management_get_free_entry();
     if (esiEntry != NULL) {

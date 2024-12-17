@@ -14,3 +14,6 @@ include:
 provides:
   - name: bootloader_delay_driver
   - name: bootloader_delay_driver_nonsecure
+metadata:
+  sbom:
+    license: MSLA

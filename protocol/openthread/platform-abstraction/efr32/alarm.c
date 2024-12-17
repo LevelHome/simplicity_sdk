@@ -47,8 +47,8 @@
 #include "platform-efr32.h"
 #include "utils/code_utils.h"
 
-#include "em_core.h"
 #include "rail.h"
+#include "sl_core.h"
 #include "sl_multipan.h"
 #include "sl_sleeptimer.h"
 
@@ -495,9 +495,9 @@ bool efr32AlarmIsRunning(otInstance *aInstance)
 
 #if defined(SL_CATALOG_POWER_MANAGER_PRESENT)
 // Callback to determine if the system can sleep after an interrupt has fired
-sl_power_manager_on_isr_exit_t efr32AlarmSleepOnISRExit(void)
+bool efr32AlarmIsReady(void)
 {
-    return HasAnyAlarmFired() ? SL_POWER_MANAGER_WAKEUP : SL_POWER_MANAGER_IGNORE;
+    return HasAnyAlarmFired();
 }
 #endif // SL_CATALOG_POWER_MANAGER_PRESENT
 
@@ -506,7 +506,7 @@ uint32_t otPlatAlarmMilliGetNow(void)
     return sMsAlarmHandles[0].mTimerGetNow();
 }
 
-uint32_t otPlatTimeGetXtalAccuracy(void)
+uint16_t otPlatTimeGetXtalAccuracy(void)
 {
 #if defined(SL_CATALOG_POWER_MANAGER_PRESENT)
     // For sleepies, we need to account for the low-frequency crystal

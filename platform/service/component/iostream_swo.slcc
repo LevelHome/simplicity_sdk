@@ -14,8 +14,6 @@ config_file:
   - path: "config/sl_iostream_swo_config.h"
 provides:
   - name: iostream_swo
-  - name: iostream_transport_core
-    allow_multiple: true
   - name: iostream_transport
     allow_multiple: true
 requires:
@@ -29,6 +27,8 @@ source:
   - path: src/sl_iostream_swo.c
 define:
   - name: "SL_IOSTREAM_SWO_PRESENT"
+  - name: SL_CODE_COMPONENT_IOSTREAM_SWO
+    value: iostream_swo
 template_contribution:
   - name: event_handler
     value:
@@ -41,6 +41,8 @@ template_contribution:
       handler: sl_iostream_instance_swo_info
   - name: component_catalog
     value: iostream_swo
+  - name: code_classification_components
+    value: iostream_swo
 documentation:
-    docset: gecko-platform
-    document: platform-service/iostream-swo
+  docset: gecko-platform
+  document: platform-service/iostream-swo

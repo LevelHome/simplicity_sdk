@@ -2,7 +2,7 @@ id: "sl_wisun_trace_util"
 label: "Wi-SUN Application Utility"
 package: "wisun"
 description: "Utilities for Wi-SUN Applications."
-category: "Wi-SUN|Application"
+category: "Wi-SUN|Wi-SUN Services"
 quality: "production"
 metadata:
   sbom:

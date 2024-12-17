@@ -6,6 +6,10 @@ quality: production
 
 description:  This component enables stack protection and also provides stack protection definitions for IAR.
 
+metadata:
+  sbom:
+    license: MSLA
+
 provides:
   - name: stack_protection_iar
 

@@ -1,6 +1,6 @@
 project_name: "connect_ncp"
 label: "Connect - NCP"
-package: "Flex"
+package: "Connect"
 description: "Connect: NCP Application for the SoC"
 category: "Connect Examples"
 quality: "production"
@@ -42,8 +42,8 @@ source:
   - path: "main.c"
 
 other_file:
-  - path: "../../../../app/flex/script/connect_create_gbl_image.bat"
-  - path: "../../../../app/flex/script/connect_create_gbl_image.sh"
+  - path: "../script/connect_create_gbl_image.bat"
+  - path: "../script/connect_create_gbl_image.sh"
   - path: "hw_filter_tags.yaml"
     condition:
       - "add_hw_filter_to_project"
@@ -53,7 +53,7 @@ define:
     value: 1
 
 readme:
-  - path: ../../../../app/flex/documentation/example/connect/connect_ncp_app/readme.md
+  - path: readme.md
 
 
 filter:

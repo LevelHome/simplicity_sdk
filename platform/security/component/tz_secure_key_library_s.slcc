@@ -46,9 +46,6 @@ requires:
 
   - name: sl_assert
 
-  # Dependency on emlib_se through extern function definition
-  - name: emlib_se
-
 source:
   - path: src/sli_tz_secure_main.c
 
@@ -73,3 +70,7 @@ define:
 
   # ITS should be encrypted when used in the SKL
   - name: SLI_PSA_ITS_ENCRYPTED
+
+metadata:
+  sbom:
+    license: Zlib

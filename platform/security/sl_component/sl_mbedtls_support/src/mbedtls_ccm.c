@@ -65,11 +65,6 @@
 #define SLI_DEVICE_HAS_AES_192
 #define AEAD_ENCRYPT_TAG_FCT    sli_se_driver_aead_encrypt_tag
 #define AEAD_DECRYPT_TAG_FCT    sli_se_driver_aead_decrypt_tag
-#elif defined(CRYPTO_PRESENT)
-#include "sli_crypto_transparent_functions.h"
-#define AEAD_IMPLEMENTATION_PRESENT
-#define AEAD_ENCRYPT_TAG_FCT    sli_crypto_transparent_aead_encrypt_tag
-#define AEAD_DECRYPT_TAG_FCT    sli_crypto_transparent_aead_decrypt_tag
 #elif defined(CRYPTOACC_PRESENT)
 #include "sli_cryptoacc_transparent_functions.h"
 #define AEAD_IMPLEMENTATION_PRESENT

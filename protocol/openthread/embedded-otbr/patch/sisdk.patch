@@ -1,0 +1,34 @@
+diff --git a/util/third_party/lwip/lwip/src/include/lwip/sockets.h b/util/third_party/lwip/lwip/src/include/lwip/sockets.h
+index d70d36c4..beef6ff6 100644
+--- a/util/third_party/lwip/lwip/src/include/lwip/sockets.h
++++ b/util/third_party/lwip/lwip/src/include/lwip/sockets.h
+@@ -613,7 +613,7 @@ int lwip_inet_pton(int af, const char *src, void *dst);
+ /** @ingroup socket */
+ #define accept(s,addr,addrlen)                    lwip_accept(s,addr,addrlen)
+ /** @ingroup socket */
+-#define bind(s,name,namelen)                      lwip_bind(s,name,namelen)
++// #define bind(s,name,namelen)                      lwip_bind(s,name,namelen)
+ /** @ingroup socket */
+ #define shutdown(s,how)                           lwip_shutdown(s,how)
+ /** @ingroup socket */
+@@ -661,17 +661,17 @@ int lwip_inet_pton(int af, const char *src, void *dst);
+ 
+ #if LWIP_POSIX_SOCKETS_IO_NAMES
+ /** @ingroup socket */
+-#define read(s,mem,len)                           lwip_read(s,mem,len)
++// #define read(s,mem,len)                           lwip_read(s,mem,len)
+ /** @ingroup socket */
+ #define readv(s,iov,iovcnt)                       lwip_readv(s,iov,iovcnt)
+ /** @ingroup socket */
+-#define write(s,dataptr,len)                      lwip_write(s,dataptr,len)
++// #define write(s,dataptr,len)                      lwip_write(s,dataptr,len)
+ /** @ingroup socket */
+ #define writev(s,iov,iovcnt)                      lwip_writev(s,iov,iovcnt)
+ /** @ingroup socket */
+ #define close(s)                                  lwip_close(s)
+ /** @ingroup socket */
+-#define fcntl(s,cmd,val)                          lwip_fcntl(s,cmd,val)
++// #define fcntl(s,cmd,val)                          lwip_fcntl(s,cmd,val)
+ /** @ingroup socket */
+ #define ioctl(s,cmd,argp)                         lwip_ioctl(s,cmd,argp)
+ #endif /* LWIP_POSIX_SOCKETS_IO_NAMES */

@@ -32,11 +32,14 @@
 
 // LED_INSTANCE_LO will turn on when the temperature drops
 // below configured threshold
-#define LED_INSTANCE_LO             sl_led_led0
 
 // LED_INSTANCE_HI will turn on when the temperature exceeds
 // configured threshold
-#define LED_INSTANCE_HI             sl_led_led1
+
+#if SL_SIMPLE_LED_COUNT > 1
+  #define LED_INSTANCE_LO           sl_led_led0
+  #define LED_INSTANCE_HI           sl_led_led1
+#endif
 
 // The limits are set relative to the initial temperature
 #define TEMPERATURE_BAND_C          10
@@ -75,7 +78,10 @@ static void tempCallback_lower(int8_t temp, TEMPDRV_LimitType_t limit)
   // re-registered.
   if (limit == TEMPDRV_LIMIT_LOW) {
     // temperature has decreased below lower threshold
+#if SL_SIMPLE_LED_COUNT > 1
     sl_led_turn_on(&LED_INSTANCE_LO);
+#endif
+    printf("Temperature below lower threshold: %d°C\r\n", temp);
 
     // register callback for return to normal temperature
     // with hysteresis
@@ -84,7 +90,10 @@ static void tempCallback_lower(int8_t temp, TEMPDRV_LimitType_t limit)
                              tempCallback_lower);
   } else {
     // temperature has returned to normal
+#if SL_SIMPLE_LED_COUNT > 1
     sl_led_turn_off(&LED_INSTANCE_LO);
+#endif
+    printf("Temperature returned to normal: %d°C\r\n", temp);
 
     // re-register callback for low temperature
     TEMPDRV_RegisterCallback(low_limit,
@@ -107,7 +116,11 @@ static void tempCallback_upper(int8_t temp, TEMPDRV_LimitType_t limit)
   // re-registered.
   if (limit == TEMPDRV_LIMIT_HIGH) {
     // temperature has increased above upper threshold
+#if SL_SIMPLE_LED_COUNT > 1
     sl_led_turn_on(&LED_INSTANCE_HI);
+#endif
+
+    printf("Temperature exceeded upper threshold: %d°C\r\n", temp);
 
     // register callback for return to normal temperature
     // with hysteresis
@@ -116,7 +129,11 @@ static void tempCallback_upper(int8_t temp, TEMPDRV_LimitType_t limit)
                              tempCallback_upper);
   } else {
     // temperature has returned to normal
+#if SL_SIMPLE_LED_COUNT > 1
     sl_led_turn_off(&LED_INSTANCE_HI);
+#endif
+
+    printf("Temperature returned to normal: %d°C\r\n", temp);
 
     // re-register callback for high temperature
     TEMPDRV_RegisterCallback(high_limit,
@@ -141,9 +158,11 @@ void tempdrv_init(void)
   // printf is configured to redirect to vcom in project file
   printf("\r\nWelcome to the tempdrv sample application\r\n\r\n");
 
-  // Initialise LEDS to off
+// Initialise LEDS to off
+#if SL_SIMPLE_LED_COUNT > 1
   sl_led_turn_off(&LED_INSTANCE_LO);
   sl_led_turn_off(&LED_INSTANCE_HI);
+#endif
 
   //Create tempdrv Task
   OSTaskCreate(&tcb,

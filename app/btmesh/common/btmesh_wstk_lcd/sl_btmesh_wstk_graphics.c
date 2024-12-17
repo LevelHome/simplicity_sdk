@@ -3,7 +3,7 @@
  * @brief BT Mesh Graphics: Draws the graphics on the display
  *******************************************************************************
  * # License
- * <b>Copyright 2020 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -33,9 +33,11 @@
 #include <stdio.h>
 
 #include "app_assert.h"
+#include "app_rta.h"
 #include "em_types.h"
 #include "glib.h"
 #include "dmd.h"
+#include "sli_btmesh_wstk_lcd.h"
 
 // Own header
 #include "sl_btmesh_wstk_graphics.h"
@@ -100,8 +102,14 @@ sl_status_t graphWriteString(char *string)
 {
   sl_status_t ret = SL_STATUS_OK;
   EMSTATUS status;
+
+  ret = app_rta_acquire(sli_btmesh_lcd_ctx);
+  if (ret != SL_STATUS_OK) {
+    return ret;
+  }
   status = GLIB_clear(&glibContext);
   if (GLIB_OK != status) {
+    (void) app_rta_release(sli_btmesh_lcd_ctx);
     return SL_STATUS_FAIL;
   }
 
@@ -109,37 +117,34 @@ sl_status_t graphWriteString(char *string)
   graphLineNum = 0;
   ret = graphPrintCenter(&glibContext, deviceHeader);
   if (SL_STATUS_OK != ret) {
+    (void) app_rta_release(sli_btmesh_lcd_ctx);
     return ret;
   }
 
   // Print the string below the header center aligned
   ret = graphPrintCenter(&glibContext, string);
-  if (SL_STATUS_OK != ret) {
-    return ret;
-  }
+  (void) app_rta_release(sli_btmesh_lcd_ctx);
 
-  status = DMD_updateDisplay();
-  if (DMD_OK != status) {
-    return SL_STATUS_FAIL;
-  }
   return ret;
 }
 
 sl_status_t graphDrawArrow(sl_btmesh_LCD_arrow arrow)
 {
+  sl_status_t ret = SL_STATUS_OK;
   EMSTATUS status = DMD_OK;
   const int32_t left_points[] = LEFT_ARROW_7x6;
   const int32_t right_points[] = RIGHT_ARROW_7x6;
+  ret = app_rta_acquire(sli_btmesh_lcd_ctx);
+  if (ret != SL_STATUS_OK) {
+    return ret;
+  }
   if ((arrow & SL_BTMESH_LCD_LEFT_ARROW) != 0) {
     status = GLIB_drawPolygon(&glibContext, 3, left_points);
   }
   if (((arrow & SL_BTMESH_LCD_RIGHT_ARROW) != 0) && (DMD_OK == status)) {
     status = GLIB_drawPolygon(&glibContext, 3, right_points);
   }
-
-  if (DMD_OK == status) {
-    status = DMD_updateDisplay();
-  }
+  (void) app_rta_release(sli_btmesh_lcd_ctx);
 
   return DMD_OK == status ? SL_STATUS_OK : SL_STATUS_FAIL;
 }

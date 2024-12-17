@@ -9,11 +9,10 @@ description: >
   GSDK version.
 
 
-  It is applicable only when the developer is on an older GSDK version and would like to port the application to the newer GSDK version. This component can be uninstalled if the user is already on
-  a later version of the GSDK.
-
-  Application concerned by this migration:
-  - NCP serial API
+  It is applicable only when the developer is on an older GSDK version and wants to port the application to the newer GSDK version.
+  This component can be uninstalled if the user is already on a later GSDK version.
+  
+  NOTE: Only Serial API is affected.
 
 package: Z-Wave
 quality: production

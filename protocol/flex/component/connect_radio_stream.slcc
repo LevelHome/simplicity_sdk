@@ -1,6 +1,6 @@
 id: "connect_radio_stream"
 label: "Radio Stream"
-package: "Flex"
+package: "Connect"
 category: "Connect"
 quality: "production"
 description: "Implements radio stream function for RF validation."

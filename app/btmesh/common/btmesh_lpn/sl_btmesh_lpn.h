@@ -3,7 +3,7 @@
  * @brief Low Power Node feature header
  *******************************************************************************
  * # License
- * <b>Copyright 2020 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -136,8 +136,10 @@ sl_status_t sl_btmesh_lpn_high_throughput_unregister(sl_btmesh_lpn_high_throughp
  * Called when the Low Power Node is initialized.
  *
  * This is a callback which can be implemented in the application.
- * @note If no implementation is provided in the application,
- *       then the default weak implementation will be an empty function.
+ * @note Do not call blocking api from here as during this call the btmesh
+ *       resource guard is being used and it can lead to undefined behaviour.
+ *       If no implementation is provided in the application, then the default
+ *       weak implementation will be an empty function.
  ******************************************************************************/
 void sl_btmesh_lpn_on_init(void);
 
@@ -145,8 +147,10 @@ void sl_btmesh_lpn_on_init(void);
  * Called when the Low Power Node is deinitialized.
  *
  * This is a callback which can be implemented in the application.
- * @note If no implementation is provided in the application,
- *       then the default weak implementation will be an empty function.
+ * @note Do not call blocking api from here as during this call the btmesh
+ *       resource guard is being used and it can lead to undefined behaviour.
+ *       If no implementation is provided in the application, then the default
+ *       weak implementation will be an empty function.
  ******************************************************************************/
 void sl_btmesh_lpn_on_deinit(void);
 

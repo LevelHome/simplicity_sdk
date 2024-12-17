@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief Trivial File Transfer Portocol Client header file
+ * @file sl_tftp_clnt.h
+ * @brief Trivial File Transfer Protocol Client header file
  *******************************************************************************
  * # License
  * <b>Copyright 2023 Silicon Laboratories Inc. www.silabs.com</b>
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __SL_TFTP_CLIENT_H__
-#define __SL_TFTP_CLIENT_H__
+#ifndef SL_TFTP_CLNT_H
+#define SL_TFTP_CLNT_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,92 +38,122 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <stdint.h>
 #include <stddef.h>
+
 #include "cmsis_os2.h"
 #include "sl_status.h"
 #include "sl_ftp.h"
 #include "sl_ftp_config.h"
 
 #if SL_FTP_ENABLE_TFTP_PROTOCOL
+/**************************************************************************//**
+ * @addtogroup SL_TFTP_CLNT
+ * @{
+ *****************************************************************************/
 
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
 
 /// Default TFTP host port
-#define SL_TFTP_DEFAULT_HOST_PORT        69U
+#define SL_TFTP_DEFAULT_HOST_PORT                       69U
 
-/// TFTP Data block size
-#define SL_TFTP_DATA_BLOCK_SIZE          512UL
+/// TFTP Default data block size
+#define SL_TFTP_DEFAULT_DATA_BLOCK_SIZE                 512U
+
+/// TFTP Default server retransmit timeout interval in seconds
+#define SL_TFTP_DEFAULT_SRV_RET_TIMEOUT_SEC             1U
 
 /// TFTP receive timeout
-#define SL_TFTP_RECV_TIMEOUT_MS          8000UL
+#define SL_TFTP_RECV_TIMEOUT_MS                         8000UL
 
 /// TFTP string max length (filename, mode)
-#define SL_TFTP_STR_MAX_LEN              256UL
+#define SL_TFTP_STR_MAX_LEN                             256UL
 
 /// Netascii mode string
-#define SL_TFTP_MODE_NETASCII_STR        "netascii"
-
+#define SL_TFTP_MODE_NETASCII_STR                       "netascii"
 /// Octet mode string
-#define SL_TFTP_MODE_OCTET_STR           "octet"
-
-/// Mail mode string
-#define SL_TFTP_MODE_MAIL_STR            "mail"
-
+#define SL_TFTP_MODE_OCTET_STR                          "octet"
 /// Netascii mode string length
-#define SL_TFTP_MODE_NETASCII_STR_LEN    8U
-
+#define SL_TFTP_MODE_NETASCII_STR_LEN                   8U
 /// Octet mode string length
-#define SL_TFTP_MODE_OCTET_STR_LEN       5U
+#define SL_TFTP_MODE_OCTET_STR_LEN                      5U
 
-/// Mail mode string length
-#define SL_TFTP_MODE_MAIL_STR_LEN        4U
+/// TFTP Blocksize Option
+#define SL_TFTP_OPT_EXT_BLOCKSIZE                       "blksize"
+/// TFTP Blocksize Option length
+#define SL_TFTP_OPT_EXT_BLOCKSIZE_LEN                   7U
+/// TFTP Multicast Option
+#define SL_TFTP_OPT_EXT_MULTICAST                       "multicast"
+/// TFTP Multicast Option length
+#define SL_TFTP_OPT_EXT_MULTICAST_LEN                   9U
+/// TFTP Timeout Interval Option
+#define SL_TFTP_OPT_EXT_TIMEOUT_INTERVAL                "timeout"
+/// TFTP Timeout Interval Option length
+#define SL_TFTP_OPT_EXT_TIMEOUT_INTERVAL_LEN            7U
+/// TFTP Transfer Size Option
+#define SL_TFTP_OPT_EXT_TRANSFER_SIZE                   "tsize"
+/// TFTP Transfer Size Option length
+#define SL_TFTP_OPT_EXT_TRANSFER_SIZE_LEN               5U
+/// TFTP Windowsize Option
+#define SL_TFTP_OPT_EXT_WINDOWSIZE                      "windowsize"
+/// TFTP Windowsize Option length
+#define SL_TFTP_OPT_EXT_WINDOWSIZE_LEN                  10U
 
 /// TFTP Read Request operation code
-#define SL_TFTP_OPCODE_RRQ               1U
-
+#define SL_TFTP_OPCODE_RRQ                              1U
 /// TFTP Write Request operation code
-#define SL_TFTP_OPCODE_WRQ               2U
-
+#define SL_TFTP_OPCODE_WRQ                              2U
 /// TFTP Data operation code
-#define SL_TFTP_OPCODE_DATA              3U
-
+#define SL_TFTP_OPCODE_DATA                             3U
 /// TFTP Acknowledgement operation code
-#define SL_TFTP_OPCODE_ACK               4U
-
+#define SL_TFTP_OPCODE_ACK                              4U
 /// TFTP Error operation code
-#define SL_TFTP_OPCODE_ERROR             5U
+#define SL_TFTP_OPCODE_ERROR                            5U
+/// TFTP Option Acknowledgement operation code
+#define SL_TFTP_OPCODE_OACK                             6U
 
 /// Not defined, see error message (if any).
-#define SL_TFTP_ERROCODE_NOTDEF          0U
+#define SL_TFTP_ERROCODE_NOTDEF                         0U
 /// File not found.
-#define SL_TFTP_ERROCODE_FNOTFOUND       1U
+#define SL_TFTP_ERROCODE_FNOTFOUND                      1U
 /// Access violation.
-#define SL_TFTP_ERROCODE_ACCVIOL         2U
+#define SL_TFTP_ERROCODE_ACCVIOL                        2U
 /// Disk full or allocation exceeded.
-#define SL_TFTP_ERROCODE_DISKFULL        3U
+#define SL_TFTP_ERROCODE_DISKFULL                       3U
 /// Illegal TFTP operation.
-#define SL_TFTP_ERROCODE_ILLEGALOP       4U
+#define SL_TFTP_ERROCODE_ILLEGALOP                      4U
 /// Unknown transfer ID.
-#define SL_TFTP_ERROCODE_UNKNTID         5U
+#define SL_TFTP_ERROCODE_UNKNTID                        5U
 /// File already exists.
-#define SL_TFTP_ERROCODE_FEXIST          6U
+#define SL_TFTP_ERROCODE_FEXIST                         6U
 /// No such user.
-#define SL_TFTP_ERROCODE_NOUSR           7U
+#define SL_TFTP_ERROCODE_NOUSR                          7U
+/// Terminate transfer due to option negotiation.
+#define SL_TFTP_ERROCODE_OPTNEGOTFAIL                   8U
 
-#if  defined(SL_WISUN_UNIT_TEST)
-#warning Unit test enabled
-/// TFTP Service loop for unit tests
-#define SL_TFTP_SERVICE_LOOP()       for (uint8_t i = 0U; i < SL_TFTP_SERVICE_LOOP_EXPECTED_CNT; ++i)
-#else
-/// TFTP Service loop
-#define SL_TFTP_SERVICE_LOOP()       while (1)
+/// TFTP Service loop definition
+#ifndef SL_TFTP_SERVICE_LOOP
+#define SL_TFTP_SERVICE_LOOP  while (1)
 #endif
 
-/// TFTP requeset packet
+/**************************************************************************//**
+ * @addtogroup SL_TFTP_CLNT_DEFS Type definitions
+ * @ingroup SL_TFTP_CLNT
+ * @{
+ *****************************************************************************/
+
+/// TFTP Client options
+/// The definition doesn't include the unsupported options
+typedef struct sl_tftp_clnt_opt {
+  /// Blocksize option
+  uint32_t blksize;
+  /// Timeout interval option
+  uint32_t timeout_sec;
+} sl_tftp_clnt_opt_t;
+
+/// TFTP request packet
 typedef struct sl_tftp_req_pkt {
   /// File name
   const char *filename;
@@ -141,11 +171,19 @@ typedef struct sl_tftp_data_pkt {
   uint16_t data_size;
 } sl_tftp_data_pkt_t;
 
-/// TFTP ack packet
+/// TFTP ACK packet
 typedef struct sl_tftp_ack_pkt {
   /// Block number
   uint16_t block_num;
 } sl_tftp_ack_pkt_t;
+
+/// TFTP OACK packet
+typedef struct sl_tftp_oack_pkt {
+  /// Option list start ptr
+  const char *opt_list;
+  /// Total size of option list
+  uint16_t size;
+} sl_tftp_oack_pkt_t;
 
 /// TFTP error packet
 typedef struct sl_tftp_error_pkt {
@@ -161,8 +199,10 @@ typedef union sl_tftp_pkt_content {
   sl_tftp_req_pkt_t request;
   /// Data
   sl_tftp_data_pkt_t data;
-  /// Ack
+  /// ACK
   sl_tftp_ack_pkt_t ack;
+  /// OACK
+  sl_tftp_oack_pkt_t oack;
   /// Error
   sl_tftp_error_pkt_t error;
 } sl_tftp_pkt_content_t;
@@ -186,18 +226,22 @@ typedef struct sl_tftp_clnt {
   /// Event flags
   osEventFlagsId_t evt_flags;
   /// External data pointer to WRQ
-  const uint8_t * ext_data;
+  const uint8_t *ext_data;
   /// External data size
   uint32_t ext_data_size;
   /// Data handler callback
-  void (*data_hnd)(struct sl_tftp_clnt* const clnt,
+  void (*data_hnd)(struct sl_tftp_clnt * const clnt,
                    const uint8_t * const data_ptr,
                    const uint16_t data_size);
   /// Error handler callback
-  void (*error_hnd)(struct sl_tftp_clnt* const clnt,
+  void (*error_hnd)(struct sl_tftp_clnt * const clnt,
                     const uint16_t error_code,
-                    const char * error_msg);
+                    const char *error_msg);
+  /// Options
+  sl_tftp_clnt_opt_t options;
 } sl_tftp_clnt_t;
+
+/** @} (end SL_TFTP_CLNT_DEFS) */
 
 /// Data handler callback definition
 typedef void (*sl_tftp_clnt_data_hnd_t)(sl_tftp_clnt_t * const clnt,
@@ -260,6 +304,21 @@ __STATIC_INLINE sl_status_t sl_tftp_clnt_default_init(sl_tftp_clnt_t * const cln
 void sl_tftp_clnt_print_pkt(const sl_tftp_pkt_t * const pkt);
 
 /***************************************************************************//**
+ * @brief Set TFTP Client option
+ * @details Set TFTP Client option in the TFTP client instance.
+ *          The supported options are:
+ *          - SL_TFTP_OPT_EXT_BLOCKSIZE: Blocksize option (8 - 1228 for Wi-SUN)
+ *          - SL_TFTP_OPT_EXT_TIMEOUT_INTERVAL: Timeout interval option (1 - 255)
+ * @param[in,out] clnt Client
+ * @param[in] opt Option string
+ * @param[in] value Option value
+ * @return sl_status_t SL_STATUS_OK on success, otherwise SL_STATUS_FAIL
+ ******************************************************************************/
+sl_status_t sl_tftp_clnt_set_option(sl_tftp_clnt_t * const clnt,
+                                    const char *opt,
+                                    const uint32_t value);
+
+/***************************************************************************//**
  * @brief TFTP Client request
  * @details Send request for Server (RRQ or WRQ)
  * @param[in,out] clnt Client
@@ -275,20 +334,22 @@ sl_status_t sl_tftp_clnt_request(sl_tftp_clnt_t * const clnt,
 
 /***************************************************************************//**
  * @brief TFT Client Get
- * @details Get file from server in netascii mode
+ * @details Get file from server in octet mode
  * @param[in,out] clnt Client
  * @param[in] file File name
  * @return sl_status_t SL_STATUS_OK on success, otherwise SL_STATUS_FAIL
  ******************************************************************************/
-__STATIC_INLINE sl_status_t sl_tftp_clnt_get(sl_tftp_clnt_t * const clnt, const char *file)
+__STATIC_INLINE sl_status_t sl_tftp_clnt_get(sl_tftp_clnt_t * const clnt,
+                                             const char *file)
 {
-  return sl_tftp_clnt_request(clnt, SL_TFTP_OPCODE_RRQ, file, SL_TFTP_MODE_NETASCII_STR);
+  return sl_tftp_clnt_request(clnt, SL_TFTP_OPCODE_RRQ, file, SL_TFTP_MODE_OCTET_STR);
 }
 
 /***************************************************************************//**
  * @brief TFTP Client terminate session
  * @details Terminate TFTP session
  * @param[in,out] clnt Client
+ * @return sl_status_t SL_STATUS_OK on success, otherwise SL_STATUS_FAIL
  ******************************************************************************/
 sl_status_t sl_tftp_clnt_terminate_session(sl_tftp_clnt_t * const clnt);
 
@@ -299,9 +360,10 @@ sl_status_t sl_tftp_clnt_terminate_session(sl_tftp_clnt_t * const clnt);
  * @param[in] file File name to store data
  * @return sl_status_t SL_STATUS_OK on success, otherwise SL_STATUS_FAIL
  ******************************************************************************/
-__STATIC_INLINE sl_status_t sl_tftp_clnt_put(sl_tftp_clnt_t * const clnt, const char *file)
+__STATIC_INLINE sl_status_t sl_tftp_clnt_put(sl_tftp_clnt_t * const clnt,
+                                             const char *file)
 {
-  return sl_tftp_clnt_request(clnt, SL_TFTP_OPCODE_WRQ, file, SL_TFTP_MODE_NETASCII_STR);
+  return sl_tftp_clnt_request(clnt, SL_TFTP_OPCODE_WRQ, file, SL_TFTP_MODE_OCTET_STR);
 }
 
 /***************************************************************************//**
@@ -337,9 +399,12 @@ bool sl_tftp_clnt_is_op_put(const sl_tftp_clnt_t * const clnt);
  ******************************************************************************/
 bool sl_tftp_clnt_is_op_rrq_wrq_failed(const sl_tftp_clnt_t * const clnt);
 
-#endif
+/** @}*/
+
+#endif // SL_FTP_ENABLE_TFTP_PROTOCOL
 
 #ifdef __cplusplus
 }
 #endif
-#endif
+
+#endif // SL_TFTP_CLNT_H

@@ -41,7 +41,11 @@ static volatile bool run = true;
 static void signal_handler(int sig)
 {
   (void)sig;
-  run = false;
+  if (run) {
+    run = false;
+  } else {
+    exit(EXIT_FAILURE);
+  }
 }
 
 int main(int argc, char* argv[])

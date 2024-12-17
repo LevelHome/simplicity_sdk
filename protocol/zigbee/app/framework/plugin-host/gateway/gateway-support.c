@@ -24,7 +24,6 @@
 
 #include "app/framework/util/af-event.h"
 #include "app/util/ezsp/serial-interface.h"
-#include "app/util/serial/sl_zigbee_command_interpreter.h"
 #include "app/util/serial/linux-serial.h"
 #include "gateway-config.h"
 

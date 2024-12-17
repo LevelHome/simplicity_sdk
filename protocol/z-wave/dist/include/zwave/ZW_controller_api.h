@@ -21,15 +21,29 @@
  */
 
 /* Mode parameters to ZW_AddNodeToNetwork */
-#define ADD_NODE_ANY          1
-#define ADD_NODE_CONTROLLER   2
-#define ADD_NODE_SLAVE        3
-#define ADD_NODE_EXISTING     4
-#define ADD_NODE_STOP         5
-#define ADD_NODE_STOP_FAILED  6
-#define ADD_NODE_RESERVED     7
-#define ADD_NODE_HOME_ID      8
-#define ADD_NODE_SMART_START  9
+typedef enum _ADD_NODE_MODE_
+{
+  ADD_NODE_ANY = 1,
+  ADD_NODE_CONTROLLER ,
+  ADD_NODE_SLAVE,
+  ADD_NODE_EXISTING,
+  ADD_NODE_STOP,
+  ADD_NODE_STOP_FAILED,
+  ADD_NODE_RESERVED,
+  ADD_NODE_HOME_ID,
+  ADD_NODE_SMART_START,
+  ADD_NODE_MAX
+} ADD_NODE_MODE;
+
+typedef enum _REMOVE_NODE_MODE_
+{
+  REMOVE_NODE_ANY = ADD_NODE_ANY,
+  REMOVE_NODE_CONTROLLER = ADD_NODE_CONTROLLER,
+  REMOVE_NODE_SLAVE = ADD_NODE_SLAVE,
+  REMOVE_NODE_STOP = ADD_NODE_STOP,
+  REMOVE_NODE_MAX = REMOVE_NODE_STOP + 1
+} REMOVE_NODE_MODE;
+
 
 #define ADD_NODE_MODE_MASK                   0x0F
 #define ADD_NODE_OPTION_NORMAL_POWER         0x80
@@ -47,12 +61,6 @@
 #define ADD_NODE_STATUS_FAILED              7
 #define ADD_NODE_STATUS_FIND_NEIGHBORS_DONE 11 // Sent if SFLND == true
 #define ADD_NODE_STATUS_NOT_PRIMARY         0x23
-
-/* Mode parameters to ZW_RemoveNodeFromNetwork/ZW_RemoveNodeIDFromNetwork */
-#define REMOVE_NODE_ANY                     ADD_NODE_ANY
-#define REMOVE_NODE_CONTROLLER              ADD_NODE_CONTROLLER
-#define REMOVE_NODE_SLAVE                   ADD_NODE_SLAVE
-#define REMOVE_NODE_STOP                    ADD_NODE_STOP
 
 #define REMOVE_NODE_MODE_MASK               ADD_NODE_MODE_MASK
 #define REMOVE_NODE_OPTION_NORMAL_POWER     ADD_NODE_OPTION_NORMAL_POWER
@@ -155,22 +163,24 @@
 #define ZW_SUC_FUNC_NODEID_SERVER   0x01
 
 /* Defines for ZW_GetControllerCapabilities */
-#define CONTROLLER_IS_SECONDARY                 0x01 /* - If bit is set then the controller is a secondary controller */
-#define CONTROLLER_ON_OTHER_NETWORK             0x02 /* - If this bit is set then this controller is not using its built-in home ID */
-#define CONTROLLER_NODEID_SERVER_PRESENT        0x04 /* - If this bit is set then there is a SUC ID server (SIS) in the */
-                                                     /*   network and this controller can therefore include/exclude nodes */
-                                                     /*   in the network. This is called an inclusion controller */
-#define CONTROLLER_IS_REAL_PRIMARY              0x08 /* - If this bit is set then this controller was the original primary controller */
-                                                     /*   in the network before the SIS was added to the network */
-#define CONTROLLER_IS_SUC                       0x10 /* - If this bit is set then this controller is a SUC */
-#define NO_NODES_INCLUDED                       0x20 /* - If this bit is set then no nodes are included */
+
+typedef struct __attribute__((packed)) _CONTROLLER_CONFIGURATION_
+{
+  uint8_t  controller_is_secondary:1;
+  uint8_t  controller_on_other_network:1;
+  uint8_t  controller_nodeid_server_present:1;
+  uint8_t  controller_is_real_primary:1;
+  uint8_t  controller_is_suc:1;
+  uint8_t  no_nodes_included:1;
+  uint8_t  reserved:2;
+} CONTROLLER_CONFIGURATION;
 
 /* Z-Wave RF speed definitions */
 #define ZW_RF_SPEED_NONE                        0x0000
 #define ZW_RF_SPEED_9600                        0x0001
 #define ZW_RF_SPEED_40K                         0x0002
 #define ZW_RF_SPEED_100K                        0x0003
-#define ZW_RF_SPEED_100KLR						0x0004
+#define ZW_RF_SPEED_100KLR						          0x0004
 #define ZW_RF_SPEED_MASK                        0x0007
 
 /* Z-Wave Long Range Channel */
@@ -185,7 +195,7 @@
 #define ZW_GET_ROUTING_INFO_9600                ZW_RF_SPEED_9600
 #define ZW_GET_ROUTING_INFO_40K                 ZW_RF_SPEED_40K
 #define ZW_GET_ROUTING_INFO_100K                ZW_RF_SPEED_100K
-#define ZW_GET_ROUTING_INFO_100KLR				ZW_RF_SPEED_100KLR
+#define ZW_GET_ROUTING_INFO_100KLR				      ZW_RF_SPEED_100KLR
 #define ZW_GET_ROUTING_INFO_SPEED_MASK          ZW_RF_SPEED_MASK
 
 /* Listening bit in the NODEINFO capability byte */

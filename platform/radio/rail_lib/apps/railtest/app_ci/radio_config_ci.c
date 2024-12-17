@@ -88,18 +88,41 @@ void setConfigIndex(sl_cli_command_arg_t *args)
     }
   }
 
-  configIndex = proposedIndex;
   RAIL_Idle(railHandle, RAIL_IDLE_ABORT, true);
   // Load the channel configuration for the specified index.
-  channel = RAIL_ConfigChannels(railHandle,
-                                channelConfigs[configIndex],
-                                &sli_rail_util_on_channel_config_change);
-  responsePrint(sl_cli_get_command_string(args, 0), "configIndex:%d,firstAvailableChannel:%d",
-                configIndex,
-                channel);
+  if (sl_cli_get_argument_count(args) >= 2) {
+    // A channel is provided, try to use it.
+    if (RAIL_ConfigChannelsAlt(railHandle,
+                               channelConfigs[proposedIndex],
+                               &sli_rail_util_on_channel_config_change)
+        != RAIL_STATUS_NO_ERROR) {
+      responsePrintError(sl_cli_get_command_string(args, 0), 0x11, "Could not set radio config index '%d'", configIndex);
+      return;
+    }
+    uint16_t proposedChannel = sl_cli_get_argument_uint16(args, 1);
+    // Make sure this is a valid channel. if not, reset channel configuration.
+    if (RAIL_IsValidChannel(railHandle, proposedChannel)
+        != RAIL_STATUS_NO_ERROR) {
+      (void) RAIL_ConfigChannelsAlt(railHandle,
+                                    channelConfigs[configIndex],
+                                    &sli_rail_util_on_channel_config_change);
+      responsePrintError(sl_cli_get_command_string(args, 0), 0x11, "Invalid channel '%d'", proposedChannel);
+      return;
+    }
+    channel = proposedChannel;
+  } else {
+    // No channel is provided, use the first available one.
+    channel = RAIL_ConfigChannels(railHandle,
+                                  channelConfigs[proposedIndex],
+                                  &sli_rail_util_on_channel_config_change);
+  }
+  configIndex = proposedIndex;
   if (receiveModeEnabled) {
     (void) RAIL_StartRx(railHandle, channel, NULL);
   }
+  responsePrint(sl_cli_get_command_string(args, 0), "configIndex:%d,channel:%d",
+                configIndex,
+                channel);
 #else // !SL_RAIL_UTIL_INIT_RADIO_CONFIG_SUPPORT_INST0_ENABLE
   responsePrintError(sl_cli_get_command_string(args, 0), 0x22, "External radio config support not enabled");
 #endif // SL_RAIL_UTIL_INIT_RADIO_CONFIG_SUPPORT_INST0_ENABLE

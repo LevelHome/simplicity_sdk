@@ -83,17 +83,11 @@ typedef struct IotSPIDescriptor {
   USART_TypeDef            *pxPeripheral;
   uint8_t                   ucPeripheralNo;
 
-  /* ports */
-  GPIO_Port_TypeDef         xTxPort;
-  GPIO_Port_TypeDef         xRxPort;
-  GPIO_Port_TypeDef         xClkPort;
-  GPIO_Port_TypeDef         xCsPort;
-
-  /* pins */
-  uint8_t                   ucTxPin;
-  uint8_t                   ucRxPin;
-  uint8_t                   ucClkPin;
-  uint8_t                   ucCsPin;
+  /* GPIO strucutres */
+  sl_gpio_t                 txGpio;
+  sl_gpio_t                 rxGpio;
+  sl_gpio_t                 clkGpio;
+  sl_gpio_t                 csGpio;
 
   /* locations */
   uint8_t                   ucTxLoc;

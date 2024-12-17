@@ -34,7 +34,7 @@ This project uses Silicon Labs’ proprietary CPC (Co-Processor Communication) p
 
 ![](image/readme_cpc_img0.png)
 
-For more information on CPC, refer to [AN1351: Using the Co-Processor Communication Daemon (CPCd)](https://www.silabs.com/documents/public/application-notes/an1351-using-co-processor-communication_daemon.pdf). To learn more about the DMP use case, see [AN1333: Running Zigbee, OpenThread, and Bluetooth Concurrently on a Linux Host with a Multiprotocol RCP](https://www.silabs.com/documents/public/application-notes/an1333-concurrent-protocols-with-802-15-4-rcp.pdf).
+For more information on CPC, refer to [AN1351: Using the Co-Processor Communication Daemon (CPCd)](https://www.silabs.com/documents/public/application-notes/an1351-using-co-processor-communication_daemon.pdf). To learn more about the DMP use case, see [Running Zigbee, OpenThread, and Bluetooth Concurrently on a Linux Host with a Multiprotocol RCP](https://docs.silabs.com/multiprotocol/latest/multiprotocol-solution-linux/).
 
 ## Troubleshooting
 

@@ -42,3 +42,7 @@ template_contribution:
       event: service_init
       include: sl_mbedtls.h
       handler: sl_mbedtls_init
+
+metadata:
+  sbom:
+    license: Zlib

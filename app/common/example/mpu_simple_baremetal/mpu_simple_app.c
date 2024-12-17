@@ -18,7 +18,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdint.h>
-#include "em_ramfunc.h" //Needed for SL_RAMFUNC_DECLARATOR macro
+#include "sl_code_classification.h" //Needed for SL_CODE_RAM macro
 #include "sl_iostream.h"
 #include "sl_iostream_init_instances.h"
 #include "sl_iostream_handles.h"
@@ -70,12 +70,12 @@ static void function_executing_from_flash(void)
  * @brief Function executing from ram.
  *
  * For this example demonstration, we mark this function with the special
- * macro SL_RAMFUNC_DECLARATOR. It tells the compiler to put the code of this
+ * macro SL_CODE_RAM. It tells the compiler to put the code of this
  * function in the .ram section, which in turn, is placed in the RAM address
  * space (see auto-generated linkerfile.ld linker script). Functions placed in
  * the appropriate (.ram) section won't be denied execution from the MPU.
  */
-SL_RAMFUNC_DECLARATOR static void function_executing_from_ram(void)
+SL_CODE_RAM static void function_executing_from_ram(void)
 {
 /* suppressing [Ta022], [Ta023] iar warnings
    Error[Ta022]: Possible rom access (<Constant "  Normal function exe...">) from within a __ramfunc function

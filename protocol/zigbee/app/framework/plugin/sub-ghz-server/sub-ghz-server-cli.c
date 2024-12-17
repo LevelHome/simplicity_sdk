@@ -71,7 +71,7 @@ static void printSuccessOrError(sl_status_t status)
   if (status == SL_STATUS_OK) {
     sl_zigbee_af_core_println("OK");
   } else {
-    sl_zigbee_af_core_println("Error %d (0x%x)", status, status);
+    sl_zigbee_af_core_println("Error %d (0x%02X)", status, status);
   }
 }
 
@@ -96,7 +96,7 @@ static void printAttributes(const uint16_t attributeIds[], int n)
                                                                      sizeof value,
                                                                      &type);
     if (status == (sl_zigbee_af_status_t)SL_STATUS_OK) {
-      sl_zigbee_af_core_println("0x%4x", value);
+      sl_zigbee_af_core_println("0x%08X", value);
     } else {
       sl_zigbee_af_core_println("Error reading attribute");
     }
@@ -206,7 +206,7 @@ void sli_zigbee_af_sub_ghz_server_cli_duty_cycle_limits_print(sl_cli_command_arg
     printHectoPercent(limits.suspLimit);
     sl_zigbee_af_core_println("");
   } else {
-    sl_zigbee_af_core_println("Could not get %p%p%p", "", "duty cycle", " limits");
+    sl_zigbee_af_core_println("Could not get %s%s%s", "", "duty cycle", " limits");
   }
 
   if (sl_zigbee_get_current_duty_cycle(sizeof arrayOfDutyCycles / sizeof arrayOfDutyCycles[0],
@@ -218,18 +218,18 @@ void sli_zigbee_af_sub_ghz_server_cli_duty_cycle_limits_print(sl_cli_command_arg
     sl_zigbee_af_core_println("");
 
     for (i = 1; i < sizeof arrayOfDutyCycles / sizeof arrayOfDutyCycles[0]; i++) {
-      sl_zigbee_af_core_print("  (%2X: ", arrayOfDutyCycles[i].nodeId);
+      sl_zigbee_af_core_print("  (%04X: ", arrayOfDutyCycles[i].nodeId);
       printHectoPercent(arrayOfDutyCycles[i].dutyCycleConsumed);
       sl_zigbee_af_core_println(")");
     }
   } else {
-    sl_zigbee_af_core_println("Could not get %p%p%p", "consumed ", "duty cycle", "s");
+    sl_zigbee_af_core_println("Could not get %s%s%s", "consumed ", "duty cycle", "s");
   }
 
   if (sl_zigbee_get_duty_cycle_state(&dcState) == SL_STATUS_OK) {
     sl_zigbee_af_core_println("DC state: %s", dcStateStr[dcState]);
   } else {
-    sl_zigbee_af_core_println("Could not get %p%p%p", "current ", "duty cycle", " state");
+    sl_zigbee_af_core_println("Could not get %s%s%s", "current ", "duty cycle", " state");
   }
 }
 
@@ -278,8 +278,8 @@ void sli_zigbee_af_sub_ghz_server_cli_client_status(sl_cli_command_arg_t *argume
   uint16_t t = sl_zigbee_af_sub_ghz_server_suspend_zcl_messages_status(nodeId);
 
   if (t > 0) {
-    sl_zigbee_af_core_println("%2x: %p for %d:%d%d", nodeId, "suspended", t / 60, (t % 60) / 10, t % 10);
+    sl_zigbee_af_core_println("%04X: %s for %d:%d%d", nodeId, "suspended", t / 60, (t % 60) / 10, t % 10);
   } else {
-    sl_zigbee_af_core_println("%2x: not %p", nodeId, "suspended");
+    sl_zigbee_af_core_println("%04X: not %s", nodeId, "suspended");
   }
 }

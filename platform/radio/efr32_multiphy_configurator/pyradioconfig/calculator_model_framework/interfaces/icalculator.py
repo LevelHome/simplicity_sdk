@@ -222,3 +222,13 @@ class ICalculator(object):
             #Start with 1s filling all the bits and then add the negative value
             #Example: if we have 4 bits and value is -5, we want 0xF - 0x5 = 0xA = 0b1010
             return (1 << size) - 1 + value
+
+    def _covert_twos_complement_to_signed(self, value, size):
+        max_value = 2 ** size
+        # Check if the number is negative (if the sign bit is set)
+        if value >= max_value // 2:
+            # Calculate the negative value by subtracting from the maximum value
+            signed_number = value - max_value
+        else:
+            signed_number = value
+        return signed_number

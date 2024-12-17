@@ -60,7 +60,7 @@ Basic Command Class is mapped to Binary Switch CC
         <ul>
             <li>Device Reset Locally: triggered upon reset.</li>
             <li>Binary Switch Report: Triggered when the switch changes state.</li>
-            <li>Indicator Report: Triggered when LED1 changes state.</li>
+            <li>Indicator Report: Triggered when LED0 changes state.</li>
         </ul>
     </td>
 </tr>
@@ -70,9 +70,29 @@ X: For Z-Wave node count is equal to 5 and for Z-Wave Long Range it is 1.
 
 ## Usage of Buttons and LED Status
 
-To use the sample app, the BRD8029A Button and LEDs Expansion Board must be used. BTN0-BTN3 and LED0-LED3 refer to the buttons and LEDs on the Expansion Board.
+We are differentiating four different types of button presses. The following types are the same for the BTN0 and BTN1 on the WSTK board. The duration values can be configured under the config directory in app_button_press_config.h file in each generated application/project.
 
-The following LEDs and buttons shown in the next table below are used.
+Please note external wakeup is not supported on button 1 in case of brd2603a and brd2603b.
+
+<table>
+<tr>
+    <th>Press Type</th>
+    <th>Duration</th>
+</tr><tr>
+    <td>Short Press</td>
+    <td>0 - 400 ms</td>
+</tr><tr>
+    <td>Medium Press</td>
+    <td>401 - 1500 ms</td>
+</tr><tr>
+    <td>Long Press</td>
+    <td>1501 - 5000 ms</td>
+</tr><tr>
+    <td>Very Long Press</td>
+    <td>Every press longer than Long Press</td>
+</tr>
+</table>
+
 
 <table>
 <tr>
@@ -85,20 +105,21 @@ The following LEDs and buttons shown in the next table below are used.
     <td>Resets the firmware of an application (like losing power). All volatile memory will be cleared.</td>
 </tr><tr>
     <td>BTN0</td>
-    <td>Press</td>
-    <td>Toggle LED0</td>
+    <td>Short Press</td>
+    <td>Toggles LED1</td>
 </tr><tr>
     <td rowspan="2">BTN1</td>
-    <td>Press</td>
-    <td>
-        Enter "learn mode" (sending node info frame) to add/remove the device.<br>
-        Removing the device from a network will reset it.
+    <td>Short Press</td>
+    <td>Enter "learn mode" (sending node info frame) to add/remove the device.<br>
+    Removing the device from a network will reset it.
     </td>
 </tr><tr>
-    <td>Hold for at least 5 seconds and release</td>
-    <td>Perform a reset to factory default operation of the device, and a Device Reset Locally Notification Command is sent via Lifeline.</td>
+    <td>Very Long Press</td>
+    <td>Perform a reset to factory default operation of the device, and a Device Reset Locally Notification Command is sent via Lifeline.
+    </td>
 </tr>
 </table>
+
 
 <table>
 <tr>
@@ -106,12 +127,17 @@ The following LEDs and buttons shown in the next table below are used.
     <th>Description</th>
 </tr><tr>
     <td>LED0</td>
-    <td>Switch: LED ON indicates SWITCH ON / LED OFF indicates SWITCH OFF</td>
-</tr><tr>
-    <td>LED1</td>
     <td>
         Blinks with 1 Hz when learn mode is active.<br>
         Used for Indicator Command Class.
+    </td>
+</tr><tr>
+    <td>LED1</td>
+    <td>Switch:
+        <ul>
+            <li>LED ON indicates SWITCH ON</li>
+            <li>LED OFF indicates SWITCH OFF</li>
+        </ul>
     </td>
 </tr>
 </table>
@@ -153,11 +179,16 @@ Please note the zw_cli_common component will modify the power consumption in cas
 <tr>
     <th>toggle_led</th>
     <td>-</td>
-    <td>Toggling LED0</td>
+    <td>Toggling LED1</td>
 </tr>
 <tr>
     <th>send_nif</th>
     <td>-</td>
     <td>Sending Node Information Frame</td>
+</tr>
+<tr>
+    <th>get_led_state</th>
+    <td>-</td>
+    <td>Get the state of the LED1. Can be "on" or "off"</td>
 </tr>
 </table>

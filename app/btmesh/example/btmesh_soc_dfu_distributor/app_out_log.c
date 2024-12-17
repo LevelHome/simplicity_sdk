@@ -29,7 +29,6 @@
  ******************************************************************************/
 
 #include <stdbool.h>
-#include "em_common.h"
 
 #include "app.h"
 #include "app_log.h"

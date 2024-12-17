@@ -31,9 +31,6 @@ int32_t btl_init(void)
 
 #ifdef BOOTLOADER_SUPPORT_STORAGE
   retval = storage_init();
-  if (retval != BOOTLOADER_OK) {
-    return retval;
-  }
 #endif
 
   return retval;
@@ -45,9 +42,6 @@ int32_t btl_deinit(void)
 
 #ifdef BOOTLOADER_SUPPORT_STORAGE
   retval = storage_shutdown();
-  if (retval != BOOTLOADER_OK) {
-    return retval;
-  }
 #endif
 
   return retval;

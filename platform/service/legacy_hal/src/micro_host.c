@@ -46,11 +46,6 @@ void halInternalAssertFailed(const char * filename, int linenumber)
   halReboot();
 }
 
-void otaServerSetClientDelayUnits(void)
-{
-  //stub
-}
-
 void setMicroRebootHandler(void (*handler)(void))
 {
   microRebootHandler = handler;
@@ -76,36 +71,6 @@ const char *halGetResetString(void)
   return (resetString);
 }
 
-// Ideally this should not be necessary, but the serial code references
-// this for all platforms.
-void simulatedSerialTimePasses(void)
-{
-}
-
-void halPowerDown(void)
-{
-}
-
-void halPowerUp(void)
-{
-}
-
-// void halSleep(SleepModes sleepMode)
-// {
-// }
-
-// Implement this to catch incorrect HAL calls for this platform.
-void halCommonSetSystemTime(uint32_t time)
-{
-  (void)time;
-  fprintf(stderr, "FATAL:  halCommonSetSystemTime() not supported!\n");
-  assert(0);
-}
-
-void halInternalResetWatchDog(void)
-{
-}
-
 void halCommonDelayMicroseconds(uint16_t usec)
 {
   if (usec == 0) {
@@ -128,24 +93,4 @@ void halCommonDelayMilliseconds(uint16_t msec)
 
   while (cnt-- > 0)
     halCommonDelayMicroseconds(1000);
-}
-
-// stubs to enable full compilation.
-CORE_irqState_t CORE_EnterCritical(void)
-{
-  return 0;
-}
-void CORE_ExitCritical(CORE_irqState_t irqState)
-{
-  (void) irqState;
-}
-
-CORE_irqState_t CORE_EnterAtomic(void)
-{
-  return (0u);
-}
-
-void CORE_ExitAtomic(CORE_irqState_t irqState)
-{
-  (void)irqState;
 }

@@ -41,7 +41,11 @@ def cast_value_from_xml(var, xml_value):
         if var.is_array:
             values = []
             for str_value in xml_value:
-                values.append((var.var_type)(str_value))
+                if '[' in str_value and ']' in str_value:
+                    list_values = eval(str_value)
+                    values.extend(list_values)
+                else:
+                    values.append((var.var_type)(str_value))
             return values
         else:
             if len(xml_value) == 0:

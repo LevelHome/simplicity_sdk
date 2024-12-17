@@ -773,7 +773,7 @@ sl_status_t sli_zigbee_af_test_harness_z3_zdo_command_response_handler(uint8_t *
                                                                        uint8_t length,
                                                                        sl_zigbee_aps_frame_t *apsFrame)
 {
-  sl_zigbee_af_debug_println("sli_zigbee_af_test_harness_z3_zdo_command_response_handler: cluster = %2X", apsFrame->clusterId);
+  sl_zigbee_af_debug_println("sli_zigbee_af_test_harness_z3_zdo_command_response_handler: cluster = %04X", apsFrame->clusterId);
   sl_status_t status = SL_STATUS_OK;
   uint16_t clusterId = apsFrame->clusterId;
   sl_802154_short_addr_t node_id = sl_zigbee_af_get_node_id();
@@ -1026,7 +1026,7 @@ void sl_zigbee_af_test_harness_z3_zdo_send_event_handler(sl_zigbee_af_event_t * 
 
   if (!(negativeZdoCommandFlags
         & NEGATIVE_ZDO_COMMAND_FLAGS_NO_NEGATIVE_RESPONSE)) {
-    sl_zigbee_af_core_println("%p: %p: 0x%X",
+    sl_zigbee_af_core_println("%s: %s: 0x%02X",
                               TEST_HARNESS_Z3_PRINT_NAME,
                               "ZDO send event handler",
                               sendZdoCommand(currentZdoNegativeCommandDestination,

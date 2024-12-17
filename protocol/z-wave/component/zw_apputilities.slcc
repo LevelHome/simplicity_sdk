@@ -1,7 +1,11 @@
 id: zw_apputilities
 label: Z-Wave ApplicationUtility Component
 category: Z-Wave
-description: ApplicationUtility Component
+description: >
+  This SLC component provides full support for Application Utilities. 
+  It includes utilities for ZAF (Z-Wave Application Framework) such as timers,
+  ZAF NVM (non-volatile memory), and more.
+  These utilities are essential for developing Z-Wave applications or new Command Classes and enhancing their functionality.
 package: Z-Wave
 quality: production
 metadata:

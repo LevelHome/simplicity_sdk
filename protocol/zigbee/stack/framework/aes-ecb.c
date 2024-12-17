@@ -20,16 +20,13 @@
 #include <stdbool.h>
 #include "include/security.h"
 
+#include <mbedtls/build_info.h>
 #ifdef SL_COMPONENT_CATALOG_PRESENT
 #include "sl_component_catalog.h"
 #endif
 
 #if !defined(EZSP_HOST)
 #include "internal/inc/internal-defs-patch.h"
-#endif
-
-#if defined(MBEDTLS_CONFIG_FILE)
-#include MBEDTLS_CONFIG_FILE
 #endif
 
 #if defined(SL_CATALOG_SLI_PROTOCOL_CRYPTO_PRESENT)
@@ -214,7 +211,6 @@ void sli_zigbee_aes_decrypt(uint8_t* block, const uint8_t* key)
 }
 
 #elif defined(MBEDTLS_AES_C)
-
 #include "mbedtls/aes.h"
 
 // mbed TLS implementation

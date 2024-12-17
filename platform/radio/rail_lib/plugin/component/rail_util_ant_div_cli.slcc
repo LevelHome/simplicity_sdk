@@ -4,6 +4,11 @@ description: Antenna Diversity CLI
 package: platform
 category: Platform|Radio
 quality: production
+metadata:
+  sbom:
+    id: rail_util_ant_div_cli
+    name: RAIL Utility, Antenna Diversity CLI
+    license: Zlib
 requires:
   - name: cli
   - name: rail_util_ant_div

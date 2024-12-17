@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "sl_common.h"
+#include "sl_core.h"
 #include "esl_tag_log.h"
 #include "esl_tag_tlv.h"
 #include "esl_tag_core.h"

@@ -165,7 +165,7 @@ node_id_t ZAF_GetSucNodeId(void);
 EInclusionMode_t ZAF_GetInclusionMode(void);
 
 /**
- * Checks if region is valid Z-Wave radio region
+ * Checks if region is supported by Z-Wave stack
  * @param region Region to check
  * @return True if region is valid, false if it isn't.
  */
@@ -175,7 +175,7 @@ bool isRfRegionValid(zpal_radio_region_t region);
  * Check if eRegion is a Long Range region.
  * Warning: the function does not check that the region is supported by the zpal.
  * @param eRegion Region to check
- * @return True if the region supports Long Range, False otherwise.
+ * @return True if the region support Long Range, False otherwise.
  */
 bool ZAF_isLongRangeRegion(zpal_radio_region_t eRegion);
 

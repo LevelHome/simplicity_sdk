@@ -1,7 +1,11 @@
 id: "sl_wisun_app_setting"
-label: "Setting"
+label: "Wi-SUN Setting"
 package: "wisun"
-description: "Provides an interface to handle the settings, such as network name, network size and TX power."
+description: >
+  The Application Settings component provides the fundamental API for getting and setting Wi-SUN related settings within the application code. 
+  After initializing with the app_wisun_setting_init() function, the setters and getters can be used in the application to interface 
+  with runtime settings such as network name, network size, TX power, and PHY configuration. 
+  A notification mechanism is implemented and is triggered by the appropriate settings changes.
 category: "Wi-SUN|Wi-SUN Services"
 quality: "production"
 metadata:
@@ -23,7 +27,6 @@ requires:
   - name: "sl_wisun_cli_util"
   - name: "sl_wisun_trace_util"
   - name: "wisun_config"
-
 
 #-------------- Template Contribution ----------------
 template_contribution:

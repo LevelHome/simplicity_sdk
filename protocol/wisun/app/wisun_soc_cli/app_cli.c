@@ -32,6 +32,12 @@
 #include "sl_wisun_cli_core.h"
 #include "sl_wisun_version.h"
 #include "sl_wisun_keychain.h"
+#include "psa/crypto.h"
+#include "em_system.h"
+#if defined(SEMAILBOX_PRESENT)
+#include "sl_se_manager.h"
+#include "sl_se_manager_util.h"
+#endif
 #include "rail_features.h"
 #include "socket/socket.h"
 #include "arpa/inet.h"
@@ -118,20 +124,51 @@ static const app_enum_t app_frame_type_enum[] = {
   { NULL, 0 }
 };
 
-typedef sl_status_t (*app_socket_option_handler)(sl_wisun_socket_option_data_t *option_data,
+/// socket options
+SL_PACK_START(1)
+typedef union {
+  /// Socket event mode
+  uint32_t event_mode;
+  /// Socket non-blocking mode
+  uint32_t non_blocking_mode;
+  /// Socket send buffer limit
+  int32_t send_buffer_limit;
+  /// Socket multicast group
+  ipv6_mreq_t multicast_group;
+  /// Socket EDFE mode
+  int32_t edfe_mode;
+  /// Socket receive buffer size
+  int32_t receive_buff_size;
+  /// Socket unicast hop limit
+  int32_t unicast_hop_limit;
+  /// Socket multicast hop limit
+  int32_t multicast_hop_limit;
+} SL_ATTRIBUTE_PACKED app_socket_option_data_t;
+SL_PACK_END()
+
+typedef sl_status_t (*app_socket_option_handler)(app_socket_option_data_t *option_data,
                                                  const char *option_data_str);
 
-static sl_status_t app_socket_event_mode_handler(sl_wisun_socket_option_data_t *option_data,
+static sl_status_t app_socket_event_mode_handler(app_socket_option_data_t *option_data,
                                                  const char *option_data_str);
 
-static sl_status_t app_socket_multicast_group_handler(sl_wisun_socket_option_data_t *option_data,
-                                                      const char *option_data_str);
-
-static sl_status_t app_socket_nonblocking_mode_handler(sl_wisun_socket_option_data_t *option_data,
+static sl_status_t app_socket_nonblocking_mode_handler(app_socket_option_data_t *option_data,
                                                        const char *option_data_str);
 
-static sl_status_t app_socket_send_buffer_limit_handler (sl_wisun_socket_option_data_t *option_data,
+static sl_status_t app_socket_receive_buff_size_handler(app_socket_option_data_t *option_data,
+                                                        const char *option_data_str);
+
+static sl_status_t app_socket_send_buffer_limit_handler (app_socket_option_data_t *option_data,
                                                          const char *option_data_str);
+
+static sl_status_t app_socket_unicast_hop_limit_handler(app_socket_option_data_t *option_data,
+                                                        const char *option_data_str);
+
+static sl_status_t app_socket_multicast_hop_limit_handler(app_socket_option_data_t *option_data,
+                                                          const char *option_data_str);
+
+static sl_status_t app_socket_multicast_group_handler(app_socket_option_data_t *option_data,
+                                                      const char *option_data_str);
 
 static sl_status_t app_get_ip_address(in6_addr_t *value,
                                       const char *value_str);
@@ -143,32 +180,35 @@ typedef struct
   char *option;
   uint32_t option_name;
   uint32_t option_level;
-  uint32_t option_lenght;
+  uint32_t option_length;
   app_socket_option_handler handler;
 } app_socket_option_t;
 
 static const app_socket_option_t app_set_socket_options[] =
 {
-  { "event_mode", SOCKET_EVENT_MODE, APP_LEVEL_SOCKET, sizeof(uint32_t), app_socket_event_mode_handler },
-  { "blocking_mode", SO_NONBLOCK, APP_LEVEL_SOCKET, sizeof(uint32_t), app_socket_nonblocking_mode_handler },
-  { "join_multicast_group", IPV6_JOIN_GROUP, IPPROTO_IPV6, sizeof(in6_addr_t), app_socket_multicast_group_handler },
-  { "leave_multicast_group", IPV6_LEAVE_GROUP, IPPROTO_IPV6, sizeof(in6_addr_t), app_socket_multicast_group_handler },
-  { "send_buffer_limit", SO_SNDBUF, SOL_SOCKET, sizeof(int32_t),app_socket_send_buffer_limit_handler },
+  { "SO_EVENT_MODE", SO_EVENT_MODE, APP_LEVEL_SOCKET, MEMBER_SIZE(app_socket_option_data_t, event_mode), app_socket_event_mode_handler },
+  { "SO_NONBLOCK", SO_NONBLOCK, APP_LEVEL_SOCKET, MEMBER_SIZE(app_socket_option_data_t, non_blocking_mode), app_socket_nonblocking_mode_handler },
+  { "SO_RCVBUF", SO_RCVBUF, SOL_SOCKET, MEMBER_SIZE(app_socket_option_data_t, receive_buff_size), app_socket_receive_buff_size_handler },
+  { "SO_SNDBUF", SO_SNDBUF, SOL_SOCKET, MEMBER_SIZE(app_socket_option_data_t, send_buffer_limit), app_socket_send_buffer_limit_handler },
+  { "IPV6_UNICAST_HOPS", IPV6_UNICAST_HOPS, IPPROTO_IPV6, MEMBER_SIZE(app_socket_option_data_t, unicast_hop_limit), app_socket_unicast_hop_limit_handler },
+  { "IPV6_MULTICAST_HOPS", IPV6_MULTICAST_HOPS, IPPROTO_IPV6, MEMBER_SIZE(app_socket_option_data_t, multicast_hop_limit), app_socket_multicast_hop_limit_handler },
+  { "IPV6_JOIN_GROUP", IPV6_JOIN_GROUP, IPPROTO_IPV6, MEMBER_SIZE(app_socket_option_data_t, multicast_group), app_socket_multicast_group_handler },
+  { "IPV6_LEAVE_GROUP", IPV6_LEAVE_GROUP, IPPROTO_IPV6, MEMBER_SIZE(app_socket_option_data_t, multicast_group), app_socket_multicast_group_handler },
   { NULL, 0, 0, 0, NULL }
 };
 
 static const app_socket_option_t app_get_socket_options[] =
 {
-  { "receive_buff_size", SO_RCVBUF, SOL_SOCKET, sizeof(int32_t),NULL },
-  { "send_buff_size", SO_SNDBUF, SOL_SOCKET,sizeof(int32_t), NULL },
-  { "unicast_hops", IPV6_UNICAST_HOPS, IPPROTO_IPV6, sizeof(int16_t), NULL },
-  { "multicast_hops", IPV6_MULTICAST_HOPS, IPPROTO_IPV6, sizeof(int16_t), NULL },
+  { "SO_RCVBUF", SO_RCVBUF, SOL_SOCKET, MEMBER_SIZE(app_socket_option_data_t, receive_buff_size), NULL },
+  { "SO_SNDBUF", SO_SNDBUF, SOL_SOCKET, MEMBER_SIZE(app_socket_option_data_t, send_buffer_limit), NULL },
+  { "IPV6_UNICAST_HOPS", IPV6_UNICAST_HOPS, IPPROTO_IPV6, MEMBER_SIZE(app_socket_option_data_t, unicast_hop_limit), NULL },
+  { "IPV6_MULTICAST_HOPS", IPV6_MULTICAST_HOPS, IPPROTO_IPV6, MEMBER_SIZE(app_socket_option_data_t, multicast_hop_limit), NULL },
   { NULL, 0, 0, 0, NULL }
 };
 
 typedef app_icmpv6_echo_request_t app_icmpv6_echo_response_t;
 
-static sl_wisun_socket_id_t app_ping_socket_id = SOCKET_INVALID_ID;
+static int app_ping_socket_id = SOCKET_INVALID_ID;
 static uint32_t app_ping_tick_count;
 
 static const in6_addr_t APP_IN6ADDR_ANY = { 0 };
@@ -218,7 +258,7 @@ typedef enum {
 typedef struct
 {
   sl_slist_node_t node;
-  sl_wisun_socket_id_t socket_id;
+  int socket_id;
   app_socket_type_t socket_type;
   app_socket_state_t socket_state;
   in6_addr_t remote_address;
@@ -231,6 +271,9 @@ static sl_slist_node_t *app_socket_entry_list;
 static app_socket_entry_t app_socket_entries[APP_MAX_SOCKET_ENTRIES];
 static app_connection_state_t app_connection_state;
 static uint32_t app_connection_tick_count;
+
+static bool app_direct_connect_state = false;
+static uint32_t app_direct_connect_pmk_key_id = MBEDTLS_SVC_KEY_ID_INIT;
 
 #ifdef SL_CATALOG_POWER_MANAGER_PRESENT
 #define EM_EVENT_MASK_ALL  (SL_POWER_MANAGER_EVENT_TRANSITION_ENTERING_EM0   \
@@ -286,7 +329,7 @@ static void app_socket_free_entry(app_socket_entry_t *entry)
   sl_slist_push(&app_socket_entry_list_free, &entry->node);
 }
 
-static app_socket_entry_t *app_socket_entry(sl_wisun_socket_id_t socket_id)
+static app_socket_entry_t *app_socket_entry(int socket_id)
 {
   app_socket_entry_t *entry = NULL;
 
@@ -364,6 +407,10 @@ void app_cli_init(void)
 
 void app_about(void)
 {
+  sl_status_t status;
+  uint8_t major, minor, patch;
+  uint16_t build;
+
 #ifdef WISUN_LFN_CLI_SAMPLE_APP
   printf("Wi-SUN LFN CLI Application\r\n");
 #else
@@ -382,9 +429,12 @@ void app_about(void)
 #if defined(SL_CATALOG_FREERTOS_KERNEL_PRESENT) && defined(tskKERNEL_VERSION_MAJOR) && defined(tskKERNEL_VERSION_MINOR) && defined(tskKERNEL_VERSION_BUILD)
   printf("  * FreeRTOS kernel: %u.%u.%u\r\n", tskKERNEL_VERSION_MAJOR, tskKERNEL_VERSION_MINOR, tskKERNEL_VERSION_BUILD);
 #endif
-#if defined(SL_WISUN_VERSION_MAJOR) && defined(SL_WISUN_VERSION_MINOR) && defined(SL_WISUN_VERSION_PATCH)
-  printf("  * Wi-SUN: %u.%u.%u\r\n", SL_WISUN_VERSION_MAJOR, SL_WISUN_VERSION_MINOR, SL_WISUN_VERSION_PATCH);
-#endif
+  status = sl_wisun_get_stack_version(&major, &minor, &patch, &build);
+  if (status == SL_STATUS_OK) {
+    printf("  * Wi-SUN: %u.%u.%u.%"PRIu16"\r\n", major, minor, patch, build);
+  } else {
+    printf("  * Wi-SUN: error %"PRIu32" getting stack version\r\n", status);
+  }
 }
 
 static void app_handle_network_update_ind(sl_wisun_evt_t *evt)
@@ -682,6 +732,44 @@ static void app_handle_dhcp_vendor_data_ind(sl_wisun_evt_t *evt)
   printf("\r\n");
 }
 
+static void app_handle_pan_defect_ind(sl_wisun_evt_t *evt)
+{
+  printf("[PAN Defect %s (PAN ID %"PRIu32")]\r\n",
+    evt->evt.pan_defect.state ? "enabled" : "cancelled",
+    evt->evt.pan_defect.pan_id);
+}
+
+static void app_handle_direct_connect_link_available_ind(sl_wisun_evt_t *evt)
+{
+  char ipv6_string[40];
+
+  ip6tos(&evt->evt.direct_connect_link_available.link_local_ipv6, ipv6_string);
+
+  printf("[Direct Connection request from %s]\r\n", ipv6_string);
+}
+
+static void app_handle_direct_connect_link_status_ind(sl_wisun_evt_t *evt)
+{
+  char ipv6_string[40];
+
+  ip6tos(&evt->evt.direct_connect_link_status.link_local_ipv6, ipv6_string);
+
+  switch (evt->evt.direct_connect_link_status.link_status)
+  {
+  case SL_WISUN_DIRECT_CONNECT_LINK_STATUS_CONNECTED:
+    printf("[Direct Connect Link %s: connected]\r\n", ipv6_string);
+    break;
+  case SL_WISUN_DIRECT_CONNECT_LINK_STATUS_ERROR:
+    printf("[Direct Connect Link %s: error]\r\n", ipv6_string);
+    break;
+  case SL_WISUN_DIRECT_CONNECT_LINK_STATUS_DISCONNECTED:
+    printf("[Direct Connect Link %s: disconnected]\r\n", ipv6_string);
+    break;
+  default:
+    break;
+  }
+}
+
 void sl_wisun_on_event(sl_wisun_evt_t *evt)
 {
   sl_status_t result;
@@ -738,6 +826,15 @@ void sl_wisun_on_event(sl_wisun_evt_t *evt)
       break;
     case SL_WISUN_MSG_DHCP_VENDOR_DATA_IND_ID:
       app_handle_dhcp_vendor_data_ind(evt);
+      break;
+    case SL_WISUN_MSG_PAN_DEFECT_IND_ID:
+      app_handle_pan_defect_ind(evt);
+      break;
+    case SL_WISUN_MSG_DIRECT_CONNECT_LINK_AVAILABLE_IND_ID:
+      app_handle_direct_connect_link_available_ind(evt);
+      break;
+    case SL_WISUN_MSG_DIRECT_CONNECT_LINK_STATUS_IND_ID:
+      app_handle_direct_connect_link_status_ind(evt);
       break;
     default:
       printf("[Unknown event: %d]\r\n", evt->header.id);
@@ -929,7 +1026,7 @@ static void app_join(sl_wisun_phy_config_type_t phy_config_type)
     }
   }
 
-  ret = sl_wisun_set_tx_power_ddbm((int16_t)app_settings_wisun.tx_power * 10);
+  ret = sl_wisun_set_tx_power_ddbm(app_settings_wisun.tx_power_ddbm);
   if (ret != SL_STATUS_OK) {
     printf("[Failed: unable to set TX power: %lu]\r\n", ret);
     goto cleanup;
@@ -957,7 +1054,7 @@ static void app_join(sl_wisun_phy_config_type_t phy_config_type)
       goto cleanup;
     }
 
-    free(trustedca);
+    sl_free(trustedca);
     trustedca = NULL;
     certificate_options |= SL_WISUN_CERTIFICATE_OPTION_APPEND;
   }
@@ -1077,10 +1174,10 @@ static void app_join(sl_wisun_phy_config_type_t phy_config_type)
 cleanup:
 
   if (trustedca) {
-    free(trustedca);
+    sl_free(trustedca);
   }
   if (credential) {
-    free(credential);
+    sl_free(credential);
   }
 
   app_wisun_cli_mutex_unlock();
@@ -1601,14 +1698,14 @@ cleanup:
 void app_socket_close(sl_cli_command_arg_t *arguments)
 {
   app_socket_entry_t *entry;
-  sl_wisun_socket_id_t socket_id;
+  int socket_id;
 
   int32_t socket_retval = SOCKET_RETVAL_ERROR;
 
   app_wisun_cli_mutex_lock();
 
   // Parameters
-  socket_id = sl_cli_get_argument_uint32(arguments, 0);
+  socket_id = (int)sl_cli_get_argument_uint32(arguments, 0);
 
   entry = app_socket_entry(socket_id);
   if (!entry) {
@@ -1635,8 +1732,8 @@ void app_socket_read(sl_cli_command_arg_t *arguments)
 {
   app_socket_entry_t *entry;
   uint16_t data_length;
-  uint8_t data[40];
-  sl_wisun_socket_id_t socket_id;
+  uint8_t *data = NULL;
+  int socket_id;
   app_printable_data_ctx_t printable_data_ctx;
   char *printable_data;
 
@@ -1653,11 +1750,17 @@ void app_socket_read(sl_cli_command_arg_t *arguments)
   app_wisun_cli_mutex_lock();
 
   // Parameters
-  socket_id = sl_cli_get_argument_uint32(arguments, 0);
+  socket_id = (int)sl_cli_get_argument_uint32(arguments, 0);
 
   data_length = sl_cli_get_argument_uint16(arguments, 1);
   if (!data_length) {
     printf("[Failed: invalid amount of bytes to read]\r\n");
+    goto cleanup;
+  }
+
+  data = sl_malloc(data_length);
+  if (!data) {
+    printf("[Failed: cannot allocate read buffer]\r\n");
     goto cleanup;
   }
 
@@ -1687,7 +1790,7 @@ void app_socket_read(sl_cli_command_arg_t *arguments)
   if (app_settings_app.printable_data_length) {
     printable_data = app_util_printable_data_init(&printable_data_ctx,
                                                   data,
-                                                  data_length,
+                                                  socket_retval,
                                                   app_settings_app.printable_data_as_hex,
                                                   app_settings_app.printable_data_length);
     while (printable_data) {
@@ -1698,7 +1801,9 @@ void app_socket_read(sl_cli_command_arg_t *arguments)
   printf("]\r\n");
 
 cleanup:
-
+  if (data) {
+    sl_free(data);
+  }
   app_wisun_cli_mutex_unlock();
 }
 
@@ -1706,14 +1811,14 @@ void app_socket_write(sl_cli_command_arg_t *arguments)
 {
   app_socket_entry_t *entry;
   const char *data;
-  sl_wisun_socket_id_t socket_id;
+  int socket_id;
 
   int32_t socket_retval = SOCKET_RETVAL_ERROR;
 
   app_wisun_cli_mutex_lock();
 
   // Parameters
-  socket_id = sl_cli_get_argument_uint32(arguments, 0);
+  socket_id = (int)sl_cli_get_argument_uint32(arguments, 0);
 
   data = sl_cli_get_argument_string(arguments, 1);
   if (!data || !strlen(data)) {
@@ -1756,7 +1861,7 @@ void app_socket_writeto(sl_cli_command_arg_t *arguments)
   app_socket_entry_t *entry;
   char *arg_remote_address;
   const char *data;
-  sl_wisun_socket_id_t socket_id;
+  int socket_id;
 
   int32_t socket_retval = SOCKET_RETVAL_ERROR;
   sockaddr_in6_t ipv6_dest_addr = {
@@ -1770,7 +1875,7 @@ void app_socket_writeto(sl_cli_command_arg_t *arguments)
   app_wisun_cli_mutex_lock();
 
   // Parameters
-  socket_id = sl_cli_get_argument_uint32(arguments, 0);
+  socket_id = (int)sl_cli_get_argument_uint32(arguments, 0);
 
   arg_remote_address = sl_cli_get_argument_string(arguments, 1);
   ret = app_get_ip_address(&ipv6_dest_addr.sin6_addr, arg_remote_address);
@@ -1845,18 +1950,18 @@ void app_socket_set_option(sl_cli_command_arg_t *arguments)
 {
   sl_status_t ret = SL_STATUS_OK;
   app_socket_entry_t *entry;
-  sl_wisun_socket_id_t socket_id;
+  int socket_id;
   char *arg_option;
   char *arg_option_data;
   const app_socket_option_t *iter;
-  SL_ALIGN(4) sl_wisun_socket_option_data_t option_data SL_ATTRIBUTE_ALIGN(4);
+  SL_ALIGN(4) app_socket_option_data_t option_data SL_ATTRIBUTE_ALIGN(4);
 
   int32_t socket_retval = SOCKET_RETVAL_ERROR;
 
   app_wisun_cli_mutex_lock();
 
   // Parameters
-  socket_id = sl_cli_get_argument_uint32(arguments, 0);
+  socket_id = (int)sl_cli_get_argument_uint32(arguments, 0);
 
   arg_option = sl_cli_get_argument_string(arguments, 1);
   if (!arg_option || !strlen(arg_option)) {
@@ -1900,8 +2005,8 @@ void app_socket_set_option(sl_cli_command_arg_t *arguments)
  socket_retval = setsockopt(socket_id,
                             iter->option_level,
                             iter->option_name,
-                            (void *) &option_data,
-                            iter->option_lenght);
+                            (void *)&option_data,
+                            iter->option_length);
   if (socket_retval == SOCKET_RETVAL_ERROR) {
     printf("[Failed: unable to set socket option: %ld]\r\n", socket_retval);
     goto cleanup;
@@ -1914,7 +2019,7 @@ cleanup:
   app_wisun_cli_mutex_unlock();
 }
 
-static sl_status_t app_socket_event_mode_handler(sl_wisun_socket_option_data_t *option_data,
+static sl_status_t app_socket_event_mode_handler(app_socket_option_data_t *option_data,
                                                  const char *option_data_str)
 {
   // The caller guarantees the aligment of the option data,
@@ -1927,7 +2032,7 @@ static sl_status_t app_socket_event_mode_handler(sl_wisun_socket_option_data_t *
   #pragma diag_suppress=Pa039
   #endif
 
-  return app_util_get_integer((uint32_t *) &option_data->value, option_data_str, app_socket_event_mode, false);
+  return app_util_get_integer(&option_data->event_mode, option_data_str, app_socket_event_mode, false);
 
   // Restore the defaults
   #ifdef __GNUC__
@@ -1937,8 +2042,8 @@ static sl_status_t app_socket_event_mode_handler(sl_wisun_socket_option_data_t *
   #endif
 }
 
-static sl_status_t app_socket_nonblocking_mode_handler(sl_wisun_socket_option_data_t *option_data,
-                                                     const char *option_data_str)
+static sl_status_t app_socket_nonblocking_mode_handler(app_socket_option_data_t *option_data,
+                                                       const char *option_data_str)
 {
   // The caller guarantees the aligment of the option data,
   // thus the warning can be ignored.
@@ -1950,7 +2055,7 @@ static sl_status_t app_socket_nonblocking_mode_handler(sl_wisun_socket_option_da
   #pragma diag_suppress=Pa039
   #endif
 
-  return app_util_get_integer((uint32_t *) &option_data->value, option_data_str, app_socket_nonblock, false);
+  return app_util_get_integer(&option_data->non_blocking_mode, option_data_str, app_socket_nonblock, false);
 
   // Restore the defaults
   #ifdef __GNUC__
@@ -1960,8 +2065,8 @@ static sl_status_t app_socket_nonblocking_mode_handler(sl_wisun_socket_option_da
   #endif
 }
 
-static sl_status_t app_socket_send_buffer_limit_handler (sl_wisun_socket_option_data_t *option_data,
-                                                         const char *option_data_str)
+static sl_status_t app_socket_receive_buff_size_handler(app_socket_option_data_t *option_data,
+                                                        const char *option_data_str)
 {
     // The caller guarantees the aligment of the option data,
   // thus the warning can be ignored.
@@ -1973,7 +2078,7 @@ static sl_status_t app_socket_send_buffer_limit_handler (sl_wisun_socket_option_
   #pragma diag_suppress=Pa039
   #endif
 
-  return app_util_get_integer((uint32_t *) &option_data->value, option_data_str, NULL, false);
+  return app_util_get_integer((uint32_t *)&option_data->receive_buff_size, option_data_str, NULL, true);
 
   // Restore the defaults
   #ifdef __GNUC__
@@ -1983,7 +2088,76 @@ static sl_status_t app_socket_send_buffer_limit_handler (sl_wisun_socket_option_
   #endif
 }
 
-static sl_status_t app_socket_multicast_group_handler(sl_wisun_socket_option_data_t *option_data,
+static sl_status_t app_socket_send_buffer_limit_handler(app_socket_option_data_t *option_data,
+                                                        const char *option_data_str)
+{
+    // The caller guarantees the aligment of the option data,
+  // thus the warning can be ignored.
+  #if defined __GNUC__
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wpragmas"
+  #pragma GCC diagnostic ignored "-Waddress-of-packed-member"
+  #elif defined __ICCARM__
+  #pragma diag_suppress=Pa039
+  #endif
+
+  return app_util_get_integer((uint32_t *)&option_data->send_buffer_limit, option_data_str, NULL, true);
+
+  // Restore the defaults
+  #ifdef __GNUC__
+  #pragma GCC diagnostic pop
+  #elif defined __ICCARM__
+  #pragma diag_default=Pa039
+  #endif
+}
+
+static sl_status_t app_socket_unicast_hop_limit_handler(app_socket_option_data_t *option_data,
+                                                        const char *option_data_str)
+{
+    // The caller guarantees the aligment of the option data,
+  // thus the warning can be ignored.
+  #if defined __GNUC__
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wpragmas"
+  #pragma GCC diagnostic ignored "-Waddress-of-packed-member"
+  #elif defined __ICCARM__
+  #pragma diag_suppress=Pa039
+  #endif
+
+  return app_util_get_integer((uint32_t *)&option_data->unicast_hop_limit, option_data_str, NULL, true);
+
+  // Restore the defaults
+  #ifdef __GNUC__
+  #pragma GCC diagnostic pop
+  #elif defined __ICCARM__
+  #pragma diag_default=Pa039
+  #endif
+}
+
+static sl_status_t app_socket_multicast_hop_limit_handler(app_socket_option_data_t *option_data,
+                                                          const char *option_data_str)
+{
+    // The caller guarantees the aligment of the option data,
+  // thus the warning can be ignored.
+  #if defined __GNUC__
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wpragmas"
+  #pragma GCC diagnostic ignored "-Waddress-of-packed-member"
+  #elif defined __ICCARM__
+  #pragma diag_suppress=Pa039
+  #endif
+
+  return app_util_get_integer((uint32_t *)&option_data->multicast_hop_limit, option_data_str, NULL, true);
+
+  // Restore the defaults
+  #ifdef __GNUC__
+  #pragma GCC diagnostic pop
+  #elif defined __ICCARM__
+  #pragma diag_default=Pa039
+  #endif
+}
+
+static sl_status_t app_socket_multicast_group_handler(app_socket_option_data_t *option_data,
                                                       const char *option_data_str)
 {
   // The caller guarantees the aligment of the option data,
@@ -1996,9 +2170,10 @@ static sl_status_t app_socket_multicast_group_handler(sl_wisun_socket_option_dat
   #pragma diag_suppress=Pa039
   #endif
 
-  if (!stoip6(option_data_str, strlen(option_data_str), &option_data->ipv6_address.address)) {
+  if (!stoip6(option_data_str, strlen(option_data_str), option_data->multicast_group.ipv6mr_multiaddr.address)) {
     return SL_STATUS_INVALID_PARAMETER;
   }
+  option_data->multicast_group.ipv6mr_ifindex = 0;
 
   return SL_STATUS_OK;
 
@@ -2119,13 +2294,13 @@ cleanup:
 void app_socket_get_option(sl_cli_command_arg_t *arguments)
 {
   app_socket_entry_t *entry;
-  sl_wisun_socket_id_t socket_id;
+  int socket_id;
   char *arg_option;
   const app_socket_option_t *iter;
-  SL_ALIGN(4) sl_wisun_socket_option_data_t option_data SL_ATTRIBUTE_ALIGN(4);
+  SL_ALIGN(4) app_socket_option_data_t option_data SL_ATTRIBUTE_ALIGN(4);
 
   int32_t socket_retval = SOCKET_RETVAL_ERROR;
-  socklen_t option_lenght = 0;
+  socklen_t option_length = 0;
 
   app_wisun_cli_mutex_lock();
 
@@ -2136,54 +2311,58 @@ void app_socket_get_option(sl_cli_command_arg_t *arguments)
       printf("%s\r\n",iter->option);
       iter++;
     }
+    goto cleanup;
+  }
 
-  } else if (sl_cli_get_argument_count(arguments) != 2) {
+  if (sl_cli_get_argument_count(arguments) != 2) {
     printf("[Failed: invalid number of arguments]\r\n");
     goto cleanup;
-
-  } else {
-    // Parameters
-    socket_id = sl_cli_get_argument_uint32(arguments, 0);
-
-    arg_option = sl_cli_get_argument_string(arguments, 1);
-    if (!arg_option || !strlen(arg_option)) {
-      printf("[Failed: invalid option parameter]\r\n");
-      goto cleanup;
-    }
-
-    entry = app_socket_entry(socket_id);
-    if (!entry) {
-      printf("[Failed: unable to find the specified socket]\r\n");
-      goto cleanup;
-    }
-
-    iter = app_get_socket_options;
-    while (iter->option) {
-      if (!strcmp(iter->option, arg_option)) {
-          break;
-      }
-      iter++;
-    }
-
-    if (!iter->option) {
-      printf("[Failed: invalid option parameter]\r\n");
-      goto cleanup;
-    }
-
-    option_lenght = iter->option_lenght;
-    socket_retval = getsockopt(socket_id,
-                               iter->option_level,
-                               iter->option_name,
-                               (void *) &option_data,
-                               &option_lenght);
-    if (socket_retval == SOCKET_RETVAL_ERROR) {
-      printf("[Failed: unable to get socket option: %ld]\r\n", socket_retval);
-      goto cleanup;
-    }
-
-    printf("[Socket option get: %lu]\r\n", option_data.value);
-
   }
+
+  // Parameters
+  arg_option = sl_cli_get_argument_string(arguments, 0);
+  if (sscanf(arg_option, "%d", &socket_id) != 1) {
+    printf("[Failed: invalid option parameter]\r\n");
+  }
+
+  arg_option = sl_cli_get_argument_string(arguments, 1);
+  if (!arg_option || !strlen(arg_option)) {
+    printf("[Failed: invalid option parameter]\r\n");
+    goto cleanup;
+  }
+
+  entry = app_socket_entry(socket_id);
+  if (!entry) {
+    printf("[Failed: unable to find the specified socket]\r\n");
+    goto cleanup;
+  }
+
+  iter = app_get_socket_options;
+  while (iter->option) {
+    if (!strcmp(iter->option, arg_option)) {
+        break;
+    }
+    iter++;
+  }
+
+  if (!iter->option) {
+    printf("[Failed: invalid option parameter]\r\n");
+    goto cleanup;
+  }
+
+  option_length = iter->option_length;
+  socket_retval = getsockopt(socket_id,
+                              iter->option_level,
+                              iter->option_name,
+                              (void *)&option_data,
+                              &option_length);
+  if (socket_retval == SOCKET_RETVAL_ERROR) {
+    printf("[Failed: unable to get socket option: %ld]\r\n", socket_retval);
+    goto cleanup;
+  }
+
+  // Every read socket option is int32_t.
+  printf("%s = %"PRIi32"\r\n", arg_option, *(int32_t *)&option_data);
 
 cleanup:
 
@@ -2602,6 +2781,125 @@ void app_getpeername(sl_cli_command_arg_t *arguments)
   } else {
     printf("[remote IPv6 address: %s, remote port: %d]\r\n",
            app_get_ip_address_str(&remote_address.sin6_addr), ntohs(remote_address.sin6_port));
+  }
+
+  app_wisun_cli_mutex_unlock();
+}
+
+static sl_status_t app_import_direct_connect_pmk(void)
+{
+  psa_key_attributes_t pmk_key_attributes = psa_key_attributes_init();
+  psa_key_location_t pmk_location = PSA_KEY_LOCATION_LOCAL_STORAGE;
+  sl_status_t status;
+  psa_status_t ret;
+
+#if defined(SEMAILBOX_PRESENT)
+  if (SYSTEM_GetSecurityCapability() == securityCapabilityVault)
+  {
+    // If the device has Secure Vault, always use wrapped keys
+    pmk_location = SL_PSA_KEY_LOCATION_WRAPPED;
+  }
+#endif
+
+  psa_set_key_lifetime(&pmk_key_attributes,
+                       PSA_KEY_LIFETIME_FROM_PERSISTENCE_AND_LOCATION(PSA_KEY_LIFETIME_VOLATILE, pmk_location));
+
+  if (app_direct_connect_pmk_key_id != MBEDTLS_SVC_KEY_ID_INIT) {
+    psa_destroy_key(app_direct_connect_pmk_key_id);
+  }
+
+  app_direct_connect_pmk_key_id = MBEDTLS_SVC_KEY_ID_INIT;
+
+  psa_set_key_usage_flags(&pmk_key_attributes, PSA_KEY_USAGE_SIGN_HASH);
+  psa_set_key_type(&pmk_key_attributes, PSA_KEY_TYPE_HMAC);
+  psa_set_key_algorithm(&pmk_key_attributes, PSA_ALG_HMAC(PSA_ALG_SHA_1));
+  ret = psa_import_key(&pmk_key_attributes, app_settings_wisun.direct_connect_pmk, SL_WISUN_PMK_LEN, &app_direct_connect_pmk_key_id);
+  if (ret != PSA_SUCCESS) {
+    printf("[PMK import failed: psa_import_key: %"PRIu32"]\r\n", ret);
+    status = SL_STATUS_FAIL;
+    goto error_handler;
+  }
+
+  status = sl_wisun_set_direct_connect_pmk(app_direct_connect_pmk_key_id);
+  if (status != SL_STATUS_OK) {
+    printf("[PMK import failed: sl_wisun_set_direct_connect_pmk: %"PRIu32"]\r\n", ret);
+  }
+
+error_handler:
+  psa_reset_key_attributes(&pmk_key_attributes);
+  return status;
+}
+
+void app_set_direct_connect_state(sl_cli_command_arg_t *arguments)
+{
+  sl_status_t status;
+  bool is_enabled;
+
+  app_wisun_cli_mutex_lock();
+
+  is_enabled = (bool)sl_cli_get_argument_uint8(arguments, 0);
+
+  if (is_enabled && !app_direct_connect_state) {
+    status = app_import_direct_connect_pmk();
+    if (status != SL_STATUS_OK) {
+      goto cleanup;
+    }
+  }
+
+  status = sl_wisun_set_direct_connect_state(is_enabled);
+  if (status != SL_STATUS_OK) {
+    printf("[Failed: sl_wisun_set_direct_connect_state: %"PRIu32"]\r\n", status);
+  } else {
+    printf("[Direct Connect %s]\r\n", is_enabled ? "enabled" : "disabled");
+  }
+  app_direct_connect_state = is_enabled;
+
+cleanup:
+  app_wisun_cli_mutex_unlock();
+}
+
+void app_accept_direct_connect_link(sl_cli_command_arg_t *arguments)
+{
+  in6_addr_t client_address;
+  char *arg_client_address;
+  sl_status_t status;
+
+  app_wisun_cli_mutex_lock();
+
+  arg_client_address = sl_cli_get_argument_string(arguments, 0);
+  status = app_get_ip_address(&client_address, arg_client_address);
+  if (status != SL_STATUS_OK) {
+    printf("[Failed: invalid client address parameter]\r\n");
+    goto cleanup;
+  }
+
+  status = sl_wisun_accept_direct_connect_link(&client_address);
+  if (status == SL_STATUS_OK) {
+    printf("[Accepted connection request]\r\n");
+  } else {
+    printf("[Failed: error %"PRIu32" when accepting connection request]\r\n", status);
+  }
+
+cleanup:
+  app_wisun_cli_mutex_unlock();
+}
+
+void app_set_phy_sensitivity(sl_cli_command_arg_t *arguments)
+{
+  sl_status_t ret;
+  uint8_t phy_mode_id;
+  int16_t sensitivity;
+
+  app_wisun_cli_mutex_lock();
+
+  phy_mode_id = sl_cli_get_argument_uint8(arguments, 0);
+  sensitivity = sl_cli_get_argument_int16(arguments, 1);
+
+  ret = sl_wisun_set_phy_sensitivity(phy_mode_id, sensitivity);
+  if (ret == SL_STATUS_OK) {
+    printf("[PHY sensitivity set]\r\n");
+  } else {
+    printf("[Failed: unable to set PHY sensitivity: %lu]\r\n", ret);
   }
 
   app_wisun_cli_mutex_unlock();

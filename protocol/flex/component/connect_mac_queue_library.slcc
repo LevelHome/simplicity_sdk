@@ -1,6 +1,6 @@
 id: "connect_mac_queue_library"
 label: "MAC Queue (Library)"
-package: "Flex"
+package: "Connect"
 category: "Connect"
 quality: "production"
 ui_hints:

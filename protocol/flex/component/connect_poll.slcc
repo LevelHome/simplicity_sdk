@@ -1,6 +1,6 @@
 id: "connect_poll"
 label: "Poll"
-package: "Flex"
+package: "Connect"
 category: "Connect"
 quality: "production"
 description: "Implements polling for end devices."

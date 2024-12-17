@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_wisun_led_driver.h
+ * @brief Wi-SUN LED driver
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __SL_WISUN_LED_DRIVER_H__
-#define __SL_WISUN_LED_DRIVER_H__
+#ifndef SL_WISUN_LED_DRIVER_H
+#define SL_WISUN_LED_DRIVER_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,10 +38,10 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-#include "sl_status.h"
 #include <inttypes.h>
-#include "sl_component_catalog.h"
 
+#include "sl_status.h"
+#include "sl_component_catalog.h"
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -133,4 +133,4 @@ void sl_wisun_led_driver_init(void);
 }
 #endif
 
-#endif
+#endif // SL_WISUN_LED_DRIVER_H

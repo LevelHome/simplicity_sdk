@@ -20,14 +20,11 @@ filter:
     value: ["Advanced"]
 
 component:
+  - id: bluetooth_stack
   - id: bootloader_interface
   - id: apploader
   - id: app_assert
   - id: app_log
-  - id: iostream_usart
-    instance:
-      - vcom
-  - id: mpu
   - id: nvm3_lib
   - id: nvm3_default
   - id: psa_crypto
@@ -45,7 +42,7 @@ component:
   - id: clock_manager
   - id: device_init
   - id: sleeptimer
-  - id: bt_post_build
+  - id: sl_common
 
 source:
   - path: app.c
@@ -74,19 +71,13 @@ other_file:
 configuration:
   - name: SL_STACK_SIZE
     value: "6200"
-  - name: APP_LOG_LEVEL
-    value: "APP_LOG_LEVEL_INFO"
-  - name: CSR_GENERATOR_NVM3_REGION
-    value: "0x40000"
-  - name: CSR_GENERATOR_CSR_RAM_ADDRESS
-    value: "0x20000000"
-    condition:
-      - "device_generic_family_efr32xg22"
   - name: CSR_GENERATOR_KEY_LOCATION
     value: "PSA_KEY_LOCATION_SLI_SE_OPAQUE"  # Secure Vault
   - name: SL_BOARD_ENABLE_VCOM
     value: "1"
   - name: SL_IOSTREAM_USART_VCOM_RESTRICT_ENERGY_MODE_TO_ALLOW_RECEPTION
+    value: "0"
+  - name: SL_IOSTREAM_EUSART_VCOM_RESTRICT_ENERGY_MODE_TO_ALLOW_RECEPTION
     value: "0"
   - name: SL_PSA_KEY_USER_SLOT_COUNT
     value: "1"
@@ -97,7 +88,12 @@ requires:
   - name: device_supports_bluetooth
   - name: device_security_vault
 
+post_build:
+  - profile: bt_common
+    condition: [device_series_2, bootloader_app_properties]
+
 tag:
+  - hardware:rf:band:2400
   - hardware:device:flash:512
   - hardware:device:ram:64
 

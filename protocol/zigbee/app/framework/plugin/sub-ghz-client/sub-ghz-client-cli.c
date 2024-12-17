@@ -31,7 +31,7 @@ static void printSuccessOrError(sl_status_t status)
   if (status == SL_STATUS_OK) {
     sl_zigbee_af_core_println("OK");
   } else {
-    sl_zigbee_af_core_println("Error %d (0x%x)", status, status);
+    sl_zigbee_af_core_println("Error %d (0x%02X)", status, status);
   }
 }
 

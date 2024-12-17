@@ -28,7 +28,7 @@
  *
  ******************************************************************************/
 
-#include "em_common.h"
+#include "sl_common.h"
 #include "sl_status.h"
 
 #include "app_assert.h"
@@ -181,6 +181,7 @@ void sl_btmesh_lighting_set_level(uint16_t level, uint32_t transition_ms)
       app_assert_status_f(sc, "Failed to stop Periodic Level Transition Timer");
     }
     sl_btmesh_lighting_server_on_ui_update(current_level);
+    sl_btmesh_update_lightness(current_level, IMMEDIATE);
     return;
   }
 

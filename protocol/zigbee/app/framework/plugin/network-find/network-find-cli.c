@@ -39,7 +39,7 @@ void findMaskCommand(sl_cli_command_arg_t *arguments)
       sl_zigbee_af_core_println("Invalid mask for channel page %d", page);
       break;
     default:
-      sl_zigbee_af_core_println("Error 0x%X", status);
+      sl_zigbee_af_core_println("Error 0x%02X", status);
       break;
   }
 }
@@ -50,7 +50,7 @@ void findModeCommand(sl_cli_command_arg_t *arguments)
 
   const sl_status_t status = sl_zigbee_af_set_form_and_join_search_mode(mode);
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_core_println("Error 0x%X", status);
+    sl_zigbee_af_core_println("Error 0x%02X", status);
   }
 }
 
@@ -65,7 +65,7 @@ void findPrintCommand(sl_cli_command_arg_t *arguments)
   for (page = 0; page <= 31; ++page) {
     const uint32_t mask = sl_zigbee_af_get_form_and_join_channel_mask(page);
     if (mask != 0xFFFFFFFFU) {
-      sl_zigbee_af_core_print("Page %d mask 0x%4X, %p", page, mask, "channels: ");
+      sl_zigbee_af_core_print("Page %d mask 0x%08X, %s", page, mask, "channels: ");
       sl_zigbee_af_core_debug_exec(sl_zigbee_af_print_channel_list_from_mask(mask));
       sl_zigbee_af_core_println("");
     }

@@ -22,7 +22,7 @@
 
 #include "zap-cluster-command-parser.h"
 
-bool sl_zigbee_af_11073_protocol_tunnel_cluster_connect_request_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_11073_protocol_tunnel_cluster_connect_request_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_11073_protocol_tunnel_cluster_connect_request_command_t cmd_data;
   bool connected = false;
@@ -33,7 +33,7 @@ bool sl_zigbee_af_11073_protocol_tunnel_cluster_connect_request_cb(sl_zigbee_af_
 
   if (zcl_decode_11073_protocol_tunnel_cluster_connect_request_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   // Check to see if we are already connected by looking at connected attribute
@@ -48,7 +48,7 @@ bool sl_zigbee_af_11073_protocol_tunnel_cluster_connect_request_cb(sl_zigbee_af_
     sl_zigbee_af_fill_command_11073_protocol_tunnel_cluster_connect_status_notification(
       SL_ZIGBEE_ZCL_11073_TUNNEL_CONNECTION_STATUS_ALREADY_CONNECTED);
     sl_zigbee_af_send_response();
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
   }
 
   // if not already connected copy attributes
@@ -93,10 +93,10 @@ bool sl_zigbee_af_11073_protocol_tunnel_cluster_connect_request_cb(sl_zigbee_af_
     SL_ZIGBEE_ZCL_11073_TUNNEL_CONNECTION_STATUS_CONNECTED);
   sl_zigbee_af_send_response();
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_11073_protocol_tunnel_cluster_disconnect_request_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_11073_protocol_tunnel_cluster_disconnect_request_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_11073_protocol_tunnel_cluster_disconnect_request_command_t cmd_data;
   bool connected = false;
@@ -108,7 +108,7 @@ bool sl_zigbee_af_11073_protocol_tunnel_cluster_disconnect_request_cb(sl_zigbee_
 
   if (zcl_decode_11073_protocol_tunnel_cluster_disconnect_request_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   // check to see if already connected
@@ -123,7 +123,7 @@ bool sl_zigbee_af_11073_protocol_tunnel_cluster_disconnect_request_cb(sl_zigbee_
     sl_zigbee_af_fill_command_11073_protocol_tunnel_cluster_connect_status_notification(
       SL_ZIGBEE_ZCL_11073_TUNNEL_CONNECTION_STATUS_DISCONNECTED);
     sl_zigbee_af_send_response();
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
   }
 
   // if is connected, is ieee address same or is pre-emptible set to true?
@@ -143,7 +143,7 @@ bool sl_zigbee_af_11073_protocol_tunnel_cluster_disconnect_request_cb(sl_zigbee_
       sl_zigbee_af_fill_command_11073_protocol_tunnel_cluster_connect_status_notification(
         SL_ZIGBEE_ZCL_11073_TUNNEL_CONNECTION_STATUS_NOT_AUTHORIZED);
       sl_zigbee_af_send_response();
-      return true;
+      return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
     }
   }
 
@@ -161,12 +161,10 @@ bool sl_zigbee_af_11073_protocol_tunnel_cluster_disconnect_request_cb(sl_zigbee_
   sl_zigbee_af_fill_command_11073_protocol_tunnel_cluster_connect_status_notification(
     SL_ZIGBEE_ZCL_11073_TUNNEL_CONNECTION_STATUS_DISCONNECTED);
   sl_zigbee_af_send_response();
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 
   // Send another DISCONNECTED connection event to sender of message. (may be same
   // as manager, may be some other device).
-
-  return false;
 }
 
 uint32_t sl_zigbee_af_11073_protocol_tunnel_cluster_server_command_parse(sl_service_opcode_t opcode,
@@ -175,24 +173,22 @@ uint32_t sl_zigbee_af_11073_protocol_tunnel_cluster_server_command_parse(sl_serv
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_CONNECT_REQUEST_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_11073_protocol_tunnel_cluster_connect_request_cb(cmd);
+        status = sl_zigbee_af_11073_protocol_tunnel_cluster_connect_request_cb(cmd);
         break;
       }
       case ZCL_DISCONNECT_REQUEST_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_11073_protocol_tunnel_cluster_disconnect_request_cb(cmd);
+        status = sl_zigbee_af_11073_protocol_tunnel_cluster_disconnect_request_cb(cmd);
         break;
       }
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

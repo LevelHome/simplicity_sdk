@@ -43,7 +43,7 @@ typedef enum
   DOOR_MODE_UNSECURE_INSIDE_TIMEOUT = DOOR_LOCK_OPERATION_SET_DOOR_UNSECURED_FOR_INSIDE_DOOR_HANDLES_WITH_TIMEOUT_V2,	/**< Door Unsecured for inside Door Handles with timeout 2)*/   //!< DOOR_MODE_UNSECURE_INSIDE_TIMEOUT
   DOOR_MODE_UNSECURE_OUTSIDE = DOOR_LOCK_OPERATION_SET_DOOR_UNSECURED_FOR_OUTSIDE_DOOR_HANDLES_V2,	/**< Door Unsecured for outside Door Handles 1)*/                                  //!< DOOR_MODE_UNSECURE_OUTSIDE
   DOOR_MODE_UNSECURE_OUTSIDE_TIMEOUT = DOOR_LOCK_OPERATION_SET_DOOR_UNSECURED_FOR_OUTSIDE_DOOR_HANDLES_WITH_TIMEOUT_V2,	/**< Door Unsecured for outside Door Handles with timeout 2)*///!< DOOR_MODE_UNSECURE_OUTSIDE_TIMEOUT
-  DOOR_MODE_UNKNOWN = DOOR_LOCK_OPERATION_SET_DOOR_LOCK_STATE_UNKNOWN_V2, /**<	Door/Lock State Unknown 3). (Version 2)*/                                                           //!< DOOR_MODE_UNKNOWN
+  DOOR_MODE_UNKNOWN = DOOR_LOCK_OPERATION_REPORT_DOOR_MODE_UNKNOWN_V4, /**< Door/Lock State Unknown (Version 4) this is an invalid set value*/ //!< DOOR_MODE_UNKNOWN
   DOOR_MODE_SECURED = DOOR_LOCK_OPERATION_SET_DOOR_SECURED_V2	/**< Door Secured*/                                                                                                  //!< DOOR_MODE_SECURED
 } door_lock_mode_t;
 

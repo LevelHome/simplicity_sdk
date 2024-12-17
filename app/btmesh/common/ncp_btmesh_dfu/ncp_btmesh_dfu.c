@@ -30,7 +30,6 @@
 
 #include <stdlib.h>
 
-#include "em_common.h"
 #include "sl_memory_manager.h"
 #include "sl_bt_api.h"
 

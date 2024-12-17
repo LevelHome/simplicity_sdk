@@ -103,19 +103,19 @@
 #define IOT_SPI_CFG_EXP_PERIPHERAL_NO            2
 
 // USART2 TX on PD00
-#define IOT_SPI_CFG_EXP_TX_PORT                  gpioPortD
+#define IOT_SPI_CFG_EXP_TX_PORT                  SL_GPIO_PORT_D
 #define IOT_SPI_CFG_EXP_TX_PIN                   0
 
 // USART2 RX on PD01
-#define IOT_SPI_CFG_EXP_RX_PORT                  gpioPortD
+#define IOT_SPI_CFG_EXP_RX_PORT                  SL_GPIO_PORT_D
 #define IOT_SPI_CFG_EXP_RX_PIN                   1
 
 // USART2 CLK on PD02
-#define IOT_SPI_CFG_EXP_CLK_PORT                 gpioPortD
+#define IOT_SPI_CFG_EXP_CLK_PORT                 SL_GPIO_PORT_D
 #define IOT_SPI_CFG_EXP_CLK_PIN                  2
 
 // USART2 CS on PD04
-#define IOT_SPI_CFG_EXP_CS_PORT                  gpioPortD
+#define IOT_SPI_CFG_EXP_CS_PORT                  SL_GPIO_PORT_D
 #define IOT_SPI_CFG_EXP_CS_PIN                   4
 
 // [USART_IOT_SPI_CFG_EXP]$

@@ -70,6 +70,10 @@ sl_status_t mesh_lib_serialize_request(const struct mesh_generic_request *req,
 {
   size_t msg_off = 0;
 
+  if (!req || !msg_buf) {
+    return SL_STATUS_INVALID_PARAMETER;
+  }
+
   switch (req->kind) {
     case mesh_generic_request_on_off:
       if (msg_len < 1) {
@@ -263,7 +267,7 @@ sl_status_t mesh_lib_serialize_request(const struct mesh_generic_request *req,
     case mesh_lighting_request_hsl:
     case mesh_lighting_request_hsl_default:
       if (msg_len < 6) {
-        return -1;
+        return SL_STATUS_INVALID_PARAMETER;
       }
       uint16_to_buf(&msg_buf[msg_off], req->hsl.lightness);
       msg_off += 2;
@@ -276,7 +280,7 @@ sl_status_t mesh_lib_serialize_request(const struct mesh_generic_request *req,
 
     case mesh_lighting_request_hsl_hue:
       if (msg_len < 2) {
-        return -1;
+        return SL_STATUS_INVALID_PARAMETER;
       }
       uint16_to_buf(&msg_buf[msg_off], req->hsl_hue);
       msg_off += 2;
@@ -285,7 +289,7 @@ sl_status_t mesh_lib_serialize_request(const struct mesh_generic_request *req,
 
     case mesh_lighting_request_hsl_saturation:
       if (msg_len < 2) {
-        return -1;
+        return SL_STATUS_INVALID_PARAMETER;
       }
       uint16_to_buf(&msg_buf[msg_off], req->hsl_saturation);
       msg_off += 2;
@@ -294,7 +298,7 @@ sl_status_t mesh_lib_serialize_request(const struct mesh_generic_request *req,
 
     case mesh_lighting_request_hsl_range:
       if (msg_len < 8) {
-        return -1;
+        return SL_STATUS_INVALID_PARAMETER;
       }
       uint16_to_buf(&msg_buf[msg_off], req->hsl_range.hue_min);
       msg_off += 2;
@@ -320,6 +324,10 @@ sl_status_t mesh_lib_deserialize_request(struct mesh_generic_request *req,
                                          size_t msg_len)
 {
   size_t msg_off = 0;
+
+  if (!req || !msg_buf) {
+    return SL_STATUS_INVALID_PARAMETER;
+  }
 
   switch (kind) {
     case mesh_generic_request_on_off:
@@ -374,7 +382,6 @@ sl_status_t mesh_lib_deserialize_request(struct mesh_generic_request *req,
       req->location_global.lon = int32_from_buf(&msg_buf[msg_off]);
       msg_off += 4;
       req->location_global.alt = int16_from_buf(&msg_buf[msg_off]);
-      msg_off += 2;
       break;
 
     case mesh_generic_request_location_local:
@@ -390,7 +397,6 @@ sl_status_t mesh_lib_deserialize_request(struct mesh_generic_request *req,
       msg_off += 2;
       req->location_local.floor = msg_buf[msg_off++];
       req->location_local.uncertainty = uint16_from_buf(&msg_buf[msg_off]);
-      msg_off += 2;
       break;
 
     case mesh_generic_request_power_level:
@@ -500,7 +506,7 @@ sl_status_t mesh_lib_deserialize_request(struct mesh_generic_request *req,
     case mesh_lighting_request_hsl:
     case mesh_lighting_request_hsl_default:
       if (msg_len - msg_off != 6) {
-        return -1;
+        return SL_STATUS_INVALID_PARAMETER;
       }
       req->kind = kind;
       req->hsl.lightness = uint16_from_buf(&msg_buf[msg_off + 0]);
@@ -510,7 +516,7 @@ sl_status_t mesh_lib_deserialize_request(struct mesh_generic_request *req,
 
     case mesh_lighting_request_hsl_hue:
       if (msg_len - msg_off != 2) {
-        return -1;
+        return SL_STATUS_INVALID_PARAMETER;
       }
       req->kind = kind;
       req->hsl_hue = uint16_from_buf(&msg_buf[msg_off]);
@@ -518,7 +524,7 @@ sl_status_t mesh_lib_deserialize_request(struct mesh_generic_request *req,
 
     case mesh_lighting_request_hsl_saturation:
       if (msg_len - msg_off != 2) {
-        return -1;
+        return SL_STATUS_INVALID_PARAMETER;
       }
       req->kind = kind;
       req->hsl_saturation = uint16_from_buf(&msg_buf[msg_off]);
@@ -526,7 +532,7 @@ sl_status_t mesh_lib_deserialize_request(struct mesh_generic_request *req,
 
     case mesh_lighting_request_hsl_range:
       if (msg_len - msg_off != 8) {
-        return -1;
+        return SL_STATUS_INVALID_PARAMETER;
       }
       req->kind = kind;
       req->hsl_range.hue_min = uint16_from_buf(&msg_buf[msg_off]);
@@ -549,6 +555,10 @@ sl_status_t mesh_lib_serialize_state(const struct mesh_generic_state *current,
                                      size_t *msg_used)
 {
   size_t msg_off = 0;
+
+  if (!current || !msg_buf) {
+    return SL_STATUS_INVALID_PARAMETER;
+  }
 
   switch (current->kind) {
     case mesh_generic_state_on_off:
@@ -834,7 +844,7 @@ sl_status_t mesh_lib_serialize_state(const struct mesh_generic_state *current,
 
     case mesh_lighting_state_hsl:
       if (msg_len < (target ? 12 : 6)) {
-        return -1;
+        return SL_STATUS_INVALID_PARAMETER;
       }
       uint16_to_buf(&msg_buf[msg_off], current->hsl.lightness);
       msg_off += 2;
@@ -856,7 +866,7 @@ sl_status_t mesh_lib_serialize_state(const struct mesh_generic_state *current,
     case mesh_lighting_state_hsl_target:
     case mesh_lighting_state_hsl_default:
       if (msg_len < 6) {
-        return -1;
+        return SL_STATUS_INVALID_PARAMETER;
       }
       uint16_to_buf(&msg_buf[msg_off], current->hsl.lightness);
       msg_off += 2;
@@ -869,7 +879,7 @@ sl_status_t mesh_lib_serialize_state(const struct mesh_generic_state *current,
 
     case mesh_lighting_state_hsl_hue:
       if (msg_len < (target ? 4 : 2)) {
-        return -1;
+        return SL_STATUS_INVALID_PARAMETER;
       }
       uint16_to_buf(&msg_buf[msg_off], current->hsl_hue.hue);
       msg_off += 2;
@@ -882,7 +892,7 @@ sl_status_t mesh_lib_serialize_state(const struct mesh_generic_state *current,
 
     case mesh_lighting_state_hsl_saturation:
       if (msg_len < (target ? 4 : 2)) {
-        return -1;
+        return SL_STATUS_INVALID_PARAMETER;
       }
       uint16_to_buf(&msg_buf[msg_off], current->hsl_saturation.saturation);
       msg_off += 2;
@@ -895,13 +905,13 @@ sl_status_t mesh_lib_serialize_state(const struct mesh_generic_state *current,
 
     case mesh_lighting_state_hsl_range_with_status:
       if (msg_len < 9) {
-        return -1;
+        return SL_STATUS_INVALID_PARAMETER;
       }
       msg_buf[msg_off++] = current->hsl_range.status;
     //Intentional fallthrough
     case mesh_lighting_state_hsl_range:
       if (msg_len < 8) {
-        return -1;
+        return SL_STATUS_INVALID_PARAMETER;
       }
       uint16_to_buf(&msg_buf[msg_off], current->hsl_range.hue_min);
       msg_off += 2;
@@ -914,7 +924,6 @@ sl_status_t mesh_lib_serialize_state(const struct mesh_generic_state *current,
       *msg_used = msg_off;
       break;
 
-    case mesh_generic_state_last:
     default:
       return SL_STATUS_INVALID_PARAMETER;
   }
@@ -930,6 +939,10 @@ sl_status_t mesh_lib_deserialize_state(struct mesh_generic_state *current,
                                        size_t msg_len)
 {
   size_t msg_off = 0;
+
+  if (!current || !target || !has_target || !msg_buf) {
+    return SL_STATUS_INVALID_PARAMETER;
+  }
 
   switch (kind) {
     case mesh_generic_state_on_off:
@@ -972,7 +985,6 @@ sl_status_t mesh_lib_deserialize_state(struct mesh_generic_state *current,
       if (msg_len - msg_off == 2) {
         current->kind = kind;
         current->level.level = int16_from_buf(&msg_buf[msg_off]);
-        msg_off += 2;
         *has_target = 0;
       } else if (msg_len - msg_off == 4) {
         current->kind = kind;
@@ -980,7 +992,6 @@ sl_status_t mesh_lib_deserialize_state(struct mesh_generic_state *current,
         msg_off += 2;
         target->kind = kind;
         target->level.level = int16_from_buf(&msg_buf[msg_off]);
-        msg_off += 2;
         *has_target = 1;
       } else {
         return SL_STATUS_INVALID_PARAMETER;
@@ -997,7 +1008,6 @@ sl_status_t mesh_lib_deserialize_state(struct mesh_generic_state *current,
       current->location_global.lon = int32_from_buf(&msg_buf[msg_off]);
       msg_off += 4;
       current->location_global.alt = int16_from_buf(&msg_buf[msg_off]);
-      msg_off += 2;
       *has_target = 0;
       break;
 
@@ -1014,7 +1024,6 @@ sl_status_t mesh_lib_deserialize_state(struct mesh_generic_state *current,
       msg_off += 2;
       current->location_local.floor = msg_buf[msg_off++];
       current->location_local.uncertainty = uint16_from_buf(&msg_buf[msg_off]);
-      msg_off += 2;
       *has_target = 0;
       break;
 
@@ -1036,7 +1045,6 @@ sl_status_t mesh_lib_deserialize_state(struct mesh_generic_state *current,
       if (msg_len - msg_off == 2) {
         current->kind = kind;
         current->power_level.level = uint16_from_buf(&msg_buf[msg_off]);
-        msg_off += 2;
         *has_target = 0;
       } else if (msg_len - msg_off == 4) {
         current->kind = kind;
@@ -1044,7 +1052,6 @@ sl_status_t mesh_lib_deserialize_state(struct mesh_generic_state *current,
         msg_off += 2;
         target->kind = kind;
         target->power_level.level = uint16_from_buf(&msg_buf[msg_off]);
-        msg_off += 2;
         *has_target = 1;
       } else {
         return SL_STATUS_INVALID_PARAMETER;
@@ -1057,7 +1064,6 @@ sl_status_t mesh_lib_deserialize_state(struct mesh_generic_state *current,
       }
       current->kind = kind;
       current->power_level_last.level = uint16_from_buf(&msg_buf[msg_off]);
-      msg_off += 2;
       *has_target = 0;
       break;
 
@@ -1067,7 +1073,6 @@ sl_status_t mesh_lib_deserialize_state(struct mesh_generic_state *current,
       }
       current->kind = kind;
       current->power_level_default.level = uint16_from_buf(&msg_buf[msg_off]);
-      msg_off += 2;
       *has_target = 0;
       break;
 
@@ -1080,7 +1085,6 @@ sl_status_t mesh_lib_deserialize_state(struct mesh_generic_state *current,
       current->power_level_range.min = uint16_from_buf(&msg_buf[msg_off]);
       msg_off += 2;
       current->power_level_range.max = uint16_from_buf(&msg_buf[msg_off]);
-      msg_off += 2;
       *has_target = 0;
       break;
 
@@ -1119,7 +1123,6 @@ sl_status_t mesh_lib_deserialize_state(struct mesh_generic_state *current,
       if (msg_len - msg_off == 2) {
         current->kind = kind;
         current->lightness.level = uint16_from_buf(&msg_buf[msg_off]);
-        msg_off += 2;
         *has_target = 0;
       } else if (msg_len - msg_off == 4) {
         current->kind = kind;
@@ -1127,7 +1130,6 @@ sl_status_t mesh_lib_deserialize_state(struct mesh_generic_state *current,
         msg_off += 2;
         target->kind = kind;
         target->lightness.level = int16_from_buf(&msg_buf[msg_off]);
-        msg_off += 2;
         *has_target = 1;
       } else {
         return SL_STATUS_INVALID_PARAMETER;
@@ -1139,7 +1141,6 @@ sl_status_t mesh_lib_deserialize_state(struct mesh_generic_state *current,
       if (msg_len - msg_off == 2) {
         current->kind = kind;
         current->lightness.level = uint16_from_buf(&msg_buf[msg_off]);
-        msg_off += 2;
         *has_target = 0;
       } else {
         return SL_STATUS_INVALID_PARAMETER;
@@ -1159,7 +1160,6 @@ sl_status_t mesh_lib_deserialize_state(struct mesh_generic_state *current,
         current->lightness_range.min = uint16_from_buf(&msg_buf[msg_off]);
         msg_off += 2;
         current->lightness_range.max = uint16_from_buf(&msg_buf[msg_off]);
-        msg_off += 2;
         *has_target = 0;
       } else {
         return SL_STATUS_INVALID_PARAMETER;
@@ -1174,7 +1174,6 @@ sl_status_t mesh_lib_deserialize_state(struct mesh_generic_state *current,
         current->ctl.temperature = uint16_from_buf(&msg_buf[msg_off]);
         msg_off += 2;
         current->ctl.deltauv = int16_from_buf(&msg_buf[msg_off]);
-        msg_off += 2;
         *has_target = 0;
       } else if (msg_len - msg_off == 12) {
         current->kind = kind;
@@ -1190,7 +1189,6 @@ sl_status_t mesh_lib_deserialize_state(struct mesh_generic_state *current,
         target->ctl.temperature = int16_from_buf(&msg_buf[msg_off]);
         msg_off += 2;
         target->ctl.deltauv = int16_from_buf(&msg_buf[msg_off]);
-        msg_off += 2;
         *has_target = 1;
       } else {
         return SL_STATUS_INVALID_PARAMETER;
@@ -1203,7 +1201,6 @@ sl_status_t mesh_lib_deserialize_state(struct mesh_generic_state *current,
         current->ctl_temperature.temperature = uint16_from_buf(&msg_buf[msg_off]);
         msg_off += 2;
         current->ctl_temperature.deltauv = int16_from_buf(&msg_buf[msg_off]);
-        msg_off += 2;
         *has_target = 0;
       } else if (msg_len - msg_off == 8) {
         current->kind = kind;
@@ -1215,7 +1212,6 @@ sl_status_t mesh_lib_deserialize_state(struct mesh_generic_state *current,
         target->ctl_temperature.temperature = int16_from_buf(&msg_buf[msg_off]);
         msg_off += 2;
         target->ctl_temperature.deltauv = int16_from_buf(&msg_buf[msg_off]);
-        msg_off += 2;
         *has_target = 1;
       } else {
         return SL_STATUS_INVALID_PARAMETER;
@@ -1228,7 +1224,6 @@ sl_status_t mesh_lib_deserialize_state(struct mesh_generic_state *current,
         current->ctl_lightness_temperature.lightness = uint16_from_buf(&msg_buf[msg_off]);
         msg_off += 2;
         current->ctl_lightness_temperature.temperature = uint16_from_buf(&msg_buf[msg_off]);
-        msg_off += 2;
         *has_target = 0;
       } else if (msg_len - msg_off == 8) {
         current->kind = kind;
@@ -1240,7 +1235,6 @@ sl_status_t mesh_lib_deserialize_state(struct mesh_generic_state *current,
         target->ctl_lightness_temperature.lightness = int16_from_buf(&msg_buf[msg_off]);
         msg_off += 2;
         target->ctl_lightness_temperature.temperature = int16_from_buf(&msg_buf[msg_off]);
-        msg_off += 2;
         *has_target = 1;
       } else {
         return SL_STATUS_INVALID_PARAMETER;
@@ -1255,7 +1249,6 @@ sl_status_t mesh_lib_deserialize_state(struct mesh_generic_state *current,
         current->ctl.temperature = uint16_from_buf(&msg_buf[msg_off]);
         msg_off += 2;
         current->ctl.deltauv = int16_from_buf(&msg_buf[msg_off]);
-        msg_off += 2;
         *has_target = 0;
       } else {
         return SL_STATUS_INVALID_PARAMETER;
@@ -1275,7 +1268,6 @@ sl_status_t mesh_lib_deserialize_state(struct mesh_generic_state *current,
         current->ctl_temperature_range.min = uint16_from_buf(&msg_buf[msg_off]);
         msg_off += 2;
         current->ctl_temperature_range.max = uint16_from_buf(&msg_buf[msg_off]);
-        msg_off += 2;
         *has_target = 0;
       } else {
         return SL_STATUS_INVALID_PARAMETER;
@@ -1290,7 +1282,6 @@ sl_status_t mesh_lib_deserialize_state(struct mesh_generic_state *current,
         current->hsl.hue = uint16_from_buf(&msg_buf[msg_off]);
         msg_off += 2;
         current->hsl.saturation = uint16_from_buf(&msg_buf[msg_off]);
-        msg_off += 2;
         *has_target = 0;
       } else if (msg_len - msg_off == 12) {
         current->kind = kind;
@@ -1300,15 +1291,15 @@ sl_status_t mesh_lib_deserialize_state(struct mesh_generic_state *current,
         msg_off += 2;
         current->hsl.saturation = uint16_from_buf(&msg_buf[msg_off]);
         msg_off += 2;
+        target->kind = kind;
         target->hsl.lightness = uint16_from_buf(&msg_buf[msg_off]);
         msg_off += 2;
         target->hsl.hue = uint16_from_buf(&msg_buf[msg_off]);
         msg_off += 2;
         target->hsl.saturation = uint16_from_buf(&msg_buf[msg_off]);
-        msg_off += 2;
         *has_target = 1;
       } else {
-        return -1;
+        return SL_STATUS_INVALID_PARAMETER;
       }
       break;
 
@@ -1321,10 +1312,9 @@ sl_status_t mesh_lib_deserialize_state(struct mesh_generic_state *current,
         current->hsl.hue = uint16_from_buf(&msg_buf[msg_off]);
         msg_off += 2;
         current->hsl.saturation = uint16_from_buf(&msg_buf[msg_off]);
-        msg_off += 2;
         *has_target = 0;
       } else {
-        return -1;
+        return SL_STATUS_INVALID_PARAMETER;
       }
       break;
 
@@ -1332,17 +1322,16 @@ sl_status_t mesh_lib_deserialize_state(struct mesh_generic_state *current,
       if (msg_len - msg_off == 2) {
         current->kind = kind;
         current->hsl_hue.hue = uint16_from_buf(&msg_buf[msg_off]);
-        msg_off += 2;
         *has_target = 0;
       } else if (msg_len - msg_off == 4) {
         current->kind = kind;
         current->hsl_hue.hue = uint16_from_buf(&msg_buf[msg_off]);
         msg_off += 2;
+        target->kind = kind;
         target->hsl_hue.hue = uint16_from_buf(&msg_buf[msg_off]);
-        msg_off += 2;
         *has_target = 1;
       } else {
-        return -1;
+        return SL_STATUS_INVALID_PARAMETER;
       }
       break;
 
@@ -1350,17 +1339,16 @@ sl_status_t mesh_lib_deserialize_state(struct mesh_generic_state *current,
       if (msg_len - msg_off == 2) {
         current->kind = kind;
         current->hsl_saturation.saturation = uint16_from_buf(&msg_buf[msg_off]);
-        msg_off += 2;
         *has_target = 0;
       } else if (msg_len - msg_off == 4) {
         current->kind = kind;
         current->hsl_saturation.saturation = uint16_from_buf(&msg_buf[msg_off]);
         msg_off += 2;
+        target->kind = kind;
         target->hsl_saturation.saturation = uint16_from_buf(&msg_buf[msg_off]);
-        msg_off += 2;
         *has_target = 1;
       } else {
-        return -1;
+        return SL_STATUS_INVALID_PARAMETER;
       }
       break;
 
@@ -1368,7 +1356,7 @@ sl_status_t mesh_lib_deserialize_state(struct mesh_generic_state *current,
       if (msg_len - msg_off == 9) {
         current->hsl_range.status = msg_buf[msg_off++];
       } else {
-        return -1;
+        return SL_STATUS_INVALID_PARAMETER;
       }
     // Intentional fallthrough
     case mesh_lighting_state_hsl_range:
@@ -1381,14 +1369,12 @@ sl_status_t mesh_lib_deserialize_state(struct mesh_generic_state *current,
         current->hsl_range.saturation_min = uint16_from_buf(&msg_buf[msg_off]);
         msg_off += 2;
         current->hsl_range.saturation_max = uint16_from_buf(&msg_buf[msg_off]);
-        msg_off += 2;
         *has_target = 0;
       } else {
-        return -1;
+        return SL_STATUS_INVALID_PARAMETER;
       }
       break;
 
-    case mesh_generic_state_last:
     default:
       return SL_STATUS_INVALID_PARAMETER;
   }

@@ -29,13 +29,7 @@
  ******************************************************************************/
 
 #include "sl_simple_led.h"
-
-#if defined(SL_CATALOG_GPIO_PRESENT)
 #include "sl_gpio.h"
-#else
-#include "em_gpio.h"
-#endif
-
 #include "sl_clock_manager.h"
 
 sl_status_t sl_simple_led_init(void *context)
@@ -43,19 +37,12 @@ sl_status_t sl_simple_led_init(void *context)
   sl_simple_led_context_t *led = context;
   sl_clock_manager_enable_bus_clock(SL_BUS_CLOCK_GPIO);
 
-#if defined(SL_CATALOG_GPIO_PRESENT)
   sl_gpio_t gpio;
   gpio.port = led->port;
   gpio.pin = led->pin;
   sl_gpio_set_pin_mode(&gpio,
                        SL_GPIO_MODE_PUSH_PULL,
                        !led->polarity);
-#else
-  GPIO_PinModeSet(led->port,
-                  led->pin,
-                  gpioModePushPull,
-                  !led->polarity);
-#endif
   return SL_STATUS_OK;
 }
 
@@ -63,7 +50,6 @@ void sl_simple_led_turn_on(void *context)
 {
   sl_simple_led_context_t *led = context;
 
-#if defined(SL_CATALOG_GPIO_PRESENT)
   sl_gpio_t gpio;
   gpio.port = led->port;
   gpio.pin = led->pin;
@@ -72,20 +58,12 @@ void sl_simple_led_turn_on(void *context)
   } else {
     sl_gpio_set_pin(&gpio);
   }
-#else
-  if (led->polarity == SL_SIMPLE_LED_POLARITY_ACTIVE_LOW) {
-    GPIO_PinOutClear(led->port, led->pin);
-  } else {
-    GPIO_PinOutSet(led->port, led->pin);
-  }
-#endif
 }
 
 void sl_simple_led_turn_off(void *context)
 {
   sl_simple_led_context_t *led = context;
 
-#if defined(SL_CATALOG_GPIO_PRESENT)
   sl_gpio_t gpio;
   gpio.port = led->port;
   gpio.pin = led->pin;
@@ -94,27 +72,16 @@ void sl_simple_led_turn_off(void *context)
   } else {
     sl_gpio_clear_pin(&gpio);
   }
-#else
-  if (led->polarity == SL_SIMPLE_LED_POLARITY_ACTIVE_LOW) {
-    GPIO_PinOutSet(led->port, led->pin);
-  } else {
-    GPIO_PinOutClear(led->port, led->pin);
-  }
-#endif
 }
 
 void sl_simple_led_toggle(void *context)
 {
   sl_simple_led_context_t *led = context;
 
-#if defined(SL_CATALOG_GPIO_PRESENT)
   sl_gpio_t gpio;
   gpio.port = led->port;
   gpio.pin = led->pin;
   sl_gpio_toggle_pin(&gpio);
-#else
-  GPIO_PinOutToggle(led->port, led->pin);
-#endif
 }
 
 sl_led_state_t sl_simple_led_get_state(void *context)
@@ -122,16 +89,12 @@ sl_led_state_t sl_simple_led_get_state(void *context)
   sl_simple_led_context_t *led = context;
   sl_led_state_t value;
 
-#if defined(SL_CATALOG_GPIO_PRESENT)
   sl_gpio_t gpio;
   bool pin_value;
   gpio.port = led->port;
   gpio.pin = led->pin;
   sl_gpio_get_pin_output(&gpio, &pin_value);
   value = (sl_led_state_t)pin_value;
-#else
-  value = (sl_led_state_t)GPIO_PinOutGet(led->port, led->pin);
-#endif
 
   if (led->polarity == SL_SIMPLE_LED_POLARITY_ACTIVE_LOW) {
     return !value;

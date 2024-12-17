@@ -21,9 +21,6 @@ struct mcps_data_ie_list;
 struct mcps_data_ind_s;
 struct sl_wsrcp_mac;
 
-// Share with legacy implementation
-extern uint32_t g_key_id_cache[7];
-
 bool rcp_rx(struct sl_wsrcp_mac *rcp_mac);
 void rcp_on_err(int code, const char *fmt, ...);
 void rcp_ind_nop(struct sl_wsrcp_mac *rcp_mac);

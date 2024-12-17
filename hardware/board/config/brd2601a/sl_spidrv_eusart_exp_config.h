@@ -81,19 +81,19 @@
 #define SL_SPIDRV_EUSART_EXP_PERIPHERAL_NO       1
 
 // EUSART1 TX on PC03
-#define SL_SPIDRV_EUSART_EXP_TX_PORT             gpioPortC
+#define SL_SPIDRV_EUSART_EXP_TX_PORT             SL_GPIO_PORT_C
 #define SL_SPIDRV_EUSART_EXP_TX_PIN              3
 
 // EUSART1 RX on PC02
-#define SL_SPIDRV_EUSART_EXP_RX_PORT             gpioPortC
+#define SL_SPIDRV_EUSART_EXP_RX_PORT             SL_GPIO_PORT_C
 #define SL_SPIDRV_EUSART_EXP_RX_PIN              2
 
 // EUSART1 SCLK on PC01
-#define SL_SPIDRV_EUSART_EXP_SCLK_PORT           gpioPortC
+#define SL_SPIDRV_EUSART_EXP_SCLK_PORT           SL_GPIO_PORT_C
 #define SL_SPIDRV_EUSART_EXP_SCLK_PIN            1
 
 // EUSART1 CS on PA07
-#define SL_SPIDRV_EUSART_EXP_CS_PORT             gpioPortA
+#define SL_SPIDRV_EUSART_EXP_CS_PORT             SL_GPIO_PORT_A
 #define SL_SPIDRV_EUSART_EXP_CS_PIN              7
 
 // [EUSART_SL_SPIDRV_EUSART_EXP]$

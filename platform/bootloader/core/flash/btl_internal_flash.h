@@ -62,7 +62,7 @@ bool flash_erasePage(uint32_t address);
  * @return True if operation was successful
  */
 bool flash_writeBuffer_dma(uint32_t       address,
-                           void           *data,
+                           const void           *data,
                            size_t         length,
                            int            ch);
 
@@ -75,7 +75,7 @@ bool flash_writeBuffer_dma(uint32_t       address,
  * @return True if operation was successful
  */
 bool flash_writeBuffer(uint32_t       address,
-                       void           *data,
+                       const void           *data,
                        size_t         length);
 
 /** @} addtogroup internal_flash */

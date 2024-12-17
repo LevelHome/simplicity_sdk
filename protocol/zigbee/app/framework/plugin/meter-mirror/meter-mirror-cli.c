@@ -59,7 +59,7 @@ void sli_zigbee_af_meter_mirror_status_command(sl_cli_command_arg_t *arguments)
 
     sl_zigbee_af_simple_metering_cluster_print("ep: %d  ieee:", endpoint);
     sl_zigbee_af_print_big_endian_eui64(mirrorEui);
-    sl_zigbee_af_simple_metering_cluster_println("  type: 0x%X", meteringDeviceTypeAttribute);
+    sl_zigbee_af_simple_metering_cluster_println("  type: 0x%02X", meteringDeviceTypeAttribute);
   }
   // Explicitly usea  function call to find the number of mirrors allocated instead
   // of just calculating it.  In case there is ever a discrepancy,

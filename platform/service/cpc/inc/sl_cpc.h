@@ -412,6 +412,11 @@ sl_status_t sl_cpc_close_endpoint(sl_cpc_endpoint_handle_t *endpoint_handle);
  * @return Status code.
  *
  * @note Public options are:
+ * SL_CPC_ENDPOINT_NAME: Set endpoint name. `value` must be a null-terminated
+ *                       string. The string is not copied, only the pointer.
+ *                       Caller must make sure the string is persistent for
+ *                       the lifetime of the endpoint.
+ *
  * SL_CPC_ENDPOINT_ON_CONNECT: Set a callback that will be called when
  *                             connection is established with the remote.
  *

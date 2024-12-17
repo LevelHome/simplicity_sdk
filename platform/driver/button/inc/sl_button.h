@@ -34,10 +34,6 @@
 #include "sl_common.h"
 #include "sl_status.h"
 
-#if defined(SL_COMPONENT_CATALOG_PRESENT)
-#include "sl_component_catalog.h"
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif

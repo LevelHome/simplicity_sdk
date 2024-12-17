@@ -138,22 +138,15 @@
     override:
       component: iostream_eusart
       file_id: iostream_eusart_config
-      instance: vcom
-    path: brd4330a_brd4001a/sl_iostream_eusart_vcom_config.h
-  - condition:
-    - brd4001a
-    override:
-      component: iostream_eusart
-      file_id: iostream_eusart_config
       instance: mikroe
     path: brd4330a_brd4001a/sl_iostream_eusart_mikroe_config.h
   - condition:
     - brd4001a
     override:
-      component: iostream_usart
-      file_id: iostream_usart_config
+      component: iostream_eusart
+      file_id: iostream_eusart_config
       instance: vcom
-    path: brd4330a_brd4001a/sl_iostream_usart_vcom_config.h
+    path: brd4330a_brd4001a/sl_iostream_eusart_vcom_config.h
   - condition:
     - brd4001a
     override:
@@ -161,6 +154,13 @@
       file_id: iostream_usart_config
       instance: mikroe
     path: brd4330a_brd4001a/sl_iostream_usart_mikroe_config.h
+  - condition:
+    - brd4001a
+    override:
+      component: iostream_usart
+      file_id: iostream_usart_config
+      instance: vcom
+    path: brd4330a_brd4001a/sl_iostream_usart_vcom_config.h
   - condition:
     - brd4001a
     override:
@@ -284,22 +284,15 @@
     override:
       component: uartdrv_eusart
       file_id: uartdrv_eusart_config
-      instance: vcom
-    path: brd4330a_brd4001a/sl_uartdrv_eusart_vcom_config.h
-  - condition:
-    - brd4001a
-    override:
-      component: uartdrv_eusart
-      file_id: uartdrv_eusart_config
       instance: mikroe
     path: brd4330a_brd4001a/sl_uartdrv_eusart_mikroe_config.h
   - condition:
     - brd4001a
     override:
-      component: uartdrv_usart
-      file_id: uartdrv_usart_config
+      component: uartdrv_eusart
+      file_id: uartdrv_eusart_config
       instance: vcom
-    path: brd4330a_brd4001a/sl_uartdrv_usart_vcom_config.h
+    path: brd4330a_brd4001a/sl_uartdrv_eusart_vcom_config.h
   - condition:
     - brd4001a
     override:
@@ -307,6 +300,13 @@
       file_id: uartdrv_usart_config
       instance: mikroe
     path: brd4330a_brd4001a/sl_uartdrv_usart_mikroe_config.h
+  - condition:
+    - brd4001a
+    override:
+      component: uartdrv_usart
+      file_id: uartdrv_usart_config
+      instance: vcom
+    path: brd4330a_brd4001a/sl_uartdrv_usart_vcom_config.h
   - condition:
     - brd4002a
     override:
@@ -417,22 +417,15 @@
     override:
       component: iostream_eusart
       file_id: iostream_eusart_config
-      instance: vcom
-    path: brd4330a_brd4002a/sl_iostream_eusart_vcom_config.h
-  - condition:
-    - brd4002a
-    override:
-      component: iostream_eusart
-      file_id: iostream_eusart_config
       instance: mikroe
     path: brd4330a_brd4002a/sl_iostream_eusart_mikroe_config.h
   - condition:
     - brd4002a
     override:
-      component: iostream_usart
-      file_id: iostream_usart_config
+      component: iostream_eusart
+      file_id: iostream_eusart_config
       instance: vcom
-    path: brd4330a_brd4002a/sl_iostream_usart_vcom_config.h
+    path: brd4330a_brd4002a/sl_iostream_eusart_vcom_config.h
   - condition:
     - brd4002a
     override:
@@ -440,6 +433,13 @@
       file_id: iostream_usart_config
       instance: mikroe
     path: brd4330a_brd4002a/sl_iostream_usart_mikroe_config.h
+  - condition:
+    - brd4002a
+    override:
+      component: iostream_usart
+      file_id: iostream_usart_config
+      instance: vcom
+    path: brd4330a_brd4002a/sl_iostream_usart_vcom_config.h
   - condition:
     - brd4002a
     override:
@@ -563,22 +563,15 @@
     override:
       component: uartdrv_eusart
       file_id: uartdrv_eusart_config
-      instance: vcom
-    path: brd4330a_brd4002a/sl_uartdrv_eusart_vcom_config.h
-  - condition:
-    - brd4002a
-    override:
-      component: uartdrv_eusart
-      file_id: uartdrv_eusart_config
       instance: mikroe
     path: brd4330a_brd4002a/sl_uartdrv_eusart_mikroe_config.h
   - condition:
     - brd4002a
     override:
-      component: uartdrv_usart
-      file_id: uartdrv_usart_config
+      component: uartdrv_eusart
+      file_id: uartdrv_eusart_config
       instance: vcom
-    path: brd4330a_brd4002a/sl_uartdrv_usart_vcom_config.h
+    path: brd4330a_brd4002a/sl_uartdrv_eusart_vcom_config.h
   - condition:
     - brd4002a
     override:
@@ -586,3 +579,10 @@
       file_id: uartdrv_usart_config
       instance: mikroe
     path: brd4330a_brd4002a/sl_uartdrv_usart_mikroe_config.h
+  - condition:
+    - brd4002a
+    override:
+      component: uartdrv_usart
+      file_id: uartdrv_usart_config
+      instance: vcom
+    path: brd4330a_brd4002a/sl_uartdrv_usart_vcom_config.h

@@ -14,9 +14,9 @@ metadata:
     license: BSD-3-Clause
     upstream:
       name: TCPlp
-      version: 37144f078
+      version: "7f6723ffb"
       supplier: Google
       originator: Sam Kumar, Michael P Andersen, Hyung-Sin Kim, and David E. Culler
       url: https://github.com/ucbrise/tcplp
-      package_url: pkg:github/openthread/openthread/third_party/tcplp@37144f078
+      package_url: pkg:github/openthread/openthread/third_party/tcplp@7f6723ffb
       comment: TCPlp is a full-scale TCP stack for low-power wireless networks and resource-constrained embedded systems.

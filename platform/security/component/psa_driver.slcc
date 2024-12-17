@@ -14,10 +14,19 @@ provides:
   - name: psa_driver
 
 requires:
-  - name: psa_driver_source
-    condition: [trustzone_unaware]
-  - name: psa_driver_source
-    condition: [trustzone_secure]
+  - name: psa_driver_common
+  - name: psa_se_driver
+    condition: [device_has_semailbox, trustzone_unaware]
+  - name: psa_se_driver
+    condition: [device_has_semailbox, trustzone_secure]
+
+  - name: psa_vse_driver
+    condition: [device_has_cryptoacc, trustzone_secure]
+  - name: psa_vse_driver
+    condition: [device_has_cryptoacc, trustzone_unaware]
+
+  - name: psa_hostcrypto_driver
+    condition: [device_has_symcrypto, trustzone_unaware]
 
   # Inclusion of source and config components depends on which TZ state we are
   # targeting. For apps that do not make active use of TZ, a dummy state
@@ -32,15 +41,6 @@ recommends:
   # Assume that projects are TZ unaware unless a state is explicitly included.
   - id: trustzone_unaware
 
-include:
-  - path: sl_mbedtls_support/inc
-    file_list:
-      - path: sl_psa_values.h
-
-  - path: sl_psa_driver/inc
-    file_list:
-      - path: sli_psa_driver_features.h
-
 template_contribution:
   - name: mbedtls_config
     value: MBEDTLS_PSA_CRYPTO_DRIVERS
@@ -53,93 +53,7 @@ template_contribution:
     value: "MBEDTLS_PSA_BUILTIN_ALG_HMAC 1"
     condition: [device_series_2, mbedtls_sha512]
     unless: [device_security_vault]
-  - name: psa_crypto_builtin_config
-    value: "MBEDTLS_PSA_BUILTIN_ALG_ECDSA 1"
-    condition: [device_sdid_200, psa_crypto_ecc_secp224r1, psa_crypto_ecdsa]
-  - name: psa_crypto_builtin_config
-    value: "MBEDTLS_PSA_BUILTIN_ALG_ECDH 1"
-    condition: [device_sdid_200, psa_crypto_ecc_secp224r1, psa_crypto_ecdh]
-  - name: psa_crypto_builtin_config
-    value: "MBEDTLS_PSA_BUILTIN_ALG_ECDSA 1"
-    condition: [device_sdid_200, device_security_se, psa_crypto_ecc_secp384r1, psa_crypto_ecdsa]
-  - name: psa_crypto_builtin_config
-    value: "MBEDTLS_PSA_BUILTIN_ALG_ECDH 1"
-    condition: [device_sdid_200, device_security_se, psa_crypto_ecc_secp384r1, psa_crypto_ecdh]
-  - name: psa_crypto_builtin_config
-    value: "MBEDTLS_PSA_BUILTIN_ALG_ECDSA 1"
-    condition: [device_sdid_200, device_security_se, psa_crypto_ecc_secp521r1, psa_crypto_ecdsa]
-  - name: psa_crypto_builtin_config
-    value: "MBEDTLS_PSA_BUILTIN_ALG_ECDH 1"
-    condition: [device_sdid_200, device_security_se, psa_crypto_ecc_secp521r1, psa_crypto_ecdh]
-  - name: psa_crypto_builtin_config
-    value: "MBEDTLS_PSA_BUILTIN_ALG_ECDH 1"
-    condition: [device_sdid_205, psa_crypto_ecc_secp384r1, psa_crypto_ecdh]
-  - name: psa_crypto_builtin_config
-    value: "MBEDTLS_PSA_BUILTIN_ALG_ECDSA 1"
-    condition: [device_sdid_205, psa_crypto_ecc_secp384r1, psa_crypto_ecdsa]
-  - name: psa_crypto_builtin_config
-    value: "MBEDTLS_PSA_BUILTIN_ALG_ECDH 1"
-    condition: [device_sdid_205, psa_crypto_ecc_secp521r1, psa_crypto_ecdh]
-  - name: psa_crypto_builtin_config
-    value: "MBEDTLS_PSA_BUILTIN_ALG_ECDSA 1"
-    condition: [device_sdid_205, psa_crypto_ecc_secp521r1, psa_crypto_ecdsa]
-  - name: psa_crypto_builtin_config
-    value: "MBEDTLS_PSA_BUILTIN_ALG_ECDSA 1"
-    condition: [device_sdid_210, device_security_se, psa_crypto_ecc_secp384r1, psa_crypto_ecdsa]
-  - name: psa_crypto_builtin_config
-    value: "MBEDTLS_PSA_BUILTIN_ALG_ECDH 1"
-    condition: [device_sdid_210, device_security_se, psa_crypto_ecc_secp384r1, psa_crypto_ecdh]
-  - name: psa_crypto_builtin_config
-    value: "MBEDTLS_PSA_BUILTIN_ALG_ECDSA 1"
-    condition: [device_sdid_210, device_security_se, psa_crypto_ecc_secp521r1, psa_crypto_ecdsa]
-  - name: psa_crypto_builtin_config
-    value: "MBEDTLS_PSA_BUILTIN_ALG_ECDH 1"
-    condition: [device_sdid_210, device_security_se, psa_crypto_ecc_secp521r1, psa_crypto_ecdh]
-  - name: psa_crypto_builtin_config
-    value: "MBEDTLS_PSA_BUILTIN_ALG_ECDSA 1"
-    condition: [device_sdid_215, device_security_se, psa_crypto_ecc_secp384r1, psa_crypto_ecdsa]
-  - name: psa_crypto_builtin_config
-    value: "MBEDTLS_PSA_BUILTIN_ALG_ECDH 1"
-    condition: [device_sdid_215, device_security_se, psa_crypto_ecc_secp384r1, psa_crypto_ecdh]
-  - name: psa_crypto_builtin_config
-    value: "MBEDTLS_PSA_BUILTIN_ALG_ECDSA 1"
-    condition: [device_sdid_215, device_security_se, psa_crypto_ecc_secp521r1, psa_crypto_ecdsa]
-  - name: psa_crypto_builtin_config
-    value: "MBEDTLS_PSA_BUILTIN_ALG_ECDH 1"
-    condition: [device_sdid_215, device_security_se, psa_crypto_ecc_secp521r1, psa_crypto_ecdh]
-  - name: psa_crypto_builtin_config
-    value: "MBEDTLS_PSA_BUILTIN_ALG_ECDSA 1"
-    condition: [device_sdid_220, device_security_se, psa_crypto_ecc_secp384r1, psa_crypto_ecdsa]
-  - name: psa_crypto_builtin_config
-    value: "MBEDTLS_PSA_BUILTIN_ALG_ECDH 1"
-    condition: [device_sdid_220, device_security_se, psa_crypto_ecc_secp384r1, psa_crypto_ecdh]
-  - name: psa_crypto_builtin_config
-    value: "MBEDTLS_PSA_BUILTIN_ALG_ECDSA 1"
-    condition: [device_sdid_220, device_security_se, psa_crypto_ecc_secp521r1, psa_crypto_ecdsa]
-  - name: psa_crypto_builtin_config
-    value: "MBEDTLS_PSA_BUILTIN_ALG_ECDH 1"
-    condition: [device_sdid_220, device_security_se, psa_crypto_ecc_secp521r1, psa_crypto_ecdh]
-  - name: psa_crypto_builtin_config
-    value: "MBEDTLS_PSA_BUILTIN_ALG_ECDH 1"
-    condition: [device_sdid_230, psa_crypto_ecc_secp384r1, psa_crypto_ecdh]
-  - name: psa_crypto_builtin_config
-    value: "MBEDTLS_PSA_BUILTIN_ALG_ECDSA 1"
-    condition: [device_sdid_230, psa_crypto_ecc_secp384r1, psa_crypto_ecdsa]
-  - name: psa_crypto_builtin_config
-    value: "MBEDTLS_PSA_BUILTIN_ALG_ECDH 1"
-    condition: [device_sdid_230, psa_crypto_ecc_secp521r1, psa_crypto_ecdh]
-  - name: psa_crypto_builtin_config
-    value: "MBEDTLS_PSA_BUILTIN_ALG_ECDSA 1"
-    condition: [device_sdid_230, psa_crypto_ecc_secp521r1, psa_crypto_ecdsa]
-  - name: psa_crypto_builtin_config
-    value: "MBEDTLS_PSA_BUILTIN_ALG_ECDSA 1"
-    condition: [device_sdid_235, device_security_se, psa_crypto_ecc_secp384r1, psa_crypto_ecdsa]
-  - name: psa_crypto_builtin_config
-    value: "MBEDTLS_PSA_BUILTIN_ALG_ECDH 1"
-    condition: [device_sdid_235, device_security_se, psa_crypto_ecc_secp384r1, psa_crypto_ecdh]
-  - name: psa_crypto_builtin_config
-    value: "MBEDTLS_PSA_BUILTIN_ALG_ECDSA 1"
-    condition: [device_sdid_235, device_security_se, psa_crypto_ecc_secp521r1, psa_crypto_ecdsa]
-  - name: psa_crypto_builtin_config
-    value: "MBEDTLS_PSA_BUILTIN_ALG_ECDH 1"
-    condition: [device_sdid_235, device_security_se, psa_crypto_ecc_secp521r1, psa_crypto_ecdh]
+
+metadata:
+ sbom:
+    license: Zlib

@@ -29,7 +29,7 @@ component:
   - id: "sl_wisun_trace_util"
   - id: "sl_wisun_app_core"
   - id: "sl_wisun_app_setting"
-  - id: "sl_wisun_app_cli"
+  - id: "sl_wisun_cli"
   - id: "sl_wisun_ping"
   - id: "sl_wisun_collector"
   - id: "sl_wisun_coap"
@@ -93,6 +93,10 @@ configuration:
     value: "1"
   - name: SL_RAIL_UTIL_PTI_BAUD_RATE_HZ
     value: "3200000"
+  - name: SL_WISUN_COAP_RESOURCE_HND_SERVICE_ENABLE
+    value: "1U"
+  - name: SL_WISUN_COAP_NOTIFY_SERVICE_ENABLE
+    value: "1U"
 
   # LFN related peripheral and energy saver setup
   - name: SL_IOSTREAM_EUSART_INSTANCE_RESTRICT_ENERGY_MODE_TO_ALLOW_RECEPTION
@@ -145,6 +149,7 @@ ui_hints:
 toolchain_settings:
   - option: optimize
     value: debug
+
 filter:
   - name: "Wireless Technology"
     value: ["Wi-SUN"]

@@ -82,47 +82,47 @@
 // <i> Default: 0
 #define CC_USER_CREDENTIAL_MAX_CREDENTIAL_SLOTS_UNSPECIFIED_BIOMETRIC  0
 
-// <o CC_USER_CREDENTIAL_MAX_HASH_LENGTH_PIN_CODE> Maximum length of PIN Code hash <1..255:1> <f.d>
-// <i> Default: 4
-#define CC_USER_CREDENTIAL_MAX_HASH_LENGTH_PIN_CODE  4
+// <o CC_USER_CREDENTIAL_MAX_HASH_LENGTH_PIN_CODE> Maximum length of PIN Code hash <0..255:1> <f.d>
+// <i> Default: 0
+#define CC_USER_CREDENTIAL_MAX_HASH_LENGTH_PIN_CODE  0
 
-// <o CC_USER_CREDENTIAL_MAX_HASH_LENGTH_PASSWORD> Maximum length of password hash <1..255:1> <f.d>
-// <i> Default: 4
-#define CC_USER_CREDENTIAL_MAX_HASH_LENGTH_PASSWORD  4
+// <o CC_USER_CREDENTIAL_MAX_HASH_LENGTH_PASSWORD> Maximum length of password hash <0..255:1> <f.d>
+// <i> Default: 0
+#define CC_USER_CREDENTIAL_MAX_HASH_LENGTH_PASSWORD  0
 
-// <o CC_USER_CREDENTIAL_MAX_HASH_LENGTH_RFID_CODE> Maximum length of RFID Code hash <1..255:1> <f.d>
-// <i> Default: 4
-#define CC_USER_CREDENTIAL_MAX_HASH_LENGTH_RFID_CODE  4
+// <o CC_USER_CREDENTIAL_MAX_HASH_LENGTH_RFID_CODE> Maximum length of RFID Code hash <0..255:1> <f.d>
+// <i> Default: 0
+#define CC_USER_CREDENTIAL_MAX_HASH_LENGTH_RFID_CODE  0
 
-// <o CC_USER_CREDENTIAL_MAX_HASH_LENGTH_BLE> Maximum length of BLE data hash <1..255:1> <f.d>
-// <i> Default: 4
-#define CC_USER_CREDENTIAL_MAX_HASH_LENGTH_BLE  4
+// <o CC_USER_CREDENTIAL_MAX_HASH_LENGTH_BLE> Maximum length of BLE data hash <0..255:1> <f.d>
+// <i> Default: 0
+#define CC_USER_CREDENTIAL_MAX_HASH_LENGTH_BLE  0
 
-// <o CC_USER_CREDENTIAL_MAX_HASH_LENGTH_NFC> Maximum length of NFC data hash <1..255:1> <f.d>
-// <i> Default: 4
-#define CC_USER_CREDENTIAL_MAX_HASH_LENGTH_NFC  4
+// <o CC_USER_CREDENTIAL_MAX_HASH_LENGTH_NFC> Maximum length of NFC data hash <0..255:1> <f.d>
+// <i> Default: 0
+#define CC_USER_CREDENTIAL_MAX_HASH_LENGTH_NFC  0
 
-// <o CC_USER_CREDENTIAL_MAX_HASH_LENGTH_UWB> Maximum length of UWB data hash <1..255:1> <f.d>
+// <o CC_USER_CREDENTIAL_MAX_HASH_LENGTH_UWB> Maximum length of UWB data hash <0..255:1> <f.d>
 // <i> Default: 4
 #define CC_USER_CREDENTIAL_MAX_HASH_LENGTH_UWB  4
 
-// <o CC_USER_CREDENTIAL_MAX_HASH_LENGTH_EYE_BIOMETRIC> Maximum length of Eye Biometric data hash <1..255:1> <f.d>
+// <o CC_USER_CREDENTIAL_MAX_HASH_LENGTH_EYE_BIOMETRIC> Maximum length of Eye Biometric data hash <0..255:1> <f.d>
 // <i> Default: 4
 #define CC_USER_CREDENTIAL_MAX_HASH_LENGTH_EYE_BIOMETRIC  4
 
-// <o CC_USER_CREDENTIAL_MAX_HASH_LENGTH_FACE_BIOMETRIC> Maximum length of Face Biometric data hash <1..255:1> <f.d>
+// <o CC_USER_CREDENTIAL_MAX_HASH_LENGTH_FACE_BIOMETRIC> Maximum length of Face Biometric data hash <0..255:1> <f.d>
 // <i> Default: 4
 #define CC_USER_CREDENTIAL_MAX_HASH_LENGTH_FACE_BIOMETRIC  4
 
-// <o CC_USER_CREDENTIAL_MAX_HASH_LENGTH_FINGER_BIOMETRIC> Maximum length of Finger Biometric data hash <1..255:1> <f.d>
+// <o CC_USER_CREDENTIAL_MAX_HASH_LENGTH_FINGER_BIOMETRIC> Maximum length of Finger Biometric data hash <0..255:1> <f.d>
 // <i> Default: 4
 #define CC_USER_CREDENTIAL_MAX_HASH_LENGTH_FINGER_BIOMETRIC  4
 
-// <o CC_USER_CREDENTIAL_MAX_HASH_LENGTH_HAND_BIOMETRIC> Maximum length of Hand Biometric data hash <1..255:1> <f.d>
+// <o CC_USER_CREDENTIAL_MAX_HASH_LENGTH_HAND_BIOMETRIC> Maximum length of Hand Biometric data hash <0..255:1> <f.d>
 // <i> Default: 4
 #define CC_USER_CREDENTIAL_MAX_HASH_LENGTH_HAND_BIOMETRIC  4
 
-// <o CC_USER_CREDENTIAL_MAX_HASH_LENGTH_UNSPECIFIED_BIOMETRIC> Maximum length of Unspecified Biometric data hash <1..255:1> <f.d>
+// <o CC_USER_CREDENTIAL_MAX_HASH_LENGTH_UNSPECIFIED_BIOMETRIC> Maximum length of Unspecified Biometric data hash <0..255:1> <f.d>
 // <i> Default: 4
 #define CC_USER_CREDENTIAL_MAX_HASH_LENGTH_UNSPECIFIED_BIOMETRIC  4
 

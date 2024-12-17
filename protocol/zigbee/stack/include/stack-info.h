@@ -165,13 +165,6 @@ sl_802154_long_addr_t sl_zigbee_get_eui64(void);
  */
 sl_802154_short_addr_t sl_zigbee_get_node_id(void);
 
-/** @brief Return the 16-bit node ID of local node on the network it is
- * currently tuned on.
- *
- * @return The 16-bit ID.
- */
-sl_802154_short_addr_t sl_zigbee_radio_get_node_id(void);
-
 #else   // Doxygen ignores the following
 uint8_t* sl_zigbee_get_eui64(void);
 sl_802154_short_addr_t sl_zigbee_get_node_id(void);
@@ -854,7 +847,7 @@ void sl_mac_calibrate_current_channel(void);
 
 /**
  * @brief Get the current scheduler priorities used for Zigbee
- * multiprotocol operations.
+ * radio operations.
  * @param priorities A pointer to a structure to store the current priorities
  * in. This must not be NULL.
  * @return ::SL_STATUS_OK if called in a multiprotocol app and
@@ -865,7 +858,7 @@ void sl_mac_calibrate_current_channel(void);
  * @internal SL_ZIGBEE_IPC_ARGS
  * {# priorities #}
  */
-sl_status_t sl_802154_radio_get_scheduler_priorities(sl_zigbee_multiprotocol_priorities_t *priorities);
+sl_status_t sl_802154_radio_get_scheduler_priorities(sl_802154_radio_priorities_t *priorities);
 
 /**
  * @brief Set the current scheduler priorities used for Zigbee
@@ -878,7 +871,7 @@ sl_status_t sl_802154_radio_get_scheduler_priorities(sl_zigbee_multiprotocol_pri
  * For more details on what these priorities are and how to use them see UG305,
  * the Dynamic Multiprotocol User Guide.
  */
-sl_status_t sl_802154_radio_set_scheduler_priorities(const sl_zigbee_multiprotocol_priorities_t *priorities);
+sl_status_t sl_802154_radio_set_scheduler_priorities(const sl_802154_radio_priorities_t *priorities);
 
 /**
  * @brief Set the multiprotocol slip time.

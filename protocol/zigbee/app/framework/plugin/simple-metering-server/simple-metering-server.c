@@ -129,15 +129,15 @@ WEAK(void sli_zigbee_af_test_meter_tick(uint8_t endpoint))
   (void) endpoint;
 }
 
-WEAK(bool sli_zigbee_af_test_meter_get_profiles(uint8_t intervalChannel,
-                                                uint32_t endTime,
-                                                uint8_t numberOfPeriods))
+WEAK(sl_zigbee_af_zcl_request_status_t sli_zigbee_af_test_meter_get_profiles(uint8_t intervalChannel,
+                                                                             uint32_t endTime,
+                                                                             uint8_t numberOfPeriods))
 {
   (void) intervalChannel;
   (void) endTime;
   (void) numberOfPeriods;
 
-  return false;
+  return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 }
 
 void sl_zigbee_af_simple_metering_cluster_server_init_cb(uint8_t endpoint)
@@ -170,7 +170,7 @@ void sl_zigbee_af_simple_metering_cluster_server_default_response_cb(uint8_t end
 {
   if (commandId == ZCL_REMOVE_MIRROR_COMMAND_ID
       && status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_simple_metering_cluster_println("Mirror remove FAILED status 0x%x", status);
+    sl_zigbee_af_simple_metering_cluster_println("Mirror remove FAILED status 0x%02X", status);
   }
 }
 
@@ -260,7 +260,7 @@ void sl_zigbee_af_simple_metering_server_sampling_event_handler(sl_zigbee_af_eve
                                            6,
                                            &dataType);
       if (status == SL_STATUS_OK) {
-        sl_zigbee_af_simple_metering_cluster_println("Sample %u: 0x%x%x%x%x%x%x",
+        sl_zigbee_af_simple_metering_cluster_println("Sample %u: 0x%02X%02X%02X%02X%02X%02X",
                                                      samplingData[i].validSamples,
                                                      samplingData[i].samples[samplingData[i].validSamples][0],
                                                      samplingData[i].samples[samplingData[i].validSamples][1],
@@ -358,13 +358,13 @@ void sl_zigbee_af_simple_metering_cluster_read_attributes_response_cb(sl_zigbee_
         // application for each notification flags attribute.
         if (attributeId < 0x0100) {
           uint32_t bitMap = sl_zigbee_af_get_int32u(buffer, bufIndex, bufLen);
-          sl_zigbee_af_simple_metering_cluster_println("Attribute value 0x%4x", bitMap);
+          sl_zigbee_af_simple_metering_cluster_println("Attribute value 0x%08X", bitMap);
           sl_zigbee_af_simple_metering_server_process_notification_flags_cb(attributeId, bitMap);
         }
         bufIndex += dataSize;
       } else {
         // dataSize exceeds buffer length, terminate loop
-        sl_zigbee_af_simple_metering_cluster_println("ERR: attr:%2x size %d exceeds buffer size", attributeId, dataSize);
+        sl_zigbee_af_simple_metering_cluster_println("ERR: attr:%04X size %d exceeds buffer size", attributeId, dataSize);
         break;
       }
     }
@@ -374,19 +374,19 @@ void sl_zigbee_af_simple_metering_cluster_read_attributes_response_cb(sl_zigbee_
 //-----------------------
 // ZCL commands callbacks
 
-bool sl_zigbee_af_simple_metering_cluster_get_profile_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_simple_metering_cluster_get_profile_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_simple_metering_cluster_get_profile_command_t cmd_data;
 
   if (zcl_decode_simple_metering_cluster_get_profile_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   return sli_zigbee_af_test_meter_get_profiles(cmd_data.intervalChannel, cmd_data.endTime, cmd_data.numberOfPeriods);
 }
 
-bool sl_zigbee_af_simple_metering_cluster_request_fast_poll_mode_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_simple_metering_cluster_request_fast_poll_mode_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_simple_metering_cluster_request_fast_poll_mode_command_t cmd_data;
   uint8_t endpoint;
@@ -397,12 +397,11 @@ bool sl_zigbee_af_simple_metering_cluster_request_fast_poll_mode_cb(sl_zigbee_af
 
   if (zcl_decode_simple_metering_cluster_request_fast_poll_mode_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   if (!fastPolling) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   endpoint = sl_zigbee_af_current_endpoint();
@@ -412,8 +411,8 @@ bool sl_zigbee_af_simple_metering_cluster_request_fast_poll_mode_cb(sl_zigbee_af
   appliedUpdateRate = cmd_data.fastPollUpdatePeriod;
 
   if (ep == SL_ZIGBEE_AF_INVALID_ENDPOINT_INDEX) {
-    sl_zigbee_af_simple_metering_cluster_println("Invalid endpoint %x", sl_zigbee_af_current_endpoint());
-    return false;
+    sl_zigbee_af_simple_metering_cluster_println("Invalid endpoint %02X", sl_zigbee_af_current_endpoint());
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   status = sl_zigbee_af_read_server_attribute(endpoint,
@@ -425,37 +424,37 @@ bool sl_zigbee_af_simple_metering_cluster_request_fast_poll_mode_cb(sl_zigbee_af
   if (status == SL_STATUS_OK) {
     if (cmd_data.fastPollUpdatePeriod < fastPollingUpdateAttribute) {
       appliedUpdateRate = fastPollingUpdateAttribute;
-      sl_zigbee_af_simple_metering_cluster_println("Applying fast Poll rate %x ep %u", appliedUpdateRate, ep);
+      sl_zigbee_af_simple_metering_cluster_println("Applying fast Poll rate %02X ep %u", appliedUpdateRate, ep);
     }
   } else {
-    sl_zigbee_af_simple_metering_cluster_println("Reading fast Poll Attribute failed. ep %u  status %x", ep, status);
+    sl_zigbee_af_simple_metering_cluster_println("Reading fast Poll Attribute failed. ep %u  status %02X", ep, status);
     sl_zigbee_af_fill_command_simple_metering_cluster_request_fast_poll_mode_response(0,
                                                                                       0);
     sl_zigbee_af_send_response();
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
   }
 
   if (sl_zigbee_af_get_current_time() > fastPollEndTimeUtcTable[ep]) {
     cmd_data.duration = cmd_data.duration > MAX_FAST_POLLING_PERIOD ? MAX_FAST_POLLING_PERIOD : cmd_data.duration;
     fastPollEndTimeUtcTable[ep] = sl_zigbee_af_get_current_time() + (cmd_data.duration * 60);
-    sl_zigbee_af_simple_metering_cluster_println("Starting fast polling for %u minutes  End Time 0x%4x,current Time 0x%4x", cmd_data.duration, fastPollEndTimeUtcTable[ep], sl_zigbee_af_get_current_time());
+    sl_zigbee_af_simple_metering_cluster_println("Starting fast polling for %u minutes  End Time 0x%08X,current Time 0x%08X", cmd_data.duration, fastPollEndTimeUtcTable[ep], sl_zigbee_af_get_current_time());
   } else {
-    sl_zigbee_af_simple_metering_cluster_println("Fast polling mode currently active. ep %u fastPollEndTimeUtcTable[%u] 0x%4x current Time 0x%4x ", ep, ep, fastPollEndTimeUtcTable[ep], sl_zigbee_af_get_current_time());
+    sl_zigbee_af_simple_metering_cluster_println("Fast polling mode currently active. ep %u fastPollEndTimeUtcTable[%u] 0x%08X current Time 0x%08X ", ep, ep, fastPollEndTimeUtcTable[ep], sl_zigbee_af_get_current_time());
   }
   sl_zigbee_af_fill_command_simple_metering_cluster_request_fast_poll_mode_response(appliedUpdateRate,
                                                                                     fastPollEndTimeUtcTable[ep]);
   sl_zigbee_af_send_response();
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_simple_metering_cluster_start_sampling_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_simple_metering_cluster_start_sampling_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_simple_metering_cluster_start_sampling_command_t cmd_data;
   static uint8_t firstIssuerId = 0;
 
   if (zcl_decode_simple_metering_cluster_start_sampling_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   // Bug: SE1P2-19
@@ -466,9 +465,8 @@ bool sl_zigbee_af_simple_metering_cluster_start_sampling_cb(sl_zigbee_af_cluster
     minIssuerEventId = cmd_data.issuerEventId;
     firstIssuerId = 1;
   } else if (cmd_data.issuerEventId <= minIssuerEventId && cmd_data.startSamplingTime != 0xFFFFFFFF) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_FAILURE);
     sl_zigbee_af_simple_metering_cluster_println("Rejecting StartSamplingCallback issuerEventId %u minIssuerEventId %u", cmd_data.issuerEventId, minIssuerEventId);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_FAILURE;
   } else {
     minIssuerEventId = cmd_data.issuerEventId;
   }
@@ -483,13 +481,11 @@ bool sl_zigbee_af_simple_metering_cluster_start_sampling_cb(sl_zigbee_af_cluster
     // previously was (index == 0xFF). Simpler to make this change rather than
     // suppress the CSTAT check on multiple code lines.
     if (!isValidSamplingDataIndex(eventIndex)) {
-      sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_NOT_FOUND);
-      return true;
+      return SL_ZIGBEE_ZCL_STATUS_NOT_FOUND;
     } else {
       samplingData[eventIndex].sampleId = 0xFFFF;
       samplingData[eventIndex].validSamples = 0x00;
-      sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-      return true;
+      return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
     }
   }
 
@@ -502,17 +498,17 @@ bool sl_zigbee_af_simple_metering_cluster_start_sampling_cb(sl_zigbee_af_cluster
                                                                          sl_zigbee_af_current_endpoint());
   sl_zigbee_af_fill_command_simple_metering_cluster_start_sampling_response(sampleId);
   sl_zigbee_af_send_response();
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_simple_metering_cluster_get_sampled_data_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_simple_metering_cluster_get_sampled_data_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_simple_metering_cluster_get_sampled_data_command_t cmd_data;
   uint8_t i;
 
   if (zcl_decode_simple_metering_cluster_get_sampled_data_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   sl_zigbee_af_simple_metering_cluster_println("sampleId %u earliestSampleTime %u sampleType %u numberOfSamples %u",
@@ -547,7 +543,7 @@ bool sl_zigbee_af_simple_metering_cluster_get_sampled_data_cb(sl_zigbee_af_clust
                                         samplingData[i].sampleRequestInterval,
                                         cmd_data.numberOfSamples);
 
-      sl_zigbee_af_simple_metering_cluster_println("numberOfSamples 0x%2x", cmd_data.numberOfSamples);
+      sl_zigbee_af_simple_metering_cluster_println("numberOfSamples 0x%04X", cmd_data.numberOfSamples);
 
       for (j = 0; j < cmd_data.numberOfSamples; j++) {
         uint32_t b = (samplingData[i].samples[j + 1][3] << 24) | (samplingData[i].samples[j + 1][2] << 16) | (samplingData[i].samples[j + 1][1] << 8) | (samplingData[i].samples[j + 1][0] << 0);
@@ -558,22 +554,21 @@ bool sl_zigbee_af_simple_metering_cluster_get_sampled_data_cb(sl_zigbee_af_clust
         sl_zigbee_af_simple_metering_cluster_println("index %u numberOfSamples %u diff %u", j, cmd_data.numberOfSamples, diff);
       }
       sl_zigbee_af_send_response();
-      return true;
+      return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
     }
   }
 
   kickout:
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_NOT_FOUND);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_NOT_FOUND;
 }
 
-bool sl_zigbee_af_simple_metering_cluster_mirror_report_attribute_response_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_simple_metering_cluster_mirror_report_attribute_response_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_simple_metering_cluster_mirror_report_attribute_response_command_t cmd_data;
 
   if (zcl_decode_simple_metering_cluster_mirror_report_attribute_response_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   if (cmd_data.notificationScheme == 0x01) {
@@ -585,7 +580,7 @@ bool sl_zigbee_af_simple_metering_cluster_mirror_report_attribute_response_cb(sl
     uint32_t notificationFlags3 = sl_zigbee_af_get_int32u(cmd_data.notificationFlags, 8, 20);
     uint32_t notificationFlags4 = sl_zigbee_af_get_int32u(cmd_data.notificationFlags, 12, 20);
     uint32_t notificationFlags5 = sl_zigbee_af_get_int32u(cmd_data.notificationFlags, 16, 20);
-    sl_zigbee_af_simple_metering_cluster_println("functionalFlags 0x%4x notificationFlags2-5 0x%4x 0x%4x 0x%4x 0x%4x",
+    sl_zigbee_af_simple_metering_cluster_println("functionalFlags 0x%08X notificationFlags2-5 0x%08X 0x%08X 0x%08X 0x%08X",
                                                  functionalFlags, notificationFlags2, notificationFlags3,
                                                  notificationFlags4, notificationFlags5);
     sl_zigbee_af_simple_metering_server_process_notification_flags_cb(ZCL_FUNCTIONAL_NOTIFICATION_FLAGS_ATTRIBUTE_ID, functionalFlags);
@@ -594,13 +589,12 @@ bool sl_zigbee_af_simple_metering_cluster_mirror_report_attribute_response_cb(sl
     sl_zigbee_af_simple_metering_server_process_notification_flags_cb(ZCL_NOTIFICATION_FLAGS_4_ATTRIBUTE_ID, notificationFlags4);
     sl_zigbee_af_simple_metering_server_process_notification_flags_cb(ZCL_NOTIFICATION_FLAGS_5_ATTRIBUTE_ID, notificationFlags5);
   } else {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
-bool sl_zigbee_af_simple_metering_cluster_reset_load_limit_counter_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_simple_metering_cluster_reset_load_limit_counter_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   uint8_t counter = 0;
 
@@ -608,7 +602,7 @@ bool sl_zigbee_af_simple_metering_cluster_reset_load_limit_counter_cb(sl_zigbee_
   sl_zcl_simple_metering_cluster_reset_load_limit_counter_command_t cmd_data;
   if (zcl_decode_simple_metering_cluster_reset_load_limit_counter_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   sl_zigbee_af_simple_metering_cluster_println("Reset Load Counter providerId %u issuerEventId %u", cmd_data.providerId, cmd_data.issuerEventId);
@@ -620,30 +614,28 @@ bool sl_zigbee_af_simple_metering_cluster_reset_load_limit_counter_cb(sl_zigbee_
                                       CLUSTER_MASK_SERVER,
                                       &counter,
                                       ZCL_INT8U_ATTRIBUTE_TYPE);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_simple_metering_cluster_change_supply_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_simple_metering_cluster_change_supply_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_simple_metering_cluster_change_supply_command_t cmd_data;
   uint32_t delay;
 
   if (zcl_decode_simple_metering_cluster_change_supply_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   sl_zigbee_af_simple_metering_cluster_println("Change Supply Callback providerId %u issuerEventId %u implementationDateTime %u supplyStatus %u",
                                                cmd_data.providerId, cmd_data.issuerEventId, cmd_data.implementationDateTime, cmd_data.supplyControlBits);
   // TODO: fix this hard-coded check
   if (cmd_data.providerId != PROVIDER_ID) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_NOT_AUTHORIZED);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_NOT_AUTHORIZED;
   }
   if (cmd_data.implementationDateTime < sl_zigbee_af_get_current_time() && cmd_data.implementationDateTime != 0) {
     sl_zigbee_af_simple_metering_cluster_println("implementationDateTime %u", cmd_data.implementationDateTime);
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_INVALID_VALUE);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_INVALID_VALUE;
   }
   if (cmd_data.implementationDateTime == 0xFFFFFFFF) {
     sl_zigbee_af_simple_metering_cluster_println("Canceling change supply");
@@ -666,8 +658,7 @@ bool sl_zigbee_af_simple_metering_cluster_change_supply_cb(sl_zigbee_af_cluster_
                                                                                cmd_data.implementationDateTime,
                                                                                cmd_data.proposedSupplyStatus);
       sl_zigbee_af_send_response();
-    } else {
-      sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
+      return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
     }
   } else {
     (void) sl_zigbee_af_write_attribute(sl_zigbee_af_current_endpoint(),
@@ -695,37 +686,34 @@ bool sl_zigbee_af_simple_metering_cluster_change_supply_cb(sl_zigbee_af_cluster_
       sl_zigbee_af_event_set_delay_ms(supplyEvent,
                                       delay * 1000);
     }
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
   }
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
-bool sl_zigbee_af_simple_metering_cluster_local_change_supply_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_simple_metering_cluster_local_change_supply_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_simple_metering_cluster_local_change_supply_command_t cmd_data;
 
   if (zcl_decode_simple_metering_cluster_local_change_supply_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   if (cmd_data.proposedSupplyStatus < 1 || cmd_data.proposedSupplyStatus > 2) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_NOT_AUTHORIZED);
-  } else {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-    sl_zigbee_af_simple_metering_cluster_println("Setting localSupply Status %u", cmd_data.proposedSupplyStatus);
+    return SL_ZIGBEE_ZCL_STATUS_NOT_AUTHORIZED;
   }
-  return true;
+  sl_zigbee_af_simple_metering_cluster_println("Setting localSupply Status %u", cmd_data.proposedSupplyStatus);
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
-bool sl_zigbee_af_simple_metering_cluster_set_supply_status_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_simple_metering_cluster_set_supply_status_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_simple_metering_cluster_set_supply_status_command_t cmd_data;
 
   if (zcl_decode_simple_metering_cluster_set_supply_status_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   (void) sl_zigbee_af_write_attribute(sl_zigbee_af_current_endpoint(),
@@ -755,16 +743,14 @@ bool sl_zigbee_af_simple_metering_cluster_set_supply_status_cb(sl_zigbee_af_clus
                                       CLUSTER_MASK_SERVER,
                                       &cmd_data.loadLimitSupplyState,
                                       ZCL_ENUM8_ATTRIBUTE_TYPE);
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
-bool sl_zigbee_af_simple_metering_cluster_set_uncontrolled_flow_threshold_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_simple_metering_cluster_set_uncontrolled_flow_threshold_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   (void)cmd;
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
 uint32_t sl_zigbee_af_simple_metering_cluster_server_command_parse(sl_service_opcode_t opcode,
@@ -773,64 +759,62 @@ uint32_t sl_zigbee_af_simple_metering_cluster_server_command_parse(sl_service_op
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_GET_PROFILE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_simple_metering_cluster_get_profile_cb(cmd);
+        status = sl_zigbee_af_simple_metering_cluster_get_profile_cb(cmd);
         break;
       }
       case ZCL_REQUEST_FAST_POLL_MODE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_simple_metering_cluster_request_fast_poll_mode_cb(cmd);
+        status = sl_zigbee_af_simple_metering_cluster_request_fast_poll_mode_cb(cmd);
         break;
       }
       case ZCL_START_SAMPLING_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_simple_metering_cluster_start_sampling_cb(cmd);
+        status = sl_zigbee_af_simple_metering_cluster_start_sampling_cb(cmd);
         break;
       }
       case ZCL_GET_SAMPLED_DATA_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_simple_metering_cluster_get_sampled_data_cb(cmd);
+        status = sl_zigbee_af_simple_metering_cluster_get_sampled_data_cb(cmd);
         break;
       }
       case ZCL_MIRROR_REPORT_ATTRIBUTE_RESPONSE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_simple_metering_cluster_mirror_report_attribute_response_cb(cmd);
+        status = sl_zigbee_af_simple_metering_cluster_mirror_report_attribute_response_cb(cmd);
         break;
       }
       case ZCL_RESET_LOAD_LIMIT_COUNTER_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_simple_metering_cluster_reset_load_limit_counter_cb(cmd);
+        status = sl_zigbee_af_simple_metering_cluster_reset_load_limit_counter_cb(cmd);
         break;
       }
       case ZCL_CHANGE_SUPPLY_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_simple_metering_cluster_change_supply_cb(cmd);
+        status = sl_zigbee_af_simple_metering_cluster_change_supply_cb(cmd);
         break;
       }
       case ZCL_LOCAL_CHANGE_SUPPLY_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_simple_metering_cluster_local_change_supply_cb(cmd);
+        status = sl_zigbee_af_simple_metering_cluster_local_change_supply_cb(cmd);
         break;
       }
       case ZCL_SET_SUPPLY_STATUS_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_simple_metering_cluster_set_supply_status_cb(cmd);
+        status = sl_zigbee_af_simple_metering_cluster_set_supply_status_cb(cmd);
         break;
       }
       case ZCL_SET_UNCONTROLLED_FLOW_THRESHOLD_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_simple_metering_cluster_set_uncontrolled_flow_threshold_cb(cmd);
+        status = sl_zigbee_af_simple_metering_cluster_set_uncontrolled_flow_threshold_cb(cmd);
         break;
       }
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

@@ -107,7 +107,7 @@ void sl_zigbee_af_network_creator_security_init_cb(uint8_t init_level)
                                                     "Joins using install code only");
 
   if (SL_STATUS_OK != status) {
-    sl_zigbee_af_core_println("%s: %s: 0x%X",
+    sl_zigbee_af_core_println("%s: %s: 0x%02X",
                               SL_ZIGBEE_AF_PLUGIN_NETWORK_CREATOR_SECURITY_PLUGIN_NAME,
                               "failed to configure joining using install code only",
                               status);
@@ -126,13 +126,14 @@ void sli_zigbee_af_network_creator_security_stack_status_callback(sl_status_t st
       && sl_zigbee_af_get_node_id() == SL_ZIGBEE_TRUST_CENTER_NODE_ID) {
     sl_zigbee_extended_security_bitmask_t extended;
 
-    // If we form a centralized network, make sure our trust center policy is
-    // correctly set to respond to a key request.
-#ifdef ZCL_USING_SL_WWAH_CLUSTER_CLIENT
-    allowTrustCenterLinkKeyRequestsAndGenerateNewKeys();
-#else
-    allowTrustCenterLinkKeyRequests();
-#endif
+    // WWAH is what introduced the original requirement for being able to (re)generate arbitrarily many APS link keys.
+    // BDB 3.1 should be making it the default behavior
+    // unless the TC is intentionally configured to use hashed link key
+    if (SL_ZIGBEE_AF_PLUGIN_NETWORK_CREATOR_SECURITY_ALLOW_TC_USING_HASHED_LINK_KEY == 1) {
+      allowTrustCenterLinkKeyRequests();
+    } else {
+      allowTrustCenterLinkKeyRequestsAndGenerateNewKeys();
+    }
 
     // This bit is not saved to a token, so make sure that our security bitmask
     // has this bit set on reboot.
@@ -191,7 +192,7 @@ void sl_zigbee_af_network_creator_security_zigbee_key_establishment_cb(sl_802154
                                        (SL_ZIGBEE_APS_OPTION_RETRY
                                         | SL_ZIGBEE_APS_OPTION_ENABLE_ROUTE_DISCOVERY));
     }
-    sl_zigbee_af_core_println("%s: Remove node 0x%2X for failed key verification: 0x%X",
+    sl_zigbee_af_core_println("%s: Remove node 0x%04X for failed key verification: 0x%02X",
                               SL_ZIGBEE_AF_PLUGIN_NETWORK_CREATOR_SECURITY_PLUGIN_NAME,
                               destinationId,
                               status);
@@ -218,7 +219,7 @@ sl_status_t sl_zigbee_af_network_creator_security_start(bool centralizedNetwork)
                    | SL_ZIGBEE_NO_FRAME_COUNTER_RESET
                    | SL_ZIGBEE_REQUIRE_ENCRYPTED_KEY);
 
-  extended = SL_ZIGBEE_JOINER_GLOBAL_LINK_KEY;
+  extended = SL_ZIGBEE_JOINER_GLOBAL_LINK_KEY | SL_ZIGBEE_R18_STACK_BEHAVIOR;
 
   if (!centralizedNetwork) {
     memmove(&(state.preconfiguredKey),
@@ -278,7 +279,7 @@ sl_status_t sl_zigbee_af_network_creator_security_start(bool centralizedNetwork)
   status = sl_zigbee_set_extended_security_bitmask(extended);
 
   kickout:
-  sl_zigbee_af_core_println("%s: %s: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             SL_ZIGBEE_AF_PLUGIN_NETWORK_CREATOR_SECURITY_PLUGIN_NAME,
                             "Start",
                             status);
@@ -329,7 +330,7 @@ sl_status_t sl_zigbee_af_network_creator_security_open_network(void)
     sl_zigbee_af_event_set_active(openNetworkNetworkEvents);
   }
 
-  return ((status == SL_STATUS_OK) ? SL_STATUS_OK : SL_STATUS_ALLOCATION_FAILED);
+  return status;
 }
 
 sl_status_t sl_zigbee_af_network_creator_security_close_network(void)
@@ -418,7 +419,7 @@ static void openNetworkNetworkEventHandler(sl_zigbee_af_event_t * event)
 #endif // EZSP_HOST
   status = sl_zigbee_af_permit_join(permitJoinTime, true);   // broadcast permit join
 
-  sl_zigbee_af_core_println("%s: %s: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             SL_ZIGBEE_AF_PLUGIN_NETWORK_CREATOR_SECURITY_PLUGIN_NAME,
                             "Open network",
                             status);

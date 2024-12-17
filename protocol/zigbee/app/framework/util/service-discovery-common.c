@@ -162,7 +162,7 @@ sl_status_t sl_zigbee_af_find_devices_by_profile_and_cluster(sl_802154_short_add
 {
   sli_zigbee_service_discovery_state_t *state = findUnusedState();
   if (state == NULL) {
-    sl_zigbee_af_service_discovery_println("%pService Discovery State limits reached\n", PREFIX);
+    sl_zigbee_af_service_discovery_println("%sService Discovery State limits reached\n", PREFIX);
     return SL_STATUS_INVALID_STATE;
   }
   sl_status_t status;
@@ -173,7 +173,7 @@ sl_status_t sl_zigbee_af_find_devices_by_profile_and_cluster(sl_802154_short_add
     // the 'rx on when idle' address.  No other broadcast addresses are allowed.
     // The Ember stack will silently discard broadcast match descriptors
     // to invalid broadcast addresses.
-    sl_zigbee_af_service_discovery_println("%pIllegal broadcast address, remapping to valid one.",
+    sl_zigbee_af_service_discovery_println("%sIllegal broadcast address, remapping to valid one.",
                                            PREFIX);
     target = SL_ZIGBEE_RX_ON_WHEN_IDLE_BROADCAST_ADDRESS;
   }
@@ -182,13 +182,13 @@ sl_status_t sl_zigbee_af_find_devices_by_profile_and_cluster(sl_802154_short_add
   // Get the sequence number sent in the request.
   uint8_t sequenceNumber = sl_zigbee_get_last_app_zig_dev_request_sequence();
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_service_discovery_println("%pFailed to send match discovery: 0x%x",
+    sl_zigbee_af_service_discovery_println("%sFailed to send match discovery: 0x%02X",
                                            PREFIX,
                                            status);
     return status;
   }
 
-  sl_zigbee_af_service_discovery_println("%pStarting discovery for cluster 0x%2x",
+  sl_zigbee_af_service_discovery_println("%sStarting discovery for cluster 0x%04X",
                                          PREFIX,
                                          clusterId);
   setupDiscoveryData(state,
@@ -205,7 +205,7 @@ sl_status_t sl_zigbee_af_find_active_endpoints(sl_802154_short_addr_t target,
 {
   sli_zigbee_service_discovery_state_t *state = findUnusedState();
   if (state == NULL) {
-    sl_zigbee_af_service_discovery_println("%pService Discovery State limits reached\n", PREFIX);
+    sl_zigbee_af_service_discovery_println("%sService Discovery State limits reached\n", PREFIX);
     return SL_STATUS_INVALID_STATE;
   }
   sl_status_t status;
@@ -213,7 +213,7 @@ sl_status_t sl_zigbee_af_find_active_endpoints(sl_802154_short_addr_t target,
   status = sl_zigbee_active_endpoints_request(target, SL_ZIGBEE_AF_DEFAULT_APS_OPTIONS);
   uint8_t sequenceNumber = sl_zigbee_get_last_app_zig_dev_request_sequence();
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_service_discovery_println("%pFailed to send active endpoint request: 0x%x",
+    sl_zigbee_af_service_discovery_println("%sFailed to send active endpoint request: 0x%02X",
                                            PREFIX,
                                            status);
     return status;
@@ -233,7 +233,7 @@ sl_status_t sl_zigbee_af_find_clusters_by_device_and_endpoint(sl_802154_short_ad
 {
   sli_zigbee_service_discovery_state_t *state = findUnusedState();
   if (state == NULL) {
-    sl_zigbee_af_service_discovery_println("%pService Discovery State limits reached\n", PREFIX);
+    sl_zigbee_af_service_discovery_println("%sService Discovery State limits reached\n", PREFIX);
     return SL_STATUS_INVALID_STATE;
   }
   sl_status_t status;
@@ -245,7 +245,7 @@ sl_status_t sl_zigbee_af_find_clusters_by_device_and_endpoint(sl_802154_short_ad
   uint8_t sequenceNumber = sl_zigbee_get_last_app_zig_dev_request_sequence();
 
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_service_discovery_println("%pFailed to send simple descriptor request: 0x%x",
+    sl_zigbee_af_service_discovery_println("%sFailed to send simple descriptor request: 0x%02X",
                                            PREFIX,
                                            status);
     return status;
@@ -265,7 +265,7 @@ sl_status_t sl_zigbee_af_find_ieee_address(sl_802154_short_addr_t shortAddress,
 {
   sli_zigbee_service_discovery_state_t *state = findUnusedState();
   if (state == NULL) {
-    sl_zigbee_af_service_discovery_println("%pService Discovery State limits reached\n", PREFIX);
+    sl_zigbee_af_service_discovery_println("%sService Discovery State limits reached\n", PREFIX);
     return SL_STATUS_INVALID_STATE;
   }
   sl_status_t status;
@@ -286,7 +286,7 @@ sl_status_t sl_zigbee_af_find_ieee_address(sl_802154_short_addr_t shortAddress,
 #endif
 
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_service_discovery_println("%pFailed to send IEEE address request: 0x%x",
+    sl_zigbee_af_service_discovery_println("%sFailed to send IEEE address request: 0x%02X",
                                            PREFIX,
                                            status);
     return status;
@@ -306,7 +306,7 @@ sl_status_t sl_zigbee_af_find_node_id(sl_802154_long_addr_t longAddress,
 {
   sli_zigbee_service_discovery_state_t *state = findUnusedState();
   if (state == NULL) {
-    sl_zigbee_af_service_discovery_println("%pService Discovery State limits reached\n", PREFIX);
+    sl_zigbee_af_service_discovery_println("%sService Discovery State limits reached\n", PREFIX);
     return SL_STATUS_INVALID_STATE;
   }
   sl_status_t status;
@@ -325,7 +325,7 @@ sl_status_t sl_zigbee_af_find_node_id(sl_802154_long_addr_t longAddress,
   uint8_t sequenceNumber = sl_zigbee_get_last_stack_zig_dev_request_sequence();
 #endif
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_service_discovery_println("%pFailed to send NWK address request: 0x%x",
+    sl_zigbee_af_service_discovery_println("%sFailed to send NWK address request: 0x%02X",
                                            PREFIX,
                                            status);
     return status;
@@ -353,7 +353,7 @@ static void setupDiscoveryData(sli_zigbee_service_discovery_state_t *state,
   }
   state->callback = callback;
   state->requestSequence = sequenceNumber;
-  sl_zigbee_af_service_discovery_println("%pWaiting %d sec for discovery to complete",
+  sl_zigbee_af_service_discovery_println("%sWaiting %d sec for discovery to complete",
                                          PREFIX,
                                          SL_ZIGBEE_AF_DISCOVERY_TIMEOUT_QS >> 2);
   sl_zigbee_af_event_set_delay_qs(sli_zigbee_af_service_discovery_events[state->stateIndex],
@@ -372,7 +372,7 @@ static void serviceDiscoveryComplete(sli_zigbee_service_discovery_state_t *state
 
   (void) sl_zigbee_af_push_network_index(state->networkIndex);
   state->active = false;
-  sl_zigbee_af_service_discovery_println("%pcomplete.\n", PREFIX);
+  sl_zigbee_af_service_discovery_println("%scomplete.\n", PREFIX);
   sl_zigbee_af_event_set_inactive(sli_zigbee_af_service_discovery_events[state->stateIndex]);
   // Since there can be multiple states active on the same network,
   // sl_zigbee_af_remove_from_current_app_tasks should be called only when all the states
@@ -434,7 +434,7 @@ static bool processMatchDescriptorResponse(sli_zigbee_service_discovery_state_t 
   uint8_t listLength;
 
   if (length < MINIMUM_MATCH_DESCRIPTOR_SUCCESS_LENGTH) {
-    sl_zigbee_af_service_discovery_println("%pMessage too short", PREFIX);
+    sl_zigbee_af_service_discovery_println("%sMessage too short", PREFIX);
     return true;
   }
 
@@ -449,12 +449,12 @@ static bool processMatchDescriptorResponse(sli_zigbee_service_discovery_state_t 
   listLength = message[4];
 
   if (listLength != length) {
-    sl_zigbee_af_service_discovery_println("%pMessage too short for num. endpoints",
+    sl_zigbee_af_service_discovery_println("%sMessage too short for num. endpoints",
                                            PREFIX);
     return true;
   }
 
-  sl_zigbee_af_service_discovery_println("%pMatch%p found from 0x%2x.",
+  sl_zigbee_af_service_discovery_println("%sMatch%s found from 0x%04X.",
                                          PREFIX,
                                          (listLength > 0u
                                           ? ""
@@ -509,7 +509,7 @@ static bool processSimpleDescriptorResponse(sli_zigbee_service_discovery_state_t
                                         + 1u + (clusterList.inClusterCount * 2u)];
 
   if ((length - index - 1u) % 2u != 0u) {  // subtract 1 for the output cluster count.
-    sl_zigbee_af_service_discovery_println("Error: %p bad simple descriptor length.", PREFIX);
+    sl_zigbee_af_service_discovery_println("Error: %s bad simple descriptor length.", PREFIX);
     // Return true because we still tried to process the message.
     return true;
   }
@@ -556,7 +556,7 @@ static bool processAddressResponse(sli_zigbee_service_discovery_state_t *state,
   sl_802154_long_addr_t eui64LittleEndian;
 
   if (length < MINIMUM_ADDRESS_REQEUST_SUCCESS) {
-    sl_zigbee_af_service_discovery_println("%pMessage too short", PREFIX);
+    sl_zigbee_af_service_discovery_println("%sMessage too short", PREFIX);
     return true;
   }
   memmove(eui64LittleEndian, message + SL_ZIGBEE_AF_ZDO_RESPONSE_OVERHEAD, EUI64_SIZE);
@@ -581,7 +581,7 @@ static bool processActiveEndpointResponse(sli_zigbee_service_discovery_state_t* 
   sl_zigbee_af_service_discovery_result_t result;
   sl_zigbee_af_endpoint_list_t listStruct;
   if (length < MINIMUM_ACTIVE_ENDPOINT_RESPONSE) {
-    sl_zigbee_af_service_discovery_println("%pMessage too short", PREFIX);
+    sl_zigbee_af_service_discovery_println("%sMessage too short", PREFIX);
     return true;
   }
   result.matchAddress = (message[ACTIVE_ENDPOINT_RESPONSE_NODE_ID_OFFSET]
@@ -592,13 +592,13 @@ static bool processActiveEndpointResponse(sli_zigbee_service_discovery_state_t* 
   uint8_t expectedLength = SL_ZIGBEE_AF_ZDO_RESPONSE_OVERHEAD + 1u + 2u + count;
 
   if (expectedLength != length) {
-    sl_zigbee_af_service_discovery_println("Error: %p invalid length (%d != %d) for Active Endpoint response",
+    sl_zigbee_af_service_discovery_println("Error: %s invalid length (%d != %d) for Active Endpoint response",
                                            PREFIX,
                                            expectedLength,
                                            length);
     return true;
   }
-  sl_zigbee_af_service_discovery_println("%pgot active EP response", PREFIX);
+  sl_zigbee_af_service_discovery_println("%sgot active EP response", PREFIX);
   result.status = (isUnicastQuery(state)
                    ? SL_ZIGBEE_AF_UNICAST_SERVICE_DISCOVERY_COMPLETE_WITH_RESPONSE
                    : SL_ZIGBEE_AF_BROADCAST_SERVICE_DISCOVERY_RESPONSE_RECEIVED);

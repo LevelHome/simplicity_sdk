@@ -59,7 +59,7 @@ typedef uint16_t zpal_soft_reset_info_t;
 
 
 /**
- * @brief Manufacturer ID used by zpal_reboot.
+ * @brief Manufacturer ID used by zpal_reboot_with_info.
  */
 typedef uint16_t zpal_soft_reset_mfid_t;
 
@@ -67,15 +67,10 @@ static const zpal_soft_reset_info_t ZPAL_RESET_REQUESTED_BY_SAPI     = 0x0000;
 static const zpal_soft_reset_info_t ZPAL_RESET_UNHANDLED_RADIO_EVENT = 0x0001;
 static const zpal_soft_reset_info_t ZPAL_RESET_RADIO_ASSERT          = 0x0002;
 static const zpal_soft_reset_info_t ZPAL_RESET_ASSERT_PTR            = 0x0003;
+static const zpal_soft_reset_info_t ZPAL_RESET_EVENT_FLUSH_MEMORY    = 0x0004;
 static const zpal_soft_reset_info_t ZPAL_RESET_INFO_DEFAULT          = 0xFFFF;
 
 /**
- * @brief Perform a system reboot.
- */
-void zpal_reboot(void);
-
-/**
- * @deprecated
  * @brief Perform a system reboot and provide information about the context.
  *
  * @param[in] manufacturer_id manufacturer ID identifier.
@@ -218,6 +213,15 @@ void zpal_psa_set_location_persistent_key(const void *attributes);
  * @param[in] attributes of the key
  */
 void zpal_psa_set_location_volatile_key(const void *attributes);
+
+/**
+ * @brief Follows the same behavior as printf, allows
+ * vendors to use different backends for printing (UART, SWO, RTT, etc.)
+ * @param[in] format of the string to print, 
+ * follows the same format as the standard printf
+ */
+
+void zpal_printf(char *format, ...);
 
 /**
  * @} //zpal-misc

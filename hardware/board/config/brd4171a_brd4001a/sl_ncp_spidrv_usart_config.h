@@ -1,4 +1,4 @@
-/***************************************************************************//**
+/*******************************************************************************
  * @file
  * @brief OpenThread NCP spidrv usart configuration file.
  *******************************************************************************
@@ -62,7 +62,7 @@
 // <<< sl:start pin_tool >>>
 // <gpio> SL_NCP_SPIDRV_USART_HOST_INT
 // $[GPIO_SL_NCP_SPIDRV_USART_HOST_INT]
-#define SL_NCP_SPIDRV_USART_HOST_INT_PORT        gpioPortC
+#define SL_NCP_SPIDRV_USART_HOST_INT_PORT        SL_GPIO_PORT_C
 #define SL_NCP_SPIDRV_USART_HOST_INT_PIN         2
 
 // [GPIO_SL_NCP_SPIDRV_USART_HOST_INT]$
@@ -73,19 +73,19 @@
 #define SL_NCP_SPIDRV_USART_PERIPHERAL_NO        2
 
 // USART2 TX on PD00
-#define SL_NCP_SPIDRV_USART_TX_PORT              gpioPortD
+#define SL_NCP_SPIDRV_USART_TX_PORT              SL_GPIO_PORT_D
 #define SL_NCP_SPIDRV_USART_TX_PIN               0
 
 // USART2 RX on PD01
-#define SL_NCP_SPIDRV_USART_RX_PORT              gpioPortD
+#define SL_NCP_SPIDRV_USART_RX_PORT              SL_GPIO_PORT_D
 #define SL_NCP_SPIDRV_USART_RX_PIN               1
 
 // USART2 CLK on PD02
-#define SL_NCP_SPIDRV_USART_CLK_PORT             gpioPortD
+#define SL_NCP_SPIDRV_USART_CLK_PORT             SL_GPIO_PORT_D
 #define SL_NCP_SPIDRV_USART_CLK_PIN              2
 
 // USART2 CS on PD04
-#define SL_NCP_SPIDRV_USART_CS_PORT              gpioPortD
+#define SL_NCP_SPIDRV_USART_CS_PORT              SL_GPIO_PORT_D
 #define SL_NCP_SPIDRV_USART_CS_PIN               4
 
 // [USART_SL_NCP_SPIDRV_USART]$

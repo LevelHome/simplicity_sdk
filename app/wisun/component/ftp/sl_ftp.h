@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief File Transfer Portocol header file
+ * @file sl_ftp.h
+ * @brief File Transfer Protocol
  *******************************************************************************
  * # License
  * <b>Copyright 2023 Silicon Laboratories Inc. www.silabs.com</b>
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __SL_FTP_H__
-#define __SL_FTP_H__
+#ifndef SL_FTP_H
+#define SL_FTP_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,11 +38,11 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
 #include <stdio.h>
+
 #include "sl_common.h"
 #include "cmsis_os2.h"
 #include "sl_ftp_config.h"
@@ -55,8 +55,14 @@ extern "C" {
 #define __STATIC_INLINE static inline
 #endif
 
+/**************************************************************************//**
+ * @addtogroup SL_FTP_PORTABLE_INTERFACE Portable interface
+ * @ingroup SL_TFTP_CLNT
+ * @{
+ *****************************************************************************/
+
 /// FTP debug macro function
-#if defined(SL_FTP_DEBUG)
+#if SL_FTP_DEBUG
 #define sl_ftp_debug(format, ...)  \
   do {                             \
     printf("[FTP_DEBUG] ");        \
@@ -174,19 +180,16 @@ int32_t sl_ftp_tcp_socket_send(int32_t sockid, const void *buff, uint32_t len);
  ******************************************************************************/
 int32_t sl_ftp_tcp_socket_recv(int32_t sockid, void *buff, uint32_t len);
 
-#endif
+#endif // SL_FTP_ENABLE_FTP_PROTOCOL
 
 #if SL_FTP_ENABLE_TFTP_PROTOCOL
 
 /// Define SL_TFTP_DEBUG
-#if defined(SL_FTP_DEBUG)
+#if SL_FTP_DEBUG
 #ifndef SL_TFTP_DEBUG
-#define SL_TFTP_DEBUG
+#define SL_TFTP_DEBUG (SL_FTP_DEBUG)
 #endif
 #endif
-
-/// Define tftp debug print
-#define sl_tftp_debug     sl_ftp_debug
 
 /***************************************************************************//**
  * @brief TFTP Dump buffer
@@ -287,9 +290,11 @@ void * sl_tftp_udp_get_addr(const char *host,
  *****************************************************************************/
 void sl_tftp_udp_free_addr(void *addr);
 
-#endif
+#endif // SL_FTP_ENABLE_TFTP_PROTOCOL
 
 #ifdef __cplusplus
 }
 #endif
-#endif
+/** @} (end SL_FTP_PORTABLE_INTERFACE) */
+
+#endif // SL_FTP_H

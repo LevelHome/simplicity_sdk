@@ -24,7 +24,6 @@
 
 #include <string.h>
 #include <ev_man.h>
-#include <board_init.h>
 
 #include <AppTimer.h>
 #include <SwTimer.h>
@@ -175,6 +174,7 @@ ApplicationInit(__attribute__((unused)) zpal_reset_reason_t eResetReason)
 static void
 ApplicationTask(SApplicationHandles* pAppHandles)
 {
+  uint32_t unhandledEvents = 0;
   ZAF_Init(xTaskGetCurrentTaskHandle(), pAppHandles);
 
 #ifdef DEBUGPRINT
@@ -186,11 +186,13 @@ ApplicationTask(SApplicationHandles* pAppHandles)
 
   // Wait for and process events
   DPRINT("PTI Enabled app Event processor Started\r\n");
-  for (;;)
-  {
-    if (!zaf_event_distributor_distribute())
-    {
+  for(;;) {
+    unhandledEvents = zaf_event_distributor_distribute();
+    if (0 != unhandledEvents) {
+      DPRINTF("Unhandled Events: 0x%08lx\n", unhandledEvents);
+#ifdef UNIT_TEST
       return;
+#endif
     }
   }
 }

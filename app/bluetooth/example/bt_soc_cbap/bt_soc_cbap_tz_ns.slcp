@@ -30,10 +30,8 @@ component:
   - id: in_place_ota_dfu
   - id: bootloader_interface
   - id: rail_util_pti
-  - id: mpu
   - id: app_log
   - id: app_assert
-  - id: iostream_recommended_stream
   - id: simple_led
     instance:
       - led0
@@ -44,6 +42,7 @@ component:
   - id: sl_system
   - id: clock_manager
   - id: device_init
+  - id: sl_common
 
 source:
   - path: main.c
@@ -76,15 +75,21 @@ import:
 
 configuration:
   - name: SL_STACK_SIZE
+    value: "4000"
+    condition: [device_sdid_205]  # xG22
+  - name: SL_STACK_SIZE
     value: "6200"
+    unless: [device_sdid_205]  # not xG22
   - name: SL_PSA_KEY_USER_SLOT_COUNT
     value: "1"
     condition:
       - psa_crypto
   - name: SL_BOARD_ENABLE_VCOM
     value: "1"
-  - name: SL_BT_CBAP_LOG
-    value: "1"
+  - name: SL_IOSTREAM_USART_VCOM_RESTRICT_ENERGY_MODE_TO_ALLOW_RECEPTION
+    value: "0"
+  - name: SL_IOSTREAM_EUSART_VCOM_RESTRICT_ENERGY_MODE_TO_ALLOW_RECEPTION
+    value: "0"
   - name: APP_LOG_LEVEL_FILTER_THRESHOLD
     value: APP_LOG_LEVEL_INFO
 
@@ -101,14 +106,30 @@ template_contribution:
     unless: [device_sdid_200, device_sdid_205]
 
   - name: memory_flash_size
+    value: 0x54000  # 336k
+    condition:
+      - device_sdid_205  # xG22
+  - name: memory_flash_size
     value: 0x64000  # 400k
+    unless:
+      - device_sdid_205  # xG22
 
   - name: memory_ram_start
+    value: 0x20002000
+    condition: [device_sdid_205]  # xG22
+  - name: memory_ram_start
     value: 0x20003000
+    unless: [device_sdid_205]  # not xG22
+
+  - name: memory_ram_size
+    value: 0x6000  # 24k
+    condition: [device_sdid_205]  # xG22
   - name: memory_ram_size
     value: 0x8000  # 32k
+    unless: [device_sdid_205]  # not xG22
 
 requires:
+  - name: device_supports_bluetooth
   - name: armv8m.main  # Armv8-M Supports TrustZone
 
 post_build:
@@ -119,8 +140,8 @@ conflicts:
 
 tag:
   - hardware:rf:band:2400
-  - hardware:device:flash:576
-  - hardware:device:ram:64
+  - hardware:device:flash:512
+  - hardware:device:ram:32
   - hardware:component:led:1+
   - companion:secure_app  # Needs a companion app and cannot be built alone
 

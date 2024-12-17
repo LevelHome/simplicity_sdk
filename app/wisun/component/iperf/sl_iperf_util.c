@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_iperf_util.c
+ * @brief iPerf utility functions
  *******************************************************************************
  * # License
  * <b>Copyright 2022 Silicon Laboratories Inc. www.silabs.com</b>
@@ -31,7 +31,6 @@
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <stdio.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -41,7 +40,6 @@
 #include "sl_iperf_util.h"
 #include "sl_iperf_config.h"
 #include "sl_iperf_log.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -136,14 +134,6 @@ typedef struct stat_update_params {
 // -----------------------------------------------------------------------------
 //                          Static Function Declarations
 // -----------------------------------------------------------------------------
-
-/**************************************************************************//**
- * @brief Convert bool int to json bool
- * @details helper function
- * @param[in] val Value
- * @return const char* String json value
- *****************************************************************************/
-__STATIC_INLINE const char * _bool_to_json(const bool val);
 
 /**************************************************************************//**
  * @brief Calculate json indent
@@ -312,8 +302,7 @@ int16_t sl_iperf_i16_change_byte_order(const int16_t i16val)
 }
 
 #if SL_IPERF_VERBOSE_MODE
-
-void sl_iper_test_dump_buff(sl_iperf_test_t * const test, const size_t size)
+void sl_iperf_test_dump_buff(sl_iperf_test_t * const test, const size_t size)
 {
   uint8_t *buff    = NULL;
   size_t buff_size = 0U;
@@ -403,7 +392,7 @@ void sl_iperf_print_test_clnt_header_json(sl_iperf_test_t * const test, const sl
   sl_iperf_log_print(test->log, "%*s}\n", __indent(1U));
   sl_iperf_log_print(test->log, "}\n");
 }
-#endif
+#endif // SL_IPERF_VERBOSE_MODE
 
 const char * sl_iperf_opt_bw_format_to_str(const sl_iperf_opt_bw_format format)
 {
@@ -540,7 +529,7 @@ void sl_iperf_test_update_status(sl_iperf_test_t * const test)
     params.ts_ms_cur = sl_iperf_get_timestamp_ms();
   }
 
-  params.ts_ms_delta = (sl_iperf_ts_ms_t) (params.ts_ms_cur - ts_ms_prev);
+  params.ts_ms_delta = params.ts_ms_cur - ts_ms_prev;
   // Prevent division by zero
   if (!params.ts_ms_delta) {
     return;
@@ -615,7 +604,6 @@ void sl_iperf_test_calculate_average_bandwidth(sl_iperf_test_t * const test)
   params.start_time.sec  = 0UL;
   params.start_time.usec = 0UL;
 
-  // sl_iperf_test_log(test, "  ---\n");
   if (sl_iperf_test_is_udp_srv(test)) {
     _print_udp_srv_status(test, &params);
   } else if (sl_iperf_test_is_udp_clnt(test)) {
@@ -646,14 +634,71 @@ void sl_iperf_test_calculate_average_bandwidth(sl_iperf_test_t * const test)
   }
 }
 
+bool sl_iperf_test_check_time(const sl_iperf_test_t * const test)
+{
+#if (0U < SL_IPERF_MAX_TEST_TIMEOUT_MS)
+  return (bool)((sl_iperf_get_timestamp_ms() - test->statistic.ts_start_ms)
+                < (test->opt.duration_ms + SL_IPERF_MAX_TEST_TIMEOUT_MS));
+#else
+  return true;
+#endif
+}
+
+bool sl_iperf_opt_bw_format_from_str(const char *str, sl_iperf_opt_bw_format * const bw_format)
+{
+  if (!strncmp(str, sl_iperf_opt_bw_format_to_str(SL_IPERF_OPT_BW_FORMAT_BITS_PER_SEC),
+               SL_IPERF_UTIL_MAX_STRING_LENGTH)) {
+    *bw_format = SL_IPERF_OPT_BW_FORMAT_BITS_PER_SEC;
+  } else if (!strncmp(str, sl_iperf_opt_bw_format_to_str(SL_IPERF_OPT_BW_FORMAT_KBITS_PER_SEC),
+                      SL_IPERF_UTIL_MAX_STRING_LENGTH)) {
+    *bw_format = SL_IPERF_OPT_BW_FORMAT_KBITS_PER_SEC;
+  } else if (!strncmp(str, sl_iperf_opt_bw_format_to_str(SL_IPERF_OPT_BW_FORMAT_MBITS_PER_SEC),
+                      SL_IPERF_UTIL_MAX_STRING_LENGTH)) {
+    *bw_format = SL_IPERF_OPT_BW_FORMAT_MBITS_PER_SEC;
+  } else if (!strncmp(str, sl_iperf_opt_bw_format_to_str(SL_IPERF_OPT_BW_FORMAT_GBITS_PER_SEC),
+                      SL_IPERF_UTIL_MAX_STRING_LENGTH)) {
+    *bw_format = SL_IPERF_OPT_BW_FORMAT_GBITS_PER_SEC;
+  } else if (!strncmp(str, sl_iperf_opt_bw_format_to_str(SL_IPERF_OPT_BW_FORMAT_BYTES_PER_SEC),
+                      SL_IPERF_UTIL_MAX_STRING_LENGTH)) {
+    *bw_format = SL_IPERF_OPT_BW_FORMAT_BYTES_PER_SEC;
+  } else if (!strncmp(str, sl_iperf_opt_bw_format_to_str(SL_IPERF_OPT_BW_FORMAT_KBYTES_PER_SEC),
+                      SL_IPERF_UTIL_MAX_STRING_LENGTH)) {
+    *bw_format = SL_IPERF_OPT_BW_FORMAT_KBYTES_PER_SEC;
+  } else if (!strncmp(str, sl_iperf_opt_bw_format_to_str(SL_IPERF_OPT_BW_FORMAT_MBYTES_PER_SEC),
+                      SL_IPERF_UTIL_MAX_STRING_LENGTH)) {
+    *bw_format = SL_IPERF_OPT_BW_FORMAT_MBYTES_PER_SEC;
+  } else if (!strncmp(str, sl_iperf_opt_bw_format_to_str(SL_IPERF_OPT_BW_FORMAT_GBYTES_PER_SEC),
+                      SL_IPERF_UTIL_MAX_STRING_LENGTH)) {
+    *bw_format = SL_IPERF_OPT_BW_FORMAT_GBYTES_PER_SEC;
+  } else {
+    return false;
+  }
+  return true;
+}
+
+bool sl_iperf_opt_protocol_from_str(const char *str, sl_iperf_protocol_t * const dest_protocol)
+{
+  if (!strncmp(str, sl_iperf_opt_protocol_to_str(SL_IPERF_IPROTOV6_UDP),
+               SL_IPERF_UTIL_MAX_STRING_LENGTH)) {
+    *dest_protocol = SL_IPERF_IPROTOV6_UDP;
+  } else if (!strncmp(str, sl_iperf_opt_protocol_to_str(SL_IPERF_IPROTOV6_TCP),
+                      SL_IPERF_UTIL_MAX_STRING_LENGTH)) {
+    *dest_protocol = SL_IPERF_IPROTOV6_TCP;
+  } else if (!strncmp(str, sl_iperf_opt_protocol_to_str(SL_IPERF_IPROTOV4_UDP),
+                      SL_IPERF_UTIL_MAX_STRING_LENGTH)) {
+    *dest_protocol = SL_IPERF_IPROTOV4_UDP;
+  } else if (!strncmp(str, sl_iperf_opt_protocol_to_str(SL_IPERF_IPROTOV4_TCP),
+                      SL_IPERF_UTIL_MAX_STRING_LENGTH)) {
+    *dest_protocol = SL_IPERF_IPROTOV4_TCP;
+  } else {
+    return false;
+  }
+  return true;
+}
+
 // -----------------------------------------------------------------------------
 //                          Static Function Definitions
 // -----------------------------------------------------------------------------
-
-__STATIC_INLINE const char *_bool_to_json(const bool val)
-{
-  return val ? "true" : "false";
-}
 
 static void _data_converter(const uint32_t amount, const uint32_t divider, ifloat_t * const dst)
 {
@@ -735,68 +780,6 @@ static void _calculate_formatted_bw(const sl_iperf_opt_bw_format bw_format,
 __STATIC_INLINE uint8_t _calc_ind(const uint8_t val)
 {
   return (uint8_t)(val * SL_IPERF_LOG_JSON_INDENT);
-}
-
-bool sl_iperf_test_check_time(const sl_iperf_test_t * const test)
-{
-#if (0U < SL_IPERF_MAX_TEST_TIMEOUT_MS)
-  return (bool)((sl_iperf_get_timestamp_ms() - test->statistic.ts_start_ms)
-                < (test->opt.duration_ms + SL_IPERF_MAX_TEST_TIMEOUT_MS));
-#else
-  return true;
-#endif
-}
-
-bool sl_iperf_opt_bw_format_from_str(const char *str, sl_iperf_opt_bw_format * const bw_format)
-{
-  if (!strncmp(str, sl_iperf_opt_bw_format_to_str(SL_IPERF_OPT_BW_FORMAT_BITS_PER_SEC),
-               SL_IPERF_UTIL_MAX_STRING_LENGTH)) {
-    *bw_format = SL_IPERF_OPT_BW_FORMAT_BITS_PER_SEC;
-  } else if (!strncmp(str, sl_iperf_opt_bw_format_to_str(SL_IPERF_OPT_BW_FORMAT_KBITS_PER_SEC),
-                      SL_IPERF_UTIL_MAX_STRING_LENGTH)) {
-    *bw_format = SL_IPERF_OPT_BW_FORMAT_KBITS_PER_SEC;
-  } else if (!strncmp(str, sl_iperf_opt_bw_format_to_str(SL_IPERF_OPT_BW_FORMAT_MBITS_PER_SEC),
-                      SL_IPERF_UTIL_MAX_STRING_LENGTH)) {
-    *bw_format = SL_IPERF_OPT_BW_FORMAT_MBITS_PER_SEC;
-  } else if (!strncmp(str, sl_iperf_opt_bw_format_to_str(SL_IPERF_OPT_BW_FORMAT_GBITS_PER_SEC),
-                      SL_IPERF_UTIL_MAX_STRING_LENGTH)) {
-    *bw_format = SL_IPERF_OPT_BW_FORMAT_GBITS_PER_SEC;
-  } else if (!strncmp(str, sl_iperf_opt_bw_format_to_str(SL_IPERF_OPT_BW_FORMAT_BYTES_PER_SEC),
-                      SL_IPERF_UTIL_MAX_STRING_LENGTH)) {
-    *bw_format = SL_IPERF_OPT_BW_FORMAT_BYTES_PER_SEC;
-  } else if (!strncmp(str, sl_iperf_opt_bw_format_to_str(SL_IPERF_OPT_BW_FORMAT_KBYTES_PER_SEC),
-                      SL_IPERF_UTIL_MAX_STRING_LENGTH)) {
-    *bw_format = SL_IPERF_OPT_BW_FORMAT_KBYTES_PER_SEC;
-  } else if (!strncmp(str, sl_iperf_opt_bw_format_to_str(SL_IPERF_OPT_BW_FORMAT_MBYTES_PER_SEC),
-                      SL_IPERF_UTIL_MAX_STRING_LENGTH)) {
-    *bw_format = SL_IPERF_OPT_BW_FORMAT_MBYTES_PER_SEC;
-  } else if (!strncmp(str, sl_iperf_opt_bw_format_to_str(SL_IPERF_OPT_BW_FORMAT_GBYTES_PER_SEC),
-                      SL_IPERF_UTIL_MAX_STRING_LENGTH)) {
-    *bw_format = SL_IPERF_OPT_BW_FORMAT_GBYTES_PER_SEC;
-  } else {
-    return false;
-  }
-  return true;
-}
-
-bool sl_iperf_opt_protocol_from_str(const char *str, sl_iperf_protocol_t * const dest_protocol)
-{
-  if (!strncmp(str, sl_iperf_opt_protocol_to_str(SL_IPERF_IPROTOV6_UDP),
-               SL_IPERF_UTIL_MAX_STRING_LENGTH)) {
-    *dest_protocol = SL_IPERF_IPROTOV6_UDP;
-  } else if (!strncmp(str, sl_iperf_opt_protocol_to_str(SL_IPERF_IPROTOV6_TCP),
-                      SL_IPERF_UTIL_MAX_STRING_LENGTH)) {
-    *dest_protocol = SL_IPERF_IPROTOV6_TCP;
-  } else if (!strncmp(str, sl_iperf_opt_protocol_to_str(SL_IPERF_IPROTOV4_UDP),
-                      SL_IPERF_UTIL_MAX_STRING_LENGTH)) {
-    *dest_protocol = SL_IPERF_IPROTOV4_UDP;
-  } else if (!strncmp(str, sl_iperf_opt_protocol_to_str(SL_IPERF_IPROTOV4_TCP),
-                      SL_IPERF_UTIL_MAX_STRING_LENGTH)) {
-    *dest_protocol = SL_IPERF_IPROTOV4_TCP;
-  } else {
-    return false;
-  }
-  return true;
 }
 
 static void _print_udp_srv_status(sl_iperf_test_t * const test,

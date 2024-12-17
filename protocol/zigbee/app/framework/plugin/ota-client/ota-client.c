@@ -473,7 +473,7 @@ static bool setTimer(uint32_t timeMs)
   // discovery will generate a callback when it is complete.  No need for
   // keeping track of time here as well.
   if (timer != 0) {
-    //    otaPrintln("Setting timer: 0x%4X ms", timer);
+    //    otaPrintln("Setting timer: 0x%08X ms", timer);
     sl_zigbee_af_event_poll_control_t pollControl = SL_ZIGBEE_AF_SHORT_POLL;
     sl_zigbee_af_event_sleep_control_t sleepControl = SL_ZIGBEE_AF_OK_TO_SLEEP;
     if (currentBootloadState == BOOTLOAD_STATE_VERIFY_IMAGE) {
@@ -727,14 +727,14 @@ void sli_zigbee_af_ota_client_stop(void)
 
 void sli_zigbee_af_ota_client_print_state(void)
 {
-  otaPrintln(" State:   %p",
+  otaPrintln(" State:   %s",
              bootloadStateNames[currentBootloadState]);
-  otaPrintln(" Waiting for response: %p",
+  otaPrintln(" Waiting for response: %s",
              (waitingForResponse ? "yes" : "no"));
   if (waitingForResponse) {
     otaPrintln(" Next Event Timer: %d ms", nextEventTimer);
   }
-  otaPrintln(" Current Download Offset: 0x%4X (%d%%)",
+  otaPrintln(" Current Download Offset: 0x%08X (%d%%)",
              getCurrentOffset(),
              sli_zigbee_af_calculate_percentage(getCurrentOffset(),
                                                 totalImageSize));
@@ -795,13 +795,13 @@ void sli_zigbee_af_ota_client_service_discovery_callback(const sl_zigbee_af_serv
       }
 #endif // IGNORE_LOOPBACK_SERVER
       if (ignoreNonTrustCenter && result->matchAddress != 0x0000) {
-        otaPrintln("Ignoring 0x%2X OTA server in search of TC",
+        otaPrintln("Ignoring 0x%04X OTA server in search of TC",
                    result->matchAddress);
         return;
       }
       serverEndpoint = epList->list[0];
       serverNodeId = result->matchAddress;
-      otaPrintln("Setting OTA Server to 0x%2X", serverNodeId);
+      otaPrintln("Setting OTA Server to 0x%04X", serverNodeId);
     }
   } else if (result->status
              == SL_ZIGBEE_AF_UNICAST_SERVICE_DISCOVERY_COMPLETE_WITH_RESPONSE) {
@@ -910,7 +910,7 @@ static BootloadState determineDownloadFileStatus(void)
 
   if (status == SL_ZIGBEE_AF_OTA_STORAGE_PARTIAL_FILE_FOUND) {
     otaPrintFlush();
-    otaPrintln("Partial file download found, continuing from offset 0x%4X",
+    otaPrintln("Partial file download found, continuing from offset 0x%08X",
                currentOffset);
     otaPrintFlush();
     updateCurrentOffset(currentOffset);
@@ -919,16 +919,16 @@ static BootloadState determineDownloadFileStatus(void)
     return BOOTLOAD_STATE_DOWNLOAD;
   } else if (status == SL_ZIGBEE_AF_OTA_STORAGE_SUCCESS) {
     sl_zigbee_af_ota_image_id_t currentVersionInfo;
-    otaPrintln("Found fully downloaded file in storage (version 0x%4X).",
+    otaPrintln("Found fully downloaded file in storage (version 0x%08X).",
                currentDownloadFile.firmwareVersion);
     sl_zigbee_af_ota_client_version_info_cb(&currentVersionInfo, NULL);
     if (currentVersionInfo.firmwareVersion != currentDownloadFile.firmwareVersion) {
-      otaPrintln("Found file in storage with different version (0x%4X) than current version (0x%4X)",
+      otaPrintln("Found file in storage with different version (0x%08X) than current version (0x%08X)",
                  currentDownloadFile.firmwareVersion,
                  currentVersionInfo.firmwareVersion);
       return BOOTLOAD_STATE_VERIFY_IMAGE;
     } else {
-      otaPrintln("File in storage is same as current running version (0x%4X)",
+      otaPrintln("File in storage is same as current running version (0x%08X)",
                  currentVersionInfo.firmwareVersion);
     }
   } else {
@@ -981,7 +981,7 @@ static void recordUpgradeStatus(BootloadState state)
   uint8_t upgradeStatus = bootloadStateToExternalState[state];
   if (currentBootloadState != state) {
     sl_zigbee_af_core_flush();
-    otaPrintln("Bootload state: %p",
+    otaPrintln("Bootload state: %s",
                bootloadStateNames[state]);
     sl_zigbee_af_core_flush();
   }
@@ -1004,12 +1004,12 @@ static sl_zigbee_af_status_t commandParse(bool defaultResponse,
   sl_status_t sendStatus = SL_STATUS_FAIL;
 
   if (commandId > EM_AF_OTA_MAX_COMMAND_ID) {
-    otaPrintln("Bad OTA command: 0x%X", commandId);
+    otaPrintln("Bad OTA command: 0x%02X", commandId);
     return SL_ZIGBEE_ZCL_STATUS_INVALID_FIELD;
   }
 
   if (!defaultResponse && message->bufLen < sli_zigbee_af_ota_min_message_lengths[commandId]) {
-    otaPrintln("OTA command 0x%X too short (len %d < min %d)",
+    otaPrintln("OTA command 0x%02X too short (len %d < min %d)",
                commandId,
                message->bufLen,
                sli_zigbee_af_ota_min_message_lengths[commandId]);
@@ -1019,7 +1019,7 @@ static sl_zigbee_af_status_t commandParse(bool defaultResponse,
   if (message->source != serverNodeId
       && currentBootloadState >= BOOTLOAD_STATE_DISCOVER_SERVER
       && commandId != ZCL_IMAGE_NOTIFY_COMMAND_ID) {
-    otaPrintln("OTA command from unrecognized server 0x%2X.  My OTA server: 0x%2X",
+    otaPrintln("OTA command from unrecognized server 0x%04X.  My OTA server: 0x%04X",
                message->source,
                serverNodeId);
     return SL_ZIGBEE_ZCL_STATUS_NOT_AUTHORIZED;
@@ -1050,20 +1050,20 @@ static sl_zigbee_af_status_t commandParse(bool defaultResponse,
             return SL_ZIGBEE_ZCL_STATUS_NOT_AUTHORIZED;
           }
           #endif // IGNORE_LOOPBACK_SERVER
-          otaPrintln("Got unexpected %p.  Start discovery.",
+          otaPrintln("Got unexpected %s.  Start discovery.",
                      "Image Notify");
           startServerDiscovery();
           if (!broadcast) {
             sendStatus = sl_zigbee_af_send_default_response(message, SL_ZIGBEE_ZCL_STATUS_SUCCESS);
             if (SL_STATUS_OK != sendStatus) {
-              otaPrintln("OTA: failed to send %s response: 0x%x",
+              otaPrintln("OTA: failed to send %s response: 0x%02X",
                          "default",
                          sendStatus);
             }
           }
           return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
         } else {
-          otaPrintln("Got unexpected %p.  Ignored.",
+          otaPrintln("Got unexpected %s.  Ignored.",
                      "Image notify");
           return SL_ZIGBEE_ZCL_STATUS_FAILURE;
         }
@@ -1071,11 +1071,11 @@ static sl_zigbee_af_status_t commandParse(bool defaultResponse,
       if (!broadcast) {
         sendStatus = sl_zigbee_af_send_default_response(message, SL_ZIGBEE_ZCL_STATUS_SUCCESS);
         if (SL_STATUS_OK != sendStatus) {
-          otaPrintln("OTA: failed to send %s response: 0x%x",
+          otaPrintln("OTA: failed to send %s response: 0x%02X",
                      "default",
                      sendStatus);
         } else if (!(message->buffer[0] & ZCL_DISABLE_DEFAULT_RESPONSE_MASK)) {
-          otaPrintln("OTA: Default response for Image notify, status 0x%X",
+          otaPrintln("OTA: Default response for Image notify, status 0x%02X",
                      sendStatus);
         } else {
           // Do nothing
@@ -1086,7 +1086,7 @@ static sl_zigbee_af_status_t commandParse(bool defaultResponse,
     case ZCL_QUERY_NEXT_IMAGE_RESPONSE_COMMAND_ID:
     case ZCL_QUERY_NEXT_IMAGE_REQUEST_COMMAND_ID: {
       if (currentBootloadState != BOOTLOAD_STATE_QUERY_NEXT_IMAGE) {
-        otaPrintln("Got unexpected %p.  Ignored.",
+        otaPrintln("Got unexpected %s.  Ignored.",
                    "Query next image response");
         return SL_ZIGBEE_ZCL_STATUS_FAILURE;
       }
@@ -1098,7 +1098,7 @@ static sl_zigbee_af_status_t commandParse(bool defaultResponse,
     case ZCL_IMAGE_BLOCK_REQUEST_COMMAND_ID:
     case ZCL_IMAGE_BLOCK_RESPONSE_COMMAND_ID: {
       if (currentBootloadState != BOOTLOAD_STATE_DOWNLOAD) {
-        otaPrintln("Got unexpected %p.  Ignored.",
+        otaPrintln("Got unexpected %s.  Ignored.",
                    "Image block response");
         return SL_ZIGBEE_ZCL_STATUS_FAILURE;
       }
@@ -1110,7 +1110,7 @@ static sl_zigbee_af_status_t commandParse(bool defaultResponse,
     case ZCL_UPGRADE_END_REQUEST_COMMAND_ID: {
       if ((currentBootloadState != BOOTLOAD_STATE_WAITING_FOR_UPGRADE_MESSAGE)
           && (currentBootloadState != BOOTLOAD_STATE_UPGRADE_VIA_OUT_OF_BAND)) {
-        otaPrintln("Got unexpected %p.  Ignored.",
+        otaPrintln("Got unexpected %s.  Ignored.",
                    "Upgrade end response");
         return SL_ZIGBEE_ZCL_STATUS_FAILURE;
       }
@@ -1127,30 +1127,30 @@ static sl_zigbee_af_status_t commandParse(bool defaultResponse,
   return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 }
 
-bool sl_zigbee_af_ota_client_incoming_message_raw_cb(sl_zigbee_af_cluster_command_t* message)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_ota_client_incoming_message_raw_cb(sl_zigbee_af_cluster_command_t* message)
 {
   sl_status_t sendStatus;
   sl_zigbee_af_status_t zclStatus = commandParse(false,   // default response?
                                                  message);
   if (zclStatus) {
     sl_zigbee_af_ota_bootload_cluster_flush();
-    sl_zigbee_af_ota_bootload_cluster_println("%p: failed parsing OTA cmd 0x%x",
+    sl_zigbee_af_ota_bootload_cluster_println("%s: failed parsing OTA cmd 0x%02X",
                                               "Error",
                                               message->commandId);
     if (message->type == SL_ZIGBEE_INCOMING_BROADCAST) {
       // We don't want to respond to invalid broadcast messages with
       // a default response.
-      return true;
+      return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
     }
     sendStatus = sl_zigbee_af_send_default_response(message, zclStatus);
     if (SL_STATUS_OK != sendStatus) {
-      sl_zigbee_af_ota_bootload_cluster_println("OTA: failed to send %s response: 0x%x",
+      sl_zigbee_af_ota_bootload_cluster_println("OTA: failed to send %s response: 0x%02X",
                                                 "default",
                                                 sendStatus);
     }
   }
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
 void sl_zigbee_af_ota_bootload_cluster_client_default_response_cb(uint8_t endpoint,
@@ -1169,7 +1169,7 @@ void sl_zigbee_af_ota_bootload_cluster_client_default_response_cb(uint8_t endpoi
     // response message.
     return;
   }
-  otaPrintln("OTA Default response to command ID 0x%X, status 0x%X",
+  otaPrintln("OTA Default response to command ID 0x%02X, status 0x%02X",
              commandId,
              status);
 
@@ -1194,7 +1194,7 @@ static sl_zigbee_af_status_t imageNotifyParse(bool broadcast,
 
   if (!broadcast) {
     // Spec says to always respond to unicasts regardless of the parameters.
-    otaPrintln("%p unicast, querying",
+    otaPrintln("%s unicast, querying",
                "Image notify command");
     goto sendQuery;
   }
@@ -1205,21 +1205,21 @@ static sl_zigbee_af_status_t imageNotifyParse(bool broadcast,
   // code will NOT send the default response.
 
   if (payloadType > IMAGE_NOTIFY_LAST_VALID_TYPE) {
-    otaPrintln("%p %p payload type 0x%X",
+    otaPrintln("%s %s payload type 0x%02X",
                "Invalid",
                "Image notify command",
                payloadType);
     return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
   }
   if (queryJitter < 1 || queryJitter > 100) {
-    otaPrintln("%p %p: out of range jitter %d",
+    otaPrintln("%s %s: out of range jitter %d",
                "Invalid",
                "Image notify command",
                queryJitter);
     return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
   }
   if (length != imageNotifyPayloadLengths[payloadType]) {
-    otaPrintln("%p %p: payload length doesn't match type 0x%X (%d < %d)",
+    otaPrintln("%s %s: payload length doesn't match type 0x%02X (%d < %d)",
                "Invalid",
                "Image notify command",
                payloadType,
@@ -1234,7 +1234,7 @@ static sl_zigbee_af_status_t imageNotifyParse(bool broadcast,
     manufacturerId = sl_zigbee_af_get_int16u(buffer, index, length);
     index += 2;
     if (manufacturerId != myId.manufacturerId) {
-      otaPrintln("%p %p due to non-matching manufacturer ID",
+      otaPrintln("%s %s due to non-matching manufacturer ID",
                  "Ignoring",
                  "Image notify command");
       return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
@@ -1245,7 +1245,7 @@ static sl_zigbee_af_status_t imageNotifyParse(bool broadcast,
     imageTypeId = sl_zigbee_af_get_int16u(buffer, index, length);
     index += 2;
     if (imageTypeId != myId.imageTypeId) {
-      otaPrintln("%p %p due to non-matching image type ID",
+      otaPrintln("%s %s due to non-matching image type ID",
                  "Ignoring",
                  "Image notify command");
       return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
@@ -1263,7 +1263,7 @@ static sl_zigbee_af_status_t imageNotifyParse(bool broadcast,
       // be done via image notify by a unicast.  The server can force
       // a mass upgrade or downgrade by sending out a different version
       // than what devices have.
-      otaPrintln("%p %p due to matching firmware version",
+      otaPrintln("%s %s due to matching firmware version",
                  "Ignoring",
                  "Image notify command");
       return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
@@ -1277,7 +1277,7 @@ static sl_zigbee_af_status_t imageNotifyParse(bool broadcast,
   if (queryJitter < 100) {
     uint8_t random = (((uint8_t)sl_zigbee_get_pseudo_random_number()) % 100) + 1;
     if (random > queryJitter) {
-      otaPrintln("%p %p, Rx'd Jitter (0x%x), Picked Jitter (0x%x)",
+      otaPrintln("%s %s, Rx'd Jitter (0x%02X), Picked Jitter (0x%02X)",
                  "Ignoring",
                  "Image notify command",
                  queryJitter,
@@ -1297,7 +1297,7 @@ static sl_zigbee_af_status_t imageNotifyParse(bool broadcast,
 static void startDownload(uint32_t newVersion)
 {
   sl_zigbee_af_ota_storage_status_t status;
-  otaPrintln("Starting download, Version 0x%4X",
+  otaPrintln("Starting download, Version 0x%08X",
              newVersion);
   sli_zigbee_af_print_percentage_set_start_and_end(0, totalImageSize);
   updateDownloadFileVersion(newVersion);
@@ -1365,14 +1365,14 @@ static sl_zigbee_af_status_t queryNextImageResponseParse(uint8_t* buffer,
   index++;
 
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    otaPrintln("%p returned 0x%X.  No new image to download.",
+    otaPrintln("%s returned 0x%02X.  No new image to download.",
                "Query next image response",
                status);
     zclStatus = SL_ZIGBEE_ZCL_STATUS_SUCCESS;
     goto queryNextImageResponseDone;
   }
   if (length < QUERY_NEXT_IMAGE_SUCCESS_RESPONSE_MIN_LENGTH) {
-    otaPrintln("%p too short (%d < %d)",
+    otaPrintln("%s too short (%d < %d)",
                "Query next image response",
                length,
                QUERY_NEXT_IMAGE_SUCCESS_RESPONSE_MIN_LENGTH);
@@ -1380,7 +1380,7 @@ static sl_zigbee_af_status_t queryNextImageResponseParse(uint8_t* buffer,
     isError = true;
     goto queryNextImageResponseDone;
   }
-  otaPrintln("%p: New image is available for download.",
+  otaPrintln("%s: New image is available for download.",
              "Query next image response");
 
   index += sli_zigbee_af_ota_parse_image_id_from_message(&imageId,
@@ -1391,20 +1391,20 @@ static sl_zigbee_af_status_t queryNextImageResponseParse(uint8_t* buffer,
   if (imageId.manufacturerId != currentDownloadFile.manufacturerId
       || imageId.imageTypeId != currentDownloadFile.imageTypeId
       || totalImageSize == 0) {
-    otaPrintln("%p is not using my image info.",
+    otaPrintln("%s is not using my image info.",
                "Query next image response");
     isError = true;
     zclStatus = SL_ZIGBEE_ZCL_STATUS_INVALID_FIELD;
     goto queryNextImageResponseDone;
   } else if (totalImageSize > sl_zigbee_af_ota_storage_driver_max_download_size_cb()) {
-    otaPrintln("ERROR: Next Image is too big to store (0x%4X > 0x%4X)",
+    otaPrintln("ERROR: Next Image is too big to store (0x%08X > 0x%08X)",
                totalImageSize,
                sl_zigbee_af_ota_storage_driver_max_download_size_cb());
     isError = true;
     zclStatus = SL_ZIGBEE_ZCL_STATUS_INSUFFICIENT_SPACE;
     goto queryNextImageResponseDone;
   } else if (imageId.firmwareVersion == currentDownloadFile.firmwareVersion) {
-    otaPrintln("%p returned same FileVersion as currently installed.",
+    otaPrintln("%s returned same FileVersion as currently installed.",
                "Query next image response");
     zclStatus = SL_ZIGBEE_ZCL_STATUS_SUCCESS;
     goto queryNextImageResponseDone;
@@ -1519,7 +1519,7 @@ static void sendMessage(uint8_t cmdId, uint8_t upgradeEndStatus, uint32_t timer)
     break;
 
     default:
-      otaPrintln("%p: invalid cmdId 0x%x", "Error", cmdId);
+      otaPrintln("%s: invalid cmdId 0x%02X", "Error", cmdId);
       return;
   } //end switch statement
 
@@ -1530,7 +1530,7 @@ static void sendMessage(uint8_t cmdId, uint8_t upgradeEndStatus, uint32_t timer)
   {
     sl_status_t status = sl_zigbee_af_send_command_unicast(SL_ZIGBEE_OUTGOING_DIRECT, serverNodeId);
     if (status != SL_STATUS_OK) {
-      otaPrintln("Error:  Failed to send OTA command 0x%X, status: 0x%X",
+      otaPrintln("Error:  Failed to send OTA command 0x%02X, status: 0x%02X",
                  cmdId, status);
     }
   }
@@ -1750,7 +1750,7 @@ static void continueImageVerification(sl_zigbee_af_image_verify_status_t status)
       setTimer(SL_ZIGBEE_AF_PLUGIN_OTA_CLIENT_VERIFY_DELAY_MS);
       return;
     } else {
-      otaPrintln("%p verification %p: 0x%X",
+      otaPrintln("%s verification %s: 0x%02X",
                  (customVerifyStatus == NO_CUSTOM_VERIFY
                   ? "Signature"
                   : "Custom"),
@@ -1783,7 +1783,7 @@ static void askServerToRunUpgrade(bool timeout)
       otaPrintln("Upgrading anyway");
       runUpgrade();
     } else {
-      otaPrintln("Not applying upgrade due to sli_zigbee_upgrade_timeout_policy_t of 0x%x",
+      otaPrintln("Not applying upgrade due to sli_zigbee_upgrade_timeout_policy_t of 0x%02X",
                  upgradeTimeoutPolicy);
     }
     return;
@@ -1879,7 +1879,7 @@ static sl_zigbee_af_status_t imageBlockResponseParse(uint8_t* buffer, uint8_t in
       return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
     }
   } else if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    otaPrintln("Unknown %p status code 0x%X",
+    otaPrintln("Unknown %s status code 0x%02X",
                "Image block response",
                status);
     return SL_ZIGBEE_ZCL_STATUS_INVALID_VALUE;
@@ -1899,7 +1899,7 @@ static sl_zigbee_af_status_t imageBlockResponseParse(uint8_t* buffer, uint8_t in
   imageData = buffer + index;
 
   if ((length - index) < dataSize) {
-    otaPrintln("%p has data size (%d) smaller than actual packet size (%d).",
+    otaPrintln("%s has data size (%d) smaller than actual packet size (%d).",
                "Image block response",
                dataSize,
                length - index);
@@ -1912,7 +1912,7 @@ static sl_zigbee_af_status_t imageBlockResponseParse(uint8_t* buffer, uint8_t in
     // For page request, we may receive them out of order, or just miss packets.
     currentOffset = getCurrentOffset();
     if (offset != currentOffset) {
-      otaPrintln("%p error: Expected offset 0x%4X, but got 0x%4X.  Ignoring",
+      otaPrintln("%s error: Expected offset 0x%08X, but got 0x%08X.  Ignoring",
                  "Image block response",
                  currentOffset,
                  offset);
@@ -1924,7 +1924,7 @@ static sl_zigbee_af_status_t imageBlockResponseParse(uint8_t* buffer, uint8_t in
                   &imageId,
                   sizeof(sl_zigbee_af_ota_image_id_t))
       || dataSize > MAX_CLIENT_DATA_SIZE) {
-    otaPrintln("%p info did not match my expected info.  Dropping.",
+    otaPrintln("%s info did not match my expected info.  Dropping.",
                "Image block response");
     return SL_ZIGBEE_ZCL_STATUS_INVALID_VALUE;
   }
@@ -2012,7 +2012,7 @@ static sl_zigbee_af_status_t upgradeEndResponseParse(uint8_t status,
   uint8_t index = SL_ZIGBEE_AF_ZCL_OVERHEAD;
 
   if (status) {
-    otaPrintln("Server aborted upgrade, status: 0x%X",
+    otaPrintln("Server aborted upgrade, status: 0x%02X",
                status);
     downloadAndVerifyFinish(SL_ZIGBEE_AF_OTA_SERVER_ABORTED);
     return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
@@ -2024,26 +2024,26 @@ static sl_zigbee_af_status_t upgradeEndResponseParse(uint8_t status,
 
   if ((serverSentId.manufacturerId != currentDownloadFile.manufacturerId)
       && (serverSentId.manufacturerId != MFG_ID_WILD_CARD)) {
-    sl_zigbee_af_ota_bootload_cluster_print("Error: %p had invalid %p: ",
+    sl_zigbee_af_ota_bootload_cluster_print("Error: %s had invalid %s: ",
                                             "Upgrade end response",
                                             "manufacturer ID");
-    otaPrintln("0x%2X", serverSentId.manufacturerId);
+    otaPrintln("0x%04X", serverSentId.manufacturerId);
     return SL_ZIGBEE_ZCL_STATUS_INVALID_VALUE;
   }
   if ((serverSentId.imageTypeId != currentDownloadFile.imageTypeId)
       && (serverSentId.imageTypeId != IMAGE_TYPE_WILD_CARD)) {
-    sl_zigbee_af_ota_bootload_cluster_print("Error: %p had invalid %p: ",
+    sl_zigbee_af_ota_bootload_cluster_print("Error: %s had invalid %s: ",
                                             "Upgrade end response",
                                             "image type ID");
-    otaPrintln("0x%2X", serverSentId.imageTypeId);
+    otaPrintln("0x%04X", serverSentId.imageTypeId);
     return SL_ZIGBEE_ZCL_STATUS_INVALID_VALUE;
   }
   if ((serverSentId.firmwareVersion != currentDownloadFile.firmwareVersion
        && serverSentId.firmwareVersion != FILE_VERSION_WILD_CARD)) {
-    sl_zigbee_af_ota_bootload_cluster_print("Error: %p had invalid %p: ",
+    sl_zigbee_af_ota_bootload_cluster_print("Error: %s had invalid %s: ",
                                             "Upgrade end response",
                                             "file version");
-    otaPrintln("0x%4X", serverSentId.firmwareVersion);
+    otaPrintln("0x%08X", serverSentId.firmwareVersion);
     return SL_ZIGBEE_ZCL_STATUS_INVALID_VALUE;
   }
   currentTime = sl_zigbee_af_get_int32u(buffer, index, length);
@@ -2109,7 +2109,7 @@ static bool calculateTimer(uint32_t currentTime,
   bool validWaitTime = true;
 
   if (targetTime < currentTime) {
-    otaPrintln("%p: invalid offset currentTime(0x%4X) > upgradeTime(0x%4X)",
+    otaPrintln("%s: invalid offset currentTime(0x%08X) > upgradeTime(0x%08X)",
                "Error",
                currentTime,
                targetTime);
@@ -2118,7 +2118,7 @@ static bool calculateTimer(uint32_t currentTime,
     timeOut = targetTime - currentTime;
     otaPrintln("OTA Cluster: wait for %d s", timeOut);
   }
-  otaPrintln("RXed timeOut 0x%4X s, MAX timeOut 0x%4X s",
+  otaPrintln("RXed timeOut 0x%08X s, MAX timeOut 0x%08X s",
              timeOut,
              TIMEOUT_MAX_WAIT_TIME_MS >> 10);   // divide by ~1000
                                                 // save flash by doing a bit shift
@@ -2296,9 +2296,8 @@ uint32_t sl_zigbee_af_ota_cluster_client_command_parse(sl_service_opcode_t opcod
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = sl_zigbee_af_ota_client_incoming_message_raw_cb(cmd);
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
+  status = sl_zigbee_af_ota_client_incoming_message_raw_cb(cmd);
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

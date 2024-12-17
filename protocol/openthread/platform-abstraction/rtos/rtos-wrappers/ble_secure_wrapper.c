@@ -46,6 +46,7 @@
 #error Unsupported compiler
 #endif
 
+extern bool    OT_API_REAL_NAME(otBleSecureGetInstallCodeVerifyStatus)(otInstance *aInstance);
 extern bool    OT_API_REAL_NAME(otBleSecureIsCommandClassAuthorized)(otInstance        *aInstance,
                                                                   otTcatCommandClass aCommandClass);
 extern bool    OT_API_REAL_NAME(otBleSecureIsConnected)(otInstance *aInstance);
@@ -73,14 +74,14 @@ extern otError OT_API_REAL_NAME(otBleSecureGetThreadAttributeFromPeerCertificate
 extern otError OT_API_REAL_NAME(otBleSecureSend)(otInstance *aInstance, uint8_t *aBuf, uint16_t aLength);
 extern otError OT_API_REAL_NAME(otBleSecureSendApplicationTlv)(otInstance *aInstance, uint8_t *aBuf, uint16_t aLength);
 extern otError OT_API_REAL_NAME(otBleSecureSendMessage)(otInstance *aInstance, otMessage *aMessage);
+extern otError OT_API_REAL_NAME(otBleSecureSetTcatVendorInfo)(otInstance             *aInstance,
+                                                              const otTcatVendorInfo *aVendorInfo);
 extern otError OT_API_REAL_NAME(otBleSecureStart)(otInstance              *aInstance,
                                                   otHandleBleSecureConnect aConnectHandler,
                                                   otHandleBleSecureReceive aReceiveHandler,
                                                   bool                     aTlvMode,
                                                   void                    *aContext);
-extern otError OT_API_REAL_NAME(otBleSecureTcatStart)(otInstance             *aInstance,
-                                                      const otTcatVendorInfo *aVendorInfo,
-                                                      otHandleTcatJoin        aHandler);
+extern otError OT_API_REAL_NAME(otBleSecureTcatStart)(otInstance *aInstance, otHandleTcatJoin aHandler);
 extern void    OT_API_REAL_NAME(otBleSecureDisconnect)(otInstance *aInstance);
 extern void    OT_API_REAL_NAME(otBleSecureSetCaCertificateChain)(otInstance    *aInstance,
                                                                const uint8_t *aX509CaCertificateChain,
@@ -97,6 +98,14 @@ extern void    OT_API_REAL_NAME(otBleSecureSetPsk)(otInstance    *aInstance,
                                                 uint16_t       aPskIdLength);
 extern void    OT_API_REAL_NAME(otBleSecureSetSslAuthMode)(otInstance *aInstance, bool aVerifyPeerCertificate);
 extern void    OT_API_REAL_NAME(otBleSecureStop)(otInstance *aInstance);
+
+bool OT_API_WRAPPER_NAME(otBleSecureGetInstallCodeVerifyStatus)(otInstance *aInstance)
+{
+    sl_ot_rtos_acquire_stack_mutex();
+    bool ret = OT_API_REAL_NAME(otBleSecureGetInstallCodeVerifyStatus)(aInstance);
+    sl_ot_rtos_release_stack_mutex();
+    return ret;
+}
 
 bool OT_API_WRAPPER_NAME(otBleSecureIsCommandClassAuthorized)(otInstance *aInstance, otTcatCommandClass aCommandClass)
 {
@@ -226,6 +235,14 @@ otError OT_API_WRAPPER_NAME(otBleSecureSendMessage)(otInstance *aInstance, otMes
     return ret;
 }
 
+otError OT_API_WRAPPER_NAME(otBleSecureSetTcatVendorInfo)(otInstance *aInstance, const otTcatVendorInfo *aVendorInfo)
+{
+    sl_ot_rtos_acquire_stack_mutex();
+    otError ret = OT_API_REAL_NAME(otBleSecureSetTcatVendorInfo)(aInstance, aVendorInfo);
+    sl_ot_rtos_release_stack_mutex();
+    return ret;
+}
+
 otError OT_API_WRAPPER_NAME(otBleSecureStart)(otInstance              *aInstance,
                                               otHandleBleSecureConnect aConnectHandler,
                                               otHandleBleSecureReceive aReceiveHandler,
@@ -238,12 +255,10 @@ otError OT_API_WRAPPER_NAME(otBleSecureStart)(otInstance              *aInstance
     return ret;
 }
 
-otError OT_API_WRAPPER_NAME(otBleSecureTcatStart)(otInstance             *aInstance,
-                                                  const otTcatVendorInfo *aVendorInfo,
-                                                  otHandleTcatJoin        aHandler)
+otError OT_API_WRAPPER_NAME(otBleSecureTcatStart)(otInstance *aInstance, otHandleTcatJoin aHandler)
 {
     sl_ot_rtos_acquire_stack_mutex();
-    otError ret = OT_API_REAL_NAME(otBleSecureTcatStart)(aInstance, aVendorInfo, aHandler);
+    otError ret = OT_API_REAL_NAME(otBleSecureTcatStart)(aInstance, aHandler);
     sl_ot_rtos_release_stack_mutex();
     return ret;
 }

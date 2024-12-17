@@ -140,7 +140,7 @@ void sli_zigbee_af_sleepy_message_queue_cli_remove_all_msg(sl_cli_command_arg_t 
   sl_802154_long_addr_t eui64;
   sl_zigbee_copy_hex_arg(arguments, 0, eui64, EUI64_SIZE, false);
   sl_zigbee_af_sleepy_message_queue_remove_all_messages(eui64);
-  sl_zigbee_af_app_println("Removed All Msgs from {%x %x %x %x %x %x %x %x}",
+  sl_zigbee_af_app_println("Removed All Msgs from {%02X %02X %02X %02X %02X %02X %02X %02X}",
                            eui64[0], eui64[1], eui64[2], eui64[3], eui64[4], eui64[5], eui64[6], eui64[7]);
 }
 

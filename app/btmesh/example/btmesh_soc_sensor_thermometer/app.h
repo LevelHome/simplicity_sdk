@@ -3,7 +3,7 @@
  * @brief Application interface provided to main().
  *******************************************************************************
  * # License
- * <b>Copyright 2020 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -32,18 +32,69 @@
 #define APP_H
 
 #include <stdint.h>
-
+#include <stdbool.h>
+#include "sl_component_catalog.h"
 #include "sl_status.h"
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#ifndef SL_CATALOG_APP_LOG_PRESENT
+#define app_log(...)
+#define app_log_status_error_f(...)
+#endif // SL_CATALOG_APP_LOG_PRESENT
+
+#ifdef SL_CATALOG_BTMESH_WSTK_LCD_PRESENT
+#define lcd_print(...) sl_btmesh_LCD_write(__VA_ARGS__)
+#else
+#define lcd_print(...)
+#endif // SL_CATALOG_BTMESH_WSTK_LCD_PRESENT
+
+/*******************************************************************************
+ * Change buttons to LEDs in case of shared pin
+ ******************************************************************************/
+void app_change_buttons_to_leds(void);
+
+/*******************************************************************************
+ * Change LEDs to buttons in case of shared pin
+ ******************************************************************************/
+void app_change_leds_to_buttons(void);
+
+/***************************************************************************//**
+ * Handles button press and does a factory reset
+ *
+ * @return true if there is no button press
+ ******************************************************************************/
+bool app_handle_reset_conditions(void);
 
 /***************************************************************************//**
  * Application Init.
  ******************************************************************************/
 void app_init(void);
 
+/**************************************************************************//**
+ * Initialize Runtime Environment.
+ *****************************************************************************/
+void app_init_runtime(void);
+
+/**************************************************************************//**
+ * Check if it is required to process with execution.
+ * @return true if required, false otherwise.
+ *****************************************************************************/
+bool app_is_process_required(void);
+
 /***************************************************************************//**
  * Application Process Action.
  ******************************************************************************/
 void app_process_action(void);
+
+/**************************************************************************//**
+ * Proceed with execution. (Indicate that it is required to run the application
+ * process action.)
+ *****************************************************************************/
+void app_proceed(void);
 
 /***************************************************************************//**
  * Shows the provisioning start information

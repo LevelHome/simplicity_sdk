@@ -3,7 +3,7 @@
  * @brief BT Mesh People count sensor implementation
  *******************************************************************************
  * # License
- * <b>Copyright 2020 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -30,6 +30,7 @@
 
 #include <stdio.h>
 
+#include "sl_core.h"
 #include "sl_component_catalog.h"
 
 #ifdef SL_CATALOG_CLI_PRESENT
@@ -60,7 +61,9 @@ static count16_t people_count = SL_BTMESH_SENSOR_PEOPLE_COUNT_VALUE_IS_NOT_KNOWN
  ******************************************************************************/
 void sl_btmesh_set_people_count(count16_t people_count_value)
 {
-  people_count = people_count_value;
+  CORE_ATOMIC_SECTION(
+    people_count = people_count_value;
+    )
 }
 
 /*******************************************************************************
@@ -79,9 +82,11 @@ count16_t sl_btmesh_get_people_count(void)
  ******************************************************************************/
 void sl_btmesh_people_count_increase(void)
 {
-  if (people_count < SL_BTMESH_SENSOR_PEOPLE_COUNT_VALUE_IS_NOT_KNOWN) {
+  CORE_ATOMIC_SECTION(
+    if (people_count < SL_BTMESH_SENSOR_PEOPLE_COUNT_VALUE_IS_NOT_KNOWN) {
     people_count += 1;
   }
+    )
 }
 
 /*******************************************************************************
@@ -89,10 +94,12 @@ void sl_btmesh_people_count_increase(void)
  ******************************************************************************/
 void sl_btmesh_people_count_decrease(void)
 {
-  if (people_count > 0
-      && people_count < SL_BTMESH_SENSOR_PEOPLE_COUNT_VALUE_IS_NOT_KNOWN) {
+  CORE_ATOMIC_SECTION(
+    if (people_count > 0
+        && people_count < SL_BTMESH_SENSOR_PEOPLE_COUNT_VALUE_IS_NOT_KNOWN) {
     people_count -= 1;
   }
+    )
 }
 
 /**************************************************************************//**

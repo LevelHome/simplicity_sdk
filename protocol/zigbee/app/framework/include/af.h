@@ -116,7 +116,9 @@ extern void sl_zigbee_af_test_harness_z3_reset_event_handler(sl_zigbee_af_event_
 
 #include "app/framework/util/client-api.h"
 
+#ifdef SL_CATALOG_ZIGBEE_CLI_PRESENT
 #include "app/util/serial/sl_zigbee_command_interpreter.h"
+#endif // SL_CATALOG_ZIGBEE_CLI_PRESENT
 
 extern uint8_t ascii_lut[];
 /**

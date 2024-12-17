@@ -1,5 +1,5 @@
 /***************************************************************************//**
- * @file
+ * @file app_init.c
  * @brief Application init
  *******************************************************************************
  * # License
@@ -32,6 +32,7 @@
 //                                   Includes
 // -----------------------------------------------------------------------------
 #include <assert.h>
+
 #include "sl_component_catalog.h"
 #include "app_init.h"
 #include "sl_cmsis_os2_common.h"
@@ -49,7 +50,6 @@
 #if defined(SL_CATALOG_GUI_PRESENT)
 #include "sl_gui.h"
 #endif
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -106,26 +106,32 @@ void app_init(void)
 #endif
 
   // Init cli ping resource
+  sl_wisun_coap_rhnd_resource_init(&coap_resource);
   coap_resource.data.uri_path          = SL_WISUN_COAP_REMOTE_CTRL_PING_URI_PATH;
   coap_resource.data.resource_type     = SL_WISUN_COAP_REMOTE_CTRL_PING_RESOURCE_RT;
   coap_resource.data.interface         = SL_WISUN_COAP_REMOTE_CTRL_RESOURCE_IF_CLI;
   coap_resource.auto_response          = sl_wisun_coap_remote_cli_ping_cb;
+  coap_resource.redirect_response      = NULL;
   coap_resource.discoverable           = true;
   assert(sl_wisun_coap_rhnd_resource_add(&coap_resource) == SL_STATUS_OK);
 
   // Init iperf ping resource
+  sl_wisun_coap_rhnd_resource_init(&coap_resource);
   coap_resource.data.uri_path          = SL_WISUN_COAP_REMOTE_CTRL_IPERF_URI_PATH;
   coap_resource.data.resource_type     = SL_WISUN_COAP_REMOTE_CTRL_IPERF_RESOURCE_RT;
   coap_resource.data.interface         = SL_WISUN_COAP_REMOTE_CTRL_RESOURCE_IF_CLI;
   coap_resource.auto_response          = sl_wisun_coap_remote_cli_iperf_cb;
+  coap_resource.redirect_response      = NULL;
   coap_resource.discoverable           = true;
   assert(sl_wisun_coap_rhnd_resource_add(&coap_resource) == SL_STATUS_OK);
 
   // Init nbr info resource
+  sl_wisun_coap_rhnd_resource_init(&coap_resource);
   coap_resource.data.uri_path          = SL_WISUN_COAP_REMOTE_CTRL_NBR_INFO_URI_PATH;
   coap_resource.data.resource_type     = SL_WISUN_COAP_REMOTE_CTRL_NBR_INFO_RESOURCE_RT;
   coap_resource.data.interface         = SL_WISUN_COAP_REMOTE_CTRL_RESOURCE_IF_CLI;
   coap_resource.auto_response          = sl_wisun_coap_remote_cli_nbr_cb;
+  coap_resource.redirect_response      = NULL;
   coap_resource.discoverable           = true;
   assert(sl_wisun_coap_rhnd_resource_add(&coap_resource) == SL_STATUS_OK);
 

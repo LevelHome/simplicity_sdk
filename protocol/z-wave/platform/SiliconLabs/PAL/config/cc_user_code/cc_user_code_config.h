@@ -19,13 +19,13 @@
 
 // <h> Command Class User Code Configuration
 
-// <o CC_USER_CODE_MAX_IDS> Max number of user Code ID's and USER CODES <1..255:1> <f.d>
+// <o CC_USER_CODE_MAX_IDS> Max number of user Code ID's and USER CODES <1..50:1> <f.d>
 // <i> Default: 1
 #define CC_USER_CODE_MAX_IDS  1
 
 // <a.4 CC_USER_CODE_DEFAULT> The default user code used by the Command Class <0..255> <f.h>
-// <i> Default:  { 0x31, 0x32, 0x33, 0x34 }
-#define CC_USER_CODE_DEFAULT  { 0x31, 0x32, 0x33, 0x34 }
+// <i> Default:  { 0x33, 0x34, 0x39, 0x34 }
+#define CC_USER_CODE_DEFAULT  { 0x33, 0x34, 0x39, 0x34 }
 
 // </h>
 

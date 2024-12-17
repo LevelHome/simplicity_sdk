@@ -65,10 +65,10 @@ Application Association Group configuration
             <li>Device Reset Locally: triggered upon reset.</li>
             <li>Battery: triggered upon low battery.</li>
             <li>
-                Notification: triggered upon a movement detection (simulated by
-                button BTN2). After a while, a cancel notification will be issued.
+                Notification: triggered upon movement detection (simulated by
+                Medium Press of BTN1). After a while, a cancel notification will be issued.
             </li>
-            <li>Indicator Report: Triggered when LED1 changes state.</li>
+            <li>Indicator Report: Triggered when LED0 changes state.</li>
         </ul>
     </td>
 </tr><tr>
@@ -76,7 +76,7 @@ Application Association Group configuration
     <td>Basic Set</td>
     <td>Y</td>
     <td>
-        Upon a movement detection (simulated by button BTN2), nodes
+        Upon a movement detection (simulated by Medium Press of BTN1), nodes
         associated in this group will first receive a Basic Set with 0xFF (turn on)
         and after a while receive a Basic Set with 0x00 (turn off).
     </td>
@@ -88,48 +88,56 @@ Y: For Z-Wave node count is equal to 5 and for Z-Wave Long Range it is 0.
 
 ## Usage of Buttons and LED Status
 
-To use the sample app, the BRD8029A Button and LEDs Expansion Board must be used. BTN0-BTN3 and LED0-LED3 refer to the buttons and LEDs on the Expansion Board.
+We are differentiating four different types of button presses. The following types are the same for the BTN0 and BTN1 on the WSTK board. The duration values can be configured under the config directory in app_button_press_config.h file in each generated application/project.
 
-The following LEDs and buttons shown in the next table below are used.
+Please note external wakeup is not supported on button 1 in case of brd2603a and brd2603b.
 
 <table>
 <tr>
-    <th rowspan="2">Button</th>
-    <th rowspan="2">Action</th>
-    <th colspan="2">Description</th>
+    <th>Press Type</th>
+    <th>Duration</th>
 </tr><tr>
-    <th>Radio Board <sup>1</sup></th>
-    <th>Thunderboard <sup>1</sup></th>
+    <td>Short Press</td>
+    <td>0 - 400 ms</td>
+</tr><tr>
+    <td>Medium Press</td>
+    <td>401 - 1500 ms</td>
+</tr><tr>
+    <td>Long Press</td>
+    <td>1501 - 5000 ms</td>
+</tr><tr>
+    <td>Very Long Press</td>
+    <td>Every press longer than Long Press</td>
+</tr>
+</table>
+
+
+<table>
+<tr>
+    <th>Button</th>
+    <th>Action</th>
+    <th>Description</th>
 </tr><tr>
     <td>RST</td>
     <td>Press</td>
-    <td colspan="2">
-        Resets the firmware of an application (like losing power). All volatile memory will be cleared.<br>
-        Sends Wake Up Notification.
+    <td>Resets the firmware of an application (like losing power). All volatile memory will be cleared.</td>
+</tr><tr>
+    <td rowspan="2">BTN0</td>
+    <td>Short Press</td>
+    <td>Sends Battery Report</td>
+</tr><tr>
+    <td>Medium Press</td>
+    <td>Toggles "motion detected" event simulation.</td>
+</tr><tr>
+    <td rowspan="2">BTN1</td>
+    <td>Short Press</td>
+    <td>Enter "learn mode" (sending node info frame) to add/remove the device.<br>
+    Removing the device from a network will reset it.
     </td>
 </tr><tr>
-    <td>BTN0<sup>2</sup></td>
-    <td>Press</td>
-    <td colspan="2">Sends Battery Report (only if the device is not sleeping)</td>
-</tr><tr>
-    <td rowspan="3">BTN1<sup>2</sup></td>
-    <td>Press</td>
-    <td colspan="2">
-        Enter "learn mode" (sending node info frame) to add/remove the device.<br>
-        Removing the device from a network will reset it.
+    <td>Very Long Press</td>
+    <td>Perform a reset to factory default operation of the device, and a Device Reset Locally Notification Command is sent via Lifeline.
     </td>
-</tr><tr>
-    <td>Hold for at least 1 second and release</td>
-    <td></td>
-    <td>Simulates a "Motion detected" event.</td>
-</tr><tr>
-    <td>Hold for at least 5 seconds and release</td>
-    <td colspan="2">Perform a reset to factory default operation of the device, and a Device Reset Locally Notification Command is sent via Lifeline.</td>
-</tr><tr>
-    <td>BTN2</td>
-    <td>Hold for at least 1 second and release</td>
-    <td>Simulates a "Motion detected" event.</td>
-    <td></td>
 </tr>
 </table>
 
@@ -138,7 +146,7 @@ The following LEDs and buttons shown in the next table below are used.
     <th>LED</th>
     <th>Description</th>
 </tr><tr>
-    <td>LED1</td>
+    <td>LED0</td>
     <td>
         Blinks with 1 Hz when learn mode is active.<br>
         Used for Indicator Command Class.
@@ -146,15 +154,6 @@ The following LEDs and buttons shown in the next table below are used.
 </tr>
 </table>
 
-<sup>1</sup>: A Radio Board is plug-in board for the Wireless Pro Kit Mainboard.
-A Thunderboard is a stand-alone kit with a direct USB Type-C connection.
-
-<sup>2</sup>: The application needs to be woken up for these operations.
-It is not possible to wake up the BRD4400C and BRD4401C radio boards using BTN0
-and BTN1, and the BRD2603A Thunderboard using BTN1.\
-To support these functionalities, the affected buttons must be remapped to pins
-that support waking up the chip from EM4 sleep mode.
-Please refer to your hardware's documentation for further information.
 
 ## Firmware Update
 
@@ -202,8 +201,8 @@ In case CLI support is needed pelase install zw_cli_common component to the proj
     <td>Triggering a motion detected event</td>
 </tr>
 <tr>
-    <th>enable_sleeping</th>
-    <td>-</td>
-    <td>Lets the application go into sleep mode. After this command the CLI won't work until the next reset</td>
+    <th>sleeping</th>
+    <td>[string] "enable" or "disable"</td>
+    <td>Enable or disable sleeping. After pushing the reset button (or resetting with commander) the device will be awake for a given amount of time if the CLI component is added to the project. During this time the user can prevent the sleeping. For more information check the `zw_cli_sleeping` component.</td>
 </tr>
 </table>

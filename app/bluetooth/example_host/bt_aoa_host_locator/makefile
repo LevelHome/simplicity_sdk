@@ -3,7 +3,8 @@
 ################################################################################
 
 PROJECTNAME = bt_aoa_host_locator
-SDK_DIR = ../../../..
+PROJ_DIR := $(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
+SDK_DIR := $(realpath $(PROJ_DIR)/../../../..)
 
 # The MQTT component depends on Mosquitto that has to be installed to the
 # development environment. By enabling this experimental option, this dependency
@@ -55,7 +56,7 @@ endif
 # Include paths                                                                #
 ################################################################################
 
-override INCLUDEPATHS += . \
+override INCLUDEPATHS += $(PROJ_DIR) \
 $(SDK_DIR)/app/bluetooth/common_host/aoa_parse \
 $(SDK_DIR)/app/bluetooth/common_host/aoa_util \
 $(SDK_DIR)/app/bluetooth/common_host/aoa_db \
@@ -77,10 +78,10 @@ $(SDK_DIR)/app/bluetooth/common_host/aoa_util/aoa_serdes.c \
 $(SDK_DIR)/app/bluetooth/common_host/aoa_util/aoa_util.c \
 $(SDK_DIR)/app/bluetooth/common_host/aoa_db/aoa_db.c \
 $(SDK_DIR)/app/bluetooth/common_host/system/system.c \
-app.c \
-main.c
+$(PROJ_DIR)/app.c \
+$(PROJ_DIR)/main.c
 
-PROJ_FILES += $(wildcard config/*)
+PROJ_FILES += $(wildcard $(PROJ_DIR)/config/*)
 
 
 ################################################################################

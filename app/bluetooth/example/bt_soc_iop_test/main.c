@@ -3,7 +3,7 @@
  * @brief main() function.
  *******************************************************************************
  * # License
- * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -46,9 +46,12 @@ int main(void)
   // this call.
   sl_system_init();
 
-  // Initialize the application. For example, create periodic timer(s) or
-  // task(s) if the kernel is present.
+  // Initialize the application.
   app_init();
+
+  // Initialize the application runtime. For example create task(s) if a
+  // kernel is present.
+  app_init_runtime();
 
 #if defined(SL_CATALOG_KERNEL_PRESENT)
   // Start the kernel. Task(s) created in app_init() will start running.

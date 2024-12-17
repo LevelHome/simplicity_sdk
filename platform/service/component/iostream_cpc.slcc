@@ -14,16 +14,14 @@ metadata:
 root_path: platform/service/iostream
 provides:
   - name: iostream_cpc
-  - name: iostream_transport_core
-    allow_multiple: true
   - name: iostream_transport
     allow_multiple: true
 requires:
   - name: cpc_secondary
   - name: iostream
   - name: sleeptimer
-  - name: emlib_common
-  - name: emlib_core
+  - name: sl_assert
+  - name: sl_core
 config_file:
   - path: config/sl_iostream_cpc_config.h
 include:
@@ -49,5 +47,5 @@ template_contribution:
       include: sl_iostream_cpc.h
       handler: sl_iostream_instance_cpc_info
 documentation:
-    docset: gecko-platform
-    document: platform-service/iostream-cpc
+  docset: gecko-platform
+  document: platform-service/iostream-cpc

@@ -82,7 +82,9 @@ static const RAIL_PaAutoModeConfigEntry_t RAIL_PaAutoModeConfigDefault[] = {
     .band = RAIL_PA_BAND_COUNT
   }
 };
-#elif ((_SILICON_LABS_32B_SERIES_2_CONFIG == 2) || (_SILICON_LABS_32B_SERIES_2_CONFIG == 7))
+#elif ((_SILICON_LABS_32B_SERIES_2_CONFIG == 2) \
+  || (_SILICON_LABS_32B_SERIES_2_CONFIG == 7)   \
+  || (_SILICON_LABS_32B_SERIES_2_CONFIG == 9) )
 static const RAIL_PaAutoModeConfigEntry_t RAIL_PaAutoModeConfigDefault[] = {
   {
     .min = -287,
@@ -119,8 +121,7 @@ static const RAIL_PaAutoModeConfigEntry_t RAIL_PaAutoModeConfigDefault[] = {
   }
 };
 #elif ((_SILICON_LABS_32B_SERIES_2_CONFIG == 4) \
-  || (_SILICON_LABS_32B_SERIES_2_CONFIG == 6)   \
-  || (!defined(_SILICON_LABS_32B_SERIES_2)))
+  || (_SILICON_LABS_32B_SERIES_2_CONFIG == 6))
 static const RAIL_PaAutoModeConfigEntry_t RAIL_PaAutoModeConfigDefault10dBm[] = {
   {
     .min = -252,
@@ -184,6 +185,27 @@ static const RAIL_PaAutoModeConfigEntry_t RAIL_PaAutoModeConfigDefault[] = {
     .max = INT16_MAX,
     .mode = RAIL_TX_POWER_MODE_SUBGIG_HP,
     .band = RAIL_PA_BAND_SUBGIG
+  },
+  {
+    .min = INT16_MIN,
+    .max = INT16_MAX,
+    .mode = RAIL_TX_POWER_MODE_2P4GIG_HP,
+    .band = RAIL_PA_BAND_2P4GIG
+  },
+  {
+    .min = INT16_MIN,
+    .max = INT16_MAX,
+    .mode = RAIL_TX_POWER_MODE_NONE,
+    .band = RAIL_PA_BAND_COUNT
+  }
+};
+#elif (_SILICON_LABS_32B_SERIES_3_CONFIG == 301 || _SILICON_LABS_32B_SERIES_3_CONFIG == 300)
+static const RAIL_PaAutoModeConfigEntry_t RAIL_PaAutoModeConfigDefault[] = {
+  {
+    .min = -190,
+    .max = 0,
+    .mode = RAIL_TX_POWER_MODE_2P4GIG_LP,
+    .band = RAIL_PA_BAND_2P4GIG
   },
   {
     .min = INT16_MIN,
@@ -280,8 +302,7 @@ RAIL_Status_t RAILCb_PaAutoModeDecision(RAIL_Handle_t railHandle,
 #endif
 
 #if ((_SILICON_LABS_32B_SERIES_2_CONFIG == 4) \
-  || (_SILICON_LABS_32B_SERIES_2_CONFIG == 6) \
-  || (!defined(_SILICON_LABS_32B_SERIES_2)))
+  || (_SILICON_LABS_32B_SERIES_2_CONFIG == 6))
   if (RAIL_SupportsTxPowerMode(railHandle,
                                RAIL_TX_POWER_MODE_2P4GIG_LP,
                                NULL)) {

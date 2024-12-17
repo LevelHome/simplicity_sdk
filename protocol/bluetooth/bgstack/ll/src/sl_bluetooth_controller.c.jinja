@@ -2,7 +2,7 @@
 
 #include <assert.h>
 #include <stdbool.h>
-#include <em_common.h>
+#include <sl_common.h>
 #include "sl_rail_util_pa_config.h"
 #include "sl_btctrl_linklayer.h"
 #include "sl_btctrl_config.h"
@@ -53,6 +53,10 @@
 #define SL_BT_CONFIG_RESOLVING_LIST_SIZE 0
 #endif
 
+SL_WEAK void sl_bluetooth_controller_debug_init()
+{
+}
+
 void sl_bt_controller_init(void)
 {
   if(sl_btctrl_is_initialized() == true)
@@ -77,6 +81,8 @@ void sl_bt_controller_init(void)
 #endif // SL_CATALOG_KERNEL_PRESENT
 
   sl_btctrl_init_ll();
+
+  sl_bluetooth_controller_debug_init();
 
   {%- for entry in bluetooth_controller_init %}
   {%-   if entry["function"] is string %}
@@ -112,6 +118,14 @@ void sl_bt_controller_init(void)
                                                   SL_BT_CONTROLLER_COMPLETED_PACKETS_EVENTS_TIMEOUT);
 #endif // SL_CATALOG_BLUETOOTH_FEATURE_CONNECTION_PRESENT
 
+#if defined(SL_CATALOG_BLUETOOTH_FEATURE_CONNECTION_SUBRATING_PRESENT)
+{
+  sl_btctrl_init_subrate();
+  sl_status_t status = sl_btctrl_allocate_conn_subrate_memory(SL_BT_CONFIG_MAX_CONNECTIONS);
+  assert(status == SL_STATUS_OK);
+}
+#endif // SL_CATALOG_BLUETOOTH_FEATURE_CONNECTION_SUBRATING_PRESENT
+
 #if defined(SL_CATALOG_BLUETOOTH_FEATURE_SCANNER_PRESENT)
   sl_btctrl_configure_max_queued_adv_reports(SL_BT_CONFIG_MAX_QUEUED_ADV_REPORTS);
 #endif // SL_CATALOG_BLUETOOTH_FEATURE_SCANNER_PRESENT
@@ -128,6 +142,10 @@ void sl_bt_controller_deinit(void)
 #if defined(SL_CATALOG_BLUETOOTH_FEATURE_RESOLVING_LIST_PRESENT)
   sl_btctrl_allocate_resolving_list_memory(0);
 #endif
+
+#if defined(SL_CATALOG_BLUETOOTH_FEATURE_CONNECTION_SUBRATING_PRESENT)
+  sl_btctrl_allocate_conn_subrate_memory(0);
+#endif // SL_CATALOG_BLUETOOTH_FEATURE_CONNECTION_SUBRATING_PRESENT
   {%-for entry in bluetooth_controller_init |reverse if entry["deinit"] is string%}
 
   sl_bt_ll_deinit();
@@ -137,4 +155,3 @@ void sl_bt_controller_deinit(void)
 
   sli_btctrl_deinit_mem();
 }
-

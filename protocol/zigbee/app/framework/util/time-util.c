@@ -131,7 +131,7 @@ uint32_t sl_zigbee_af_get_utc_from_time_struct(sl_zigbee_af_time_struct_t *time)
   }
   daysThisYear += time->day - 1;
   utcTime += SECONDS_IN_DAY * daysThisYear;
-  sl_zigbee_af_app_println("daysThisYear=%d, total Sec=%d (0x%4x)", daysThisYear, utcTime, utcTime);
+  sl_zigbee_af_app_println("daysThisYear=%d, total Sec=%d (0x%08X)", daysThisYear, utcTime, utcTime);
 
   // Utc Time now reflects seconds up to last completed day of current year.
   for ( i = 0; i < time->hours; i++ ) {
@@ -194,7 +194,7 @@ void sl_zigbee_af_print_time(uint32_t utcTime)
   sl_zigbee_af_time_struct_t time;
   sl_zigbee_af_fill_time_struct_from_utc(utcTime, &time);
   sl_zigbee_af_println(sl_zigbee_af_print_active_area,
-                       "UTC time: %d/%d/%d %d:%d:%d (%4x)",
+                       "UTC time: %d/%d/%d %d:%d:%d (%08X)",
                        time.month,
                        time.day,
                        time.year,
@@ -230,7 +230,7 @@ void sl_zigbee_af_print_date(const sl_zigbee_af_date_t * date)
                          + (((uint32_t)date->dayOfWeek)));
 
   sl_zigbee_af_print(sl_zigbee_af_print_active_area,
-                     "0x%4X (%d/%p%d/%p%d)",
+                     "0x%08X (%d/%s%d/%s%d)",
                      zigbeeDate,
                      date->year + 1900,
                      (date->month < 10 ? "0" : ""),

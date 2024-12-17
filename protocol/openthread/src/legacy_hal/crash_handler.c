@@ -30,8 +30,6 @@
 #include "cortexm3/diagnostic.h"
 #endif
 
-#include "em_chip.h"
-
 void sl_ot_crash_handler_init(void)
 {
     halInternalClassifyReset();

@@ -32,11 +32,7 @@
 #include "rail_ble.h"
 #include "sl_rail_util_aox.h"
 #include "sl_rail_util_aox_config.h"
-#ifndef _SILICON_LABS_32B_SERIES_3
-#include "em_gpio.h"
-#else
 #include "sl_gpio.h"
-#endif
 
 #if SL_RAIL_UTIL_AOX_ANTENNA_PIN_COUNT
 static RAIL_BLE_AoxAntennaPortPins_t antennaPortPin[] = {

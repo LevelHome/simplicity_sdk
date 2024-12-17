@@ -7,7 +7,8 @@ class Calc_Misc_Bobcat(CALC_Misc_ocelot):
         #Call inherited calc_misc method
         super().calc_misc(model)
 
-        #Add LongRange reg writes
+    def calc_misc_bobcat(self, model):
+        # Add LongRange reg writes
         self._reg_write(model.vars.MODEM_LONGRANGE_LRBLE, 0)
         self._reg_write(model.vars.MODEM_LONGRANGE_LRBLEDSA, 0)
         self._reg_write(model.vars.MODEM_LONGRANGE_LRCORRSCHWIN, 0xA)

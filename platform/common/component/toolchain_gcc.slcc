@@ -18,20 +18,23 @@ provides:
 requires:
   - name: toolchain_linker_type
   - name: toolchain_variant
-  - name: toolchain_variant_arm
-    condition: [device_cortexm]
-  - name: toolchain_variant_host
-    condition: [device_host]
   - name: sl_memory
     condition: [device_cortexm]
   - name: sl_syscalls
     condition: [device_cortexm]
 recommends:
   - id: toolchain_gcc_standard
+    condition: [device_cortexm]
+  - id: toolchain_gcc_standard
+    condition: [device_host]
 library:
   - system: gcc
-    condition: [device_cortexm]
+    unless: [device_host]
   - system: c
   - system: m
   - system: nosys
-    condition: [device_cortexm]
+    unless: [device_host]
+toolchain_settings:
+  - option: link_time_optimization
+    value: "disabled"
+    unless: [toolchain_lto]

@@ -34,10 +34,6 @@
 #include <stdint.h>
 #include "sl_status.h"
 
-#if defined(SL_COMPONENT_CATALOG_PRESENT)
-#include "sl_component_catalog.h"
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -140,12 +136,14 @@ sl_led_state_t sl_led_get_state(const sl_led_t *led_handle);
 ///
 ///   @n @section leddrv_config Configuration
 ///
-///   All LED instances are configured with an @ref sl_led_t struct and a type specific
-///   context struct, and sometimes additional structs. There is also a typedef
-///   sl_led_state_t to get the state of an LED. These structs are automatically
-///   generated after an LED is set up using Simplicity Studio's wizard, along with a
-///   function definition for initializing all LEDs of that type. Specific setups for the
-///   various LED types are in the following sections.
+///   All LED instances are configured using an @ref sl_led_t struct along with a
+///   type-specific context struct, and sometimes additional structs. For `sl_led_XXX`
+///   functions, the `sl_led_t *led_handle` is used, while for `sl_simple_led_XXX`
+///   functions, the `sl_simple_led_context_t *context` is used.
+///
+///   These structs are automatically generated when an LED is set up using Simplicity
+///   Studio's wizard. Specific configuration setups for the various LED types are
+///   described in the following sections.
 ///
 ///   - [Simple LED Configuration](/gecko-platform/<docspace-docleaf-version>/platform-driver/simple-led#simple-led-configuration)
 ///   - [RGBW PWM LED Configuration](/gecko-platform/<docspace-docleaf-version>/platform-driver/simple-rgb-pwm-led#rgb-pwm-led-configuration)
@@ -162,12 +160,19 @@ sl_led_state_t sl_led_get_state(const sl_led_t *led_handle);
 ///   @li @ref sl_led_toggle
 ///   @li @ref sl_led_get_state
 ///
-///   These functions allow for initializing the LED, turning it on and off, toggling it, and getting
-///   the current on/off state of it. Other functions are called through the specific type of LED's API
-///   directly. The usages of the different types of LEDs are described in detail in the following sections.
+///   These functions allow for initializing the LED, turning it on and off, toggling it, and retrieving
+///   its current state (on/off). Other functions specific to certain types of LEDs are called through
+///   their respective APIs. The usages of the different types of LEDs are described in detail in the
+///   following sections:
 ///
 ///   @li @ref simple_led_usage
 ///   @li @ref rgbw_led_usage
+///
+///   Ensure that the appropriate context type is used in the function calls:
+///   - Use `sl_led_t *led_handle` for `sl_led_XXX` functions.
+///   - Use `sl_simple_led_context_t *context` for `sl_simple_led_XXX` functions.
+///
+///   These distinctions are handled by the Simplicity Studio auto-generated code.
 ///
 /// @} end group led ********************************************************/
 

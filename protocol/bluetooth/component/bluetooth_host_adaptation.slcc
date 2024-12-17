@@ -21,9 +21,7 @@ source:
 provides:
   - name: bluetooth_host_adaptation
 requires:
-  - name: bluetooth_host_adaptation_libraries
-recommends:
-  - id: bluetooth_host_adaptation_libraries_release
+  - name: sl_core
 template_contribution:
   - name: component_catalog
     value: bluetooth_host_adaptation

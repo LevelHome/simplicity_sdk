@@ -75,7 +75,7 @@ extern "C" {
 
 // <gpio> SL_EFP_EFP0_IRQ
 // $[GPIO_SL_EFP_EFP0_IRQ]
-#define SL_EFP_EFP0_IRQ_PORT                     gpioPortA
+#define SL_EFP_EFP0_IRQ_PORT                     SL_GPIO_PORT_A
 #define SL_EFP_EFP0_IRQ_PIN                      0
 
 // [GPIO_SL_EFP_EFP0_IRQ]$
@@ -86,11 +86,11 @@ extern "C" {
 #define SL_EFP_EFP0_I2C_PERIPHERAL_NO            1
 
 // I2C1 SDA on PC01
-#define SL_EFP_EFP0_I2C_SDA_PORT                 gpioPortC
+#define SL_EFP_EFP0_I2C_SDA_PORT                 SL_GPIO_PORT_C
 #define SL_EFP_EFP0_I2C_SDA_PIN                  1
 
 // I2C1 SCL on PC00
-#define SL_EFP_EFP0_I2C_SCL_PORT                 gpioPortC
+#define SL_EFP_EFP0_I2C_SCL_PORT                 SL_GPIO_PORT_C
 #define SL_EFP_EFP0_I2C_SCL_PIN                  0
 
 // [I2C_SL_EFP_EFP0_I2C]$

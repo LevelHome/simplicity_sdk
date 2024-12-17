@@ -32,7 +32,7 @@ static void setActuatorEnable(void)
                                           (uint8_t *)&troo,
                                           ZCL_BOOLEAN_ATTRIBUTE_TYPE);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_door_lock_cluster_println("Failed to write ActuatorEnabled attribute: 0x%X",
+    sl_zigbee_af_door_lock_cluster_println("Failed to write ActuatorEnabled attribute: 0x%02X",
                                            status);
   }
 }
@@ -46,7 +46,7 @@ static void setDoorState(void)
                                                                      (uint8_t *)&state,
                                                                      ZCL_ENUM8_ATTRIBUTE_TYPE);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_door_lock_cluster_println("Failed to write DoorState attribute: 0x%X",
+    sl_zigbee_af_door_lock_cluster_println("Failed to write DoorState attribute: 0x%02X",
                                            status);
   }
 }
@@ -61,7 +61,7 @@ static void setLanguage(void)
                                           englishString,
                                           ZCL_CHAR_STRING_ATTRIBUTE_TYPE);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_door_lock_cluster_println("Failed to write Language attribute: 0x%X",
+    sl_zigbee_af_door_lock_cluster_println("Failed to write Language attribute: 0x%02X",
                                            status);
   }
 }
@@ -90,7 +90,7 @@ void sli_zigbee_af_door_lock_server_write_attributes(const sli_zigbee_af_door_lo
                                             (uint8_t *)&data[i].value,
                                             ZCL_INT16U_ATTRIBUTE_TYPE);
     if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-      sl_zigbee_af_door_lock_cluster_println("Failed to write %s attribute 0x%2X: 0x%X",
+      sl_zigbee_af_door_lock_cluster_println("Failed to write %s attribute 0x%04X: 0x%02X",
                                              data[i].id,
                                              status,
                                              description);
@@ -140,34 +140,34 @@ sl_zigbee_af_status_t sli_zigbee_af_door_lock_server_note_door_state_changed(sl_
   return status;
 }
 
-bool sl_zigbee_af_door_lock_cluster_lock_door_cb(sl_zigbee_af_cluster_command_t *cmd);
-bool sl_zigbee_af_door_lock_cluster_unlock_door_cb(sl_zigbee_af_cluster_command_t *cmd);
-bool sl_zigbee_af_door_lock_cluster_unlock_with_timeout_cb(sl_zigbee_af_cluster_command_t *cmd);
-bool sl_zigbee_af_door_lock_cluster_get_log_record_cb(sl_zigbee_af_cluster_command_t *cmd);
-bool sl_zigbee_af_door_lock_cluster_set_pin_cb(sl_zigbee_af_cluster_command_t *cmd);
-bool sl_zigbee_af_door_lock_cluster_get_pin_cb(sl_zigbee_af_cluster_command_t *cmd);
-bool sl_zigbee_af_door_lock_cluster_clear_pin_cb(sl_zigbee_af_cluster_command_t *cmd);
-bool sl_zigbee_af_door_lock_cluster_clear_all_pins_cb(void);
-bool sl_zigbee_af_door_lock_cluster_set_weekday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd);
-bool sl_zigbee_af_door_lock_cluster_get_weekday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd);
-bool sl_zigbee_af_door_lock_cluster_clear_weekday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd);
-bool sl_zigbee_af_door_lock_cluster_set_yearday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd);
-bool sl_zigbee_af_door_lock_cluster_get_yearday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd);
-bool sl_zigbee_af_door_lock_cluster_clear_yearday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd);
-bool sl_zigbee_af_door_lock_cluster_set_holiday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd);
-bool sl_zigbee_af_door_lock_cluster_get_holiday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd);
-bool sl_zigbee_af_door_lock_cluster_clear_holiday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd);
-bool sl_zigbee_af_door_lock_cluster_set_user_type_cb(sl_zigbee_af_cluster_command_t *cmd);
-bool sl_zigbee_af_door_lock_cluster_get_user_type_cb(sl_zigbee_af_cluster_command_t *cmd);
-bool sl_zigbee_af_door_lock_cluster_set_rfid_cb(sl_zigbee_af_cluster_command_t *cmd);
-bool sl_zigbee_af_door_lock_cluster_get_rfid_cb(sl_zigbee_af_cluster_command_t *cmd);
-bool sl_zigbee_af_door_lock_cluster_clear_rfid_cb(sl_zigbee_af_cluster_command_t *cmd);
-bool sl_zigbee_af_door_lock_cluster_clear_all_rfids_cb(void);
-bool sl_zigbee_af_door_lock_cluster_set_disposable_schedule_cb(sl_zigbee_af_cluster_command_t *cmd);
-bool sl_zigbee_af_door_lock_cluster_get_disposable_schedule_cb(sl_zigbee_af_cluster_command_t *cmd);
-bool sl_zigbee_af_door_lock_cluster_clear_disposable_schedule_cb(sl_zigbee_af_cluster_command_t *cmd);
-bool sl_zigbee_af_door_lock_cluster_clear_biometric_credential_cb(sl_zigbee_af_cluster_command_t *cmd);
-bool sl_zigbee_af_door_lock_cluster_clear_all_biometric_credentials_cb(void);
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_lock_door_cb(sl_zigbee_af_cluster_command_t *cmd);
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_unlock_door_cb(sl_zigbee_af_cluster_command_t *cmd);
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_unlock_with_timeout_cb(sl_zigbee_af_cluster_command_t *cmd);
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_get_log_record_cb(sl_zigbee_af_cluster_command_t *cmd);
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_set_pin_cb(sl_zigbee_af_cluster_command_t *cmd);
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_get_pin_cb(sl_zigbee_af_cluster_command_t *cmd);
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_clear_pin_cb(sl_zigbee_af_cluster_command_t *cmd);
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_clear_all_pins_cb(void);
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_set_weekday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd);
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_get_weekday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd);
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_clear_weekday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd);
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_set_yearday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd);
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_get_yearday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd);
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_clear_yearday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd);
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_set_holiday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd);
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_get_holiday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd);
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_clear_holiday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd);
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_set_user_type_cb(sl_zigbee_af_cluster_command_t *cmd);
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_get_user_type_cb(sl_zigbee_af_cluster_command_t *cmd);
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_set_rfid_cb(sl_zigbee_af_cluster_command_t *cmd);
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_get_rfid_cb(sl_zigbee_af_cluster_command_t *cmd);
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_clear_rfid_cb(sl_zigbee_af_cluster_command_t *cmd);
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_clear_all_rfids_cb(void);
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_set_disposable_schedule_cb(sl_zigbee_af_cluster_command_t *cmd);
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_get_disposable_schedule_cb(sl_zigbee_af_cluster_command_t *cmd);
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_clear_disposable_schedule_cb(sl_zigbee_af_cluster_command_t *cmd);
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_clear_biometric_credential_cb(sl_zigbee_af_cluster_command_t *cmd);
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_clear_all_biometric_credentials_cb(void);
 
 uint32_t sl_zigbee_af_door_lock_cluster_server_command_parse(sl_service_opcode_t opcode,
                                                              sl_service_function_context_t *context)
@@ -175,154 +175,152 @@ uint32_t sl_zigbee_af_door_lock_cluster_server_command_parse(sl_service_opcode_t
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_LOCK_DOOR_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_door_lock_cluster_lock_door_cb(cmd);
+        status = sl_zigbee_af_door_lock_cluster_lock_door_cb(cmd);
         break;
       }
       case ZCL_UNLOCK_DOOR_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_door_lock_cluster_unlock_door_cb(cmd);
+        status = sl_zigbee_af_door_lock_cluster_unlock_door_cb(cmd);
         break;
       }
       case ZCL_UNLOCK_WITH_TIMEOUT_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_door_lock_cluster_unlock_with_timeout_cb(cmd);
+        status = sl_zigbee_af_door_lock_cluster_unlock_with_timeout_cb(cmd);
         break;
       }
       case ZCL_GET_LOG_RECORD_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_door_lock_cluster_get_log_record_cb(cmd);
+        status = sl_zigbee_af_door_lock_cluster_get_log_record_cb(cmd);
         break;
       }
       case ZCL_SET_PIN_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_door_lock_cluster_set_pin_cb(cmd);
+        status = sl_zigbee_af_door_lock_cluster_set_pin_cb(cmd);
         break;
       }
       case ZCL_GET_PIN_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_door_lock_cluster_get_pin_cb(cmd);
+        status = sl_zigbee_af_door_lock_cluster_get_pin_cb(cmd);
         break;
       }
       case ZCL_CLEAR_PIN_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_door_lock_cluster_clear_pin_cb(cmd);
+        status = sl_zigbee_af_door_lock_cluster_clear_pin_cb(cmd);
         break;
       }
       case ZCL_CLEAR_ALL_PINS_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_door_lock_cluster_clear_all_pins_cb();
+        status = sl_zigbee_af_door_lock_cluster_clear_all_pins_cb();
         break;
       }
       case ZCL_SET_WEEKDAY_SCHEDULE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_door_lock_cluster_set_weekday_schedule_cb(cmd);
+        status = sl_zigbee_af_door_lock_cluster_set_weekday_schedule_cb(cmd);
         break;
       }
       case ZCL_GET_WEEKDAY_SCHEDULE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_door_lock_cluster_get_weekday_schedule_cb(cmd);
+        status = sl_zigbee_af_door_lock_cluster_get_weekday_schedule_cb(cmd);
         break;
       }
       case ZCL_CLEAR_WEEKDAY_SCHEDULE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_door_lock_cluster_clear_weekday_schedule_cb(cmd);
+        status = sl_zigbee_af_door_lock_cluster_clear_weekday_schedule_cb(cmd);
         break;
       }
       case ZCL_SET_YEARDAY_SCHEDULE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_door_lock_cluster_set_yearday_schedule_cb(cmd);
+        status = sl_zigbee_af_door_lock_cluster_set_yearday_schedule_cb(cmd);
         break;
       }
       case ZCL_GET_YEARDAY_SCHEDULE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_door_lock_cluster_get_yearday_schedule_cb(cmd);
+        status = sl_zigbee_af_door_lock_cluster_get_yearday_schedule_cb(cmd);
         break;
       }
       case ZCL_CLEAR_YEARDAY_SCHEDULE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_door_lock_cluster_clear_yearday_schedule_cb(cmd);
+        status = sl_zigbee_af_door_lock_cluster_clear_yearday_schedule_cb(cmd);
         break;
       }
       case ZCL_SET_HOLIDAY_SCHEDULE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_door_lock_cluster_set_holiday_schedule_cb(cmd);
+        status = sl_zigbee_af_door_lock_cluster_set_holiday_schedule_cb(cmd);
         break;
       }
       case ZCL_GET_HOLIDAY_SCHEDULE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_door_lock_cluster_get_holiday_schedule_cb(cmd);
+        status = sl_zigbee_af_door_lock_cluster_get_holiday_schedule_cb(cmd);
         break;
       }
       case ZCL_CLEAR_HOLIDAY_SCHEDULE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_door_lock_cluster_clear_holiday_schedule_cb(cmd);
+        status = sl_zigbee_af_door_lock_cluster_clear_holiday_schedule_cb(cmd);
         break;
       }
       case ZCL_SET_USER_TYPE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_door_lock_cluster_set_user_type_cb(cmd);
+        status = sl_zigbee_af_door_lock_cluster_set_user_type_cb(cmd);
         break;
       }
       case ZCL_GET_USER_TYPE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_door_lock_cluster_get_user_type_cb(cmd);
+        status = sl_zigbee_af_door_lock_cluster_get_user_type_cb(cmd);
         break;
       }
       case ZCL_SET_RFID_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_door_lock_cluster_set_rfid_cb(cmd);
+        status = sl_zigbee_af_door_lock_cluster_set_rfid_cb(cmd);
         break;
       }
       case ZCL_GET_RFID_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_door_lock_cluster_get_rfid_cb(cmd);
+        status = sl_zigbee_af_door_lock_cluster_get_rfid_cb(cmd);
         break;
       }
       case ZCL_CLEAR_RFID_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_door_lock_cluster_clear_rfid_cb(cmd);
+        status = sl_zigbee_af_door_lock_cluster_clear_rfid_cb(cmd);
         break;
       }
       case ZCL_CLEAR_ALL_RFIDS_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_door_lock_cluster_clear_all_rfids_cb();
+        status = sl_zigbee_af_door_lock_cluster_clear_all_rfids_cb();
         break;
       }
       case ZCL_SET_DISPOSABLE_SCHEDULE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_door_lock_cluster_set_disposable_schedule_cb(cmd);
+        status = sl_zigbee_af_door_lock_cluster_set_disposable_schedule_cb(cmd);
         break;
       }
       case ZCL_GET_DISPOSABLE_SCHEDULE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_door_lock_cluster_get_disposable_schedule_cb(cmd);
+        status = sl_zigbee_af_door_lock_cluster_get_disposable_schedule_cb(cmd);
         break;
       }
       case ZCL_CLEAR_DISPOSABLE_SCHEDULE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_door_lock_cluster_clear_disposable_schedule_cb(cmd);
+        status = sl_zigbee_af_door_lock_cluster_clear_disposable_schedule_cb(cmd);
         break;
       }
       case ZCL_CLEAR_BIOMETRIC_CREDENTIAL_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_door_lock_cluster_clear_biometric_credential_cb(cmd);
+        status = sl_zigbee_af_door_lock_cluster_clear_biometric_credential_cb(cmd);
         break;
       }
       case ZCL_CLEAR_ALL_BIOMETRIC_CREDENTIALS_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_door_lock_cluster_clear_all_biometric_credentials_cb();
+        status = sl_zigbee_af_door_lock_cluster_clear_all_biometric_credentials_cb();
         break;
       }
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

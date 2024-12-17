@@ -318,14 +318,6 @@ const char *decode_sl_zigbee_ezsp_zll_network_operation_t(uint8_t value)
   return "*** Not enumerated. ***";
 }
 
-const char *decode_sl_zigbee_ezsp_source_route_overhead_information_t(uint8_t value)
-{
-  switch (value) {
-    case SL_ZIGBEE_EZSP_SOURCE_ROUTE_OVERHEAD_UNKNOWN: return "SL_ZIGBEE_EZSP_SOURCE_ROUTE_OVERHEAD_UNKNOWN";
-  }
-  return "*** Not enumerated. ***";
-}
-
 const char *decodeFrameId(uint16_t value)
 {
   switch (value) {

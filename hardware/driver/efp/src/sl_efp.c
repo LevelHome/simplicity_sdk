@@ -32,10 +32,9 @@
 #include "sl_clock_manager.h"
 #include "em_core.h"
 #include "em_emu.h"
-#include "em_gpio.h"
+#include "sl_gpio.h"
 #include "sli_se_manager_mailbox.h"
 #include "sl_efp.h"
-#include "sl_i2cspm.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -72,12 +71,20 @@ static sl_status_t sl_efp_decouple_handoff(sl_efp_handle_t handle, uint8_t bk_ir
  ******************************************************************************/
 static void enable_i2c_pins(sl_efp_handle_t handle, bool enable)
 {
+  sl_gpio_t i2c_sda_gpio = {
+    .port = handle->init_data.i2c_sda_port,
+    .pin = handle->init_data.i2c_sda_pin,
+  };
+  sl_gpio_t i2c_scl_gpio = {
+    .port = handle->init_data.i2c_scl_port,
+    .pin = handle->init_data.i2c_scl_pin,
+  };
+
   if (enable) {
     handle->in_direct_mode = false;
-    GPIO_PinModeSet(handle->init_data.i2c_sda_port, handle->init_data.i2c_sda_pin,
-                    gpioModeWiredAnd, 1);
-    GPIO_PinModeSet(handle->init_data.i2c_scl_port, handle->init_data.i2c_scl_pin,
-                    gpioModeWiredAnd, 1);
+
+    sl_gpio_set_pin_mode(&i2c_sda_gpio, SL_GPIO_MODE_WIRED_AND, 1);
+    sl_gpio_set_pin_mode(&i2c_scl_gpio, SL_GPIO_MODE_WIRED_AND, 1);
 
     // Enable I2C module and clock.
     sl_clock_manager_enable_bus_clock(handle->i2c_clock);
@@ -93,10 +100,9 @@ static void enable_i2c_pins(sl_efp_handle_t handle, bool enable)
 #endif
   } else {
     handle->in_direct_mode = true;
-    GPIO_PinModeSet(handle->init_data.i2c_sda_port, handle->init_data.i2c_sda_pin,
-                    gpioModePushPull, 1);
-    GPIO_PinModeSet(handle->init_data.i2c_scl_port, handle->init_data.i2c_scl_pin,
-                    gpioModePushPull, 1);
+
+    sl_gpio_set_pin_mode(&i2c_sda_gpio, SL_GPIO_MODE_PUSH_PULL, 1);
+    sl_gpio_set_pin_mode(&i2c_scl_gpio, SL_GPIO_MODE_PUSH_PULL, 1);
 
 #if defined(_SILICON_LABS_32B_SERIES_0)
     init_data.i2c_instance->ROUTE &= ~(I2C_ROUTE_SDAPEN | I2C_ROUTE_SCLPEN);
@@ -351,6 +357,11 @@ sl_status_t sl_efp_enter_em0(sl_efp_handle_t handle)
 {
   sl_status_t ret_val = SL_STATUS_OK;
 
+  sl_gpio_t i2c_scl_gpio = {
+    .port = handle->init_data.i2c_scl_port,
+    .pin = handle->init_data.i2c_scl_pin,
+  };
+
   if (handle->init_data.em_transition_mode == efp_em_transition_mode_gpio_bitbang) {
 #if defined(_EMU_CTRL_EFPDIRECTMODEEN_SHIFT)
     EMU_EFPDirectModeEnable(false);
@@ -358,7 +369,7 @@ sl_status_t sl_efp_enter_em0(sl_efp_handle_t handle)
     if (!handle->in_direct_mode) {
       ret_val = sl_efp_enable_direct_mode(handle);
     }
-    GPIO_PinOutSet(handle->init_data.i2c_scl_port, handle->init_data.i2c_scl_pin);
+    sl_gpio_set_pin(&i2c_scl_gpio);
   } else if (handle->init_data.em_transition_mode == efp_em_transition_mode_i2c) {
 #if defined(_EMU_CTRL_EFPDIRECTMODEEN_SHIFT)
     EMU_EFPDirectModeEnable(false);
@@ -393,6 +404,11 @@ sl_status_t sl_efp_enter_em2(sl_efp_handle_t handle)
   uint8_t tmp;
   sl_status_t ret_val = SL_STATUS_OK;
 
+  sl_gpio_t i2c_scl_gpio = {
+    .port = handle->init_data.i2c_scl_port,
+    .pin = handle->init_data.i2c_scl_pin,
+  };
+
   if (handle->init_data.em_transition_mode == efp_em_transition_mode_gpio_bitbang) {
 #if defined(_EMU_CTRL_EFPDIRECTMODEEN_SHIFT)
     EMU_EFPDirectModeEnable(false);
@@ -400,7 +416,7 @@ sl_status_t sl_efp_enter_em2(sl_efp_handle_t handle)
     if (!handle->in_direct_mode) {
       ret_val = sl_efp_enable_direct_mode(handle);
     }
-    GPIO_PinOutSet(handle->init_data.i2c_scl_port, handle->init_data.i2c_scl_pin);
+    sl_gpio_set_pin(&i2c_scl_gpio);
   } else if (handle->init_data.em_transition_mode == efp_em_transition_mode_i2c) {
 #if defined(_EMU_CTRL_EFPDIRECTMODEEN_SHIFT)
     EMU_EFPDirectModeEnable(false);
@@ -552,7 +568,7 @@ sl_status_t sl_efp_emu_ldo_enable(sl_efp_handle_t handle, bool enable)
     return SL_STATUS_OK;
 #elif defined(_SILICON_LABS_32B_SERIES_2_CONFIG_1)
     sli_se_mailbox_command_t command = SLI_SE_MAILBOX_COMMAND_DEFAULT(SLI_SE_COMMAND_PROTECTED_REGISTER
-                                              | SLI_SE_COMMAND_OPTION_WRITE);
+                                                                      | SLI_SE_COMMAND_OPTION_WRITE);
     sli_se_mailbox_command_add_parameter(&command, 0x4000408c);    // Address
     sli_se_mailbox_command_add_parameter(&command, 1 << 14);       // Mask
     if (enable) {
@@ -603,6 +619,7 @@ sl_status_t sl_efp_init(sl_efp_handle_t handle, const sl_efp_init_data_t *init)
   uint8_t *p;
   uint8_t tmp = 0;
   sl_status_t ret_val;
+  sl_gpio_t irq_gpio;
 
   if (init->is_host_efp) {
     if (host_efp == NULL) {
@@ -703,6 +720,9 @@ sl_status_t sl_efp_init(sl_efp_handle_t handle, const sl_efp_init_data_t *init)
   EMU_EFPDriveDvddSet(true);
 #endif
 
+  irq_gpio.port = init->irq_port;
+  irq_gpio.pin = init->irq_pin;
+
   // Configure GPIO pin as EFP IRQ input.
   if ((init->irq_pin_mode != efp_irq_pin_disabled) && (ret_val == SL_STATUS_OK)) {
     // Clear interrupt flags.
@@ -713,7 +733,7 @@ sl_status_t sl_efp_init(sl_efp_handle_t handle, const sl_efp_init_data_t *init)
 #if defined(EMU_CTRL_EFPDRVDVDD)
     if (init->irq_pin_mode == efp_irq_pin_emu) {
       if (ret_val == SL_STATUS_OK) {
-        GPIO_PinModeSet(init->irq_port, init->irq_pin, gpioModeInput, 1);
+        sl_gpio_set_pin_mode(&irq_gpio, SL_GPIO_MODE_INPUT, 1);
       }
 
       /* Get and clear all pending EMU EFP interrupts */
@@ -723,7 +743,7 @@ sl_status_t sl_efp_init(sl_efp_handle_t handle, const sl_efp_init_data_t *init)
     }
 # else
     if (ret_val == SL_STATUS_OK) {
-      GPIO_PinModeSet(init->irq_port, init->irq_pin, gpioModeInputPull, 1);
+      sl_gpio_set_pin_mode(&irq_gpio, SL_GPIO_MODE_INPUT_PULL, 1);
     }
 #endif
   }

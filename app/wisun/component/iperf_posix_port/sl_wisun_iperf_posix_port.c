@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_wisun_iperf_posix_port.c
+ * @brief Wi-SUN iPerf POSIX port implementation
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -31,7 +31,6 @@
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <stddef.h>
 #include <stdint.h>
 #include <assert.h>
@@ -43,7 +42,6 @@
 #include "sl_sleeptimer.h"
 #include "sl_wisun_types.h"
 #include "sl_wisun_app_core_util.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------

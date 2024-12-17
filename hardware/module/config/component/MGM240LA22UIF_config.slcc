@@ -17,6 +17,18 @@
   - name: MGM240LA22UIF_config
 - config_file:
   - override:
+      component: clock_manager
+      file_id: clock_manager_oscillator_config
+    path: MGM240LA22UIF/sl_clock_manager_oscillator_config.h
+    unless:
+    - board_config_clock_manager
+  - override:
+      component: clock_manager
+      file_id: clock_manager_tree_config
+    path: MGM240LA22UIF/sl_clock_manager_tree_config.h
+    unless:
+    - board_config_clock_manager
+  - override:
       component: device_init_hfxo
       file_id: device_init_hfxo_config
     path: MGM240LA22UIF/sl_device_init_hfxo_config.h

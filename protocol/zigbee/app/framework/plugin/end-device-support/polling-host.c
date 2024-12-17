@@ -71,9 +71,9 @@ void sl_zigbee_af_end_device_support_tick_cb(void)
                                                           &units);
         status = sl_zigbee_ezsp_poll_for_data(duration, units, ncpFailureLimit);
         if (status != SL_STATUS_OK) {
-          sl_zigbee_af_core_println("poll nwk %d: 0x%x", i, status);
+          sl_zigbee_af_core_println("poll nwk %d: 0x%02X", i, status);
         } else {
-          sl_zigbee_af_core_println("Next poll nwk %d in %l ms",
+          sl_zigbee_af_core_println("Next poll nwk %d in %ld ms",
                                     i,
                                     state->pollIntervalMs);
         }

@@ -14,6 +14,9 @@ description: >
 
   function in sl_bt_in_place_ota_dfu.c file.
 category: Bluetooth|Application|Firmware Update
+metadata:
+  sbom:
+    license: Zlib
 quality: production
 root_path: app/bluetooth/common/in_place_ota_dfu
 tag:
@@ -32,6 +35,7 @@ provides:
   - name: in_place_ota_dfu
 conflicts:
   - name: app_ota_dfu
+  - name: device_series_3  # Not supported on Series 3 devices
 requires:
   - name: app_assert
   - name: app_timer
@@ -42,10 +46,12 @@ requires:
   - name: bluetooth_feature_system
   - name: bluetooth_stack
   - name: bootloader_interface
+  - name: component_catalog
   - name: gatt_configuration
-recommends:
-  - id: app_timer
+  - name: sl_common
 template_contribution:
+  - name: component_catalog
+    value: in_place_ota_dfu
   - name: bluetooth_on_event
     value:
       include: sl_bt_in_place_ota_dfu.h

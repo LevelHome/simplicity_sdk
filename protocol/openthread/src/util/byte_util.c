@@ -142,22 +142,6 @@ void sl_reverse_memcpy(uint8_t *dest, const uint8_t *src, uint8_t length)
     }
 }
 
-uint16_t sl_strlen(const uint8_t *const string)
-{
-    uint16_t i = 0;
-
-    if (string != NULL)
-    {
-        while (string[i] != '\0' && i != 0xFFFF)
-        {
-            i++;
-        }
-        OT_ASSERT(i != 0xFFFF);
-    }
-
-    return i;
-}
-
 int8_t sl_strcmp(const uint8_t *s1, const uint8_t *s2)
 {
     uint8_t c1, c2;

@@ -20,7 +20,7 @@
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-#include "em_cmu.h"
+#include "em_device.h"
 #include "psa/crypto.h"
 #include <inttypes.h>
 #include <stdio.h>
@@ -29,32 +29,32 @@
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
 #if defined(DWT_CTRL_CYCCNTENA_Msk) && (PSA_CRYPTO_PRINT == 1)
-#define print_error_cycle(CODE)                                           \
-  do {                                                                    \
-    psa_status_t ret;                                                     \
-    uint32_t cycles;                                                      \
-                                                                          \
-    DWT->CYCCNT = 0;                                                      \
-    ret = CODE;                                                           \
-    cycles = DWT->CYCCNT;                                                 \
-                                                                          \
-    if (ret == PSA_SUCCESS) {                                             \
-      printf("PSA_SUCCESS");                                              \
-    } else {                                                              \
-      printf("PSA_ERROR: %ld", ret);                                      \
-    }                                                                     \
-                                                                          \
-    if (cycles < (CMU_ClockFreqGet(cmuClock_CORE) / 10)) {                \
-      printf(" (cycles: %" PRIu32 " time: %" PRIu32 " us)\n",             \
-             cycles,                                                      \
-             (cycles * 10) / (CMU_ClockFreqGet(cmuClock_CORE) / 100000)); \
-    }                                                                     \
-    else {                                                                \
-      printf(" (cycles: %" PRIu32 " time: %" PRIu32 " ms)\n",             \
-             cycles,                                                      \
-             cycles / (CMU_ClockFreqGet(cmuClock_CORE) / 1000));          \
-    }                                                                     \
-    return ret;                                                           \
+#define print_error_cycle(CODE)                               \
+  do {                                                        \
+    psa_status_t ret;                                         \
+    uint32_t cycles;                                          \
+                                                              \
+    DWT->CYCCNT = 0;                                          \
+    ret = CODE;                                               \
+    cycles = DWT->CYCCNT;                                     \
+                                                              \
+    if (ret == PSA_SUCCESS) {                                 \
+      printf("PSA_SUCCESS");                                  \
+    } else {                                                  \
+      printf("PSA_ERROR: %ld", ret);                          \
+    }                                                         \
+                                                              \
+    if (cycles < (SystemHCLKGet() / 10)) {                    \
+      printf(" (cycles: %" PRIu32 " time: %" PRIu32 " us)\n", \
+             cycles,                                          \
+             (cycles * 10) / (SystemHCLKGet() / 100000));     \
+    }                                                         \
+    else {                                                    \
+      printf(" (cycles: %" PRIu32 " time: %" PRIu32 " ms)\n", \
+             cycles,                                          \
+             cycles / (SystemHCLKGet() / 1000));              \
+    }                                                         \
+    return ret;                                               \
   } while (0)
 
 #else

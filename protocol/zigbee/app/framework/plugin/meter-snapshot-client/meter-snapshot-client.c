@@ -25,55 +25,53 @@
   (sl_zigbee_af_current_command()->bufLen - (field - sl_zigbee_af_current_command()->buffer))
 #endif
 
-bool sl_zigbee_af_simple_metering_cluster_schedule_snapshot_response_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_simple_metering_cluster_schedule_snapshot_response_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_simple_metering_cluster_schedule_snapshot_response_command_t cmd_data;
 
   if (zcl_decode_simple_metering_cluster_schedule_snapshot_response_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_simple_metering_cluster_println("RX: ScheduleSnapshotResponse 0x%4x",
+  sl_zigbee_af_simple_metering_cluster_println("RX: ScheduleSnapshotResponse 0x%08X",
                                                cmd_data.issuerEventId);
 
   // according to the documentation, the payload comprises of two uint8_t types
-  sl_zigbee_af_simple_metering_cluster_println("    Payload: 0x%x, 0x%x",
+  sl_zigbee_af_simple_metering_cluster_println("    Payload: 0x%02X, 0x%02X",
                                                cmd_data.snapshotResponsePayload[0],
                                                cmd_data.snapshotResponsePayload[2]);
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
-bool sl_zigbee_af_simple_metering_cluster_take_snapshot_response_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_simple_metering_cluster_take_snapshot_response_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_simple_metering_cluster_take_snapshot_response_command_t cmd_data;
 
   if (zcl_decode_simple_metering_cluster_take_snapshot_response_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
-  sl_zigbee_af_simple_metering_cluster_println("RX: TakeSnapshotResponse 0x%4x, 0x%x",
+  sl_zigbee_af_simple_metering_cluster_println("RX: TakeSnapshotResponse 0x%08X, 0x%02X",
                                                cmd_data.snapshotId,
                                                cmd_data.snapshotConfirmation);
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
-bool sl_zigbee_af_simple_metering_cluster_publish_snapshot_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_simple_metering_cluster_publish_snapshot_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_simple_metering_cluster_publish_snapshot_command_t cmd_data;
 
   if (zcl_decode_simple_metering_cluster_publish_snapshot_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
   uint8_t i;
   uint16_t snapshotPayloadLength = fieldLength(cmd_data.snapshotPayload);
 
-  sl_zigbee_af_simple_metering_cluster_println("RX: PublishSnapshotResponse 0x%4x, 0x%4x, 0x%x, 0x%x, 0x%x, 0x%4x, 0x%x",
+  sl_zigbee_af_simple_metering_cluster_println("RX: PublishSnapshotResponse 0x%08X, 0x%08X, 0x%02X, 0x%02X, 0x%02X, 0x%08X, 0x%02X",
                                                cmd_data.snapshotId,
                                                cmd_data.snapshotTime,
                                                cmd_data.totalSnapshotsFound,
@@ -89,7 +87,7 @@ bool sl_zigbee_af_simple_metering_cluster_publish_snapshot_cb(sl_zigbee_af_clust
     sl_zigbee_af_simple_metering_cluster_println("    Payload:");
 
     for (i = 0; i < snapshotPayloadLength; i += 4) {
-      sl_zigbee_af_simple_metering_cluster_println("            0x%x 0x%x 0x%x 0x%x",
+      sl_zigbee_af_simple_metering_cluster_println("            0x%02X 0x%02X 0x%02X 0x%02X",
                                                    cmd_data.snapshotPayload[i],
                                                    cmd_data.snapshotPayload[i + 1],
                                                    cmd_data.snapshotPayload[i + 2],
@@ -97,34 +95,31 @@ bool sl_zigbee_af_simple_metering_cluster_publish_snapshot_cb(sl_zigbee_af_clust
     }
   }
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
-sl_zigbee_af_status_t sl_zigbee_af_simple_metering_cluster_client_snapshot_command_parse(sl_service_opcode_t opcode,
-                                                                                         sl_service_function_context_t *context)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_simple_metering_cluster_client_snapshot_command_parse(sl_service_opcode_t opcode,
+                                                                                                     sl_service_function_context_t *context)
 {
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_SCHEDULE_SNAPSHOT_RESPONSE_COMMAND_ID:
-        wasHandled = sl_zigbee_af_simple_metering_cluster_schedule_snapshot_response_cb(cmd);
+        status = sl_zigbee_af_simple_metering_cluster_schedule_snapshot_response_cb(cmd);
         break;
       case ZCL_TAKE_SNAPSHOT_RESPONSE_COMMAND_ID:
-        wasHandled = sl_zigbee_af_simple_metering_cluster_take_snapshot_response_cb(cmd);
+        status = sl_zigbee_af_simple_metering_cluster_take_snapshot_response_cb(cmd);
         break;
       case ZCL_PUBLISH_SNAPSHOT_COMMAND_ID:
-        wasHandled = sl_zigbee_af_simple_metering_cluster_publish_snapshot_cb(cmd);
+        status = sl_zigbee_af_simple_metering_cluster_publish_snapshot_cb(cmd);
         break;
       default:
         break;
     }
   }
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

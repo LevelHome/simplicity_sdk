@@ -29,7 +29,7 @@
  ******************************************************************************/
 #include "sl_rail_util_rf_path_switch.h"
 #include "em_assert.h"
-#include "em_gpio.h"
+#include "sl_gpio.h"
 #include "em_cmu.h"
 #include "em_prs.h"
 

@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_wisun_network_measurement_stat.h
+ * @brief Wi-SUN Network Measurement Statistics
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __SL_WISUN_NETWORK_MEASUREMENT_STAT_H__
-#define __SL_WISUN_NETWORK_MEASUREMENT_STAT_H__
+#ifndef SL_WISUN_NETWORK_MEASUREMENT_STAT_H
+#define SL_WISUN_NETWORK_MEASUREMENT_STAT_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,21 +38,19 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include "sl_wisun_ping.h"
 #include "sl_wisun_types.h"
 #include "socket/socket.h"
 #include "sl_wisun_trace_util.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
 
 /// Maximum measurable router count
-#define SL_WISUN_MAX_NODE_COUNT       (33U) // 32 Neighbors + 1 BR
+#define SL_WISUN_MAX_NODE_COUNT             (33U) // 32 Neighbors + 1 BR
 
 /// Maximum children count
-#define SL_WISUN_MAX_CHILDREN_COUNT       (30U)
+#define SL_WISUN_MAX_CHILDREN_COUNT         (30U)
 
 /// Wi-SUN Node type enum type definition
 typedef enum sl_wisun_nwm_node_type {
@@ -191,4 +189,4 @@ void sl_wisun_nwm_get_children_stat(sl_wisun_nwm_node_stat_t * const dest,
 }
 #endif
 
-#endif
+#endif // SL_WISUN_NETWORK_MEASUREMENT_STAT_H

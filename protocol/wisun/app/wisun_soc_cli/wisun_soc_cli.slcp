@@ -8,12 +8,11 @@ category: "Wi-SUN Examples"
 quality: "production"
 
 component:
-  - id: "segger_rtt"
   - id: "wisun_stack"
   - id: "wisun_stack_debug"
   - id: "wisun_stack_lfn"
   - id: "wisun_stack_ffn"
-  - id: "wisun_full_radioconf"
+  - id: "wisun_default_radioconf"
   - id: "wisun_keychain"
   - id: "wisun_silabs_certificates"
   - id: "wisun_default_phy"
@@ -126,6 +125,11 @@ configuration:
     value: "3200000"
   - name: SL_MBEDTLS_SSL_IN_CONTENT_LEN
     value: 1024
+  - name: SL_CLI_INPUT_BUFFER_SIZE
+    value: 256
+  - name: "SL_SLEEPTIMER_PERIPHERAL"
+    value: "SL_SLEEPTIMER_PERIPHERAL_BURTC"
+    condition: [wisun_low_power]
 
 template_contribution:
   - name: "event_handler"
@@ -474,6 +478,35 @@ template_contribution:
       argument:
         - type: uint8
           help: "is_leaf: True to act as RPL leaf"
+  - name: "cli_command"
+    value:
+      group: "wisun"
+      name: "set_direct_connect_state"
+      handler: "app_set_direct_connect_state"
+      help: "Enable/disable Direct Connect"
+      argument:
+        - type: uint8
+          help: "is_enabled: True to enable Direct Connect"
+  - name: "cli_command"
+    value:
+      group: "wisun"
+      name: "accept_direct_connect_link"
+      handler: "app_accept_direct_connect_link"
+      help: "Accept a Direct Connect link"
+      argument:
+        - type: string
+          help: "Client link local address"
+  - name: "cli_command"
+    value:
+      group: "wisun"
+      name: "set_phy_sens"
+      handler: "app_set_phy_sensitivity"
+      help: "Set the sensitivity for the given PHY mode ID"
+      argument:
+        - type: uint8
+          help: "PHY mode ID"
+        - type: int16
+          help: "Sensitivity in dBm"
 
 
 # -------------------------------

@@ -357,16 +357,17 @@ void Zero_Table()
 }
 #endif // __START
 
-#if !defined(SL_LEGACY_LINKER) && !defined(SL_RAM_LINKER)
+#if !defined(SL_LEGACY_LINKER) \
+  && !defined(SL_RAM_LINKER)   \
+  && !defined(BOOTLOADER_ENABLE)
 #if defined (__GNUC__)
 __attribute__((optimize("no-tree-loop-distribute-patterns")))
 #endif
-void CopyBlock(const uint32_t *from, uint32_t *to, uint32_t size)
+// Instructions are 4 bytes long
+void CopyInstructions(const uint32_t *from, uint32_t *to, uint32_t num_instructions)
 {
-  if (size != 0) {
-    while (size--) {
-      *to++ = *from++;
-    }
+  while (num_instructions--) {
+    *to++ = *from++;
   }
 }
 #if defined (__GNUC__)
@@ -375,9 +376,9 @@ void CopyToRam()
   extern uint32_t __lma_ramfuncs_start__;
   extern uint32_t __lma_ramfuncs_end__;
   extern uint32_t __ramfuncs_start__;
-  uint32_t        size = &__lma_ramfuncs_end__ - &__lma_ramfuncs_start__;
+  uint32_t        num_instructions = &__lma_ramfuncs_end__ - &__lma_ramfuncs_start__;
 
-  CopyBlock(&__lma_ramfuncs_start__, &__ramfuncs_start__, size);
+  CopyInstructions(&__lma_ramfuncs_start__, &__ramfuncs_start__, num_instructions);
 }
 #elif defined (__ICCARM__)
 #pragma language=save
@@ -386,11 +387,11 @@ void CopyToRam()
 #pragma section="text_ram_init"
 void CopyToRam(void)
 {
-  uint32_t size   = __section_size("text_ram");
-  uint32_t * from = __section_begin("text_ram_init");
-  uint32_t * to   = __section_begin("text_ram");
+  uint32_t num_instructions = (__section_size("text_ram") + 3) / 4;
+  uint32_t * from           = __section_begin("text_ram_init");
+  uint32_t * to             = __section_begin("text_ram");
 
-  CopyBlock(from, to, size);
+  CopyInstructions(from, to, num_instructions);
 }
 #pragma language=restore
 #endif
@@ -413,12 +414,15 @@ __NO_RETURN void Reset_Handler(void)
   SystemInit();                    /* CMSIS System Initialization */
   #endif
 
+#if !defined(SL_LEGACY_LINKER) \
+  && !defined(SL_RAM_LINKER)   \
+  && !defined(BOOTLOADER_ENABLE)
+  CopyToRam();
+#endif
+
 #ifdef BOOTLOADER_ENABLE
   SystemInit2();
 #endif // BOOTLOADER_ENABLE
-#if !defined(SL_LEGACY_LINKER) && !defined(SL_RAM_LINKER)
-  CopyToRam();
-#endif
 #if defined (__GNUC__) && defined (__START)
   Copy_Table();
   Zero_Table();

@@ -4,6 +4,22 @@ from pyradioconfig.calculator_model_framework.Utils.LogMgr import LogMgr
 class CalcViterbiRainier(Calc_Viterbi_Bobcat):
     acqwin_unit = 1
 
+    def calc_trecs_optimize_cost_thd(self, model):
+        trecs_enabled = model.vars.trecs_enabled.value
+        protocol_id = model.vars.protocol_id.value
+        is_ble = protocol_id == model.vars.protocol_id.var_enum.BLE
+
+        enable_opt = trecs_enabled and not is_ble
+        model.vars.trecs_optimize_cost_thd.value = enable_opt
+
+    def calc_trecs_weak_syncword_optimization(self, model):
+        trecs_enabled = model.vars.trecs_enabled.value
+        protocol_id = model.vars.protocol_id.value
+        is_ble = protocol_id == model.vars.protocol_id.var_enum.BLE
+
+        enable_opt = trecs_enabled and not is_ble
+        model.vars.trecs_weak_syncword_optimization.value = enable_opt
+
     def calc_pmoffset_reg(self, model):
 
         afc_oneshot_enabled = (model.vars.MODEM_AFC_AFCONESHOT.value == 1)
@@ -66,3 +82,17 @@ class CalcViterbiRainier(Calc_Viterbi_Bobcat):
         self._reg_write(model.vars.MODEM_CHFCTRL_SWCOEFFEN, swcoeffen)
         self._reg_write(model.vars.MODEM_VTCORRCFG1_KSI3SWENABLE, ksi3swenable, do_not_care=ksi3swen_donotccare)
 
+    def calc_vtdemoden_reg(self, model):
+        demod_sel = model.vars.demod_select.value
+        dssscfe_combo = model.vars.MODEM_DIGMIXCTRL_DSSSCFECOMBO.value
+
+        # VTDEMODEN is set if: the selected demod uses the TRECS
+        # Or if the CFE of the TRECS is used along the DSSS correlator for timing and detection (dssscfecombo)
+        if (demod_sel == model.vars.demod_select.var_enum.TRECS_VITERBI
+                or demod_sel == model.vars.demod_select.var_enum.TRECS_SLICER
+                or dssscfe_combo):
+            reg = 1
+        else:
+            reg = 0
+
+        self._reg_write(model.vars.MODEM_VITERBIDEMOD_VTDEMODEN, reg)

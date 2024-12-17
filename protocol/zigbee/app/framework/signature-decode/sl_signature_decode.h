@@ -135,7 +135,7 @@ sl_signature_decode_status_t sl_signature_decode(uint8_t *message,
  * @param msgLen Message length
  * @param bytes Number of bytes requested
  *
- * @return uint32_t decoded intß
+ * @return uint32_t decoded int
  */
 uint32_t sl_signature_decode_int(const uint8_t* message,
                                  uint16_t currentIndex,

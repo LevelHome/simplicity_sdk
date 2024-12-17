@@ -37,7 +37,7 @@
 // <o SL_RAIL_UTIL_AOX_ANTENNA_PIN_COUNT> Number of AoX Antenna Pins
 // <0-6:1>
 // <i> Default: 0
-#define SL_RAIL_UTIL_AOX_ANTENNA_PIN_COUNT 2
+#define SL_RAIL_UTIL_AOX_ANTENNA_PIN_COUNT 1
 #if SL_RAIL_UTIL_AOX_ANTENNA_PIN_COUNT == 0
 #warning "The AoX component is only needed to configure multiple AoX antennas!"
 #endif //SL_RAIL_UTIL_AOX_ANTENNA_PIN_COUNT == 0
@@ -48,7 +48,7 @@
 // CTE antenna GPIO 0
 // <gpio optional=true> SL_RAIL_UTIL_AOX_ANTENNA_PIN0
 // $[GPIO_SL_RAIL_UTIL_AOX_ANTENNA_PIN0]
-#define SL_RAIL_UTIL_AOX_ANTENNA_PIN0_PORT       gpioPortA
+#define SL_RAIL_UTIL_AOX_ANTENNA_PIN0_PORT       SL_GPIO_PORT_A
 #define SL_RAIL_UTIL_AOX_ANTENNA_PIN0_PIN        0
 
 // [GPIO_SL_RAIL_UTIL_AOX_ANTENNA_PIN0]$
@@ -56,8 +56,6 @@
 // CTE antenna GPIO 1
 // <gpio optional=true> SL_RAIL_UTIL_AOX_ANTENNA_PIN1
 // $[GPIO_SL_RAIL_UTIL_AOX_ANTENNA_PIN1]
-#define SL_RAIL_UTIL_AOX_ANTENNA_PIN1_PORT       gpioPortA
-#define SL_RAIL_UTIL_AOX_ANTENNA_PIN1_PIN        0
 
 // [GPIO_SL_RAIL_UTIL_AOX_ANTENNA_PIN1]$
 

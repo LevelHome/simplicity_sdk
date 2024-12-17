@@ -57,9 +57,9 @@ void sl_zigbee_af_clear_response_data(void)
 
 uint8_t * sl_zigbee_af_put_int8u_in_resp(uint8_t value)
 {
-  //sl_zigbee_af_debug_print("try %x max %x\r\n", appResponseLength, SL_ZIGBEE_AF_RESPONSE_BUFFER_LEN);
+  //sl_zigbee_af_debug_print("try %02X max %02X\r\n", appResponseLength, SL_ZIGBEE_AF_RESPONSE_BUFFER_LEN);
   if (appResponseLength < SL_ZIGBEE_AF_RESPONSE_BUFFER_LEN) {
-    //sl_zigbee_af_debug_print("put %x at spot %x\r\n", value, appResponseLength);
+    //sl_zigbee_af_debug_print("put %02X at spot %02X\r\n", value, appResponseLength);
     appResponseData[appResponseLength] = value;
     appResponseLength++;
     return &appResponseData[appResponseLength - 1];
@@ -153,7 +153,7 @@ uint32_t sl_zigbee_af_get_int(const uint8_t* message,
   // This printout needs to stay here, otherwise `./z run linkkey` test fails.
   // We should rework the test so we can remove this....
   if ((currentIndex + bytes) > msgLen) {
-    sl_zigbee_af_debug_println("GetInt, %x bytes short", bytes);
+    sl_zigbee_af_debug_println("GetInt, %02X bytes short", bytes);
     sl_zigbee_af_debug_flush();
     return 0;
   }
@@ -179,14 +179,14 @@ uint8_t* sl_zigbee_af_get_string(uint8_t* message, uint16_t currentIndex, uint16
 {
   // Strings must contain at least one byte for the length.
   if (msgLen <= currentIndex) {
-    sl_zigbee_af_debug_println("GetString: %p", "buffer too short");
+    sl_zigbee_af_debug_println("GetString: %s", "buffer too short");
     return zeroLenBytePtr;
   }
 
   // Starting from the current index, there must be enough bytes in the message
   // for the string and the length byte.
   if (msgLen < currentIndex + sl_zigbee_af_string_length(&message[currentIndex]) + 1) {
-    sl_zigbee_af_debug_println("GetString: %p", "len byte wrong");
+    sl_zigbee_af_debug_println("GetString: %s", "len byte wrong");
     return zeroLenBytePtr;
   }
 
@@ -197,7 +197,7 @@ uint8_t* sl_zigbee_af_get_long_string(uint8_t* message, uint16_t currentIndex, u
 {
   // Long strings must contain at least two bytes for the length.
   if (msgLen <= currentIndex + 1) {
-    sl_zigbee_af_debug_println("GetLongString: %p", "buffer too short");
+    sl_zigbee_af_debug_println("GetLongString: %s", "buffer too short");
     return zeroLenBytePtr;
   }
 
@@ -205,7 +205,7 @@ uint8_t* sl_zigbee_af_get_long_string(uint8_t* message, uint16_t currentIndex, u
   // for the string and the length bytes.
   if (msgLen
       < currentIndex + sl_zigbee_af_long_string_length(&message[currentIndex]) + 2) {
-    sl_zigbee_af_debug_println("GetLongString: %p", "len bytes wrong");
+    sl_zigbee_af_debug_println("GetLongString: %s", "len bytes wrong");
     return zeroLenBytePtr;
   }
 
@@ -233,7 +233,7 @@ uint8_t sl_zigbee_af_get_date(uint8_t* message,
                               sl_zigbee_af_date_t *destination)
 {
   if ((currentIndex + 4) > msgLen) {
-    sl_zigbee_af_debug_println("GetDate, %x bytes short", 4);
+    sl_zigbee_af_debug_println("GetDate, %02X bytes short", 4);
     sl_zigbee_af_debug_flush();
     return 0;
   }

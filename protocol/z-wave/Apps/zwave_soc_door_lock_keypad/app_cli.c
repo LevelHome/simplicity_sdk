@@ -40,10 +40,9 @@
 #include "CC_UserCode.h"
 #include "sl_cli.h"
 #include "app_log.h"
-#include "app_cli.h"
 #include "ev_man.h"
 #include "events.h"
-#include "zpal_power_manager.h"
+#include "CC_DoorLock.h"
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -123,6 +122,52 @@ void cli_set_doorhandle_state(sl_cli_command_arg_t *arguments)
   }
 }
 
+/******************************************************************************
+ * CLI - get_doorhandle_state: Get Door Handle State
+ *****************************************************************************/
+void cli_get_doorhandle_state(__attribute__((unused)) sl_cli_command_arg_t *arguments)
+{
+  app_log_info("Get Door Handle State\r\n");
+  char* state = door_lock_hw_handle_is_pressed() ? "pressed" : "released";
+  app_log_info("Door Handle is %s\r\n", state);
+}
+
+/******************************************************************************
+ * CLI - set_doorhandle_state: Set Doorhandle State
+ *****************************************************************************/
+void cli_get_doorbolt_state(__attribute__((unused)) sl_cli_command_arg_t *arguments)
+{
+  app_log_info("Get Door Bolt State\r\n");
+  char* state = door_lock_hw_bolt_is_unlocked() ? "unlocked" : "locked";
+  app_log_info("Door Bolt is %s\r\n", state);
+}
+
+/******************************************************************************
+ * CLI - get_doorlatch_state: Get Door Latch State
+ *****************************************************************************/
+void cli_get_doorlatch_state(__attribute__((unused)) sl_cli_command_arg_t *arguments)
+{
+  app_log_info("Get Door Latch State\r\n");
+  char* state = door_lock_hw_latch_is_closed() ? "closed" : "open";
+  app_log_info("Door Latch is %s\r\n", state);
+}
+
+void cli_log_cc_door_lock_events(
+  const uint8_t event, __attribute__((unused)) const void * const data)
+{
+  switch (event) {
+    case CC_DOOR_LOCK_EVENT_HW_OPERATION_DONE:
+      app_log_info("The door bolt is now %s\r\n",
+                   door_lock_hw_bolt_is_unlocked() ? "unlocked" : "locked");
+      break;
+    default:
+      break;
+  }
+}
+
+ZAF_EVENT_DISTRIBUTOR_REGISTER_CC_EVENT_HANDLER(
+  COMMAND_CLASS_DOOR_LOCK, cli_log_cc_door_lock_events);
+
 // -----------------------------------------------------------------------------
 //                          Static Function Definitions
 // -----------------------------------------------------------------------------
@@ -143,30 +188,4 @@ static void send_user_code_for_validation(char* user_code)
   zaf_event_distributor_enqueue_cc_event(COMMAND_CLASS_USER_CODE, CC_USER_CODE_EVENT_VALIDATE, (const void*) &user_code_event_validate_data);
 }
 
-/******************************************************************************
- * CLI - enable_sleeping: Enabling the device to go into sleep mode
- *****************************************************************************/
-void cli_enable_sleeping(sl_cli_command_arg_t *arguments)
-{
-  (void) arguments;
-  app_log_info("Enable sleeping\r\n");
-  cli_util_prevent_sleeping(false);
-}
-
-/******************************************************************************
- * CLI - Util Preventing the application to go into sleep mode to keep
- * the CLI alive
- *****************************************************************************/
-void cli_util_prevent_sleeping(bool is_prevent)
-{
-  static zpal_pm_handle_t pm_handle = NULL;
-
-  if ((true == is_prevent) && (pm_handle == NULL)) {
-    pm_handle  = zpal_pm_register(ZPAL_PM_TYPE_USE_RADIO);
-    zpal_pm_stay_awake(pm_handle, 0);
-  } else {
-    zpal_pm_cancel(pm_handle);
-    pm_handle = NULL;
-  }
-}
 #endif // SL_CATALOG_ZW_CLI_COMMON_PRESENT

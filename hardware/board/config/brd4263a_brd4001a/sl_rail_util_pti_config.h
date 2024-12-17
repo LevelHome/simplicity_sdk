@@ -58,11 +58,11 @@
 #define SL_RAIL_UTIL_PTI_PERIPHERAL              PTI
 
 // PTI DOUT on PC08
-#define SL_RAIL_UTIL_PTI_DOUT_PORT               gpioPortC
+#define SL_RAIL_UTIL_PTI_DOUT_PORT               SL_GPIO_PORT_C
 #define SL_RAIL_UTIL_PTI_DOUT_PIN                8
 
 // PTI DFRAME on PC09
-#define SL_RAIL_UTIL_PTI_DFRAME_PORT             gpioPortC
+#define SL_RAIL_UTIL_PTI_DFRAME_PORT             SL_GPIO_PORT_C
 #define SL_RAIL_UTIL_PTI_DFRAME_PIN              9
 
 

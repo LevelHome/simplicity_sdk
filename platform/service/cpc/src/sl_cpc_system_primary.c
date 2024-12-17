@@ -33,11 +33,14 @@
 #include "sl_cpc_config.h"
 #include "sl_cpc.h"
 #include "sli_cpc.h"
+#include "sli_cpc_assert.h"
 #include "sli_cpc_memory.h"
 #include "sli_cpc_system_common.h"
 #include "sli_cpc_system_primary.h"
 #include "sli_cpc_trace.h"
 #include "sli_cpc_debug.h"
+
+#include "sl_cpc_instance_handles.h"
 
 #include <string.h>
 
@@ -50,12 +53,12 @@
 #endif
 
 #if defined(DEBUG_EFM) || defined(DEBUG_EFM_USER)
-#define  VALIDATE_COMMAND_HANDLE(command_handle)            \
-  {                                                         \
-    sl_slist_node_t *_node_;                                \
-    SL_SLIST_FOR_EACH(commands, _node_) {                   \
-      EFM_ASSERT(_node_ != &command_handle->node_commands); \
-    }                                                       \
+#define  VALIDATE_COMMAND_HANDLE(command_handle)                \
+  {                                                             \
+    sl_slist_node_t *_node_;                                    \
+    SL_SLIST_FOR_EACH(commands, _node_) {                       \
+      SLI_CPC_ASSERT(_node_ != &command_handle->node_commands); \
+    }                                                           \
   }
 #else
 #define  VALIDATE_COMMAND_HANDLE(command_handle)
@@ -201,8 +204,8 @@ static void init_command_handle(sli_cpc_system_command_handle_t *command_handle,
                                 uint32_t retry_timeout_ms,
                                 sli_cpc_system_ep_frame_type_t frame_type)
 {
-  EFM_ASSERT(command_handle != NULL);
-  EFM_ASSERT(on_final_callback != NULL);
+  SLI_CPC_ASSERT(command_handle != NULL);
+  SLI_CPC_ASSERT(on_final_callback != NULL);
 
   command_handle->error_status       = SL_STATUS_OK;
   command_handle->frame_type         = frame_type;
@@ -304,7 +307,7 @@ static void on_write_completed(sl_cpc_user_endpoint_id_t endpoint_id,
   if (command_handle->flags.received_reply) {
     // Command was already replied, simply free it and return.
     // Received a reply so ACK must be valid
-    EFM_ASSERT(status == SL_STATUS_OK);
+    SLI_CPC_ASSERT(status == SL_STATUS_OK);
     sli_cpc_free_system_command_handle(&g_instance, command_handle);
     return;
   }
@@ -318,7 +321,7 @@ static void on_write_completed(sl_cpc_user_endpoint_id_t endpoint_id,
                                                command_handle->retry_timeout_tick,
                                                on_timer_expired,
                                                command_handle);
-    EFM_ASSERT(status_timer == SL_STATUS_OK);
+    SLI_CPC_ASSERT(status_timer == SL_STATUS_OK);
   } else {
     // If the write failed and we're dealing with an I-Frame, it means the secondary didn't
     // acknowledge the frame in time, so it's an error that should be reported to caller.
@@ -447,7 +450,7 @@ static void on_final(uint8_t endpoint_id,
       case CMD_SYSTEM_PROP_VALUE_GET:   // Fallthrough, primary ain't supposed to receive those
       case CMD_SYSTEM_PROP_VALUE_SET:
       default:
-        EFM_ASSERT(false);
+        SLI_CPC_ASSERT(0);
         break;
     }
 
@@ -478,7 +481,7 @@ static void on_error(uint8_t endpoint_id, void *arg)
 
   (void)arg;
 
-  EFM_ASSERT(endpoint_id == SL_CPC_ENDPOINT_SYSTEM);
+  SLI_CPC_ASSERT(endpoint_id == SL_CPC_ENDPOINT_SYSTEM);
 
   MCU_ENTER_ATOMIC();
 
@@ -531,7 +534,7 @@ sl_status_t sli_cpc_system_cmd_noop(sli_cpc_system_noop_cmd_callback_t on_noop_r
   sl_status_t status;
 
   // Make sure the system endpoint is initialized
-  EFM_ASSERT(system_ep.ep != NULL);
+  SLI_CPC_ASSERT(system_ep.ep != NULL);
 
   status = sli_cpc_get_system_command_handle(&g_instance, &command_handle);
   if (status != SL_STATUS_OK) {
@@ -564,7 +567,7 @@ sl_status_t sli_cpc_system_cmd_reboot(sli_cpc_system_reset_cmd_callback_t on_res
   sl_status_t status;
 
   // Make sure the system endpoint is initialized
-  EFM_ASSERT(system_ep.ep != NULL);
+  SLI_CPC_ASSERT(system_ep.ep != NULL);
 
   status = sli_cpc_get_system_command_handle(&g_instance, &command_handle);
   if (status != SL_STATUS_OK) {
@@ -600,7 +603,7 @@ sl_status_t sli_cpc_system_cmd_property_get(sli_cpc_system_property_get_set_cmd_
   sl_status_t status;
 
   // Make sure the system endpoint is initialized
-  EFM_ASSERT(system_ep.ep != NULL);
+  SLI_CPC_ASSERT(system_ep.ep != NULL);
 
   status = sli_cpc_get_system_command_handle(&g_instance, &command_handle);
   if (status != SL_STATUS_OK) {
@@ -608,7 +611,7 @@ sl_status_t sli_cpc_system_cmd_property_get(sli_cpc_system_property_get_set_cmd_
   }
 
   if (retry_count_max != 0 && frame_type == SYSTEM_EP_IFRAME) {
-    EFM_ASSERT(false);
+    SLI_CPC_ASSERT(0);
     sli_cpc_free_system_command_handle(&g_instance, command_handle);
     return SL_STATUS_INVALID_PARAMETER;
   }
@@ -648,7 +651,7 @@ sl_status_t sli_cpc_system_cmd_property_set(sli_cpc_system_property_get_set_cmd_
   sl_status_t status;
 
   // Make sure the system endpoint is initialized
-  EFM_ASSERT(system_ep.ep != NULL);
+  SLI_CPC_ASSERT(system_ep.ep != NULL);
 
   status = sli_cpc_get_system_command_handle(&g_instance, &command_handle);
   if (status != SL_STATUS_OK) {
@@ -656,7 +659,7 @@ sl_status_t sli_cpc_system_cmd_property_set(sli_cpc_system_property_get_set_cmd_
   }
 
   if (retry_count_max != 0 && frame_type == SYSTEM_EP_IFRAME) {
-    EFM_ASSERT(false);
+    SLI_CPC_ASSERT(0);
     sli_cpc_free_system_command_handle(&g_instance, command_handle);
     return SL_STATUS_INVALID_PARAMETER;
   }
@@ -716,7 +719,7 @@ void sli_cpc_system_process(sli_cpc_system_endpoint_t *cpc_system_ep)
 
       // terminate only when all command handles are dealt with
       status = sl_cpc_terminate_endpoint(&system_ep, 0);
-      EFM_ASSERT(status == SL_STATUS_OK || status == SL_STATUS_IN_PROGRESS);
+      SLI_CPC_ASSERT(status == SL_STATUS_OK || status == SL_STATUS_IN_PROGRESS);
 
       if (status == SL_STATUS_OK) {
         terminate_system_ep = false;
@@ -769,7 +772,7 @@ static void process_command_in_error(void)
         break;
       case CMD_SYSTEM_PROP_VALUE_IS: // fallthrough to default:
       default:
-        EFM_ASSERT(false);
+        SLI_CPC_ASSERT(0);
     }
     sli_cpc_free_system_command_handle(&g_instance, handle);
   }
@@ -806,7 +809,7 @@ static void process_unsolicited(void)
       }
 
       if (status != SL_STATUS_OK || length < MINIMUM_LENGTH || data == NULL) {
-        EFM_ASSERT(false);
+        SLI_CPC_ASSERT(0);
         goto next;
       }
 
@@ -815,7 +818,7 @@ static void process_unsolicited(void)
       // Received unsupported or invalid unsolicited command
       if (command->command_id != CMD_SYSTEM_PROP_VALUE_IS
           || length != SIZEOF_SYSTEM_COMMAND(command)) {
-        EFM_ASSERT(false);
+        SLI_CPC_ASSERT(0);
         if (is_i_frame) {
           SLI_CPC_DEBUG_TRACE_ENDPOINT_RXD_DATA_FRAME_DROPPED(((sl_cpc_endpoint_t *)system_ep.ep));
         } else {
@@ -830,7 +833,7 @@ static void process_unsolicited(void)
       if (property_cmd->property_id == PROP_LAST_STATUS) {
         expected_length = (sizeof(sli_cpc_system_property_cmd_t) + sizeof(sl_cpc_system_status_t));
         if (command->length != expected_length) {
-          EFM_ASSERT(false);
+          SLI_CPC_ASSERT(0);
           if (is_i_frame) {
             SLI_CPC_DEBUG_TRACE_ENDPOINT_RXD_DATA_FRAME_DROPPED(((sl_cpc_endpoint_t *)system_ep.ep));
           } else {
@@ -847,7 +850,7 @@ static void process_unsolicited(void)
           && property_cmd->property_id <= PROP_ENDPOINT_STATE_255) {
         expected_length = (sizeof(sli_cpc_system_property_cmd_t) + sizeof(sl_cpc_endpoint_state_t));
         if (command->length != expected_length) {
-          EFM_ASSERT(false);
+          SLI_CPC_ASSERT(0);
           goto next;
         }
 
@@ -897,7 +900,7 @@ static sl_status_t write_command(sli_cpc_system_command_handle_t *command_handle
       write_flags = SL_CPC_FLAG_UNNUMBERED_POLL_FINAL;
       break;
     default:
-      EFM_ASSERT(false);
+      SLI_CPC_ASSERT(0);
       break;
   }
 
@@ -906,7 +909,7 @@ static sl_status_t write_command(sli_cpc_system_command_handle_t *command_handle
     // Can't send iframe commands on the system endpoint until the sequence numbers are reset
 
     // I-Frame should only be sent once, the re-transmit mechanism is managed by the core
-    EFM_ASSERT((command_handle->flags.is_first_try) && command_handle->retry_count == 0);
+    SLI_CPC_ASSERT((command_handle->flags.is_first_try) && command_handle->retry_count == 0);
   }
 
   status = sl_cpc_write(&system_ep,
@@ -937,7 +940,7 @@ static sl_status_t write_command(sli_cpc_system_command_handle_t *command_handle
                                            SL_CPC_SYSTEM_PRIMARY_OUT_OF_MEMORY_RETRY_TICK,
                                            on_timer_expired, command_handle);
       if (status != SL_STATUS_OK) {
-        EFM_ASSERT(false);
+        SLI_CPC_ASSERT(0);
 
         // if we failed to start the retry timer, move the command handle
         // to the error list to call the user callback and free resource

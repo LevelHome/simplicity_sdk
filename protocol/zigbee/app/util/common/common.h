@@ -43,7 +43,6 @@ extern const char * applicationString;
 
 // Boilerplate
 void configureSerial(uint8_t port, SerialBaudRate rate);
-void toggleBlinker(void);
 
 #if !defined EZSP_HOST
 extern sli_zigbee_event_t blinkEvent;

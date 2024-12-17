@@ -51,7 +51,7 @@ void sl_zigbee_af_groups_cluster_server_init_cb(uint8_t endpoint)
                                         (uint8_t *)&nameSupport,
                                         ZCL_BITMAP8_ATTRIBUTE_TYPE);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_groups_cluster_println("ERR: writing name support %x", status);
+    sl_zigbee_af_groups_cluster_println("ERR: writing name support %02X", status);
   }
 }
 
@@ -100,7 +100,7 @@ static sl_zigbee_af_status_t addEntryToGroupTable(uint8_t endpoint, uint16_t gro
                                                      groupName);
         return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
       } else {
-        sl_zigbee_af_groups_cluster_println("ERR: Failed to create binding (0x%x)",
+        sl_zigbee_af_groups_cluster_println("ERR: Failed to create binding (0x%02X)",
                                             status);
       }
     }
@@ -125,7 +125,7 @@ static sl_zigbee_af_status_t removeEntryFromGroupTable(uint8_t endpoint, uint16_
                                                    groupName);
       return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
     } else {
-      sl_zigbee_af_groups_cluster_println("ERR: Failed to delete binding (0x%x)",
+      sl_zigbee_af_groups_cluster_println("ERR: Failed to delete binding (0x%02X)",
                                           status);
       return SL_ZIGBEE_ZCL_STATUS_FAILURE;
     }
@@ -133,17 +133,17 @@ static sl_zigbee_af_status_t removeEntryFromGroupTable(uint8_t endpoint, uint16_
   return SL_ZIGBEE_ZCL_STATUS_NOT_FOUND;
 }
 
-bool sl_zigbee_af_groups_cluster_add_group_cb(sl_zigbee_af_cluster_command_t * cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_groups_cluster_add_group_cb(sl_zigbee_af_cluster_command_t * cmd)
 {
   sl_zcl_groups_cluster_add_group_command_t cmd_data;
   sl_zigbee_af_status_t status;
 
   if (zcl_decode_groups_cluster_add_group_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_groups_cluster_print("RX: AddGroup 0x%2x, \"", cmd_data.groupId);
+  sl_zigbee_af_groups_cluster_print("RX: AddGroup 0x%04X, \"", cmd_data.groupId);
   sl_zigbee_af_groups_cluster_print_string(cmd_data.groupName);
   sl_zigbee_af_groups_cluster_println("\"");
 
@@ -153,14 +153,14 @@ bool sl_zigbee_af_groups_cluster_add_group_cb(sl_zigbee_af_cluster_command_t * c
   // they are addressed to a single device.
   if (sl_zigbee_af_current_command()->type != SL_ZIGBEE_INCOMING_UNICAST
       && sl_zigbee_af_current_command()->type != SL_ZIGBEE_INCOMING_UNICAST_REPLY) {
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
   }
   sl_zigbee_af_fill_command_groups_cluster_add_group_response(status, cmd_data.groupId);
   sl_zigbee_af_send_response();
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_groups_cluster_view_group_cb(sl_zigbee_af_cluster_command_t * cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_groups_cluster_view_group_cb(sl_zigbee_af_cluster_command_t * cmd)
 {
   sl_zcl_groups_cluster_view_group_command_t cmd_data;
   sl_zigbee_af_status_t status = SL_ZIGBEE_ZCL_STATUS_NOT_FOUND;
@@ -169,16 +169,16 @@ bool sl_zigbee_af_groups_cluster_view_group_cb(sl_zigbee_af_cluster_command_t * 
 
   if (zcl_decode_groups_cluster_view_group_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_groups_cluster_println("RX: ViewGroup 0x%2x", cmd_data.groupId);
+  sl_zigbee_af_groups_cluster_println("RX: ViewGroup 0x%04X", cmd_data.groupId);
 
   // For all networks, View Group commands can only be addressed to a
   // single device.
   if (sl_zigbee_af_current_command()->type != SL_ZIGBEE_INCOMING_UNICAST
       && sl_zigbee_af_current_command()->type != SL_ZIGBEE_INCOMING_UNICAST_REPLY) {
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
   }
 
   // Validate groupId
@@ -197,14 +197,14 @@ bool sl_zigbee_af_groups_cluster_view_group_cb(sl_zigbee_af_cluster_command_t * 
   sl_zigbee_af_fill_command_groups_cluster_view_group_response(status, cmd_data.groupId, groupName);
   sendStatus = sl_zigbee_af_send_response();
   if (SL_STATUS_OK != sendStatus) {
-    sl_zigbee_af_groups_cluster_println("Groups: failed to send %s response: 0x%x",
+    sl_zigbee_af_groups_cluster_println("Groups: failed to send %s response: 0x%02X",
                                         "view_group",
                                         sendStatus);
   }
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_groups_cluster_get_group_membership_cb(sl_zigbee_af_cluster_command_t * cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_groups_cluster_get_group_membership_cb(sl_zigbee_af_cluster_command_t * cmd)
 {
   sl_zcl_groups_cluster_get_group_membership_command_t cmd_data;
   sl_status_t status;
@@ -215,12 +215,12 @@ bool sl_zigbee_af_groups_cluster_get_group_membership_cb(sl_zigbee_af_cluster_co
 
   if (zcl_decode_groups_cluster_get_group_membership_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_groups_cluster_print("RX: GetGroupMembership 0x%x,", cmd_data.groupCount);
+  sl_zigbee_af_groups_cluster_print("RX: GetGroupMembership 0x%02X,", cmd_data.groupCount);
   for (i = 0; i < cmd_data.groupCount; i++) {
-    sl_zigbee_af_groups_cluster_print(" [0x%2x]",
+    sl_zigbee_af_groups_cluster_print(" [0x%04X]",
                                       sl_zigbee_af_get_int16u(cmd_data.groupList + (i << 1), 0, 2));
   }
   sl_zigbee_af_groups_cluster_println("");
@@ -276,20 +276,19 @@ bool sl_zigbee_af_groups_cluster_get_group_membership_cb(sl_zigbee_af_cluster_co
                                                                            list,
                                                                            listLen);
     status = sl_zigbee_af_send_response();
-  } else {
-    status = sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_NOT_FOUND);
+    if (SL_STATUS_OK != status) {
+      sl_zigbee_af_groups_cluster_println("Groups: failed to send %s: 0x%02X",
+                                          (cmd_data.groupCount == 0 || count != 0)
+                                          ? "get_group_membership response"
+                                          : "default_response",
+                                          status);
+    }
+    return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
   }
-  if (SL_STATUS_OK != status) {
-    sl_zigbee_af_groups_cluster_println("Groups: failed to send %s: 0x%x",
-                                        (cmd_data.groupCount == 0 || count != 0)
-                                        ? "get_group_membership response"
-                                        : "default_response",
-                                        status);
-  }
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_NOT_FOUND;
 }
 
-bool sl_zigbee_af_groups_cluster_remove_group_cb(sl_zigbee_af_cluster_command_t * cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_groups_cluster_remove_group_cb(sl_zigbee_af_cluster_command_t * cmd)
 {
   sl_zcl_groups_cluster_remove_group_command_t cmd_data;
   sl_zigbee_af_status_t status;
@@ -297,10 +296,10 @@ bool sl_zigbee_af_groups_cluster_remove_group_cb(sl_zigbee_af_cluster_command_t 
 
   if (zcl_decode_groups_cluster_remove_group_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_groups_cluster_println("RX: RemoveGroup 0x%2x", cmd_data.groupId);
+  sl_zigbee_af_groups_cluster_println("RX: RemoveGroup 0x%04X", cmd_data.groupId);
 
   status = removeEntryFromGroupTable(sl_zigbee_af_current_endpoint(),
                                      cmd_data.groupId);
@@ -309,7 +308,7 @@ bool sl_zigbee_af_groups_cluster_remove_group_cb(sl_zigbee_af_cluster_command_t 
   // they are addressed to a single device.
   if (sl_zigbee_af_current_command()->type != SL_ZIGBEE_INCOMING_UNICAST
       && sl_zigbee_af_current_command()->type != SL_ZIGBEE_INCOMING_UNICAST_REPLY) {
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
   }
 
   // EMAPPFWKV2-1414: if we remove a group, we should remove any scene
@@ -321,16 +320,15 @@ bool sl_zigbee_af_groups_cluster_remove_group_cb(sl_zigbee_af_cluster_command_t 
   sl_zigbee_af_fill_command_groups_cluster_remove_group_response(status, cmd_data.groupId);
   sendStatus = sl_zigbee_af_send_response();
   if (SL_STATUS_OK != sendStatus) {
-    sl_zigbee_af_groups_cluster_println("Groups: failed to send %s response: 0x%x",
+    sl_zigbee_af_groups_cluster_println("Groups: failed to send %s response: 0x%02X",
                                         "remove_group",
                                         sendStatus);
   }
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_groups_cluster_remove_all_groups_cb(void)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_groups_cluster_remove_all_groups_cb(void)
 {
-  sl_status_t sendStatus;
   uint8_t i, endpoint = sl_zigbee_af_current_endpoint();
   bool success = true;
 
@@ -344,7 +342,7 @@ bool sl_zigbee_af_groups_cluster_remove_all_groups_cb(void)
         sl_status_t status = sl_zigbee_delete_binding(i);
         if (status != SL_STATUS_OK) {
           success = false;
-          sl_zigbee_af_groups_cluster_println("ERR: Failed to delete binding (0x%x)",
+          sl_zigbee_af_groups_cluster_println("ERR: Failed to delete binding (0x%02X)",
                                               status);
         } else {
           uint8_t groupName[ZCL_GROUPS_CLUSTER_MAXIMUM_NAME_LENGTH + 1] = { 0 };
@@ -367,29 +365,20 @@ bool sl_zigbee_af_groups_cluster_remove_all_groups_cb(void)
   sl_zigbee_af_scenes_cluster_remove_scenes_in_group_cb(sl_zigbee_af_current_endpoint(),
                                                         ZCL_SCENES_GLOBAL_SCENE_GROUP_ID);
 
-  sendStatus = sl_zigbee_af_send_immediate_default_response(success
-                                                            ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-                                                            : SL_ZIGBEE_ZCL_STATUS_FAILURE);
-  if (SL_STATUS_OK != sendStatus) {
-    sl_zigbee_af_groups_cluster_println("Groups: failed to send %s: 0x%x",
-                                        "default_response",
-                                        sendStatus);
-  }
-  return true;
+  return success ? SL_ZIGBEE_ZCL_STATUS_SUCCESS : SL_ZIGBEE_ZCL_STATUS_FAILURE;
 }
 
-bool sl_zigbee_af_groups_cluster_add_group_if_identifying_cb(sl_zigbee_af_cluster_command_t * cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_groups_cluster_add_group_if_identifying_cb(sl_zigbee_af_cluster_command_t * cmd)
 {
   sl_zcl_groups_cluster_add_group_if_identifying_command_t cmd_data;
   sl_zigbee_af_status_t status;
-  sl_status_t sendStatus;
 
   if (zcl_decode_groups_cluster_add_group_if_identifying_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS ) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_groups_cluster_print("RX: AddGroupIfIdentifying 0x%2x, \"", cmd_data.groupId);
+  sl_zigbee_af_groups_cluster_print("RX: AddGroupIfIdentifying 0x%04X, \"", cmd_data.groupId);
   sl_zigbee_af_groups_cluster_print_string(cmd_data.groupName);
   sl_zigbee_af_groups_cluster_println("\"");
 
@@ -402,13 +391,7 @@ bool sl_zigbee_af_groups_cluster_add_group_if_identifying_cb(sl_zigbee_af_cluste
                                   cmd_data.groupName);
   }
 
-  sendStatus = sl_zigbee_af_send_immediate_default_response(status);
-  if (SL_STATUS_OK != sendStatus) {
-    sl_zigbee_af_groups_cluster_println("Groups: failed to send %s: 0x%x",
-                                        "default_response",
-                                        sendStatus);
-  }
-  return true;
+  return status;
 }
 
 void sl_zigbee_af_groups_cluster_clear_group_table_cb(uint8_t endpoint)
@@ -423,7 +406,7 @@ void sl_zigbee_af_groups_cluster_clear_group_table_cb(uint8_t endpoint)
                 && networkIndex == binding.networkIndex))) {
       sl_status_t status = sl_zigbee_delete_binding(i);
       if (status != SL_STATUS_OK) {
-        sl_zigbee_af_groups_cluster_println("ERR: Failed to delete binding (0x%x)",
+        sl_zigbee_af_groups_cluster_println("ERR: Failed to delete binding (0x%02X)",
                                             status);
       }
     }
@@ -451,45 +434,43 @@ uint32_t sl_zigbee_af_groups_cluster_server_command_parse(sl_service_opcode_t op
 {
   (void)opcode;
 
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_ADD_GROUP_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_groups_cluster_add_group_cb(cmd);
+        status = sl_zigbee_af_groups_cluster_add_group_cb(cmd);
         break;
       }
       case ZCL_ADD_GROUP_IF_IDENTIFYING_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_groups_cluster_add_group_if_identifying_cb(cmd);
+        status = sl_zigbee_af_groups_cluster_add_group_if_identifying_cb(cmd);
         break;
       }
       case ZCL_GET_GROUP_MEMBERSHIP_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_groups_cluster_get_group_membership_cb(cmd);
+        status = sl_zigbee_af_groups_cluster_get_group_membership_cb(cmd);
         break;
       }
       case ZCL_REMOVE_ALL_GROUPS_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_groups_cluster_remove_all_groups_cb();
+        status = sl_zigbee_af_groups_cluster_remove_all_groups_cb();
         break;
       }
       case ZCL_REMOVE_GROUP_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_groups_cluster_remove_group_cb(cmd);
+        status = sl_zigbee_af_groups_cluster_remove_group_cb(cmd);
         break;
       }
       case ZCL_VIEW_GROUP_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_groups_cluster_view_group_cb(cmd);
+        status = sl_zigbee_af_groups_cluster_view_group_cb(cmd);
         break;
       }
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

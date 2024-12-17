@@ -32,7 +32,8 @@
 
 #include "sl_efp01.h"
 #include "sl_clock_manager.h"
-#include "em_gpio.h"
+#include "sl_gpio.h"
+#include "sl_i2cspm.h"
 #include "sl_status.h"
 
 #include <stddef.h>
@@ -172,7 +173,7 @@ extern "C" {
 
 // <gpio> SL_EFP_EFP0_IRQ
 // $[GPIO_SL_EFP_EFP0_IRQ]
-#define SL_EFP_EFP0_IRQ_PORT                     gpioPortA
+#define SL_EFP_EFP0_IRQ_PORT                     SL_GPIO_PORT_A
 #define SL_EFP_EFP0_IRQ_PIN                      0
 
 // [GPIO_SL_EFP_EFP0_IRQ]$
@@ -183,11 +184,11 @@ extern "C" {
 #define SL_EFP_EFP0_I2C_PERIPHERAL_NO            1
 
 // I2C1 SDA on PC01
-#define SL_EFP_EFP0_I2C_SDA_PORT                 gpioPortC
+#define SL_EFP_EFP0_I2C_SDA_PORT                 SL_GPIO_PORT_C
 #define SL_EFP_EFP0_I2C_SDA_PIN                  1
 
 // I2C1 SCL on PC00
-#define SL_EFP_EFP0_I2C_SCL_PORT                 gpioPortC
+#define SL_EFP_EFP0_I2C_SCL_PORT                 SL_GPIO_PORT_C
 #define SL_EFP_EFP0_I2C_SCL_PIN                  0
 
 // [I2C_SL_EFP_EFP0_I2C]$
@@ -627,12 +628,12 @@ typedef struct {
   bool                is_host_efp;                ///< True if this EFP powers host SoC.
   sl_efp_em_transition_mode_t em_transition_mode; ///< Method for controlling EFP Energy Mode (EM) transitions.
   sl_efp_irq_mode_t   irq_pin_mode;               ///< Initialize a GPIO pin as EFP IRQ input.
-  GPIO_Port_TypeDef   irq_port;                   ///< GPIO port to use for EFP IRQ GPIO pin.
+  sl_gpio_port_t      irq_port;                   ///< GPIO port to use for EFP IRQ GPIO pin.
   unsigned int        irq_pin;                    ///< GPIO pin number to use for EFP IRQ GPIO pin.
   I2C_TypeDef         *i2c_peripheral;            ///< I2C peripheral instance pointer.
-  GPIO_Port_TypeDef   i2c_scl_port;               ///< GPIO port to use for I2C SCL signal.
+  sl_gpio_port_t      i2c_scl_port;               ///< GPIO port to use for I2C SCL signal.
   unsigned int        i2c_scl_pin;                ///< GPIO pin number to use for I2C SCL signal.
-  GPIO_Port_TypeDef   i2c_sda_port;               ///< GPIO port to use for I2C SDA signal.
+  sl_gpio_port_t      i2c_sda_port;               ///< GPIO port to use for I2C SDA signal.
   unsigned int        i2c_sda_pin;                ///< GPIO pin number to use for I2C SDA signal.
 #if defined(_SILICON_LABS_32B_SERIES_0)
   unsigned int        i2c_port_location;          ///< I2C location number to use for I2C signals.

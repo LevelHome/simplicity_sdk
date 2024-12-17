@@ -88,20 +88,14 @@
 #define SL_IOSTREAM_USART_EXP_PERIPHERAL_NO      1
 
 // USART1 TX on PA05
-#define SL_IOSTREAM_USART_EXP_TX_PORT            gpioPortA
+#define SL_IOSTREAM_USART_EXP_TX_PORT            SL_GPIO_PORT_A
 #define SL_IOSTREAM_USART_EXP_TX_PIN             5
 
 // USART1 RX on PA06
-#define SL_IOSTREAM_USART_EXP_RX_PORT            gpioPortA
+#define SL_IOSTREAM_USART_EXP_RX_PORT            SL_GPIO_PORT_A
 #define SL_IOSTREAM_USART_EXP_RX_PIN             6
 
-// USART1 CTS on PA00
-#define SL_IOSTREAM_USART_EXP_CTS_PORT           gpioPortA
-#define SL_IOSTREAM_USART_EXP_CTS_PIN            0
 
-// USART1 RTS on PA07
-#define SL_IOSTREAM_USART_EXP_RTS_PORT           gpioPortA
-#define SL_IOSTREAM_USART_EXP_RTS_PIN            7
 
 // [USART_SL_IOSTREAM_USART_EXP]$
 // <<< sl:end pin_tool >>>

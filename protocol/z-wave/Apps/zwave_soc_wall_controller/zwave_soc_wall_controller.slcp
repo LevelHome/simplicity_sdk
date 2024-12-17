@@ -16,7 +16,6 @@ component:
   - id: zw_role_type_always_on
   - id: zaf_soc
   - id: zw_core
-  - id: zw_appshw_wallcontroller
   - id: zw_zaf
   - id: zw_true_status
   - id: zw_ota
@@ -35,23 +34,39 @@ component:
   - id: zw_cc_central_scene
   - id: zw_cc_central_scene_nvm
   - id: zw_cc_multilevelswitchcontrol
+  - id: zw_appshw
   - id: sl_system
   - id: device_init
   - id: mpu # disable execution from RAM
   - id: ZW_MIGRATION_TO_7_19
   - id: zw_cli_common
     condition: [zw_production]
+  - id: app_button_press
+  - id: app_assert
+  - id: simple_button
+    instance: [btn0, btn1]
+  - id: simple_led
+    instance: [led0, led1]
 
 source:
   - path: app.c
   - path: main.c
   - path: app_cli.c
+    condition: [zw_cli_common]
+  - path: app_btn_handler.c
+    condition: [simple_button]
 
 include:
   - path: .
     file_list:
       - path: events.h
 configuration:
+  - name: SHORT_BUTTON_PRESS_DURATION
+    value: (400)
+  - name: MEDIUM_BUTTON_PRESS_DURATION
+    value: (1500)
+  - name: APP_BUTTON_PRESS_DETECTION
+    value: APP_BUTTON_PRESS_DETECT_PRESS_AND_RELEASE
   - name: ZAF_CONFIG_REQUEST_KEY_S0
     value: 1
   - name: ZAF_CONFIG_REQUEST_KEY_S2_UNAUTHENTICATED
@@ -148,6 +163,11 @@ configuration:
 config_file:
   - path: WallController.cc_config
     directory: cc_config
+  # Sample keys for signing
+  - path: ../../platform/SiliconLabs/PAL/BootLoader/sample-keys/sample_encrypt.key
+    directory: sample_keys
+  - path: ../../platform/SiliconLabs/PAL/BootLoader/sample-keys/sample_sign.key
+    directory: sample_keys
 
 template_contribution:
 #------------------ CLI commands ---------------------
@@ -159,7 +179,7 @@ template_contribution:
       help: Send Central Scene Command
       argument:
       - type: uint8
-        help: Number or the key (1 ,2 or 3)
+        help: Number of the key (1 ,2 or 3)
       - type: string
         help: Action of the key action (press, hold, release)
 
@@ -169,11 +189,8 @@ define:
   - name: FILE_ID_APPLICATIONDATA # File identifiers for application file system
     value: "0x00000" # Range: 0x00000 - 0x0FFFF
 
-other_file:
-  - path: ../../DevTools/postbuild.sh
-
 post_build:
-  profile: zwave_soc_wall_controller
+  profile: zwave_application
 
 tag:
   - prebuilt_demo

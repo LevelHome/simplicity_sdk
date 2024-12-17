@@ -4,8 +4,8 @@ label: Bluetooth - SoC Throughput (two buttons)
 description: >
   This example tests the throughput capabilities of the device and can be used
   to measure throughput between 2 *EFR32* devices, as well as between a device
-  and a smartphone using EFR Connect mobile app, through the Throughput demo
-  tile.
+  and a smartphone using Simplicity Connect mobile app, through the Throughput
+  demo tile.
 category: Bluetooth Examples
 quality: production
 
@@ -24,9 +24,6 @@ component:
   - id: bootloader_interface
   - id: app_assert
   - id: app_log
-  - id: iostream_usart
-    instance:
-      - vcom
   - id: mpu
   - id: simple_button
     instance:
@@ -38,10 +35,10 @@ component:
   - id: cli
     instance:
       - example
-  - id: bt_post_build
   - id: sl_system
   - id: clock_manager
   - id: device_init
+  - id: sl_common
 
 source:
   - path: main.c
@@ -82,9 +79,12 @@ configuration:
   - name: SL_BOARD_ENABLE_VCOM
     value: "1"
   - name: SL_IOSTREAM_USART_VCOM_RESTRICT_ENERGY_MODE_TO_ALLOW_RECEPTION
-    value: "1"
-    condition:
-      - iostream_usart
+    value: "0"
+    unless:
+      - cli
+  - name: SL_IOSTREAM_EUSART_VCOM_RESTRICT_ENERGY_MODE_TO_ALLOW_RECEPTION
+    value: "0"
+    unless:
       - cli
   - name: SL_PSA_KEY_USER_SLOT_COUNT
     value: "0"
@@ -106,6 +106,10 @@ template_contribution:
       help: "Switch to peripheral"
     condition:
       - cli
+
+post_build:
+  - profile: bt_common
+    condition: [device_series_2, bootloader_app_properties]
 
 tag:
   - hardware:rf:band:2400

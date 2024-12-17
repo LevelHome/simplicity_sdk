@@ -1,8 +1,11 @@
 id: sensor_rht
 label: Relative Humidity and Temperature sensor
 package: Bluetooth
-description: Relative Humidity and Temperature sensor driver abstraction designed for Thunderboard.
+description: Relative Humidity and Temperature sensor driver abstraction designed for Thunderboard. Not suitable for other applications.
 category: Bluetooth|Application|Miscellaneous
+metadata:
+  sbom:
+    license: Zlib
 quality: production
 root_path: app/bluetooth/common/sensor_rht
 tag:

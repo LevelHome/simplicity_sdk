@@ -1,5 +1,5 @@
 /***************************************************************************//**
- * @file
+ * @file app.c
  * @brief Application code
  *******************************************************************************
  * # License
@@ -32,6 +32,7 @@
 // -----------------------------------------------------------------------------
 #include <stdio.h>
 #include <assert.h>
+
 #include "sl_component_catalog.h"
 #include "app.h"
 #include "sl_wisun_network_measurement.h"
@@ -63,7 +64,7 @@
 // -----------------------------------------------------------------------------
 //                          Public Function Definitions
 // -----------------------------------------------------------------------------
-/*App task function*/
+/* App task function */
 void app_task(void *args)
 {
   (void) args;
@@ -76,7 +77,9 @@ void app_task(void *args)
 #endif
 
   while (1) {
-    // User code here
+    ///////////////////////////////////////////////////////////////////////////
+    // Put your application code here!                                       //
+    ///////////////////////////////////////////////////////////////////////////
     sl_wisun_app_core_util_dispatch_thread();
   }
 }

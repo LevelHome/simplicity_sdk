@@ -46,6 +46,8 @@
 #include "em_device.h"
 #include "em_usart.h"
 
+#include "sl_device_gpio.h"
+
 #include "iot_flash.h"
 
 /*******************************************************************************
@@ -83,17 +85,11 @@ typedef struct IotFlashDescriptor {
   USART_TypeDef              *pxPeripheral;
   uint8_t                     ucPeripheralNo;
 
-  /* ports */
-  GPIO_Port_TypeDef           xTxPort;
-  GPIO_Port_TypeDef           xRxPort;
-  GPIO_Port_TypeDef           xClkPort;
-  GPIO_Port_TypeDef           xCsPort;
-
-  /* pins */
-  uint8_t                     ucTxPin;
-  uint8_t                     ucRxPin;
-  uint8_t                     ucClkPin;
-  uint8_t                     ucCsPin;
+  /* GPIO structures */
+  sl_gpio_t                   gpio_tx;
+  sl_gpio_t                   gpio_rx;
+  sl_gpio_t                   gpio_clk;
+  sl_gpio_t                   gpio_cs;
 
   /* locations */
   uint8_t                     ucTxLoc;

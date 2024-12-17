@@ -28,12 +28,30 @@
  *
  ******************************************************************************/
 
+#include "sl_cpc_config.h"
+
 // <<< Use Configuration Wizard in Context Menu >>>
 
 #ifndef SL_CPC_DRV_UART_USART_INSTANCE_CONFIG_H
 #define SL_CPC_DRV_UART_USART_INSTANCE_CONFIG_H
 
 // <h> CPC - UART Driver Configuration
+
+// <o SL_CPC_DRV_UART_INSTANCE_RX_PAYLOAD_MAX_LENGTH>Max Rx Payload Length<1-4087>
+// <i> Default: SL_CPC_RX_PAYLOAD_MAX_LENGTH
+// <i> Maximum size of the payload in bytes of each RX buffer
+#define SL_CPC_DRV_UART_INSTANCE_RX_PAYLOAD_MAX_LENGTH      SL_CPC_RX_PAYLOAD_MAX_LENGTH
+
+// <o SL_CPC_DRV_UART_INSTANCE_TX_QUEUE_ITEM_MAX_COUNT> Tx Queue Size
+// <i> Default: SL_CPC_TX_QUEUE_ITEM_MAX_COUNT
+// <i> The maximum number of outgoing messages capable of being queued for transmission.
+#define SL_CPC_DRV_UART_INSTANCE_TX_QUEUE_ITEM_MAX_COUNT    SL_CPC_TX_QUEUE_ITEM_MAX_COUNT
+
+// <o SL_CPC_DRV_UART_INSTANCE_RX_BUFFER_MAX_COUNT> Total Number of Rx Buffers
+// <i> Default: SL_CPC_RX_BUFFER_MAX_COUNT
+// <i> Total number of CPC RX buffers available across all endpoints
+// <i> Multiple RX buffers can be associated with a single endpoint
+#define SL_CPC_DRV_UART_INSTANCE_RX_BUFFER_MAX_COUNT        SL_CPC_RX_BUFFER_MAX_COUNT
 
 // <o SL_CPC_DRV_UART_INSTANCE_RX_QUEUE_SIZE> Number of frame that can be queued in the driver receive queue
 // <i> Default: 10

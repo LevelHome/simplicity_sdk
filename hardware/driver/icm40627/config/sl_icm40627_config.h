@@ -38,22 +38,22 @@
 //#define SL_ICM40627_SPI_EUSART_PERIPHERAL               EUSART1
 //#define SL_ICM40627_SPI_EUSART_PERIPHERAL_NO            1
 
-//#define SL_ICM40627_SPI_EUSART_TX_PORT                  gpioPortC
+//#define SL_ICM40627_SPI_EUSART_TX_PORT                  SL_GPIO_PORT_C
 //#define SL_ICM40627_SPI_EUSART_TX_PIN                   3
 
-//#define SL_ICM40627_SPI_EUSART_RX_PORT                  gpioPortC
+//#define SL_ICM40627_SPI_EUSART_RX_PORT                  SL_GPIO_PORT_C
 //#define SL_ICM40627_SPI_EUSART_RX_PIN                   2
 
-//#define SL_ICM40627_SPI_EUSART_SCLK_PORT                gpioPortC
+//#define SL_ICM40627_SPI_EUSART_SCLK_PORT                SL_GPIO_PORT_C
 //#define SL_ICM40627_SPI_EUSART_SCLK_PIN                 1
 
-//#define SL_ICM40627_SPI_EUSART_CS_PORT                  gpioPortC
+//#define SL_ICM40627_SPI_EUSART_CS_PORT                  SL_GPIO_PORT_C
 //#define SL_ICM40627_SPI_EUSART_CS_PIN                   0
 // [EUSART_SL_ICM40627_SPI_EUSART]$
 
 // <gpio optional=true> SL_ICM40627_INT
 // $[GPIO_SL_ICM40627_INT]
-//#define SL_ICM40627_INT_PORT                            gpioPortB
+//#define SL_ICM40627_INT_PORT                            SL_GPIO_PORT_B
 //#define SL_ICM40627_INT_PIN                             1
 // [GPIO_SL_ICM40627_INT]$
 // <<< sl:end pin_tool >>>

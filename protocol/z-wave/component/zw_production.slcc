@@ -2,8 +2,10 @@ id: zw_production
 label: Z-Wave Production
 category: Z-Wave
 description: >
-  This component includes diferent libraries for 700 and 800 series processor types, for
-  end devices, and for controller and portable controller devices.
+  This component includes various libraries (SiliconLabs provided Z-Wave stack)
+  for 800 series processor types, both for end devices and controllers.
+  This component is mandatory for the SiliconLabs provided Z-Wave sample applications and 
+  it is essential for the proper functioning of the Z-Wave production environment.
 package: Z-Wave
 quality: production
 metadata:

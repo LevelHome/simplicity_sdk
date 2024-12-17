@@ -19,6 +19,7 @@ requires:
   - name: status
   - name: sl_assert
   - name: emlib_cmu
+  - name: gpio
 root_path: platform/service/clock_manager
 source:
   - path: src/sl_clock_manager_init_hal_s2.c

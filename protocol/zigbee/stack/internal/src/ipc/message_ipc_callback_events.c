@@ -19,6 +19,54 @@
 #include "stack/internal/src/ipc/zigbee_ipc_callback_events.h"
 extern void sl_zigbee_wakeup_common_task(void);
 
+void sli_zigbee_stack_gpep_incoming_message_handler(sl_zigbee_gp_status_t status,
+                                                    uint8_t gpdLink,
+                                                    uint8_t sequenceNumber,
+                                                    sl_zigbee_gp_address_t *addr,
+                                                    sl_zigbee_gp_security_level_t gpdfSecurityLevel,
+                                                    sl_zigbee_gp_key_type_t gpdfSecurityKeyType,
+                                                    bool autoCommissioning,
+                                                    uint8_t bidirectionalInfo,
+                                                    uint32_t gpdSecurityFrameCounter,
+                                                    uint8_t gpdCommandId,
+                                                    uint32_t mic,
+                                                    uint8_t proxyTableIndex,
+                                                    uint8_t gpdCommandPayloadLength,
+                                                    uint8_t *gpdCommandPayload,
+                                                    sl_zigbee_rx_packet_info_t *packetInfo)
+{
+  sl_zigbee_stack_cb_event_t *cb_event = (sl_zigbee_stack_cb_event_t *) malloc(sizeof(sl_zigbee_stack_cb_event_t));
+  cb_event->data.gpep_incoming_message_handler.status = status;
+  cb_event->data.gpep_incoming_message_handler.gpdLink = gpdLink;
+  cb_event->data.gpep_incoming_message_handler.sequenceNumber = sequenceNumber;
+
+  if (addr != NULL) {
+    cb_event->data.gpep_incoming_message_handler.addr = *addr;
+  }
+
+  cb_event->data.gpep_incoming_message_handler.gpdfSecurityLevel = gpdfSecurityLevel;
+  cb_event->data.gpep_incoming_message_handler.gpdfSecurityKeyType = gpdfSecurityKeyType;
+  cb_event->data.gpep_incoming_message_handler.autoCommissioning = autoCommissioning;
+  cb_event->data.gpep_incoming_message_handler.bidirectionalInfo = bidirectionalInfo;
+  cb_event->data.gpep_incoming_message_handler.gpdSecurityFrameCounter = gpdSecurityFrameCounter;
+  cb_event->data.gpep_incoming_message_handler.gpdCommandId = gpdCommandId;
+  cb_event->data.gpep_incoming_message_handler.mic = mic;
+  cb_event->data.gpep_incoming_message_handler.proxyTableIndex = proxyTableIndex;
+  cb_event->data.gpep_incoming_message_handler.gpdCommandPayloadLength = gpdCommandPayloadLength;
+
+  if (gpdCommandPayload != NULL) {
+    cb_event->data.gpep_incoming_message_handler.gpdCommandPayload = *gpdCommandPayload;
+  }
+
+  if (packetInfo != NULL) {
+    cb_event->data.gpep_incoming_message_handler.packetInfo = *packetInfo;
+  }
+
+  cb_event->tag = SLI_ZIGBEE_STACK_GPEP_INCOMING_MESSAGE_HANDLER_IPC_EVENT_TYPE;
+  sl_event_publish(&sli_zigbee_ipc_publisher, SL_EVENT_CLASS_ZIGBEE, 1 /*priority*/, cb_event);
+  sl_zigbee_wakeup_common_task();
+}
+
 void sli_zigbee_stack_id_conflict_handler(sl_802154_short_addr_t conflictingId)
 {
   sl_zigbee_stack_cb_event_t *cb_event = (sl_zigbee_stack_cb_event_t *) malloc(sizeof(sl_zigbee_stack_cb_event_t));
@@ -193,6 +241,24 @@ void sli_zigbee_stack_redirect_outgoing_message_handler(uint8_t mac_index,
 void sli_zigbee_message_process_ipc_event(sl_zigbee_stack_cb_event_t *cb_event)
 {
   switch (cb_event->tag) {
+    case SLI_ZIGBEE_STACK_GPEP_INCOMING_MESSAGE_HANDLER_IPC_EVENT_TYPE:
+      sl_zigbee_gpep_incoming_message_handler(cb_event->data.gpep_incoming_message_handler.status,
+                                              cb_event->data.gpep_incoming_message_handler.gpdLink,
+                                              cb_event->data.gpep_incoming_message_handler.sequenceNumber,
+                                              &cb_event->data.gpep_incoming_message_handler.addr,
+                                              cb_event->data.gpep_incoming_message_handler.gpdfSecurityLevel,
+                                              cb_event->data.gpep_incoming_message_handler.gpdfSecurityKeyType,
+                                              cb_event->data.gpep_incoming_message_handler.autoCommissioning,
+                                              cb_event->data.gpep_incoming_message_handler.bidirectionalInfo,
+                                              cb_event->data.gpep_incoming_message_handler.gpdSecurityFrameCounter,
+                                              cb_event->data.gpep_incoming_message_handler.gpdCommandId,
+                                              cb_event->data.gpep_incoming_message_handler.mic,
+                                              cb_event->data.gpep_incoming_message_handler.proxyTableIndex,
+                                              cb_event->data.gpep_incoming_message_handler.gpdCommandPayloadLength,
+                                              &cb_event->data.gpep_incoming_message_handler.gpdCommandPayload,
+                                              &cb_event->data.gpep_incoming_message_handler.packetInfo);
+      break;
+
     case SLI_ZIGBEE_STACK_ID_CONFLICT_HANDLER_IPC_EVENT_TYPE:
       sl_zigbee_id_conflict_handler(cb_event->data.id_conflict_handler.conflictingId);
       break;

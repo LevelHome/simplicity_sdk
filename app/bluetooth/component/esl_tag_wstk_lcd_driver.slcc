@@ -7,6 +7,9 @@ description: >
   Display component. PLEASE NOTE that this driver automatically registers the
   WSTK LCD screen as the first display on the ESL Tag!
 category: Bluetooth|Application|Miscellaneous
+metadata:
+  sbom:
+    license: Zlib
 quality: production
 root_path: app/bluetooth/common/esl_tag_wstk_lcd_driver
 tag:

@@ -42,7 +42,7 @@ class ModelRoot(object):
         self.vars = ModelVariableContainer()
         self.logs = None
         self.calc_routine_execution = None  # This variable is not serialized/deserialized to XML, only used for unit tests
-        self._reg_model = RegModel.get_reg_model(part_family)  # Reg model object is passed by reference
+        self._reg_model = RegModel.get_reg_model(part_family, part_revision)  # Reg model object is passed by reference
         if target is not None:
             self.target = target
 

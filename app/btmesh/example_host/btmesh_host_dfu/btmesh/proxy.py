@@ -35,7 +35,7 @@ from .db import (ConnectionInfo, ConnectionStep, GapAddrType, GapPhy, Node,
                  ProxyInfo, ProxyStep)
 from .errors import BtmeshError, BtmeshErrorCode
 from .event import LocalEvent
-from .util import BleSecurityMode, ConnectionParams, ConnectionParamsRange
+from .util import BleSecurityMode, ConnectionParams, ConnectionParamsRange, ConnectionDataLength
 
 logger = logging.getLogger(__name__)
 
@@ -88,6 +88,10 @@ class Proxy(BtmeshComponent):
                 "btmesh_evt_proxy_disconnected",
                 self.on_proxy_disconnected,
             )
+            self.lib.subscribe(
+                "bt_evt_connection_data_length",
+                self.on_bt_evt_connection_data_length,
+            )
 
     def on_system_boot(self, event: BGEvent) -> None:
         self.db.clear_all_conns()
@@ -99,13 +103,11 @@ class Proxy(BtmeshComponent):
             latency = event.latency
             timeout_ms = event.timeout * util.CONN_TIMEOUT_MS_RES
             security_mode = BleSecurityMode.from_int(event.security_mode)
-            txsize = event.txsize
             conn_params = ConnectionParams(
                 interval_ms=interval_ms,
                 latency=latency,
                 timeout_ms=timeout_ms,
                 security_mode=security_mode,
-                txsize=txsize,
             )
             conn_info = self.db.get_bt_conn_info_by_conn_handle(conn_handle)
             conn_info.conn_params = conn_params
@@ -114,6 +116,24 @@ class Proxy(BtmeshComponent):
                 f"Connection parameter change for unknown bluetooth connection "
                 f"with {conn_handle} connection handle."
             )
+
+    def on_bt_evt_connection_data_length(self, event: BGEvent) -> None:
+        conn_handle = event.connection
+        if self.db.is_bt_conn_exists(conn_handle):
+            conn_data_length = ConnectionDataLength(
+                tx_data_len=event.tx_data_len,
+                rx_data_len=event.rx_data_len,
+                tx_time_us=event.tx_time_us,
+                rx_time_us=event.rx_time_us,
+            )
+            conn_info = self.db.get_bt_conn_info_by_conn_handle(conn_handle)
+            conn_info.conn_data_len = conn_data_length
+        else:
+            logger.warning(
+                f"Connection data length change for unknown bluetooth connection "
+                f"with {conn_handle} connection handle."
+            )
+        
 
     def on_gatt_mtu_exchanged(self, event: BGEvent):
         conn_handle = event.connection

@@ -35,7 +35,7 @@
 #include "esl_tag_log.h"
 #include "esl_tag_led.h"
 #include "esl_tag_image_core.h"
-#include "em_common.h"
+#include "sl_common.h"
 
 // An arbitrary big value to tell if a LED is currently inactive
 #define ESL_LED_PATTERN_INACTIVE      UINT8_MAX

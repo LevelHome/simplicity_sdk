@@ -22,6 +22,8 @@ include:
     - path: cc_multi_channel_config_api.h
 provides:
   - name: zw_cc_multi_channel_support
+requires:
+  - name: zw_cc_security
 config_file:
   - path: protocol/z-wave/platform/SiliconLabs/PAL/config/cc_multi_channel/cc_multi_channel_config.h
     file_id: cc_multi_channel_config

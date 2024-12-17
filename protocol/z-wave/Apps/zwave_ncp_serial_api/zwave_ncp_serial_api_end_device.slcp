@@ -31,6 +31,8 @@ component:
   - id: sl_system
   - id: device_init
   - id: mpu # disable execution from RAM
+  - id: simple_led
+    instance: [led0, led1]
 source:
   - path: app_node_info.c
   - path: cmd_handlers_invoker.c
@@ -74,6 +76,12 @@ config_file:
   - path: ../../platform/SiliconLabs/PAL/config/zw_zaf/s2/zaf_config.h
     file_id: zaf_config
     condition: [device_series_2]
+  # Sample keys for signing
+  - path: ../../platform/SiliconLabs/PAL/BootLoader/sample-keys/sample_encrypt.key
+    directory: sample_keys
+  - path: ../../platform/SiliconLabs/PAL/BootLoader/sample-keys/sample_sign.key
+    directory: sample_keys
+
 configuration:
   - name: ZAF_CONFIG_REQUEST_KEY_S0
     value: 1
@@ -143,11 +151,8 @@ define:
   - name: APP_PROPERTIES_CONFIG_FILE
     value: <application_properties_config.h>
 
-other_file:
-  - path: ../../DevTools/postbuild.sh
-
 post_build:
-  profile: zwave_ncp_serial_api_end_device
+  profile: zwave_application
 
 tag:
   - prebuilt_demo

@@ -35,11 +35,9 @@ include:
 provides:
   - name: "btmesh_provisioning_decorator"
 requires:
-  - name: "app_assert"
-  - name: "app_btmesh_util"
   - name: "bluetooth_feature_system"
   - name: "btmesh_stack"
-  - name: "app_timer"
+  - name: "sl_common"
 
 template_contribution:
   - name: "btmesh_on_event"

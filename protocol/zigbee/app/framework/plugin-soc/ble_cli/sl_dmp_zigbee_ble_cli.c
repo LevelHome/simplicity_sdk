@@ -91,7 +91,7 @@ static sl_status_t bleGenerateAdvertisingData(uint8_t adv_handle,
 
   sl_status_t status = sl_bt_legacy_advertiser_generate_data(adv_handle, discoverable_mode);
   if (status != SL_STATUS_OK) {
-    sl_zigbee_app_debug_print("Generate ble advertising data error: 0x%x\n", status);
+    sl_zigbee_app_debug_print("Generate ble advertising data error: 0x%02X\n", status);
   }
   return status;
 }
@@ -111,7 +111,7 @@ void sl_zigbee_af_ble_start_command(sl_cli_command_arg_t *arguments)
   if (status == SL_STATUS_OK) {
     sl_zigbee_app_debug_print("Starting Bluetooth Stack: success\n");
   } else {
-    sl_zigbee_app_debug_print("error: 0x%x\n", status);
+    sl_zigbee_app_debug_print("error: 0x%02X\n", status);
   }
 }
 
@@ -122,7 +122,7 @@ void sl_zigbee_af_ble_stop_command(sl_cli_command_arg_t *arguments)
   if (status == SL_STATUS_OK) {
     sl_zigbee_app_debug_print("Stopping Bluetooth Stack: success\n");
   } else {
-    sl_zigbee_app_debug_print("error: 0x%x\n", status);
+    sl_zigbee_app_debug_print("error: 0x%02X\n", status);
   }
 }
 #endif //SL_CATALOG_BLUETOOTH_ON_DEMAND_START_PRESENT
@@ -157,7 +157,7 @@ void sl_zigbee_af_ble_set_advertisement_params_command(sl_cli_command_arg_t *arg
   if (status == SL_STATUS_OK) {
     sl_zigbee_app_debug_print("success\n");
   } else {
-    sl_zigbee_app_debug_print("error: 0x%x\n", status);
+    sl_zigbee_app_debug_print("error: 0x%02X\n", status);
   }
 }
 
@@ -187,7 +187,7 @@ void sl_zigbee_af_ble_set_gap_mode_command(sl_cli_command_arg_t *arguments)
   if (status == SL_STATUS_OK) {
     sl_zigbee_app_debug_print("success\n");
   } else {
-    sl_zigbee_app_debug_print("error: 0x%x\n", status);
+    sl_zigbee_app_debug_print("error: 0x%02X\n", status);
   }
 }
 
@@ -226,7 +226,7 @@ void sl_zigbee_af_ble_set_bt5_gap_mode_command(sl_cli_command_arg_t *arguments)
   if (status == SL_STATUS_OK) {
     sl_zigbee_app_debug_print("success\n");
   } else {
-    sl_zigbee_app_debug_print("error: 0x%x\n", status);
+    sl_zigbee_app_debug_print("error: 0x%02X\n", status);
   }
 }
 
@@ -246,7 +246,7 @@ void sl_zigbee_af_ble_gap_start_scan_command(sl_cli_command_arg_t *arguments)
   if (status == SL_STATUS_OK) {
     sl_zigbee_app_debug_print("success\n");
   } else {
-    sl_zigbee_app_debug_print("error: 0x%x\n", status);
+    sl_zigbee_app_debug_print("error: 0x%02X\n", status);
   }
 }
 
@@ -257,7 +257,7 @@ void sl_zigbee_af_ble_gap_stop_scan_command(sl_cli_command_arg_t *arguments)
   if (status == SL_STATUS_OK) {
     sl_zigbee_app_debug_print("success\n");
   } else {
-    sl_zigbee_app_debug_print("error: 0x%x\n", status);
+    sl_zigbee_app_debug_print("error: 0x%02X\n", status);
   }
 }
 
@@ -279,7 +279,7 @@ void sl_zigbee_af_ble_gap_scan_config_command(sl_cli_command_arg_t *arguments)
   if (status == SL_STATUS_OK) {
     sl_zigbee_app_debug_print("success\n");
   } else {
-    sl_zigbee_app_debug_print("error: 0x%x\n", status);
+    sl_zigbee_app_debug_print("error: 0x%02X\n", status);
   }
 }
 
@@ -306,7 +306,7 @@ void sl_zigbee_af_ble_gap_connection_open_command(sl_cli_command_arg_t *argument
   if (status == SL_STATUS_OK) {
     sl_zigbee_app_debug_print("success\n");
   } else {
-    sl_zigbee_app_debug_print("error: 0x%x\n", status);
+    sl_zigbee_app_debug_print("error: 0x%02X\n", status);
   }
 }
 
@@ -327,7 +327,7 @@ void sl_zigbee_af_ble_gap_set_connection_params_command(sl_cli_command_arg_t *ar
   if (status == SL_STATUS_OK) {
     sl_zigbee_app_debug_print("success\n");
   } else {
-    sl_zigbee_app_debug_print("error: 0x%x\n", status);
+    sl_zigbee_app_debug_print("error: 0x%02X\n", status);
   }
 }
 
@@ -350,7 +350,7 @@ void sl_zigbee_af_ble_connection_set_params_command(sl_cli_command_arg_t *argume
   if (status == SL_STATUS_OK) {
     sl_zigbee_app_debug_print("success\n");
   } else {
-    sl_zigbee_app_debug_print("error: 0x%x\n", status);
+    sl_zigbee_app_debug_print("error: 0x%02X\n", status);
   }
 }
 
@@ -364,7 +364,7 @@ void sl_zigbee_af_ble_security_manager_configure_command(sl_cli_command_arg_t *a
   if (status == SL_STATUS_OK) {
     sl_zigbee_app_debug_print("success\n");
   } else {
-    sl_zigbee_app_debug_print("error: 0x%x\n", status);
+    sl_zigbee_app_debug_print("error: 0x%02X\n", status);
   }
 }
 
@@ -377,7 +377,7 @@ void sl_zigbee_af_ble_security_manager_increase_security_command(sl_cli_command_
   if (status == SL_STATUS_OK) {
     sl_zigbee_app_debug_print("success\n");
   } else {
-    sl_zigbee_app_debug_print("error: 0x%x\n", status);
+    sl_zigbee_app_debug_print("error: 0x%02X\n", status);
   }
 }
 
@@ -402,7 +402,7 @@ void sl_zigbee_af_ble_security_manager_list_all_bondings_command(sl_cli_command_
       sl_zigbee_app_debug_print("\nBLE address: [%02X %02X %02X %02X %02X %02X]\n",
                                 address.addr[5], address.addr[4], address.addr[3],
                                 address.addr[2], address.addr[1], address.addr[0]);
-      sl_zigbee_app_debug_print(" 0x%x 0x%x 0x%x \n", address_type, security_mode, key_size);
+      sl_zigbee_app_debug_print(" 0x%02X 0x%02X 0x%02X \n", address_type, security_mode, key_size);
     }
   }
 }
@@ -416,7 +416,7 @@ void sl_zigbee_af_ble_security_manager_delete_bonding_command(sl_cli_command_arg
   if (status == SL_STATUS_OK) {
     sl_zigbee_app_debug_print("success\n");
   } else {
-    sl_zigbee_app_debug_print("error: 0x%x\n", status);
+    sl_zigbee_app_debug_print("error: 0x%02X\n", status);
   }
 }
 
@@ -427,7 +427,7 @@ void sl_zigbee_af_ble_security_manager_delete_all_bondings_command(sl_cli_comman
   if (status == SL_STATUS_OK) {
     sl_zigbee_app_debug_print("success\n");
   } else {
-    sl_zigbee_app_debug_print("error: 0x%x\n", status);
+    sl_zigbee_app_debug_print("error: 0x%02X\n", status);
   }
 }
 
@@ -445,7 +445,7 @@ void sl_zigbee_af_ble_security_manager_set_bondable_mode_command(sl_cli_command_
   if (status == SL_STATUS_OK) {
     sl_zigbee_app_debug_print("success\n");
   } else {
-    sl_zigbee_app_debug_print("error: 0x%x\n", status);
+    sl_zigbee_app_debug_print("error: 0x%02X\n", status);
   }
 }
 
@@ -459,7 +459,7 @@ void sl_zigbee_af_ble_security_manager_confirm_passkey_command(sl_cli_command_ar
   if (status == SL_STATUS_OK) {
     sl_zigbee_app_debug_print("success\n");
   } else {
-    sl_zigbee_app_debug_print("error: 0x%x\n", status);
+    sl_zigbee_app_debug_print("error: 0x%02X\n", status);
   }
 }
 
@@ -473,7 +473,7 @@ void sl_zigbee_af_ble_security_manager_enter_passkey_command(sl_cli_command_arg_
   if (status == SL_STATUS_OK) {
     sl_zigbee_app_debug_print("success\n");
   } else {
-    sl_zigbee_app_debug_print("error: 0x%x\n", status);
+    sl_zigbee_app_debug_print("error: 0x%02X\n", status);
   }
 }
 
@@ -486,7 +486,7 @@ void sl_zigbee_af_ble_gatt_discover_primary_services_command(sl_cli_command_arg_
   if (status == SL_STATUS_OK) {
     sl_zigbee_app_debug_print("success\n");
   } else {
-    sl_zigbee_app_debug_print("error: 0x%x\n", status);
+    sl_zigbee_app_debug_print("error: 0x%02X\n", status);
   }
 }
 
@@ -500,7 +500,7 @@ void sl_zigbee_af_ble_gatt_discover_characteristics_command(sl_cli_command_arg_t
   if (status == SL_STATUS_OK) {
     sl_zigbee_app_debug_print("success\n");
   } else {
-    sl_zigbee_app_debug_print("error: 0x%x\n", status);
+    sl_zigbee_app_debug_print("error: 0x%02X\n", status);
   }
 }
 
@@ -516,7 +516,7 @@ void sl_zigbee_af_ble_gatt_set_characteristic_notification_command(sl_cli_comman
   if (status == SL_STATUS_OK) {
     sl_zigbee_app_debug_print("success\n");
   } else {
-    sl_zigbee_app_debug_print("error: 0x%x\n", status);
+    sl_zigbee_app_debug_print("error: 0x%02X\n", status);
   }
 }
 
@@ -535,7 +535,7 @@ void sl_zigbee_af_ble_gatt_write_characteristic_value_command(sl_cli_command_arg
   if (status == SL_STATUS_OK) {
     sl_zigbee_app_debug_print("success\n");
   } else {
-    sl_zigbee_app_debug_print("error: 0x%x\n", status);
+    sl_zigbee_app_debug_print("error: 0x%02X\n", status);
   }
 }
 
@@ -548,7 +548,7 @@ void sl_zigbee_af_ble_connection_close_command(sl_cli_command_arg_t *arguments)
   if (status == SL_STATUS_OK) {
     sl_zigbee_app_debug_print("success\n");
   } else {
-    sl_zigbee_app_debug_print("error: 0x%x\n", status);
+    sl_zigbee_app_debug_print("error: 0x%02X\n", status);
   }
 }
 
@@ -561,7 +561,7 @@ void sl_zigbee_af_ble_stop_advertising(sl_cli_command_arg_t *arguments)
     if (status == SL_STATUS_OK) {
       sl_zigbee_app_debug_print("success\n");
     } else {
-      sl_zigbee_app_debug_print("error: 0x%x\n", status);
+      sl_zigbee_app_debug_print("error: 0x%02X\n", status);
     }
   }
 }
@@ -578,14 +578,12 @@ void sl_zigbee_af_ble_set_tx_power_command(sl_cli_command_arg_t *arguments)
   if (status == SL_STATUS_OK) {
     sl_zigbee_app_debug_print("tx power is set to: %d.%ddBm", (tx_power_min_val / 10), (tx_power_min_val % 10));
   } else {
-    sl_zigbee_app_debug_print("error: 0x%x", status);
+    sl_zigbee_app_debug_print("error: 0x%02X", status);
   }
 }
 
 void sl_dmp_print_connections(sl_cli_command_arg_t *arguments)
 {
   (void)arguments;
-  #ifndef SL_CATALOG_MATTER_BLE_PRESENT
   zb_ble_dmp_print_ble_connections();
-  #endif //SL_CATALOG_MATTER_BLE_PRESENT
 }

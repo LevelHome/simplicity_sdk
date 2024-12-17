@@ -36,31 +36,7 @@ extern sl_zigbee_event_control_t sl_zigbee_af_concentrator_update_event_control;
 
 #define LOW_RAM_CONCENTRATOR  SL_ZIGBEE_LOW_RAM_CONCENTRATOR
 #define HIGH_RAM_CONCENTRATOR SL_ZIGBEE_HIGH_RAM_CONCENTRATOR
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-#define sli_zigbee_af_concentrator_start_discovery sl_zigbee_af_concentrator_queue_discovery
-void sli_zigbee_af_concentrator_stop_discovery(void);
-#endif
-
-/**
- * @name API
- * @{
- */
-
-/** @brief Concentrator source route discovery
- *
- * @return uint32_t
- *
- */
-uint32_t sl_zigbee_af_concentrator_queue_discovery(void);
-
-/** @brief Concentrator stop source route discover
- *
- *
- */
-void sl_zigbee_af_concentrator_stop_discovery(void);
-
-/** @} */ // end of API
+#define INACTIVE_CONCENTRATOR SL_ZIGBEE_INACTIVE_CONCENTRATOR
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 // These values are defined by appbuilder.
@@ -90,5 +66,38 @@ extern sl_zigbee_af_plugin_concentrator_router_behavior_t sli_zigbee_af_concentr
   (sli_zigbee_af_concentrator_router_behavior)
 #define sl_zigbee_af_concentrator_set_router_behavior(behavior) \
   do { sli_zigbee_af_concentrator_router_behavior = behavior; } while (0);
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+#define sli_zigbee_af_concentrator_start_discovery sl_zigbee_af_concentrator_queue_discovery
+void sli_zigbee_af_concentrator_stop_discovery(void);
+#endif
+
+/**
+ * @name API
+ * @{
+ */
+
+/** @brief Concentrator change router behavior
+ *
+ * @param behavior concentrator router behavior Ver.: always
+ *
+ * @return sl_status_t status
+ */
+sl_status_t sl_zigbee_af_concentrator_change_router_behavior(sl_zigbee_af_plugin_concentrator_router_behavior_t behavior);
+
+/** @brief Concentrator source route discovery
+ *
+ * @return uint32_t
+ *
+ */
+uint32_t sl_zigbee_af_concentrator_queue_discovery(void);
+
+/** @brief Concentrator stop source route discover
+ *
+ *
+ */
+void sl_zigbee_af_concentrator_stop_discovery(void);
+
+/** @} */ // end of API
 
 /** @} */ // end of concentrator

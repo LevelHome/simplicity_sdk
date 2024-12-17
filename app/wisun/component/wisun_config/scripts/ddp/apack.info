@@ -1,0 +1,46 @@
+# Wisun DDP Credentials
+
+# Is used for SetupId
+id=wisunDdp
+path=.,deploy
+label=Wi-SUN DDP Credentials
+
+function(create_signing_server) {
+  cmd=$(python) SigningServer.py SetupCerts --co ${co} --cu ${cu} --oid ${oid}
+}
+
+function(create_signing_server_config) {
+  cmd=$(python) SigningServer.py SetupCerts --co ${co} --cu ${cu} --oid ${oid} --config ${config}
+}
+
+function(init_nvm) {
+  cmd=$(python) DDPAdapter.py --soc ${socType} --jlink_ser ${serialNumber} ${command} --prov_img ${prov_img}
+}
+
+function(gen_device_key) {
+  cmd=$(python) DDPAdapter.py --soc ${socType} --jlink_ser ${serialNumber} ${command} --prov_img ${prov_img}
+}
+
+function(gen_csr_key) {
+  cmd=$(python) DDPAdapter.py --soc ${socType} --jlink_ser ${serialNumber} ${command} --prov_img ${prov_img}
+}
+
+function(gen_wisun_certs) {
+  cmd=$(python) DDPAdapter.py --soc ${socType} --jlink_ser ${serialNumber} ${command} --data ${data}
+}
+
+function(gen_wisun_certs_custom_config) {
+  cmd=$(python) DDPAdapter.py --soc ${socType} --jlink_ser ${serialNumber} ${command} --config {config} --data ${data}
+}
+
+function(write_wisun_certs) {
+  cmd=$(python) DDPAdapter.py --soc ${socType} --jlink_ser ${serialNumber} ${command} --prov_img ${prov_img} --data ${data}
+}
+
+function(write_batch_certs) {
+  cmd=$(python) DDPAdapter.py --soc ${socType} --jlink_ser ${serialNumber} ${command} --prov_img ${prov_img} --data ${data}
+}
+
+function(write_root_certs) {
+  cmd=$(python) DDPAdapter.py --soc ${socType} --jlink_ser ${serialNumber} ${command} --prov_img ${prov_img} --data ${data}
+}

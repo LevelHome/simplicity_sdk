@@ -32,7 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "app_queue.h"
-#include "em_core.h"
+#include "sl_core.h"
 
 // -----------------------------------------------------------------------------
 // Public functions

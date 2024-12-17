@@ -36,9 +36,6 @@ requires:
   - name: psa_builtin_key_support_se
     condition: [trustzone_nonsecure, device_has_semailbox]
 
-conflicts:
-  - name: device_series_3
-
 include:
   # These complicated conditions are required in order to avoid conflicts with
   # TF-M, which also contains these exact header files (with slightly different
@@ -81,3 +78,13 @@ template_contribution:
     value:
       name: psa_its_files_minimum
       count: 1
+
+metadata:
+ sbom:
+    license: Zlib AND MSLA AND BSD-3-Clause
+    upstream:
+      name: TrustedFirmware-M (TF-M)
+      version: v1.5
+      supplier: Trusted Firmware
+      url: https://review.trustedfirmware.org/TF-M/trusted-firmware-m.git
+      comment: Trusted Firmware for M profile Arm CPUs

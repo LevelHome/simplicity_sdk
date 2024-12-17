@@ -60,8 +60,7 @@
 
 // Type for button event
 typedef struct {
-  uint32_t timestamp;
-  uint8_t  state;
+  uint32_t duration;
   uint8_t  index;
 } button_event_t;
 
@@ -86,6 +85,11 @@ static button_press_state_t state;
 // Application Runtime Adaptor context
 static app_rta_context_t ctx = APP_RTA_INVALID_CONTEXT;
 
+#ifdef SL_CATALOG_CLI_PRESENT
+static uint32_t cli_button_timestamps[SL_SIMPLE_BUTTON_COUNT];
+static uint8_t cli_button_states[SL_SIMPLE_BUTTON_COUNT];
+#endif // SL_CATALOG_CLI_PRESENT
+
 // -----------------------------------------------------------------------------
 // Forward declaration of private functions
 
@@ -101,6 +105,14 @@ static void calculate_press(button_event_t *evt);
 void app_button_press_init(void)
 {
   sl_status_t sc;
+
+#ifdef SL_CATALOG_CLI_PRESENT
+  // Iterate over buttons and clear timestamps and states
+  for (uint8_t i = 0; i < SL_SIMPLE_BUTTON_COUNT; i++) {
+    cli_button_timestamps[i] = 0;
+    cli_button_states[i] = SL_SIMPLE_BUTTON_RELEASED;
+  }
+#endif // SL_CATALOG_CLI_PRESENT
 
   // Iterate over buttons and clear timestamps and states
   for (uint8_t i = 0; i < SL_SIMPLE_BUTTON_COUNT; i++) {
@@ -244,13 +256,23 @@ void sl_button_on_change(const sl_button_t *handle)
   for (uint8_t i = 0; i < SL_SIMPLE_BUTTON_COUNT; i++) {
     // If the handle is applicable
     if (SL_SIMPLE_BUTTON_INSTANCE(i) == handle) {
+      if (sl_button_get_state(handle) == SL_SIMPLE_BUTTON_PRESSED) {
+        state.buttons[i].timestamp = sl_sleeptimer_get_tick_count();
+        #if (APP_BUTTON_PRESS_DETECTION == APP_BUTTON_PRESS_DETECT_PRESS_AND_RELEASE)
+        state.buttons[i].press = APP_BUTTON_PRESS_PRESSED_DOWN;
+        #else
+        return;
+        #endif // APP_BUTTON_PRESS_DETECTION
+      }
       // Push event
-      evt.timestamp = sl_sleeptimer_get_tick_count();
-      evt.state = sl_button_get_state(handle);
+      evt.duration = sl_sleeptimer_get_tick_count() - state.buttons[i].timestamp;
       evt.index = i;
-      sc = app_rta_queue_push(ctx, (uint8_t *)&evt, sizeof(evt));
-      if (sc != SL_STATUS_OK) {
-        app_button_press_error(sc);
+      if ((evt.duration > sl_sleeptimer_ms_to_tick(MIN_VALID_BUTTON_PRESS_DURATION))
+          || (state.buttons[i].press == APP_BUTTON_PRESS_PRESSED_DOWN)) {
+        sc = app_rta_queue_push(ctx, (uint8_t *)&evt, sizeof(evt));
+        if (sc != SL_STATUS_OK) {
+          app_button_press_error(sc);
+        }
       }
       return;
     }
@@ -280,6 +302,54 @@ void button_press_from_cli(sl_cli_command_arg_t *arguments)
   }
   app_button_press_cb(button_id, duration);
 }
+
+/******************************************************************************
+* Command Line Interface callback implementation
+*
+* @param[in] arguments command line argument list
+******************************************************************************/
+void button_hold_from_cli(sl_cli_command_arg_t *arguments)
+{
+  uint8_t button_id;
+  button_id = sl_cli_get_argument_uint8(arguments, BUTTON_ID_PARAM_IDX);
+  if (button_id >= SL_SIMPLE_BUTTON_COUNT) {
+    button_id = SL_SIMPLE_BUTTON_COUNT - 1;
+  }
+  if (cli_button_states[button_id] == SL_SIMPLE_BUTTON_RELEASED) {
+    cli_button_timestamps[button_id] = sl_sleeptimer_get_tick_count();
+    cli_button_states[button_id] = SL_SIMPLE_BUTTON_PRESSED;
+    #if (APP_BUTTON_PRESS_DETECTION == APP_BUTTON_PRESS_DETECT_PRESS_AND_RELEASE)
+    app_button_press_cb(button_id, APP_BUTTON_PRESS_PRESSED_DOWN);
+    #endif // APP_BUTTON_PRESS_DETECTION
+  }
+}
+
+/******************************************************************************
+* Command Line Interface callback implementation
+*
+* @param[in] arguments command line argument list
+******************************************************************************/
+void button_release_from_cli(sl_cli_command_arg_t *arguments)
+{
+  uint8_t button_id;
+  button_id = sl_cli_get_argument_uint8(arguments, BUTTON_ID_PARAM_IDX);
+  if (button_id >= SL_SIMPLE_BUTTON_COUNT) {
+    button_id = SL_SIMPLE_BUTTON_COUNT - 1;
+  }
+  if (cli_button_states[button_id] == SL_SIMPLE_BUTTON_PRESSED) {
+    uint32_t t_diff = sl_sleeptimer_get_tick_count() - cli_button_timestamps[button_id];
+    cli_button_states[button_id] = SL_SIMPLE_BUTTON_RELEASED;
+    if (t_diff < sl_sleeptimer_ms_to_tick(SHORT_BUTTON_PRESS_DURATION)) {
+      app_button_press_cb(button_id, APP_BUTTON_PRESS_DURATION_SHORT);
+    } else if (t_diff < sl_sleeptimer_ms_to_tick(MEDIUM_BUTTON_PRESS_DURATION)) {
+      app_button_press_cb(button_id, APP_BUTTON_PRESS_DURATION_MEDIUM);
+    } else if (t_diff < sl_sleeptimer_ms_to_tick(LONG_BUTTON_PRESS_DURATION)) {
+      app_button_press_cb(button_id, APP_BUTTON_PRESS_DURATION_LONG);
+    } else {
+      app_button_press_cb(button_id, APP_BUTTON_PRESS_DURATION_VERYLONG);
+    }
+  }
+}
 #endif // SL_CATALOG_CLI_PRESENT
 
 // -----------------------------------------------------------------------------
@@ -293,21 +363,20 @@ static void init_error(app_rta_error_t error, sl_status_t result)
 
 static void calculate_press(button_event_t *evt)
 {
-  uint32_t t_diff;
   uint8_t i = evt->index;
-  if (evt->state == SL_SIMPLE_BUTTON_PRESSED) {
-    state.buttons[i].timestamp = evt->timestamp;
+  #if (APP_BUTTON_PRESS_DETECTION == APP_BUTTON_PRESS_DETECT_PRESS_AND_RELEASE)
+  if (state.buttons[i].press == APP_BUTTON_PRESS_PRESSED_DOWN) {
+    return;
+  }
+  #endif // APP_BUTTON_PRESS_DETECTION
+  // Set state flag according to the difference
+  if (evt->duration < sl_sleeptimer_ms_to_tick(SHORT_BUTTON_PRESS_DURATION)) {
+    state.buttons[i].press = APP_BUTTON_PRESS_DURATION_SHORT;
+  } else if (evt->duration < sl_sleeptimer_ms_to_tick(MEDIUM_BUTTON_PRESS_DURATION)) {
+    state.buttons[i].press = APP_BUTTON_PRESS_DURATION_MEDIUM;
+  } else if (evt->duration < sl_sleeptimer_ms_to_tick(LONG_BUTTON_PRESS_DURATION)) {
+    state.buttons[i].press = APP_BUTTON_PRESS_DURATION_LONG;
   } else {
-    t_diff = evt->timestamp - state.buttons[i].timestamp;
-    // Set state flag according to the difference
-    if (t_diff < sl_sleeptimer_ms_to_tick(SHORT_BUTTON_PRESS_DURATION)) {
-      state.buttons[i].press = APP_BUTTON_PRESS_DURATION_SHORT;
-    } else if (t_diff < sl_sleeptimer_ms_to_tick(MEDIUM_BUTTON_PRESS_DURATION)) {
-      state.buttons[i].press = APP_BUTTON_PRESS_DURATION_MEDIUM;
-    } else if (t_diff < sl_sleeptimer_ms_to_tick(LONG_BUTTON_PRESS_DURATION)) {
-      state.buttons[i].press = APP_BUTTON_PRESS_DURATION_LONG;
-    } else {
-      state.buttons[i].press = APP_BUTTON_PRESS_DURATION_VERYLONG;
-    }
+    state.buttons[i].press = APP_BUTTON_PRESS_DURATION_VERYLONG;
   }
 }

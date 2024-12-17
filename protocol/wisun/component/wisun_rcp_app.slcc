@@ -16,7 +16,7 @@ requires:
   - name: device_init
   - name: sl_system
   - name: wisun_mac
-  - name: wisun_radioconf
+  - name: a_radio_config
   - name: dmadrv
   - name: silabs_core_sl_malloc
   - name: cpc_secondary
@@ -64,8 +64,6 @@ template_contribution:
       event: internal_app_init
       include: sl_wsrcp.h
       handler: wisun_rcp_init
-  - name: component_catalog
-    value: wisun_ncp
 
 metadata:
   sbom:

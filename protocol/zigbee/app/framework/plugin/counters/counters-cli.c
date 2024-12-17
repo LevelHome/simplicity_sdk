@@ -47,7 +47,7 @@ void sl_zigbee_af_counters_print_counters_type_command(sl_cli_command_arg_t *arg
 #if !defined(EZSP_HOST)
   uint8_t counterType = sl_cli_get_argument_uint8(args, 0);
   if (counterType < SL_ZIGBEE_COUNTER_TYPE_COUNT) {
-    sl_zigbee_af_core_println("%u) %p: %u",
+    sl_zigbee_af_core_println("%u) %s: %u",
                               counterType,
                               (titleStrings[counterType] == NULL
                                ? unknownCounter
@@ -88,7 +88,7 @@ void sl_zigbee_af_counters_print_thresholds_command(sl_cli_command_arg_t *args)
 {
   uint8_t i;
   for (i = 0; i < SL_ZIGBEE_COUNTER_TYPE_COUNT; i++) {
-    sl_zigbee_af_core_println("%u) %p: %u",
+    sl_zigbee_af_core_println("%u) %s: %u",
                               i,
                               (titleStrings[i] == NULL
                                ? unknownCounter
@@ -101,11 +101,23 @@ static void sl_zigbee_af_counters_print(void)
 {
   uint8_t i;
   for (i = 0; i < SL_ZIGBEE_COUNTER_TYPE_COUNT; i++) {
-    sl_zigbee_af_core_println("%u) %p: %u",
+    sl_zigbee_af_core_println("%u) %s: %u",
                               i,
                               (titleStrings[i] == NULL
                                ? unknownCounter
                                : titleStrings[i]),
                               sl_zigbee_counters[i]);
   }
+}
+
+void sl_zigbee_af_counters_clear_command(sl_cli_command_arg_t *args)
+{
+  (void) args;
+  sl_zigbee_af_counters_clear();
+}
+
+void sl_zigbee_af_counters_reset_thresholds_command(sl_cli_command_arg_t *args)
+{
+  (void) args;
+  sl_zigbee_af_counters_reset_thresholds();
 }

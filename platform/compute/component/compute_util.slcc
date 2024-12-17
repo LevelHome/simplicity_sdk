@@ -5,6 +5,9 @@ description: >
   This component provides compute utilities.
 category: Platform|Compute
 quality: production
+metadata:
+  sbom:
+    license: Zlib
 root_path: platform/compute/util
 source:
   - path: src/sl_compute_util.c

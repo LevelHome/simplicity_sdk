@@ -469,6 +469,31 @@ static void cli_decode_esl_basic_state(esl_basic_state_t basic_state)
   app_log_nl();
 }
 
+const char *sli_bt_esl_log_get_ordinal(uint32_t value)
+{
+  // normalize the range of the value
+  value %= 100;
+
+  if (value > 3 && value < 21) {
+    value = 4;  // shortcut for exceptions
+  }
+
+  switch (value % 10) {
+    case 1:
+      return "st";
+
+    case 2:
+      return "nd";
+
+    case 3:
+      return "rd";
+
+    default:
+      return "th";
+      break;
+  }
+}
+
 // Check if given component has logging enabled
 static bool component_log_enabled(uint8_t component)
 {

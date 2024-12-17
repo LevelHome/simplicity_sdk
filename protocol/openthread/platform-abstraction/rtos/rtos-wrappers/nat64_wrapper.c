@@ -69,6 +69,7 @@ extern void         OT_API_REAL_NAME(otIp4ExtractFromIp6Address)(uint8_t        
                                                          const otIp6Address *aIp6Address,
                                                          otIp4Address       *aIp4Address);
 extern void OT_API_REAL_NAME(otIp4ToIp4MappedIp6Address)(const otIp4Address *aIp4Address, otIp6Address *aIp6Address);
+extern void OT_API_REAL_NAME(otNat64ClearIp4Cidr)(otInstance *aInstance);
 extern void OT_API_REAL_NAME(otNat64GetCounters)(otInstance *aInstance, otNat64ProtocolCounters *aCounters);
 extern void OT_API_REAL_NAME(otNat64GetErrorCounters)(otInstance *aInstance, otNat64ErrorCounters *aCounters);
 extern void OT_API_REAL_NAME(otNat64InitAddressMappingIterator)(otInstance                    *aInstance,
@@ -205,6 +206,13 @@ void OT_API_WRAPPER_NAME(otIp4ToIp4MappedIp6Address)(const otIp4Address *aIp4Add
 {
     sl_ot_rtos_acquire_stack_mutex();
     OT_API_REAL_NAME(otIp4ToIp4MappedIp6Address)(aIp4Address, aIp6Address);
+    sl_ot_rtos_release_stack_mutex();
+}
+
+void OT_API_WRAPPER_NAME(otNat64ClearIp4Cidr)(otInstance *aInstance)
+{
+    sl_ot_rtos_acquire_stack_mutex();
+    OT_API_REAL_NAME(otNat64ClearIp4Cidr)(aInstance);
     sl_ot_rtos_release_stack_mutex();
 }
 

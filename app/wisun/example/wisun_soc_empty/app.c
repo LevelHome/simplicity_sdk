@@ -1,5 +1,5 @@
 /***************************************************************************//**
- * @file
+ * @file app.c
  * @brief Application code
  *******************************************************************************
  * # License
@@ -32,12 +32,13 @@
 // -----------------------------------------------------------------------------
 #include <stdio.h>
 #include <assert.h>
+
 #include "app.h"
 #include "sl_wisun_api.h"
-#ifdef SL_CATALOG_WISUN_APP_CORE_PRESENT
-  #include "sl_wisun_app_core_util.h"
-#endif
 
+#ifdef SL_CATALOG_WISUN_APP_CORE_PRESENT
+#include "sl_wisun_app_core_util.h"
+#endif
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -57,8 +58,8 @@
 // -----------------------------------------------------------------------------
 //                          Public Function Definitions
 // -----------------------------------------------------------------------------
-#ifndef SL_CATALOG_WISUN_EVENT_MGR_PRESENT // Event Manager also defines this handler
-/*Wi-SUN event handler*/
+#ifndef SL_CATALOG_WISUN_EVENT_MGR_PRESENT  // Event Manager also defines this handler
+/* Wi-SUN event handler */
 void sl_wisun_on_event(sl_wisun_evt_t *evt)
 {
   (void) evt->header.id;
@@ -72,12 +73,12 @@ void sl_wisun_on_event(sl_wisun_evt_t *evt)
 }
 #endif
 
-/*App task function*/
+/* App task function */
 void app_task(void *args)
 {
   (void) args;
 
-  printf("\nWi-SUN Empty application\n");
+  printf("\nWi-SUN Empty Application\n");
 
 #ifdef SL_CATALOG_WISUN_APP_CORE_PRESENT
   // connect to the wisun network

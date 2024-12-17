@@ -35,6 +35,7 @@
 #include "sl_memory_manager.h"
 #include "zigbee_rtos_adaptation.h"
 #include "zigbee_sleep_config.h"
+#include "sl_code_classification.h"
 extern void sli_zigbee_process_stack_callbacks_event(sl_event_t *cb_event);
 
 extern void sl_zigbee_af_acquire_lock(void);
@@ -63,6 +64,7 @@ static void sl_zigbee_rtos_wakeup_app_framework_task(void);
 
 //------------------------------------------------------------------------------
 // APIs and callbacks.
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_ZIGBEE_STACK, SL_CODE_CLASS_TIME_CRITICAL)
 void sl_zigbee_wakeup_common_task(void)
 {
   sl_zigbee_wakeup_stack_task();
@@ -118,6 +120,7 @@ void sli_iostream_on_uart_rx(sl_iostream_t *handle)
 }
 #endif
 
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_ZIGBEE_STACK, SL_CODE_CLASS_TIME_CRITICAL)
 void sl_zigbee_rtos_wakeup_app_framework_task(void)
 {
   // NOTE: This semaphore is not really used to protect any resources

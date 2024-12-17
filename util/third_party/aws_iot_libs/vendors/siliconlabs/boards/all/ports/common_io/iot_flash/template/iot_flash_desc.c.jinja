@@ -72,17 +72,11 @@ IotFlashDescriptor_t iot_flash_desc[] = {
     .pxPeripheral       = IOT_FLASH_CFG_{{ instance | upper }}_SPI_PERIPHERAL,
     .ucPeripheralNo     = IOT_FLASH_CFG_{{ instance | upper }}_SPI_PERIPHERAL_NO,
 
-    /* ports */
-    .xTxPort            = IOT_FLASH_CFG_{{ instance | upper }}_SPI_TX_PORT,
-    .xRxPort            = IOT_FLASH_CFG_{{ instance | upper }}_SPI_RX_PORT,
-    .xClkPort           = IOT_FLASH_CFG_{{ instance | upper }}_SPI_CLK_PORT,
-    .xCsPort            = IOT_FLASH_CFG_{{ instance | upper }}_SPI_CS_PORT,
-
-    /* pins */
-    .ucTxPin            = IOT_FLASH_CFG_{{ instance | upper }}_SPI_TX_PIN,
-    .ucRxPin            = IOT_FLASH_CFG_{{ instance | upper }}_SPI_RX_PIN,
-    .ucClkPin           = IOT_FLASH_CFG_{{ instance | upper }}_SPI_CLK_PIN,
-    .ucCsPin            = IOT_FLASH_CFG_{{ instance | upper }}_SPI_CS_PIN,
+    /* GPIO structures */
+    .gpio_tx            = {.port = IOT_FLASH_CFG_{{ instance | upper }}_SPI_TX_PORT, .pin = IOT_FLASH_CFG_{{ instance | upper }}_SPI_TX_PIN},
+    .gpio_rx            = {.port = IOT_FLASH_CFG_{{ instance | upper }}_SPI_RX_PORT, .pin = IOT_FLASH_CFG_{{ instance | upper }}_SPI_RX_PIN},
+    .gpio_clk           = {.port = IOT_FLASH_CFG_{{ instance | upper }}_SPI_CLK_PORT, .pin = IOT_FLASH_CFG_{{ instance | upper }}_SPI_CLK_PIN},
+    .gpio_cs            = {.port = IOT_FLASH_CFG_{{ instance | upper }}_SPI_CS_PORT, .pin = IOT_FLASH_CFG_{{ instance | upper }}_SPI_CS_PIN},
 
     /* locations */
 #if (_SILICON_LABS_32B_SERIES < 2)

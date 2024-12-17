@@ -20,6 +20,9 @@
   - name: hardware_board_from_xg24-rb4115b
   - name: hardware_board_has_vcom
   - name: hardware_board_has_spiflash
+  - name: hardware_board_has_spi
+  - name: hardware_board_has_uart
+  - name: board_config_clock_manager
   - name: hardware_board_has_hfxo_freq_39mhz
   - name: hardware_board_has_hfxo
   - name: hardware_board_has_lfxo

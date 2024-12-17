@@ -14,6 +14,7 @@ schema:
       - cortex-m3
       - cortex-m4
       - cortex-m33
+      - cortex-m55
   fpu:
     type: str
     enum:
@@ -26,6 +27,13 @@ schema:
       - debug
       - speed
       - size
+  debug_level:
+    type: str
+    enum:
+      - none
+      - minimal
+      - default
+      - maximal
   c_standard:
     type: str
   cxx_standard:
@@ -59,6 +67,8 @@ schema:
   gcc_c_compiler_option:
     type: str
   gcc_c++_compiler_option:
+    type: str
+  gcc_assembler_option:
     type: str
   gcc_linker_option:
     type: str
@@ -102,25 +112,10 @@ schema:
 exporter:
   - exporter_id: simplicity_studio
     setting:
-      - tool: makefile.arm.gcc.compiler
-        option: misc
-        action: append
-        value: "-g"
-
-      - tool: makefile.arm.gcc.assembler
-        option: misc
-        action: append
-        value: "-x assembler-with-cpp"
-
-      - tool: makefile.arm.gcc.linker
-        option: misc
-        action: append
-        value: "-Wl,--no-warn-rwx-segments"
 
       - tool: linker
         option: generateMapFile
         value: true
-
       - tool: compiler
         option: c_standard
         value: c18
@@ -142,6 +137,9 @@ exporter:
       - tool: compiler
         option: optimization
         value: size # Optimize for size by default
+      - tool: compiler
+        option: debug_level
+        value: default
 
       - tool: com.silabs.ide.si32.gcc.cdt.managedbuild.tool.gnu.c.linker.base
         option: com.silabs.ide.si32.gcc.cdt.managedbuild.tool.gnu.c.linker.circulardependency
@@ -287,6 +285,10 @@ exporter:
           - tool: toolchain
             option: cpu
             value: cortex-m33
+        cortex-m55:
+          - tool: toolchain
+            option: cpu
+            value: cortex-m55
       fpu:
         fpv4-sp:
           - tool: toolchain
@@ -319,6 +321,23 @@ exporter:
           - tool: compiler
             option: optimization
             value: size
+      debug_level:
+        none:
+          - tool: compiler
+            option: debug_level
+            value: none
+        minimal:
+          - tool: compiler
+            option: debug_level
+            value: minimal
+        default:
+          - tool: compiler
+            option: debug_level
+            value: default
+        maximal:
+          - tool: compiler
+            option: debug_level
+            value: maximum
       c_standard:
         - tool: compiler
           option: c_standard
@@ -399,6 +418,11 @@ exporter:
           option: com.silabs.gnu.cpp.compiler.option.misc.otherlist
           action: append
           value: "{{value}}"
+      gcc_assembler_option:
+        - tool: makefile.arm.gcc.assembler
+          option: misc
+          action: append
+          value: "{{value}}"
       gcc_linker_option:
         - tool: makefile.arm.gcc.linker
           option: misc
@@ -476,7 +500,7 @@ exporter:
           - tool: com.silabs.ide.si32.gcc.cdt.managedbuild.tool.gnu.cpp.compiler.base
             option: com.silabs.gnu.cpp.compiler.option.misc.otherlist
             action: append
-            value: "-flto=auto -fwhole-program"  
+            value: "-flto=auto -fwhole-program"
           - tool: com.silabs.ide.si32.gcc.cdt.managedbuild.tool.gnu.cpp.linker.base
             option: com.silabs.gnu.cpp.link.option.flags
             action: append
@@ -485,7 +509,31 @@ exporter:
             option: com.silabs.gnu.c.link.option.ldflags
             action: append
             value: "-flto"
-        disabled: []
+        disabled:
+          - tool: makefile.arm.gcc.compiler
+            option: misc
+            action: append
+            value: "-fno-lto"
+          - tool: makefile.arm.gcc.linker
+            option: misc
+            action: append
+            value: "-fno-lto"
+          - tool: com.silabs.ide.si32.gcc.cdt.managedbuild.tool.gnu.c.compiler.base
+            option: com.silabs.gnu.c.compiler.option.misc.otherlist
+            action: append
+            value: "-fno-lto"
+          - tool: com.silabs.ide.si32.gcc.cdt.managedbuild.tool.gnu.cpp.compiler.base
+            option: com.silabs.gnu.cpp.compiler.option.misc.otherlist
+            action: append
+            value: "-fno-lto"
+          - tool: com.silabs.ide.si32.gcc.cdt.managedbuild.tool.gnu.cpp.linker.base
+            option: com.silabs.gnu.cpp.link.option.flags
+            action: append
+            value: "-fno-lto"
+          - tool: com.silabs.ide.si32.gcc.cdt.managedbuild.tool.gnu.c.linker.base
+            option: com.silabs.gnu.c.link.option.ldflags
+            action: append
+            value: "-fno-lto"
       compiler_option:
         - tool: compiler
           option: misc

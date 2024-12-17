@@ -18,6 +18,7 @@ source:
   - path: util/third_party/mbedtls/library/ecdsa.c
   
   - path: util/third_party/mbedtls/library/pk.c
+  - path: util/third_party/mbedtls/library/pk_ecc.c
   - path: util/third_party/mbedtls/library/pkparse.c
   - path: util/third_party/mbedtls/library/pkwrite.c
   - path: util/third_party/mbedtls/library/pk_wrap.c
@@ -48,3 +49,12 @@ template_contribution:
     value: MBEDTLS_PK_PARSE_C
   - name: mbedtls_config
     value: MBEDTLS_PK_WRITE_C
+metadata:
+  sbom:
+    license: Apache-2.0
+    upstream:
+      name: Mbed TLS
+      version: v3.6.2
+      supplier: Trusted Firmware
+      url: https://github.com/Mbed-TLS/mbedtls.git
+      comment: Mbed TLS is a C library implementing the PSA Cryptography API, cryptographic primitives, X.509 certificate manipulation and the SSL/TLS and DTLS protocols

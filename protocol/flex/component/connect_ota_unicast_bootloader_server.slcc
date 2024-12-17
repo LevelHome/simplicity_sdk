@@ -1,6 +1,6 @@
 id: "connect_ota_unicast_bootloader_server"
 label: "OTA Unicast Bootloader Server"
-package: "Flex"
+package: "Connect"
 category: "Connect|OTA"
 quality: "production"
 description: "Implements the server side of the Connect OTA Unicast Bootloader protocol. The OTA Unicast Bootloader Server component should be used to distribute an image from the server to a target device (client) in a reliable unicast fashion and to instruct a target device to initiate a bootload."

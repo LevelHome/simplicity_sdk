@@ -29,8 +29,10 @@
  ******************************************************************************/
 
 #include "sl_status.h"
+#include "sli_cpc_assert.h"
 #include "sli_cpc_debug.h"
 #include "sli_cpc_instance.h"
+#include "sl_cpc_instance_handles.h"
 
 #if defined(SL_COMPONENT_CATALOG_PRESENT)
 #include "sl_component_catalog.h"
@@ -90,36 +92,36 @@ static sl_status_t instance_kernel_init(sli_cpc_instance_t *inst)
 #endif // SL_CATALOG_CMSIS_OS_COMMON_PRESENT
   };
 
-  inst->thread_id = osThreadNew(&sl_cpc_task, (void*)inst, &task_attr);
-  if (inst->thread_id == 0) {
-    EFM_ASSERT(false);
+  inst->endpoints_list_lock = osMutexNew(&mutex_attr);
+  if (inst->endpoints_list_lock == 0) {
+    SLI_CPC_ASSERT(0);
     status = SL_STATUS_ALLOCATION_FAILED;
     goto exit;
   }
 
-  inst->endpoints_list_lock = osMutexNew(&mutex_attr);
-  if (inst->endpoints_list_lock == 0) {
-    EFM_ASSERT(false);
-    status = SL_STATUS_ALLOCATION_FAILED;
-    goto terminate_thread;
-  }
-
-  inst->event_signal = osSemaphoreNew(EVENT_SIGNAL_MAX_COUNT,
+  inst->event_signal = osSemaphoreNew(SLI_CPC_EVENT_SIGNAL_MAX_COUNT_INST(inst),
                                       0u,
                                       &event_signal_semaphore_attr);
   if (inst->event_signal == 0) {
-    EFM_ASSERT(false);
+    SLI_CPC_ASSERT(0);
     status = SL_STATUS_ALLOCATION_FAILED;
-    goto exit_free_mutex;
+    goto free_list_lock;
+  }
+
+  inst->thread_id = osThreadNew(&sl_cpc_task, (void*)inst, &task_attr);
+  if (inst->thread_id == 0) {
+    SLI_CPC_ASSERT(0);
+    status = SL_STATUS_ALLOCATION_FAILED;
+    goto free_event_signal;
   }
 
   goto exit;
 
-  exit_free_mutex:
-  osMutexDelete(inst->endpoints_list_lock);
+  free_event_signal:
+  osSemaphoreDelete(inst->event_signal);
 
-  terminate_thread:
-  osThreadTerminate(inst->thread_id);
+  free_list_lock:
+  osMutexDelete(inst->endpoints_list_lock);
 
   exit:
   return status;
@@ -136,9 +138,9 @@ static sl_status_t instance_kernel_init(sli_cpc_instance_t *inst)
 static void instance_kernel_deinit(sli_cpc_instance_t *inst)
 {
 #if defined(SL_CATALOG_KERNEL_PRESENT)
+  osThreadTerminate(inst->thread_id);
   osSemaphoreDelete(inst->event_signal);
   osMutexDelete(inst->endpoints_list_lock);
-  osThreadTerminate(inst->thread_id);
 #endif // SL_CATALOG_KERNEL_PRESENT
   (void)inst;
 }
@@ -150,21 +152,23 @@ static sl_status_t instance_hw_init(sli_cpc_instance_t *inst)
 {
   sl_status_t status;
 
+#if defined(SL_CATALOG_CPC_PRIMARY_PRESENT)
   // retrieve driver associated with this instance
   inst->driver = sli_cpc_drv_get_driver();
+#endif
 
   // get driver capabilities
   status = inst->driver->ops.get_capabilities(inst->driver,
                                               &inst->sli_cpc_driver_capabilities);
   if (status != SL_STATUS_OK) {
-    EFM_ASSERT(false);
+    SLI_CPC_ASSERT(0);
     return status;
   }
 
   // call the driver hw initialization function
   status = inst->driver->ops.hw_init(inst->driver);
   if (status != SL_STATUS_OK) {
-    EFM_ASSERT(false);
+    SLI_CPC_ASSERT(0);
     return status;
   }
 
@@ -199,7 +203,7 @@ static sl_status_t sli_cpc_instance_early_init(sli_cpc_instance_t *inst)
 
   status = instance_hw_init(inst);
   if (status != SL_STATUS_OK) {
-    EFM_ASSERT(false);
+    SLI_CPC_ASSERT(0);
     return status;
   }
 
@@ -235,13 +239,13 @@ static sl_status_t sli_cpc_instance_late_init(sli_cpc_instance_t *inst)
 
   status = inst->driver->ops.init(inst->driver, inst);
   if (status != SL_STATUS_OK) {
-    EFM_ASSERT(false);
+    SLI_CPC_ASSERT(0);
     return status;
   }
 
   status = sli_cpc_system_init(&inst->system_ep);
   if (status != SL_STATUS_OK) {
-    EFM_ASSERT(false);
+    SLI_CPC_ASSERT(0);
     return status;
   }
 
@@ -314,13 +318,13 @@ sl_status_t sli_cpc_instance_start(sli_cpc_instance_t *inst)
 
   status = inst->driver->ops.start_rx(inst->driver);
   if (status != SL_STATUS_OK) {
-    EFM_ASSERT(false);
+    SLI_CPC_ASSERT(0);
     return status;
   }
 
   status = sli_cpc_system_start(&inst->system_ep);
   if (status != SL_STATUS_OK) {
-    EFM_ASSERT(false);
+    SLI_CPC_ASSERT(0);
     return status;
   }
 
@@ -342,8 +346,8 @@ bool sli_cpc_instance_is_initialized(sli_cpc_instance_t *inst)
  ******************************************************************************/
 uint32_t sli_cpc_instance_bus_get_bitrate(sli_cpc_instance_t *inst)
 {
-  EFM_ASSERT(inst != NULL);
-  EFM_ASSERT(inst->driver != NULL);
+  SLI_CPC_ASSERT(inst != NULL);
+  SLI_CPC_ASSERT(inst->driver != NULL);
 
   return inst->driver->ops.get_bus_bitrate(inst->driver);
 }
@@ -353,8 +357,8 @@ uint32_t sli_cpc_instance_bus_get_bitrate(sli_cpc_instance_t *inst)
  ******************************************************************************/
 uint32_t sli_cpc_instance_bus_get_max_bitrate(sli_cpc_instance_t *inst)
 {
-  EFM_ASSERT(inst != NULL);
-  EFM_ASSERT(inst->driver != NULL);
+  SLI_CPC_ASSERT(inst != NULL);
+  SLI_CPC_ASSERT(inst->driver != NULL);
 
   return inst->driver->ops.get_bus_max_bitrate(inst->driver);
 }

@@ -196,6 +196,7 @@
 #define CREATOR_STACK_ZLL_DATA                               0xE501
 #define CREATOR_STACK_ZLL_SECURITY                           0xE502
 #define CREATOR_STACK_ADDITIONAL_CHILD_DATA                  0xE503
+#define CREATOR_STACK_KEY_TABLE_EXTENDED                     0xE510
 
 /** @} END Creator Codes  */
 
@@ -284,6 +285,9 @@
 
 // This key is used for an indexed token and the subsequent 0x7F keys are also reserved
 #define NVM3KEY_STACK_GP_INCOMING_FC_IN_SINK               (NVM3KEY_DOMAIN_ZIGBEE | 0x0780)
+
+// This key is used to store additional link keys beyond the limitations of the token system
+#define NVM3KEY_STACK_KEY_TABLE_EXTENDED                    (NVM3KEY_DOMAIN_ZIGBEE | 0x892C)
 /** @} END NVM3 Object Keys  */
 
 //////////////////////////////////////////////////////////////////////////////
@@ -556,10 +560,25 @@ DEFINE_INDEXED_TOKEN(STACK_CHILD_TABLE,
                      tokTypeStackChildTable,
                      SL_ZIGBEE_CHILD_TABLE_SIZE,
                      { 0, })
+
+#if !defined(EZSP_HOST)
+#if SL_ZIGBEE_KEY_TABLE_SIZE < 0x80
+#define SL_ZIGBEE_ORIGINAL_KEY_TABLE_MAX_SIZE SL_ZIGBEE_KEY_TABLE_SIZE
+#define SL_ZIGBEE_EXTENDED_KEY_TABLE_MAX_SIZE 0
+#else
+#define SL_ZIGBEE_ORIGINAL_KEY_TABLE_MAX_SIZE 0x7F
+#define SL_ZIGBEE_EXTENDED_KEY_TABLE_MAX_SIZE (SL_ZIGBEE_KEY_TABLE_SIZE - SL_ZIGBEE_ORIGINAL_KEY_TABLE_MAX_SIZE)
+#endif // SL_ZIGBEE_KEY_TABLE_SIZE < 0x80
+
 DEFINE_INDEXED_TOKEN(STACK_KEY_TABLE,
                      tokTypeStackKeyTable,
-                     SL_ZIGBEE_KEY_TABLE_SIZE,
+                     SL_ZIGBEE_ORIGINAL_KEY_TABLE_MAX_SIZE,
                      { 0, })
+DEFINE_INDEXED_TOKEN(STACK_KEY_TABLE_EXTENDED,
+                     tokTypeStackKeyTable,
+                     SL_ZIGBEE_EXTENDED_KEY_TABLE_MAX_SIZE,
+                     { 0, })
+#endif // !defined(EZSP_HOST)
 DEFINE_INDEXED_TOKEN(STACK_CERTIFICATE_TABLE,
                      tokTypeStackCertificateTable,
                      SL_ZIGBEE_CERTIFICATE_TABLE_SIZE,

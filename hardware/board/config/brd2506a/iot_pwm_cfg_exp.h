@@ -63,7 +63,7 @@
 #define IOT_PWM_CFG_EXP_PERIPHERAL_NO            4
 
 // TIMER4 CC0 on PB07
-#define IOT_PWM_CFG_EXP_CC0_PORT                 gpioPortB
+#define IOT_PWM_CFG_EXP_CC0_PORT                 SL_GPIO_PORT_B
 #define IOT_PWM_CFG_EXP_CC0_PIN                  7
 
 

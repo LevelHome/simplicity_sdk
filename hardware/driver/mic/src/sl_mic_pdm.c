@@ -31,7 +31,8 @@
 #include <math.h>
 #include "dmadrv.h"
 #include "em_pdm.h"
-#include "em_gpio.h"
+#include "sl_hal_gpio.h"
+#include "sl_gpio.h"
 #include "sl_clock_manager.h"
 #include "sl_mic.h"
 #include "sl_mic_pdm_config.h"
@@ -79,6 +80,14 @@ void timeout_callback(sl_sleeptimer_timer_handle_t *handle, void *data)
 sl_status_t sl_mic_init(uint32_t sample_rate, uint8_t n_channels)
 {
   sl_status_t status;
+  sl_gpio_t mic_pdm_dat0_gpio = {
+    .port = SL_MIC_PDM_DAT0_PORT,
+    .pin = SL_MIC_PDM_DAT0_PIN,
+  };
+  sl_gpio_t mic_pdm_clk_gpio = {
+    .port = SL_MIC_PDM_CLK_PORT,
+    .pin = SL_MIC_PDM_CLK_PIN,
+  };
 
   if (n_channels < 1 || n_channels > 2) {
     return SL_STATUS_INVALID_PARAMETER;
@@ -89,11 +98,12 @@ sl_status_t sl_mic_init(uint32_t sample_rate, uint8_t n_channels)
   sl_clock_manager_enable_bus_clock(SL_BUS_CLOCK_PDM);
 
   /* Setup GPIO pins */
-  GPIO_PinModeSet(SL_MIC_PDM_DAT0_PORT, SL_MIC_PDM_DAT0_PIN, gpioModeInput, 0);
-  GPIO_PinModeSet(SL_MIC_PDM_CLK_PORT, SL_MIC_PDM_CLK_PIN, gpioModePushPull, 0);
+  sl_gpio_set_pin_mode(&mic_pdm_dat0_gpio, SL_GPIO_MODE_INPUT, 0);
+  sl_gpio_set_pin_mode(&mic_pdm_clk_gpio, SL_GPIO_MODE_PUSH_PULL, 0);
 
   // Set fast slew rate on PDM mic CLK and DATA pins
-  GPIO_SlewrateSet(SL_MIC_PDM_DAT0_PORT, 0x7, 0X7);
+  sl_hal_gpio_set_slew_rate(SL_MIC_PDM_DAT0_PORT, 0x7);
+  sl_hal_gpio_set_slew_rate_alternate(SL_MIC_PDM_DAT0_PORT, 0x7);
 
   /* Configure and enable clock and data routing locations */
 #ifdef _SILICON_LABS_32B_SERIES_2
@@ -257,8 +267,17 @@ sl_status_t sl_mic_deinit(void)
   // DE-initialize the PDM peripheral
   PDM_DeInit(PDM);
 
-  GPIO_PinModeSet(SL_MIC_PDM_CLK_PORT, SL_MIC_PDM_CLK_PIN, gpioModeDisabled, 0);
-  GPIO_PinModeSet(SL_MIC_PDM_DAT0_PORT, SL_MIC_PDM_DAT0_PIN, gpioModeDisabled, 0);
+  sl_gpio_t mic_pdm_dat0_gpio = {
+    .port = SL_MIC_PDM_DAT0_PORT,
+    .pin = SL_MIC_PDM_DAT0_PIN,
+  };
+  sl_gpio_t mic_pdm_clk_gpio = {
+    .port = SL_MIC_PDM_CLK_PORT,
+    .pin = SL_MIC_PDM_CLK_PIN,
+  };
+
+  sl_gpio_set_pin_mode(&mic_pdm_clk_gpio, SL_GPIO_MODE_DISABLED, 0);
+  sl_gpio_set_pin_mode(&mic_pdm_dat0_gpio, SL_GPIO_MODE_DISABLED, 0);
 
   /* Free resources */
   DMADRV_FreeChannel(dma_channel_id);

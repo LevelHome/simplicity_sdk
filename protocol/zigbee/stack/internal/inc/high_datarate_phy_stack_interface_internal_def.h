@@ -24,7 +24,7 @@
 
 void sli_mac_stack_lower_mac_set_high_datarate_csma_params(RAIL_CsmaConfig_t *csma_params);
 
-void sli_mac_stack_lower_mac_set_high_datarate_phy_radio_priorities(sl_zigbee_multiprotocol_priorities_t *priorities);
+void sli_mac_stack_lower_mac_set_high_datarate_phy_radio_priorities(sl_802154_radio_priorities_t *priorities);
 
 sl_status_t sli_mac_stack_send_raw_high_datarate_phy_message(uint8_t nwk_index,
                                                              uint8_t *payload);

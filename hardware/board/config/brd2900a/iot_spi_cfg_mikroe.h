@@ -103,19 +103,19 @@
 #define IOT_SPI_CFG_MIKROE_PERIPHERAL_NO         0
 
 // USART0 TX on PD03
-#define IOT_SPI_CFG_MIKROE_TX_PORT               gpioPortD
+#define IOT_SPI_CFG_MIKROE_TX_PORT               SL_GPIO_PORT_D
 #define IOT_SPI_CFG_MIKROE_TX_PIN                3
 
 // USART0 RX on PD02
-#define IOT_SPI_CFG_MIKROE_RX_PORT               gpioPortD
+#define IOT_SPI_CFG_MIKROE_RX_PORT               SL_GPIO_PORT_D
 #define IOT_SPI_CFG_MIKROE_RX_PIN                2
 
 // USART0 CLK on PC00
-#define IOT_SPI_CFG_MIKROE_CLK_PORT              gpioPortC
+#define IOT_SPI_CFG_MIKROE_CLK_PORT              SL_GPIO_PORT_C
 #define IOT_SPI_CFG_MIKROE_CLK_PIN               0
 
 // USART0 CS on PC01
-#define IOT_SPI_CFG_MIKROE_CS_PORT               gpioPortC
+#define IOT_SPI_CFG_MIKROE_CS_PORT               SL_GPIO_PORT_C
 #define IOT_SPI_CFG_MIKROE_CS_PIN                1
 
 // [USART_IOT_SPI_CFG_MIKROE]$

@@ -28,3 +28,6 @@ library:
     condition:
       - toolchain_iar
       - cortexm33
+metadata:
+  sbom:
+    license: MSLA

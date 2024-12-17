@@ -38,3 +38,6 @@ provides:
   - name: bootloader_gbl_delta_dfu
   - name: bootloader_nonsecure_incompatible
     condition: [bootloader_core_nonsecure]
+metadata:
+  sbom:
+    license: MSLA

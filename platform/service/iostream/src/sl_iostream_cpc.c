@@ -114,7 +114,7 @@ sl_iostream_t *sl_iostream_cpc_handle = &sl_iostream_cpc;
 sl_iostream_instance_info_t sl_iostream_instance_cpc_info = {
   .handle = &sl_iostream_cpc,
   .name = "cpc",
-  .type = SL_IOSTREAM_TYPE_UNDEFINED,
+  .type = SL_IOSTREAM_TYPE_VUART,
   .periph_id = 0,
   .init = sl_iostream_cpc_init
 };

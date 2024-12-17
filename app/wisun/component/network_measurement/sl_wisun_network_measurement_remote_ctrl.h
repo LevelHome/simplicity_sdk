@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief Wi-SUN Application Core Component
+ * @file sl_wisun_network_measurement_remote_ctrl.h
+ * @brief Wi-SUN Network Measurement Remote Control
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -28,18 +28,17 @@
  *
  ******************************************************************************/
 
-#ifndef __SL_WISUN_NETWORK_MEASUREMENT_REMOTE_CTRL_H__
-#define __SL_WISUN_NETWORK_MEASUREMENT_REMOTE_CTRL_H__
+#ifndef SL_WISUN_NETWORK_MEASUREMENT_REMOTE_CTRL_H
+#define SL_WISUN_NETWORK_MEASUREMENT_REMOTE_CTRL_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include "sl_wisun_coap.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -80,4 +79,4 @@ sl_wisun_coap_packet_t * sl_wisun_coap_remote_cli_nbr_cb(const sl_wisun_coap_pac
 }
 #endif
 
-#endif
+#endif // SL_WISUN_NETWORK_MEASUREMENT_REMOTE_CTRL_H

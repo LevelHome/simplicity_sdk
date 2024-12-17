@@ -1,5 +1,5 @@
 /***************************************************************************//**
- * @file
+ * @file sl_mempool.c
  * @brief Memory Pool
  *******************************************************************************
  * # License
@@ -31,19 +31,10 @@
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include "em_common.h"
-#include "sl_mempool.h"
+#include "sl_memory_manager.h"
 #include "sl_component_catalog.h"
-
-#if defined(SL_CATALOG_FREERTOS_KERNEL_PRESENT)
-// FreeRTOS
-  #include "FreeRTOS.h"
-#else
-// MicriumOS and bare-metal
-  #include "sl_memory_manager.h"
-#endif
-
+#include "sl_mempool.h"
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -51,13 +42,6 @@
 // -----------------------------------------------------------------------------
 //                          Static Function Declarations
 // -----------------------------------------------------------------------------
-
-/**************************************************************************//**
- * @brief Init block handler
- * @details Helper function
- * @param[out] block Block handler pointer
- *****************************************************************************/
-__STATIC_INLINE void _init_block(sl_mempool_block_hnd_t * const block);
 
 /**************************************************************************//**
  * @brief Allocate block handler
@@ -122,6 +106,7 @@ void * sl_mempool_alloc(sl_mempool_t * const memp)
 {
   void * tmp_addr = NULL;
   sl_mempool_block_hnd_t *tmp_block = NULL;
+  sl_mempool_block_hnd_t *tail = NULL;
 
   if (memp == NULL) {
     return NULL;
@@ -138,21 +123,34 @@ void * sl_mempool_alloc(sl_mempool_t * const memp)
     if (_get_block_hnd_by_addr(tmp_addr, memp) != NULL) {
       continue;
     }
-    tmp_block = memp->blocks;
-    memp->blocks = _alloc_block_hnd();
-    if (memp->blocks == NULL) {
-      memp->blocks = tmp_block;
+
+    // Allocate block
+    tmp_block = _alloc_block_hnd();
+    if (tmp_block == NULL) {
       return NULL;
     }
 
-    _init_block(memp->blocks);
+    // Initialize block
+    tmp_block->start_addr = tmp_addr;
+    tmp_block->next = NULL;
 
-    // init new block handler
-    memp->blocks->start_addr = tmp_addr;
-    memp->blocks->next = tmp_block;
+    // find the tail of the block list
+    tail = memp->blocks;
+    while (tail != NULL && tail->next != NULL) {
+      tail = tail->next;
+    }
+
+    // first item in the block
+    if (tail == NULL) {
+      memp->blocks = tmp_block;
+    } else {
+      tail->next = tmp_block;
+    }
+
+    // increment used block count
     ++memp->used_block_count;
 
-    return memp->blocks->start_addr;
+    return tmp_addr;
   }
 
   return NULL;
@@ -189,32 +187,14 @@ void sl_mempool_free(sl_mempool_t * const memp, const void * const addr)
 //                          Static Function Definitions
 // -----------------------------------------------------------------------------
 
-__STATIC_INLINE void _init_block(sl_mempool_block_hnd_t * const block)
-{
-  block->next = NULL;
-  block->start_addr = NULL;
-}
-
 static sl_mempool_block_hnd_t *_alloc_block_hnd(void)
 {
-#if defined(SL_CATALOG_FREERTOS_KERNEL_PRESENT)
-  // FreeRTOS
-  return (sl_mempool_block_hnd_t *) pvPortMalloc(sizeof(sl_mempool_block_hnd_t));
-#else
-  // MicriumOS
   return (sl_mempool_block_hnd_t *) sl_malloc(sizeof(sl_mempool_block_hnd_t));
-#endif
 }
 
 static void _free_block_hnd(sl_mempool_block_hnd_t * block_hnd)
 {
-#if defined(SL_CATALOG_FREERTOS_KERNEL_PRESENT)
-  // FreeRTOS
-  vPortFree(block_hnd);
-#else
-  // MicriumOS
   sl_free(block_hnd);
-#endif
 }
 
 static sl_mempool_block_hnd_t * _get_block_hnd_by_addr(const void * const addr,

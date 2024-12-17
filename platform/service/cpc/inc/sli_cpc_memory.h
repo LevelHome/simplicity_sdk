@@ -49,6 +49,12 @@
 #include "sli_mem_pool.h"
 #endif
 
+/** @brief Struct for rx_buffer allocated in memory pool. */
+typedef struct {
+  sli_cpc_instance_t *instance; ///< Pointer to instance that allocated the RX buffer
+  uint8_t            data[];    ///< The data itself
+} sli_cpc_rx_buffer_t;
+
 /***************************************************************************//**
  * Initialize CPC buffers' handling module.
  ******************************************************************************/

@@ -56,11 +56,11 @@
 #define SL_SERIAL_EUART_PERIPHERAL_NO            1
 
 // EUSART1 TX on PD07
-#define SL_SERIAL_EUART_TX_PORT                  gpioPortD
+#define SL_SERIAL_EUART_TX_PORT                  SL_GPIO_PORT_D
 #define SL_SERIAL_EUART_TX_PIN                   7
 
 // EUSART1 RX on PD08
-#define SL_SERIAL_EUART_RX_PORT                  gpioPortD
+#define SL_SERIAL_EUART_RX_PORT                  SL_GPIO_PORT_D
 #define SL_SERIAL_EUART_RX_PIN                   8
 
 
@@ -70,7 +70,7 @@
 // <gpio optional=true> SL_VCOM_ENABLE
 
 // $[GPIO_SL_VCOM_ENABLE]
-#define SL_VCOM_ENABLE_PORT                      gpioPortD
+#define SL_VCOM_ENABLE_PORT                      SL_GPIO_PORT_D
 #define SL_VCOM_ENABLE_PIN                       6
 
 // [GPIO_SL_VCOM_ENABLE]$

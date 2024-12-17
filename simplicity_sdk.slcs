@@ -2,16 +2,15 @@ id: "simplicity_sdk"
 label: "Simplicity SDK Suite"
 description: |-
   Simplicity SDK Suite for EFM32 and EFR32 microcontrollers and radios.
-sdk_version: "2024.6.2"
-specification_version: 10
+sdk_version: "2024.12.0"
+specification_version: 12
+supplier: "Silicon Laboratories, Inc."
 component_path:
   - path: "app/amazon/component"
   - path: "app/bluetooth/component"
   - path: "app/btmesh/component"
-  - path: "app/flex/component/common"
-  - path: "app/flex/component/connect"
-  - path: "app/flex/component/rail"
-  - path: "app/flex/component/radio_configuration"
+  - path: "app/rail/component"
+  - path: "app/connect/component"
   - path: "app/wisun/component"
   - path: "app/internal/mcu_cli"
   - path: "app/internal/security_cli"
@@ -20,11 +19,13 @@ component_path:
   - path: "app/micrium_os_example/component"
   - path: "platform/base/component"
   - path: "platform/bootloader/component"
+  - path: "platform/bootloader/series3/component"
   - path: "platform/CMSIS/component"
   - path: "platform/common/component"
   - path: "platform/compute/component"
   - path: "platform/driver/component"
   - path: "platform/service/component"
+  - path: "platform/service/cpc/component"
   - path: "platform/service/ddp/component"
   - path: "platform/Device/component"
   - path: "platform/Device/component-restricted"
@@ -40,6 +41,7 @@ component_path:
   - path: "platform/radio/rail_lib/plugin/component"
   - path: "platform/radio/mac/component"
   - path: "platform/radio/wifi/wfx_fmac_driver/component"
+  - path: "platform/rvlib/component"
   - path: "platform/middleware/cslib/component"
   - path: "platform/middleware/glib/component"
   - path: "hardware/board/component"
@@ -50,6 +52,7 @@ component_path:
   - path: "hardware/kit/component"
   - path: "protocol/flex/component"
   - path: "protocol/bluetooth/component"
+  - path: "protocol/bluetooth_classic/component"
   - path: "protocol/bluetooth/bgstack/ll/component"
   - path: "protocol/bluetooth/bgcommon/component"
   - path: "protocol/openthread/component"
@@ -84,39 +87,39 @@ component_path:
   - path: "util/third_party/printf/component"
   - path: "util/third_party/rv2_framework/component"
   - path: "util/third_party/segger/component"
-  - path: "util/third_party/tensorflow_extra/component"
   - path: "util/third_party/unity/component"
   - path: "util/third_party/unity_test_framework/component"
   - path: "util/third_party/lwip/component"
   - path: "util/third_party/find_my/component"
   - path: "util/third_party/trusted-firmware-m/component"
   - path: "util/third_party/uwb/component"
+  - path: "tool/vsrpc-lib/component"
 toolchain_mapping: "platform/common/toolchain/toolchains.slct"
 documentation:
   - docset: gecko-platform
-    version: "5.0.2"
+    version: "5.1.0"
   - docset: mbed-tls
     version: "3.5.0"
   - docset: connect-stack
-    version: "3.8.2"
+    version: "4.0.0"
   - docset: mcu-bootloader
-    version: "2.5.2"
+    version: "2.6.0"
   - docset: openthread
-    version: "2.5.2"
+    version: "2.6.0"
   - docset: rail
-    version: "2.17.2"
+    version: "2.18.0"
   - docset: wifi/wf200/rtos
-    version: "3.5.0"
+    version: "3.6.2"
   - docset: wisun
-    version: "2.2.0"
+    version: "2.3.0"
   - docset: zigbee
-    version: "8.0.2"
+    version: "8.1.0"
   - docset: rtl-lib
-    version: "8.2.0"
+    version: "9.0.0"
   - docset: bluetooth
-    version: "8.2.0"
+    version: "9.0.0"
   - docset: protocol-usb
-    version: "1.3.0"
+    version: "1.4.0"
   - docset: machine-learning
     version: "1.3.0"
 upgrade_manifest:

@@ -32,6 +32,18 @@
  *
  */
 
+#ifdef SL_CATALOG_RAIL_UTIL_IEEE802154_FAST_CHANNEL_SWITCHING_PRESENT
+#include "sl_rail_util_ieee802154_fast_channel_switching_config.h"
+#endif // SL_CATALOG_RAIL_UTIL_IEEE802154_FAST_CHANNEL_SWITCHING_PRESENT
+
+#if SL_RAIL_UTIL_IEEE802154_FAST_CHANNEL_SWITCHING_ENABLED && !defined(SL_CATALOG_RAIL_MULTIPLEXER_PRESENT)
+// When RAIL multiplexer is present, we handle fast channel switching in the multiplexer code
+// turn off the feature here since OT lower mac is unaware of the goings on in the zigbee stack
+#define FAST_CHANNEL_SWITCHING_SUPPORT 1
+#else
+#define FAST_CHANNEL_SWITCHING_SUPPORT 0
+#endif // SL_RAIL_UTIL_IEEE802154_FAST_CHANNEL_SWITCHING_ENABLED && !defined(SL_CATALOG_RAIL_MULTIPLEXER_PRESENT)
+
 /**
  * Check if the multi-channel feature is enabled.
  *

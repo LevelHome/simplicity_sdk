@@ -142,7 +142,7 @@ static sl_status_t startScan(void)
 
   nodeType = sli_zigbee_af_current_zigbee_pro_network->nodeType;
 
-  sl_zigbee_af_debug_println("startScan: scanningState = %X, dev mode = %d, nodeType = %d", scanningState, sli_zigbee_af_test_harness_z3_device_mode, nodeType);
+  sl_zigbee_af_debug_println("startScan: scanningState = %02X, dev mode = %d, nodeType = %d", scanningState, sli_zigbee_af_test_harness_z3_device_mode, nodeType);
   return sl_zigbee_zll_start_scan((scanningState & STATE_PRIMARY_CHANNELS) ? sl_zigbee_get_zll_primary_channel_mask() : sl_zigbee_get_zll_secondary_channel_mask(),
                                   0, // default power
                                   nodeType);
@@ -254,7 +254,7 @@ static sl_status_t sendScanResponse(void)
 
   // ZLL.
   sl_zigbee_af_copy_int32u(finger, 0, globalScanResponseData.transactionId);
-  sl_zigbee_af_core_println("sendScanResponse: tr id = %4X", globalScanResponseData.transactionId);
+  sl_zigbee_af_core_println("sendScanResponse: tr id = %08X", globalScanResponseData.transactionId);
   finger += sizeof(globalScanResponseData.transactionId);
   *finger++ = 0x00; // RSSI correction - whatever
   *finger++ = zigbeeInformation();
@@ -332,7 +332,7 @@ void sendDeviceInfoResponse(const sl_802154_long_addr_t source,
   uint8_t *recordCountPtr = finger++;
   *recordCountPtr = 0;
 
-  sl_zigbee_af_core_println("sendDeviceInfoResponse 0x%4x, 0x%x",
+  sl_zigbee_af_core_println("sendDeviceInfoResponse 0x%08X, 0x%02X",
                             transaction,
                             startIndex);
 
@@ -372,7 +372,7 @@ void sendDeviceInfoResponse(const sl_802154_long_addr_t source,
                                        payloadLength,
                                        payload);
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_core_println("%p%p failed 0x%x",
+    sl_zigbee_af_core_println("%s%s failed 0x%02X",
                               "Error: ",
                               "Device information response",
                               status);
@@ -401,7 +401,7 @@ void sli_zigbee_af_test_harness_z3_touchlink_scan_request_process_command(SL_CLI
 #ifndef EZSP_HOST
   uint8_t linkInitiator = sl_cli_get_argument_uint8(arguments, 0);
   uint32_t options      = sl_cli_get_argument_uint32(arguments, 2);
-  sl_zigbee_app_debug_println("Scan request process: linkInitiator = %d, options = %4X", linkInitiator, options);
+  sl_zigbee_app_debug_println("Scan request process: linkInitiator = %d, options = %08X", linkInitiator, options);
   // Assume we're starting with the primary channel mask.
   scanningState = STATE_NOT_SCANNING | STATE_PRIMARY_CHANNELS;
   if (options & BIT32(1)) {
@@ -442,7 +442,7 @@ void sli_zigbee_af_test_harness_z3_touchlink_scan_request_process_command(SL_CLI
   }
   sl_zigbee_zll_set_policy(policy);
 
-  sl_zigbee_app_debug_println("Scan request process: scanningState = %d, scanBehaviorMask = %4X, policy = %X", scanningState, scanBehaviorMask, policy);
+  sl_zigbee_app_debug_println("Scan request process: scanningState = %d, scanBehaviorMask = %08X, policy = %02X", scanningState, scanBehaviorMask, policy);
 
   // Set security for a new scan.
   sl_zigbee_af_zll_set_initial_security_state();
@@ -452,7 +452,7 @@ void sli_zigbee_af_test_harness_z3_touchlink_scan_request_process_command(SL_CLI
   }
 #endif /* EZSP_HOST */
 
-  sl_zigbee_af_core_println("%s: %s: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "Scan request process",
                             status);
@@ -477,7 +477,7 @@ void sli_zigbee_af_test_harness_z3_touchlink_start_as_router_command(SL_CLI_COMM
                                                                  panId);
   }
 
-  sl_zigbee_af_core_println("%s: %s: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "Start as router",
                             status);
@@ -520,7 +520,7 @@ void sli_zigbee_af_test_harness_z3_touchlink_device_information_request_command(
                                                  sli_zigbee_af_test_harness_z3_touchlink_profile_id);
   }
 
-  sl_zigbee_af_core_println("%s: %s: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "Device information request",
                             status);
@@ -558,7 +558,7 @@ void sli_zigbee_af_test_harness_z3_touchlink_device_information_request_w_target
                                                  sli_zigbee_af_test_harness_z3_touchlink_profile_id);
   }
 
-  sl_zigbee_af_core_println("%s: %s: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "Device information request w target",
                             status);
@@ -591,7 +591,7 @@ void sli_zigbee_af_test_harness_z3_touchlink_identify_request_command(SL_CLI_COM
                                                  sli_zigbee_af_test_harness_z3_touchlink_profile_id);
   }
 
-  sl_zigbee_af_core_println("%s: %s: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "Identify request",
                             status);
@@ -627,7 +627,7 @@ void sli_zigbee_af_test_harness_z3_touchlink_rtfn_request_command(SL_CLI_COMMAND
     }
   }
 
-  sl_zigbee_af_core_println("%s: %s: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "Reset to factory new request",
                             status);
@@ -750,7 +750,7 @@ void sli_zigbee_af_test_harness_z3_touchlink_network_command(SL_CLI_COMMAND_ARG)
   sli_zigbee_af_zll_clear_forced_address_assignment();
 
   done:
-  sl_zigbee_af_core_println("%s: %s: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             (command == ZCL_NETWORK_START_REQUEST_COMMAND_ID
                              ? "Network start request"
@@ -795,7 +795,7 @@ void sli_zigbee_af_test_harness_z3_touchlink_network_update_request_command(SL_C
                                                  sli_zigbee_af_test_harness_z3_touchlink_profile_id);
   }
 
-  sl_zigbee_af_core_println("%s: %s: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "Network update request",
                             status);
@@ -818,7 +818,7 @@ void sli_zigbee_af_test_harness_z3_touchlink_get_group_identifiers_request_comma
     status = sl_zigbee_af_send_command_unicast(SL_ZIGBEE_OUTGOING_DIRECT, destination);
   }
 
-  sl_zigbee_af_core_println("%s: %s: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "Get group identifiers request",
                             status);
@@ -841,7 +841,7 @@ void sli_zigbee_af_test_harness_z3_touchlink_get_endpoint_list_request_command(S
     status = sl_zigbee_af_send_command_unicast(SL_ZIGBEE_OUTGOING_DIRECT, destination);
   }
 
-  sl_zigbee_af_core_println("%s: %s: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "Get endpoint list request",
                             status);
@@ -931,7 +931,7 @@ void sli_zigbee_af_test_harness_z3_touchlink_scan_response_config_command(SL_CLI
   sl_zigbee_set_nwk_update_id(globalScanResponseData.networkUpdateId, true);
   negativeBehaviorCommandId = ZCL_SCAN_REQUEST_COMMAND_ID;
 
-  sl_zigbee_af_core_println("%s: %s: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "Scan response config",
                             SL_STATUS_OK);
@@ -965,7 +965,7 @@ void sli_zigbee_af_test_harness_z3_touchlink_network_start_response_config(SL_CL
   }
 
   // All options are handled in the negative behaviour callbacks
-  sl_zigbee_af_core_println("%s: %s: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "Network start response config",
                             SL_STATUS_OK);
@@ -1000,7 +1000,7 @@ void sli_zigbee_af_test_harness_z3_touchlink_network_join_router_response_config
   }
 
   // All options are handled in the negative behaviour callbacks
-  sl_zigbee_af_core_println("%s: %s: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "Network join router response config",
                             SL_STATUS_OK);
@@ -1021,7 +1021,7 @@ void sli_zigbee_af_test_harness_z3_touchlink_device_information_response_config_
   if (negativeBehaviorMask) {
     negativeBehaviorCommandId = ZCL_DEVICE_INFORMATION_REQUEST_COMMAND_ID;
   }
-  sl_zigbee_af_core_println("%s: %s: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "Device information response config",
                             SL_STATUS_OK);
@@ -1032,7 +1032,7 @@ void sli_zigbee_af_test_harness_z3_touchlink_device_information_response_config_
 
 void sli_zigbee_af_test_harness_z3_zll_network_found_callback(const sl_zigbee_zll_network_t *networkInfo)
 {
-  sl_zigbee_af_core_println("%p: %p: node type = %d, zll state = 0x%2X, node id = 0x%2X, pan id = 0x%2X",
+  sl_zigbee_af_core_println("%s: %s: node type = %d, zll state = 0x%04X, node id = 0x%04X, pan id = 0x%04X",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "Network found",
                             networkInfo->nodeType,
@@ -1054,7 +1054,7 @@ bool sli_zigbee_af_test_harness_z3_zll_scan_complete_callback(sl_status_t status
       scanningState &= ~STATE_PRIMARY_CHANNELS;
       startScan();
     } else {
-      sl_zigbee_af_core_println("%p: %p: 0x%02X",
+      sl_zigbee_af_core_println("%s: %s: 0x%02X",
                                 TEST_HARNESS_Z3_PRINT_NAME,
                                 "Scan Complete",
                                 SL_STATUS_OK,
@@ -1084,7 +1084,7 @@ sl_zigbee_packet_action_t sli_zigbee_af_test_harness_z3_zll_command_callback(uin
   uint8_t commandId = command[2];
   uint32_t realTransactionId = sl_util_fetch_low_high_int32u(command + transactionIdIndex);
   sl_zigbee_packet_action_t act = SL_ZIGBEE_ACCEPT_PACKET;
-  sl_zigbee_af_debug_println("emAfPluginTestHarnessZ3ZllCommandCallback: commandId = %X", commandId);
+  sl_zigbee_af_debug_println("emAfPluginTestHarnessZ3ZllCommandCallback: commandId = %02X", commandId);
 
   // Print the source EUI64 for certain commands only
   if (commandId == ZCL_NETWORK_START_RESPONSE_COMMAND_ID
@@ -1146,7 +1146,7 @@ sl_zigbee_packet_action_t sli_zigbee_af_test_harness_z3_zll_command_callback(uin
           lastTransactionId = realTransactionId;
           sendScanResponse();
         } else {
-          sl_zigbee_af_debug_println("Dropping scan req w/dupl trans id = %4X", realTransactionId);
+          sl_zigbee_af_debug_println("Dropping scan req w/dupl trans id = %08X", realTransactionId);
         }
       }
     }
@@ -1169,13 +1169,13 @@ void sl_zigbee_af_test_harness_z3_zll_stuff_event_handler(sl_zigbee_af_event_t *
     case ZLL_STUFF_EVENT_CONTROL_ACTION_SCAN_RESPONSE:
       isDelayingScanResponse = false;
       status = sendScanResponse();
-      sl_zigbee_af_core_println("emZllSendScanResponse, status = %X", status);
+      sl_zigbee_af_core_println("emZllSendScanResponse, status = %02X", status);
       break;
     default:
       status = SL_STATUS_INVALID_PARAMETER;
   }
 
-  sl_zigbee_af_core_println("%p: %p (0x%X): 0x%X",
+  sl_zigbee_af_core_println("%s: %s (0x%02X): 0x%02X",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "ZLL event handler",
                             zllStuffEventControlAction,
@@ -1192,7 +1192,7 @@ sl_zigbee_packet_action_t sli_zigbee_af_test_harness_z3_zll_modify_interpan_comm
 
   uint8_t *apsPointer = commandData + macHeaderLength + 7;
   uint8_t cmdId = *(apsPointer + 2);
-  sl_zigbee_af_debug_println("Modify Interpan: cmd id = %d, mask = %4X", cmdId, responseBehaviorMask);
+  sl_zigbee_af_debug_println("Modify Interpan: cmd id = %d, mask = %08X", cmdId, responseBehaviorMask);
 
   // Ignore any negative behavior if the command doesn't match up.
   if (cmdId == responseBehaviorCommandId) {
@@ -1228,7 +1228,7 @@ sl_zigbee_packet_action_t sli_zigbee_af_test_harness_z3_zll_modify_interpan_comm
     act = SL_ZIGBEE_MANGLE_PACKET;
   } else if (cmdId == ZCL_SCAN_REQUEST_COMMAND_ID) {
     // This is the most convenient place to set and clear bits.
-    sl_zigbee_af_debug_println("Modify Interpan: scanBehaviorMask = %4X", scanBehaviorMask);
+    sl_zigbee_af_debug_println("Modify Interpan: scanBehaviorMask = %08X", scanBehaviorMask);
     if (scanBehaviorMask & NEGATIVE_BEHAVIOR_SET_ZB_RESERVED_BITS) {
       *(apsPointer + 7) |= ZB_RESERVED_BITS;
     }
@@ -1257,5 +1257,5 @@ void sli_zigbee_test_harness_set_radio_idle_mode(sl_cli_command_arg_t *arguments
 void sli_zigbee_test_harness_get_radio_idle_mode(sl_cli_command_arg_t *arguments)
 {
   uint8_t mode = sl_zigbee_zll_get_radio_idle_mode();
-  sl_zigbee_af_app_println("%p %p", "MAC Radio Idle Mode: ", mode ? "off" : "rx-on");
+  sl_zigbee_af_app_println("%s %s", "MAC Radio Idle Mode: ", mode ? "off" : "rx-on");
 }

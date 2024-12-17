@@ -3,7 +3,7 @@
  * @brief Configuration header file
  *******************************************************************************
  * # License
- * <b>Copyright 2018 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -33,7 +33,7 @@
 /* Default configuration */
 configuration_t configuration = DEFAULT_CONFIGURATION;
 
-configuration_t *CONF_get(void)
+configuration_t *get_config(void)
 {
   return &configuration;
 }

@@ -30,13 +30,6 @@
 
 #include "sl_simple_button.h"
 #include "sl_simple_button_config.h"
-
-#if defined(SL_CATALOG_GPIO_PRESENT)
-#include "sl_gpio.h"
-#else
-#include "gpiointerrupt.h"
-#endif
-
 #include "sl_clock_manager.h"
 
 #if (SL_SIMPLE_BUTTON_DEBOUNCE_BITS < 1U)
@@ -67,18 +60,15 @@ static void sli_simple_button_on_change(uint8_t interrupt_no, void *ctx)
   (void)interrupt_no;
   sl_button_t *button = (sl_button_t *)ctx;
   sl_simple_button_context_t *simple_button = button->context;
+  sl_gpio_t gpio = {
+    .port = simple_button->port,
+    .pin = simple_button->pin
+  };
+  bool pin_value;
 
   if (simple_button->state != SL_SIMPLE_BUTTON_DISABLED) {
-#if defined(SL_CATALOG_GPIO_PRESENT)
-    sl_gpio_t gpio;
-    bool pin_value;
-    gpio.port = simple_button->port;
-    gpio.pin = simple_button->pin;
     sl_gpio_get_pin_input(&gpio, &pin_value);
     simple_button->state = ((bool)pin_value == SL_SIMPLE_BUTTON_POLARITY);
-#else
-    simple_button->state = ((bool)GPIO_PinInGet(simple_button->port, simple_button->pin) == SL_SIMPLE_BUTTON_POLARITY);
-#endif
 
     sl_button_on_change(button);
   }
@@ -86,79 +76,55 @@ static void sli_simple_button_on_change(uint8_t interrupt_no, void *ctx)
 
 sl_status_t sl_simple_button_init(const sl_button_t *handle)
 {
-  int32_t interrupt;
+  int32_t interrupt_em4, interrupt_ext;
+  sl_status_t status;
   sl_button_t *button = (sl_button_t *)handle;
   sl_simple_button_context_t *simple_button = button->context;
+  sl_gpio_t gpio = {
+    .port = simple_button->port,
+    .pin = simple_button->pin
+  };
+  bool pin_value;
 
   sl_clock_manager_enable_bus_clock(SL_BUS_CLOCK_GPIO);
 
-#if defined(SL_CATALOG_GPIO_PRESENT)
-  sl_gpio_t gpio;
-  bool pin_value;
-  gpio.port = simple_button->port;
-  gpio.pin = simple_button->pin;
   sl_gpio_set_pin_mode(&gpio, SL_SIMPLE_BUTTON_GPIO_MODE, SL_SIMPLE_BUTTON_GPIO_DOUT);
   sl_gpio_get_pin_input(&gpio, &pin_value);
   simple_button->state = ((bool)pin_value == SL_SIMPLE_BUTTON_POLARITY);
-#else
-  GPIO_PinModeSet(simple_button->port,
-                  simple_button->pin,
-                  SL_SIMPLE_BUTTON_GPIO_MODE,
-                  SL_SIMPLE_BUTTON_GPIO_DOUT);
-
-  simple_button->state = ((bool)GPIO_PinInGet(simple_button->port, simple_button->pin) == SL_SIMPLE_BUTTON_POLARITY);
-#endif
 
   if (simple_button->mode == SL_SIMPLE_BUTTON_MODE_INTERRUPT) {
-#if defined(SL_CATALOG_GPIO_PRESENT)
-    interrupt = SL_GPIO_INTERRUPT_UNAVAILABLE;
-    sl_status_t status = sl_gpio_configure_external_interrupt(&gpio,
-                                                              &interrupt,
-                                                              SL_GPIO_INTERRUPT_RISING_FALLING_EDGE,
-                                                              (sl_gpio_irq_callback_t)sli_simple_button_on_change,
-                                                              button);
-    EFM_ASSERT(status == SL_STATUS_OK);
-#else
-    GPIOINT_Init();
-
+    interrupt_em4 = SL_GPIO_INTERRUPT_UNAVAILABLE;
+    interrupt_ext = SL_GPIO_INTERRUPT_UNAVAILABLE;
     // Try to register an EM4WU interrupt for the given pin
-    interrupt = GPIOINT_EM4WUCallbackRegisterExt(simple_button->port,
-                                                 simple_button->pin,
-                                                 (GPIOINT_IrqCallbackPtrExt_t)sli_simple_button_on_change,
-                                                 button);
-    if (interrupt == INTERRUPT_UNAVAILABLE) {
+    status = sl_gpio_configure_wakeup_em4_interrupt(&gpio,
+                                                    &interrupt_em4,
+                                                    SL_SIMPLE_BUTTON_POLARITY,
+                                                    (sl_gpio_irq_callback_t)sli_simple_button_on_change,
+                                                    button);
+    if (interrupt_em4 == SL_GPIO_INTERRUPT_UNAVAILABLE) {
       // if the pin not EM4WU-compatible, instead register a regualr interrupt
-      interrupt = GPIOINT_CallbackRegisterExt(simple_button->pin,
-                                              (GPIOINT_IrqCallbackPtrExt_t)sli_simple_button_on_change,
-                                              button);
-      EFM_ASSERT(interrupt != INTERRUPT_UNAVAILABLE);
-      GPIO_ExtIntConfig(simple_button->port,
-                        simple_button->pin,
-                        interrupt,
-                        true,
-                        true,
-                        true);
+      status = sl_gpio_configure_external_interrupt(&gpio,
+                                                    &interrupt_ext,
+                                                    SL_GPIO_INTERRUPT_RISING_FALLING_EDGE,
+                                                    (sl_gpio_irq_callback_t)sli_simple_button_on_change,
+                                                    button);
+      EFM_ASSERT(status == SL_STATUS_OK);
     } else {
       // If the pin is EM4WU-compatible, setup the pin as an EM4WU pin
-      GPIO_EM4WUExtIntConfig(simple_button->port,
-                             simple_button->pin,
-                             interrupt,
-                             SL_SIMPLE_BUTTON_POLARITY,
-                             true);
-
       // Since EM4WU interrupts are level-sensitive and not edge-sensitive, also register a regular edge-sensitive interrupt to capture the other edge
-      interrupt = GPIOINT_CallbackRegisterExt(simple_button->pin,
-                                              (GPIOINT_IrqCallbackPtrExt_t)sli_simple_button_on_change,
-                                              button);
-      EFM_ASSERT(interrupt != INTERRUPT_UNAVAILABLE);
-      GPIO_ExtIntConfig(simple_button->port,
-                        simple_button->pin,
-                        interrupt,
-                        (SL_SIMPLE_BUTTON_POLARITY == 0U), // Register a Rising Edge interrupt for an Active Low button
-                        (SL_SIMPLE_BUTTON_POLARITY == 1U), // Register a Falling Edge interrupt for an Active High button
-                        true);
+      uint8_t flags;
+      if (SL_SIMPLE_BUTTON_POLARITY == 0) {
+        flags = SL_GPIO_INTERRUPT_RISING_EDGE;
+      } else if (SL_SIMPLE_BUTTON_POLARITY == 1) {
+        flags = SL_GPIO_INTERRUPT_FALLING_EDGE;
+      }
+      status = sl_gpio_configure_external_interrupt(&gpio,
+                                                    &interrupt_ext,
+                                                    flags,
+                                                    (sl_gpio_irq_callback_t)sli_simple_button_on_change,
+                                                    button);
+      EFM_ASSERT(status == SL_STATUS_OK);
     }
-#endif
   }
 
   return SL_STATUS_OK;
@@ -176,22 +142,18 @@ void sl_simple_button_poll_step(const sl_button_t *handle)
 {
   sl_button_t *button = (sl_button_t *)handle;
   sl_simple_button_context_t *simple_button = button->context;
-  bool button_press;
+  bool button_press, pin_value;
+  sl_gpio_t gpio = {
+    .port = simple_button->port,
+    .pin = simple_button->pin
+  };
 
   if (simple_button->state == SL_SIMPLE_BUTTON_DISABLED) {
     return;
   }
 
-#if defined(SL_CATALOG_GPIO_PRESENT)
-  sl_gpio_t gpio;
-  bool pin_value;
-  gpio.port = simple_button->port;
-  gpio.pin = simple_button->pin;
   sl_gpio_get_pin_input(&gpio, &pin_value);
   button_press = (bool)pin_value;
-#else
-  button_press = (bool)GPIO_PinInGet(simple_button->port, simple_button->pin);
-#endif
 
   if (simple_button->mode == SL_SIMPLE_BUTTON_MODE_POLL_AND_DEBOUNCE) {
     uint16_t history = simple_button->history;
@@ -236,18 +198,7 @@ void sl_simple_button_disable(const sl_button_t *handle)
     return;
   }
   if (simple_button->mode == SL_SIMPLE_BUTTON_MODE_INTERRUPT) {
-#if defined(SL_CATALOG_GPIO_PRESENT)
     sl_gpio_deconfigure_external_interrupt(simple_button->pin);
-#else
-    GPIOINT_CallbackUnRegister(simple_button->pin);
-    // Disable interrupts
-    GPIO_ExtIntConfig(simple_button->port,
-                      simple_button->pin,
-                      simple_button->pin,
-                      false,
-                      false,
-                      false);
-#endif
   }
   // Disable the button
   simple_button->state = SL_SIMPLE_BUTTON_DISABLED;

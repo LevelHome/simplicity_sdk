@@ -16,7 +16,7 @@ provides:
 requires:
   - name: clock_manager_runtime
   - name: emlib_usart
-  - name: emlib_gpio
+  - name: gpio
   - name: udelay
   - name: device
 include:

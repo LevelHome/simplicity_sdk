@@ -17,27 +17,12 @@ template_contribution:
       - psa_crypto
 requires:
   - name: "psa_crypto"
-    condition:
-      - "device_series_2"
   - name: "psa_crypto_cmac"
-    condition:
-      - "device_series_2"
   - name: "psa_crypto_cipher_ecb"
-    condition:
-      - "device_series_2"
   - name: "psa_crypto_ecdh"
-    condition:
-      - "device_series_2"
   - name: "psa_crypto_ecc_secp256r1"
-    condition:
-      - "device_series_2"
   - name: "psa_its"
-    condition:
-      - "device_series_2"
-      - "bluetooth_stack"
-  - name: "sli_protocol_crypto"
-    condition:
-      - "device_series_2"
+
 provides:
   - name: "bluetooth_crypto"
 

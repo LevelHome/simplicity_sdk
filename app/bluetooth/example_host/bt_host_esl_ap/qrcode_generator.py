@@ -30,7 +30,6 @@ from intelhex import IntelHex
 import ap_logger
 import subprocess
 import argparse
-import logging
 import qrcode
 import bincopy
 import sys
@@ -43,6 +42,7 @@ QR_CODE_BORDER = 4  # default is 4, which is the minimum in the specification
 WSTK_DISPLAY_H = 128
 WSTK_DISPLAY_W = 128
 MAGIC_CONST = b".qrc_ph_pic_data"
+FALLBACK_HEX = "readout_data.hex"
 
 log = ap_logger.getLogger("QRG")
 # Add commander path to system environment variables
@@ -70,7 +70,11 @@ class Commander:
 
     def call(self, args):
         try:
-            ap_logger.log("Excuting Simplicity Commander:", _half_indent_log=True)
+            ap_logger.log(
+                "Excuting Simplicity Commander with arguments:",
+                args[:3],
+                _half_indent_log=True,
+            )
             return subprocess.run(
                 ["commander"] + args + self.conn_args,
                 stdout=subprocess.PIPE,
@@ -116,6 +120,13 @@ class Commander:
         commander_response = self.call(["flash", filename])
         ap_logger.log(commander_response)
 
+    def read_mem(self, filename):
+        commander_response = self.call(
+            ["readmem", "--region", "@mainflash", "--outfile", filename]
+        )
+        ap_logger.log(commander_response)
+        log.info(f"Created temporary hex file: {filename}")
+
 
 def generate_qrcode(data, height, width):
     # QR code is a square we take the smaller
@@ -160,6 +171,8 @@ def merge_qr_hex(qrcode, ihex, sa, hex_file_out="merged.hex"):
 
 def find_magic_in_hex(ihex):
     found = ihex.find(MAGIC_CONST)
+    if found == -1:
+        raise EOFError
     offset = found + len(MAGIC_CONST)
     size = ihex[offset] + ihex[offset + 1] * 256
     addr = (
@@ -174,10 +187,18 @@ def find_magic_in_hex(ihex):
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=lambda prog: argparse.RawTextHelpFormatter(
+            prog, max_help_position=8
+        ),
+    )
     parser.add_argument(
         "hex",
-        help="The output file of the ESL Tag project or pre-built demo in Intel HEX (.hex) or Motorola S-Records (.s37) format.",
+        help="""The output file of the ESL Tag project or pre-built demo in Intel HEX (.hex) or Motorola S-Records (.s37) format."
+Can be omitted if the device is already flashed with the correct file and is unlocked.""",
+        nargs="?",
+        default=FALLBACK_HEX,
     )
     parser.add_argument("-s", "--serialno", help="J-Link serial number of the WSTK")
     parser.add_argument("--ip", help="IP address of the WSTK")
@@ -201,6 +222,12 @@ def main():
 
     # 1) Check if file is in a known format: Intel HEX (.hex), or Motorola S-Records (.s37)
     ihex = None
+    if args.hex == FALLBACK_HEX:
+        log.warning(
+            "No input file specified, try reading it from the device. This may take a little longer than if we had an input file."
+        )
+        commander.read_mem(args.hex)
+        log.info("Temporary file processing in progress...")
     try:
         f = bincopy.BinFile(args.hex)
     except IOError as e:
@@ -215,6 +242,10 @@ def main():
         except:
             log.error("IntelHex import error.")
             abort(-5)
+    finally:
+        if args.hex == FALLBACK_HEX:
+            os.remove(args.hex)
+            log.info(f"Temporary file removed: {args.hex}")
 
     # 2) Read MAC address and create QR code data
     uid = commander.get_board_uid()
@@ -222,20 +253,27 @@ def main():
     data = "connect " + uid
 
     # 3) Generate QR code: the generated data should be a binary which can be flashed to NVM
-    bin_image = generate_qrcode(data, args.height, args.width)
+    bin_image, _ = generate_qrcode(data, args.height, args.width)
 
     # 4) Find the magic constant with commander in the given hex file
-    start_addr, size = find_magic_in_hex(ihex)
-
+    try:
+        start_addr, size = find_magic_in_hex(ihex)
+    except EOFError:
+        log.error(
+            "The QR Code region could not be found. Please check if you have the correct firmware and specified the right target!"
+        )
+        abort(-6)
     # 5) Check if the space is enough for the QR code
     if size < len(bin_image):
         log.error("There is not enough memory to flash the QR code")
-        abort(-6)
+        abort(-7)
 
     # 6) Create the new hex file and flash it on the device
 
     merged_hex = merge_qr_hex(bin_image, ihex, start_addr)
     commander.flash_board(merged_hex)
+    log.info("Done. Cleaning up.")
+    os.remove(merged_hex)
 
 
 if __name__ == "__main__":

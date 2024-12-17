@@ -30,18 +30,17 @@
 
 #include "zap-cluster-command-parser.h"
 
-extern bool sl_zigbee_af_simple_metering_cluster_get_notified_message_cb(sl_zigbee_af_cluster_command_t *cmd);
-extern bool sl_zigbee_af_simple_metering_cluster_get_sampled_data_cb(sl_zigbee_af_cluster_command_t *cmd);
-extern bool sl_zigbee_af_simple_metering_cluster_publish_snapshot_cb(sl_zigbee_af_cluster_command_t *cmd);
-extern bool sl_zigbee_af_simple_metering_cluster_get_snapshot_cb(sl_zigbee_af_cluster_command_t *cmd);
-extern bool sl_zigbee_af_simple_metering_cluster_get_sampled_data_response_cb(sl_zigbee_af_cluster_command_t *cmd);
-extern bool sl_zigbee_af_simple_metering_cluster_get_sampled_data_response_cb(sl_zigbee_af_cluster_command_t *cmd);
-extern bool sl_zigbee_af_prepayment_cluster_publish_prepay_snapshot_cb(sl_zigbee_af_cluster_command_t *cmd);
-extern bool sl_zigbee_af_prepayment_cluster_get_prepay_snapshot_cb(sl_zigbee_af_cluster_command_t *cmd);
-extern bool sl_zigbee_af_prepayment_cluster_publish_top_up_log_cb(sl_zigbee_af_cluster_command_t *cmd);
-extern bool sl_zigbee_af_prepayment_cluster_get_top_up_log_cb(sl_zigbee_af_cluster_command_t *cmd);
-extern bool sl_zigbee_af_prepayment_cluster_publish_debt_log_cb(sl_zigbee_af_cluster_command_t *cmd);
-extern bool sl_zigbee_af_prepayment_cluster_get_debt_repayment_log_cb(sl_zigbee_af_cluster_command_t *cmd);
+extern sl_zigbee_af_zcl_request_status_t sl_zigbee_af_simple_metering_cluster_get_notified_message_cb(sl_zigbee_af_cluster_command_t *cmd);
+extern sl_zigbee_af_zcl_request_status_t sl_zigbee_af_simple_metering_cluster_get_sampled_data_cb(sl_zigbee_af_cluster_command_t *cmd);
+extern sl_zigbee_af_zcl_request_status_t sl_zigbee_af_simple_metering_cluster_publish_snapshot_cb(sl_zigbee_af_cluster_command_t *cmd);
+extern sl_zigbee_af_zcl_request_status_t sl_zigbee_af_simple_metering_cluster_get_snapshot_cb(sl_zigbee_af_cluster_command_t *cmd);
+extern sl_zigbee_af_zcl_request_status_t sl_zigbee_af_simple_metering_cluster_get_sampled_data_response_cb(sl_zigbee_af_cluster_command_t *cmd);
+extern sl_zigbee_af_zcl_request_status_t sl_zigbee_af_prepayment_cluster_publish_prepay_snapshot_cb(sl_zigbee_af_cluster_command_t *cmd);
+extern sl_zigbee_af_zcl_request_status_t sl_zigbee_af_prepayment_cluster_get_prepay_snapshot_cb(sl_zigbee_af_cluster_command_t *cmd);
+extern sl_zigbee_af_zcl_request_status_t sl_zigbee_af_prepayment_cluster_publish_top_up_log_cb(sl_zigbee_af_cluster_command_t *cmd);
+extern sl_zigbee_af_zcl_request_status_t sl_zigbee_af_prepayment_cluster_get_top_up_log_cb(sl_zigbee_af_cluster_command_t *cmd);
+extern sl_zigbee_af_zcl_request_status_t sl_zigbee_af_prepayment_cluster_publish_debt_log_cb(sl_zigbee_af_cluster_command_t *cmd);
+extern sl_zigbee_af_zcl_request_status_t sl_zigbee_af_prepayment_cluster_get_debt_repayment_log_cb(sl_zigbee_af_cluster_command_t *cmd);
 
 // default configurations
 #define DEFAULT_TABLE_SET_INDEX (0)
@@ -58,7 +57,7 @@ static void hideEndpoint(uint8_t endpoint)
 #ifdef EZSP_HOST
   sl_status_t status = sl_zigbee_ezsp_set_endpoint_flags(endpoint,
                                                          SL_ZIGBEE_EZSP_ENDPOINT_DISABLED);
-  sl_zigbee_af_gas_proxy_function_println("GPF: hiding endpoint status: 0x%X", status);
+  sl_zigbee_af_gas_proxy_function_println("GPF: hiding endpoint status: 0x%02X", status);
 #else
   // we need to standarize disabling/hiding/reset endpoints.
   sl_zigbee_af_gas_proxy_function_println("GPF: hiding endpoint not supported on Soc!");
@@ -208,26 +207,26 @@ static bool matchingZclCommands(sl_zigbee_af_gbz_zcl_command_t * cmd, sl_zigbee_
 
   // check command direction
   if ((cmd->frameControl & ZCL_FRAME_CONTROL_DIRECTION_MASK) == (cmdResp->frameControl & ZCL_FRAME_CONTROL_DIRECTION_MASK)) {
-    sl_zigbee_af_gas_proxy_function_println("GPF: ERR: No matching ZCL command direction (0x%X/0x%X) in ZCL cmd/cmd resp pair!",
+    sl_zigbee_af_gas_proxy_function_println("GPF: ERR: No matching ZCL command direction (0x%02X/0x%02X) in ZCL cmd/cmd resp pair!",
                                             cmd->frameControl & ZCL_FRAME_CONTROL_DIRECTION_MASK,
                                             cmdResp->frameControl & ZCL_FRAME_CONTROL_DIRECTION_MASK);
     result = false;
   }
 
   if (cmd->transactionSequenceNumber != cmdResp->transactionSequenceNumber) {
-    sl_zigbee_af_gas_proxy_function_println("GPF: ERR: No matching ZCL tran seq number (0x%X/0x%X) in ZCL cmd/cmd resp pair!", cmd->transactionSequenceNumber, cmdResp->transactionSequenceNumber);
+    sl_zigbee_af_gas_proxy_function_println("GPF: ERR: No matching ZCL tran seq number (0x%02X/0x%02X) in ZCL cmd/cmd resp pair!", cmd->transactionSequenceNumber, cmdResp->transactionSequenceNumber);
     result = false;
   }
 
   if (cmd->clusterId != cmdResp->clusterId) {
-    sl_zigbee_af_gas_proxy_function_println("GPF: ERR: No matching ZCL cluster id (%2X/%2X) in ZCL cmd/cmd resp pair!", cmd->clusterId, cmdResp->clusterId);
+    sl_zigbee_af_gas_proxy_function_println("GPF: ERR: No matching ZCL cluster id (%04X/%04X) in ZCL cmd/cmd resp pair!", cmd->clusterId, cmdResp->clusterId);
     result = false;
   }
 
   // the command id doesn't always matches in value (e.g. read attr(0x00) vs read attr resp (0x01)).
   // this is not being checked for now.
   /*if (cmd->commandId != cmdResp->commandId) {*/
-  /*sl_zigbee_af_gas_proxy_function_println("GPF: ERR: No matching ZCL command id (%x/%x) in ZCL cmd/cmd resp pair!", cmd->commandId, cmdResp->commandId);*/
+  /*sl_zigbee_af_gas_proxy_function_println("GPF: ERR: No matching ZCL command id (%02X/%02X) in ZCL cmd/cmd resp pair!", cmd->commandId, cmdResp->commandId);*/
   /*result = false;*/
   /*}*/
 
@@ -328,21 +327,22 @@ sl_status_t sl_zigbee_af_gas_proxy_function_tap_off_message_handler(uint8_t * gb
       status = sl_zigbee_af_gas_proxy_function_validate_incoming_zcl_command_cb(&clusterCmd,
                                                                                 messageCode);
       if (status == SL_ZIGBEE_AF_GPF_ZCL_COMMAND_PERMISSION_ALLOWED) {
-        sl_zigbee_af_status_t parsingStatus;
+        sl_zigbee_af_zcl_request_status_t parsingStatus;
         sl_zigbee_af_current_command() = &clusterCmd;
         sl_zigbee_af_gas_proxy_function_println("GPF: Passing cmd to cluster parser");
         parsingStatus = sl_zigbee_af_cluster_specific_command_parse(&clusterCmd);
-        if (parsingStatus != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-          sl_zigbee_af_gas_proxy_function_println("GPF: ERR: Unable to apply ZCL command (error: 0x%X)!", parsingStatus);
+        if (parsingStatus != SL_ZIGBEE_ZCL_STATUS_SUCCESS
+            && parsingStatus != SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED) {
+          sl_zigbee_af_gas_proxy_function_println("GPF: ERR: Unable to apply ZCL command (error: 0x%02X)!", parsingStatus);
           status = SL_STATUS_FAIL;
           goto kickout;
         }
       } else if (status == SL_ZIGBEE_AF_GPF_ZCL_COMMAND_PERMISSION_IGNORED) {
-        sl_zigbee_af_gas_proxy_function_println("GPF: Info: Command ignored: ZCL command(clus 0x%2X, cmd 0x%x) embedded within Tap Off Message.", clusterCmd.apsFrame->clusterId, clusterCmd.commandId);
+        sl_zigbee_af_gas_proxy_function_println("GPF: Info: Command ignored: ZCL command(clus 0x%04X, cmd 0x%02X) embedded within Tap Off Message.", clusterCmd.apsFrame->clusterId, clusterCmd.commandId);
       } else {
         // only SL_ZIGBEE_AF_GPF_ZCL_COMMAND_PERMISSION_NOT_ALLOWED is expected to be
         // here.
-        sl_zigbee_af_gas_proxy_function_println("GPF: ERR: Unsupported ZCL command(clus 0x%2X, cmd 0x%x) embedded within Tap Off Message!", clusterCmd.apsFrame->clusterId, clusterCmd.commandId);
+        sl_zigbee_af_gas_proxy_function_println("GPF: ERR: Unsupported ZCL command(clus 0x%04X, cmd 0x%02X) embedded within Tap Off Message!", clusterCmd.apsFrame->clusterId, clusterCmd.commandId);
         status = SL_STATUS_FAIL;
         goto kickout;
       }
@@ -431,7 +431,7 @@ static bool sendNextNonTomZclCmd(void)
   }
 
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_gas_proxy_function_println("GPF: ERR: Unable to replay ZCL command (error: 0x%x)!", status);
+    sl_zigbee_af_gas_proxy_function_println("GPF: ERR: Unable to replay ZCL command (error: 0x%02X)!", status);
     return false;
   }
 
@@ -566,7 +566,7 @@ static void captureNonTomZclCmdResp(sl_zigbee_af_cluster_command_t * cmd)
 {
   sl_zigbee_af_gbz_zcl_command_t gbzZclCmd = { 0 };
   sl_zigbee_af_gbz_message_creator_result_t *gbzResponse;
-  sl_zigbee_af_gas_proxy_function_println("GPF: Intercepting ZCL cmd(0x%X) on endpoint: %d", cmd->commandId, sl_zigbee_af_current_endpoint());
+  sl_zigbee_af_gas_proxy_function_println("GPF: Intercepting ZCL cmd(0x%02X) on endpoint: %d", cmd->commandId, sl_zigbee_af_current_endpoint());
 
   if (!nonTomHandlingActive) {
     sl_zigbee_af_gas_proxy_function_println("GPF: ERR: Not expecting a Non-TOM response.");
@@ -648,17 +648,17 @@ bool sli_zigbee_af_gas_proxy_function_pre_command_received_callback(sl_zigbee_af
 
 // Calendar Client commands
 
-bool sl_zigbee_af_calendar_cluster_publish_calendar_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_calendar_cluster_publish_calendar_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_calendar_cluster_publish_calendar_command_t cmd_data;
   bool status;
 
   if (zcl_decode_calendar_cluster_publish_calendar_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_gas_proxy_function_println("GPF: RX: PublishCalendar 0x%4x, 0x%4x, 0x%4x, 0x%4x, 0x%x, \"",
+  sl_zigbee_af_gas_proxy_function_println("GPF: RX: PublishCalendar 0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%02X, \"",
                                           cmd_data.providerId,
                                           cmd_data.issuerEventId,
                                           cmd_data.issuerCalendarId,
@@ -672,7 +672,7 @@ bool sl_zigbee_af_calendar_cluster_publish_calendar_cb(sl_zigbee_af_cluster_comm
 
   if (sl_zigbee_af_gas_proxy_function_ignore_future_command(cmd_data.startTime)) {
     sl_zigbee_af_gas_proxy_function_println("GPF: Ignoring future dated command.");
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
   }
 
   status = sl_zigbee_af_calendar_common_add_cal_info(cmd_data.providerId,
@@ -687,35 +687,35 @@ bool sl_zigbee_af_calendar_cluster_publish_calendar_cb(sl_zigbee_af_cluster_comm
 
   if (status) {
     sl_zigbee_af_gas_proxy_function_println("GPF: Updated: Calendar");
-    sl_zigbee_af_gas_proxy_function_println("GPF:          providerId: 0x%4X", cmd_data.providerId);
-    sl_zigbee_af_gas_proxy_function_println("GPF:          issuerEventId: 0x%4X", cmd_data.issuerEventId);
-    sl_zigbee_af_gas_proxy_function_println("GPF:          issuerCalendarId: 0x%4X", cmd_data.issuerCalendarId);
-    sl_zigbee_af_gas_proxy_function_println("GPF:          startTimeUtc: 0x%4X", cmd_data.startTime);
-    sl_zigbee_af_gas_proxy_function_println("GPF:          calendarType: 0x%X", cmd_data.calendarType);
+    sl_zigbee_af_gas_proxy_function_println("GPF:          providerId: 0x%08X", cmd_data.providerId);
+    sl_zigbee_af_gas_proxy_function_println("GPF:          issuerEventId: 0x%08X", cmd_data.issuerEventId);
+    sl_zigbee_af_gas_proxy_function_println("GPF:          issuerCalendarId: 0x%08X", cmd_data.issuerCalendarId);
+    sl_zigbee_af_gas_proxy_function_println("GPF:          startTimeUtc: 0x%08X", cmd_data.startTime);
+    sl_zigbee_af_gas_proxy_function_println("GPF:          calendarType: 0x%02X", cmd_data.calendarType);
     sl_zigbee_af_gas_proxy_function_print("GPF:          calendarName: ");
     sl_zigbee_af_gas_proxy_function_print_string(cmd_data.calendarName);
     sl_zigbee_af_gas_proxy_function_println("");
-    sl_zigbee_af_gas_proxy_function_println("GPF:          numberOfSeasons: 0x%X", cmd_data.numberOfSeasons);
-    sl_zigbee_af_gas_proxy_function_println("GPF:          numberOfWeekProfiles: 0x%X", cmd_data.numberOfWeekProfiles);
-    sl_zigbee_af_gas_proxy_function_println("GPF:          numberOfDayProfiles: 0x%X", cmd_data.numberOfDayProfiles);
+    sl_zigbee_af_gas_proxy_function_println("GPF:          numberOfSeasons: 0x%02X", cmd_data.numberOfSeasons);
+    sl_zigbee_af_gas_proxy_function_println("GPF:          numberOfWeekProfiles: 0x%02X", cmd_data.numberOfWeekProfiles);
+    sl_zigbee_af_gas_proxy_function_println("GPF:          numberOfDayProfiles: 0x%02X", cmd_data.numberOfDayProfiles);
   }
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_calendar_cluster_publish_day_profile_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_calendar_cluster_publish_day_profile_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_calendar_cluster_publish_day_profile_command_t cmd_data;
   uint16_t dayScheduleEntriesLength;
 
   if (zcl_decode_calendar_cluster_publish_day_profile_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   dayScheduleEntriesLength = fieldLength(cmd_data.dayScheduleEntries);
 
-  sl_zigbee_af_gas_proxy_function_println("GPF: RX: PublishDayProfile 0x%4x, 0x%4x, 0x%4x, %d, %d, %d, %d, 0x%x",
+  sl_zigbee_af_gas_proxy_function_println("GPF: RX: PublishDayProfile 0x%08X, 0x%08X, 0x%08X, %d, %d, %d, %d, 0x%02X",
                                           cmd_data.providerId,
                                           cmd_data.issuerEventId,
                                           cmd_data.issuerCalendarId,
@@ -729,10 +729,10 @@ bool sl_zigbee_af_calendar_cluster_publish_day_profile_cb(sl_zigbee_af_cluster_c
                                                  cmd_data.dayId,
                                                  cmd_data.dayScheduleEntries,
                                                  dayScheduleEntriesLength);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_calendar_cluster_publish_seasons_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_calendar_cluster_publish_seasons_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_calendar_cluster_publish_seasons_command_t cmd_data;
   bool success;
@@ -741,12 +741,12 @@ bool sl_zigbee_af_calendar_cluster_publish_seasons_cb(sl_zigbee_af_cluster_comma
 
   if (zcl_decode_calendar_cluster_publish_seasons_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   seasonEntriesLength = fieldLength(cmd_data.seasonEntries);
 
-  sl_zigbee_af_gas_proxy_function_println("GPF: RX: PublishSeasons 0x%4x, 0x%4x, 0x%4x, %d, %d",
+  sl_zigbee_af_gas_proxy_function_println("GPF: RX: PublishSeasons 0x%08X, 0x%08X, 0x%08X, %d, %d",
                                           cmd_data.providerId,
                                           cmd_data.issuerEventId,
                                           cmd_data.issuerCalendarId,
@@ -765,10 +765,10 @@ bool sl_zigbee_af_calendar_cluster_publish_seasons_cb(sl_zigbee_af_cluster_comma
                                                               unknownWeekIdSeasonsMask);
   }
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_calendar_cluster_publish_special_days_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_calendar_cluster_publish_special_days_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_calendar_cluster_publish_special_days_command_t cmd_data;
   uint16_t speicalDaysEntriesLength;
@@ -777,12 +777,12 @@ bool sl_zigbee_af_calendar_cluster_publish_special_days_cb(sl_zigbee_af_cluster_
 
   if (zcl_decode_calendar_cluster_publish_special_days_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   speicalDaysEntriesLength = fieldLength(cmd_data.specialDayEntries);
 
-  sl_zigbee_af_gas_proxy_function_println("GPF: RX: PublishSpecialDays 0x%4x, 0x%4x, 0x%4x, 0x%4x, 0x%x, %d, %d, %d, [",
+  sl_zigbee_af_gas_proxy_function_println("GPF: RX: PublishSpecialDays 0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%02X, %d, %d, %d, [",
                                           cmd_data.providerId,
                                           cmd_data.issuerEventId,
                                           cmd_data.issuerCalendarId,
@@ -796,7 +796,7 @@ bool sl_zigbee_af_calendar_cluster_publish_special_days_cb(sl_zigbee_af_cluster_
 
   if (sl_zigbee_af_gas_proxy_function_ignore_future_command(cmd_data.startTime)) {
     sl_zigbee_af_gas_proxy_function_println("GPF: Ignoring future dated command.");
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
   }
 
   success = sl_zigbee_af_calendar_common_add_special_days_info(cmd_data.issuerCalendarId,
@@ -811,19 +811,19 @@ bool sl_zigbee_af_calendar_cluster_publish_special_days_cb(sl_zigbee_af_cluster_
                                                                    unknownSpecialDaysMask);
   }
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_calendar_cluster_publish_week_profile_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_calendar_cluster_publish_week_profile_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_calendar_cluster_publish_week_profile_command_t cmd_data;
 
   if (zcl_decode_calendar_cluster_publish_week_profile_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_gas_proxy_function_println("GPF: RX: PublishWeekProfile 0x%4x, 0x%4x, 0x%4x, %d, %d, %d, %d, %d, %d, %d, %d",
+  sl_zigbee_af_gas_proxy_function_println("GPF: RX: PublishWeekProfile 0x%08X, 0x%08X, 0x%08X, %d, %d, %d, %d, %d, %d, %d, %d",
                                           cmd_data.providerId,
                                           cmd_data.issuerEventId,
                                           cmd_data.issuerCalendarId,
@@ -845,22 +845,22 @@ bool sl_zigbee_af_calendar_cluster_publish_week_profile_cb(sl_zigbee_af_cluster_
                                                   cmd_data.dayIdRefFriday,
                                                   cmd_data.dayIdRefSaturday,
                                                   cmd_data.dayIdRefSunday);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
 // Device management commands
 
-bool sl_zigbee_af_device_management_cluster_publish_change_of_supplier_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_device_management_cluster_publish_change_of_supplier_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_device_management_cluster_publish_change_of_supplier_command_t cmd_data;
   sl_zigbee_af_device_management_supplier_t supplier;
 
   if (zcl_decode_device_management_cluster_publish_change_of_supplier_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_gas_proxy_function_println("GPF: RX: PublishChangeOfSupplier: 0x%4X, 0x%4X, 0x%X, 0x%4X, 0x%4X, 0x%4X, ",
+  sl_zigbee_af_gas_proxy_function_println("GPF: RX: PublishChangeOfSupplier: 0x%08X, 0x%08X, 0x%02X, 0x%08X, 0x%08X, 0x%08X, ",
                                           cmd_data.currentProviderId,
                                           cmd_data.issuerEventId,
                                           cmd_data.tariffType,
@@ -874,7 +874,7 @@ bool sl_zigbee_af_device_management_cluster_publish_change_of_supplier_cb(sl_zig
 
   if (sl_zigbee_af_gas_proxy_function_ignore_future_command(cmd_data.providerChangeImplementationTime)) {
     sl_zigbee_af_gas_proxy_function_println("GPF: Ignoring future dated command.");
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
   }
 
   supplier.proposedProviderId = cmd_data.proposedProviderId;
@@ -888,10 +888,10 @@ bool sl_zigbee_af_device_management_cluster_publish_change_of_supplier_cb(sl_zig
                            SL_ZIGBEE_AF_DEVICE_MANAGEMENT_MAXIMUM_PROPOSED_PROVIDER_CONTACT_DETAILS_LENGTH);
 
   sl_zigbee_af_device_management_set_supplier(SL_ZIGBEE_AF_PLUGIN_GAS_PROXY_FUNCTION_ESI_ENDPOINT, &supplier);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_device_management_cluster_publish_change_of_tenancy_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_device_management_cluster_publish_change_of_tenancy_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_device_management_cluster_publish_change_of_tenancy_command_t cmd_data;
   sl_zigbee_af_device_management_tenancy_t tenancy;
@@ -900,10 +900,10 @@ bool sl_zigbee_af_device_management_cluster_publish_change_of_tenancy_cb(sl_zigb
 
   if (zcl_decode_device_management_cluster_publish_change_of_tenancy_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_gas_proxy_function_println("RX: PublishChangeOfTenancy: 0x%4X, 0x%4X, 0x%X, 0x%4X, 0x%4X",
+  sl_zigbee_af_gas_proxy_function_println("RX: PublishChangeOfTenancy: 0x%08X, 0x%08X, 0x%02X, 0x%08X, 0x%08X",
                                           cmd_data.providerId,
                                           cmd_data.issuerEventId,
                                           cmd_data.tariffType,
@@ -912,7 +912,7 @@ bool sl_zigbee_af_device_management_cluster_publish_change_of_tenancy_cb(sl_zigb
 
   if (sl_zigbee_af_gas_proxy_function_ignore_future_command(cmd_data.implementationDateTime)) {
     sl_zigbee_af_gas_proxy_function_println("GPF: Ignoring future dated command.");
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
   }
 
   tenancy.implementationDateTime = cmd_data.implementationDateTime;
@@ -925,29 +925,28 @@ bool sl_zigbee_af_device_management_cluster_publish_change_of_tenancy_cb(sl_zigb
 
   if (result) {
     sl_zigbee_af_gas_proxy_function_println("GPF: Updated: Tenancy");
-    sl_zigbee_af_gas_proxy_function_println("              implementationTime: 0x%4X", tenancy.implementationDateTime);
-    sl_zigbee_af_gas_proxy_function_println("              tenancy: 0x%4X", tenancy.tenancy);
+    sl_zigbee_af_gas_proxy_function_println("              implementationTime: 0x%08X", tenancy.implementationDateTime);
+    sl_zigbee_af_gas_proxy_function_println("              tenancy: 0x%08X", tenancy.tenancy);
     status = SL_ZIGBEE_ZCL_STATUS_SUCCESS;
   } else {
     sl_zigbee_af_gas_proxy_function_println("GPF: Unable to update tenancy due to mismatching information.");
     status = SL_ZIGBEE_ZCL_STATUS_FAILURE;
   }
 
-  sl_zigbee_af_send_immediate_default_response(status);
-  return true;
+  return status;
 }
 
-bool sl_zigbee_af_price_cluster_publish_calorific_value_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_price_cluster_publish_calorific_value_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_price_cluster_publish_calorific_value_command_t cmd_data;
   sl_zigbee_af_status_t status;
 
   if (zcl_decode_price_cluster_publish_calorific_value_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_gas_proxy_function_println("GPF: RX: PublishCalorificValue 0x%4X, 0x%4X, 0x%4X, 0x%X, 0x%X",
+  sl_zigbee_af_gas_proxy_function_println("GPF: RX: PublishCalorificValue 0x%08X, 0x%08X, 0x%08X, 0x%02X, 0x%02X",
                                           cmd_data.issuerEventId,
                                           cmd_data.startTime,
                                           cmd_data.calorificValue,
@@ -956,7 +955,7 @@ bool sl_zigbee_af_price_cluster_publish_calorific_value_cb(sl_zigbee_af_cluster_
 
   if (sl_zigbee_af_gas_proxy_function_ignore_future_command(cmd_data.startTime)) {
     sl_zigbee_af_gas_proxy_function_println("GPF: Ignoring future dated command.");
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
   }
 
   status = sl_zigbee_af_price_server_calorific_value_add(SL_ZIGBEE_AF_PLUGIN_GAS_PROXY_FUNCTION_ESI_ENDPOINT,
@@ -966,22 +965,22 @@ bool sl_zigbee_af_price_cluster_publish_calorific_value_cb(sl_zigbee_af_cluster_
                                                          cmd_data.calorificValueUnit,
                                                          cmd_data.calorificValueTrailingDigit);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_gas_proxy_function_println("GPF: ERR: Unable to update calorific value (status:0x%X).", status);
+    sl_zigbee_af_gas_proxy_function_println("GPF: ERR: Unable to update calorific value (status:0x%02X).", status);
   }
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_price_cluster_publish_conversion_factor_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_price_cluster_publish_conversion_factor_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_price_cluster_publish_conversion_factor_command_t cmd_data;
   sl_status_t status;
 
   if (zcl_decode_price_cluster_publish_conversion_factor_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_gas_proxy_function_println("GPF: RX: PublishConversionFactor 0x%4X, 0x%4X, 0x%4X, 0x%X",
+  sl_zigbee_af_gas_proxy_function_println("GPF: RX: PublishConversionFactor 0x%08X, 0x%08X, 0x%08X, 0x%02X",
                                           cmd_data.issuerEventId,
                                           cmd_data.startTime,
                                           cmd_data.conversionFactor,
@@ -989,7 +988,7 @@ bool sl_zigbee_af_price_cluster_publish_conversion_factor_cb(sl_zigbee_af_cluste
 
   if (sl_zigbee_af_gas_proxy_function_ignore_future_command(cmd_data.startTime)) {
     sl_zigbee_af_gas_proxy_function_println("GPF: Ignoring future dated command.");
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
   }
 
   status = sl_zigbee_af_price_server_conversion_factor_add(SL_ZIGBEE_AF_PLUGIN_GAS_PROXY_FUNCTION_ESI_ENDPOINT,
@@ -998,21 +997,21 @@ bool sl_zigbee_af_price_cluster_publish_conversion_factor_cb(sl_zigbee_af_cluste
                                                            cmd_data.conversionFactor,
                                                            cmd_data.conversionFactorTrailingDigit);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_gas_proxy_function_println("GPF: ERR: Unable to update conversion factor (status:0x%X).", status);
+    sl_zigbee_af_gas_proxy_function_println("GPF: ERR: Unable to update conversion factor (status:0x%02X).", status);
   }
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_price_cluster_publish_block_thresholds_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_price_cluster_publish_block_thresholds_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_price_cluster_publish_block_thresholds_command_t cmd_data;
 
   if (zcl_decode_price_cluster_publish_block_thresholds_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_gas_proxy_function_println("GPF: RX: PublishBlockThresholds 0x%4X, 0x%4X, 0x%4X, 0x%4X, 0x%X, 0x%X, 0x%X",
+  sl_zigbee_af_gas_proxy_function_println("GPF: RX: PublishBlockThresholds 0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%02X, 0x%02X, 0x%02X",
                                           cmd_data.providerId,
                                           cmd_data.issuerEventId,
                                           cmd_data.startTime,
@@ -1023,7 +1022,7 @@ bool sl_zigbee_af_price_cluster_publish_block_thresholds_cb(sl_zigbee_af_cluster
 
   if (sl_zigbee_af_gas_proxy_function_ignore_future_command(cmd_data.startTime)) {
     sl_zigbee_af_gas_proxy_function_println("GPF: Ignoring future dated command.");
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
   }
 
   sl_zigbee_af_price_add_block_thresholds_table_entry(SL_ZIGBEE_AF_PLUGIN_GAS_PROXY_FUNCTION_ESI_ENDPOINT,
@@ -1036,10 +1035,10 @@ bool sl_zigbee_af_price_cluster_publish_block_thresholds_cb(sl_zigbee_af_cluster
                                                       cmd_data.subPayloadControl,
                                                       cmd_data.payload);
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_price_cluster_publish_tariff_information_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_price_cluster_publish_tariff_information_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_price_cluster_publish_tariff_information_command_t cmd_data;
   sl_zigbee_af_price_common_info_t info;
@@ -1047,11 +1046,11 @@ bool sl_zigbee_af_price_cluster_publish_tariff_information_cb(sl_zigbee_af_clust
 
   if (zcl_decode_price_cluster_publish_tariff_information_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   sl_zigbee_af_gas_proxy_function_println("GPF: RX: PublishTariffInformationReceived");
-  sl_zigbee_af_price_cluster_print("RX: PublishTariffInformation 0x%4x, 0x%4x, 0x%4x, 0x%4x, 0x%x, \"",
+  sl_zigbee_af_price_cluster_print("RX: PublishTariffInformation 0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%02X, \"",
                                    cmd_data.providerId,
                                    cmd_data.issuerEventId,
                                    cmd_data.issuerTariffId,
@@ -1060,13 +1059,13 @@ bool sl_zigbee_af_price_cluster_publish_tariff_information_cb(sl_zigbee_af_clust
 
   sl_zigbee_af_price_cluster_print_string(cmd_data.tariffLabel);
   sl_zigbee_af_price_cluster_print("\"");
-  sl_zigbee_af_price_cluster_print(", 0x%x, 0x%x, 0x%x, 0x%2x, 0x%x",
+  sl_zigbee_af_price_cluster_print(", 0x%02X, 0x%02X, 0x%02X, 0x%04X, 0x%02X",
                                    cmd_data.numberOfPriceTiersInUse,
                                    cmd_data.numberOfBlockThresholdsInUse,
                                    cmd_data.unitOfMeasure,
                                    cmd_data.currency,
                                    cmd_data.priceTrailingDigit);
-  sl_zigbee_af_price_cluster_println(", 0x%4x, 0x%x, 0x%4x, 0x%4x",
+  sl_zigbee_af_price_cluster_println(", 0x%08X, 0x%02X, 0x%08X, 0x%08X",
                                      cmd_data.standingCharge,
                                      cmd_data.tierBlockMode,
                                      cmd_data.blockThresholdMultiplier,
@@ -1075,7 +1074,7 @@ bool sl_zigbee_af_price_cluster_publish_tariff_information_cb(sl_zigbee_af_clust
 
   if (sl_zigbee_af_gas_proxy_function_ignore_future_command(cmd_data.startTime)) {
     sl_zigbee_af_gas_proxy_function_println("GPF: Ignoring future dated command.");
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
   }
 
   info.startTime = cmd_data.startTime;
@@ -1098,19 +1097,19 @@ bool sl_zigbee_af_price_cluster_publish_tariff_information_cb(sl_zigbee_af_clust
   sl_zigbee_af_price_add_tariff_table_entry(SL_ZIGBEE_AF_PLUGIN_GAS_PROXY_FUNCTION_ESI_ENDPOINT,
                                             &info,
                                             &tariff);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_price_cluster_publish_price_matrix_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_price_cluster_publish_price_matrix_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_price_cluster_publish_price_matrix_command_t cmd_data;
 
   if (zcl_decode_price_cluster_publish_price_matrix_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_gas_proxy_function_println("GPF: RX: PublishPriceMatrix 0x%4X, 0x%4X, 0x%4X, 0x%4X, 0x%X, 0x%X, 0x%X",
+  sl_zigbee_af_gas_proxy_function_println("GPF: RX: PublishPriceMatrix 0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%02X, 0x%02X, 0x%02X",
                                           cmd_data.providerId,
                                           cmd_data.issuerEventId,
                                           cmd_data.startTime,
@@ -1121,7 +1120,7 @@ bool sl_zigbee_af_price_cluster_publish_price_matrix_cb(sl_zigbee_af_cluster_com
 
   if (sl_zigbee_af_gas_proxy_function_ignore_future_command(cmd_data.startTime)) {
     sl_zigbee_af_gas_proxy_function_println("GPF: Ignoring future dated command.");
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
   }
 
   sl_zigbee_af_price_add_price_matrix_raw(SL_ZIGBEE_AF_PLUGIN_GAS_PROXY_FUNCTION_ESI_ENDPOINT,
@@ -1134,10 +1133,10 @@ bool sl_zigbee_af_price_cluster_publish_price_matrix_cb(sl_zigbee_af_cluster_com
                                           cmd_data.subPayloadControl,
                                           cmd_data.payload);
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_messaging_cluster_display_message_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_messaging_cluster_display_message_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_messaging_cluster_display_message_command_t cmd_data;
   sl_zigbee_af_plugin_messaging_server_message_t message;
@@ -1145,19 +1144,19 @@ bool sl_zigbee_af_messaging_cluster_display_message_cb(sl_zigbee_af_cluster_comm
 
   if (zcl_decode_messaging_cluster_display_message_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   msgLength = sl_zigbee_af_string_length(cmd_data.message) + 1;
 
   if (msgLength > SL_ZIGBEE_AF_PLUGIN_MESSAGING_SERVER_MESSAGE_SIZE) {
     sl_zigbee_af_gas_proxy_function_print("GPF: ERR: Message too long for messaging server message buffer.");
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
   }
 
   if (sl_zigbee_af_gas_proxy_function_ignore_future_command(cmd_data.startTime)) {
     sl_zigbee_af_gas_proxy_function_println("GPF: Ignoring future dated command.");
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
   }
 
   message.messageId = cmd_data.messageId;
@@ -1168,21 +1167,21 @@ bool sl_zigbee_af_messaging_cluster_display_message_cb(sl_zigbee_af_cluster_comm
   message.extendedMessageControl = cmd_data.optionalExtendedMessageControl;
 
   sl_zigbee_af_gas_proxy_function_print("GPF: RX: DisplayMessage"
-                                        " 0x%4x, 0x%x, 0x%4x, 0x%2x, \"",
+                                        " 0x%08X, 0x%02X, 0x%08X, 0x%04X, \"",
                                         cmd_data.messageId,
                                         cmd_data.messageControl,
                                         cmd_data.startTime,
                                         cmd_data.durationInMinutes);
   sl_zigbee_af_gas_proxy_function_print_string(cmd_data.message);
-  sl_zigbee_af_gas_proxy_function_print(", 0x%X", cmd_data.optionalExtendedMessageControl);
+  sl_zigbee_af_gas_proxy_function_print(", 0x%02X", cmd_data.optionalExtendedMessageControl);
   sl_zigbee_af_gas_proxy_function_println("\"");
 
   sl_zigbee_af_messaging_server_set_message(SL_ZIGBEE_AF_PLUGIN_GAS_PROXY_FUNCTION_ESI_ENDPOINT,
                                             &message);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_price_cluster_publish_block_period_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_price_cluster_publish_block_period_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_price_cluster_publish_block_period_command_t cmd_data;
   uint32_t thresholdMultiplier;
@@ -1190,10 +1189,10 @@ bool sl_zigbee_af_price_cluster_publish_block_period_cb(sl_zigbee_af_cluster_com
 
   if (zcl_decode_price_cluster_publish_block_period_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_gas_proxy_function_println("GPF: RX: PublishBlockPeriod 0x%4X, 0x%4X, 0x%4X, 0x%4X, 0x%X, 0x%X, 0x%X, 0x%X",
+  sl_zigbee_af_gas_proxy_function_println("GPF: RX: PublishBlockPeriod 0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%02X, 0x%02X, 0x%02X, 0x%02X",
                                           cmd_data.providerId,
                                           cmd_data.issuerEventId,
                                           cmd_data.blockPeriodStartTime,
@@ -1205,7 +1204,7 @@ bool sl_zigbee_af_price_cluster_publish_block_period_cb(sl_zigbee_af_cluster_com
 
   if (sl_zigbee_af_gas_proxy_function_ignore_future_command(cmd_data.blockPeriodStartTime)) {
     sl_zigbee_af_gas_proxy_function_println("GPF: Ignoring future dated command.");
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
   }
 
   sl_zigbee_af_read_attribute(SL_ZIGBEE_AF_PLUGIN_GAS_PROXY_FUNCTION_ESI_ENDPOINT,
@@ -1235,19 +1234,19 @@ bool sl_zigbee_af_price_cluster_publish_block_period_cb(sl_zigbee_af_cluster_com
                                              thresholdDivisor,
                                              cmd_data.tariffType,
                                              cmd_data.tariffResolutionPeriod);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_price_cluster_publish_billing_period_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_price_cluster_publish_billing_period_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_price_cluster_publish_billing_period_command_t cmd_data;
 
   if (zcl_decode_price_cluster_publish_billing_period_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_gas_proxy_function_println("GPF: RX: PublishBillingPeriod 0x%4X, 0x%4X, 0x%4X, 0x%4X, 0x%X, 0x%X",
+  sl_zigbee_af_gas_proxy_function_println("GPF: RX: PublishBillingPeriod 0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%02X, 0x%02X",
                                           cmd_data.providerId,
                                           cmd_data.issuerEventId,
                                           cmd_data.billingPeriodStartTime,
@@ -1257,7 +1256,7 @@ bool sl_zigbee_af_price_cluster_publish_billing_period_cb(sl_zigbee_af_cluster_c
 
   if (sl_zigbee_af_gas_proxy_function_ignore_future_command(cmd_data.billingPeriodStartTime)) {
     sl_zigbee_af_gas_proxy_function_println("GPF: Ignoring future dated command.");
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
   }
 
   sl_zigbee_af_price_server_billing_period_add(SL_ZIGBEE_AF_PLUGIN_GAS_PROXY_FUNCTION_ESI_ENDPOINT,
@@ -1267,10 +1266,10 @@ bool sl_zigbee_af_price_cluster_publish_billing_period_cb(sl_zigbee_af_cluster_c
                                                cmd_data.billingPeriodDuration,
                                                cmd_data.billingPeriodDurationType,
                                                cmd_data.tariffType);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_simple_metering_cluster_request_mirror_cb(void)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_simple_metering_cluster_request_mirror_cb(void)
 {
   sl_802154_long_addr_t otaEui;
   uint16_t endpointId;
@@ -1282,17 +1281,16 @@ bool sl_zigbee_af_simple_metering_cluster_request_mirror_cb(void)
     if (endpointId != 0xFFFF) {
       sl_zigbee_af_fill_command_simple_metering_cluster_request_mirror_response(endpointId);
       sl_zigbee_af_send_response();
+      return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
     } else {
       sl_zigbee_af_gas_proxy_function_println("GPF: Invalid endpoint. Sending Default Response");
-      sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_NOT_AUTHORIZED);
+      return SL_ZIGBEE_ZCL_STATUS_NOT_AUTHORIZED;
     }
-  } else {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_FAILURE);
   }
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_FAILURE;
 }
 
-bool sl_zigbee_af_simple_metering_cluster_remove_mirror_cb(void)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_simple_metering_cluster_remove_mirror_cb(void)
 {
   sl_802154_long_addr_t otaEui;
   uint16_t endpointId;
@@ -1303,10 +1301,9 @@ bool sl_zigbee_af_simple_metering_cluster_remove_mirror_cb(void)
     endpointId = sl_zigbee_af_meter_mirror_remove_mirror(otaEui);
     sl_zigbee_af_fill_command_simple_metering_cluster_mirror_removed(endpointId);
     sl_zigbee_af_send_response();
-  } else {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_FAILURE);
+    return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
   }
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_FAILURE;
 }
 
 /** @brief Publish Info
@@ -1366,41 +1363,39 @@ uint32_t sli_zigbee_af_gas_proxy_function_calendar_cluster_client_command_parse(
                                                                                 sl_service_function_context_t *context)
 {
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_PUBLISH_CALENDAR_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_calendar_cluster_publish_calendar_cb(cmd);
+        status = sl_zigbee_af_calendar_cluster_publish_calendar_cb(cmd);
         break;
       }
       case ZCL_PUBLISH_DAY_PROFILE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_calendar_cluster_publish_day_profile_cb(cmd);
+        status = sl_zigbee_af_calendar_cluster_publish_day_profile_cb(cmd);
         break;
       }
       case ZCL_PUBLISH_WEEK_PROFILE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_calendar_cluster_publish_week_profile_cb(cmd);
+        status = sl_zigbee_af_calendar_cluster_publish_week_profile_cb(cmd);
         break;
       }
       case ZCL_PUBLISH_SEASONS_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_calendar_cluster_publish_seasons_cb(cmd);
+        status = sl_zigbee_af_calendar_cluster_publish_seasons_cb(cmd);
         break;
       }
       case ZCL_PUBLISH_SPECIAL_DAYS_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_calendar_cluster_publish_special_days_cb(cmd);
+        status = sl_zigbee_af_calendar_cluster_publish_special_days_cb(cmd);
         break;
       }
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }
 
 uint32_t sli_zigbee_af_gas_proxy_function_device_management_cluster_client_command_parse(sl_service_opcode_t opcode,
@@ -1409,26 +1404,24 @@ uint32_t sli_zigbee_af_gas_proxy_function_device_management_cluster_client_comma
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_PUBLISH_CHANGE_OF_TENANCY_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_device_management_cluster_publish_change_of_tenancy_cb(cmd);
+        status = sl_zigbee_af_device_management_cluster_publish_change_of_tenancy_cb(cmd);
         break;
       }
       case ZCL_PUBLISH_CHANGE_OF_SUPPLIER_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_device_management_cluster_publish_change_of_supplier_cb(cmd);
+        status = sl_zigbee_af_device_management_cluster_publish_change_of_supplier_cb(cmd);
         break;
       }
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }
 
 uint32_t sli_zigbee_af_gas_proxy_function_price_cluster_client_command_parse(sl_service_opcode_t opcode,
@@ -1437,51 +1430,49 @@ uint32_t sli_zigbee_af_gas_proxy_function_price_cluster_client_command_parse(sl_
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_PUBLISH_BLOCK_PERIOD_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_price_cluster_publish_block_period_cb(cmd);
+        status = sl_zigbee_af_price_cluster_publish_block_period_cb(cmd);
         break;
       }
       case ZCL_PUBLISH_CONVERSION_FACTOR_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_price_cluster_publish_conversion_factor_cb(cmd);
+        status = sl_zigbee_af_price_cluster_publish_conversion_factor_cb(cmd);
         break;
       }
       case ZCL_PUBLISH_CALORIFIC_VALUE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_price_cluster_publish_calorific_value_cb(cmd);
+        status = sl_zigbee_af_price_cluster_publish_calorific_value_cb(cmd);
         break;
       }
       case ZCL_PUBLISH_TARIFF_INFORMATION_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_price_cluster_publish_tariff_information_cb(cmd);
+        status = sl_zigbee_af_price_cluster_publish_tariff_information_cb(cmd);
         break;
       }
       case ZCL_PUBLISH_BLOCK_THRESHOLDS_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_price_cluster_publish_block_thresholds_cb(cmd);
+        status = sl_zigbee_af_price_cluster_publish_block_thresholds_cb(cmd);
         break;
       }
       case ZCL_PUBLISH_BILLING_PERIOD_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_price_cluster_publish_billing_period_cb(cmd);
+        status = sl_zigbee_af_price_cluster_publish_billing_period_cb(cmd);
         break;
       }
       case ZCL_PUBLISH_PRICE_MATRIX_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_price_cluster_publish_price_matrix_cb(cmd);
+        status = sl_zigbee_af_price_cluster_publish_price_matrix_cb(cmd);
         break;
       }
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }
 
 uint32_t sli_zigbee_af_gas_proxy_function_messaging_cluster_client_command_parse(sl_service_opcode_t opcode,
@@ -1490,21 +1481,19 @@ uint32_t sli_zigbee_af_gas_proxy_function_messaging_cluster_client_command_parse
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_DISPLAY_MESSAGE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_messaging_cluster_display_message_cb(cmd);
+        status = sl_zigbee_af_messaging_cluster_display_message_cb(cmd);
         break;
       }
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }
 
 uint32_t sli_zigbee_af_gas_proxy_function_simple_metering_cluster_client_command_parse(sl_service_opcode_t opcode,
@@ -1513,41 +1502,39 @@ uint32_t sli_zigbee_af_gas_proxy_function_simple_metering_cluster_client_command
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_REQUEST_MIRROR_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_simple_metering_cluster_request_mirror_cb();
+        status = sl_zigbee_af_simple_metering_cluster_request_mirror_cb();
         break;
       }
       case ZCL_REMOVE_MIRROR_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_simple_metering_cluster_remove_mirror_cb();
+        status = sl_zigbee_af_simple_metering_cluster_remove_mirror_cb();
         break;
       }
       case ZCL_GET_NOTIFIED_MESSAGE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_simple_metering_cluster_get_notified_message_cb(cmd);
+        status = sl_zigbee_af_simple_metering_cluster_get_notified_message_cb(cmd);
         break;
       }
       case ZCL_PUBLISH_SNAPSHOT_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_simple_metering_cluster_publish_snapshot_cb(cmd);
+        status = sl_zigbee_af_simple_metering_cluster_publish_snapshot_cb(cmd);
         break;
       }
       case ZCL_GET_SAMPLED_DATA_RESPONSE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_simple_metering_cluster_get_sampled_data_response_cb(cmd);
+        status = sl_zigbee_af_simple_metering_cluster_get_sampled_data_response_cb(cmd);
         break;
       }
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }
 
 uint32_t sli_zigbee_af_gas_proxy_function_simple_metering_cluster_server_command_parse(sl_service_opcode_t opcode,
@@ -1556,26 +1543,24 @@ uint32_t sli_zigbee_af_gas_proxy_function_simple_metering_cluster_server_command
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_GET_SAMPLED_DATA_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_simple_metering_cluster_get_sampled_data_cb(cmd);
+        status = sl_zigbee_af_simple_metering_cluster_get_sampled_data_cb(cmd);
         break;
       }
       case ZCL_GET_SNAPSHOT_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_simple_metering_cluster_get_snapshot_cb(cmd);
+        status = sl_zigbee_af_simple_metering_cluster_get_snapshot_cb(cmd);
         break;
       }
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }
 
 uint32_t sli_zigbee_af_gas_proxy_function_prepayment_cluster_client_command_parse(sl_service_opcode_t opcode,
@@ -1584,31 +1569,29 @@ uint32_t sli_zigbee_af_gas_proxy_function_prepayment_cluster_client_command_pars
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_PUBLISH_PREPAY_SNAPSHOT_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_prepayment_cluster_publish_prepay_snapshot_cb(cmd);
+        status = sl_zigbee_af_prepayment_cluster_publish_prepay_snapshot_cb(cmd);
         break;
       }
       case ZCL_PUBLISH_TOP_UP_LOG_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_prepayment_cluster_publish_top_up_log_cb(cmd);
+        status = sl_zigbee_af_prepayment_cluster_publish_top_up_log_cb(cmd);
         break;
       }
       case ZCL_PUBLISH_DEBT_LOG_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_prepayment_cluster_publish_debt_log_cb(cmd);
+        status = sl_zigbee_af_prepayment_cluster_publish_debt_log_cb(cmd);
         break;
       }
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }
 
 uint32_t sli_zigbee_af_gas_proxy_function_prepayment_cluster_server_command_parse(sl_service_opcode_t opcode,
@@ -1617,29 +1600,27 @@ uint32_t sli_zigbee_af_gas_proxy_function_prepayment_cluster_server_command_pars
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_GET_PREPAY_SNAPSHOT_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_prepayment_cluster_get_prepay_snapshot_cb(cmd);
+        status = sl_zigbee_af_prepayment_cluster_get_prepay_snapshot_cb(cmd);
         break;
       }
       case ZCL_GET_TOP_UP_LOG_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_prepayment_cluster_get_top_up_log_cb(cmd);
+        status = sl_zigbee_af_prepayment_cluster_get_top_up_log_cb(cmd);
         break;
       }
       case  ZCL_GET_DEBT_REPAYMENT_LOG_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_prepayment_cluster_get_debt_repayment_log_cb(cmd);
+        status = sl_zigbee_af_prepayment_cluster_get_debt_repayment_log_cb(cmd);
         break;
       }
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

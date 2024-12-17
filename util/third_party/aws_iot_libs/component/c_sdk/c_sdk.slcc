@@ -6,7 +6,9 @@ description: C SDK for Embedded Devices for AWS IoT integration.
 
 package: amazon_platform
 quality: production
-
+metadata:
+  sbom:
+    license: MIT
 provides:
   - name: c_sdk
 

@@ -46,17 +46,19 @@
 #error Unsupported compiler
 #endif
 
-extern bool               OT_API_REAL_NAME(otBorderAgentIsEphemeralKeyActive)(otInstance *aInstance);
-extern otBorderAgentState OT_API_REAL_NAME(otBorderAgentGetState)(otInstance *aInstance);
-extern otError            OT_API_REAL_NAME(otBorderAgentGetId)(otInstance *aInstance, otBorderAgentId *aId);
-extern otError            OT_API_REAL_NAME(otBorderAgentSetEphemeralKey)(otInstance *aInstance,
+extern bool                         OT_API_REAL_NAME(otBorderAgentIsEphemeralKeyActive)(otInstance *aInstance);
+extern const otBorderAgentCounters *OT_API_REAL_NAME(otBorderAgentGetCounters)(otInstance *aInstance);
+extern otBorderAgentState           OT_API_REAL_NAME(otBorderAgentGetState)(otInstance *aInstance);
+extern otError                      OT_API_REAL_NAME(otBorderAgentGetId)(otInstance *aInstance, otBorderAgentId *aId);
+extern otError                      OT_API_REAL_NAME(otBorderAgentSetEphemeralKey)(otInstance *aInstance,
                                                               const char *aKeyString,
                                                               uint32_t    aTimeout,
                                                               uint16_t    aUdpPort);
-extern otError            OT_API_REAL_NAME(otBorderAgentSetId)(otInstance *aInstance, const otBorderAgentId *aId);
-extern uint16_t           OT_API_REAL_NAME(otBorderAgentGetUdpPort)(otInstance *aInstance);
-extern void               OT_API_REAL_NAME(otBorderAgentClearEphemeralKey)(otInstance *aInstance);
-extern void               OT_API_REAL_NAME(otBorderAgentSetEphemeralKeyCallback)(otInstance                       *aInstance,
+extern otError  OT_API_REAL_NAME(otBorderAgentSetId)(otInstance *aInstance, const otBorderAgentId *aId);
+extern uint16_t OT_API_REAL_NAME(otBorderAgentGetUdpPort)(otInstance *aInstance);
+extern void     OT_API_REAL_NAME(otBorderAgentClearEphemeralKey)(otInstance *aInstance);
+extern void     OT_API_REAL_NAME(otBorderAgentDisconnect)(otInstance *aInstance);
+extern void     OT_API_REAL_NAME(otBorderAgentSetEphemeralKeyCallback)(otInstance                       *aInstance,
                                                                    otBorderAgentEphemeralKeyCallback aCallback,
                                                                    void                             *aContext);
 
@@ -64,6 +66,14 @@ bool OT_API_WRAPPER_NAME(otBorderAgentIsEphemeralKeyActive)(otInstance *aInstanc
 {
     sl_ot_rtos_acquire_stack_mutex();
     bool ret = OT_API_REAL_NAME(otBorderAgentIsEphemeralKeyActive)(aInstance);
+    sl_ot_rtos_release_stack_mutex();
+    return ret;
+}
+
+const otBorderAgentCounters *OT_API_WRAPPER_NAME(otBorderAgentGetCounters)(otInstance *aInstance)
+{
+    sl_ot_rtos_acquire_stack_mutex();
+    const otBorderAgentCounters *ret = OT_API_REAL_NAME(otBorderAgentGetCounters)(aInstance);
     sl_ot_rtos_release_stack_mutex();
     return ret;
 }
@@ -115,6 +125,13 @@ void OT_API_WRAPPER_NAME(otBorderAgentClearEphemeralKey)(otInstance *aInstance)
 {
     sl_ot_rtos_acquire_stack_mutex();
     OT_API_REAL_NAME(otBorderAgentClearEphemeralKey)(aInstance);
+    sl_ot_rtos_release_stack_mutex();
+}
+
+void OT_API_WRAPPER_NAME(otBorderAgentDisconnect)(otInstance *aInstance)
+{
+    sl_ot_rtos_acquire_stack_mutex();
+    OT_API_REAL_NAME(otBorderAgentDisconnect)(aInstance);
     sl_ot_rtos_release_stack_mutex();
 }
 

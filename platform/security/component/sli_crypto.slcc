@@ -1,0 +1,20 @@
+id: sli_crypto
+label: Accelerated Crypto Primitives
+package: platform
+description: >-
+  This component provides hardware accelerated cryptographic primitives.
+category: Platform|Security|SLI Crypto
+quality: production
+ui_hints:
+  visibility: never
+provides:
+  - name: sli_crypto
+requires:
+  - name: device
+  - name: sli_crypto_s2
+    condition: [device_series_2]
+  - name: sli_crypto_s3
+    condition: [device_series_3]
+metadata:
+  sbom:
+    license: Zlib

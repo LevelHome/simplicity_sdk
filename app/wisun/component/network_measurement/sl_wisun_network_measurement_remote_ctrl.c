@@ -1,6 +1,6 @@
 /***************************************************************************/ /**
- * @file
- * @brief
+ * @file sl_wisun_network_measurement_remote_ctrl.c
+ * @brief Wi-SUN Network Measurement Remote Control
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -31,7 +31,6 @@
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <stddef.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -51,7 +50,6 @@
 #include "sl_cmsis_os2_common.h"
 #include "sl_sleeptimer.h"
 #include "sl_component_catalog.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -157,7 +155,7 @@
 /// Response iPerf client started str
 #define SL_WISUN_NWM_REMOTE_CTRL_RESP_IPERF_CLNT_STARTED          "[iPerf client started]"
 /// Response iPerf set successfully str
-#define SL_WISUN_NWM_REMOTE_CTRL_RESP_IPERF_SET_SUCCEED           "[iPerf parameter is set succesfully]"
+#define SL_WISUN_NWM_REMOTE_CTRL_RESP_IPERF_SET_SUCCEED           "[iPerf parameter is set successfully]"
 /// Response iPerf set failed str
 #define SL_WISUN_NWM_REMOTE_CTRL_RESP_IPERF_SET_FAILED            "[iPerf parameter setting is failed]"
 /// Response iperf help str
@@ -475,6 +473,7 @@ __STATIC_INLINE void _print_cb_result(const char * format_str,
 sl_wisun_coap_packet_t * sl_wisun_coap_remote_cli_ping_cb(const sl_wisun_coap_packet_t * const req_packet)
 {
   sl_wisun_coap_packet_t * resp_packet = NULL;
+
   resp_packet = _parse_ping(req_packet);
   _print_cb_result(SL_WISUN_NWM_REMOTE_CTRL_PING_RESULT_FROMAT_STR, resp_packet);
   return resp_packet;
@@ -483,6 +482,7 @@ sl_wisun_coap_packet_t * sl_wisun_coap_remote_cli_ping_cb(const sl_wisun_coap_pa
 sl_wisun_coap_packet_t * sl_wisun_coap_remote_cli_iperf_cb(const sl_wisun_coap_packet_t * const req_packet)
 {
   sl_wisun_coap_packet_t * resp_packet = NULL;
+
   resp_packet = _parse_iperf(req_packet);
   _print_cb_result(SL_WISUN_NWM_REMOTE_CTRL_IPERF_RESULT_FROMAT_STR, resp_packet);
   return resp_packet;
@@ -491,6 +491,7 @@ sl_wisun_coap_packet_t * sl_wisun_coap_remote_cli_iperf_cb(const sl_wisun_coap_p
 sl_wisun_coap_packet_t * sl_wisun_coap_remote_cli_nbr_cb(const sl_wisun_coap_packet_t * const req_packet)
 {
   sl_wisun_coap_packet_t * resp_packet = NULL;
+
   resp_packet = _build_response(req_packet, SL_WISUN_NWM_REMOTE_CTRL_BUF_TARGET_NBINF);
   _print_cb_result(SL_WISUN_NWM_REMOTE_CTRL_NBRINFO_RESULT_FROMAT_STR, resp_packet);
   return resp_packet;

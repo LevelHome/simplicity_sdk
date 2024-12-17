@@ -37,16 +37,6 @@
 #include "app_timer.h"
 #include "ncp_host_config.h"
 #include "host_comm_config.h"
-#if defined(HOST_COMM_ROBUST) && HOST_COMM_ROBUST == 1
-#include "host_comm_robust.h"
-#define HOST_COMM_TX    host_comm_robust_tx
-#define HOST_COMM_RX    host_comm_robust_rx
-#define HOST_COMM_PEEK  host_comm_robust_peek
-#else // HOST_COMM_ROBUST
-#define HOST_COMM_TX    host_comm_tx
-#define HOST_COMM_RX    host_comm_rx
-#define HOST_COMM_PEEK  host_comm_peek
-#endif // HOST_COMM_ROBUST
 
 // Default parameter values.
 #define MAX_OPT_LEN                   255
@@ -119,14 +109,15 @@ sl_status_t ncp_host_init(void)
   }
 #endif // defined(SECURITY) && SECURITY == 1
 
-  booted = false;
-  boot_retry_count = 0;
-  sc = app_timer_start(&boot_timer,
-                       NCP_REBOOT_TIMEOUT_INIT_MS,
-                       on_boot_timer_expire,
-                       NULL,
-                       false);
-
+  if (sc == SL_STATUS_OK) {
+    booted = false;
+    boot_retry_count = 0;
+    sc = app_timer_start(&boot_timer,
+                         NCP_REBOOT_TIMEOUT_INIT_MS,
+                         on_boot_timer_expire,
+                         NULL,
+                         false);
+  }
   return sc;
 }
 
@@ -168,11 +159,11 @@ void ncp_host_tx(uint32_t len, uint8_t* data)
 #if  defined(SECURITY) && SECURITY == 1
   if (enable_security) {
     security_encrypt((char*)data, (char*)&buf_ncp_out.buf, &len);
-    ret = HOST_COMM_TX(len, buf_ncp_out.buf);
+    ret = host_comm_tx(len, buf_ncp_out.buf);
   } else
 #endif // defined(SECURITY) && SECURITY == 1
   {
-    ret = HOST_COMM_TX(len, data);
+    ret = host_comm_tx(len, data);
   }
   if (ret < 0) {
     host_comm_deinit();
@@ -232,7 +223,7 @@ void ncp_host_reboot(void)
  *****************************************************************************/
 static int32_t ncp_host_lazy_peek(void)
 {
-  int32_t ret = HOST_COMM_PEEK();
+  int32_t ret = host_comm_peek();
 
   if (ret < 1) {
     app_sleep_us(PEEK_US_SLEEP);
@@ -249,7 +240,7 @@ static int32_t ncp_host_peek_timeout(uint32_t len, uint32_t timeout)
   uint32_t timeout_counter = 0;
 
   do {
-    ret = HOST_COMM_PEEK();
+    ret = host_comm_peek();
 
     if (ret < len) {
       timeout_counter++;
@@ -275,7 +266,7 @@ static int32_t ncp_host_get_msg(void)
   }
 
   // Read first byte
-  ret = HOST_COMM_RX(1, &buf_ncp_raw.buf[0]);
+  ret = host_comm_rx(1, &buf_ncp_raw.buf[0]);
   msg_header = (uint8_t)(buf_ncp_raw.buf[0] & 0xf8);
   msg_len = 256 * (buf_ncp_raw.buf[0] & 0x07); // Get the high bits of the message length
   // Check if proper ncp header arrived
@@ -288,7 +279,7 @@ static int32_t ncp_host_get_msg(void)
   if (ret < 0) {
     return -1;
   }
-  ret = HOST_COMM_RX(1, (void *)&buf_ncp_raw.buf[1]);
+  ret = host_comm_rx(1, (void *)&buf_ncp_raw.buf[1]);
   msg_len |= buf_ncp_raw.buf[1];
   msg_len += 2;
   // Check if length will fit to buffer
@@ -300,7 +291,7 @@ static int32_t ncp_host_get_msg(void)
     return -1;
   }
   // Read the rest of the message
-  ret = HOST_COMM_RX(msg_len, (void *)&buf_ncp_raw.buf[2]);
+  ret = host_comm_rx(msg_len, (void *)&buf_ncp_raw.buf[2]);
   if (ret < 0) {
     return -1;
   }
@@ -341,7 +332,7 @@ static int32_t ncp_host_get_boot_event(void)
     return -1;
   }
   // Read header
-  ret = HOST_COMM_RX(SL_BGAPI_MSG_HEADER_LEN, &buf_ncp_in.buf[0]);
+  ret = host_comm_rx(SL_BGAPI_MSG_HEADER_LEN, &buf_ncp_in.buf[0]);
   if (ret < 0) {
     return -1;
   }
@@ -357,7 +348,7 @@ static int32_t ncp_host_get_boot_event(void)
     if (ret < 0) {
       return -1;
     }
-    ret = HOST_COMM_RX(1, (void *)&buf_ncp_in.buf[3]);
+    ret = host_comm_rx(1, (void *)&buf_ncp_in.buf[3]);
     if (ret < 0) {
       return -1;
     }
@@ -368,7 +359,7 @@ static int32_t ncp_host_get_boot_event(void)
   if (ret < 0) {
     return -1;
   }
-  ret = HOST_COMM_RX(msg_len, (void *)&buf_ncp_in.buf[SL_BGAPI_MSG_HEADER_LEN]);
+  ret = host_comm_rx(msg_len, (void *)&buf_ncp_in.buf[SL_BGAPI_MSG_HEADER_LEN]);
   if (ret < 0) {
     return -1;
   }
@@ -397,7 +388,7 @@ static void on_boot_timer_expire(app_timer_t *timer, void *data)
   if (boot_retry_count < NCP_REBOOT_RETRY_COUNT) {
     app_log_info("Rebooting NCP target (%d)..." APP_LOG_NL, boot_retry_count);
     boot_retry_count++;
-    (void)HOST_COMM_TX(sizeof(reboot_command), reboot_command);
+    (void)host_comm_tx(sizeof(reboot_command), reboot_command);
     sl_status_t sc = app_timer_start(timer,
                                      NCP_REBOOT_TIMEOUT_RETRY_MS,
                                      on_boot_timer_expire,
@@ -433,7 +424,7 @@ static void ncp_sec_host_command_handler(buf_ncp_host_t *buf)
         return;
       }
       // Read the rest of the message
-      ret = HOST_COMM_RX(SEC_BGAPI_RSP_MSG_LEN, (void *) &response);
+      ret = host_comm_rx(SEC_BGAPI_RSP_MSG_LEN, (void *) &response);
       resp_cmd = (sl_bt_msg_t *)response;
       if (SL_BT_MSG_ID(resp_cmd->header)
           == sl_bt_rsp_user_message_to_target_id) {

@@ -102,3 +102,21 @@ upgrade:
       - script: protocol/zigbee/component/scripts/upgrade_gp_table_token_size.lua
       - script: protocol/zigbee/component/scripts/upgrade_remove_packet_buffer_count.lua
       - script: protocol/zigbee/component/scripts/zigbee_gsdk_to_sisdk_compatibility.lua
+
+  - sdk:
+      id: simplicity_sdk
+      version: 2024.12.0
+    configuration:
+      - name: SL_ZIGBEE_KEY_TABLE_SIZE
+        replacement: REMOVED_MACRO
+      - script: protocol/zigbee/component/scripts/upgrade_key_table_size.lua
+    component:
+      - trigger: zigbee_dmp_tuning
+        description: >
+          The zigbee_dmp_tuning component has been deprecated. radio_priority_15_4 component has taken its place for adjusting 15_4 dmp radio priority.
+        remove:
+          - zigbee_dmp_tuning
+    configuration:
+      - name: NVM3_DEFAULT_CACHE_SIZE
+        replacement: NVM3_DEFAULT_CACHE_SIZE
+      - script: protocol/zigbee/component/scripts/upgrade_nvm3_default_cache_size.lua

@@ -3,7 +3,8 @@
 ################################################################################
 
 PROJECTNAME = bt_host_cpc_hci_bridge
-SDK_DIR = ../../../..
+PROJ_DIR := $(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
+SDK_DIR := $(realpath $(PROJ_DIR)/../../../..)
 
 
 ################################################################################
@@ -28,7 +29,7 @@ include $(SDK_DIR)/app/bluetooth/component_host/app_log.mk
 # Include paths                                                                #
 ################################################################################
 
-override INCLUDEPATHS += . \
+override INCLUDEPATHS += $(PROJ_DIR) \
 $(SDK_DIR)/platform/common/inc \
 $(SDK_DIR)/protocol/bluetooth/bgstack/ll/utils/hci_packet/inc
 
@@ -38,7 +39,7 @@ $(SDK_DIR)/protocol/bluetooth/bgstack/ll/utils/hci_packet/inc
 ################################################################################
 
 override C_SRC += \
-main.c
+$(PROJ_DIR)/main.c
 
 # Some linux distros require libutil for PTY
 override LDFLAGS += -lutil -lpthread

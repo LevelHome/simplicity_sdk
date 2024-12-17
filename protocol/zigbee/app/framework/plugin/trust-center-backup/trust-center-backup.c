@@ -87,12 +87,12 @@ sl_status_t sl_zigbee_trust_center_import_backup_and_start_network(const sl_zigb
   sl_status_t status;
 
   if (SL_ZIGBEE_NO_NETWORK != sl_zigbee_af_network_state()) {
-    sl_zigbee_af_security_println("%p: Cannot import TC data while network is up.");
+    sl_zigbee_af_security_println("%s: Cannot import TC data while network is up.");
     return SL_STATUS_INVALID_STATE;
   }
 
   if (backup->keyListLength > keyTableSize) {
-    sl_zigbee_af_security_println("%p: Current key table of %d too small for import of backup (%d)!",
+    sl_zigbee_af_security_println("%s: Current key table of %d too small for import of backup (%d)!",
                                   "Error",
                                   keyTableSize,
                                   backup->keyListLength);
@@ -117,7 +117,7 @@ sl_status_t sl_zigbee_trust_center_import_backup_and_start_network(const sl_zigb
     }
 
     if (status != SL_STATUS_OK) {
-      sl_zigbee_af_security_println("%p: Failed to %p key table entry at index %d: 0%X",
+      sl_zigbee_af_security_println("%s: Failed to %s key table entry at index %d: 0%02X",
                                     "Error",
                                     ((i >= backup->keyListLength)
                                      ? "erase"

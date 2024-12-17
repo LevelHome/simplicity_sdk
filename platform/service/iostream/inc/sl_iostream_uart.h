@@ -73,6 +73,72 @@ extern "C" {
  *
  *   Each UART stream type provides its initalization with parameters specific to them.
  * @note  Each UART stream requires a dedicated (L)DMA channel through DMADRV.
+ *
+ * ## Configuration
+ *
+ * ### RX Buffer Size
+ *
+ *    The `SL_IOSTREAM_<Peripheral>_<Instance>_RX_BUFFER_SIZE` parameter should
+ *    be chosen based on the time it takes for the MCU to consume the RX buffer,
+ *    otherwise flow control will have to be asserted to avoid data loss.
+ *    If hardware flow control is unavailable, data will be dropped.
+ *
+ *    Let's assume that the MCU is able to call the IOStream Read function with
+ *    a maximum delay of 1ms. We have:
+ *    ```
+ *    (1) MaximumDelay = RXBufferSize * TimePerDatum
+ *
+ *    Where TimePerDatum is defined by (#startBits + #dataBits + #parityBits + #stopBits)/BaudRate.
+ *    With default settings, we have 1 start & stop bit, 8 data bits and no parity.
+ *
+ *    Rewriting (1), we have:
+ *
+ *    (2) MaximumDelay = RXBufferSize * 10/BaudRate <=> RXBufferSize = MaximumDelay*Baudrate/10
+ *
+ *    With a baudrate of 921,600 and a maximum consumption delay of 1ms, we have
+ *    a recommended RXBufferSize of:
+ *
+ *    (3) RXBufferSize = 0.001*921600/10 = 93Bytes
+ *    ```
+ *    This should ensure that flow control does not have to be asserted, slowing
+ *    down the bus and if unavailable, that no data will be dropped.
+ *
+ * ### Baudrate
+ *
+ *    IOStream UART leverages the DMA in order consume data from the UART peripheral.
+ *    When user reads data from IOStream, the internal reception buffer gets more
+ *    room for receiving new data. However, this update process pauses the DMA,
+ *    meaning that any new data coming from the bus will remain in the UART peripheral's
+ *    FIFO. If too much data is received before the update can complete, hardware
+ *    flow control will have be enforces, or data will be dropped if unavailable.
+ *
+ *    Measurements show that the DMA update executes in ~23.7us with -O3 optimization
+ *    (-Os gives slightly worst performance of ~32.7us). With these, the following
+ *    equations can be followed to understand the maximum baudrate supported by
+ *    the current design, when no flow control is available:
+ *    ```
+ *    The number of bytes received during the ring buffer update is given by:
+ *
+ *    (1) UpdateTime = FIFOSize * TimePerDatum
+ *
+ *    Where TimePerDatum is defined by (#startBits + #dataBits + #parityBits + #stopBits)/BaudRate.
+ *    With default settings, we have 1 start & stop bit, 8 data bits and no parity.
+ *    Rewriting (1), we have:
+ *
+ *    (2) UpdateTime = FIFOSize * 10/Baudrate
+ *
+ *    For USART, we have a FIFO of size 2. This means that for an update time of
+ *    23.7us, we have a max baudrate of:
+ *
+ *    (3) 23.7 = 2 * 10/Baudrate <=> Baudrate = 2*10/23.7 = 843,881Baud.
+ *    ```
+ *    The maximum "real" baudrate is then 460,800 Baud, otherwise hardware flow
+ *    control will have to be asserted, or data will be dropped.
+ *
+ *    To achieve higher throughput without flow control assertion, users can use
+ *    the EUSART peripheral, which boasts a 16Bytes FIFO, allow for baudrate of
+ *    upwards of 921600 without data loss with no hardware flow control.
+ *
  * @{
  ******************************************************************************/
 
@@ -113,6 +179,13 @@ typedef struct {
 typedef struct {
   sl_iostream_dma_config_t cfg;                       ///< DMA Configuration
   uint8_t channel;                                    ///< DMA Channel
+  #if defined(EMDRV_DMADRV_LDMA)
+  LDMA_Descriptor_t rx_resume_desc;                   ///< DMA reception resume descriptor
+  LDMA_Descriptor_t wrap_desc;                        ///< DMA wrap descriptor
+  #elif defined(EMDRV_DMADRV_LDMA_S3)
+  sl_hal_ldma_descriptor_t rx_resume_desc;            ///< DMA reception resume descriptor
+  sl_hal_ldma_descriptor_t wrap_desc;                 ///< DMA wrap descriptor
+  #endif
 } sl_iostream_dma_context_t;
 
 /// @brief I/O Stream UART config
@@ -133,11 +206,8 @@ typedef struct {
   uint8_t *rx_buffer;                       ///< UART Rx Buffer
   size_t rx_buffer_len;                     ///< UART Rx Buffer length
   uint8_t *rx_read_ptr;                     ///< Address of the next byte to be read
-  volatile bool rx_data_available;          ///< UART Rx Buffer data available to be read
-  volatile bool rx_buffer_full;             ///< UART Rx Buffer full
   sl_status_t (*tx)(void *context, char c); ///< Tx function pointer
   void (*tx_completed)(void *context, bool enable); ///< Pointer to a function handling the Tx Completed event
-  void (*set_next_byte_detect)(void *context);///< Pointer to a function to enable detection of next byte on stream
   sl_status_t (*deinit)(void *context);     ///< DeInit function pointer
   bool lf_to_crlf;                          ///< lf_to_crlf
   bool sw_flow_control;                     ///< software flow control
@@ -156,8 +226,8 @@ typedef struct {
   bool block;                                ///< block. Available only when kernel present.
   osMutexId_t read_lock;                     ///< read_lock. Available only when kernel present.
   __ALIGNED(4) uint8_t read_lock_cb[osMutexCbSize];         ///< read_lock control block. Available only when kernel present.
-  osSemaphoreId_t read_signal;               ///< read_signal. Available only when kernel present.
-  __ALIGNED(4) uint8_t read_signal_cb[osSemaphoreCbSize];   ///< read_signal control block. Available only when kernel present.
+  osEventFlagsId_t rx_data_flag;              ///< rx_data_flag. Available only when kernel present.
+  __ALIGNED(4) uint8_t rx_data_flag_cb[osEventFlagsCbSize];   ///< rx_data_flag control block. Available only when kernel present.
   osMutexId_t write_lock;                    ///< write_lock. Available only when kernel present.
   __ALIGNED(4) uint8_t write_lock_cb[osMutexCbSize];        ///< write_lock control block. Available only when kernel present.
 #elif defined(SL_CATALOG_POWER_MANAGER_PRESENT) || defined(DOXYGEN)
@@ -208,17 +278,21 @@ __STATIC_INLINE bool sl_iostream_uart_get_auto_cr_lf(sl_iostream_uart_t *iostrea
   return iostream_uart->get_auto_cr_lf(iostream_uart->stream.context);
 }
 
+#if defined(SL_CATALOG_POWER_MANAGER_PRESENT)
 /***************************************************************************//**
- * UART Set next byte detect IRQ.
+ * Set next byte detect IRQ.
  *
  * @param[in] iostream_uart  UART stream object.
  ******************************************************************************/
-__STATIC_INLINE void sl_iostream_uart_prepare_for_sleep(sl_iostream_uart_t *iostream_uart)
-{
-  ((sl_iostream_uart_context_t*)iostream_uart->stream.context)->set_next_byte_detect(iostream_uart->stream.context);
-}
+void sl_iostream_uart_prepare_for_sleep(sl_iostream_uart_t *iostream_uart);
 
-#if defined(SL_CATALOG_POWER_MANAGER_PRESENT)
+/***************************************************************************//**
+ * Restore the UART for normal operation after wakeup.
+ *
+ * @param[in] iostream_uart  UART stream object.
+ ******************************************************************************/
+void sl_iostream_uart_wakeup(sl_iostream_uart_t *iostream_uart);
+
 /***************************************************************************//**
  * Add or remove energy mode restriction to enable/disable reception when the
  * system goes to sleep.

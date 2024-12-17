@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_wisun_cli_util.c
+ * @brief Wi-SUN CLI utility functions
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -31,11 +31,11 @@
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
-#include "sl_wisun_cli_util.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
+#include "sl_wisun_cli_util.h"
 // -----------------------------------------------------------------------------
 //                          Static Function Declarations
 // -----------------------------------------------------------------------------
@@ -86,7 +86,7 @@ sl_status_t app_util_get_string(char *const value_str,
                                 uint8_t is_value_hex,
                                 uint8_t value_length)
 {
-  const app_enum_t* value_enum;
+  const app_enum_t *value_enum;
   char value_format_str[10];
   char value_temp[10];
 
@@ -148,7 +148,7 @@ sl_status_t app_util_get_integer(uint32_t *const value,
                                  const app_enum_t *const value_enum_list,
                                  uint8_t is_value_signed)
 {
-  const app_enum_t* value_enum;
+  const app_enum_t *value_enum;
   int value_base = 10;
   char *value_end = NULL;
 

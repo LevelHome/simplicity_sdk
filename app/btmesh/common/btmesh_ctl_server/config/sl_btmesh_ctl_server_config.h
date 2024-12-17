@@ -3,7 +3,7 @@
  * @brief
  *******************************************************************************
  * # License
- * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -70,7 +70,7 @@
 #define SL_BTMESH_CTL_SERVER_MINIMUM_TEMPERATURE_CFG_VAL   (800)
 
 // <o SL_BTMESH_CTL_SERVER_MAXIMUM_TEMPERATURE_CFG_VAL> Maximum Color Temperature
-// <i> Default: 800
+// <i> Default: 20000
 // <i> Maximum Color Temperature.
 #define SL_BTMESH_CTL_SERVER_MAXIMUM_TEMPERATURE_CFG_VAL   (20000)
 
@@ -83,7 +83,28 @@
 
 // </h>
 
+// <h> Light CTL Server Metadata Settings
+
+// <o SL_BTMESH_METADATA_LIGHT_CTL_TEMP_RANGE_1> Light CTL Temperature Range metadata - Minimum Temperature value <0x0001-0xFFFF>
+// <i> Determines the minimum non-zero light temperature the physical device is capable to emit.
+// <i> This metadata is based on the physical capabilities of the device and
+// <i> restricts the Light CTL Setup Server Temperature Range minimum value.
+// <i> Default: 800
+#define SL_BTMESH_METADATA_LIGHT_CTL_TEMP_RANGE_1   800
+
+// <o SL_BTMESH_METADATA_LIGHT_CTL_TEMP_RANGE_2> Light CTL Temperature Range metadata - Maximum Temperature value <0x0001-0xFFFF>
+// <i> Determines the maximum non-zero light temperature the physical device is capable to emit.
+// <i> This metadata is based on the physical capabilities of the device and
+// <i> restricts the Light CTL Setup Server Temperature Range maximum value.
+// <i> Default: 20000
+#define SL_BTMESH_METADATA_LIGHT_CTL_TEMP_RANGE_2   20000
+
+// </h>
+
 // <<< end of configuration section >>>
+
+// Models Metadata additional info
+#define SL_BTMESH_METADATA_LIGHT_CTL_TEMP_RANGE_ID          0x0004
 
 // The PWM update period shall not be greater than the UI update period
 #if (SL_BTMESH_CTL_SERVER_UI_UPDATE_PERIOD_CFG_VAL) < (SL_BTMESH_CTL_SERVER_PWM_UPDATE_PERIOD_CFG_VAL)

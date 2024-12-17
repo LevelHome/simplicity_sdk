@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief Widget configuration header.
+ * @file sl_widget_config.h
+ * @brief Widget configuration
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -27,8 +27,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  *
  ******************************************************************************/
-#ifndef __SL_WIDGET_CONFIG__
-#define __SL_WIDGET_CONFIG__
+#ifndef SL_WIDGET_CONFIG_H
+#define SL_WIDGET_CONFIG_H
 
 // <<< Use Configuration Wizard in Context Menu >>>
 
@@ -58,4 +58,4 @@
 
 // <<< end of configuration section >>>
 
-#endif // __SL_WIDGET_CONFIG__
+#endif // SL_WIDGET_CONFIG_H

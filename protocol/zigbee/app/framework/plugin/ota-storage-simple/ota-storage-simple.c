@@ -176,7 +176,7 @@ static sl_zigbee_af_ota_storage_status_t readAndValidateStoredImage(sl_zigbee_af
 
   if (0 != memcmp(data, magicNumberBytes, TOTAL_MAGIC_NUMBER_BYTES)) {
     if (printMagicNumberError) {
-      otaPrintln("Bad magic number in file: 0x%X 0x%X 0x%X 0x%X",
+      otaPrintln("Bad magic number in file: 0x%02X 0x%02X 0x%02X 0x%02X",
                  data[0],
                  data[1],
                  data[2],
@@ -189,7 +189,7 @@ static sl_zigbee_af_ota_storage_status_t readAndValidateStoredImage(sl_zigbee_af
     getLittleEndianInt16uFromBlock(data + HEADER_VERSION_OFFSET);
 
   if (returnData->headerVersion != OTA_HEADER_VERSION_ZIGBEE) {
-    otaPrintln("Bad version in file 0x%2X", returnData->headerVersion);
+    otaPrintln("Bad version in file 0x%04X", returnData->headerVersion);
     return SL_ZIGBEE_AF_OTA_STORAGE_ERROR;
   }
 
@@ -337,7 +337,7 @@ sl_zigbee_af_ota_storage_status_t sl_zigbee_af_ota_storage_check_temp_data_cb(ui
   // entire image is in flash or we assume nothing has been downloaded.
   sl_zigbee_af_ota_header_t header;
   uint32_t lastOffset = sl_zigbee_af_ota_storage_driver_retrieve_last_stored_offset_cb();
-  otaPrintln("Last offset downloaded: 0x%4X", lastOffset);
+  otaPrintln("Last offset downloaded: 0x%08X", lastOffset);
   if (lastOffset > OTA_MINIMUM_HEADER_LENGTH
       && (SL_ZIGBEE_AF_OTA_STORAGE_SUCCESS
           == readAndValidateStoredImage(&header,

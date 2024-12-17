@@ -30,19 +30,17 @@ component:
   - id: in_place_ota_dfu
   - id: bootloader_interface
   - id: rail_util_pti
-  - id: mpu
   - id: app_log
   - id: app_assert
-  - id: iostream_recommended_stream
   - id: simple_led
     instance:
       - led0
   - id: app_timer
   - id: cbap
-  - id: bt_post_build
   - id: sl_system
   - id: clock_manager
   - id: device_init
+  - id: sl_common
 
 source:
   - path: main.c
@@ -78,13 +76,20 @@ configuration:
       - psa_crypto
   - name: SL_BOARD_ENABLE_VCOM
     value: "1"
-  - name: SL_BT_CBAP_LOG
-    value: "1"
+  - name: SL_IOSTREAM_USART_VCOM_RESTRICT_ENERGY_MODE_TO_ALLOW_RECEPTION
+    value: "0"
+  - name: SL_IOSTREAM_EUSART_VCOM_RESTRICT_ENERGY_MODE_TO_ALLOW_RECEPTION
+    value: "0"
   - name: APP_LOG_LEVEL_FILTER_THRESHOLD
     value: APP_LOG_LEVEL_INFO
 
 requires:
+  - name: device_supports_bluetooth
   - name: device_security_vault
+
+post_build:
+  - profile: bt_common
+    condition: [device_series_2, bootloader_app_properties]
 
 tag:
   - hardware:rf:band:2400

@@ -1,5 +1,5 @@
 /***************************************************************************//**
- * @file
+ * @file sli_wisun_coap_rd.c
  * @brief Wi-SUN CoAP resource discovery
  *******************************************************************************
  * # License
@@ -27,15 +27,15 @@
  * 3. This notice may not be removed or altered from any source distribution.
  *
  ******************************************************************************/
+
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <string.h>
+
 #include "sl_string.h"
 #include "sli_wisun_coap_rd.h"
 #include "sl_wisun_coap.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -52,14 +52,14 @@
 /// CoAP RD IF attribte label
 #define COAP_RD_ATTR_IF_LABEL             "if"
 
-/// CoAP RD CT attribte querry
-#define COAP_RD_ATTR_CT_QUERRY            "ct="
+/// CoAP RD CT attribte query
+#define COAP_RD_ATTR_CT_QUERY             "ct="
 
-/// CoAP RD RT attribte querry
-#define COAP_RD_ATTR_RT_QUERRY            "rt="
+/// CoAP RD RT attribte query
+#define COAP_RD_ATTR_RT_QUERY             "rt="
 
-/// CoAP RD IF attribte querry
-#define COAP_RD_ATTR_IF_QUERRY            "if="
+/// CoAP RD IF attribte query
+#define COAP_RD_ATTR_IF_QUERY             "if="
 
 /// Resource delimiter char
 #define COAP_RD_RESOURCE_DELIMITER_CHAR   ','
@@ -72,14 +72,14 @@
 
 /// Resource template str format
 #define COAP_RD_RESOURCE_TEMPLATE_STR_FORMAT \
-  "<%s>;" COAP_RD_ATTR_RT_QUERRY "\"%s\";" COAP_RD_ATTR_IF_QUERRY "\"%s\""
+  "<%s>;" COAP_RD_ATTR_RT_QUERY "\"%s\";" COAP_RD_ATTR_IF_QUERY "\"%s\""
 
 /// Resource dir tempalte str format
 #define COAP_RD_DIR_TEMPLATE_STR_FORMAT \
-  "<%s>;" COAP_RD_ATTR_CT_QUERRY COAP_RD_ATTR_CT_DEF_VAL
+  "<%s>;" COAP_RD_ATTR_CT_QUERY COAP_RD_ATTR_CT_DEF_VAL
 
-/// CoAP max querry string length
-#define COAP_RD_MAX_QUERRY_LENGTH         (SL_WISUN_COAP_URI_PATH_MAX_SIZE)
+/// CoAP max query string length
+#define COAP_RD_MAX_QUERY_LENGTH          (SL_WISUN_COAP_URI_PATH_MAX_SIZE)
 
 /// String buff to string length
 #define __buff_to_strlen(__lbl) \
@@ -119,21 +119,21 @@ typedef struct coap_rd_attribute {
   str_cache_t label;
   /// Default value string
   str_cache_t def_val;
-  /// Querry string
-  str_cache_t querry;
+  /// Query string
+  str_cache_t query;
 } coap_rd_attribute_t;
 
-/// CoAP RD querry parse
-typedef struct coap_rd_querry_parse {
-  /// Querry pattern
-  str_cache_t querry_pattern;
+/// CoAP RD query parse
+typedef struct coap_rd_query_parse {
+  /// Query pattern
+  str_cache_t query_pattern;
   /// Attribute
   const coap_rd_attribute_t *attr;
   /// Resource list
   sl_wisun_coap_rhnd_resource_t *resources;
   /// Dir list
   str_cache_t *dir;
-} coap_rd_querry_parse_t;
+} coap_rd_query_parse_t;
 
 // -----------------------------------------------------------------------------
 //                          Static Function Declarations
@@ -183,14 +183,14 @@ __STATIC_INLINE bool _check_str_buff_ptr(const char *str,
 __STATIC_INLINE bool _check_str_cache(str_cache_t *str);
 
 /**************************************************************************//**
- * @brief Get querry
+ * @brief Get query
  * @details Helper function
- * @param[in] uri_querry_request URI querry string
+ * @param[in] uri_query_request URI query string
  * @param[in] parsed Parse instance
  * @return sl_status_t SL_STATUS_OK on success, otherwise SL_STATUS_FAIL
  *****************************************************************************/
-static sl_status_t _get_querry(const char *uri_querry_request,
-                               coap_rd_querry_parse_t * const parsed);
+static sl_status_t _get_query(const char *uri_query_request,
+                              coap_rd_query_parse_t * const parsed);
 
 /**************************************************************************//**
  * @brief Is discovery request
@@ -201,12 +201,12 @@ static sl_status_t _get_querry(const char *uri_querry_request,
 __STATIC_INLINE bool _is_discovery_request(const char *uri_path_str);
 
 /**************************************************************************//**
- * @brief Is URI querry
+ * @brief Is URI query
  * @details Helper function
  * @param[in] packet Packet
- * @return true if it's a URI querry, otherwise false
+ * @return true if it's a URI query, otherwise false
  *****************************************************************************/
-__STATIC_INLINE bool _is_uri_querry(const sl_wisun_coap_packet_t * const packet);
+__STATIC_INLINE bool _is_uri_query(const sl_wisun_coap_packet_t * const packet);
 
 /**************************************************************************//**
  * @brief Get resource attribute
@@ -226,7 +226,7 @@ __STATIC_INLINE const char * _get_resource_attr(const sl_wisun_coap_rhnd_resourc
  * @return true if pattern is matched, otherwise false
  *****************************************************************************/
 static bool _is_pattern_matched(const sl_wisun_coap_rhnd_resource_t * const resource,
-                                const coap_rd_querry_parse_t * const parsed);
+                                const coap_rd_query_parse_t * const parsed);
 
 /**************************************************************************//**
  * @brief Add resource
@@ -235,35 +235,35 @@ static bool _is_pattern_matched(const sl_wisun_coap_rhnd_resource_t * const reso
  * @param[in,out] parsed Parse instance
  * @return sl_status_t
  *****************************************************************************/
-static sl_status_t _add_resource(sl_wisun_coap_rhnd_resource_t *resource,
-                                 coap_rd_querry_parse_t * parsed);
+static sl_status_t _add_resource(const sl_wisun_coap_rhnd_resource_t *resource,
+                                 coap_rd_query_parse_t * parsed);
 
 /**************************************************************************//**
  * @brief Destroy resources of parse instance
  * @details Helper function
  * @param[in] parsed Parse instance
  *****************************************************************************/
-static void _destroy_resources(const coap_rd_querry_parse_t * const parsed);
+static void _destroy_resources(const coap_rd_query_parse_t * const parsed);
 
 /**************************************************************************//**
- * @brief Parse URI querry
+ * @brief Parse URI query
  * @details Parse and fill parse instance with matched resources
  * @param[in] resources Available resources
- * @param[in] uri_querry_request URI querry request string
+ * @param[in] uri_query_request URI query request string
  * @param[out] dest Destination parse instance
  * @return sl_status_t SL_STATUS_OK on success, otherwise SL_STATUS_FAIL
  *****************************************************************************/
-static sl_status_t _parse_uri_querry(const sl_wisun_coap_rhnd_resource_t * const resources,
-                                     const char *uri_querry_request,
-                                     coap_rd_querry_parse_t * const dest);
+static sl_status_t _parse_uri_query(const sl_wisun_coap_rhnd_resource_t * const resources,
+                                    const char *uri_query_request,
+                                    coap_rd_query_parse_t * const dest);
 
 /**************************************************************************//**
- * @brief Get URI querry string
+ * @brief Get URI query string
  * @details Helper function. String is allocated on heap, must be freed
  * @param[in] packet Packet
- * @return char* URI querry string
+ * @return char* URI query string
  *****************************************************************************/
-static char *_get_uri_querry_string(const sl_wisun_coap_packet_t * const packet);
+static char *_get_uri_query_string(const sl_wisun_coap_packet_t * const packet);
 
 /**************************************************************************//**
  * @brief Calculate resource discovery response payload size
@@ -272,7 +272,7 @@ static char *_get_uri_querry_string(const sl_wisun_coap_packet_t * const packet)
  * @param[in] calc_dir Indicate requirement of calculate directory part of payload
  * @return size_t Calculated payload size
  *****************************************************************************/
-static size_t _calc_rd_response_str_size(const coap_rd_querry_parse_t * const parsed,
+static size_t _calc_rd_response_str_size(const coap_rd_query_parse_t * const parsed,
                                          const bool calc_dir);
 
 /**************************************************************************//**
@@ -291,14 +291,14 @@ static size_t _get_first_level_dir_len(const char *uri_path);
  * @return sl_status_t SL_STATUS_OK on success, otherwise SL_STATUS_FAIL
  *****************************************************************************/
 static sl_status_t _add_dir_to_list(const char *uri_path,
-                                    coap_rd_querry_parse_t * const dest);
+                                    coap_rd_query_parse_t * const dest);
 
 /**************************************************************************//**
  * @brief Destroy dir list of parse instance
  * @details Free memory
  * @param[out] dest Destination parse instance
  *****************************************************************************/
-static void _destroy_dir_list(coap_rd_querry_parse_t * const dest);
+static void _destroy_dir_list(coap_rd_query_parse_t * const dest);
 
 /**************************************************************************//**
  * @brief Parse resource directories
@@ -307,7 +307,7 @@ static void _destroy_dir_list(coap_rd_querry_parse_t * const dest);
  * @param[out] dest Destination parse instance
  *****************************************************************************/
 static void _parse_resource_dir(const sl_wisun_coap_rhnd_resource_t * const resources,
-                                coap_rd_querry_parse_t * const dest);
+                                coap_rd_query_parse_t * const dest);
 
 /**************************************************************************//**
  * @brief Print directory to payload buff
@@ -351,7 +351,7 @@ static char *_print_delimiter_to_buff(char * const buf,
  * @param[in] add_dir_list True if the dir lis required
  * @return char* String result ptr
  *****************************************************************************/
-static char *_build_resp_payload_str(const coap_rd_querry_parse_t * const parse,
+static char *_build_resp_payload_str(const coap_rd_query_parse_t * const parse,
                                      const size_t max_str_length,
                                      const bool add_dir_list);
 /**************************************************************************//**
@@ -364,7 +364,7 @@ static char *_build_resp_payload_str(const coap_rd_querry_parse_t * const parse,
  *****************************************************************************/
 static sl_status_t _filter_by_dirs(const char *uri_path,
                                    const sl_wisun_coap_rhnd_resource_t * const resources,
-                                   coap_rd_querry_parse_t * const parse);
+                                   coap_rd_query_parse_t * const parse);
 
 /**************************************************************************//**
  * @brief Add all discoverable resource
@@ -374,7 +374,7 @@ static sl_status_t _filter_by_dirs(const char *uri_path,
  * @return sl_status_t SL_STATUS_OK on success, otherwise SL_STATUS_FAIL
  *****************************************************************************/
 static sl_status_t _add_all_discoverable_resource(const sl_wisun_coap_rhnd_resource_t * const resources,
-                                                  coap_rd_querry_parse_t const * parse);
+                                                  coap_rd_query_parse_t * parse);
 // -----------------------------------------------------------------------------
 //                                Global Variables
 // -----------------------------------------------------------------------------
@@ -391,8 +391,8 @@ static const coap_rd_attribute_t _attributes[] = {
                  .len = __buff_to_strlen(COAP_RD_ATTR_CT_LABEL) },
     .def_val = { .str = COAP_RD_ATTR_CT_DEF_VAL,
                  .len = __buff_to_strlen(COAP_RD_ATTR_CT_DEF_VAL) },
-    .querry  = { .str = COAP_RD_ATTR_CT_QUERRY,
-                 .len = __buff_to_strlen(COAP_RD_ATTR_CT_QUERRY) }
+    .query   = { .str = COAP_RD_ATTR_CT_QUERY,
+                 .len = __buff_to_strlen(COAP_RD_ATTR_CT_QUERY) }
   },
 
   // Resource type
@@ -402,8 +402,8 @@ static const coap_rd_attribute_t _attributes[] = {
                  .len = __buff_to_strlen(COAP_RD_ATTR_RT_LABEL) },
     .def_val = { .str = NULL,
                  .len = 0UL },
-    .querry  = { .str = COAP_RD_ATTR_RT_QUERRY,
-                 .len = __buff_to_strlen(COAP_RD_ATTR_RT_QUERRY) }
+    .query   = { .str = COAP_RD_ATTR_RT_QUERY,
+                 .len = __buff_to_strlen(COAP_RD_ATTR_RT_QUERY) }
   },
 
   // Interface
@@ -413,8 +413,8 @@ static const coap_rd_attribute_t _attributes[] = {
                  .len = __buff_to_strlen(COAP_RD_ATTR_IF_LABEL) },
     .def_val = { .str = NULL,
                  .len = 0UL },
-    .querry  = { .str = COAP_RD_ATTR_IF_QUERRY,
-                 .len = __buff_to_strlen(COAP_RD_ATTR_IF_QUERRY) }
+    .query   = { .str = COAP_RD_ATTR_IF_QUERY,
+                 .len = __buff_to_strlen(COAP_RD_ATTR_IF_QUERY) }
   },
 };
 
@@ -426,14 +426,14 @@ char * sli_wisun_coap_rd_parser(const sl_wisun_coap_rhnd_resource_t * const reso
                                 const sl_wisun_coap_packet_t * const packet,
                                 uint16_t * const rd_length)
 {
-  char *uri_path_str                        = NULL;
-  char *uri_querry_str                      = NULL;
-  char *res_str                             = NULL;
-  coap_rd_querry_parse_t parsed             = { 0U };
-  bool is_discovery_req                     = false;
-  bool is_uri_querry                        = false;
-  bool is_dir_required                      = false;
-  sl_status_t stat                          = SL_STATUS_OK;
+  const char *uri_path_str                = NULL;
+  char *uri_query_str                     = NULL;
+  char *res_str                           = NULL;
+  coap_rd_query_parse_t parsed            = { 0U };
+  bool is_discovery_req                   = false;
+  bool is_uri_query                       = false;
+  bool is_dir_required                    = false;
+  sl_status_t stat                        = SL_STATUS_OK;
 
   // check resources
   if (resources == NULL) {
@@ -458,26 +458,26 @@ char * sli_wisun_coap_rd_parser(const sl_wisun_coap_rhnd_resource_t * const reso
   }
 
   is_discovery_req = _is_discovery_request(uri_path_str);
-  is_uri_querry = _is_uri_querry(packet);
+  is_uri_query = _is_uri_query(packet);
 
   // parse resource dirs
   _parse_resource_dir(resources, &parsed);
 
-  // 1. Parse Discovery request URI querry
-  if (is_discovery_req && is_uri_querry) {
-    // Get '\0' terminated uri querry str from packet
-    uri_querry_str = _get_uri_querry_string(packet);
-    if (uri_querry_str == NULL) {
+  // 1. Parse Discovery request URI query
+  if (is_discovery_req && is_uri_query) {
+    // Get '\0' terminated uri query str from packet
+    uri_query_str = _get_uri_query_string(packet);
+    if (uri_query_str == NULL) {
       _destroy_dir_list(&parsed);
       _destroy_resources(&parsed);
       sl_wisun_coap_destroy_uri_path_str(uri_path_str);
       return NULL;
     }
     // Parse and get matched list of resources
-    stat = _parse_uri_querry(resources, uri_querry_str, &parsed);
+    stat = _parse_uri_query(resources, uri_query_str, &parsed);
     is_dir_required = false;
 
-    // 2. Discovery request only, without uri querry (full resource list)
+    // 2. Discovery request only, without uri query (full resource list)
   } else if (is_discovery_req) {
     stat = _add_all_discoverable_resource(resources, &parsed);
     is_dir_required = true;
@@ -494,7 +494,7 @@ char * sli_wisun_coap_rd_parser(const sl_wisun_coap_rhnd_resource_t * const reso
     is_dir_required = true;
   }
 
-  *rd_length = _calc_rd_response_str_size(&parsed, is_dir_required);
+  *rd_length = (uint16_t)_calc_rd_response_str_size(&parsed, is_dir_required);
 
   // Build response string payload
   if (stat == SL_STATUS_OK) {
@@ -506,7 +506,7 @@ char * sli_wisun_coap_rd_parser(const sl_wisun_coap_rhnd_resource_t * const reso
   // clean-up
   _destroy_dir_list(&parsed);
   _destroy_resources(&parsed);
-  _destroy_str(uri_querry_str);
+  _destroy_str(uri_query_str);
   sl_wisun_coap_destroy_uri_path_str(uri_path_str);
 
   return res_str;
@@ -577,28 +577,28 @@ __STATIC_INLINE bool _check_str_cache(str_cache_t *str)
   return (bool) (str != NULL && str->len && str->str != NULL);
 }
 
-static sl_status_t _get_querry(const char *uri_querry_request, coap_rd_querry_parse_t * const parsed)
+static sl_status_t _get_query(const char *uri_query_request, coap_rd_query_parse_t * const parsed)
 {
-  size_t querry_tot_len = 0UL;
-  char *p = NULL;
+  size_t query_tot_len = 0UL;
+  const char *p = NULL;
   sl_status_t stat = SL_STATUS_FAIL;
 
-  querry_tot_len = sl_strnlen((char *)uri_querry_request, COAP_RD_MAX_QUERRY_LENGTH);
-  parsed->querry_pattern.len = 0;
+  query_tot_len = sl_strnlen((char *)uri_query_request, COAP_RD_MAX_QUERY_LENGTH);
+  parsed->query_pattern.len = 0;
 
   for (size_t i = 0; i < COAP_RD_ATTR_COUNT; ++i) {
-    // skip if there isn't querry str
-    if (_attributes[i].querry.str == NULL) {
+    // skip if there isn't query str
+    if (_attributes[i].query.str == NULL) {
       continue;
     }
 
-    parsed->querry_pattern.str = strstr(uri_querry_request, _attributes[i].querry.str);
+    parsed->query_pattern.str = strstr(uri_query_request, _attributes[i].query.str);
 
-    if (parsed->querry_pattern.str != NULL) {
+    if (parsed->query_pattern.str != NULL) {
       parsed->attr = &_attributes[i];
-      p = (char *)parsed->querry_pattern.str + parsed->attr->querry.len;
-      parsed->querry_pattern.str = _check_str_buff_ptr(uri_querry_request, querry_tot_len, p) ? p : NULL;
-      parsed->querry_pattern.len = sl_strnlen((char *)parsed->querry_pattern.str, COAP_RD_MAX_QUERRY_LENGTH);
+      p = (char *)parsed->query_pattern.str + parsed->attr->query.len;
+      parsed->query_pattern.str = _check_str_buff_ptr(uri_query_request, query_tot_len, p) ? p : NULL;
+      parsed->query_pattern.len = sl_strnlen((char *)parsed->query_pattern.str, COAP_RD_MAX_QUERY_LENGTH);
       stat = SL_STATUS_OK;
       break;
     }
@@ -612,7 +612,7 @@ __STATIC_INLINE bool _is_discovery_request(const char *uri_path_str)
   return (bool) (!strncmp(uri_path_str, SLI_WISUN_COAP_RD_CORE_STR, SL_WISUN_COAP_URI_PATH_MAX_SIZE));
 }
 
-__STATIC_INLINE bool _is_uri_querry(const sl_wisun_coap_packet_t * const packet)
+__STATIC_INLINE bool _is_uri_query(const sl_wisun_coap_packet_t * const packet)
 {
   return (bool) (packet->options_list_ptr != NULL
                  && packet->options_list_ptr->uri_query_ptr != NULL
@@ -630,7 +630,7 @@ __STATIC_INLINE const char * _get_resource_attr(const sl_wisun_coap_rhnd_resourc
 }
 
 static bool _is_pattern_matched(const sl_wisun_coap_rhnd_resource_t * const resource,
-                                const coap_rd_querry_parse_t * const parsed)
+                                const coap_rd_query_parse_t * const parsed)
 {
   int32_t r            = 0L;
   const char *attr_val = NULL;
@@ -642,13 +642,13 @@ static bool _is_pattern_matched(const sl_wisun_coap_rhnd_resource_t * const reso
   }
 
   // completely match attribute value with pattern string
-  r = strncmp(attr_val, parsed->querry_pattern.str, COAP_RD_MAX_QUERRY_LENGTH);
+  r = strncmp(attr_val, parsed->query_pattern.str, COAP_RD_MAX_QUERY_LENGTH);
 
   return !r ? true : false;
 }
 
-static sl_status_t _add_resource(sl_wisun_coap_rhnd_resource_t *resource,
-                                 coap_rd_querry_parse_t * parsed)
+static sl_status_t _add_resource(const sl_wisun_coap_rhnd_resource_t *resource,
+                                 coap_rd_query_parse_t * parsed)
 {
   sl_wisun_coap_rhnd_resource_t *iter = NULL;
   sl_wisun_coap_rhnd_resource_t *tail = NULL;
@@ -684,7 +684,7 @@ static sl_status_t _add_resource(sl_wisun_coap_rhnd_resource_t *resource,
   return SL_STATUS_OK;
 }
 
-static void _destroy_resources(const coap_rd_querry_parse_t * const parsed)
+static void _destroy_resources(const coap_rd_query_parse_t * const parsed)
 {
   sl_wisun_coap_rhnd_resource_t *iter = NULL;
   sl_wisun_coap_rhnd_resource_t *rs   = NULL;
@@ -698,29 +698,29 @@ static void _destroy_resources(const coap_rd_querry_parse_t * const parsed)
   }
 }
 
-static sl_status_t _parse_uri_querry(const sl_wisun_coap_rhnd_resource_t * const resources,
-                                     const char *uri_querry_request,
-                                     coap_rd_querry_parse_t * const dest)
+static sl_status_t _parse_uri_query(const sl_wisun_coap_rhnd_resource_t * const resources,
+                                    const char *uri_query_request,
+                                    coap_rd_query_parse_t * const dest)
 {
-  sl_wisun_coap_rhnd_resource_t *iter = NULL;
+  const sl_wisun_coap_rhnd_resource_t *iter = NULL;
   sl_status_t stat                    = SL_STATUS_FAIL;
 
   // clear resource list
   dest->resources = NULL;
 
-  // Get querry properties
-  stat = _get_querry(uri_querry_request, dest);
+  // Get query properties
+  stat = _get_query(uri_query_request, dest);
   if (stat == SL_STATUS_FAIL) {
     return stat;
   }
 
-  // Check querry pattern string
-  if (!_check_str_cache(&dest->querry_pattern) || dest->attr == NULL) {
+  // Check query pattern string
+  if (!_check_str_cache(&dest->query_pattern) || dest->attr == NULL) {
     return SL_STATUS_FAIL;
   }
 
   // iterate resources and add matched resources to linked list
-  iter = (sl_wisun_coap_rhnd_resource_t *)resources;
+  iter = resources;
   while (iter != NULL) {
     // if pattern is matched with particular attribute of the resource
     if (iter->discoverable && _is_pattern_matched(iter, dest)) {
@@ -734,7 +734,7 @@ static sl_status_t _parse_uri_querry(const sl_wisun_coap_rhnd_resource_t * const
   return SL_STATUS_OK;
 }
 
-static char *_get_uri_querry_string(const sl_wisun_coap_packet_t * const packet)
+static char *_get_uri_query_string(const sl_wisun_coap_packet_t * const packet)
 {
   char *str = NULL;
 
@@ -747,7 +747,7 @@ static char *_get_uri_querry_string(const sl_wisun_coap_packet_t * const packet)
   return str;
 }
 
-static size_t _calc_rd_response_str_size(const coap_rd_querry_parse_t * const parsed,
+static size_t _calc_rd_response_str_size(const coap_rd_query_parse_t * const parsed,
                                          const bool calc_dir)
 {
   sl_wisun_coap_rhnd_resource_t *r_iter = NULL;
@@ -772,7 +772,7 @@ static size_t _calc_rd_response_str_size(const coap_rd_querry_parse_t * const pa
 
     while (d_iter != NULL) {
       res += __buff_to_strlen(COAP_RD_RESOURCE_DIR_STR_CHARS);
-      res += attr_ct->querry.len + attr_ct->def_val.len;
+      res += attr_ct->query.len + attr_ct->def_val.len;
       res += d_iter->len;
       res += 1U; // delimiter
       d_iter = d_iter->next;
@@ -785,10 +785,10 @@ static size_t _calc_rd_response_str_size(const coap_rd_querry_parse_t * const pa
   while (r_iter != NULL) {
     res += __buff_to_strlen(COAP_RD_RESOURCE_URI_STR_CHARS);
     res += sl_strnlen((char *)r_iter->data.uri_path, SL_WISUN_COAP_URI_PATH_MAX_SIZE);
-    res += attr_rt->querry.len;
-    res += sl_strnlen((char *)r_iter->data.resource_type, COAP_RD_MAX_QUERRY_LENGTH);
-    res += attr_if->querry.len;
-    res += sl_strnlen((char *)r_iter->data.interface, COAP_RD_MAX_QUERRY_LENGTH);
+    res += attr_rt->query.len;
+    res += sl_strnlen((char *)r_iter->data.resource_type, COAP_RD_MAX_QUERY_LENGTH);
+    res += attr_if->query.len;
+    res += sl_strnlen((char *)r_iter->data.interface, COAP_RD_MAX_QUERY_LENGTH);
     res += 1U; // delimiter
     r_iter = r_iter->next;
   }
@@ -827,7 +827,7 @@ static size_t _get_first_level_dir_len(const char *uri_path)
   return str_len;
 }
 
-static sl_status_t _add_dir_to_list(const char *uri_path, coap_rd_querry_parse_t * const dest)
+static sl_status_t _add_dir_to_list(const char *uri_path, coap_rd_query_parse_t * const dest)
 {
   str_cache_t *dir  = NULL;
   str_cache_t *iter = NULL;
@@ -881,7 +881,7 @@ static sl_status_t _add_dir_to_list(const char *uri_path, coap_rd_querry_parse_t
   return SL_STATUS_OK;
 }
 
-static void _destroy_dir_list(coap_rd_querry_parse_t * const dest)
+static void _destroy_dir_list(coap_rd_query_parse_t * const dest)
 {
   str_cache_t *iter = NULL;
   str_cache_t *dir  = NULL;
@@ -896,7 +896,7 @@ static void _destroy_dir_list(coap_rd_querry_parse_t * const dest)
 }
 
 static void _parse_resource_dir(const sl_wisun_coap_rhnd_resource_t * const resources,
-                                coap_rd_querry_parse_t * const dest)
+                                coap_rd_query_parse_t * const dest)
 {
   sl_wisun_coap_rhnd_resource_t *iter = NULL;
 
@@ -970,7 +970,7 @@ static char *_print_delimiter_to_buff(char * const buf,
   return NULL;
 }
 
-static char *_build_resp_payload_str(const coap_rd_querry_parse_t * const parse,
+static char *_build_resp_payload_str(const coap_rd_query_parse_t * const parse,
                                      const size_t max_str_length,
                                      const bool add_dir_list)
 {
@@ -1016,12 +1016,12 @@ static char *_build_resp_payload_str(const coap_rd_querry_parse_t * const parse,
 
 static sl_status_t _filter_by_dirs(const char *uri_path,
                                    const sl_wisun_coap_rhnd_resource_t * const resources,
-                                   coap_rd_querry_parse_t * const parse)
+                                   coap_rd_query_parse_t * const parse)
 {
-  sl_wisun_coap_rhnd_resource_t *r_iter = NULL;
-  str_cache_t *d_iter                   = NULL;
-  size_t uri_path_len                   = 0UL;
-  size_t first_lev_dir_len              = 0UL;
+  const sl_wisun_coap_rhnd_resource_t *r_iter = NULL;
+  str_cache_t *d_iter                         = NULL;
+  size_t uri_path_len                         = 0UL;
+  size_t first_lev_dir_len                    = 0UL;
 
   // calculate uri path length
   uri_path_len = sl_strnlen((char *) uri_path, SL_WISUN_COAP_URI_PATH_MAX_SIZE);
@@ -1033,7 +1033,7 @@ static sl_status_t _filter_by_dirs(const char *uri_path,
     if (uri_path_len == d_iter->len
         && !memcmp(uri_path, d_iter->str, d_iter->len)) {
       // find and add all resources for directory
-      r_iter = (sl_wisun_coap_rhnd_resource_t * ) resources;
+      r_iter = resources;
       while (r_iter != NULL) {
         first_lev_dir_len = _get_first_level_dir_len(r_iter->data.uri_path);
         if (r_iter->discoverable
@@ -1056,13 +1056,13 @@ static sl_status_t _filter_by_dirs(const char *uri_path,
 }
 
 static sl_status_t _add_all_discoverable_resource(const sl_wisun_coap_rhnd_resource_t * const resources,
-                                                  coap_rd_querry_parse_t const * parse)
+                                                  coap_rd_query_parse_t * parse)
 {
-  sl_wisun_coap_rhnd_resource_t *iter = NULL;
+  const sl_wisun_coap_rhnd_resource_t *iter = NULL;
 
-  iter = (sl_wisun_coap_rhnd_resource_t *) resources;
+  iter = resources;
   while (iter != NULL) {
-    if (iter->discoverable && _add_resource(iter, (coap_rd_querry_parse_t *) parse) == SL_STATUS_FAIL) {
+    if (iter->discoverable && _add_resource(iter, parse) == SL_STATUS_FAIL) {
       return SL_STATUS_FAIL;
     }
     iter = iter->next;

@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_wisun_udp_client.h
+ * @brief Wi-SUN UDP client
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __SL_WISUN_UDP_CLIENT_H__
-#define __SL_WISUN_UDP_CLIENT_H__
+#ifndef SL_WISUN_UDP_CLIENT_H
+#define SL_WISUN_UDP_CLIENT_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,7 +39,6 @@ extern "C" {
 //                                   Includes
 // -----------------------------------------------------------------------------
 #include <stdint.h>
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -55,8 +54,9 @@ extern "C" {
 /**************************************************************************//**
  * @brief Create a UDP client object.
  * @details Client is connected automatically to the server
+ * @return Socket ID
  *****************************************************************************/
-void sl_wisun_udp_client_create(void);
+int32_t sl_wisun_udp_client_create(void);
 
 /**************************************************************************//**
  * @brief Close UDP client socket.
@@ -88,4 +88,4 @@ void sl_wisun_udp_client_read(const int32_t sockid, const uint16_t size);
 }
 #endif
 
-#endif
+#endif // SL_WISUN_UDP_CLIENT_H

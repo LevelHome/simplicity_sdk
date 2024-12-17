@@ -43,7 +43,7 @@
 
 #include "sl_core.h"
 #include "em_device.h"
-#include "em_gpio.h"
+#include "sl_device_gpio.h"
 
 /*******************************************************************************
  *                               MACROS
@@ -355,7 +355,7 @@ typedef enum {
  ******************************************************************************/
 
 /* pin/port conversion functions */
-GPIO_Port_TypeDef slGetPort(slPin pin);
+sl_gpio_port_t slGetPort(slPin pin);
 uint32_t slGetPin(slPin pin);
 
 /*******************************************************************************

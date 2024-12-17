@@ -40,7 +40,7 @@ static bool loggingIsEnabled(void)
                                          (uint8_t *)&logging,
                                          sizeof(logging));
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_door_lock_cluster_println("Could not read EnableLogging attribute: 0x%X",
+    sl_zigbee_af_door_lock_cluster_println("Could not read EnableLogging attribute: 0x%02X",
                                            status);
   }
   return logging;
@@ -95,7 +95,7 @@ bool sl_zigbee_af_door_lock_server_get_log_entry(uint16_t *entryId,
   return true;
 }
 
-bool sl_zigbee_af_door_lock_cluster_get_log_record_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_get_log_record_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_door_lock_cluster_get_log_record_command_t cmd_data;
   sl_status_t status;
@@ -103,28 +103,23 @@ bool sl_zigbee_af_door_lock_cluster_get_log_record_cb(sl_zigbee_af_cluster_comma
 
   if (zcl_decode_door_lock_cluster_get_log_record_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   if (LOG_IS_EMPTY() || !sl_zigbee_af_door_lock_server_get_log_entry(&cmd_data.logIndex, &entry)) {
-    status = sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_INVALID_VALUE);
-    if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-      sl_zigbee_af_door_lock_cluster_println("Failed to send default response: 0x%X",
-                                             status);
-    }
-  } else {
-    sl_zigbee_af_fill_command_door_lock_cluster_get_log_record_response(entry.logEntryId,
-                                                                        entry.timestamp,
-                                                                        entry.eventType,
-                                                                        entry.source,
-                                                                        entry.eventId,
-                                                                        entry.userId,
-                                                                        entry.pin);
-    status = sl_zigbee_af_send_response();
-    if (status != SL_STATUS_OK) {
-      sl_zigbee_af_door_lock_cluster_println("Failed to send GetLogRecordResponse: 0x%X",
-                                             status);
-    }
+    return SL_ZIGBEE_ZCL_STATUS_INVALID_VALUE;
   }
-  return true;
+  sl_zigbee_af_fill_command_door_lock_cluster_get_log_record_response(entry.logEntryId,
+                                                                      entry.timestamp,
+                                                                      entry.eventType,
+                                                                      entry.source,
+                                                                      entry.eventId,
+                                                                      entry.userId,
+                                                                      entry.pin);
+  status = sl_zigbee_af_send_response();
+  if (status != SL_STATUS_OK) {
+    sl_zigbee_af_door_lock_cluster_println("Failed to send GetLogRecordResponse: 0x%02X",
+                                           status);
+  }
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }

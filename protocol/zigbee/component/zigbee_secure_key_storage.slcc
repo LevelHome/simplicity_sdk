@@ -19,6 +19,9 @@ requires:
 
 recommends:
   - id: zigbee_secure_key_storage_upgrade
+    condition: [device_series_2]
+  - id: zigbee_secure_key_storage_no_upgrade
+    condition: [device_series_3]
 
 source:
   - path: protocol/zigbee/stack/security/zigbee-security-manager-vault-support.c

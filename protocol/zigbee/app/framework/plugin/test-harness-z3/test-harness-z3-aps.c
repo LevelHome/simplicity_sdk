@@ -85,7 +85,7 @@ void sl_zigbee_af_test_harness_z3_reset_key_event_handler(sl_zigbee_af_event_t *
   // Remove the most recently added key.
   if (mostRecentKeyIndex != 0xFF) {
     status = sl_zigbee_erase_key_table_entry(mostRecentKeyIndex);
-    sl_zigbee_af_core_println("%p: %p: 0x%X",
+    sl_zigbee_af_core_println("%s: %s: 0x%02X",
                               TEST_HARNESS_Z3_PRINT_NAME,
                               "Reset key handler",
                               status);
@@ -110,7 +110,7 @@ static sl_status_t setNextKey(sl_802154_long_addr_t partner, bool linkKey, uint8
   sl_status_t status_ember = ((status == SL_STATUS_OK) ? SL_STATUS_OK
                               : ((status == SL_STATUS_FULL) ? SL_STATUS_FULL : SL_STATUS_INVALID_PARAMETER));
 
-  sl_zigbee_af_core_println("setNextKey: status = %X", status_ember);
+  sl_zigbee_af_core_println("setNextKey: status = %02X", status_ember);
 
   mostRecentKeyIndex = context.key_index;
   sl_zigbee_af_event_set_active(z3ResetKeyEventControl);
@@ -168,7 +168,7 @@ void sli_zigbee_af_test_harness_z3_aps_aps_remove_device(SL_CLI_COMMAND_ARG)
     }
   }
 
-  sl_zigbee_af_core_println("%p: %p: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "Remove device",
                             status);
@@ -288,7 +288,7 @@ void sli_zigbee_af_test_harness_z3_aps_aps_request_key_command(SL_CLI_COMMAND_AR
   done:
 #endif /* EZSP_HOST */
 
-  sl_zigbee_af_core_println("%p: %p: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "Request key",
                             status);

@@ -42,13 +42,15 @@
 #include "CC_UserCode.h"
 #include "sl_cli.h"
 #include "app_log.h"
-#include "app_cli.h"
 #include "CC_UserCredential.h"
 #include "cc_user_credential_io.h"
+#include "cc_user_credential_operations.h"
 #include "cc_user_credential_io_config.h"
 #include "CC_DoorLock.h"
 #include "events.h"
 #include "cc_user_credential_config_api.h"
+#include "cc_user_credential_validation.h"
+#include "app_credentials.h"
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -63,19 +65,17 @@ typedef enum _u3c_credential_attribute_t {
 // -----------------------------------------------------------------------------
 //                          Static Function Declarations
 // -----------------------------------------------------------------------------
-extern void delete_all_credentials_of_type(uint16_t uuid, u3c_credential_type filter_type);
-
-static bool u3c_add_user(char* user_name);
+static bool u3c_add_user(const char * const user_name);
 static bool u3c_add_credential(u3c_credential_type type, uint16_t uuid, uint16_t slot, unsigned char* credential_data);
-static bool u3c_modify_user_name(u3c_user *user, char* name);
-static bool u3c_modify_user_type(u3c_user *user, char* type);
-static bool u3c_modify_user_active(u3c_user *user, char* state);
+static bool u3c_modify_user_name(u3c_user *user, const char * const name);
+static bool u3c_modify_user_type(u3c_user *user, const char * const type);
+static bool u3c_modify_user_active(u3c_user *user, const char * const state);
 static bool u3c_modify_credential(uint16_t slot, u3c_credential_type type, unsigned char* credential_data);
-static bool u3c_move_credential_slot(uint16_t uuid, uint16_t slot, u3c_credential_type type, uint16_t new_slot);
-static bool u3c_move_credential_uuid(uint16_t uuid, uint16_t slot, u3c_credential_type type, uint16_t new_uuid);
+static bool u3c_move_credential_slot(uint16_t slot, u3c_credential_type type, uint16_t new_slot);
+static bool u3c_move_credential_uuid(uint16_t slot, u3c_credential_type type, uint16_t new_uuid);
 static u3c_credential_type u3c_convert_str_to_credential_type(unsigned char* str);
-static u3c_user_type u3c_convert_str_to_user_type(char* str);
-static u3c_credential_attribute u3c_convert_str_to_credential_attribute(char* str);
+static u3c_user_type u3c_convert_str_to_user_type(const char * const str);
+static u3c_credential_attribute u3c_convert_str_to_credential_attribute(const char * const str);
 static uint16_t u3c_generate_uuid(void);
 // -----------------------------------------------------------------------------
 //                                Global Variables
@@ -84,6 +84,12 @@ static uint16_t u3c_generate_uuid(void);
 // -----------------------------------------------------------------------------
 //                                Static Variables
 // -----------------------------------------------------------------------------
+
+static uint8_t credential_learn_data[U3C_BUFFER_SIZE_CREDENTIAL_DATA + 1] = { 0 };
+static u3c_event_data_learn_read_done event_learn_read_done_data = {
+  .data = credential_learn_data,
+  .data_length = 0
+};
 
 // -----------------------------------------------------------------------------
 //                          Public Function Definitions
@@ -97,7 +103,7 @@ static uint16_t u3c_generate_uuid(void);
  */
 void cli_u3c_db_add_user(sl_cli_command_arg_t *arguments)
 {
-  char* user_name = sl_cli_get_argument_string(arguments, 0);
+  const char * const user_name = sl_cli_get_argument_string(arguments, 0);
 
   if (u3c_add_user(user_name) == true) {
     app_log_info("%s stored successfully!\r\n", user_name);
@@ -116,10 +122,10 @@ void cli_u3c_db_add_user(sl_cli_command_arg_t *arguments)
  */
 void cli_u3c_db_add_credential(sl_cli_command_arg_t *arguments)
 {
-  uint16_t uuid    = sl_cli_get_argument_uint16(arguments, 0);
-  uint16_t slot    = sl_cli_get_argument_uint16(arguments, 1);
-  char* type       = sl_cli_get_argument_string(arguments, 2);
-  char* credential = sl_cli_get_argument_string(arguments, 3);
+  const uint16_t     uuid       = sl_cli_get_argument_uint16(arguments, 0);
+  const char * const type       = sl_cli_get_argument_string(arguments, 1);
+  const uint16_t     slot       = sl_cli_get_argument_uint16(arguments, 2);
+  const char * const credential = sl_cli_get_argument_string(arguments, 3);
   u3c_credential_type credential_type;
 
   credential_type = u3c_convert_str_to_credential_type((unsigned char*)type);
@@ -145,30 +151,26 @@ void cli_u3c_db_add_credential(sl_cli_command_arg_t *arguments)
  */
 void cli_u3c_db_modify_user(sl_cli_command_arg_t *arguments)
 {
-  uint16_t uuid         = sl_cli_get_argument_uint16(arguments, 0);
-  char* attribute       = sl_cli_get_argument_string(arguments, 1);
-  char* attribute_value = sl_cli_get_argument_string(arguments, 2);
+  const uint16_t     uuid            = sl_cli_get_argument_uint16(arguments, 0);
+  const char * const attribute       = sl_cli_get_argument_string(arguments, 1);
+  const char * const attribute_value = sl_cli_get_argument_string(arguments, 2);
   u3c_user user;
 
   if (CC_UserCredential_get_user(uuid, &user, NULL) == U3C_DB_OPERATION_RESULT_SUCCESS) {
     if (0 == strcmp(attribute, "type")) {
       if (u3c_modify_user_type(&user, attribute_value)) {
-        app_log_info("User update with new type %s was sucessful\r\n", attribute_value);
+        app_log_info("User update with new type %s was successful\r\n", attribute_value);
       } else {
         app_log_error("User update failed with new type %s!\r\n", attribute_value);
       }
     } else if (0 == strcmp(attribute, "name")) {
       if (u3c_modify_user_name(&user, attribute_value)) {
-        app_log_info("User update with new name %s was sucessful\r\n", attribute_value);
+        app_log_info("User update with new name %s was successful\r\n", attribute_value);
       } else {
         app_log_error("User update failed with name %s\r\n", attribute_value);
       }
     } else if (0 == strcmp(attribute, "active")) {
-      if (u3c_modify_user_active(&user, attribute_value)) {
-        app_log_info("User activation was successful\r\n");
-      } else {
-        app_log_error("User activation failed!\r\n");
-      }
+      u3c_modify_user_active(&user, attribute_value);
     } else {
       app_log_error("%s attribute is not supported!\r\n", attribute);
     }
@@ -189,11 +191,10 @@ void cli_u3c_db_modify_user(sl_cli_command_arg_t *arguments)
 void cli_u3c_db_modify_credential(sl_cli_command_arg_t *arguments)
 {
   bool update_status = false;
-  uint16_t uuid = sl_cli_get_argument_uint16(arguments, 0);
-  uint16_t slot = sl_cli_get_argument_uint16(arguments, 1);
-  char* type    = sl_cli_get_argument_string(arguments, 2);
-  char* attribute       = sl_cli_get_argument_string(arguments, 3);
-  char* attribute_value = sl_cli_get_argument_string(arguments, 4);
+  const char * const type            = sl_cli_get_argument_string(arguments, 0);
+  const uint16_t     slot            = sl_cli_get_argument_uint16(arguments, 1);
+  const char * const attribute       = sl_cli_get_argument_string(arguments, 2);
+  const char * const attribute_value = sl_cli_get_argument_string(arguments, 3);
 
   u3c_credential_type credential_type = u3c_convert_str_to_credential_type((unsigned char*)type);
   u3c_credential_attribute attribute_to_change = u3c_convert_str_to_credential_attribute(attribute);
@@ -204,10 +205,10 @@ void cli_u3c_db_modify_credential(sl_cli_command_arg_t *arguments)
         update_status = u3c_modify_credential(slot, credential_type, (unsigned char*)attribute_value);
         break;
       case CREDENTIAL_ATTRIBUTE_SLOT:
-        update_status = u3c_move_credential_slot(uuid, slot, credential_type, atoi(attribute_value));
+        update_status = u3c_move_credential_slot(slot, credential_type, atoi(attribute_value));
         break;
       case CREDENTIAL_ATTRIBUTE_UUID:
-        update_status = u3c_move_credential_uuid(uuid, slot, credential_type, atoi(attribute_value));
+        update_status = u3c_move_credential_uuid(slot, credential_type, atoi(attribute_value));
         break;
       default:
         break;
@@ -231,12 +232,13 @@ void cli_u3c_db_modify_credential(sl_cli_command_arg_t *arguments)
  */
 void cli_u3c_db_delete_user(sl_cli_command_arg_t *arguments)
 {
-  uint16_t uuid = sl_cli_get_argument_uint16(arguments, 0);
+  const uint16_t uuid = sl_cli_get_argument_uint16(arguments, 0);
+  RECEIVE_OPTIONS_TYPE_EX rx_options = { 0 };
 
-  if (CC_UserCredential_delete_user(uuid) == U3C_DB_OPERATION_RESULT_SUCCESS) {
+  if (CC_UserCredential_delete_user_and_report(uuid, &rx_options) == U3C_DB_OPERATION_RESULT_SUCCESS) {
     app_log_info("User successfully deleted!\r\n");
-    app_log_info("Deleting assiciated credentials\r\n");
-    delete_all_credentials_of_type(uuid, CREDENTIAL_TYPE_NONE);
+    app_log_info("Deleting associated credentials\r\n");
+    CC_UserCredential_delete_all_credentials_of_type(uuid, CREDENTIAL_TYPE_NONE);
     app_log_info("Done\r\n");
   } else {
     app_log_error("User deletion failed!\r\n");
@@ -252,16 +254,87 @@ void cli_u3c_db_delete_user(sl_cli_command_arg_t *arguments)
  */
 void cli_u3c_db_delete_credential(sl_cli_command_arg_t *arguments)
 {
-  uint16_t uuid    = sl_cli_get_argument_uint16(arguments, 0);
-  uint16_t slot    = sl_cli_get_argument_uint16(arguments, 1);
-  char* type       = sl_cli_get_argument_string(arguments, 2);
+  const char * const type = sl_cli_get_argument_string(arguments, 0);
+  const uint16_t     slot = sl_cli_get_argument_uint16(arguments, 1);
   u3c_credential_type credential_type = u3c_convert_str_to_credential_type((unsigned char*)type);
 
   if ( credential_type != CREDENTIAL_TYPE_NUMBER_OF_TYPES) {
-    if (CC_UserCredential_delete_credential(uuid, credential_type, slot) == U3C_DB_OPERATION_RESULT_SUCCESS) {
+    RECEIVE_OPTIONS_TYPE_EX rx_options = { 0 };
+    if (CC_UserCredential_delete_credential_and_report(0, credential_type, slot, &rx_options) == U3C_DB_OPERATION_RESULT_SUCCESS) {
       app_log_info("Credential successfully deleted!\r\n");
     } else {
       app_log_error("Credential deletion failed!\r\n");
+    }
+  }
+}
+
+/**
+ * @brief Get a user's parameters from the database.
+ *
+ * This function is used to get the details of a user in the database.
+ * It takes the user ID and prints the user's information from the database.
+ *
+ * @param arguments The arguments of the command.
+ */
+void cli_u3c_db_get_user(sl_cli_command_arg_t *arguments)
+{
+  const uint16_t uuid = sl_cli_get_argument_uint16(arguments, 0);
+  u3c_user user;
+  uint8_t user_name[U3C_BUFFER_SIZE_USER_NAME];
+
+  if (CC_UserCredential_get_user(uuid, &user, user_name) == U3C_DB_OPERATION_RESULT_SUCCESS) {
+    app_log_info("User parameters of uuid %d:\r\n", uuid);
+    app_log_append_info("\tname: %s\r\n", user_name);
+    app_log_append_info("\tactive: %d\r\n", user.active);
+    app_log_append_info("\tunique_identifier: %d\r\n", user.unique_identifier);
+    app_log_append_info("\tmodifier_node_id: %d\r\n", user.modifier_node_id);
+    app_log_append_info("\texpiring_timeout_minutes: %d\r\n", user.expiring_timeout_minutes);
+    app_log_append_info("\tname_length: %d\r\n", user.name_length);
+    app_log_append_info("\ttype: %d\r\n", user.type);
+    app_log_append_info("\tmodifier_type: %d\r\n", user.modifier_type);
+    app_log_append_info("\tcredential_rule: %d\r\n", user.credential_rule);
+    app_log_append_info("\tname_encodings: %d\r\n", user.name_encoding);
+  } else {
+    app_log_error("User with uuid %d not found!\r\n", uuid);
+  }
+}
+
+/**
+ * @brief Get a credential's parameters from the database.
+ *
+ * This function is used to get the details of a credential in the database.
+ * It takes the crenential's slot and type,
+ * and prints the credential's information from the database.
+ *
+ * @param arguments The arguments of the command.
+ */
+void cli_u3c_db_get_credential(sl_cli_command_arg_t *arguments)
+{
+  const char* const type = sl_cli_get_argument_string(arguments, 0);
+  const uint16_t slot    = sl_cli_get_argument_uint16(arguments, 1);
+  u3c_credential_type credential_type;
+  u3c_credential credential;
+  uint8_t credential_data[U3C_BUFFER_SIZE_CREDENTIAL_DATA + 1] = { 0 };
+  u3c_db_operation_result db_operation;
+
+  credential_type = u3c_convert_str_to_credential_type((unsigned char*)type);
+
+  if ((credential_type != CREDENTIAL_TYPE_NONE) && (credential_type != CREDENTIAL_TYPE_NUMBER_OF_TYPES)) {
+    db_operation = CC_UserCredential_get_credential(0, credential_type, slot, &credential.metadata, credential_data);
+
+    if (U3C_DB_OPERATION_RESULT_SUCCESS == db_operation) {
+      app_log_info("Credential parameters:\r\n");
+      app_log_append_info("\ttype: %d\r\n", credential.metadata.type);
+      app_log_append_info("\tuuid: %d\r\n", credential.metadata.uuid);
+      app_log_append_info("\tslot: %d\r\n", credential.metadata.slot);
+      app_log_append_info("\tlength: %d\r\n", credential.metadata.length);
+      app_log_append_info("\tmodifier_node_id: %d\r\n", credential.metadata.modifier_node_id);
+      app_log_append_info("\tmodifier_type: %d\r\n", credential.metadata.modifier_type);
+      app_log_append_info("\tdata: %s\r\n", credential_data);
+    } else if (U3C_DB_OPERATION_RESULT_FAIL_DNE == db_operation) {
+      app_log_error("Credential does not exist!\r\n");
+    } else {
+      app_log_error("Cannot get credential!\r\n");
     }
   }
 }
@@ -277,10 +350,8 @@ void cli_u3c_db_delete_credential(sl_cli_command_arg_t *arguments)
 void cli_u3c_enter_credential(sl_cli_command_arg_t *arguments)
 {
   static char credential_buffer[U3C_BUFFER_SIZE_CREDENTIAL_DATA] = { 0 };
-  uint16_t uuid    = sl_cli_get_argument_uint16(arguments, 0);
-  uint16_t slot    = sl_cli_get_argument_uint16(arguments, 1);
-  char* type       = sl_cli_get_argument_string(arguments, 2);
-  char* credential_data = sl_cli_get_argument_string(arguments, 3);
+  const char* const type            = sl_cli_get_argument_string(arguments, 0);
+  const char* const credential_data = sl_cli_get_argument_string(arguments, 1);
   uint16_t credential_size = 0;
   u3c_credential_type credential_type;
 
@@ -305,8 +376,27 @@ void cli_u3c_enter_credential(sl_cli_command_arg_t *arguments)
   };
 
   if (credential_type != CREDENTIAL_TYPE_NUMBER_OF_TYPES) {
-    credential.metadata.uuid = uuid;
-    credential.metadata.slot = slot;
+    u3c_credential credential_search = {
+      .metadata = {
+        .type = credential_type,
+        .length = credential_size
+      },
+      .data = (uint8_t*)credential_buffer
+    };
+    u3c_credential_metadata credential_find_metadata;
+    bool is_credential_found = find_existing_credential(&credential_search, &credential_find_metadata);
+    if (is_credential_found) {
+      u3c_user user;
+      uint8_t user_name[U3C_BUFFER_SIZE_USER_NAME + 1] = { 0 };
+      CC_UserCredential_get_user(credential_find_metadata.uuid, &user, user_name);
+      app_log_info("Credential found for user:\r\n");
+      app_log_append_info("\tname: %s\r\n", user_name);
+      app_log_append_info("\tunique_identifier: %d\r\n", user.unique_identifier);
+      app_log_append_info("\tslot: %d\r\n", credential_find_metadata.slot);
+    } else {
+      app_log_warning("Credential not found\r\n");
+    }
+
     credential.metadata.type = credential_type;
     credential.metadata.length = credential_size;
     credential.data = (uint8_t *) credential_buffer;
@@ -320,18 +410,18 @@ void cli_u3c_enter_credential(sl_cli_command_arg_t *arguments)
 }
 
 /**
- * @brief Sets the learn mode via the CLI.
+ * @brief Starts the credential learn mode via the CLI.
  *
- * This function is used to set the learn mode via the Command Line Interface (CLI).
+ * This function is used to start the credential learn mode via the Command Line Interface (CLI).
  * The command triggers the EVENT_APP_CREDENTIAL_LEARN_START event,
  *
  * @param arguments The arguments of the command.
  */
-void cli_u3c_set_learn_mode(sl_cli_command_arg_t *arguments)
+void cli_u3c_credential_learn_start(sl_cli_command_arg_t *arguments)
 {
-  uint16_t uuid    = sl_cli_get_argument_uint16(arguments, 0);
-  uint16_t slot    = sl_cli_get_argument_uint16(arguments, 1);
-  char* type       = sl_cli_get_argument_string(arguments, 2);
+  const uint16_t     uuid = sl_cli_get_argument_uint16(arguments, 0);
+  const char * const type = sl_cli_get_argument_string(arguments, 1);
+  const uint16_t     slot = sl_cli_get_argument_uint16(arguments, 2);
 
   uint16_t command_class = COMMAND_CLASS_NO_OPERATION;
   uint8_t cc_event = 0;
@@ -348,12 +438,33 @@ void cli_u3c_set_learn_mode(sl_cli_command_arg_t *arguments)
     credential_learn_start_data.source_id = 0;
     credential_learn_start_data.timeout_seconds = 0;
 
-    // Simulates initiating the Credential Learn process locally
+    // Initiates the Credential Learn process locally
     command_class = COMMAND_CLASS_USER_CREDENTIAL;
     cc_event = CC_USER_CREDENTIAL_EVENT_LEARN_START_REQUEST;
     cc_data = &credential_learn_start_data;
     zaf_event_distributor_enqueue_cc_event(command_class, cc_event, cc_data);
   }
+}
+
+/**
+ * @brief
+ *
+ * This function is used to enter a credential during the Credential Learn process.
+ * It has no effect if the Credential Learn process is not active.
+ * The command triggers the EVENT_APP_CREDENTIAL_LEARN_START event,
+ *
+ * @param arguments The arguments of the command.
+ */
+void cli_u3c_credential_learn(sl_cli_command_arg_t *arguments)
+{
+  const char * const data = sl_cli_get_argument_string(arguments, 0);
+
+  event_learn_read_done_data.data_length = strnlen(data, U3C_BUFFER_SIZE_CREDENTIAL_DATA);
+  strncpy((char *)credential_learn_data, data, event_learn_read_done_data.data_length);
+
+  zaf_event_distributor_enqueue_cc_event(
+    COMMAND_CLASS_USER_CREDENTIAL, CC_USER_CREDENTIAL_EVENT_LEARN_READ_DONE,
+    &event_learn_read_done_data);
 }
 
 /**
@@ -365,7 +476,7 @@ void cli_u3c_set_learn_mode(sl_cli_command_arg_t *arguments)
  * @param username The username of the user to be added.
  * @return Returns true if the user is successfully added, otherwise false.
  */
-static bool u3c_add_user(char* user_name)
+static bool u3c_add_user(const char * const user_name)
 {
   static uint16_t uuid = 0;
   bool operation_result = false;
@@ -377,14 +488,28 @@ static bool u3c_add_user(char* user_name)
     .unique_identifier = uuid,
     .modifier_node_id = 0,
     .expiring_timeout_minutes = 0,
-    .name_length = strlen(user_name),
+    .name_length = strnlen(user_name, U3C_BUFFER_SIZE_USER_NAME),
     .type = USER_TYPE_GENERAL,
     .modifier_type = MODIFIER_TYPE_LOCALLY,
     .credential_rule = CREDENTIAL_RULE_SINGLE,
     .name_encoding = USER_NAME_ENCODING_STANDARD_ASCII,
   };
 
-  if (CC_UserCredential_add_user(&user, (unsigned char*)user_name) == U3C_DB_OPERATION_RESULT_SUCCESS) {
+  // Check whether the User Name is longer than allowed
+  uint8_t user_name_max_length = cc_user_credential_get_max_length_of_user_name();
+  if (user.name_length > user_name_max_length) {
+    app_log_error("Username cannot be longer than %u characters\r\n", user_name_max_length);
+    return false;
+  }
+
+  // Check whether User Name is provided
+  if (user.name_length == 0) {
+    app_log_error("Username cannot be empty!\r\n");
+    return false;
+  }
+
+  RECEIVE_OPTIONS_TYPE_EX rx_options = { 0 };
+  if (CC_UserCredential_add_user_and_report(&user, (unsigned char*)user_name, &rx_options) == U3C_DB_OPERATION_RESULT_SUCCESS) {
     operation_result = true;
     uuid--;
     app_log_info("User added with the following parameters:\r\n");
@@ -429,13 +554,33 @@ static bool u3c_modify_credential(uint16_t slot, u3c_credential_type type, unsig
   };
   bool operation_result = false;
 
+  if (!validate_new_credential_metadata(&credential.metadata)
+      || !validate_new_credential_data(&credential, NULL)) {
+    app_log_error("Invalid credential!\r\n");
+    return false;
+  }
+
+  uint8_t credential_min_length = cc_user_credential_get_min_length_of_data(credential.metadata.type);
+  uint8_t credential_max_length = cc_user_credential_get_max_length_of_data(credential.metadata.type);
+  if (credential.metadata.length < credential_min_length
+      || credential.metadata.length > credential_max_length) {
+    app_log_error("Credential length must be between %u and %u\r\n", credential_min_length, credential_max_length);
+    return false;
+  }
+
   if (CC_UserCredential_get_credential(0, type, slot, &credential.metadata, credential.data) == U3C_DB_OPERATION_RESULT_SUCCESS) {
     credential.metadata.modifier_type    = MODIFIER_TYPE_LOCALLY;
     credential.metadata.modifier_node_id = 0;
-    credential.metadata.length           = sizeof(credential_data);
+    credential.metadata.length           = strnlen((char *)credential_data, U3C_BUFFER_SIZE_CREDENTIAL_DATA);
     credential.data                      = credential_data;
 
-    if (CC_UserCredential_modify_credential(&credential) == U3C_DB_OPERATION_RESULT_SUCCESS) {
+    if (!CC_UserCredential_manufacturer_validate_credential(&credential)) {
+      app_log_error("Credential does not follow manufacturer security rules!\r\n");
+      return false;
+    }
+
+    RECEIVE_OPTIONS_TYPE_EX rx_options = { 0 };
+    if (CC_UserCredential_modify_credential_and_report(&credential, &rx_options) == U3C_DB_OPERATION_RESULT_SUCCESS) {
       operation_result = true;
     }
   }
@@ -455,15 +600,22 @@ static bool u3c_modify_credential(uint16_t slot, u3c_credential_type type, unsig
  *
  * @return True if the move was successful, false otherwise.
  */
-static bool u3c_move_credential_slot(uint16_t uuid, uint16_t slot, u3c_credential_type type, uint16_t new_slot)
+static bool u3c_move_credential_slot(uint16_t slot, u3c_credential_type type, uint16_t new_slot)
 {
-  bool operation_result = false;
-
-  if (CC_UserCredential_move_credential(uuid, type, slot, uuid, new_slot) == U3C_DB_OPERATION_RESULT_SUCCESS) {
-    operation_result = true;
+  u3c_credential credential = { 0 };
+  uint8_t credential_data[U3C_BUFFER_SIZE_CREDENTIAL_DATA + 1] = { 0 };
+  credential.data = credential_data;
+  if (CC_UserCredential_get_credential(0, type, slot, &credential.metadata, credential.data) != U3C_DB_OPERATION_RESULT_SUCCESS) {
+    return false;
   }
 
-  return operation_result;
+  RECEIVE_OPTIONS_TYPE_EX rx_options = { 0 };
+  if (CC_UserCredential_move_credential_and_report(type, slot,
+                                                   credential.metadata.uuid, new_slot, &rx_options) == U3C_DB_OPERATION_RESULT_SUCCESS) {
+    return true;
+  }
+
+  return false;
 }
 
 /**
@@ -478,11 +630,12 @@ static bool u3c_move_credential_slot(uint16_t uuid, uint16_t slot, u3c_credentia
  *
  * @return True if the move was successful, false otherwise.
  */
-static bool u3c_move_credential_uuid(uint16_t uuid, uint16_t slot, u3c_credential_type type, uint16_t new_uuid)
+static bool u3c_move_credential_uuid(uint16_t slot, u3c_credential_type type, uint16_t new_uuid)
 {
   bool operation_result = false;
 
-  if (CC_UserCredential_move_credential(uuid, type, slot, new_uuid, slot) == U3C_DB_OPERATION_RESULT_SUCCESS) {
+  RECEIVE_OPTIONS_TYPE_EX rx_options = { 0 };
+  if (CC_UserCredential_move_credential_and_report(type, slot, new_uuid, slot, &rx_options) == U3C_DB_OPERATION_RESULT_SUCCESS) {
     operation_result = true;
   }
 
@@ -512,13 +665,33 @@ static bool u3c_add_credential(u3c_credential_type type, uint16_t uuid, uint16_t
       .type = type,
       .slot = slot,
       .modifier_node_id = 0,
-      .length = sizeof(credential_data),
+      .length = strnlen((char *)credential_data, U3C_BUFFER_SIZE_USER_NAME),
       .modifier_type = MODIFIER_TYPE_LOCALLY
     },
-    .data = credential_data
+    .data = (uint8_t *)credential_data
   };
 
-  if (CC_UserCredential_add_credential(&credential) == U3C_DB_OPERATION_RESULT_SUCCESS) {
+  if (!CC_UserCredential_manufacturer_validate_credential(&credential)) {
+    app_log_error("Credential does not follow manufacturer security rules!\r\n");
+    return false;
+  }
+
+  if (!validate_new_credential_metadata(&credential.metadata)
+      || !validate_new_credential_data(&credential, NULL)) {
+    app_log_error("Invalid credential!\r\n");
+    return false;
+  }
+
+  uint8_t credential_min_length = cc_user_credential_get_min_length_of_data(credential.metadata.type);
+  uint8_t credential_max_length = cc_user_credential_get_max_length_of_data(credential.metadata.type);
+  if (credential.metadata.length < credential_min_length
+      || credential.metadata.length > credential_max_length) {
+    app_log_error("Credential length must be between %u and %u\r\n", credential_min_length, credential_max_length);
+    return false;
+  }
+
+  RECEIVE_OPTIONS_TYPE_EX rx_options = { 0 };
+  if (CC_UserCredential_add_credential_and_report(&credential, &rx_options) == U3C_DB_OPERATION_RESULT_SUCCESS) {
     operation_result = true;
     app_log_info("Credential added with the following parameters:\r\n");
     app_log_append_info("\ttype: %d\r\n", credential.metadata.type);
@@ -544,12 +717,26 @@ static bool u3c_add_credential(u3c_credential_type type, uint16_t uuid, uint16_t
  * @return Returns true if the user's name was successfully modified, or
  *         false value if an error occurred.
  */
-static bool u3c_modify_user_name(u3c_user *user, char* name)
+static bool u3c_modify_user_name(u3c_user *user, const char * const name)
 {
   bool operation_result = false;
+  user->name_length = strnlen(name, U3C_BUFFER_SIZE_USER_NAME);
 
-  user->name_length = strlen(name);
-  if ( CC_UserCredential_modify_user(user, (unsigned char*)name) == U3C_DB_OPERATION_RESULT_SUCCESS) {
+  // Check whether the User Name is longer than allowed
+  uint8_t user_name_max_length = cc_user_credential_get_max_length_of_user_name();
+  if (user->name_length > user_name_max_length) {
+    app_log_error("Username cannot be longer than %u characters\r\n", user_name_max_length);
+    return false;
+  }
+
+  // Check whether User Name is provided
+  if (user->name_length == 0) {
+    app_log_error("Username cannot be empty!\r\n");
+    return false;
+  }
+
+  RECEIVE_OPTIONS_TYPE_EX rx_options = { 0 };
+  if (CC_UserCredential_modify_user_and_report(user, (unsigned char*)name, &rx_options) == U3C_DB_OPERATION_RESULT_SUCCESS) {
     operation_result = true;
   }
 
@@ -565,15 +752,18 @@ static bool u3c_modify_user_name(u3c_user *user, char* name)
  * @param type The new user type to be assigned.
  * @return Returns true if the user type was successfully modified, false otherwise.
  */
-static bool u3c_modify_user_type(u3c_user *user, char* type)
+static bool u3c_modify_user_type(u3c_user *user, const char * const type)
 {
   bool operation_result = false;
+  uint8_t name[U3C_BUFFER_SIZE_USER_NAME];
   u3c_user_type new_user_type;
   new_user_type = u3c_convert_str_to_user_type(type);
 
   if (new_user_type != USER_TYPE_END) {
+    CC_UserCredential_get_user(user->unique_identifier, user, name);
     user->type = new_user_type;
-    if ( CC_UserCredential_modify_user(user, NULL) == U3C_DB_OPERATION_RESULT_SUCCESS) {
+    RECEIVE_OPTIONS_TYPE_EX rx_options = { 0 };
+    if ( CC_UserCredential_modify_user_and_report(user, name, &rx_options) == U3C_DB_OPERATION_RESULT_SUCCESS) {
       operation_result = true;
     }
   }
@@ -588,19 +778,21 @@ static bool u3c_modify_user_type(u3c_user *user, char* type)
  * The user's active status can be set to either active or inactive.
  *
  * @param user The u3c_user instance to modify.
- * @param active_status The new active status for the user.
+ * @param state The new active status for the user.
  *
  * @return Returns true if the user's active status was successfully modified, or false if an error occurred.
  */
-static bool u3c_modify_user_active(u3c_user *user, char* state)
+static bool u3c_modify_user_active(u3c_user *user, const char * const state)
 {
   bool operation_result = true;
   bool active_state     = false;
+  char operation_name[sizeof("deactivation")] = "activation";
 
   if (0 == strcmp(state, "true")) {
     active_state = true;
   } else if (0 == strcmp(state, "false")) {
     active_state = false;
+    strcpy(operation_name, "deactivation");
   } else {
     app_log_error("State %s is not supported!\r\n", state);
     app_log_info("Valid values are:\r\n");
@@ -610,10 +802,26 @@ static bool u3c_modify_user_active(u3c_user *user, char* state)
   }
 
   if (operation_result) {
+    RECEIVE_OPTIONS_TYPE_EX rx_options = { 0 };
+    uint8_t name[U3C_BUFFER_SIZE_USER_NAME];
+    CC_UserCredential_get_user(user->unique_identifier, user, name);
     user->active = active_state;
-    if ( CC_UserCredential_modify_user(user, NULL) == U3C_DB_OPERATION_RESULT_SUCCESS) {
-      operation_result = true;
+    switch (CC_UserCredential_modify_user_and_report(user, name, &rx_options)) {
+      case U3C_DB_OPERATION_RESULT_SUCCESS:
+        break;
+      case U3C_DB_OPERATION_RESULT_FAIL_IDENTICAL:
+        app_log_info("User is already %s", active_state ? "active" : "inactive");
+        return true;
+      default:
+        operation_result = false;
+        break;
     }
+  }
+
+  if (operation_result) {
+    app_log_info("User %s was successful\r\n", operation_name);
+  } else {
+    app_log_error("User %s failed!\r\n", operation_name);
   }
 
   return operation_result;
@@ -641,7 +849,7 @@ static u3c_credential_type u3c_convert_str_to_credential_type(unsigned char* str
       app_log_error("Credential type %s is not supported!\r\n", str);
       app_log_info("Supported typed are:\r\n");
       app_log_append_info("\t- pin");
-      app_log_append_info("\t- password");
+      app_log_append_info("\t- password\r\n");
     }
   }
 
@@ -658,7 +866,7 @@ static u3c_credential_type u3c_convert_str_to_credential_type(unsigned char* str
  * @param str The string to be converted.
  * @return The converted u3c_user_type type. USER_TYPE_END in case of unknown raw string.
  */
-static u3c_user_type u3c_convert_str_to_user_type(char* str)
+static u3c_user_type u3c_convert_str_to_user_type(const char * const str)
 {
   u3c_user_type user_type = USER_TYPE_END;
 
@@ -700,7 +908,7 @@ static u3c_user_type u3c_convert_str_to_user_type(char* str)
  * @param str The string to be converted.
  * @return The converted Credential attribute.
  */
-static u3c_credential_attribute u3c_convert_str_to_credential_attribute(char* str)
+static u3c_credential_attribute u3c_convert_str_to_credential_attribute(const char * const str)
 {
   u3c_credential_attribute attribute = CREDENTIAL_ATTRIBUTE_END;
 
@@ -751,5 +959,61 @@ static uint16_t u3c_generate_uuid(void)
 
   return uuid;
 }
+
+void cli_log_u3c_events(
+  const uint8_t event, const void * const data)
+{
+  switch (event) {
+    case CC_USER_CREDENTIAL_EVENT_VALIDATE_VALID:
+      app_log_info("The entered credential is valid\r\n");
+      break;
+    case CC_USER_CREDENTIAL_EVENT_VALIDATE_INVALID:
+      app_log_warning("The entered credential is invalid\r\n");
+      break;
+    case CC_USER_CREDENTIAL_EVENT_LEARN_START:
+      app_log_append_info("\r\n");
+      app_log_info("Credential Learn: Process started\r\n");
+      break;
+    case CC_USER_CREDENTIAL_EVENT_LEARN_STEP_START:
+      uint8_t * remaining_steps = (uint8_t *)data;
+      app_log_info("Credential Learn: Progressed to a new step (remaining: %d)\r\n", *remaining_steps);
+      if (*remaining_steps == 1) {
+        app_log_append_info("Enter the new credential data now using the u3c_credential_learn command.\r\n> ");
+      }
+      break;
+    case CC_USER_CREDENTIAL_EVENT_LEARN_READ_DONE:
+      app_log_append_info("\r\n");
+      app_log_info("Credential Learn: New credential data has been acquired\r\n");
+      break;
+    case CC_USER_CREDENTIAL_EVENT_LEARN_SUCCESS:
+      app_log_info("Credential Learn: Finished successfully\r\n> ");
+      break;
+    case CC_USER_CREDENTIAL_EVENT_LEARN_FAILED:
+      app_log_append_info("\r\n");
+      app_log_warning("Credential Learn: Process failed\r\n> ");
+      break;
+    case CC_USER_CREDENTIAL_EVENT_LEARN_STEP_RETRY:
+      app_log_append_info("\r\n");
+      app_log_info("Credential Learn: Failed to acquire data, retrying\r\n");
+      break;
+    case CC_USER_CREDENTIAL_EVENT_LEARN_TIMEOUT:
+      app_log_append_info("\r\n");
+      app_log_warning("Credential Learn: Process timed out\r\n");
+      break;
+    case CC_USER_CREDENTIAL_EVENT_LEARN_CANCEL_REMOTE:
+      app_log_append_info("\r\n");
+      app_log_info("Credential Learn: Process cancelled by remote node\r\n");
+      break;
+    case CC_USER_CREDENTIAL_EVENT_LEARN_CANCEL_LOCAL:
+      app_log_append_info("\r\n");
+      app_log_info("Credential Learn: Process cancelled by application\r\n");
+      break;
+    default:
+      break;
+  }
+}
+
+ZAF_EVENT_DISTRIBUTOR_REGISTER_CC_EVENT_HANDLER(
+  COMMAND_CLASS_USER_CREDENTIAL, cli_log_u3c_events);
 
 #endif // SL_CATALOG_ZW_CLI_COMMON_PRESENT

@@ -18,8 +18,9 @@ requires:
   - name: "sl_common"
   - name: "wisun_implementation"
   - name: "wisun_crypto"
-  - name: "sleeptimer"
   - name: "wisun_stack_device_type"
+  - name: "sleeptimer"
+  - name: "a_radio_config"
 
 recommends:
   - id: "wisun_stack_library"
@@ -27,6 +28,7 @@ recommends:
 
 provides:
   - name: "wisun_stack"
+  - name: "a_wisun_stack"
 
 template_contribution:
   - name: "event_handler"
@@ -54,10 +56,10 @@ include:
       - path: "sl_wisun_ip6string.h"
   - path: "inc/socket/"
     file_list:
-      - path: "socket.h"
+    - path: "socket.h"
   - path: "inc/arpa/"
     file_list:
-      - path: "inet.h"
+    - path: "inet.h"
 
 documentation:
   docset: wisun

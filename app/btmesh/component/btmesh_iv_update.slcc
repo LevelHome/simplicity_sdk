@@ -40,6 +40,7 @@ requires:
   - name: "app_btmesh_util"
   - name: "btmesh_role_init"
   - name: "btmesh_stack_node"
+  - name: "sl_core"
   - name: "app_timer"
 
 template_contribution:

@@ -30,7 +30,7 @@
 
 #include <math.h>
 #include <stddef.h>
-#include "em_common.h"
+#include "sl_common.h"
 #include "gatt_db.h"
 #include "app_assert.h"
 #include "sl_apploader_util.h"

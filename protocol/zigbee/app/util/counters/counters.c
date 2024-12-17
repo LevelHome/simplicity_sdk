@@ -20,6 +20,8 @@
 
 #include PLATFORM_HEADER
 
+#include "sl_code_classification.h"
+
 #include "stack/include/sl_zigbee.h"
 #include "stack/internal/inc/internal-defs-patch.h"
 
@@ -39,6 +41,7 @@ uint16_t sli_zigbee_mac_counters[SL_ZIGBEE_MAX_NUM_PHYS][SL_ZIGBEE_MAX_MAC_ONLY_
 //Implement the stack callback by simply tallying up the counts.
 // TODO: Once we fully port the pro-compliance app to UC, we can
 // get rid of the following and just use the new name for this callback.
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_ZIGBEE_STACK, SL_CODE_CLASS_TIME_CRITICAL)
 void sli_zigbee_stack_populate_counters(sl_zigbee_counter_type_t type, sl_zigbee_counter_info_t info)
 {
   bool phyIndexRequiredCounter = sli_zigbee_stack_counter_requires_phy_index(type);
@@ -222,6 +225,7 @@ static const sl_zigbee_counter_type_t multiNetworkCounterTable[] = {
   SL_ZIGBEE_COUNTER_APS_DECRYPTION_FAILURE,
 };
 
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_ZIGBEE_STACK, SL_CODE_CLASS_TIME_CRITICAL)
 static uint8_t getMultiNetworkCounterIndex(sl_zigbee_counter_type_t type)
 {
   uint8_t i;
@@ -233,6 +237,7 @@ static uint8_t getMultiNetworkCounterIndex(sl_zigbee_counter_type_t type)
   return 0xFF;
 }
 
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_ZIGBEE_STACK, SL_CODE_CLASS_TIME_CRITICAL)
 static void multiNetworkCounterHandler(sl_zigbee_counter_type_t type, uint8_t data)
 {
   uint8_t counterIndex = getMultiNetworkCounterIndex(type);

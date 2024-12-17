@@ -31,6 +31,7 @@ component:
   - id: mpu
   - id: iostream_retarget_stdio
   - id: iostream_recommended_stream
+  - id: code_classification
 configuration:
   - name: SL_BOARD_ENABLE_VCOM
     value: 1

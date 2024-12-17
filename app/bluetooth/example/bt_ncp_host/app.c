@@ -27,7 +27,7 @@
  * 3. This notice may not be removed or altered from any source distribution.
  *
  ******************************************************************************/
-#include "em_common.h"
+#include "sl_common.h"
 #include "app.h"
 #include "app_assert.h"
 #include "sl_bluetooth.h"
@@ -87,7 +87,7 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
     case sl_bt_evt_system_boot_id:
 
       // Extract unique ID from BT Address.
-      sc = sl_bt_system_get_identity_address(&address, &address_type);
+      sc = sl_bt_gap_get_identity_address(&address, &address_type);
       app_assert_status(sc);
 
       // Pad and reverse unique ID to get System ID.

@@ -21,7 +21,11 @@ provides:
   - name: "btmesh_proxy"
 requires:
   - name: "bluetooth_feature_connection"
+    condition:
+      - device_efx
   - name: "bluetooth_feature_gatt_server"
+    condition:
+      - device_efx
   - name: "btmesh_stack_node"
   - name: "btmesh_stack_proxy"
   - name: "btmesh_stack_proxy_server"

@@ -20,6 +20,7 @@
 #include <CC_Supervision.h>
 #include "cc_multilevel_switch_support_io.h"
 #include "zaf_transport_tx.h"
+#include "zaf_event_distributor_soc.h"
 
 /****************************************************************************/
 /*                      PRIVATE TYPES and DEFINITIONS                       */
@@ -115,6 +116,9 @@ static void actuator_callback(s_Actuator * p_actuator)
                                     0); // durationRemaining should always be 0 at this point
       DPRINTF("\n%s: TX Supervision Report", __func__);
     }
+
+    zaf_event_distributor_enqueue_cc_event(
+      COMMAND_CLASS_SWITCH_MULTILEVEL, CC_MULTILEVEL_SWITCH_EVENT_REACHED_FINAL_VALUE, (void *)p_switch);
   }
 }
 
@@ -288,6 +292,9 @@ static received_frame_status_t CC_MultilevelSwitch_handler(
       // All done with SUCCESS. If needed, Supervision CC will take care of sending Supervision report,
       // so clear supervision flag here.
       p_switch->rxOpt.bSupervisionActive = 0;
+
+      zaf_event_distributor_enqueue_cc_event(
+        COMMAND_CLASS_SWITCH_MULTILEVEL, CC_MULTILEVEL_SWITCH_EVENT_START_LEVEL_CHANGE , (void *)p_switch);
     }
     break;
 
@@ -306,6 +313,9 @@ static received_frame_status_t CC_MultilevelSwitch_handler(
 
       if (EACTUATOR_CHANGING == ZAF_Actuator_StopChange(&p_switch->actuator)) {
         ZAF_TSE_Trigger(CC_MultilevelSwitch_report_stx, (void *)p_switch, true);
+
+        zaf_event_distributor_enqueue_cc_event(
+          COMMAND_CLASS_SWITCH_MULTILEVEL, CC_MULTILEVEL_SWITCH_EVENT_STOP_LEVEL_CHANGE , (void *)p_switch);
       }
     }
       break;
@@ -452,6 +462,9 @@ void cc_multilevel_switch_start_level_change(cc_multilevel_switch_t * p_switch,
                            up,
                            start_level,
                            duration);
+
+  zaf_event_distributor_enqueue_cc_event(
+    COMMAND_CLASS_SWITCH_MULTILEVEL, CC_MULTILEVEL_SWITCH_EVENT_START_LEVEL_CHANGE , (void *)p_switch);
 }
 
 void cc_multilevel_switch_set_level(cc_multilevel_switch_t * p_switch,
@@ -473,6 +486,9 @@ void cc_multilevel_switch_stop_level_change(cc_multilevel_switch_t * p_switch)
   if (EACTUATOR_CHANGING == state) {
     // A change was ongoing when we stopped it. => Trigger TSE
     ZAF_TSE_Trigger(CC_MultilevelSwitch_report_stx, (void *)p_switch, false);
+
+    zaf_event_distributor_enqueue_cc_event(
+      COMMAND_CLASS_SWITCH_MULTILEVEL, CC_MULTILEVEL_SWITCH_EVENT_STOP_LEVEL_CHANGE , (void *)p_switch);
   }
 }
 

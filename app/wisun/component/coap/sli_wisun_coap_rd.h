@@ -1,5 +1,5 @@
 /***************************************************************************//**
- * @file
+ * @file sli_wisun_coap_rd.h
  * @brief Wi-SUN CoAP resource discovery
  *******************************************************************************
  * # License
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef SLI_WISUN_COAP_RD_H_
-#define SLI_WISUN_COAP_RD_H_
+#ifndef SLI_WISUN_COAP_RD_H
+#define SLI_WISUN_COAP_RD_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,16 +38,15 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
+
 #include "sl_wisun_coap.h"
 #include "sl_wisun_coap_rhnd.h"
 #include "sl_wisun_coap_config.h"
 #include "sli_wisun_coap_rd.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -89,4 +88,4 @@ sl_wisun_coap_packet_t *sli_wisun_coap_rd_build_response(const char * const payl
 }
 #endif
 
-#endif /* SLI_WISUN_COAP_RD_H_ */
+#endif // SLI_WISUN_COAP_RD_H

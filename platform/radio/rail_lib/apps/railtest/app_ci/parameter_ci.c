@@ -274,11 +274,13 @@ void setPower(sl_cli_command_arg_t *args)
 #if RAIL_SUPPORTS_DBM_POWERSETTING_MAPPING_TABLE
     RAIL_TxPowerConfig_t tempCfg;
     RAIL_GetTxPowerConfig(railHandle, &tempCfg);
+#if IS_XG25
     if (RAIL_POWER_MODE_IS_ANY_DBM_POWERSETTING_MAPPING_TABLE(tempCfg.mode)) {
       // dBm-to-powerSetting mode does not support raw power setting
       responsePrintError(sl_cli_get_command_string(args, 0), RAIL_STATUS_INVALID_PARAMETER, "%s does not support setting raw power.", paStrings[tempCfg.mode]);
       return;
     }
+#endif
 #endif
 
     // Set the power and update the RAW level global
@@ -715,7 +717,8 @@ void configPaAutoMode(sl_cli_command_arg_t *args)
   }
   paAutoModeConfig = (RAIL_PaAutoModeConfigEntry_t *)malloc(numOfConfigs * sizeof(RAIL_PaAutoModeConfigEntry_t));
   if (paAutoModeConfig == NULL) {
-    responsePrintError(sl_cli_get_command_string(args, 0), 0x01,
+    responsePrintError(sl_cli_get_command_string(args, 0),
+                       SL_STATUS_ALLOCATION_FAILED,
                        "The PA auto mode configs are not configured.");
     return;
   }

@@ -93,7 +93,7 @@ void sli_zigbee_af_delayed_join_set_supported_timeout_command(sl_cli_command_arg
                               SL_ZIGBEE_AF_PLUGIN_DELAYED_JOIN_MAXIMUM_TIMEOUT_SUPPORTED_S);
   } else {
     if (sl_zigbee_set_transient_device_table_timeout_ms(seconds * MILLISECOND_TICKS_PER_SECOND) == SL_STATUS_OK) {
-      sl_zigbee_af_core_println("%s: %s %3d",
+      sl_zigbee_af_core_println("%s: %s %d",
                                 SL_ZIGBEE_AF_PLUGIN_DELAYED_JOIN_PLUGIN_NAME,
                                 "Adjust TC timeout to",
                                 seconds);

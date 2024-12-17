@@ -5,7 +5,7 @@ description: >
   The Device Manager GPIO component defines the macros, 
   structures, and enums that are used common across GPIO driver and
   peripheral.
-category: Services
+category: Services|Device Manager
 quality: production
 metadata:
   sbom:
@@ -14,7 +14,6 @@ provides:
   - name: device_gpio
 requires:
   - name: enum
-  - name: device_gpio_hal
 root_path: platform/service/device_manager
 source:
   - path: src/sl_device_gpio.c

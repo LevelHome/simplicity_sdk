@@ -26,16 +26,15 @@ component:
       - btn0
       - btn1
 # radio config
-  - id: "wisun_full_radioconf"
+  - id: "wisun_default_radioconf"
 # SDK components
   - id: "sl_wisun_trace_util"
   - id: "sl_wisun_app_core"
   - id: "sl_wisun_app_setting"
-  - id: "sl_wisun_app_cli"
+  - id: "sl_wisun_cli"
   - id: "sl_wisun_ping"
   - id: "sl_wisun_network_measurement"
   - id: "sl_iperf"
-  - id: "sl_wisun_iperf_posix_port"
   - id: "sl_wisun_coap"
   - id: "cli"
     instance:
@@ -47,7 +46,7 @@ requires:
     condition: [freertos]
   - name: "sl_wisun_mode_switch"
     condition:
-      - "device_sdid_220" # only for these devices
+      - "device_generic_family_efr32xg25" # only for these devices
 source:
   - path: "app.c"
   - path: "app_init.c"

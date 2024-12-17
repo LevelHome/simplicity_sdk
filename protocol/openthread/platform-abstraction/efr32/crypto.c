@@ -31,22 +31,35 @@
  *   This file implements the OpenThread platform abstraction for PSA.
  *
  */
-#include "security_manager.h"
+
 #include <openthread-core-config.h>
 #include <openthread/error.h>
 #include <openthread/platform/crypto.h>
+
+#if OPENTHREAD_CONFIG_CRYPTO_LIB == OPENTHREAD_CONFIG_CRYPTO_LIB_PSA
+#include "security_manager.h"
 #include "common/debug.hpp"
 #include "utils/code_utils.h"
 
 #include "em_device.h"
-#include "em_system.h"
-#include "sl_psa_crypto.h"
 #include <mbedtls/ecdsa.h>
 #include <mbedtls/md.h>
 #include <mbedtls/pk.h>
 #include "mbedtls/psa_util.h"
+#if defined(_SILICON_LABS_32B_SERIES_2)
+#include "em_system.h"
+#else
+#include "sl_hal_system.h"
+#endif
+#include "sl_psa_crypto.h"
 
-#if OPENTHREAD_CONFIG_CRYPTO_LIB == OPENTHREAD_CONFIG_CRYPTO_LIB_PSA
+#if defined(_SILICON_LABS_32B_SERIES_2)
+#define GET_SECURITY_CAPABILITY SYSTEM_GetSecurityCapability
+#define VAULT_ENABLED securityCapabilityVault
+#else
+#define GET_SECURITY_CAPABILITY sl_hal_system_get_security_capability
+#define VAULT_ENABLED SL_SYSTEM_SECURITY_CAPABILITY_VAULT
+#endif
 
 #define PERSISTENCE_KEY_ID_USED_MAX (7)
 #define MAX_HMAC_KEY_SIZE (32)
@@ -192,7 +205,7 @@ void otPlatCryptoInit(void)
     (void)sl_sec_man_init();
 
 #if defined(SEMAILBOX_PRESENT) && !defined(SL_TRUSTZONE_NONSECURE)
-    if (SYSTEM_GetSecurityCapability() == securityCapabilityVault)
+    if (GET_SECURITY_CAPABILITY() == VAULT_ENABLED)
     {
         checkAndWrapKeys();
     }
@@ -730,4 +743,4 @@ exit:
     return error;
 }
 
-#endif // OPENTHREAD_CONFIG_PLATFORM_KEY_REFERENCES_ENABLE
+#endif // OPENTHREAD_CONFIG_CRYPTO_LIB == OPENTHREAD_CONFIG_CRYPTO_LIB_PSA

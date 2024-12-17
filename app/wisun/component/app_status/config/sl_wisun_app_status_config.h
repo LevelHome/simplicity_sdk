@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief Wi-SUN Application Status CoAP notfication configuration header.
+ * @file sl_wisun_app_status_config.h
+ * @brief Wi-SUN Application Status CoAP notfication configuration
  *******************************************************************************
  * # License
  * <b>Copyright 2022 Silicon Laboratories Inc. www.silabs.com</b>
@@ -30,6 +30,12 @@
 #ifndef SL_WISUN_APP_STATUS_CONFIG_H
 #define SL_WISUN_APP_STATUS_CONFIG_H
 
+/**************************************************************************//**
+ * @defgroup SL_WISUN_APP_STATUS_CONFIG Configurations
+ * @ingroup SL_WISUN_APP_STATUS
+ * @{
+ *****************************************************************************/
+
 // <<< Use Configuration Wizard in Context Menu >>>
 
 // // <h> App status configuration
@@ -37,38 +43,40 @@
 // <o SL_WISUN_APP_STATUS_DEFAULT_REMOTE_PORT> Default port of the remote host to send status report
 // <i> Default: 5683
 // <1-65536>
-#define SL_WISUN_APP_STATUS_DEFAULT_REMOTE_PORT        5683U
+#define SL_WISUN_APP_STATUS_DEFAULT_REMOTE_PORT        5683U ///< Default port of the remote host to send status report
 
 // <s SL_WISUN_APP_STATUS_DEFAULT_REMOTE_ADDR> Default remote address to send status report
 // <i> This address is used by default as notification target
-#define SL_WISUN_APP_STATUS_DEFAULT_REMOTE_ADDR        "2001:db8::1"
+#define SL_WISUN_APP_STATUS_DEFAULT_REMOTE_ADDR        "2001:db8::1" ///< Default remote address to send status report
 
 // <s SL_WISUN_APP_STATUS_DEFAULT_URI_PATH> Default URI Path to use in status report packet
 // <i> Default: app/status
-#define SL_WISUN_APP_STATUS_DEFAULT_URI_PATH           "app/status"
+#define SL_WISUN_APP_STATUS_DEFAULT_URI_PATH           "app/status" ///< Default URI Path to use in status report packet
 
 // <s SL_WISUN_APP_STATUS_DEFAULT_NOTIFCATION_ID> Default notification ID string
 // <i> Default: app-status
-#define SL_WISUN_APP_STATUS_DEFAULT_NOTIFCATION_ID     "app-status"
+#define SL_WISUN_APP_STATUS_DEFAULT_NOTIFCATION_ID     "app-status" ///< Default notification ID string
 
 // <o SL_WISUN_APP_STATUS_DEFAULT_SCHEDULE_TIME_MS> Default schedule time to send status report
 // <i> Default: 10000
-#define SL_WISUN_APP_STATUS_DEFAULT_SCHEDULE_TIME_MS   10000UL
+#define SL_WISUN_APP_STATUS_DEFAULT_SCHEDULE_TIME_MS   10000UL ///< Default schedule time to send status report
 
 // <q SL_WISUN_APP_STATUS_NEIGHBOR_INFO_ENABLE> Enable Neighbor info
 // <i> Default: 1
-#define SL_WISUN_APP_STATUS_NEIGHBOR_INFO_ENABLE       1U
+#define SL_WISUN_APP_STATUS_NEIGHBOR_INFO_ENABLE       1U ///< Enable Neighbor info
 
 // <q SL_WISUN_APP_STATUS_EXECUTION_TIME_ENABLE> Enable execution time
 // <i> Default: 1
-#define SL_WISUN_APP_STATUS_EXECUTION_TIME_ENABLE      1U
+#define SL_WISUN_APP_STATUS_EXECUTION_TIME_ENABLE      1U ///< Enable execution time
 
 // <q SL_WISUN_APP_STATUS_DEVICE_INFO_ENABLE> Enable execution time
 // <i> Default: 1
-#define SL_WISUN_APP_STATUS_DEVICE_INFO_ENABLE         1U
+#define SL_WISUN_APP_STATUS_DEVICE_INFO_ENABLE         1U ///< Enable execution time
 
 // </h>
 
 // <<< end of configuration section >>>
 
-#endif
+/** @}*/
+
+#endif // SL_WISUN_APP_STATUS_CONFIG_H

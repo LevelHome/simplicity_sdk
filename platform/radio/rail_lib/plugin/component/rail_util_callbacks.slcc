@@ -4,6 +4,11 @@ description: Utility to aid with RAIL Callback Support
 package: platform
 category: Platform|Radio
 quality: production
+metadata:
+  sbom:
+    id: rail_util_callbacks
+    name: RAIL Utility, Callbacks
+    license: Zlib
 documentation:
   docset: rail
   document: rail-api/rail-util-callbacks

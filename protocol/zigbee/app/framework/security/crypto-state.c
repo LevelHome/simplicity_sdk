@@ -41,6 +41,6 @@ void sli_zigbee_af_set_crypto_status(sli_zigbee_af_crypto_status newStatus)
 {
   cryptoStatus = newStatus;
 #if defined(EMBER_AF_PRINT_ENABLE) && defined(EMBER_AF_PRINT_SECURITY)
-  sl_zigbee_af_security_println("Crypto state: %p", cryptoStatusText[cryptoStatus]);
+  sl_zigbee_af_security_println("Crypto state: %s", cryptoStatusText[cryptoStatus]);
 #endif // defined(EMBER_AF_PRINT_ENABLE) && defined(EMBER_AF_PRINT_SECURITY)
 }

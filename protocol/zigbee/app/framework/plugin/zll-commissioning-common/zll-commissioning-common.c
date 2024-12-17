@@ -106,9 +106,12 @@ static void setProfileInteropState(void)
 
 static void initFactoryNew(void)
 {
+  // We use the node type token to indicate if we have joined a network and thus
+  tokTypeStackNodeData tokNode;
+  halCommonGetToken(&tokNode, TOKEN_STACK_NODE_DATA);
   // The initialization is only performed if we are factory new in the BDB sense,
   // i.e. not joined to a centralized or distributed network.
-  if (sli_zigbee_af_zll_am_factory_new()) {
+  if (sli_zigbee_af_zll_am_factory_new() && (tokNode.nodeType == SL_ZIGBEE_UNKNOWN_DEVICE)) {
     sl_zigbee_af_app_println("ZllCommInit - device is not joined to a network");
 
     // Set the default ZLL node type for both client and server, for Scan Request
@@ -231,7 +234,7 @@ sl_status_t sli_zigbee_af_zll_form_network(uint8_t channel, int8_t power, sl_802
   network.nodeType = sli_zigbee_af_zll_get_logical_node_type();
   sl_zigbee_af_zll_set_initial_security_state();
   sl_status_t status = sl_zigbee_zll_form_network(&network, power);
-  debugPrintln("%p: sl_zigbee_zll_form_network - status = %X, node type = %d", PLUGIN_NAME, status, network.nodeType);
+  debugPrintln("%s: sl_zigbee_zll_form_network - status = %02X, node type = %d", PLUGIN_NAME, status, network.nodeType);
   if (status == SL_STATUS_OK) {
     sli_zigbee_af_zll_flags |= FORMING_NETWORK;
   }
@@ -332,7 +335,7 @@ sl_status_t sl_zigbee_af_zll_set_initial_security_state(void)
 
   status = sl_zigbee_af_generate_random_key(&networkKey);
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_app_println("%p%p failed 0x%x",
+    sl_zigbee_af_app_println("%s%s failed 0x%02X",
                              "Error: ",
                              "Generating random key",
                              status);
@@ -343,7 +346,7 @@ sl_status_t sl_zigbee_af_zll_set_initial_security_state(void)
   status = sl_zigbee_zll_set_initial_security_state(&networkKey, &securityState);
 
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_app_println("%p%p failed 0x%x",
+    sl_zigbee_af_app_println("%s%s failed 0x%02X",
                              "Error: ",
                              "Initializing security",
                              status);
@@ -357,14 +360,14 @@ void sl_zigbee_af_zll_reset_to_factory_new(void)
   // but after a short delay.
   sli_zigbee_af_zll_flags |= RESETTING_TO_FACTORY_NEW;
 
-  debugPrintln("sl_zigbee_af_zll_reset_to_factory_new - flags = %X, networkState = %X", sli_zigbee_af_zll_flags, sl_zigbee_network_state());
+  debugPrintln("sl_zigbee_af_zll_reset_to_factory_new - flags = %02X, networkState = %02X", sli_zigbee_af_zll_flags, sl_zigbee_network_state());
 
   // Note that we won't get a network down stack status if we
   // are currently trying to join - the leave will complete silently.
   bool silentLeave = (sl_zigbee_network_state() == SL_ZIGBEE_JOINING_NETWORK) ? true : false;
   sl_status_t status = sl_zigbee_leave_network(SL_ZIGBEE_LEAVE_NWK_WITH_NO_OPTION);
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_app_println("Error: Failed to leave network, status: 0x%X", status);
+    sl_zigbee_af_app_println("Error: Failed to leave network, status: 0x%02X", status);
   }
 
   // Complete the reset immediately if we're not expecting a network down status.
@@ -390,7 +393,7 @@ void sli_zigbee_af_zll_commissioning_common_stack_status_callback(sl_status_t st
   // During touch linking, SL_STATUS_NETWORK_UP means the process is complete.  Any
   // other status, unless we're busy joining or rejoining, means that the touch
   // link failed.
-  debugPrintln("%p: ZllCommStackStatus: status = %X, flags = %X", PLUGIN_NAME, status, sli_zigbee_af_zll_flags);
+  debugPrintln("%s: ZllCommStackStatus: status = %02X, flags = %02X", PLUGIN_NAME, status, sli_zigbee_af_zll_flags);
 
 #if defined(ZLL_COMMISSIONING_CLIENT_PRESENT) && defined(NETWORK_CREATOR_PRESENT)
   if (formingNetwork()) {
@@ -409,7 +412,7 @@ void sli_zigbee_af_zll_commissioning_common_stack_status_callback(sl_status_t st
     } else if (status == SL_STATUS_NETWORK_DOWN) {
       // We don't do anything here for a network down.
     } else {
-      sl_zigbee_af_app_println("%p%p%p: status = %X, flags = %X",
+      sl_zigbee_af_app_println("%s%s%s: status = %02X, flags = %02X",
                                "Error: ",
                                "Touch linking failed: ",
                                "joining failed",

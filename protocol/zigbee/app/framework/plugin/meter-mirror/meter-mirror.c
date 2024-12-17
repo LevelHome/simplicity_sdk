@@ -250,7 +250,7 @@ uint16_t sl_zigbee_af_meter_mirror_request_mirror(sl_802154_long_addr_t requesti
                                           (uint8_t*) &meteringDeviceTypeAttribute,
                                           ZCL_BITMAP8_ATTRIBUTE_TYPE);
   if (status) {
-    sl_zigbee_af_simple_metering_cluster_println("Failed to write Metering device type attribute on ep%d, status :  0x%x",
+    sl_zigbee_af_simple_metering_cluster_println("Failed to write Metering device type attribute on ep%d, status :  0x%02X",
                                                  endpoint,
                                                  status);
   }
@@ -303,7 +303,7 @@ bool sl_zigbee_af_report_attributes_cb(sl_zigbee_af_cluster_id_t clusterId,
 
   if (SL_STATUS_OK
       != sl_zigbee_lookup_eui64_by_node_id(sl_zigbee_af_current_command()->source, sendersEui)) {
-    sl_zigbee_af_simple_metering_cluster_println("Error: Meter Mirror plugin cannot determine EUI64 for node ID 0x%2X",
+    sl_zigbee_af_simple_metering_cluster_println("Error: Meter Mirror plugin cannot determine EUI64 for node ID 0x%04X",
                                                  sl_zigbee_af_current_command()->source);
     sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_FAILURE);
     return true;
@@ -329,7 +329,7 @@ bool sl_zigbee_af_report_attributes_cb(sl_zigbee_af_cluster_id_t clusterId,
   if (sl_zigbee_af_current_command()->mfgSpecific) {
     // Here is where we could handle a MFG specific Report attributes and interpret
     // it.  This code does not do that, just politely returns an error.
-    sl_zigbee_af_simple_metering_cluster_println("Error: Unknown MFG Code for mirror: 0x%2X",
+    sl_zigbee_af_simple_metering_cluster_println("Error: Unknown MFG Code for mirror: 0x%04X",
                                                  sl_zigbee_af_current_command()->mfgCode);
     sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
     return true;
@@ -403,7 +403,7 @@ bool sl_zigbee_af_report_attributes_cb(sl_zigbee_af_cluster_id_t clusterId,
         }
       }
 
-      sl_zigbee_af_simple_metering_cluster_println("Mirror attribute 0x%2x: 0x%x", attributeId, status);
+      sl_zigbee_af_simple_metering_cluster_println("Mirror attribute 0x%04X: 0x%02X", attributeId, status);
       bufIndex += dataSize;
       if (status == SL_ZIGBEE_ZCL_STATUS_UNREPORTABLE_ATTRIBUTE) {
         sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_INSUFFICIENT_SPACE);
@@ -411,7 +411,7 @@ bool sl_zigbee_af_report_attributes_cb(sl_zigbee_af_cluster_id_t clusterId,
       }
     } else {
       // dataSize exceeds buffer length, terminate loop
-      sl_zigbee_af_simple_metering_cluster_println("ERR: attr:%2x size %d exceeds buffer size", attributeId, dataSize);
+      sl_zigbee_af_simple_metering_cluster_println("ERR: attr:%04X size %d exceeds buffer size", attributeId, dataSize);
       break;
     }
   }
@@ -423,7 +423,7 @@ bool sl_zigbee_af_report_attributes_cb(sl_zigbee_af_cluster_id_t clusterId,
   }
 
   // Notification flags
-  sl_zigbee_af_simple_metering_cluster_println("Mirror reporting ep: 0x%x, reporting: 0x%x, scheme: 0x%x",
+  sl_zigbee_af_simple_metering_cluster_println("Mirror reporting ep: 0x%02X, reporting: 0x%02X, scheme: 0x%02X",
                                                endpoint,
                                                mirrorList[index].mirrorNotificationReporting,
                                                mirrorList[index].notificationScheme);
@@ -502,13 +502,13 @@ static bool sendMirrorReportAttributeResponse(uint8_t endpoint, uint8_t index)
   return true;
 }
 
-bool sl_zigbee_af_simple_metering_cluster_configure_mirror_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_simple_metering_cluster_configure_mirror_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_simple_metering_cluster_configure_mirror_command_t cmd_data;
 
   if (zcl_decode_simple_metering_cluster_configure_mirror_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   uint32_t issuerEventId = cmd_data.issuerEventId;
@@ -520,10 +520,10 @@ bool sl_zigbee_af_simple_metering_cluster_configure_mirror_cb(sl_zigbee_af_clust
   sl_802154_long_addr_t sendersEui;
   uint8_t index;
 
-  sl_zigbee_af_simple_metering_cluster_println("ConfigureMirror on endpoint 0x%x", endpoint);
+  sl_zigbee_af_simple_metering_cluster_println("ConfigureMirror on endpoint 0x%02X", endpoint);
 
   if (SL_STATUS_OK != sl_zigbee_lookup_eui64_by_node_id(sl_zigbee_af_current_command()->source, sendersEui)) {
-    sl_zigbee_af_simple_metering_cluster_println("Error: Meter Mirror plugin cannot determine EUI64 for node ID 0x%2X",
+    sl_zigbee_af_simple_metering_cluster_println("Error: Meter Mirror plugin cannot determine EUI64 for node ID 0x%04X",
                                                  sl_zigbee_af_current_command()->source);
     status = SL_ZIGBEE_ZCL_STATUS_FAILURE;
     goto kickout;
@@ -552,8 +552,7 @@ bool sl_zigbee_af_simple_metering_cluster_configure_mirror_cb(sl_zigbee_af_clust
   }
 
   kickout:
-  sl_zigbee_af_send_immediate_default_response(status);
-  return true;
+  return status;
 }
 
 uint32_t sli_zigbee_af_meter_mirror_simple_metering_cluster_client_command_parse(sl_service_opcode_t opcode,
@@ -562,18 +561,16 @@ uint32_t sli_zigbee_af_meter_mirror_simple_metering_cluster_client_command_parse
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_CONFIGURE_MIRROR_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_simple_metering_cluster_configure_mirror_cb(cmd);
+        status = sl_zigbee_af_simple_metering_cluster_configure_mirror_cb(cmd);
         break;
       }
     }
   }
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

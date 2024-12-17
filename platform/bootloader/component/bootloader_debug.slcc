@@ -25,3 +25,6 @@ config_file:
   - path: platform/bootloader/debug/config/btl_debug_cfg.h
 validation_helper:
   - path: platform/bootloader/component/scripts/bootloader_debug_validation.lua
+metadata:
+  sbom:
+    license: MSLA

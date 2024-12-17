@@ -39,7 +39,7 @@ NCP Commander can be used to control the target and test NCP firmware without de
     ![step 3](image/readme_img5.png)
     ![step 3](image/readme_img7.png)
 
-5. Open the EFR Connect or any Bluetooth browser application to see your device advertising (without any name). You may also connect to the device, although it does not have a GATT database to be discovered by default.
+5. Open the Simplicity Connect or any Bluetooth browser application to see your device advertising (without any name). You may also connect to the device, although it does not have a GATT database to be discovered by default.
 
 ## Extending the GATT database
 

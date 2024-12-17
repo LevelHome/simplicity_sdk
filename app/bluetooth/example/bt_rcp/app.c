@@ -3,7 +3,7 @@
  * @brief Core application logic.
  *******************************************************************************
  * # License
- * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -27,11 +27,10 @@
  * 3. This notice may not be removed or altered from any source distribution.
  *
  ******************************************************************************/
-#include "em_common.h"
+#include "sl_common.h"
+#include "app.h"
 
-/***************************************************************************//**
- * Application Init.
- ******************************************************************************/
+// Application Init.
 SL_WEAK void app_init(void)
 {
   /////////////////////////////////////////////////////////////////////////////
@@ -40,14 +39,14 @@ SL_WEAK void app_init(void)
   /////////////////////////////////////////////////////////////////////////////
 }
 
-/**************************************************************************//**
- * Application Process Action.
- *****************************************************************************/
+// Application Process Action.
 SL_WEAK void app_process_action(void)
 {
-  /////////////////////////////////////////////////////////////////////////////
-  // Put your additional application code here!                              //
-  // This is called infinitely.                                              //
-  // Do not call blocking functions from here!                               //
-  /////////////////////////////////////////////////////////////////////////////
+  if (app_is_process_required()) {
+    /////////////////////////////////////////////////////////////////////////////
+    // Put your additional application code here!                              //
+    // This is will run each time app_proceed() is called.                     //
+    // Do not call blocking functions from here!                               //
+    /////////////////////////////////////////////////////////////////////////////
+  }
 }

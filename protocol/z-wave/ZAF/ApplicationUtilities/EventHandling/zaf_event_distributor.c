@@ -7,11 +7,10 @@
 #include <zaf_event_distributor.h>
 #include <zaf_event_distributor_core_config.h>
 
-bool zaf_event_distributor_distribute(void)
+uint32_t zaf_event_distributor_distribute(void)
 {
   const SEventDistributor *event_distributor;
 
   event_distributor = zaf_event_distributor_get();
-
-  return (EventDistributorDistribute(event_distributor, ZAF_EVENT_DISTRIBUTOR_CORE_CONFIG_TIMEOUT, 0) != 0xFFFFFFFF);
+  return EventDistributorDistribute(event_distributor, ZAF_EVENT_DISTRIBUTOR_CORE_CONFIG_TIMEOUT, 0);
 }

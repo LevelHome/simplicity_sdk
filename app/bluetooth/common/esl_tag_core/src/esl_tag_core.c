@@ -32,7 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include "em_core.h"
+#include "sl_core.h"
 #include "em_emu.h"
 #include "gatt_db.h"
 #include "app_scheduler.h"
@@ -152,6 +152,14 @@ typedef struct {
 typedef struct {
   // Security timeout task handle
   sl_sleeptimer_timer_handle_t watchdog_handle;
+#if ESL_TAG_SYNC_SCAN_ENABLE
+  // Scan timeout handle
+  app_scheduler_task_handle_t scan_timer_task;
+  // Consecutive sync-by-scan counter
+  uint32_t scan_count;
+  // Scan permission flag (to avoid endless scan loops)
+  bool scan_permitted;
+#endif // ESL_TAG_SYNC_SCAN_ENABLE
   // Security timeout trigger flag
   bool watchdog_triggered;
   // PAwR evt_pawr_sync_subevent_report.event_counter backup
@@ -211,6 +219,11 @@ static esl_keys_struct_t esl_keys = {
 
 static esl_persistent_struct_t esl_tag_persistent = {
   .watchdog_handle        = { 0 },
+#if ESL_TAG_SYNC_SCAN_ENABLE
+  .scan_timer_task        = NULL,
+  .scan_count             = 0,
+  .scan_permitted         = true,
+#endif // ESL_TAG_SYNC_SCAN_ENABLE
   .watchdog_triggered     = false,
   .request_event          = 0,
   .request_subevent       = 0,
@@ -244,6 +257,99 @@ static void esl_core_secondary_advertiser(void *p_event_data, uint16_t event_siz
                                       sl_bt_legacy_advertiser_connectable);
 }
 #endif // ESL_TAG_INTERMITTENT_ADVERTISING
+
+#if ESL_TAG_SYNC_SCAN_ENABLE
+static void scan_timeout_task(void *p_event_data, uint16_t event_size)
+{
+  (void)event_size;
+  (void)p_event_data;
+
+  (void)sl_bt_scanner_stop();
+  sl_bt_esl_log(ESL_LOG_COMPONENT_CORE,
+                ESL_LOG_LEVEL_INFO,
+                "Scan stopped after %u seconds timeout!",
+                ESL_TAG_SCAN_TIMEOUT_SEC);
+  (void)esl_core_start_advertising();
+  // We can reset the sync-by-scan parameters now that we started advertising.
+  esl_tag_persistent.scan_permitted = true;
+  esl_tag_persistent.scan_count = 0;
+}
+
+// ESL Tag periodic advertisement scanner
+static sl_status_t start_scanning_for_periodic_adv(void)
+{
+  sl_status_t sc;
+  uint32_t pawr_interval = sl_sleeptimer_tick_to_ms(esl_tag.pawr_interval_ticks);
+  uint16_t scan_interval = pawr_interval / (ESL_DRIFT_INTEGER_MULTIPLIER * ESL_TAG_SCAN_SWEEEP_COEFF);
+  uint16_t scan_window   = scan_interval > ESL_TAG_SCAN_WINDOW_MS ? ESL_TAG_SCAN_WINDOW_MS : scan_interval;
+
+  // periodic scanner setting - configurator asks for [ms], but actual
+  // unit of time values are 0.625ms, hence the numeric conversion below:
+  sc = sl_bt_scanner_set_parameters(sl_bt_scanner_scan_mode_passive,
+                                    16 * scan_interval / 10,
+                                    16 * scan_window / 10);
+
+  if (sc == SL_STATUS_OK) {
+    sl_bt_esl_log(ESL_LOG_COMPONENT_CORE,
+                  ESL_LOG_LEVEL_INFO,
+                  "Start scanning for sync with interval %u ms, window %u ms for %u s",
+                  scan_interval,
+                  scan_window,
+                  ESL_TAG_SCAN_TIMEOUT_SEC);
+    sc = sl_bt_scanner_start(sl_bt_gap_phy_1m, sl_bt_scanner_discover_observation);
+  }
+
+  if (sc == SL_STATUS_OK) {
+    sc = app_scheduler_add_delayed(&scan_timeout_task,
+                                   ESL_TAG_SCAN_TIMEOUT_SEC * 1000u,
+                                   NULL, 0,
+                                   &esl_tag_persistent.scan_timer_task);
+  }
+
+  if (sc != SL_STATUS_OK) {
+    (void)sl_bt_scanner_stop();
+  }
+
+  return sc;
+}
+
+static void esl_core_signal_valid_message(void)
+{
+  // Allow sync-by-scan on next sync loss, as it is now proven to be successful
+  esl_tag_persistent.scan_permitted = true;
+}
+
+static void esl_core_unsynchronize(void)
+{
+  if (esl_tag_persistent.scan_count >= ESL_TAG_SCAN_COUNT_LIMIT) {
+    esl_tag_persistent.scan_permitted = false;
+    sl_bt_esl_log(ESL_LOG_COMPONENT_CORE,
+                  ESL_LOG_LEVEL_WARNING,
+                  "Scanning limit reached after %u successive sync-by-scan, return to standard ESL advertising!",
+                  ESL_TAG_SCAN_COUNT_LIMIT);
+  }
+
+  if (esl_tag_persistent.scan_permitted
+      && start_scanning_for_periodic_adv() == SL_STATUS_OK) {
+    esl_tag_persistent.scan_permitted = false;
+    esl_tag_persistent.scan_count++;
+  } else {
+    sl_bt_esl_log(ESL_LOG_COMPONENT_CORE,
+                  ESL_LOG_LEVEL_INFO,
+                  "Scanning is %s, return to standard ESL advertising.",
+                  esl_tag_persistent.scan_permitted ? "not possible" : "temporarily not allowed");
+    (void)esl_core_start_advertising();
+    esl_tag_persistent.scan_permitted = true;
+    esl_tag_persistent.scan_count = 0;
+  }
+}
+#else
+// Substitute for a missing function
+#define esl_core_signal_valid_message() (void)0
+
+// Substitute for Synchronized->Unsynchronized state transition
+#define esl_core_unsynchronize() (void)esl_core_start_advertising()
+#endif // ESL_TAG_SYNC_SCAN_ENABLE
 
 // ESL Tag PAwR sync handle getter
 uint16_t esl_core_get_sync_handle(void)
@@ -394,7 +500,7 @@ static void esl_sync_cleanup(uint16_t reason)
   }
 
   if (esl_tag.status == esl_state_synchronized) {
-    (void)esl_core_start_advertising();
+    esl_core_unsynchronize();
   }
 }
 
@@ -808,7 +914,7 @@ static void esl_state_configuring_handler(sl_bt_msg_t *evt)
                                          PSA_KEY_LIFETIME_VOLATILE,
                                          &esl_keys.response_key, &key_id);
                 // get new randomizer value whenever the Response Key Material is written
-                (void)app_scheduler_add(&esl_core_async_randomizer, 0, 0, NULL);
+                (void)app_scheduler_add(&esl_core_async_randomizer, NULL, 0, NULL);
                 if (sc == SL_STATUS_OK) {
                   esl_tag.config_status |= execute_write_flag;
                 }
@@ -1054,6 +1160,7 @@ static void esl_state_synchronized_handler(sl_bt_msg_t *evt)
         // also skip processing any improperly encrypted data:
         // (skip msg == NULL and improper length and/or type)
         if (msg && msg[0] == --len && msg[1] == ESL_AD_TYPE) {
+          esl_core_signal_valid_message();
           // backup vales for response
           esl_tag_persistent.request_event = evt->data.evt_pawr_sync_subevent_report.event_counter;
           esl_tag_persistent.request_subevent = evt->data.evt_pawr_sync_subevent_report.subevent;
@@ -1163,6 +1270,85 @@ static void esl_state_synchronized_handler(sl_bt_msg_t *evt)
         }
       }
       break;
+#if ESL_TAG_SYNC_SCAN_ENABLE
+    case sl_bt_evt_scanner_extended_advertisement_report_id:
+      // Only interested in extended advertisements
+      if (esl_tag.sync_handle == SL_BT_INVALID_SYNC_HANDLE) {
+        // Accept incoming advertisements only from the bonded ESL Access Point
+        if (evt->data.evt_scanner_extended_advertisement_report.bonding == esl_tag.bonding_handle) {
+          // get proper timeout value, which arrives in unit of 1.25 ms
+          uint32_t pawr_interval = (10 * evt->data.evt_scanner_extended_advertisement_report.periodic_interval) / 8;
+          uint32_t sync_timeout = ((ESL_TAG_MAX_SYNC_LOST_COUNT * pawr_interval) + ESL_SYNC_MIN_TIMEOUT) / 10;
+
+          // Only if the periodic_interval implies the previously lost periodic advertisement train...
+          if (sync_timeout == esl_tag.sync_timeout) {
+            sl_status_t sc;
+
+            // This will cause the sl_bt_evt_scanner_extended_advertisement_report_id to be stopped from now on
+            (void)sl_bt_scanner_stop();
+            sl_bt_esl_log(ESL_LOG_COMPONENT_CORE,
+                          ESL_LOG_LEVEL_INFO,
+                          "Found %d ms periodic sync service, attempting to open",
+                          pawr_interval);
+
+            sc = sl_bt_sync_scanner_set_sync_parameters(0,
+                                                        sync_timeout,
+                                                        sl_bt_sync_report_all);
+            if (sc == SL_STATUS_OK) {
+              // sl_bt_evt_pawr_sync_opened_id event must arrive within the total scan timeout or the ESL will start advertising
+              sc = sl_bt_sync_scanner_open(evt->data.evt_scanner_extended_advertisement_report.address,
+                                           evt->data.evt_scanner_extended_advertisement_report.address_type,
+                                           evt->data.evt_scanner_extended_advertisement_report.adv_sid,
+                                           &esl_tag.sync_handle);
+            }
+
+            if (sc != SL_STATUS_OK) {
+              (void)app_scheduler_remove(esl_tag_persistent.scan_timer_task);
+              // Fall back to advertising in case of error
+              esl_tag.sync_handle = SL_BT_INVALID_SYNC_HANDLE;
+
+              sl_bt_esl_log(ESL_LOG_COMPONENT_CORE,
+                            ESL_LOG_LEVEL_WARNING,
+                            "Sync-by-scan failed due 0x%04x",
+                            sc);
+              (void)esl_core_start_advertising();
+              esl_tag_persistent.scan_permitted = true;
+              esl_tag_persistent.scan_count = 0;
+            }
+          }
+        }
+      }
+      break;
+
+    case sl_bt_evt_periodic_sync_opened_id:
+      (void)app_scheduler_remove(esl_tag_persistent.scan_timer_task);
+      esl_tag_persistent.scan_timer_task = NULL;
+      sl_bt_esl_log(ESL_LOG_COMPONENT_CORE,
+                    ESL_LOG_LEVEL_WARNING,
+                    "Unsupported sync train detected, will close!");
+      sl_bt_sync_close(esl_tag.sync_handle);
+      break;
+
+    case sl_bt_evt_pawr_sync_opened_id:
+      (void)app_scheduler_remove(esl_tag_persistent.scan_timer_task);
+      esl_tag_persistent.scan_timer_task = NULL;
+      sl_bt_esl_log(ESL_LOG_COMPONENT_CORE,
+                    ESL_LOG_LEVEL_INFO,
+                    "Synchronized by scanning successfully for the %u%s time!",
+                    esl_tag_persistent.scan_count,
+                    sli_bt_esl_log_get_ordinal(esl_tag_persistent.scan_count));
+      sl_bt_esl_log(ESL_LOG_COMPONENT_CORE,
+                    ESL_LOG_LEVEL_INFO,
+                    "PAwR clock accuracy: %d ppm",
+                    evt->data.evt_pawr_sync_opened.clock_accuracy);
+      // now that sync is open, we can set ESL_BASIC_STATE_SYNCHRONIZED_BIT again
+      esl_core_set_basic_state_bit(ESL_BASIC_STATE_SYNCHRONIZED_BIT, ESL_SET);
+      // reset the correct subevent to listen to at the end
+      (void)sl_bt_pawr_sync_set_sync_subevents(esl_tag.sync_handle,
+                                               sizeof(esl_tag.address.group_id),
+                                               &esl_tag.address.group_id);
+      break;
+#endif // ESL_TAG_SYNC_SCAN_ENABLE
 
     case sl_bt_evt_sync_closed_id:
       esl_sync_cleanup(evt->data.evt_sync_closed.reason);
@@ -1322,7 +1508,7 @@ sl_status_t esl_core_start_advertising(void)
         timeout_ms = ESL_TAG_POWER_DOWN_TIMEOUT_MS;
         sl_bt_esl_log(ESL_LOG_COMPONENT_CORE,
                       ESL_LOG_LEVEL_INFO,
-                      "Enter power save mode after %d minutes of ineffective advertising.",
+                      "Will enter a power save mode after %d minutes of ineffective advertising.",
                       ESL_TAG_POWER_DOWN_TIMEOUT_MIN);
       }
       // start / restart watchdog timer whenever ESL starts advertising
@@ -1343,7 +1529,7 @@ sl_status_t esl_core_start_advertising(void)
 #if ESL_TAG_INTERMITTENT_ADVERTISING
   (void)app_scheduler_add_delayed(&esl_core_secondary_advertiser,
                                   ESL_TAG_SECONDARY_ADVERTISING_DELAY,
-                                  0, 0, NULL);
+                                  NULL, 0, NULL);
 #endif // ESL_TAG_INTERMITTENT_ADVERTISING
   return result;
 }
@@ -1520,7 +1706,7 @@ sl_status_t esl_core_update_complete(void)
       // If ESL receives the Update Complete command and it is synchronized,
       // it shall immediately terminate the ACL connection and transition
       // to the Synchronized state.
-      sl_status_t result = app_scheduler_add(&esl_core_async_disconnect, 0, 0, NULL);
+      result = app_scheduler_add(&esl_core_async_disconnect, NULL, 0, NULL);
       // However, doing it literally "immediately" would cause possible loss of the
       // write response sent by the sl_bt_gatt_server_send_user_write_response()
       // following the opcode processing in the ESL, therefore we're going to
@@ -1529,13 +1715,13 @@ sl_status_t esl_core_update_complete(void)
         // Fall-back: disconnect immediately if defer attempt fails! Even though
         // the Core spec. allows remote device to flush all ACL packets when it
         // receives the disconnection command, we tried to avoid this at least.
-        (void)sl_bt_connection_close(esl_tag.connection_handle);
+        result = sl_bt_connection_close(esl_tag.connection_handle);
       }
     } else {
       // If ESL receives the Update Complete command and it is not
       // synchronized, it shall wait for synchronization to be established.
+      result = SL_STATUS_OK;
     }
-    result = SL_STATUS_OK;
   }
   return result;
 }

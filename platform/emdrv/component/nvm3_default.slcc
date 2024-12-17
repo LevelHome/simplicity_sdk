@@ -33,17 +33,13 @@ requires:
 recommends:
   - id: nvm3_lib
   - id: nvm3_default_flash_backend
-    condition: [device_series_2]
-  - id: nvm3_default_flash_backend
-    condition: [device_si91x]
-  - id: nvm3_default_ram_backend
-    condition: [device_series_3]
 template_contribution:
   - name: event_handler
     value:
       event: platform_init
       include: nvm3_default.h
       handler: nvm3_initDefault
+    priority: 9999
     condition: [device_efx]
     unless: [trustzone_secure]
 documentation:

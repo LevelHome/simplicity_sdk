@@ -51,6 +51,7 @@ extern bool                  OT_API_REAL_NAME(otTrelIsFilterEnabled)(otInstance 
 extern const otTrelCounters *OT_API_REAL_NAME(otTrelGetCounters)(otInstance *aInstance);
 extern const otTrelPeer     *OT_API_REAL_NAME(otTrelGetNextPeer)(otInstance *aInstance, otTrelPeerIterator *aIterator);
 extern uint16_t              OT_API_REAL_NAME(otTrelGetNumberOfPeers)(otInstance *aInstance);
+extern uint16_t              OT_API_REAL_NAME(otTrelGetUdpPort)(otInstance *aInstance);
 extern void OT_API_REAL_NAME(otTrelInitPeerIterator)(otInstance *aInstance, otTrelPeerIterator *aIterator);
 extern void OT_API_REAL_NAME(otTrelResetCounters)(otInstance *aInstance);
 extern void OT_API_REAL_NAME(otTrelSetEnabled)(otInstance *aInstance, bool aEnable);
@@ -92,6 +93,14 @@ uint16_t OT_API_WRAPPER_NAME(otTrelGetNumberOfPeers)(otInstance *aInstance)
 {
     sl_ot_rtos_acquire_stack_mutex();
     uint16_t ret = OT_API_REAL_NAME(otTrelGetNumberOfPeers)(aInstance);
+    sl_ot_rtos_release_stack_mutex();
+    return ret;
+}
+
+uint16_t OT_API_WRAPPER_NAME(otTrelGetUdpPort)(otInstance *aInstance)
+{
+    sl_ot_rtos_acquire_stack_mutex();
+    uint16_t ret = OT_API_REAL_NAME(otTrelGetUdpPort)(aInstance);
     sl_ot_rtos_release_stack_mutex();
     return ret;
 }

@@ -24,13 +24,41 @@
 #include <stdint.h>
 #include <stdio.h>
 
+
+#ifdef SL_COMPONENT_CATALOG_PRESENT
+#include "sl_component_catalog.h"
+#endif // SL_COMPONENT_CATALOG_PRESENT
+
 #include "platform-efr32.h"
 #include "crash_handler.h"
+#include "em_device.h"
 
-#include "em_emu.h"
+#ifdef SL_CATALOG_EMLIB_RMU_PRESENT
 #include "em_rmu.h"
+#define sl_hal_emu_get_reset_cause   RMU_ResetCauseGet
+#define sl_hal_emu_clear_reset_cause RMU_ResetCauseClear
+#endif // SL_CATALOG_EMLIB_RMU_PRESENT
+
+#ifdef SL_CATALOG_GECKO_BOOTLOADER_INTERFACE_PRESENT
+#include "btl_interface.h"
+#include "btl_reset_info.h"
+#endif // SL_CATALOG_GECKO_BOOTLOADER_INTERFACE_PRESENT
+
+#ifdef SL_CATALOG_HAL_EMU_PRESENT
+#include "sl_hal_emu.h"
+#endif // SL_CATALOG_HAL_EMU_PRESENT
+
+#if defined(SL_CATALOG_IOSTREAM_UART_COMMON_PRESENT)
+#include "sl_iostream.h"
+#endif
 
 #include <openthread/logging.h>
+
+#if defined(_SILICON_LABS_32B_SERIES_2)
+ #define RAM_BASE RAM_MEM_BASE
+#elif defined(_SILICON_LABS_32B_SERIES_3)
+ #define RAM_BASE SRAM_BASE
+#endif // _SILICON_LABS_32B_SERIES_2 || _SILICON_LABS_32B_SERIES_3
 
 // Crash info live in noinit RAM segment that is not modified during startup.
 NO_INIT(HalCrashInfoType halCrashInfo);
@@ -46,8 +74,7 @@ NO_INIT(HalCrashInfoType halCrashInfo);
   #define WDOG0_IRQn WDOG_IRQn
 #endif
 
-#ifdef RTOS
-  #include "rtos/rtos.h"
+#if defined(SL_CATALOG_CMSIS_OS_COMMON_PRESENT)
   #define freeRTOS 1
 #else
   #define freeRTOS 0
@@ -92,767 +119,6 @@ static const char * const cfsrBits[] =
   "",                                                                 // B23
   "UNALIGNED: attempted an unaligned memory access",                  // B24
   "DIVBYZERO: attempted to execute SDIV or UDIV with divisor of 0"    // B25
-};
-
-static const char * const intActiveBits[] =
-{
-#if defined (_EFR_DEVICE)
-  #if defined (_SILICON_LABS_32B_SERIES_1_CONFIG_1)
-  "EMU_IRQn",         // B0
-  "FRC_PRI_IRQn",     // B1
-  "WDOG0_IRQn",       // B2
-  "FRC_IRQn",         // B3
-  "MODEM_IRQn",       // B4
-  "RAC_SEQ_IRQn",     // B5
-  "RAC_RSM_IRQn",     // B6
-  "BUFC_IRQn",        // B7
-  "LDMA_IRQn",        // B8
-  "GPIO_EVEN_IRQn",   // B9
-  "TIMER0_IRQn",      // B10
-  "USART0_RX_IRQn",   // B11
-  "USART0_TX_IRQn",   // B12
-  "ACMP0_IRQn",       // B13
-  "ADC0_IRQn",        // B14
-  "IDAC0_IRQn",       // B15
-  "I2C0_IRQn",        // B16
-  "GPIO_ODD_IRQn",    // B17
-  "TIMER1_IRQn",      // B18
-  "USART1_RX_IRQn",   // B19
-  "USART1_TX_IRQn",   // B20
-  "LEUART0_IRQn",     // B21
-  "PCNT0_IRQn",       // B22
-  "CMU_IRQn",         // B23
-  "MSC_IRQn",         // B24
-  "CRYPTO_IRQn",      // B25
-  "LETIMER0_IRQn",    // B26
-  "AGC_IRQn",         // B27
-  "PROTIMER_IRQn",    // B28
-  "RTCC_IRQn",        // B29
-  "SYNTH_IRQn",       // B30
-  "CRYOTIMER_IRQn",   // B31
-  "RFSENSE_IRQn",     // B32
-  "FPUEH_IRQn",       // B33
-  #elif defined (_SILICON_LABS_32B_SERIES_1_CONFIG_2)
-  "EMU_IRQn",         // B0
-  "FRC_PRI_IRQn",     // B1
-  "WDOG0_IRQn",       // B2
-  "WDOG1_IRQn",       // B3
-  "FRC_IRQn",         // B4
-  "MODEM_IRQn",       // B5
-  "RAC_SEQ_IRQn",     // B6
-  "RAC_RSM_IRQn",     // B7
-  "BUFC_IRQn",        // B8
-  "LDMA_IRQn",        // B9
-  "GPIO_EVEN_IRQn",   // B10
-  "TIMER0_IRQn",      // B11
-  "USART0_RX_IRQn",   // B12
-  "USART0_TX_IRQn",   // B13
-  "ACMP0_IRQn",       // B14
-  "ADC0_IRQn",        // B15
-  "IDAC0_IRQn",       // B16
-  "I2C0_IRQn",        // B17
-  "GPIO_ODD_IRQn",    // B18
-  "TIMER1_IRQn",      // B19
-  "USART1_RX_IRQn",   // B20
-  "USART1_TX_IRQn",   // B21
-  "LEUART0_IRQn",     // B22
-  "PCNT0_IRQn",       // B23
-  "CMU_IRQn",         // B24
-  "MSC_IRQn",         // B25
-  "CRYPTO0_IRQn",     // B26
-  "LETIMER0_IRQn",    // B27
-  "AGC_IRQn",         // B28
-  "PROTIMER_IRQn",    // B29
-  "RTCC_IRQn",        // B30
-  "SYNTH_IRQn",       // B31
-  "CRYOTIMER_IRQn",   // B32
-  "RFSENSE_IRQn",     // B33
-  "FPUEH_IRQn",       // B34
-  "SMU_IRQn",         // B35
-  "WTIMER0_IRQn",     // B36
-  "WTIMER1_IRQn",     // B37
-  "PCNT1_IRQn",       // B38
-  "PCNT2_IRQn",       // B39
-  "USART2_RX_IRQn",   // B40
-  "USART2_TX_IRQn",   // B41
-  "I2C1_IRQn",        // B42
-  "USART3_RX_IRQn",   // B43
-  "USART3_TX_IRQn",   // B44
-  "VDAC0_IRQn",       // B45
-  "CSEN_IRQn",        // B46
-  "LESENSE_IRQn",     // B47
-  "CRYPTO1_IRQn",     // B48
-  "TRNG0_IRQn",       // B49
-  #elif defined (_SILICON_LABS_32B_SERIES_1_CONFIG_3)
-  "EMU_IRQn",         // B0
-  "FRC_PRI_IRQn",     // B1
-  "WDOG0_IRQn",       // B2
-  "WDOG1_IRQn",       // B3
-  "FRC_IRQn",         // B4
-  "MODEM_IRQn",       // B5
-  "RAC_SEQ_IRQn",     // B6
-  "RAC_RSM_IRQn",     // B7
-  "BUFC_IRQn",        // B8
-  "LDMA_IRQn",        // B9
-  "GPIO_EVEN_IRQn",   // B10
-  "TIMER0_IRQn",      // B11
-  "USART0_RX_IRQn",   // B12
-  "USART0_TX_IRQn",   // B13
-  "ACMP0_IRQn",       // B14
-  "ADC0_IRQn",        // B15
-  "IDAC0_IRQn",       // B16
-  "I2C0_IRQn",        // B17
-  "GPIO_ODD_IRQn",    // B18
-  "TIMER1_IRQn",      // B19
-  "USART1_RX_IRQn",   // B20
-  "USART1_TX_IRQn",   // B21
-  "LEUART0_IRQn",     // B22
-  "PCNT0_IRQn",       // B23
-  "CMU_IRQn",         // B24
-  "MSC_IRQn",         // B25
-  "CRYPTO0_IRQn",     // B26
-  "LETIMER0_IRQn",    // B27
-  "AGC_IRQn",         // B28
-  "PROTIMER_IRQn",    // B29
-  "PRORTC_IRQn",      // B30
-  "RTCC_IRQn",        // B31
-  "SYNTH_IRQn",       // B32
-  "CRYOTIMER_IRQn",   // B33
-  "RFSENSE_IRQn",     // B34
-  "FPUEH_IRQn",       // B35
-  "SMU_IRQn",         // B36
-  "WTIMER0_IRQn",     // B37
-  "USART2_RX_IRQn",   // B38
-  "USART2_TX_IRQn",   // B39
-  "I2C1_IRQn",        // B40
-  "VDAC0_IRQn",       // B41
-  "CSEN_IRQn",        // B42
-  "LESENSE_IRQn",     // B43
-  "CRYPTO1_IRQn",     // B44
-  "TRNG0_IRQn"        // B45
-  #elif defined (_SILICON_LABS_32B_SERIES_1_CONFIG_4)
-  "EMU_IRQn",         // B0
-  "FRC_PRI_IRQn",     // B1
-  "WDOG0_IRQn",       // B2
-  "WDOG1_IRQn",       // B3
-  "FRC_IRQn",         // B4
-  "MODEM_IRQn",       // B5
-  "RAC_SEQ_IRQn",     // B6
-  "RAC_RSM_IRQn",     // B7
-  "BUFC_IRQn",        // B8
-  "LDMA_IRQn",        // B9
-  "GPIO_EVEN_IRQn",   // B10
-  "TIMER0_IRQn",      // B11
-  "USART0_RX_IRQn",   // B12
-  "USART0_TX_IRQn",   // B13
-  "ACMP0_IRQn",       // B14
-  "ADC0_IRQn",        // B15
-  "IDAC0_IRQn",       // B16
-  "I2C0_IRQn",        // B17
-  "GPIO_ODD_IRQn",    // B18
-  "TIMER1_IRQn",      // B19
-  "USART1_RX_IRQn",   // B20
-  "USART1_TX_IRQn",   // B21
-  "LEUART0_IRQn",     // B22
-  "PCNT0_IRQn",       // B23
-  "CMU_IRQn",         // B24
-  "MSC_IRQn",         // B25
-  "CRYPTO0_IRQn",     // B26
-  "LETIMER0_IRQn",    // B27
-  "AGC_IRQn",         // B28
-  "PROTIMER_IRQn",    // B29
-  "PRORTC_IRQn",      // B30
-  "RTCC_IRQn",        // B31
-  "SYNTH_IRQn",       // B32
-  "CRYOTIMER_IRQn",   // B33
-  "RFSENSE_IRQn",     // B34
-  "FPUEH_IRQn",       // B35
-  "SMU_IRQn",         // B36
-  "WTIMER0_IRQn",     // B37
-  "VDAC0_IRQn",       // B38
-  "LESENSE_IRQn",     // B39
-  "TRNG0_IRQn",       // B40
-  "SYSCFG_IRQn",      // B41
-  #elif defined (_SILICON_LABS_32B_SERIES_2_CONFIG_1)
-  "SETAMPERHOST_IRQn",     // B0
-  "SEMBRX_IRQn",           // B1
-  "SEMBTX_IRQn",           // B2
-  "SMU_SECURE_IRQn",       // B3
-  "SMU_PRIVILEGED_IRQn",   // B4
-  "EMU_IRQn",              // B5
-  "TIMER0_IRQn",           // B6
-  "TIMER1_IRQn",           // B7
-  "TIMER2_IRQn",           // B8
-  "TIMER3_IRQn",           // B9
-  "RTCC_IRQn",             // B10
-  "USART0_RX_IRQn",        // B11
-  "USART0_TX_IRQn",        // B12
-  "USART1_RX_IRQn",        // B13
-  "USART1_TX_IRQn",        // B14
-  "USART2_RX_IRQn",        // B15
-  "USART2_TX_IRQn",        // B16
-  "ICACHE0_IRQn",          // B17
-  "BURTC_IRQn",            // B18
-  "LETIMER0_IRQn",         // B19
-  "SYSCFG_IRQn",           // B20
-  "LDMA_IRQn",             // B21
-  "LFXO_IRQn",             // B22
-  "LFRCO_IRQn",            // B23
-  "ULFRCO_IRQn",           // B24
-  "GPIO_ODD_IRQn",         // B25
-  "GPIO_EVEN_IRQn",        // B26
-  "I2C0_IRQn",             // B27
-  "I2C1_IRQn",             // B28
-  "EMUDG_IRQn",            // B29
-  "EMUSE_IRQn",            // B30
-  "AGC_IRQn",              // B31
-  "BUFC_IRQn",             // B32
-  "FRC_PRI_IRQn",          // B33
-  "FRC_IRQn",              // B34
-  "MODEM_IRQn",            // B35
-  "PROTIMER_IRQn",         // B36
-  "RAC_RSM_IRQn",          // B37
-  "RAC_SEQ_IRQn",          // B38
-  "PRORTC_IRQn",           // B39
-  "SYNTH_IRQn",            // B40
-  "ACMP0_IRQn",            // B41
-  "ACMP1_IRQn",            // B42
-  "WDOG0_IRQn",            // B43
-  "WDOG1_IRQn",            // B44
-  "HFXO00_IRQn",           // B45
-  "HFRCO0_IRQn",           // B46
-  "HFRCOEM23_IRQn",        // B47
-  "CMU_IRQn",              // B48
-  "AES_IRQn",              // B49
-  "IADC_IRQn",             // B50
-  "MSC_IRQn",              // B51
-  "DPLL0_IRQn",            // B52
-  "SW0_IRQn",              // B53
-  "SW1_IRQn",              // B54
-  "SW2_IRQn",              // B55
-  "SW3_IRQn",              // B56
-  "KERNEL0_IRQn",          // B57
-  "KERNEL1_IRQn",          // B58
-  "M33CTI0_IRQn",          // B59
-  "M33CTI1_IRQn",          // B60
-  #elif defined (_SILICON_LABS_32B_SERIES_2_CONFIG_2)
-  "CRYPTOACC_IRQn",         // B0
-  "TRNG_IRQn",              // B1
-  "PKE_IRQn",               // B2
-  "SMU_SECURE_IRQn",        // B3
-  "SMU_S_PRIVILEGED_IRQn",  // B4
-  "SMU_NS_PRIVILEGED_IRQn", // B5
-  "EMU_IRQn",               // B6
-  "TIMER0_IRQn",            // B7
-  "TIMER1_IRQn",            // B8
-  "TIMER2_IRQn",            // B9
-  "TIMER3_IRQn",            // B10
-  "TIMER4_IRQn",            // B11
-  "RTCC_IRQn",              // B12
-  "USART0_RX_IRQn",         // B13
-  "USART0_TX_IRQn",         // B14
-  "USART1_RX_IRQn",         // B15
-  "USART1_TX_IRQn",         // B16
-  "ICACHE0_IRQn",           // B17
-  "BURTC_IRQn",             // B18
-  "LETIMER0_IRQn",          // B19
-  "SYSCFG_IRQn",            // B20
-  "LDMA_IRQn",              // B21
-  "LFXO_IRQn",              // B22
-  "LFRCO_IRQn",             // B23
-  "ULFRCO_IRQn",            // B24
-  "GPIO_ODD_IRQn",          // B25
-  "GPIO_EVEN_IRQn",         // B26
-  "I2C0_IRQn",              // B27
-  "I2C1_IRQn",              // B28
-  "EMUDG_IRQn",             // B29
-  "EMUSE_IRQn",             // B30
-  "AGC_IRQn",               // B31
-  "BUFC_IRQn",              // B32
-  "FRC_PRI_IRQn",           // B33
-  "FRC_IRQn",               // B34
-  "MODEM_IRQn",             // B35
-  "PROTIMER_IRQn",          // B36
-  "RAC_RSM_IRQn",           // B37
-  "RAC_SEQ_IRQn",           // B38
-  "RDMAILBOX_IRQn",         // B39
-  "RFSENSE_IRQn",           // B40
-  "PRORTC_IRQn",            // B41
-  "SYNTH_IRQn",             // B42
-  "WDOG0_IRQn",             // B43
-  "HFXO0_IRQn",             // B44
-  "HFRCO0_IRQn",            // B45
-  "CMU_IRQn",               // B46
-  "AES_IRQn",               // B47
-  "IADC_IRQn",              // B48
-  "MSC_IRQn",               // B49
-  "DPLL0_IRQn",             // B50
-  "PDM_IRQn",               // B51
-  "SW0_IRQn",               // B52
-  "SW1_IRQn",               // B53
-  "SW2_IRQn",               // B54
-  "SW3_IRQn",               // B55
-  "KERNEL0_IRQn",           // B56
-  "KERNEL1_IRQn",           // B57
-  "M33CTI0_IRQn",           // B58
-  "M33CTI1_IRQn",           // B59
-  "EMUEFP_IRQn",            // B60
-  "DCDC_IRQn",              // B61
-  "EUART0_RX_IRQn",         // B62
-  "EUART0_TX_IRQn",         // B63
-#elif defined(_SILICON_LABS_32B_SERIES_2_CONFIG_3)
-  "SMU_SECURE_IRQn",        // B0
-  "SMU_S_PRIVILEGED_IRQn",  // B1
-  "SMU_NS_PRIVILEGED_IRQn", // B2
-  "EMU_IRQn",               // B3
-  "TIMER0_IRQn",            // B4
-  "TIMER1_IRQn",            // B5
-  "TIMER2_IRQn",            // B6
-  "TIMER3_IRQn",            // B7
-  "TIMER4_IRQn",            // B8
-  "USART0_RX_IRQn",         // B9
-  "USART0_TX_IRQn",         // B10
-  "EUSART0_RX_IRQn",        // B11
-  "EUSART0_TX_IRQn",        // B12
-  "EUSART1_RX_IRQn",        // B13
-  "EUSART1_TX_IRQn",        // B14
-  "EUSART2_RX_IRQn",        // B15
-  "EUSART2_TX_IRQn",        // B16
-  "ICACHE0_IRQn",           // B17
-  "BURTC_IRQn",             // B18
-  "LETIMER0_IRQn",          // B19
-  "SYSCFG_IRQn",            // B20
-  "MPAHBRAM_IRQn",          // B21
-  "LDMA_IRQn",              // B22
-  "LFXO_IRQn",              // B23
-  "LFRCO_IRQn",             // B24
-  "ULFRCO_IRQn",            // B25
-  "GPIO_ODD_IRQn",          // B26
-  "GPIO_EVEN_IRQn",         // B27
-  "I2C0_IRQn",              // B28
-  "I2C1_IRQn",              // B29
-  "EMUDG_IRQn",             // B30
-  "AGC_IRQn",               // B31
-  "BUFC_IRQn",              // B32
-  "FRC_PRI_IRQn",           // B33
-  "FRC_IRQn",               // B34
-  "MODEM_IRQn",             // B35
-  "PROTIMER_IRQn",          // B36
-  "RAC_RSM_IRQn",           // B37
-  "RAC_SEQ_IRQn",           // B38
-  "HOSTMAILBOX_IRQn",       // B39
-  "SYNTH_IRQn",             // B40
-  "ACMP0_IRQn",             // B41
-  "ACMP1_IRQn",             // B42
-  "WDOG0_IRQn",             // B43
-  "WDOG1_IRQn",             // B44
-  "HFXO0_IRQn",             // B45
-  "HFRCO0_IRQn",            // B46
-  "HFRCOEM23_IRQn",         // B47
-  "CMU_IRQn",               // B48
-  "AES_IRQn",               // B49
-  "IADC_IRQn",              // B50
-  "MSC_IRQn",               // B51
-  "DPLL0_IRQn",             // B52
-  "EMUEFP_IRQn",            // B53
-  "DCDC_IRQn",              // B54
-  "VDAC_IRQn",              // B55
-  "PCNT0_IRQn",             // B56
-  "SW0_IRQn",               // B57
-  "SW1_IRQn",               // B58
-  "SW2_IRQn",               // B59
-  "SW3_IRQn",               // B60
-  "KERNEL0_IRQn",           // B61
-  "KERNEL1_IRQn",           // B62
-  "M33CTI0_IRQn",           // B63
-  "M33CTI1_IRQn",           // B64
-  "FPUEXH_IRQn",            // B65
-  "SEMBRX_IRQn",            // B67
-  "SEMBTX_IRQn",            // B68
-  "LESENSE_IRQn",           // B69
-  "SYSRTC_APP_IRQn",        // B70
-  "SYSRTC_SEQ_IRQn",        // B71
-  "LCD_IRQn",               // B72
-  "KEYSCAN_IRQn",           // B73
-  "RFECA0_IRQn",            // B74
-  "RFECA1_IRQn",            // B75
-#elif defined(_SILICON_LABS_32B_SERIES_2_CONFIG_4)
-  "SMU_SECURE_IRQn",        // B0
-  "SMU_S_PRIVILEGED_IRQn",  // B1
-  "SMU_NS_PRIVILEGED_IRQn", // B2
-  "EMU_IRQn",               // B3
-  "TIMER0_IRQn",            // B4
-  "TIMER1_IRQn",            // B5
-  "TIMER2_IRQn",            // B6
-  "TIMER3_IRQn",            // B7
-  "TIMER4_IRQn",            // B8
-  "USART0_RX_IRQn",         // B9
-  "USART0_TX_IRQn",         // B10
-  "EUSART0_RX_IRQn",        // B11
-  "EUSART0_TX_IRQn",        // B12
-  "EUSART1_RX_IRQn",        // B13
-  "EUSART1_TX_IRQn",        // B14
-  "MVP_IRQn",               // B15
-  "ICACHE0_IRQn",           // B16
-  "BURTC_IRQn",             // B17
-  "LETIMER0_IRQn",          // B18
-  "SYSCFG_IRQn",            // B19
-  "MPAHBRAM_IRQn",          // B20
-  "LDMA_IRQn",              // B21
-  "LFXO_IRQn",              // B22
-  "LFRCO_IRQn",             // B23
-  "ULFRCO_IRQn",            // B24
-  "GPIO_ODD_IRQn",          // B25
-  "GPIO_EVEN_IRQn",         // B26
-  "I2C0_IRQn",              // B27
-  "I2C1_IRQn",              // B28
-  "EMUDG_IRQn",             // B29
-  "AGC_IRQn",               // B30
-  "BUFC_IRQn",              // B31
-  "FRC_PRI_IRQn",           // B32
-  "FRC_IRQn",               // B33
-  "MODEM_IRQn",             // B34
-  "PROTIMER_IRQn",          // B35
-  "RAC_RSM_IRQn",           // B36
-  "RAC_SEQ_IRQn",           // B37
-  "HOSTMAILBOX_IRQn",       // B38
-  "SYNTH_IRQn",             // B39
-  "ACMP0_IRQn",             // B40
-  "ACMP1_IRQn",             // B41
-  "WDOG0_IRQn",             // B42
-  "WDOG1_IRQn",             // B43
-  "HFXO0_IRQn",             // B44
-  "HFRCO0_IRQn",            // B45
-  "HFRCOEM23_IRQn",         // B46
-  "CMU_IRQn",               // B47
-  "AES_IRQn",               // B48
-  "IADC_IRQn",              // B49
-  "MSC_IRQn",               // B50
-  "DPLL0_IRQn",             // B51
-  "EMUEFP_IRQn",            // B52
-  "DCDC_IRQn",              // B53
-  "PCNT0_IRQn",             // B54
-  "SW0_IRQn",               // B55
-  "SW1_IRQn",               // B56
-  "SW2_IRQn",               // B57
-  "SW3_IRQn",               // B58
-  "KERNEL0_IRQn",           // B59
-  "KERNEL1_IRQn",           // B60
-  "FPUEXH_IRQn",            // B61
-  "SETAMPERHOST_IRQn",      // B62
-  "SEMBRX_IRQn",            // B63
-  "SEMBTX_IRQn",            // B64
-  "SYSRTC_APP_IRQn",        // B65
-  "SYSRTC_SEQ_IRQn",        // B66
-  "KEYSCAN_IRQn",           // B67
-  "RFECA0_IRQn",            // B68
-  "RFECA1_IRQn",            // B69
-  "VDAC0_IRQn",             // B70
-  "VDAC1_IRQn",             // B71
-  "AHB2AHB0_IRQn",          // B72
-  "AHB2AHB1_IRQn"           // B73
-#elif defined (_SILICON_LABS_32B_SERIES_2_CONFIG_6)
-  "SMU_SECURE_IRQn",        // B0
-  "SMU_S_PRIVILEGED_IRQn",  // B1
-  "SMU_NS_PRIVILEGED_IRQn", // B2
-  "EMU_IRQn",               // B3
-  "TIMER0_IRQn",            // B4
-  "TIMER1_IRQn",            // B5
-  "TIMER2_IRQn",            // B6
-  "TIMER3_IRQn",            // B7
-  "TIMER4_IRQn",            // B8
-  "TIMER5_IRQn",            // B9
-  "TIMER6_IRQn",            // B10
-  "TIMER7_IRQn",            // B11
-  "TIMER8_IRQn",            // B12
-  "TIMER9_IRQn",            // B13
-  "USART0_RX_IRQn",         // B14
-  "USART0_TX_IRQn",         // B15
-  "USART1_RX_IRQn",         // B16
-  "USART1_TX_IRQn",         // B17
-  "USART2_RX_IRQn",         // B18
-  "USART2_TX_IRQn",         // B19
-  "EUSART0_RX_IRQn",        // B20
-  "EUSART0_TX_IRQn",        // B21
-  "EUSART1_RX_IRQn",        // B22
-  "EUSART1_TX_IRQn",        // B23
-  "EUSART2_RX_IRQn",        // B24
-  "EUSART2_TX_IRQn",        // B25
-  "EUSART3_RX_IRQn",        // B26
-  "EUSART3_TX_IRQn",        // B27
-  "MVP_IRQn",               // B28
-  "ICACHE0_IRQn",           // B29
-  "BURTC_IRQn",             // B30
-  "LETIMER0_IRQn",          // B31
-  "SYSCFG_IRQn",            // B32
-  "MPAHBRAM0_IRQn",         // B33
-  "MPAHBRAM1_IRQn",         // B34
-  "LDMA_IRQn",              // B35
-  "LFXO_IRQn",              // B36
-  "LFRCO_IRQn",             // B37
-  "ULFRCO_IRQn",            // B38
-  "GPIO_ODD_IRQn",          // B39
-  "GPIO_EVEN_IRQn",         // B40
-  "I2C0_IRQn",              // B41
-  "I2C1_IRQn",              // B42
-  "I2C2_IRQn",              // B43
-  "I2C3_IRQn",              // B44
-  "EMUDG_IRQn",             // B45
-  "AGC_IRQn",               // B46
-  "BUFC_IRQn",              // B47
-  "FRC_PRI_IRQn",           // B48
-  "FRC_IRQn",               // B49
-  "MODEM_IRQn",             // B50
-  "PROTIMER_IRQn",          // B51
-  "RAC_RSM_IRQn",           // B52
-  "RAC_SEQ_IRQn",           // B53
-  "HOSTMAILBOX_IRQn",       // B54
-  "SYNTH_IRQn",             // B55
-  "ACMP0_IRQn",             // B56
-  "ACMP1_IRQn",             // B57
-  "WDOG0_IRQn",             // B58
-  "WDOG1_IRQn",             // B59
-  "HFXO0_IRQn",             // B60
-  "HFRCO0_IRQn",            // B61
-  "HFRCOEM23_IRQn",         // B62
-  "CMU_IRQn",               // B63
-  "AES_IRQn",               // B64
-  "IADC_IRQn",              // B65
-  "MSC_IRQn",               // B66
-  "DPLL0_IRQn",             // B67
-  "EMUEFP_IRQn",            // B68
-  "DCDC_IRQn",              // B69
-  "PCNT0_IRQn",             // B70
-  "SW0_IRQn",               // B71
-  "SW1_IRQn",               // B72
-  "SW2_IRQn",               // B73
-  "SW3_IRQn",               // B74
-  "KERNEL0_IRQn",           // B75
-  "KERNEL1_IRQn",           // B76
-  "M33CTI0_IRQn",           // B77
-  "M33CTI1_IRQn",           // B78
-  "FPUEXH_IRQn",            // B79
-  "SETAMPERHOST_IRQn",      // B80
-  "SEMBRX_IRQn",            // B81
-  "SEMBTX_IRQn",            // B82
-  "SYSRTC_APP_IRQn",        // B83
-  "SYSRTC_SEQ_IRQn",        // B84
-  "KEYSCAN_IRQn",           // B85
-  "RFECA0_IRQn",            // B86
-  "RFECA1_IRQn",            // B87
-  "VDAC0_IRQn",             // B88
-  "VDAC1_IRQn",             // B89
-  "AHB2AHB0_IRQn",          // B90
-  "AHB2AHB1_IRQn",          // B91
-  "LCD_IRQn",               // B92
-#elif defined (_SILICON_LABS_32B_SERIES_2_CONFIG_7)
-  "CRYPTOACC_IRQn",         // B0
-  "TRNG_IRQn",              // B1
-  "PKE_IRQn",               // B2
-  "SMU_SECURE_IRQn",        // B3
-  "SMU_S_PRIVILEGED_IRQn",  // B4
-  "SMU_NS_PRIVILEGED_IRQn", // B5
-  "EMU_IRQn",               // B6
-  "EMUEFP_IRQn",            // B7
-  "DCDC_IRQn",              // B8
-  "ETAMPDET_IRQn",          // B9
-  "TIMER0_IRQn",            // B10
-  "TIMER1_IRQn",            // B11
-  "TIMER2_IRQn",            // B12
-  "TIMER3_IRQn",            // B13
-  "TIMER4_IRQn",            // B14
-  "RTCC_IRQn",              // B15
-  "USART0_RX_IRQn",         // B16
-  "USART0_TX_IRQn",         // B17
-  "USART1_RX_IRQn",         // B18
-  "USART1_TX_IRQn",         // B19
-  "EUSART0_RX_IRQn",        // B20
-  "EUSART0_TX_IRQn",        // B21
-  "ICACHE0_IRQn",           // B22
-  "BURTC_IRQn",             // B23
-  "LETIMER0_IRQn",          // B24
-  "SYSCFG_IRQn",            // B25
-  "LDMA_IRQn",              // B26
-  "LFXO_IRQn",              // B27
-  "LFRCO_IRQn",             // B28
-  "ULFRCO_IRQn",            // B29
-  "GPIO_ODD_IRQn",          // B30
-  "GPIO_EVEN_IRQn",         // B31
-  "I2C0_IRQn",              // B32
-  "I2C1_IRQn",              // B33
-  "EMUDG_IRQn",             // B34
-  "EMUSE_IRQn",             // B35
-  "AGC_IRQn",               // B36
-  "BUFC_IRQn",              // B37
-  "FRC_PRI_IRQn",           // B38
-  "FRC_IRQn",               // B39
-  "MODEM_IRQn",             // B40
-  "PROTIMER_IRQn",          // B41
-  "RAC_RSM_IRQn",           // B42
-  "RAC_SEQ_IRQn",           // B43
-  "RDMAILBOX_IRQn",         // B44
-  "RFSENSE_IRQn",           // B45
-  "SYNTH_IRQn",             // B46
-  "PRORTC_IRQn",            // B47
-  "ACMP0_IRQn",             // B48
-  "WDOG0_IRQn",             // B49
-  "HFXO0_IRQn",             // B50
-  "HFRCO0_IRQn",            // B51
-  "CMU_IRQn",               // B52
-  "AES_IRQn",               // B53
-  "IADC_IRQn",              // B54
-  "MSC_IRQn",               // B55
-  "DPLL0_IRQn",             // B56
-  "PDM_IRQn",               // B57
-  "SW0_IRQn",               // B58
-  "SW1_IRQn",               // B59
-  "SW2_IRQn",               // B60
-  "SW3_IRQn",               // B61
-  "KERNEL0_IRQn",           // B62
-  "KERNEL1_IRQn",           // B63
-  "M33CTI0_IRQn",           // B64
-  "M33CTI1_IRQn",           // B65
-  "FPUEXH_IRQn",            // B66
-#elif defined (_SILICON_LABS_32B_SERIES_2_CONFIG_8)
-  "SMU_SECURE_IRQn",        // B0
-  "SMU_S_PRIVILEGED_IRQn",  // B1
-  "SMU_NS_PRIVILEGED_IRQn", // B2
-  "EMU_IRQn",               // B3
-  "TIMER0_IRQn",            // B4
-  "TIMER1_IRQn",            // B5
-  "TIMER2_IRQn",            // B6
-  "TIMER3_IRQn",            // B7
-  "TIMER4_IRQn",            // B8
-  "USART0_RX_IRQn",         // B9
-  "USART0_TX_IRQn",         // B10
-  "EUSART0_RX_IRQn",        // B11
-  "EUSART0_TX_IRQn",        // B12
-  "EUSART1_RX_IRQn",        // B13
-  "EUSART1_TX_IRQn",        // B14
-  "EUSART2_RX_IRQn",        // B15
-  "EUSART2_TX_IRQn",        // B16
-  "ICACHE0_IRQn",           // B17
-  "BURTC_IRQn",             // B18
-  "LETIMER0_IRQn",          // B19
-  "SYSCFG_IRQn",            // B20
-  "MPAHBRAM_IRQn",          // B21
-  "LDMA_IRQn",              // B22
-  "LFXO_IRQn",              // B23
-  "LFRCO_IRQn",             // B24
-  "ULFRCO_IRQn",            // B25
-  "GPIO_ODD_IRQn",          // B26
-  "GPIO_EVEN_IRQn",         // B27
-  "I2C0_IRQn",              // B28
-  "I2C1_IRQn",              // B29
-  "EMUDG_IRQn",             // B30
-  "AGC_IRQn",               // B31
-  "BUFC_IRQn",              // B32
-  "FRC_PRI_IRQn",           // B33
-  "FRC_IRQn",               // B34
-  "MODEM_IRQn",             // B35
-  "PROTIMER_IRQn",          // B36
-  "RAC_RSM_IRQn",           // B37
-  "RAC_SEQ_IRQn",           // B38
-  "HOSTMAILBOX_IRQn",       // B39
-  "SYNTH_IRQn",             // B40
-  "ACMP0_IRQn",             // B41
-  "ACMP1_IRQn",             // B42
-  "WDOG0_IRQn",             // B43
-  "WDOG1_IRQn",             // B44
-  "HFXO0_IRQn",             // B45
-  "HFRCO0_IRQn",            // B46
-  "HFRCOEM23_IRQn",         // B47
-  "CMU_IRQn",               // B48
-  "AES_IRQn",               // B49
-  "IADC_IRQn",              // B50
-  "MSC_IRQn",               // B51
-  "DPLL0_IRQn",             // B52
-  "EMUEFP_IRQn",            // B53
-  "DCDC_IRQn",              // B54
-  "VDAC0_IRQn",             // B55
-  "PCNT0_IRQn",             // B56
-  "SW0_IRQn",               // B57
-  "SW1_IRQn",               // B58
-  "SW2_IRQn",               // B59
-  "SW3_IRQn",               // B60
-  "KERNEL0_IRQn",           // B61
-  "KERNEL1_IRQn",           // B62
-  "M33CTI0_IRQn",           // B63
-  "M33CTI1_IRQn",           // B64
-  "FPUEXH_IRQn",            // B65
-  "SETAMPERHOST_IRQn",      // B66
-  "SEMBRX_IRQn",            // B67
-  "SEMBTX_IRQn",            // B68
-  "LESENSE_IRQn",           // B69
-  "SYSRTC_APP_IRQn",        // B70
-  "SYSRTC_SEQ_IRQn",        // B71
-  "LCD_IRQn",               // B72
-  "KEYSCAN_IRQn",           // B73
-  "RFECA0_IRQn",            // B74
-  "RFECA1_IRQn",            // B75
-  "AHB2AHB0_IRQn",          // B76
-  "AHB2AHB1_IRQn",          // B77
-  "MVP_IRQn",               // B78
-  #endif
-#elif defined (CORTEXM3_EFM32_MICRO)
-  "DMA",            // B0
-  "GPIO_EVEN",      // B1
-  "TIMER0",         // B2
-  "USART0_RX",      // B3
-  "USART0_TX",      // B4
-  "USB",            // B5
-  "ACMP0",          // B6
-  "ADC0",           // B7
-  "DAC0",           // B8
-  "I2C0",           // B9
-  "I2C1",           // B10
-  "GPIO_ODD",       // B11
-  "TIMER1",         // B12
-  "TIMER2",         // B13
-  "TIMER3",         // B14
-  "USART1_RX",      // B15
-  "USART1_TX",      // B16
-  "LESENSE",        // B17
-  "USART2_RX",      // B18
-  "USART2_TX",      // B19
-  "UART0_RX",       // B20
-  "UART0_TX",       // B21
-  "UART1_RX",       // B22
-  "UART1_TX",       // B23
-  "LEUART0",        // B24
-  "LEUART1",        // B25
-  "LETIMER0",       // B26
-  "PCNT0",          // B27
-  "PCNT1",          // B28
-  "PCNT2",          // B29
-  "RTC",            // B30
-  "BURTC",          // B31
-  "CMU",            // B32
-  "VCMP",           // B33
-  "LCD",            // B34
-  "MSC",            // B35
-  "AES",            // B36
-  "EBI",            // B37
-  "EMU",            // B38
-#else
-  "Timer1",       // B0
-  "Timer2",       // B1
-  "Management",   // B2
-  "Baseband",     // B3
-  "Sleep_Timer",  // B4
-  "SC1",          // B5
-  "SC2",          // B6
-  "Security",     // B7
-  "MAC_Timer",    // B8
-  "MAC_TX",       // B9
-  "MAC_RX",       // B10
-  "ADC",          // B11
-  "IRQ_A",        // B12
-  "IRQ_B",        // B13
-  "IRQ_C",        // B14
-  "IRQ_D",        // B15
-  "Debug"         // B16
-#endif
 };
 
 // Names of raw crash data items - each name is null terminated, and the
@@ -907,6 +173,7 @@ void halPrintCrashData(uint8_t port)
   while (*name != '\0') {
     /*lint -save -e448 */
     separator = ((*name != '\0') && ((i & 3) != 3)) ? ", " : "";
+
     /*lint -restore */
 
     outBufIdx += snprintf(outBuf+outBufIdx, sizeof outBuf,"%s = 0x%08lx%s", name, (unsigned long)*data++,separator);
@@ -1060,16 +327,21 @@ void halPrintCrashSummary(uint8_t port)
     otLogCritPlat("SP is outside %s stack range!", stack);
   }
 
-  if (c->intActive.word[0] || c->intActive.word[1]) {
-    otLogCritPlat("Interrupts active (or pre-empted and stacked):");
-    for (bit = 0; bit < 32; bit++) {
-      if ((c->intActive.word[0] & (1 << bit)) && (*intActiveBits[bit] != '\0')) {
-        otLogCritPlat(" %s", intActiveBits[bit]);
-      }
+  bool interrupts_active = false;
+  uint8_t num_bitmasks = (sizeof(c->intActive.word) / sizeof(c->intActive.word[0]));
+  for (uint8_t mask_num = 0; mask_num < num_bitmasks; mask_num++) {
+    if (c->intActive.word[mask_num]) {
+      interrupts_active = true;
     }
-    for (bit = 0; bit < (sizeof(intActiveBits) / sizeof(intActiveBits[0])) - 32; bit++) {
-      if ((c->intActive.word[1] & (1 << bit)) && (*intActiveBits[bit + 32] != '\0')) {
-        otLogCritPlat(" %s", intActiveBits[bit + 32]);
+  }
+
+  if (interrupts_active) {
+    otLogCritPlat("Interrupts active (or pre-empted and stacked):");
+    for (uint8_t mask_num = 0; mask_num < num_bitmasks; mask_num++) {
+      for (bit = 0; bit < 32; bit++) {
+        if (c->intActive.word[mask_num] & (1 << bit)) {
+          otLogCritPlat(" %u", bit + (mask_num * 32));
+        }
       }
     }
   } else {
@@ -1113,6 +385,26 @@ void halInternalClassifyReset(void)
     RESET_UNKNOWN_UNKNOWN,             // bit 13 : TAMPER // TODO: make new reset cause?
     RESET_UNKNOWN_UNKNOWN,             // bit 14 : M0SYSREQ // TODO: make new reset cause?
     RESET_UNKNOWN_UNKNOWN,             // bit 15 : M0LOCKUP // TODO: make new reset cause?
+  #elif defined (_SILICON_LABS_32B_SERIES_3)
+    RESET_POWERON_HV,                  // bit  0 : POR
+    RESET_EXTERNAL_PIN,                // bit  1 : PIN
+    RESET_SOFTWARE_EM4,                // bit  2 : EM4
+    RESET_WATCHDOG_EXPIRED,            // bit  3 : WDOG0
+    RESET_WATCHDOG_EXPIRED,            // bit  4 : WDOG1
+    RESET_FATAL_LOCKUP,                // bit  5 : LOCKUP
+    RESET_SOFTWARE,                    // bit  6 : SYSREQ
+    RESET_BROWNOUT_DVDD,               // bit  7 : DVDDBOD
+    RESET_UNKNOWN_UNKNOWN,             // bit  8 : DVDDLEBOD // TODO: make new reset cause?
+    RESET_BROWNOUT_DEC,                // bit  9 : DECBOD
+    RESET_BROWNOUT_AVDD,               // bit 10 : AVDDBOD
+    RESET_UNKNOWN_UNKNOWN,             // bit 11 : IOVDD0BOD // TODO: make new reset cause?
+    RESET_UNKNOWN_UNKNOWN,             // bit 12 : IOVDD1BOD // TODO: make new reset cause?
+    RESET_UNKNOWN_UNKNOWN,             // bit 13 : FLBOD // TODO: make new reset cause?
+    RESET_UNKNOWN_UNKNOWN,             // bit 14 : SETAMPER // TODO: make new reset cause?
+    RESET_UNKNOWN_UNKNOWN,             // bit 15 : M0SYSREQ // TODO: make new reset cause?
+    RESET_UNKNOWN_UNKNOWN,             // bit 16 : M0LOCKUP // TODO: make new reset cause?
+    RESET_UNKNOWN_UNKNOWN,             // bit 17 : SEM0SYSREQ // TODO: make new reset cause?
+    RESET_UNKNOWN_UNKNOWN,             // bit 18 : SEM0LOCKUP // TODO: make new reset cause?
   #elif defined (_EFR_DEVICE)
     RESET_POWERON_HV,                  // bit  0: PORST
     RESET_UNKNOWN_UNKNOWN,             // bit  1: RESERVED
@@ -1131,15 +423,15 @@ void halInternalClassifyReset(void)
     RESET_UNKNOWN_UNKNOWN,             // bit 14: RESERVED
     RESET_UNKNOWN_UNKNOWN,             // bit 15: RESERVED
     RESET_SOFTWARE_EM4,                // bit 16: EM4RST
+  #else
+    #error "Reset causes are undefined for this part. You'll need to find your _emu.h file for the part and define the reset bits accordingly."
   #endif
   };
 
-  uint32_t resetEvent = RMU_ResetCauseGet();
-  RMU_ResetCauseClear();
+  uint32_t resetEvent = sl_hal_emu_get_reset_cause();
+  sl_hal_emu_clear_reset_cause();
   uint16_t cause = RESET_UNKNOWN;
   uint16_t i;
-
-  HalResetCauseType *resetCause = (HalResetCauseType*)(RAM_MEM_BASE);
 
   for (i = 0; i < sizeof(resetEventTable) / sizeof(resetEventTable[0]); i++) {
     if (resetEvent & (1 << i)) {
@@ -1148,28 +440,39 @@ void halInternalClassifyReset(void)
     }
   }
 
+#ifdef SL_CATALOG_GECKO_BOOTLOADER_INTERFACE_PRESENT
+
+  BootloaderResetCause_t resetCause = bootloader_getResetReason();
+
   if (cause == RESET_SOFTWARE) {
-    if ((resetCause->signature == RESET_VALID_SIGNATURE)
-        && (RESET_BASE_TYPE(resetCause->reason) < NUM_RESET_BASE_TYPES)) {
+    if ((resetCause.signature == BOOTLOADER_RESET_SIGNATURE_VALID)
+        && (RESET_BASE_TYPE(resetCause.reason) < NUM_RESET_BASE_TYPES)) {
       // The extended reset cause is recovered from RAM
       // This can be trusted because the hardware reset event was software
       //  and additionally because the signature is valid
-      savedResetCause = resetCause->reason;
+      savedResetCause = resetCause.reason;
     } else {
       savedResetCause = RESET_SOFTWARE_UNKNOWN;
     }
     // mark the signature as invalid
-    resetCause->signature = RESET_INVALID_SIGNATURE;
+    ((BootloaderResetCause_t*)(RAM_BASE))->signature = BOOTLOADER_RESET_SIGNATURE_INVALID;
   } else if ((cause == RESET_BOOTLOADER_DEEPSLEEP)
-             && (resetCause->signature == RESET_VALID_SIGNATURE)
-             && (resetCause->reason == RESET_BOOTLOADER_DEEPSLEEP)) {
+             && (resetCause.signature == BOOTLOADER_RESET_SIGNATURE_VALID)
+             && (resetCause.reason == BOOTLOADER_RESET_REASON_DEEPSLEEP)) {
     // Save the crash info for bootloader deep sleep (even though it's not used
     // yet) and invalidate the reset signature.
-    resetCause->signature = RESET_INVALID_SIGNATURE;
-    savedResetCause = resetCause->reason;
+    ((BootloaderResetCause_t*)(RAM_BASE))->signature = BOOTLOADER_RESET_SIGNATURE_INVALID;
+    savedResetCause = resetCause.reason;
   } else {
     savedResetCause = cause;
   }
+#else // SL_CATALOG_GECKO_BOOTLOADER_INTERFACE_PRESENT
+  if (cause == RESET_SOFTWARE) {
+    savedResetCause = RESET_SOFTWARE_UNKNOWN;
+  } else {
+    savedResetCause = cause;
+  }
+#endif // SL_CATALOG_GECKO_BOOTLOADER_INTERFACE_PRESENT
 
   // If the last reset was due to an assert, save the assert info.
   if (savedResetCause == RESET_CRASH_ASSERT) {
@@ -1247,12 +550,15 @@ const char * halGetExtendedResetString(void)
 {
   // Create a table of reset strings for each extended reset type
   typedef const char ResetStringTableType[][4];
+  // Uncrustify doesn't like the following defines
+  /* *INDENT-OFF* */
   #define RESET_BASE_DEF(basename, value, string) \
   }; static ResetStringTableType basename##ResetStringTable = {
   #define RESET_EXT_DEF(basename, extname, extvalue, string)  string,
   {
     #include "reset-def.h"
   };
+  /* *INDENT-ON* */
   #undef RESET_BASE_DEF
   #undef RESET_EXT_DEF
 
@@ -1274,55 +580,18 @@ const char * halGetExtendedResetString(void)
   return (*extendedResetStringTable)[((extResetInfo) & 0xFF)];
 }
 
-#if _SILICON_LABS_GECKO_INTERNAL_SDID == 80
-
-// Workaround for brownouts on Dumbo when DCDC is retimed and radio subsystem is reset
-__STATIC_INLINE void disableDcdcRetimingAndRcosync(void)
-{
-  // Ensure access to EMU registers
-  EMU_Unlock();
-  EMU_PowerUnlock();
-
-  // Don't need to disable retiming if DCDC is not powering DVDD
-  if ((EMU->PWRCFG & _EMU_PWRCFG_PWRCFG_MASK) != EMU_PWRCFG_PWRCFG_DCDCTODVDD) {
-    return;
-  }
-
-  // Ensure sequencer is halted
-  uint32_t clockEnable = *(volatile uint32_t *)(0x400E4000 + 0xC8);
-  volatile uint32_t *reg;
-
-  if (clockEnable & 0x4UL) {
-    reg = (volatile uint32_t *)(0x40084000UL + 0x40);
-    *reg = 0x1UL;
-  }
-
-  // If DCDC is in use, ensure retiming and rcosync are disabled
-  uint32_t dcdcMode = EMU->DCDCCTRL & _EMU_DCDCCTRL_DCDCMODE_MASK;
-  if ((dcdcMode == EMU_DCDCCTRL_DCDCMODE_LOWNOISE)
-      || (dcdcMode == EMU_DCDCCTRL_DCDCMODE_LOWPOWER)) {
-    BUS_RegBitWrite(&EMU->DCDCTIMING, 28, 0);
-    // EMU->DCDCRCOSC is internal, _EMU_DCDCRCOSC_RCOSYNC_SHIFT = 0
-    BUS_RegBitWrite((void *)(EMU_BASE + 0x74), 0, 0);
-  }
-}
-
-#else
-
-// Workaround not needed for dies other than Dumbo
-#define disableDcdcRetimingAndRcosync() ((void)0)
-
-#endif
-
 void halInternalSysReset(uint16_t extendedCause)
 {
-  HalResetCauseType *resetCause = (HalResetCauseType*)(RAM_MEM_BASE);
   INTERRUPTS_OFF();
-  // Ensure DCDC settings are compatible with the upcoming radio subsystem reset
-  disableDcdcRetimingAndRcosync();
 
+#ifdef SL_CATALOG_GECKO_BOOTLOADER_INTERFACE_PRESENT
+  BootloaderResetCause_t *resetCause = (BootloaderResetCause_t*)(RAM_BASE);
   resetCause->reason = extendedCause;
-  resetCause->signature = RESET_VALID_SIGNATURE;
+  resetCause->signature = BOOTLOADER_RESET_SIGNATURE_VALID;
+#else
+  OT_UNUSED_VARIABLE(extendedCause);
+#endif // SL_CATALOG_GECKO_BOOTLOADER_INTERFACE_PRESENT
+
   // force write to complete before reset
   asm ("DMB");
   NVIC_SystemReset();
@@ -1344,15 +613,18 @@ static void halInternalAssertFault(const char * filename, int linenumber)
 __attribute__((noinline))
 static void halInternalAssertFault(const char * filename, int linenumber)
 {
-  asm (".short 0xDE42" : : "r" (filename), "r" (linenumber));
+  asm (".short 0xDE42\n" : : "r" (filename), "r" (linenumber));
 }
 #endif
 
 void halInternalAssertFailed(const char * filename, int linenumber)
 {
-  INTERRUPTS_OFF();
+#if defined(SL_CATALOG_IOSTREAM_UART_COMMON_PRESENT)
+  sl_iostream_printf(SL_IOSTREAM_STDOUT, "\r\n[ASSERT:%s:%d]\r\n", filename, linenumber);
+#endif // SL_CATALOG_IOSTREAM_UART_COMMON_PRESENT
 
-  otLogCritPlat("\r\n[ASSERT:%s:%d]\r", filename, linenumber);
+  halResetWatchdog();              // In case we're close to running out.
+  INTERRUPTS_OFF();
 
 #if defined (__ICCARM__) || defined (__GNUC__)
   // We can use the special fault mechanism to preserve more assert
@@ -1395,8 +667,10 @@ uint16_t halInternalCrashHandler(void)
   c->icsr.word = SCB->ICSR;
   c->shcsr.word = SCB->SHCSR;
 
-  c->intActive.word[0] = NVIC->IABR[0];
-  c->intActive.word[1] = NVIC->IABR[1];
+  uint8_t num_bitmasks = (sizeof(c->intActive.word) / sizeof(c->intActive.word[0]));
+  for (uint8_t mask_num = 0; mask_num < num_bitmasks; mask_num++) {
+    c->intActive.word[mask_num] = NVIC->IABR[mask_num];
+  }
 
   c->cfsr.word = SCB->CFSR;
   c->hfsr.word = SCB->HFSR;

@@ -8,11 +8,10 @@ category: "Wi-SUN Examples"
 quality: "evaluation"
 
 component:
-  - id: "segger_rtt"
   - id: "wisun_stack"
   - id: "wisun_stack_debug"
   - id: "wisun_stack_lfn"
-  - id: "wisun_full_radioconf"
+  - id: "wisun_default_radioconf"
   - id: "wisun_keychain"
   - id: "wisun_silabs_certificates"
   - id: "wisun_default_phy"
@@ -119,6 +118,8 @@ configuration:
     value: 1024
   - name: BUFFER_SIZE_UP
     value: 8192
+  - name: "SL_SLEEPTIMER_PERIPHERAL"
+    value: "SL_SLEEPTIMER_PERIPHERAL_BURTC"
 
 template_contribution:
   - name: "event_handler"

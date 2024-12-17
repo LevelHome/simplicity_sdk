@@ -8,6 +8,7 @@
 #include "cc_user_credential_config_api.h"
 #include "cc_user_credential_io_config.h"
 #include "cc_user_credential_io.h"
+#include "cc_user_credential_operations.h"
 #include "cc_user_credential_validation.h"
 #include "CC_Notification.h"
 #include "CC_Supervision.h"
@@ -33,26 +34,29 @@
   sizeof(uint8_t)   /**< Credential Type */\
   + sizeof(uint8_t)  /**< Properties1 */\
   + sizeof(uint16_t) /**< Credential Slots */\
-  + sizeof(uint8_t) /**< Minimum Length of Data */\
-  + sizeof(uint8_t) /**< Maximum Length of Data */\
+  + sizeof(uint8_t)  /**< Minimum Length of Data */\
+  + sizeof(uint8_t)  /**< Maximum Length of Data */\
   + sizeof(uint8_t)  /**< Credential Learn Recommended Timeout */\
   + sizeof(uint8_t)  /**< Credential Learn Number of Steps */\
   + sizeof(uint8_t)  /**< Maximum Credential Hash Length */\
 )
 #define S_TO_MS 1000 // Seconds to milliseconds, used for timers
 
-#define ASCII_AC_MIN 0x30 // Minimum AC PIN code character ('0' by default)
-#define ASCII_AC_MAX 0x39 // Maximum AC PIN code character ('9' by default)
-#define AC_MAX_LENGTH 10
-#define AC_MIN_LENGTH 4
-
 /**
- * Length of the Event/State Parameters data in the User Notification Report
- * frame without the Command Class and Command fields
+ * Maximum size for Credential Usage Data Notification Event/State parameters
+ * 
+ * UUID (16 bits) | Credential Count (8 bits)
+ * 3 * (Credential Type (8 bits) + Credential Slot (16 bits))
  */
-#define USER_NOTIFICATION_EV_PAR_LENGTH \
-  sizeof(ZW_USER_NOTIFICATION_REPORT_FRAME) - \
-  offsetof(ZW_USER_NOTIFICATION_REPORT_FRAME, userModifierType)
+#define CREDENTIAL_USAGE_DATA_MAX_SIZE ( \
+  sizeof(uuid) + sizeof(credential_count) \
+  + (CREDENTIAL_RULE_TRIPLE * (1 + sizeof(p_credential_metadata->slot))) \
+)
+
+// Number of bytes of a credential set frame if credential length and credential data fields are empty.
+#define CREDENTIAL_SET_FRAME_LENGTH_WITHOUT_CREDENTIAL_LENGTH (offsetof(ZW_CREDENTIAL_SET_1BYTE_FRAME, credentialLength))
+// Number of bytes of a credential set frame if credential data field is empty.
+#define CREDENTIAL_SET_FRAME_LENGTH_WITHOUT_CREDENTIAL_DATA (offsetof(ZW_CREDENTIAL_SET_1BYTE_FRAME, credentialData1))
 
 // State and timer for the current Credential Learn operation
 typedef struct credential_learn_status_ {
@@ -173,50 +177,6 @@ void set_default_name(uint8_t * pName, u3c_user * pUser)
   pUser->name_length = character_count * (is_16_bit_encoding ? 2 : 1);
 }
 
-/**
- * Deletes all Credentials of a given type for a User.
- *
- * @param[in] user_uid    User Unique Identifier
- * @param[in] filter_type The type of Credentials to delete, set this to
- *                        CREDENTIAL_TYPE_NONE to delete every Credential
- */
-void delete_all_credentials_of_type(
-  uint16_t uuid, u3c_credential_type filter_type)
-{
-  // The Credential to be deleted in the current iteration
-  u3c_credential_type target_type = filter_type;
-  uint16_t target_slot = 0;
-
-  // The Credential after the current target
-  u3c_credential_type next_type = filter_type;
-  uint16_t next_slot = 0;
-
-  // Find first Credential
-  bool next_exists = CC_UserCredential_get_next_credential(
-    uuid, filter_type, 0, &target_type, &target_slot);
-
-  // Loop through matching Credentials
-  while (
-    next_exists
-    && ((filter_type == CREDENTIAL_TYPE_NONE) || (next_type == filter_type))
-  ) {
-    /**
-     * Fetch the next Credential's details before deleting the current one
-     * (otherwise CC_UserCredential_get_next_credential will not find the next
-     * one)
-     */
-    next_exists = CC_UserCredential_get_next_credential(
-      uuid, target_type, target_slot, &next_type, &next_slot);
-    
-    // Delete target Credential
-    CC_UserCredential_delete_credential(uuid, target_type, target_slot);
-
-    // Target the next Credential
-    target_type = next_type;
-    target_slot = next_slot;
-  }
-}
-
 static void calculate_credentials_checksum_for_uuid(
   const uint16_t uuid, uint16_t * checksum)
 {
@@ -258,153 +218,29 @@ static void calculate_credentials_checksum_for_uuid(
   }
 }
 
-/**
- * Checks whether a Credential is identical to an existing Credential in the
- * database.
- *
- * @param[in]  p_credential        Pointer to the incoming Credential
- * @param[out] p_existing_metadata Pointer to the existing Credential metadata
- *                                 (valid only if true was returned)
- *
- * @return true if the Credential is a duplicate
- */
-bool find_existing_credential(
-  const u3c_credential * const p_credential,
-  u3c_credential_metadata * p_existing_metadata)
+JOB_STATUS CC_User_Credential_UsageNotification_tx(
+  const uint8_t notification_event,
+  const uint16_t uuid,
+  const uint8_t credential_count,
+  const u3c_credential_metadata * const p_credential_metadata
+)
 {
-  // Iterate through each User
-  uint16_t uuid = CC_UserCredential_get_next_user(0);
-  while (uuid) {
-    // Iterate through each Credential
-    u3c_credential_type type = CREDENTIAL_TYPE_NONE;
-    uint16_t slot = 0;
-
-    while (
-      CC_UserCredential_get_next_credential(
-        uuid, type, slot, &type, &slot)
-      ) {
-      if (p_credential->metadata.type == type) {
-        // Read existing credential
-        uint8_t e_data[U3C_BUFFER_SIZE_CREDENTIAL_DATA] = { 0 };
-
-        CC_UserCredential_get_credential(
-          uuid, type, slot, p_existing_metadata, e_data);
-
-        // Check whether the incoming and existing data is identical
-        if (p_existing_metadata->length == p_credential->metadata.length
-            && (memcmp(e_data, p_credential->data, p_existing_metadata->length)
-                == 0)
-            ) {
-          return true;
-        }
-      }
-    }
-    uuid = CC_UserCredential_get_next_user(uuid);
-  }
-  return false;
-}
-
-/**
- * Validates that a new Credential conforms to the active configuration of the
- * User Credential Command Class.
- *
- * @param[in] p_metadata Pointer to the incoming Credential data
- *
- * @return true if the Credential passes all checks
- */
-bool validate_new_credential_metadata(
-  const u3c_credential_metadata * const p_metadata)
-{
-  if (!p_metadata) {
-    assert(false);
-    return false;
-  }
-
-  bool is_valid = (
-    // CC:0083.01.0A.11.002
-    cc_user_credential_is_credential_type_supported(p_metadata->type)
-
-    // CC:0083.01.05.11.015
-    && (p_metadata->uuid != 0)
-    // CC:0083.01.05.11.014
-    && (p_metadata->uuid <= cc_user_credential_get_max_user_unique_idenfitiers())
-
-    // CC:0083.01.0A.11.004
-    && (p_metadata->slot
-        <= cc_user_credential_get_max_credential_slots(p_metadata->type))
-    // CC:0083.01.0A.11.005
-    && (p_metadata->slot != 0)
-  );
-
-  if (is_valid) {
-    // CC:0083.01.05.11.016: Associated UUID must reference existing User
-    u3c_db_operation_result get_user_result =
-      CC_UserCredential_get_user(p_metadata->uuid, NULL, NULL);
-    is_valid &= (get_user_result == U3C_DB_OPERATION_RESULT_SUCCESS);
-  }
-
-  return is_valid;
-}
-
-/**
- * Validates that a new Credential is not a duplicate and that it conforms to
- * the manufacturer's security rules and sends the required reports if these
- * checks fail.
- *
- * @param[in] p_credential Pointer to the incoming Credential data
- * @param[in] p_rx_options Pointer to the properties of the incoming frame
- *                         (set to NULL if a response should not be sent)
- *
- * @return true if the Credential passes all checks
- */
-bool validate_new_credential_data(
-  u3c_credential * p_credential, RECEIVE_OPTIONS_TYPE_EX * p_rx_options) {
-  
-  // Valiate the credential data against the rules in the specification
-  if (!validate_credential_data(p_credential, p_rx_options)) {
-    return false;
-  }
-
-  // CC:0083.01.0A.11.018: no duplicate credentials within a Credential Type
-  u3c_credential existing_credential = {
-    .metadata = { 0 },
-    .data = p_credential->data
+  uint8_t notification_event_parameters[CREDENTIAL_USAGE_DATA_MAX_SIZE] = {
+    uuid >> 8,
+    uuid & 0xFF,
+    credential_count
   };
-  if (find_existing_credential(p_credential, &existing_credential.metadata)) {
-    bool is_identifier_identical = (
-      p_credential->metadata.type == existing_credential.metadata.type
-      && p_credential->metadata.slot == existing_credential.metadata.slot
-    );
-    if (!is_identifier_identical) {
-      if (p_rx_options) {
-        // Get next credential's details
-        u3c_credential_type next_credential_type = CREDENTIAL_TYPE_NONE;
-        uint16_t next_credential_slot = 0;
-        CC_UserCredential_get_next_credential(
-          0, existing_credential.metadata.type,
-          existing_credential.metadata.slot, &next_credential_type,
-          &next_credential_slot);
 
-        // Report duplicate
-        CC_UserCredential_CredentialReport_tx(
-          CREDENTIAL_REP_TYPE_DUPLICATE, &existing_credential,
-          next_credential_type, next_credential_slot, p_rx_options);
-      }
-      return false;
-    }
+  uint8_t * p_event_parameters = notification_event_parameters + 3;
+  for (uint8_t i = 0; i < credential_count; ++i) {
+    *p_event_parameters++ = p_credential_metadata[i].type;
+    *p_event_parameters++ = p_credential_metadata[i].slot >> 8;
+    *p_event_parameters++ = p_credential_metadata[i].slot & 0xFF;
   }
 
-  // CC:0083.01.0D.11.001: Credential must follow manufacturer security rules
-  if (!CC_UserCredential_manufacturer_validate_credential(p_credential)) {
-    if (p_rx_options) {
-      CC_UserCredential_CredentialReport_tx(
-        CREDENTIAL_REP_TYPE_MANUFACTURER_SECURITY_RULES, p_credential,
-        CREDENTIAL_TYPE_NONE, 0, p_rx_options);
-    }
-    return false;
-  }
-
-  return true;
+  return CC_Notification_TriggerAndTransmit(
+    0, notification_event, notification_event_parameters,
+    (p_event_parameters - notification_event_parameters), NULL, false);
 }
 
 /**
@@ -478,7 +314,7 @@ CC_UserCredential_CredentialCapabilitiesGet_handler(
 
   pReport->numberOfSupportedCredentialTypes = n_credential_types;
 
-  uint8_t * pArray = (uint8_t *)&(pReport->credentialType1);
+  uint8_t * pArray = (uint8_t *)(&pReport->variantgroup1.credentialType);
   u3c_credential_type i_type = CREDENTIAL_TYPE_NONE;
 
   /**
@@ -584,6 +420,7 @@ static received_frame_status_t CC_UserCredential_UserSet_handler(
   ZW_USER_SET_1BYTE_FRAME * pFrameIn = &input->frame->ZW_UserSet1byteFrame;
   RECEIVE_OPTIONS_TYPE_EX * rxOptions = input->rx_options;
   received_frame_status_t status = RECEIVED_FRAME_STATUS_FAIL;
+  u3c_db_operation_result operation_result = U3C_DB_OPERATION_RESULT_SUCCESS;
 
   // Extract User data from frame
   uint8_t name[U3C_BUFFER_SIZE_USER_NAME];
@@ -600,6 +437,7 @@ static received_frame_status_t CC_UserCredential_UserSet_handler(
   };
   uint8_t * pName = &pFrameIn->userName1;
   uint8_t operation = pFrameIn->properties1 & USER_SET_PROPERTIES1_OPERATION_TYPE_MASK;
+  bool is_name_truncated = false;
 
   // CC:0083.01.05.11.014: Ignore frames where the User Unique Identifier is greater than allowed
   if (user.unique_identifier > cc_user_credential_get_max_user_unique_idenfitiers()) {
@@ -633,7 +471,7 @@ static received_frame_status_t CC_UserCredential_UserSet_handler(
         user.credential_rule = CREDENTIAL_RULE_SINGLE;
       }
       CC_UserCredential_UserReport_tx(
-        USER_REP_TYPE_EXP_NZ_EXP_MIN_INVALID, &user, name,
+        USER_REP_TYPE_Z_EXP_MIN_INVALID, &user, name,
         CC_UserCredential_get_next_user(user.unique_identifier), rxOptions);
       return RECEIVED_FRAME_STATUS_FAIL;
     }
@@ -647,6 +485,7 @@ static received_frame_status_t CC_UserCredential_UserSet_handler(
     uint8_t user_name_max_length = cc_user_credential_get_max_length_of_user_name();
     if (user.name_length > user_name_max_length) {
       user.name_length = user_name_max_length;
+      is_name_truncated = true;
     }
 
     // If no name is provided, set it to the default value
@@ -660,89 +499,20 @@ static received_frame_status_t CC_UserCredential_UserSet_handler(
 
   switch (operation) {
     case USER_SET_OPERATION_TYPE_ADD: {
-      switch (CC_UserCredential_add_user(&user, pName)) {
-        case U3C_DB_OPERATION_RESULT_SUCCESS: {
-          CC_UserCredential_UserReport_tx(
-            USER_REP_TYPE_ADDED, &user, pName,
-            CC_UserCredential_get_next_user(user.unique_identifier), rxOptions);
-          status = RECEIVED_FRAME_STATUS_SUCCESS;
-          break;
-        }
-
-        case U3C_DB_OPERATION_RESULT_FAIL_OCCUPIED: {
-          CC_UserCredential_get_user(user.unique_identifier, &user, name);
-          CC_UserCredential_UserReport_tx(
-            USER_REP_TYPE_ADD_AGAINST_OCCUPIED, &user, name,
-            CC_UserCredential_get_next_user(user.unique_identifier), rxOptions);
-          status = RECEIVED_FRAME_STATUS_FAIL;
-          break;
-        }
-
-        case U3C_DB_OPERATION_RESULT_FAIL_FULL: {
-          // Send report of a blank user with the User Unchanged report type
-          memset(&user, 0, sizeof(u3c_user));
-          user.credential_rule = CREDENTIAL_RULE_SINGLE;
-          CC_UserCredential_UserReport_tx(
-            USER_REP_TYPE_UNCHANGED, &user, NULL, 0, rxOptions);
-          status = RECEIVED_FRAME_STATUS_FAIL;
-          break;
-        }
-
-        case U3C_DB_OPERATION_RESULT_FAIL_IDENTICAL: {
-          /**
-           * The received data is identical to that stored in the database.
-           * Report data already occupying the UUID.
-           */
-          CC_UserCredential_get_user(user.unique_identifier, &user, NULL);
-          CC_UserCredential_UserReport_tx(
-            USER_REP_TYPE_UNCHANGED, &user, pName,
-            CC_UserCredential_get_next_user(user.unique_identifier), rxOptions);
-          status = RECEIVED_FRAME_STATUS_FAIL;
-          break;
-        }
-
-        default:
-          break;
-      }
+      operation_result = CC_UserCredential_add_user_and_report(&user, pName, rxOptions);
+      status = (((operation_result == U3C_DB_OPERATION_RESULT_SUCCESS)
+                || (operation_result == U3C_DB_OPERATION_RESULT_FAIL_IDENTICAL))
+                && (is_name_truncated == false))
+               ? RECEIVED_FRAME_STATUS_SUCCESS : RECEIVED_FRAME_STATUS_FAIL;
       break;
     }
 
     case USER_SET_OPERATION_TYPE_MODIFY: {
-      switch (CC_UserCredential_modify_user(&user, pName)) {
-        case U3C_DB_OPERATION_RESULT_SUCCESS: {
-          CC_UserCredential_UserReport_tx(
-            USER_REP_TYPE_MODIFIED, &user, pName,
-            CC_UserCredential_get_next_user(user.unique_identifier), rxOptions);
-          status = RECEIVED_FRAME_STATUS_SUCCESS;
-          break;
-        }
-
-        case U3C_DB_OPERATION_RESULT_FAIL_IDENTICAL: {
-          /**
-           * The received data is identical to that stored in the database.
-           * Report data already occupying the UUID.
-           */
-          CC_UserCredential_get_user(user.unique_identifier, &user, pName);
-          CC_UserCredential_UserReport_tx(
-            USER_REP_TYPE_UNCHANGED, &user, pName,
-            CC_UserCredential_get_next_user(user.unique_identifier), rxOptions);
-          status = RECEIVED_FRAME_STATUS_FAIL;
-          break;
-        }
-
-        case U3C_DB_OPERATION_RESULT_FAIL_DNE: {
-          user.name_length = pFrameIn->userNameLength;
-          CC_UserCredential_UserReport_tx(
-            USER_REP_TYPE_MODIF_AGAINST_EMPTY, &user, &pFrameIn->userName1, 0,
-            rxOptions);
-
-          status = RECEIVED_FRAME_STATUS_FAIL;
-          break;
-        }
-
-        default:
-          break;
-      }
+      operation_result = CC_UserCredential_modify_user_and_report(&user, pName, rxOptions);
+      status = (((operation_result == U3C_DB_OPERATION_RESULT_SUCCESS)
+                || (operation_result == U3C_DB_OPERATION_RESULT_FAIL_IDENTICAL))
+                && (is_name_truncated == false))
+               ? RECEIVED_FRAME_STATUS_SUCCESS : RECEIVED_FRAME_STATUS_FAIL;
       break;
     }
 
@@ -758,33 +528,25 @@ static received_frame_status_t CC_UserCredential_UserSet_handler(
            * one)
            */
           uint16_t next_user_uid = CC_UserCredential_get_next_user(user_uid);
-          delete_all_credentials_of_type(user_uid, CREDENTIAL_TYPE_NONE);
+          CC_UserCredential_delete_all_credentials_of_type(user_uid, CREDENTIAL_TYPE_NONE);
           CC_UserCredential_delete_user(user_uid);
           user_uid = next_user_uid;
         }
 
-        // Mirror request in report
+        // Mirror request in report, resetting non-identifying parameters
+        user.modifier_type = MODIFIER_TYPE_DNE;
+        user.modifier_node_id = 0;
+        user.active = false;
+        user.expiring_timeout_minutes = 0;
         CC_UserCredential_UserReport_tx(
           USER_REPORT_DELETED, &user, pName, 0, rxOptions);
         status = RECEIVED_FRAME_STATUS_SUCCESS;
       } else {
-        // Delete a single User
-        delete_all_credentials_of_type(user.unique_identifier, CREDENTIAL_TYPE_NONE);
-        if (
-          CC_UserCredential_get_user(user.unique_identifier, &user, name)
-          == U3C_DB_OPERATION_RESULT_SUCCESS
-        ) {
-          pName = name;
-          CC_UserCredential_get_next_user(user.unique_identifier);
-        }
-        u3c_db_operation_result result = CC_UserCredential_delete_user(user.unique_identifier);
-
-        if (result == U3C_DB_OPERATION_RESULT_SUCCESS) {
-          CC_UserCredential_UserReport_tx(
-            USER_REPORT_DELETED, &user, pName,
-            CC_UserCredential_get_next_user(user.unique_identifier), rxOptions);
-          status = RECEIVED_FRAME_STATUS_SUCCESS;
-        }
+        // Delete a single User and report
+        operation_result = CC_UserCredential_delete_user_and_report(user.unique_identifier, rxOptions);
+        status = ((operation_result == U3C_DB_OPERATION_RESULT_SUCCESS)
+                  || (operation_result == U3C_DB_OPERATION_RESULT_FAIL_DNE))
+                 ? RECEIVED_FRAME_STATUS_SUCCESS : RECEIVED_FRAME_STATUS_FAIL;
       }
       break;
     }
@@ -816,6 +578,7 @@ static received_frame_status_t CC_UserCredential_UserGet_handler(
   if (result != U3C_DB_OPERATION_RESULT_SUCCESS) {
     // The User doesn't exist, return blank data, but make sure all fields are valid
     memset(&user, 0, sizeof(user));
+    user.unique_identifier = uid;
     user.credential_rule = CREDENTIAL_RULE_SINGLE;
   }
 
@@ -835,6 +598,7 @@ static received_frame_status_t CC_UserCredential_CredentialSet_handler(
   )
 {
   received_frame_status_t status = RECEIVED_FRAME_STATUS_FAIL;
+  u3c_db_operation_result operation_result = U3C_DB_OPERATION_RESULT_ERROR;
 
   if (operation_type != U3C_OPERATION_TYPE_DELETE) {
     if (!validate_new_credential_metadata(&p_credential->metadata)
@@ -859,225 +623,63 @@ static received_frame_status_t CC_UserCredential_CredentialSet_handler(
 
   switch (operation_type) {
     case U3C_OPERATION_TYPE_ADD: {
-      switch (CC_UserCredential_add_credential(p_credential)) {
-        case U3C_DB_OPERATION_RESULT_SUCCESS: {
-          // Get next credential's details
-          u3c_credential_type next_credential_type = CREDENTIAL_TYPE_NONE;
-          uint16_t next_credential_slot = 0;
-          CC_UserCredential_get_next_credential(
-            p_credential->metadata.uuid, p_credential->metadata.type,
-            p_credential->metadata.slot,
-            &next_credential_type, &next_credential_slot);
-
-          CC_UserCredential_CredentialReport_tx(
-            CREDENTIAL_REP_TYPE_ADDED, p_credential, next_credential_type,
-            next_credential_slot, p_rx_options);
-          status = RECEIVED_FRAME_STATUS_SUCCESS;
-          break;
-        }
-
-        case U3C_DB_OPERATION_RESULT_FAIL_OCCUPIED: {
-          // Read existing Credential from database and send its details in the report
-          CC_UserCredential_get_credential(
-            p_credential->metadata.uuid, p_credential->metadata.type, p_credential->metadata.slot,
-            &p_credential->metadata, p_credential->data);
-
-          // Get next credential's details
-          u3c_credential_type next_credential_type = CREDENTIAL_TYPE_NONE;
-          uint16_t next_credential_slot = 0;
-          CC_UserCredential_get_next_credential(
-            p_credential->metadata.uuid, p_credential->metadata.type,
-            p_credential->metadata.slot,
-            &next_credential_type, &next_credential_slot);
-
-          CC_UserCredential_CredentialReport_tx(
-            CREDENTIAL_REP_TYPE_ADD_AGAINST_OCCUPIED, p_credential,
-            next_credential_type, next_credential_slot, p_rx_options);
-
-          status = RECEIVED_FRAME_STATUS_FAIL;
-          break;
-        }
-
-        case U3C_DB_OPERATION_RESULT_FAIL_FULL: {
-          // Report an empty credential with unchanged status
-          p_credential->metadata.length = 0;
-          p_credential->metadata.modifier_type = MODIFIER_TYPE_DNE;
-          p_credential->metadata.modifier_node_id = 0;
-          CC_UserCredential_CredentialReport_tx(
-            CREDENTIAL_REP_TYPE_UNCHANGED, p_credential, CREDENTIAL_TYPE_NONE, 0,
-            p_rx_options);
-
-          status = RECEIVED_FRAME_STATUS_FAIL;
-          break;
-        }
-
-        case U3C_DB_OPERATION_RESULT_FAIL_IDENTICAL: {
-          // Read existing Credential from database and send its details in the report
-          CC_UserCredential_get_credential(
-            p_credential->metadata.uuid, p_credential->metadata.type,p_credential->metadata.slot,
-            &p_credential->metadata, p_credential->data);
-
-          // Get next credential's details
-          u3c_credential_type next_credential_type = CREDENTIAL_TYPE_NONE;
-          uint16_t next_credential_slot = 0;
-          CC_UserCredential_get_next_credential(
-            0, p_credential->metadata.type, p_credential->metadata.slot,
-            &next_credential_type, &next_credential_slot);
-
-          CC_UserCredential_CredentialReport_tx(
-            CREDENTIAL_REP_TYPE_UNCHANGED, p_credential,
-            next_credential_type, next_credential_slot, p_rx_options);
-
-          status = RECEIVED_FRAME_STATUS_FAIL;
-          break;
-        }
-
-        default:
-          break;
-      }
+      operation_result = CC_UserCredential_add_credential_and_report(p_credential, p_rx_options);
+      status = ((operation_result == U3C_DB_OPERATION_RESULT_SUCCESS )
+               || (operation_result == U3C_DB_OPERATION_RESULT_FAIL_IDENTICAL))
+               ? RECEIVED_FRAME_STATUS_SUCCESS : RECEIVED_FRAME_STATUS_FAIL;
       break;
     }
 
     case U3C_OPERATION_TYPE_MODIFY: {
-      switch (CC_UserCredential_modify_credential(p_credential)) {
-        case U3C_DB_OPERATION_RESULT_SUCCESS: {
-          // Get next credential's details
-          u3c_credential_type next_credential_type = CREDENTIAL_TYPE_NONE;
-          uint16_t next_credential_slot = 0;
-          CC_UserCredential_get_next_credential(
-            0, p_credential->metadata.type, p_credential->metadata.slot,
-            &next_credential_type, &next_credential_slot);
-
-          CC_UserCredential_CredentialReport_tx(
-            CREDENTIAL_REP_TYPE_MODIFIED, p_credential, next_credential_type,
-            next_credential_slot, p_rx_options);
-
-          status = RECEIVED_FRAME_STATUS_SUCCESS;
-          break;
-        }
-
-        case U3C_DB_OPERATION_RESULT_FAIL_DNE: {
-          CC_UserCredential_CredentialReport_tx(
-            CREDENTIAL_REP_TYPE_MODIF_AGAINST_EMPTY, p_credential,
-            CREDENTIAL_TYPE_NONE, 0, p_rx_options);
-
-          status = RECEIVED_FRAME_STATUS_FAIL;
-          break;
-        }
-
-        case U3C_DB_OPERATION_RESULT_FAIL_REASSIGN: {
-          /**
-           * The UUID must not be changed via this command.
-           * User Credential Association Set should be used instead.
-           * Read existing Credential from database and send its details in the report
-           */
-          CC_UserCredential_get_credential(
-            p_credential->metadata.uuid, p_credential->metadata.type, p_credential->metadata.slot,
-            &p_credential->metadata, p_credential->data);
-
-          // Get next credential's details
-          u3c_credential_type next_credential_type = CREDENTIAL_TYPE_NONE;
-          uint16_t next_credential_slot = 0;
-          CC_UserCredential_get_next_credential(
-            0, p_credential->metadata.type, p_credential->metadata.slot,
-            &next_credential_type, &next_credential_slot);
-
-          CC_UserCredential_CredentialReport_tx(
-            CREDENTIAL_REP_TYPE_ASSIGNED_TO_DIFFERENT_USER, p_credential,
-            next_credential_type, next_credential_slot, p_rx_options);
-
-          status = RECEIVED_FRAME_STATUS_FAIL;
-          break;
-        }
-
-        case U3C_DB_OPERATION_RESULT_FAIL_IDENTICAL: {
-          // Read existing Credential from database and send its details in the report
-          CC_UserCredential_get_credential(
-            p_credential->metadata.uuid, p_credential->metadata.type,p_credential->metadata.slot,
-            &p_credential->metadata, p_credential->data);
-
-          // Get next credential's details
-          u3c_credential_type next_credential_type = CREDENTIAL_TYPE_NONE;
-          uint16_t next_credential_slot = 0;
-          CC_UserCredential_get_next_credential(
-            0, p_credential->metadata.type, p_credential->metadata.slot,
-            &next_credential_type, &next_credential_slot);
-
-          CC_UserCredential_CredentialReport_tx(
-            CREDENTIAL_REP_TYPE_UNCHANGED, p_credential,
-            next_credential_type, next_credential_slot, p_rx_options);
-
-          status = RECEIVED_FRAME_STATUS_FAIL;
-          break;
-        }
-
-        default:
-          break;
-      }
+      operation_result = CC_UserCredential_modify_credential_and_report(p_credential, p_rx_options);
+      status = ((operation_result == U3C_DB_OPERATION_RESULT_SUCCESS)
+                || (operation_result == U3C_DB_OPERATION_RESULT_FAIL_IDENTICAL))
+               ? RECEIVED_FRAME_STATUS_SUCCESS : RECEIVED_FRAME_STATUS_FAIL;
       break;
     }
 
     case U3C_OPERATION_TYPE_DELETE: {
-      if (p_credential->metadata.uuid == 0) {
-        // Delete all User Credentials
+      if (p_credential->metadata.slot == 0) {
+        // Bulk delete credentials
 
-        // Iterate through each User
-        uint16_t user_uid = CC_UserCredential_get_next_user(0);
-        while (user_uid) {
-          // Delete an User's every Credential (of a certain type, if specified)
-          delete_all_credentials_of_type(user_uid, p_credential->metadata.type);
-          user_uid = CC_UserCredential_get_next_user(user_uid);
+        uint16_t user_uid = p_credential->metadata.uuid;
+        if (user_uid == 0) {
+          user_uid = CC_UserCredential_get_next_user(0);
         }
 
+        // Iterate through each user
+        while (user_uid) {
+          // Delete a user's every credential (of a certain type, if specified)
+          CC_UserCredential_delete_all_credentials_of_type(user_uid, p_credential->metadata.type);
+          user_uid = CC_UserCredential_get_next_user(user_uid);
+
+          /**
+           * If the UUID was specified in the request, don't process any
+           * additional users.
+           */
+          if (p_credential->metadata.uuid != 0) {
+            break;
+          }
+        }
+
+        p_credential->metadata.modifier_type = MODIFIER_TYPE_DNE;
+        p_credential->metadata.modifier_node_id = 0;
         // Echo data from request back to sender
         CC_UserCredential_CredentialReport_tx(
           CREDENTIAL_REP_TYPE_DELETED, p_credential, CREDENTIAL_TYPE_NONE, 0,
           p_rx_options);
 
         status = RECEIVED_FRAME_STATUS_SUCCESS;
-      } else {
-        // Delete Credential(s) of a specific User
-
-        if (p_credential->metadata.slot == 0) {
-          // Delete an User's every Credential (of a certain type, if specified)
-          delete_all_credentials_of_type(
-            p_credential->metadata.uuid, p_credential->metadata.type);
-
-          // Echo data from request back to sender
-          CC_UserCredential_CredentialReport_tx(
-            CREDENTIAL_REP_TYPE_DELETED, p_credential, CREDENTIAL_TYPE_NONE, 0,
-            p_rx_options);
-
-          status = RECEIVED_FRAME_STATUS_SUCCESS;
-        } else {
-          // Delete a single Credential
-
-          // Read existing data pending deletion for use in Notification Report
-          bool credential_exists = CC_UserCredential_get_credential(
-            p_credential->metadata.uuid,
-            p_credential->metadata.type,
-            p_credential->metadata.slot,
-            &p_credential->metadata, p_credential->data
-            )
-                                   == U3C_DB_OPERATION_RESULT_SUCCESS;
-
-          if (credential_exists
-              && (CC_UserCredential_delete_credential(
-                    p_credential->metadata.uuid,
-                    p_credential->metadata.type,
-                    p_credential->metadata.slot)
-                  == U3C_DB_OPERATION_RESULT_SUCCESS
-                 )
-          ) {
-            // Send report of deleted Credential
-            CC_UserCredential_CredentialReport_tx(
-              CREDENTIAL_REP_TYPE_DELETED, p_credential, CREDENTIAL_TYPE_NONE, 0,
-              p_rx_options);
-
-            status = RECEIVED_FRAME_STATUS_SUCCESS;
-          }
-        }
+      } else if (p_credential->metadata.type != 0) {
+        // Delete a single Credential and report
+        operation_result = CC_UserCredential_delete_credential_and_report(
+          p_credential->metadata.uuid, p_credential->metadata.type,
+          p_credential->metadata.slot, p_rx_options);
+        status = ((operation_result == U3C_DB_OPERATION_RESULT_SUCCESS)
+                  || (operation_result == U3C_DB_OPERATION_RESULT_FAIL_DNE))
+                 ? RECEIVED_FRAME_STATUS_SUCCESS : RECEIVED_FRAME_STATUS_FAIL;
       }
+      // Type == 0 && Slot != 0 is not a valid request
     }
     break;
 
@@ -1106,10 +708,14 @@ static received_frame_status_t CC_UserCredential_CredentialSet_parser(
   }
 
   // Validate length
-  uint8_t credential_length = input->frame->ZW_CredentialSet1byteFrame.credentialLength;
-  const uint8_t FRAME_LENGTH_WITHOUT_CREDENTIAL_DATA = 9;
-  if (input->length != (FRAME_LENGTH_WITHOUT_CREDENTIAL_DATA + credential_length)) {
+  uint8_t credential_length = 0;
+  if (input->length < CREDENTIAL_SET_FRAME_LENGTH_WITHOUT_CREDENTIAL_LENGTH) {
     return RECEIVED_FRAME_STATUS_FAIL;
+  } else if (input->length > CREDENTIAL_SET_FRAME_LENGTH_WITHOUT_CREDENTIAL_LENGTH) {
+    credential_length = input->frame->ZW_CredentialSet1byteFrame.credentialLength;
+    if (input->length != (CREDENTIAL_SET_FRAME_LENGTH_WITHOUT_CREDENTIAL_DATA + credential_length)) {
+      return RECEIVED_FRAME_STATUS_FAIL;
+    }
   }
 
   if (
@@ -1180,18 +786,20 @@ static void send_report(
   const bool notify_lifeline
   )
 {
-  bool only_sender_is_in_lifeline = false; // The Lifeline group only contains the sender
+  node_id_t initiator_node_id = p_rx_options->sourceNode.nodeId;
+  uint8_t n_nodes_in_lifeline = 0;
+  bool initiator_is_in_lifeline = false;
 
   if (notify_lifeline) {
-    uint8_t n_nodes_in_lifeline = 0;
     MULTICHAN_NODE_ID * p_nodes = NULL;
     if (
-      (handleAssociationGetnodeList(LIFELINE_GROUP_ID, 0, &p_nodes, &n_nodes_in_lifeline)
-       == NODE_LIST_STATUS_SUCCESS)
-      && (n_nodes_in_lifeline == 1)
+      handleAssociationGetnodeList(LIFELINE_GROUP_ID, 0, &p_nodes, &n_nodes_in_lifeline)
+      == NODE_LIST_STATUS_SUCCESS
     ) {
-      if (p_nodes[0].node.nodeId == p_rx_options->sourceNode.nodeId) {
-        only_sender_is_in_lifeline = true;
+      for (uint8_t i = 0; i < n_nodes_in_lifeline; ++i) {
+        if (p_nodes[i].node.nodeId == initiator_node_id) {
+          initiator_is_in_lifeline = true;
+        }
       }
     }
   }
@@ -1202,10 +810,13 @@ static void send_report(
   /**
    * Send single report to requesting node only if
    * - the report is not addressed to the Lifeline group or
-   * - the only node in the Lifeline is the sender (TSE wouldn't send anything
-   *   in this case)
+   * - the initiating node is not in the Lifeline
+   * - the only node in the Lifeline is the initiator (TSE wouldn't send
+   *   anything in this case)
    */
-  if (!notify_lifeline || only_sender_is_in_lifeline) {
+  if (!notify_lifeline
+      || (!initiator_is_in_lifeline || (n_nodes_in_lifeline == 1))
+  ) {
     zaf_transport_tx(
       report_out_frame, report_out_size, NULL, &tx_options);
   }
@@ -1226,7 +837,14 @@ void CC_UserCredential_CredentialReport_tx(
   uint8_t * p_frame_start = report_out_frame;
   uint8_t * p_frame = p_frame_start;
 
-  bool crb = true; // #TODO: Get configuration of max hash length once available
+  /**
+   * CC:0083.01.0C.11.021: If the credential can be read back (Maximum
+   * Credential Hash Length 0 in the Credential Capabilities Report Command),
+   * the CRB flag MUST be set to 1.
+   */
+  bool crb =
+    (p_credential->metadata.type != CREDENTIAL_TYPE_NONE)
+    && (cc_user_credential_get_max_hash_length(p_credential->metadata.type) == 0);
 
   *p_frame++ = COMMAND_CLASS_USER_CREDENTIAL;
   *p_frame++ = CREDENTIAL_REPORT;
@@ -1333,9 +951,8 @@ static void CC_UserCredential_AdminCodeReport_tx(
   u3c_admin_code_metadata_t *data, 
   RECEIVE_OPTIONS_TYPE_EX *rx_options)
 {
-  ZW_APPLICATION_TX_BUFFER buffer; 
-  ZW_ADMIN_PIN_CODE_REPORT_1BYTE_FRAME *tx_frame = 
-    (ZW_ADMIN_PIN_CODE_REPORT_1BYTE_FRAME*)&buffer;
+  ZW_ADMIN_PIN_CODE_REPORT_1BYTE_FRAME * tx_frame =
+    (ZW_ADMIN_PIN_CODE_REPORT_1BYTE_FRAME *)&report_out_frame;
 
   // Populate frame with data from metadata structure
   tx_frame->cmdClass = COMMAND_CLASS_USER_CREDENTIAL; 
@@ -1346,13 +963,12 @@ static void CC_UserCredential_AdminCodeReport_tx(
   } else if (!data->code_length) {
     memset((void*)&tx_frame->adminCode1, 0x00, AC_MAX_LENGTH); 
   }
+  report_out_size =
+    sizeof(ZW_ADMIN_PIN_CODE_REPORT_1BYTE_FRAME) - 1 + data->code_length;
 
-  zaf_tx_options_t tx_options; 
-  zaf_transport_rx_to_tx_options(rx_options, &tx_options); 
-  zaf_transport_tx((uint8_t*)tx_frame, 
-                   sizeof(ZW_ADMIN_PIN_CODE_REPORT_1BYTE_FRAME) - 1 + data->code_length,
-                   NULL, 
-                   &tx_options); 
+  // CC:0083.01.1A.11.001: Notify the Lifeline on a succesful modification
+  bool notify_lifeline = (data->result == ADMIN_CODE_OPERATION_RESULT_MODIFIED);
+  send_report(rx_options, notify_lifeline);
 }
 
 // TODO: Move this function outside of the CC.
@@ -1362,6 +978,15 @@ bool CC_UserCredential_CredentialGet_handler(
   u3c_credential_report_tx_callback_t callback
   )
 {
+  /**
+   * CC:0083.01.0B.11.006 Other combinations of zero and non-zero User Unique Identifier, 
+   * Credential Type, and Credential Slot are considered invalid and MUST be ignored.
+   * CC:0083.01.0C.11.002 - Table
+   */
+  if (p_metadata->type == CREDENTIAL_TYPE_NONE && p_metadata->slot != 0) {
+    return false;
+  }
+
   uint8_t data[U3C_BUFFER_SIZE_CREDENTIAL_DATA] = { 0 };
   u3c_credential credential = {
     .metadata = {
@@ -1453,16 +1078,8 @@ static void CC_UserCredential_CredentialLearnStatusReport_tx(
     return;
   }
 
-  if (p_rx_options->destNode.nodeId == 0 || p_rx_options->sourceNode.nodeId) {
-    /**
-     * Since the Learn process was initiated locally, there is no incoming
-     * frame to parse the receive options from.
-     * Use the Controller's ID as the source and the node's own ID as the
-     * destination.
-     */
-    p_rx_options->sourceNode.nodeId = ZAF_GetSucNodeId();
-    p_rx_options->destNode.nodeId = ZAF_GetNodeID();
-    p_rx_options->securityKey = GetHighestSecureLevel(ZAF_GetSecurityKeys());
+  if (is_rx_frame_initiated_locally(p_rx_options)) {
+    fill_rx_frame_with_local(p_rx_options);
   }
 
   ZW_APPLICATION_TX_BUFFER tx_buffer;
@@ -1517,12 +1134,16 @@ static received_frame_status_t CC_UserCredential_CredentialLearnStart_handler(
     .type = p_learn_target->type,
     .slot = p_learn_target->slot
   };
+
   if (
-    !validate_new_credential_metadata(&metadata)
+    !validate_associated_uuid(p_learn_target->uuid)
+    || !validate_new_credential_metadata(&metadata)
     // CC:0083.01.0F.11.004
     || !cc_user_credential_is_credential_learn_supported(metadata.type)
   ) {
-    return RECEIVED_FRAME_STATUS_FAIL;
+    zaf_event_distributor_enqueue_cc_event(
+      COMMAND_CLASS_USER_CREDENTIAL, CC_USER_CREDENTIAL_EVENT_LEARN_FAILED, NULL);
+    return RECEIVED_FRAME_STATUS_NO_SUPPORT;
   }
 
   /**
@@ -1559,6 +1180,8 @@ static received_frame_status_t CC_UserCredential_CredentialLearnStart_handler(
       return RECEIVED_FRAME_STATUS_FAIL;
   }
   if (!is_consistent_with_database) {
+    zaf_event_distributor_enqueue_cc_event(
+      COMMAND_CLASS_USER_CREDENTIAL, CC_USER_CREDENTIAL_EVENT_LEARN_FAILED, NULL);
     CC_UserCredential_CredentialLearnStatusReport_tx(
       status, p_learn_target, 0, p_rx_options
     );
@@ -1622,76 +1245,17 @@ static received_frame_status_t CC_UserCredential_CredentialLearnCancel_handler(
     if (input->rx_options->sourceNode.nodeId == cl_state.rx_options.sourceNode.nodeId) {
       frame_status = RECEIVED_FRAME_STATUS_SUCCESS;
       cl_status = CL_STATUS_ENDED_NOT_DUE_TO_TIMEOUT;
-      credential_learn_reset();
       zaf_event_distributor_enqueue_cc_event(
         COMMAND_CLASS_USER_CREDENTIAL, CC_USER_CREDENTIAL_EVENT_LEARN_CANCEL_REMOTE, NULL
       );
+      CC_UserCredential_CredentialLearnStatusReport_tx(
+        cl_status, &cl_state.data.target, 0, &cl_state.rx_options
+      );
+      credential_learn_reset();
     }
-    CC_UserCredential_CredentialLearnStatusReport_tx(
-      cl_status, &cl_state.data.target, 0, &cl_state.rx_options
-    );
   }
 
   return frame_status;
-}
-
-typedef enum
-{
-  U3C_UCAR_STATUS_SUCCESS                                         = USER_CREDENTIAL_ASSOCIATION_REPORT_SUCCESS,
-  U3C_UCAR_STATUS_SOURCE_USER_UNIQUE_IDENTIFIER_INVALID           = USER_CREDENTIAL_ASSOCIATION_REPORT_SOURCE_USER_UNIQUE_IDENTIFIER_INVALID,
-  U3C_UCAR_STATUS_SOURCE_USER_UNIQUE_IDENTIFIER_NONEXISTENT       = USER_CREDENTIAL_ASSOCIATION_REPORT_SOURCE_USER_UNIQUE_IDENTIFIER_NONEXISTENT,
-  U3C_UCAR_STATUS_SOURCE_CREDENTIAL_TYPE_INVALID                  = USER_CREDENTIAL_ASSOCIATION_REPORT_SOURCE_CREDENTIAL_TYPE_INVALID,
-  U3C_UCAR_STATUS_SOURCE_CREDENTIAL_SLOT_INVALID                  = USER_CREDENTIAL_ASSOCIATION_REPORT_SOURCE_CREDENTIAL_SLOT_INVALID,
-  U3C_UCAR_STATUS_SOURCE_CREDENTIAL_SLOT_EMPTY                    = USER_CREDENTIAL_ASSOCIATION_REPORT_SOURCE_CREDENTIAL_SLOT_EMPTY,
-  U3C_UCAR_STATUS_DESTINATION_USER_UNIQUE_IDENTIFIER_INVALID      = USER_CREDENTIAL_ASSOCIATION_REPORT_DESTINATION_USER_UNIQUE_IDENTIFIER_INVALID,
-  U3C_UCAR_STATUS_DESTINATION_USER_UNIQUE_IDENTIFIER_NONEXISTENT  = USER_CREDENTIAL_ASSOCIATION_REPORT_DESTINATION_USER_UNIQUE_IDENTIFIER_NONEXISTENT,
-  U3C_UCAR_STATUS_DESTINATION_CREDENTIAL_SLOT_INVALID             = USER_CREDENTIAL_ASSOCIATION_REPORT_DESTINATION_CREDENTIAL_SLOT_INVALID,
-  U3C_UCAR_STATUS_DESTINATION_CREDENTIAL_SLOT_OCCUPIED            = USER_CREDENTIAL_ASSOCIATION_REPORT_DESTINATION_CREDENTIAL_SLOT_OCCUPIED
-}
-u3c_user_credential_association_report_status_t;
-
-/**
- * @brief Sends a USER_CREDENTIAL_ASSOCIATION_REPORT frame.
- * 
- * @param[out] p_frame Address of frame memory to fill.
- * @param[in,out] p_length Frame buffer length. Will be overwritten with the filled frame length.
- * @param[in] p_source_metadata Source credential metadata.
- * @param[in] p_destination_metadata Destination credential metadata.
- * @param[in] status Status of association set action.
- * @return true if the frame was enqueued succesfully.
- */
-static bool send_user_credential_association_report(
-  u3c_credential_metadata const * const p_source_metadata,
-  u3c_credential_metadata const * const p_destination_metadata,
-  u3c_user_credential_association_report_status_t const status,
-  RECEIVE_OPTIONS_TYPE_EX * const p_rx_options
-  )
-{
-  if ((NULL == p_source_metadata) ||
-      (NULL == p_destination_metadata)) {
-    assert(false);
-    return false;
-  }
-  ZW_APPLICATION_TX_BUFFER tx_buffer;
-  ZW_USER_CREDENTIAL_ASSOCIATION_REPORT_FRAME * p_cmd = &tx_buffer.ZW_UserCredentialAssociationReportFrame;
-
-  p_cmd->cmdClass                         = COMMAND_CLASS_USER_CREDENTIAL;
-  p_cmd->cmd                              = USER_CREDENTIAL_ASSOCIATION_REPORT;
-  p_cmd->sourceUserUniqueIdentifier1      = (uint8_t)(p_source_metadata->uuid >> 8); // MSB
-  p_cmd->sourceUserUniqueIdentifier2      = (uint8_t)p_source_metadata->uuid; // LSB
-  p_cmd->sourceCredentialType             = (uint8_t)p_source_metadata->type;
-  p_cmd->sourceCredentialSlot1            = (uint8_t)(p_source_metadata->slot >> 8); // MSB
-  p_cmd->sourceCredentialSlot2            = (uint8_t)p_source_metadata->slot; // LSB
-  p_cmd->destinationUserUniqueIdentifier1 = (uint8_t)(p_destination_metadata->uuid >> 8); // MSB
-  p_cmd->destinationUserUniqueIdentifier2 = (uint8_t)p_destination_metadata->uuid; // LSB
-  p_cmd->destinationCredentialSlot1       = (uint8_t)(p_destination_metadata->slot >> 8); // MSB
-  p_cmd->destinationCredentialSlot2       = (uint8_t)p_destination_metadata->slot; // LSB
-  p_cmd->userCredentialAssociationStatus  = (uint8_t)status;
-
-  zaf_tx_options_t tx_options;
-  zaf_transport_rx_to_tx_options(p_rx_options, &tx_options);
-  return zaf_transport_tx((uint8_t *)&tx_buffer, sizeof(ZW_USER_CREDENTIAL_ASSOCIATION_REPORT_FRAME),
-                          NULL, &tx_options);
 }
 
 static received_frame_status_t CC_UserCredential_UserCredentialAssociationSet_handler(
@@ -1705,55 +1269,17 @@ static received_frame_status_t CC_UserCredential_UserCredentialAssociationSet_ha
     return RECEIVED_FRAME_STATUS_FAIL;
   }
 
-  // Database-related checks according to Table 2.546
-  // Source User Unique Identifier must reference an existing User
-  if (U3C_DB_OPERATION_RESULT_SUCCESS != CC_UserCredential_get_user(source_metadata->uuid, NULL, NULL)) {
-    send_user_credential_association_report(
-      source_metadata, destination_metadata, U3C_UCAR_STATUS_SOURCE_USER_UNIQUE_IDENTIFIER_NONEXISTENT, p_rx_options);
-    return RECEIVED_FRAME_STATUS_FAIL;
-  }
+  u3c_db_operation_result operation_result =
+      CC_UserCredential_move_credential_and_report(source_metadata->type,
+      source_metadata->slot, destination_metadata->uuid, destination_metadata->slot, p_rx_options);
 
-  // Destination User Unique Identifier must reference an existing User
-  if (U3C_DB_OPERATION_RESULT_SUCCESS != CC_UserCredential_get_user(destination_metadata->uuid, NULL, NULL)) {
-    send_user_credential_association_report(
-      source_metadata, destination_metadata, U3C_UCAR_STATUS_DESTINATION_USER_UNIQUE_IDENTIFIER_NONEXISTENT, p_rx_options);
-    return RECEIVED_FRAME_STATUS_FAIL;
-  }
-
-  /**
-   * Attempt to execute the move operation. If the source Credential does not
-   * exist or the destination slot is occupied, send an error report.
-   */
-  u3c_db_operation_result move_credential_result = CC_UserCredential_move_credential(
-    source_metadata->uuid, source_metadata->type, source_metadata->slot,
-    destination_metadata->uuid, destination_metadata->slot);
-  u3c_user_credential_association_report_status_t status;
-  received_frame_status_t frame_status = RECEIVED_FRAME_STATUS_FAIL;
-  switch (move_credential_result) {
-    case U3C_DB_OPERATION_RESULT_SUCCESS:
-      status = U3C_UCAR_STATUS_SUCCESS;
-      frame_status = RECEIVED_FRAME_STATUS_SUCCESS;
-      break;
-    case U3C_DB_OPERATION_RESULT_FAIL_DNE:
-      status = U3C_UCAR_STATUS_SOURCE_CREDENTIAL_SLOT_EMPTY;
-      break;
-    case U3C_DB_OPERATION_RESULT_FAIL_OCCUPIED:
-      status = U3C_UCAR_STATUS_DESTINATION_CREDENTIAL_SLOT_OCCUPIED;
-      break;
-    default:
-      // Database error
-      return RECEIVED_FRAME_STATUS_FAIL;
-  }
-  send_user_credential_association_report(source_metadata, destination_metadata, status, p_rx_options);
-  return frame_status;
+  return operation_result == U3C_DB_OPERATION_RESULT_SUCCESS ?
+      RECEIVED_FRAME_STATUS_SUCCESS : RECEIVED_FRAME_STATUS_FAIL;
 }
 
 static received_frame_status_t CC_UserCredential_UserCredentialAssociationSet_parser(
   cc_handler_input_t const * const input)
 {
-  uint16_t source_uuid = (uint16_t)(input->frame->ZW_UserCredentialAssociationSetFrame.sourceUserUniqueIdentifier1 << 8) |
-                                    input->frame->ZW_UserCredentialAssociationSetFrame.sourceUserUniqueIdentifier2;
-
   uint16_t source_slot = (uint16_t)(input->frame->ZW_UserCredentialAssociationSetFrame.sourceCredentialSlot1 << 8) |
                                     input->frame->ZW_UserCredentialAssociationSetFrame.sourceCredentialSlot2;
 
@@ -1764,8 +1290,7 @@ static received_frame_status_t CC_UserCredential_UserCredentialAssociationSet_pa
                                          input->frame->ZW_UserCredentialAssociationSetFrame.destinationCredentialSlot2;
 
   u3c_credential_metadata source_metadata = {0};
-  source_metadata.uuid = source_uuid;
-  source_metadata.type = input->frame->ZW_UserCredentialAssociationSetFrame.sourceCredentialType;
+  source_metadata.type = input->frame->ZW_UserCredentialAssociationSetFrame.credentialType;
   source_metadata.slot = source_slot;
 
   u3c_credential_metadata destination_metadata = {0};
@@ -1777,13 +1302,10 @@ static received_frame_status_t CC_UserCredential_UserCredentialAssociationSet_pa
   u3c_user_credential_association_report_status_t status = U3C_UCAR_STATUS_SUCCESS;
 
   // Configuration-related checks according to Table 2.546
-  // Source User Unique Identifier must be in supported range
-  if (0 == source_uuid || source_uuid > cc_user_credential_get_max_user_unique_idenfitiers()) {
-    status = U3C_UCAR_STATUS_SOURCE_USER_UNIQUE_IDENTIFIER_INVALID;
-  }
+
   // Source Credential Type must be supported
-  else if (!cc_user_credential_is_credential_type_supported(source_metadata.type)) {
-    status = U3C_UCAR_STATUS_SOURCE_CREDENTIAL_TYPE_INVALID;
+  if (!cc_user_credential_is_credential_type_supported(source_metadata.type)) {
+    status = U3C_UCAR_STATUS_CREDENTIAL_TYPE_INVALID;
   }
   // Source Credential Slot must be in supported range
   else if (source_slot == 0 || source_slot > cc_user_credential_get_max_credential_slots(source_metadata.type)) {
@@ -1801,7 +1323,7 @@ static received_frame_status_t CC_UserCredential_UserCredentialAssociationSet_pa
   }
 
   if (!parsing_success) {
-    send_user_credential_association_report(&source_metadata, &destination_metadata, status, input->rx_options);
+    CC_UserCredential_send_association_report(&source_metadata, &destination_metadata, status, input->rx_options);
     return RECEIVED_FRAME_STATUS_FAIL;
   }
 
@@ -1996,69 +1518,6 @@ static received_frame_status_t CC_UserCredential_CredentialChecksumGet_handler(c
   return RECEIVED_FRAME_STATUS_SUCCESS;
 }
 
-/**
- * @brief Validates that credential does not exist in the database and is not a 
- * duplicate of the admin code.
- * 
- * This function checks that the following requirements are satisfied: 
- * 
- * CC:0083.01.1A.13.004 - AC is not a duplicate of the current AC
- * CC:0083.01.1A.13.005 - AC is not a duplicate of the existing credential
- * 
- * @param code Pointer to structure containing Admin Code information. 
- * 
- * @returns True if all checks pass. If checks do not pass, returns false, and 
- * result code populated in code struct. 
- * 
- * @note result code of a successful check should be ignored, but in 
- * practice ensure it is set to ADMIN_CODE_OPERATION_RESULT_NONE in this case.
- */
-static bool validate_admin_pin_code(u3c_admin_code_metadata_t * data)
-{  
-  /**
-   * CC:0083.01.1A.13.004 - Ensure that the pin code provided is different than the existing one
-   */
-  u3c_admin_code_metadata_t current_code = { 0 };
-  uint8_t temp_code[AC_MAX_LENGTH] = { 0 }; 
-  current_code.code_data = (uint8_t*)temp_code; 
-
-  if (U3C_DB_OPERATION_RESULT_SUCCESS ==
-      CC_UserCredential_get_admin_code_info(&current_code)) {
-    if (current_code.code_length == data->code_length && 
-      memcmp(data->code_data, current_code.code_data, current_code.code_length) == 0) { 
-        data->result = ADMIN_CODE_OPERATION_RESULT_INTERNAL_DUPLICATE_AC; 
-        return false; 
-    }
-  } else {
-    data->result = ADMIN_CODE_OPERATION_RESULT_ERROR_NODE; 
-    return false;
-  }
-
-  // Temporary credential wrapper
-  u3c_credential credential = {
-    .data = data->code_data,
-    .metadata = {
-      .length = data->code_length,
-      .type = CREDENTIAL_TYPE_PIN_CODE,
-    }
-  }; 
-  
-  /**
-   * CC:0083.01.1A.13.005 - Ensure that there is not a duplicate PIN code in the database 
-   */
-  u3c_credential_metadata existing_credential = { 0 }; 
-  if (find_existing_credential(&credential, &existing_credential))
-  {
-    data->result = ADMIN_CODE_OPERATION_RESULT_FAIL_DUPLICATE_CRED; 
-    return false; 
-  } 
-
-  /**
-   * CC:0083.01.1A.11.011 - Check manufacturer and application specific requirements
-   */
-  return CC_UserCredential_manufacturer_validate_admin_pin_code(data); 
-}
-
 static received_frame_status_t CC_UserCredential_AdminCodeSet_handler(u3c_admin_code_metadata_t *data, RECEIVE_OPTIONS_TYPE_EX *rx_options)
 {
   received_frame_status_t status = RECEIVED_FRAME_STATUS_FAIL;  
@@ -2134,10 +1593,11 @@ static received_frame_status_t CC_UserCredential_AdminCodeSet_parser(cc_handler_
     /**
      * CC:0083.01.1A.11.010 - Check and ensure that if an Admin Code is provided, that the characters 
      * are valid. If they are not, ignore the command.
+     * CC:0063.02.0E.11.006 - Each byte in this field MUST be encoded with ASCII representation.
      */
     for (int i = 0; i < data.code_length; i++) {
-      if (data.code_data[i] < ASCII_AC_MIN || data.code_data[i] > ASCII_AC_MAX) {
-        return status; 
+      if (data.code_data[i] > ASCII_AC_MAX) {
+        return status;
       }
     }
   }
@@ -2285,21 +1745,19 @@ user_credential_event_handler(const uint8_t event, const void * p_data)
   switch (event) {
     case CC_USER_CREDENTIAL_EVENT_VALIDATE: {
       const u3c_event_data_validate * const p_data_validate = (u3c_event_data_validate *) p_data;
-      const u3c_credential * p_credential = p_data_validate->credential;
       uint8_t notification_event = NOTIFICATION_EVENT_ACCESS_CONTROL_NO_EVENT;
       uint8_t event_out = CC_USER_CREDENTIAL_EVENT_VALIDATE_INVALID;
-      u3c_credential_metadata tmp_metadata = { 0 };
+      u3c_credential_metadata stored_credential = { 0 }; // Metadata of the existing credential in the database
 
-      if (!find_existing_credential(p_credential, &tmp_metadata)) {
+      if (!find_existing_credential(p_data_validate->credential, &stored_credential)) {
         // The Credential does not exist in the database
         notification_event = NOTIFICATION_EVENT_ACCESS_CONTROL_INVALID_CREDENTIAL_USED_TO_ACCESS_THE_NODE;
         CC_Notification_TriggerAndTransmit(
           0, notification_event, NULL, 0, NULL, false);
       } else {
         // The Credential exists in the database, perform additional checks
-        uint8_t pNotificationEventParam[5];
         u3c_user current_user = { 0 };
-        CC_UserCredential_get_user(p_credential->metadata.uuid, &current_user, NULL);
+        CC_UserCredential_get_user(stored_credential.uuid, &current_user, NULL);
 
         if (current_user.type == USER_TYPE_NON_ACCESS) {
           // Non-access Users may not operate the lock, but a report should be generated
@@ -2317,15 +1775,9 @@ user_credential_event_handler(const uint8_t event, const void * p_data)
           }
         }
 
-        pNotificationEventParam[0] = p_credential->metadata.uuid >> 8;
-        pNotificationEventParam[1] = p_credential->metadata.uuid & 0xFF;
-        pNotificationEventParam[2] = p_credential->metadata.type;
-        pNotificationEventParam[3] = p_credential->metadata.slot >> 8;
-        pNotificationEventParam[4] = p_credential->metadata.slot & 0xFF;
-
-        CC_Notification_TriggerAndTransmit(
-          0, notification_event, pNotificationEventParam,
-          sizeof(pNotificationEventParam), NULL, false);
+        CC_User_Credential_UsageNotification_tx(
+          notification_event, stored_credential.uuid, 1, &stored_credential
+        );
       }
 
       zaf_event_distributor_enqueue_cc_event(
@@ -2389,7 +1841,7 @@ user_credential_event_handler(const uint8_t event, const void * p_data)
           .type = cl_state.data.target.type,
           .slot = cl_state.data.target.slot,
           .length = data_length,
-          .modifier_node_id = cl_state.rx_options.sourceNode.nodeId,
+          .modifier_node_id = 0,
           .modifier_type = MODIFIER_TYPE_LOCALLY,
         },
         .data = data

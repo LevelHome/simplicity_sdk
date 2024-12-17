@@ -18,12 +18,9 @@ class PhyFilters_Sol(IPhyFilter):
                            'Phys_Internal_WiSUN_FSK',
                            'Phys_Internal_WiSUN_OFDM',
                            'Phys_Internal_WiSUN_OFDM_MCSx',
-                           'Phys_RAIL_Base_Standard_BLE',
                            'Phys_Internal_Base_Standard_IEEE802154',
-                           'Phys_RAIL_Base_Standard_IEEE802154GB',
                            'Phys_RAIL_Base_Standard_ZWave',
                            'Phys_Internal_Base_Customer_Melco',
-                           'Phys_Studio_IEEE802154'
                         ]
 
     # Studio white list (these PHYs show in Studio as proprietary starting points)
@@ -37,7 +34,8 @@ class PhyFilters_Sol(IPhyFilter):
                                     'phys_studio_wisun_fan_1_1',
                                     'phys_studio_wisun_fan_1_1_virtual',
                                     'phys_studio_wisun_han',
-                                    'Phys_Studio_LongRange'
+                                    'Phys_Studio_LongRange',
+                                    'Phys_Studio_IEEE802154'
                                     ]
 
     # Special designation for simulation PHYs

@@ -50,8 +50,8 @@
  ******************************************************************************/
 #define CORTEX_INTERRUPTS       (16)
 #define TOTAL_INTERRUPTS        (CORTEX_INTERRUPTS + EXT_IRQ_COUNT)
-#define LOWEST_NVIC_PRIORITY    ((1U << (__NVIC_PRIO_BITS + 1U)) - 1U)
 
+#define LOWEST_NVIC_PRIORITY    ((1U << __NVIC_PRIO_BITS) - 1U)
 #define SL_INTERRUPT_MANAGER_DEFAULT_PRIORITY 5U
 
 // Use same alignement as IAR
@@ -70,14 +70,29 @@
 #define SL_INTERRUPT_MANAGER_HOOKS_ENABLED (1)
 #endif
 
+// Interrupt vector table need to be in a different section of RAM for Cortex-M55.
+#if defined(__CM55_REV)
+#define RAM_BASE              SRAM_BASE   // ITCM_RAM_BASE
+#define RAM_SIZE              SRAM_SIZE   // ITCM_RAM_SIZE
+#if defined(__GNUC__)
+#define VECTOR_TABLE_SECTION  __attribute__((section(".vector_table_ram")))
+#else
+#define VECTOR_TABLE_SECTION  _Pragma("location =\".vector_table_ram\"")
+#endif
+#else
+#define RAM_BASE              SRAM_BASE
+#define RAM_SIZE              SRAM_SIZE
+#define VECTOR_TABLE_SECTION
+#endif
+
 #if defined(VECTOR_TABLE_IN_RAM)
 
 #if defined(__GNUC__)
 // Create a vector table in RAM aligned to 512.
-static sl_interrupt_manager_irq_handler_t vector_table_ram[TOTAL_INTERRUPTS] __attribute__((aligned(VECTOR_TABLE_ALIGNMENT) ));
+static sl_interrupt_manager_irq_handler_t vector_table_ram[TOTAL_INTERRUPTS] __attribute__((aligned(VECTOR_TABLE_ALIGNMENT) )) VECTOR_TABLE_SECTION;
 #elif defined(__ICCARM__)
 #pragma data_alignment = VECTOR_TABLE_ALIGNMENT
-static sl_interrupt_manager_irq_handler_t vector_table_ram[TOTAL_INTERRUPTS];
+static sl_interrupt_manager_irq_handler_t vector_table_ram[TOTAL_INTERRUPTS] VECTOR_TABLE_SECTION;
 #endif /* defined(__GNUC__) */
 
 #if defined(SL_INTERRUPT_MANAGER_HOOKS_ENABLED)
@@ -85,10 +100,10 @@ static sl_interrupt_manager_irq_handler_t vector_table_ram[TOTAL_INTERRUPTS];
 // ram or in flash) will call an ISR wrapper. The actual ISRs will be registered
 // and called from the wrapped_vector_table.
 #if defined(__GNUC__)
-static sl_interrupt_manager_irq_handler_t wrapped_vector_table[TOTAL_INTERRUPTS] __attribute__((aligned(VECTOR_TABLE_ALIGNMENT) ));
+static sl_interrupt_manager_irq_handler_t wrapped_vector_table[TOTAL_INTERRUPTS] __attribute__((aligned(VECTOR_TABLE_ALIGNMENT) )) VECTOR_TABLE_SECTION;
 #elif defined(__ICCARM__)
 #pragma data_alignment = VECTOR_TABLE_ALIGNMENT
-static sl_interrupt_manager_irq_handler_t wrapped_vector_table[TOTAL_INTERRUPTS];
+static sl_interrupt_manager_irq_handler_t wrapped_vector_table[TOTAL_INTERRUPTS] VECTOR_TABLE_SECTION;
 #endif /* defined(__GNUC__) */
 #endif /* SL_INTERRUPT_MANAGER_HOOKS_ENABLED */
 
@@ -108,6 +123,13 @@ CCV_SECTION
 #endif
 static void sli_interrupt_manager_isr_wrapper(void);
 #endif /* SL_INTERRUPT_MANAGER_HOOKS */
+
+/*******************************************************************************
+ *****************************   VARIABLES   ***********************************
+ ******************************************************************************/
+
+// Initialization flag.
+static bool is_interrupt_manager_initialized = false;
 
 /*******************************************************************************
  *****************************   FUNCTIONS   ***********************************
@@ -140,12 +162,12 @@ static void sli_interrupt_manager_isr_wrapper(void)
  * @brief
  *   Set a new RAM based interrupt vector table.
  ******************************************************************************/
-static sl_interrupt_manager_irq_handler_t *sli_interrupt_manager_set_irq_table(sl_interrupt_manager_irq_handler_t *table,
-                                                                               uint32_t handler_count)
+sl_interrupt_manager_irq_handler_t *sli_interrupt_manager_set_irq_table(sl_interrupt_manager_irq_handler_t *table,
+                                                                        uint32_t handler_count)
 {
   sl_interrupt_manager_irq_handler_t * current;
 
-  EFM_ASSERT(((uint32_t)table >= SRAM_BASE) && (uint32_t)table < (SRAM_BASE + SRAM_SIZE));
+  EFM_ASSERT(((uint32_t)table >= RAM_BASE) && (uint32_t)table < (RAM_BASE + RAM_SIZE));
 
   // ASSERT if misaligned with respect to the VTOR register implementation.
   EFM_ASSERT(((uint32_t)table & ~SCB_VTOR_TBLOFF_Msk) == 0U);
@@ -176,14 +198,29 @@ static sl_interrupt_manager_irq_handler_t *sli_interrupt_manager_set_irq_table(s
 /***************************************************************************//**
  * @brief
  *   Initialize interrupt controller hardware and initialise vector table in RAM.
+ *
+ * @note
+ *   The interrupt manager init function will perform the initialization only
+ *   once even if it's called multiple times.
  ******************************************************************************/
 void sl_interrupt_manager_init(void)
 {
+  CORE_DECLARE_IRQ_STATE;
+
+  CORE_ENTER_ATOMIC();
+
+  if (!is_interrupt_manager_initialized) {
+    is_interrupt_manager_initialized = true;
+    CORE_EXIT_ATOMIC();
+  } else {
+    CORE_EXIT_ATOMIC();
+    return;
+  }
+
   #if defined(VECTOR_TABLE_IN_RAM)
 
   sl_interrupt_manager_irq_handler_t* current;
 
-  CORE_DECLARE_IRQ_STATE;
   CORE_ENTER_CRITICAL();
 
   current = (sl_interrupt_manager_irq_handler_t*)SCB->VTOR;
@@ -220,22 +257,7 @@ void sl_interrupt_manager_init(void)
  ******************************************************************************/
 void sl_interrupt_manager_reset_system(void)
 {
-  // Ensure all outstanding memory accesses including buffered writes are
-  // completed before reset
-  __DSB();
-
-  // Keep priority group unchanged
-  SCB->AIRCR  = (uint32_t)((0x5FAUL << SCB_AIRCR_VECTKEY_Pos)
-                           | (SCB->AIRCR & SCB_AIRCR_PRIGROUP_Msk)
-                           | SCB_AIRCR_SYSRESETREQ_Msk);
-
-  // Ensure completion of memory access
-  __DSB();
-
-  // Wait until reset
-  for (;; ) {
-    __NOP();
-  }
+  CORE_RESET_SYSTEM();
 }
 
 /***************************************************************************//**
@@ -402,7 +424,7 @@ sl_status_t sl_interrupt_manager_set_irq_handler(int32_t irqn,
   #endif /* SL_INTERRUPT_MANAGER_HOOKS_ENABLED */
 
   // Make sure the VTOR points to a table in RAM.
-  if (((uint32_t)table < SRAM_BASE) || (uint32_t)table > (SRAM_BASE + SRAM_SIZE)) {
+  if (((uint32_t)table < RAM_BASE) || (uint32_t)table > (RAM_BASE + RAM_SIZE)) {
     return SL_STATUS_NOT_INITIALIZED;
   }
 
@@ -448,9 +470,58 @@ uint32_t sl_interrupt_manager_get_irq_priority(int32_t irqn)
 void sl_interrupt_manager_set_irq_priority(int32_t irqn, uint32_t priority)
 {
   EFM_ASSERT((irqn >= -CORTEX_INTERRUPTS) && (irqn <= EXT_IRQ_COUNT));
-  EFM_ASSERT(priority < LOWEST_NVIC_PRIORITY);
+  EFM_ASSERT(priority <= LOWEST_NVIC_PRIORITY);
 
   set_priority(irqn, priority);
+}
+
+/***************************************************************************//**
+ * @brief
+ *   Increase the interrupt preemption priority of an interrupt source
+ *   relative to the default priority.
+ ******************************************************************************/
+void sl_interrupt_manager_increase_irq_priority_from_default(int32_t irqn, uint32_t diff)
+{
+  uint32_t prio = sl_interrupt_manager_get_default_priority();
+  sl_interrupt_manager_set_irq_priority(irqn, prio - diff);
+}
+
+/***************************************************************************//**
+ * @brief
+ *   Decrease the interrupt preemption priority of an interrupt source.
+ *   relative to the default priority.
+ ******************************************************************************/
+void sl_interrupt_manager_decrease_irq_priority_from_default(int32_t irqn, uint32_t diff)
+{
+  uint32_t prio = sl_interrupt_manager_get_default_priority();
+  sl_interrupt_manager_set_irq_priority(irqn, prio + diff);
+}
+
+/***************************************************************************//**
+ * @brief
+ *   Get the default interrupt preemption priority value.
+ ******************************************************************************/
+uint32_t sl_interrupt_manager_get_default_priority(void)
+{
+  return SL_INTERRUPT_MANAGER_DEFAULT_PRIORITY;
+}
+
+/***************************************************************************//**
+ * @brief
+ *   Get the highest interrupt preemption priority value.
+ ******************************************************************************/
+uint32_t sl_interrupt_manager_get_highest_priority(void)
+{
+  return 0;
+}
+
+/***************************************************************************//**
+ * @brief
+ *   Get the lowest interrupt preemption priority value.
+ ******************************************************************************/
+uint32_t sl_interrupt_manager_get_lowest_priority(void)
+{
+  return LOWEST_NVIC_PRIORITY;
 }
 
 /***************************************************************************//**

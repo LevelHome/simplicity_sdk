@@ -69,3 +69,7 @@ requires:
     condition: [psa_crypto_jpake]
 
   - name: tz_sl_interface_crypto_rng_funcs
+
+metadata:
+  sbom:
+    license: Zlib

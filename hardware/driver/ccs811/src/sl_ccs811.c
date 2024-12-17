@@ -35,7 +35,7 @@
 #include <stdarg.h>
 
 #include "sl_i2cspm.h"
-#include "em_gpio.h"
+#include "sl_gpio.h"
 #include "sl_ccs811_config.h"
 #include "sl_ccs811.h"
 #include "sl_sleeptimer.h"
@@ -70,11 +70,15 @@ static uint32_t ccs811_set_app_start(sl_i2cspm_t *i2cspm);
  ******************************************************************************/
 static uint32_t ccs811_wake(bool wake)
 {
-  if ( wake ) {
-    GPIO_PinOutClear(SL_CCS811_WAKE_PORT, SL_CCS811_WAKE_PIN);
+  sl_gpio_t ccs811_wake_gpio = {
+    .port = SL_CCS811_WAKE_PORT,
+    .pin = SL_CCS811_WAKE_PIN,
+  };
+  if (wake) {
+    sl_gpio_clear_pin(&ccs811_wake_gpio);
     sl_sleeptimer_delay_millisecond(1);
   } else {
-    GPIO_PinOutSet(SL_CCS811_WAKE_PORT, SL_CCS811_WAKE_PIN);
+    sl_gpio_set_pin(&ccs811_wake_gpio);
     sl_sleeptimer_delay_millisecond(1);
   }
   return SL_STATUS_OK;
@@ -87,8 +91,11 @@ sl_status_t sl_ccs811_init(sl_i2cspm_t *i2cspm)
 {
   uint8_t id;
   sl_status_t status;
-
-  GPIO_PinModeSet(SL_CCS811_WAKE_PORT, SL_CCS811_WAKE_PIN, gpioModePushPull, 1);
+  sl_gpio_t ccs811_wake_gpio = {
+    .port = SL_CCS811_WAKE_PORT,
+    .pin = SL_CCS811_WAKE_PIN,
+  };
+  sl_gpio_set_pin_mode(&ccs811_wake_gpio, SL_GPIO_MODE_PUSH_PULL, 1);
 
   /* Set the wake pin low */
   ccs811_wake(true);
@@ -104,7 +111,7 @@ sl_status_t sl_ccs811_init(sl_i2cspm_t *i2cspm)
 
   /* Switch from boot mode to application mode */
   status = sl_ccs811_start_application(i2cspm);
-  if (status != SL_STATUS_OK){
+  if (status != SL_STATUS_OK) {
     return status;
   }
   /* Go back to sleep */
@@ -188,7 +195,7 @@ sl_status_t sl_ccs811_start_application(sl_i2cspm_t *i2cspm)
 
   /* Issue APP_START */
   result = ccs811_set_app_start(i2cspm);
-  if (result != SL_STATUS_OK){
+  if (result != SL_STATUS_OK) {
     return result;
   }
 
@@ -531,7 +538,7 @@ sl_status_t sl_ccs811_read_firmware_version(sl_i2cspm_t *i2cspm, uint16_t *fw_ve
   sl_status_t status;
   uint8_t buffer[2];
   status = sl_ccs811_read_mailbox(i2cspm, CCS811_ADDR_FW_APP_VERSION, 2, buffer);
-  if (status != SL_STATUS_OK){
+  if (status != SL_STATUS_OK) {
     return status;
   }
 
@@ -555,7 +562,7 @@ sl_status_t sl_ccs811_update_firmware(sl_i2cspm_t *i2cspm, const uint8_t *firmwa
   /** Put CCS811 in BOOT mode                                             **/
   /*************************************************************************/
   status = sl_ccs811_get_status(i2cspm, &reg);
-  if (status != SL_STATUS_OK){
+  if (status != SL_STATUS_OK) {
     return status;
   }
 

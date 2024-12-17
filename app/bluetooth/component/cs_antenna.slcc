@@ -4,6 +4,9 @@ label: CS Antenna
 description: >
   Channel Sounding (CS) Antenna manages CS antenna offset settings.
 category: Bluetooth|Application|Miscellaneous
+metadata:
+  sbom:
+    license: Zlib
 quality: evaluation
 root_path: app/bluetooth/common/cs_antenna
 include:

@@ -37,7 +37,7 @@
 
 #if defined(SL_CATALOG_MICRIUMOS_KERNEL_PRESENT) \
   || defined(SL_CATALOG_FREERTOS_KERNEL_PRESENT)
-  #include "cmsis_os2.h"
+  #include "sli_psec_osal.h"
   #include "sl_assert.h"
   #define RTOS_KERNEL_PRESENT
 #endif
@@ -47,29 +47,7 @@
 
 #if defined(RTOS_KERNEL_PRESENT)
 
-typedef struct tfm_threading_mutex {
-  osMutexAttr_t mutex_attr;
-  osMutexId_t   mutex_ID;
-} tfm_threading_mutex_t;
-
-static tfm_threading_mutex_t mutex = { 0 };
-
-#define SLI_TZ_RTOS_KERNEL_CRITICAL_SECTION_START                          \
-  int32_t kernel_lock_state = 0;                                           \
-  osKernelState_t kernel_state = osKernelGetState();                       \
-  if (kernel_state != osKernelInactive && kernel_state != osKernelReady) { \
-    kernel_lock_state = osKernelLock();                                    \
-    if (kernel_lock_state < 0) {                                           \
-      return SL_STATUS_FAIL;                                               \
-    }                                                                      \
-  }
-
-#define SLI_TZ_RTOS_KERNEL_CRITICAL_SECTION_END                            \
-  if (kernel_state != osKernelInactive && kernel_state != osKernelReady) { \
-    if (osKernelRestoreLock(kernel_lock_state) < 0) {                      \
-      return SL_STATUS_FAIL;                                               \
-    }                                                                      \
-  }
+static sli_psec_osal_lock_t skl_lock = { 0 };
 
 #endif // RTOS_KERNEL_PRESENT
 
@@ -77,22 +55,20 @@ static tfm_threading_mutex_t mutex = { 0 };
 // Global Functions
 
 // Initialise the TrustZone NS interface.
-// If RTOS is enabled, initialise SKL lock mutex.
+// If RTOS is enabled, initialise the SKL lock.
 // This function is typically called by the service_init event_handler.
 sl_status_t sli_tz_ns_interface_init(void)
 {
+  sl_status_t sl_status = SL_STATUS_OK;
   #if defined(RTOS_KERNEL_PRESENT)
-  SLI_TZ_RTOS_KERNEL_CRITICAL_SECTION_START
+  SLI_PSEC_OSAL_KERNEL_CRITICAL_SECTION_START
 
-  mutex.mutex_ID = osMutexNew(&mutex.mutex_attr);
-  if (mutex.mutex_ID == NULL) {
-    SLI_TZ_RTOS_KERNEL_CRITICAL_SECTION_END
-    return SL_STATUS_FAIL;
-  }
-  SLI_TZ_RTOS_KERNEL_CRITICAL_SECTION_END
+    sl_status = sli_psec_osal_init_lock(&skl_lock);
+
+  SLI_PSEC_OSAL_KERNEL_CRITICAL_SECTION_END
   #endif // RTOS_KERNEL_PRESENT
 
-  return SL_STATUS_OK;
+  return sl_status;
 }
 
 int32_t sli_tz_ns_interface_dispatch(sli_tz_veneer_fn fn,
@@ -102,18 +78,18 @@ int32_t sli_tz_ns_interface_dispatch(sli_tz_veneer_fn fn,
                                      uint32_t arg3)
 {
   #if defined(RTOS_KERNEL_PRESENT)
-  if (osKernelGetState() == osKernelRunning) {
-    osStatus_t status = osMutexAcquire(mutex.mutex_ID, osWaitForever);
-    EFM_ASSERT(status == osOK);
+  if (SLI_PSEC_OSAL_KERNEL_RUNNING) {
+    sl_status_t sl_status = sli_psec_osal_take_lock(&skl_lock);
+    EFM_ASSERT(sl_status == SL_STATUS_OK);
   }
   #endif // RTOS_KERNEL_PRESENT
 
   int32_t result = fn((sli_tz_invec *)arg0, arg1, (sli_tz_outvec *)arg2, arg3);
 
   #if defined(RTOS_KERNEL_PRESENT)
-  if (osKernelGetState() == osKernelRunning) {
-    osStatus_t status = osMutexRelease(mutex.mutex_ID);
-    EFM_ASSERT(status == osOK);
+  if (SLI_PSEC_OSAL_KERNEL_RUNNING) {
+    sl_status_t sl_status = sli_psec_osal_give_lock(&skl_lock);
+    EFM_ASSERT(sl_status == SL_STATUS_OK);
   }
   #endif // RTOS_KERNEL_PRESENT
 
@@ -125,18 +101,18 @@ uint32_t sli_tz_ns_interface_dispatch_simple(sli_tz_veneer_simple_fn fn,
                                              uint32_t arg)
 {
   #if defined(RTOS_KERNEL_PRESENT)
-  if (osKernelGetState() == osKernelRunning) {
-    osStatus_t status = osMutexAcquire(mutex.mutex_ID, osWaitForever);
-    EFM_ASSERT(status == osOK);
+  if (SLI_PSEC_OSAL_KERNEL_RUNNING) {
+    sl_status_t sl_status = sli_psec_osal_take_lock(&skl_lock);
+    EFM_ASSERT(sl_status == SL_STATUS_OK);
   }
   #endif // RTOS_KERNEL_PRESENT
 
   uint32_t result = fn(sid, arg);
 
   #if defined(RTOS_KERNEL_PRESENT)
-  if (osKernelGetState() == osKernelRunning) {
-    osStatus_t status = osMutexRelease(mutex.mutex_ID);
-    EFM_ASSERT(status == osOK);
+  if (SLI_PSEC_OSAL_KERNEL_RUNNING) {
+    sl_status_t sl_status = sli_psec_osal_give_lock(&skl_lock);
+    EFM_ASSERT(sl_status == SL_STATUS_OK);
   }
   #endif // RTOS_KERNEL_PRESENT
 
@@ -146,18 +122,18 @@ uint32_t sli_tz_ns_interface_dispatch_simple(sli_tz_veneer_simple_fn fn,
 int32_t sli_tz_ns_interface_dispatch_noarg(sli_tz_veneer_noarg_fn fn)
 {
   #if defined(RTOS_KERNEL_PRESENT)
-  if (osKernelGetState() == osKernelRunning) {
-    osStatus_t status = osMutexAcquire(mutex.mutex_ID, osWaitForever);
-    EFM_ASSERT(status == osOK);
+  if (SLI_PSEC_OSAL_KERNEL_RUNNING) {
+    sl_status_t sl_status = sli_psec_osal_take_lock(&skl_lock);
+    EFM_ASSERT(sl_status == SL_STATUS_OK);
   }
   #endif // RTOS_KERNEL_PRESENT
 
   int32_t result = fn();
 
   #if defined(RTOS_KERNEL_PRESENT)
-  if (osKernelGetState() == osKernelRunning) {
-    osStatus_t status = osMutexRelease(mutex.mutex_ID);
-    EFM_ASSERT(status == osOK);
+  if (SLI_PSEC_OSAL_KERNEL_RUNNING) {
+    sl_status_t sl_status = sli_psec_osal_give_lock(&skl_lock);
+    EFM_ASSERT(sl_status == SL_STATUS_OK);
   }
   #endif // RTOS_KERNEL_PRESENT
 
@@ -168,18 +144,18 @@ int32_t sli_tz_ns_interface_dispatch_simple_noarg(sli_tz_veneer_simple_noarg_fn 
                                                   uint32_t sid)
 {
   #if defined(RTOS_KERNEL_PRESENT)
-  if (osKernelGetState() == osKernelRunning) {
-    osStatus_t status = osMutexAcquire(mutex.mutex_ID, osWaitForever);
-    EFM_ASSERT(status == osOK);
+  if (SLI_PSEC_OSAL_KERNEL_RUNNING) {
+    sl_status_t sl_status = sli_psec_osal_take_lock(&skl_lock);
+    EFM_ASSERT(sl_status == SL_STATUS_OK);
   }
   #endif // RTOS_KERNEL_PRESENT
 
   int32_t result = fn(sid);
 
   #if defined(RTOS_KERNEL_PRESENT)
-  if (osKernelGetState() == osKernelRunning) {
-    osStatus_t status = osMutexRelease(mutex.mutex_ID);
-    EFM_ASSERT(status == osOK);
+  if (SLI_PSEC_OSAL_KERNEL_RUNNING) {
+    sl_status_t sl_status = sli_psec_osal_give_lock(&skl_lock);
+    EFM_ASSERT(sl_status == SL_STATUS_OK);
   }
   #endif // RTOS_KERNEL_PRESENT
 

@@ -43,9 +43,11 @@
                                   | SL_POWER_MANAGER_EVENT_TRANSITION_LEAVING_EM2  \
                                   | SL_POWER_MANAGER_EVENT_TRANSITION_ENTERING_EM3 \
                                   | SL_POWER_MANAGER_EVENT_TRANSITION_LEAVING_EM3  \
+                                  | SL_POWER_MANAGER_EVENT_TRANSITION_ENTERING_EM0 \
                                   | SL_POWER_MANAGER_EVENT_TRANSITION_LEAVING_EM0)
 #else 
-#define SLEEP_EM_EVENT_MASK      (SL_POWER_MANAGER_EVENT_TRANSITION_LEAVING_EM0)
+#define SLEEP_EM_EVENT_MASK      (SL_POWER_MANAGER_EVENT_TRANSITION_ENTERING_EM0   \
+                                  | SL_POWER_MANAGER_EVENT_TRANSITION_LEAVING_EM0)
 #endif // _SILICON_LABS_32B_SERIES_2
 static void events_handler(sl_power_manager_em_t from,
                            sl_power_manager_em_t to);
@@ -248,8 +250,14 @@ static void events_handler(sl_power_manager_em_t from,
     {% endfor %}
   }
   #endif // _SILICON_LABS_32B_SERIES_2
-  if (to < SL_POWER_MANAGER_EM2){
-    // Only prepare for wakeup from EM1 or less, since USART doesn't run in EM2
+  if (to == SL_POWER_MANAGER_EM0) {
+    {% for instance in iostream_usart_instances %} 
+    if (sl_iostream_uart_{{ instance }}_handle->stream.context != NULL) {
+      sl_iostream_uart_wakeup(sl_iostream_uart_{{ instance }}_handle);
+    }
+    {% endfor %}
+  } else if (to < SL_POWER_MANAGER_EM2){
+    // Only prepare for sleep to EM1 or less, since USART doesn't run in EM2
     {% for instance in iostream_usart_instances %} 
     if (sl_iostream_uart_{{ instance }}_handle->stream.context != NULL) {
       sl_iostream_uart_prepare_for_sleep(sl_iostream_uart_{{ instance }}_handle);

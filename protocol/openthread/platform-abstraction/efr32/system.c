@@ -35,23 +35,25 @@
 #include <assert.h>
 #include <string.h>
 
-#include <openthread-core-config.h>
-#include <openthread-system.h>
-#include "utils/uart.h"
-
-#include "common/logging.hpp"
-
-#include "em_chip.h"
-#include "em_emu.h"
-#include "em_system.h"
-#include "rail.h"
-#include "sl_mpu.h"
-#include "sl_sleeptimer.h"
-
 #if defined(SL_COMPONENT_CATALOG_PRESENT)
 #include "sl_component_catalog.h"
 #endif
+
+#include <openthread-core-config.h>
+#include <openthread-system.h>
+#include <openthread/platform/toolchain.h>
+
+#include "utils/uart.h"
+
+#include "rail.h"
+#include "common/logging.hpp"
+
+#if defined(SL_CATALOG_MPU_PRESENT)
+#include "sl_mpu.h"
+#endif
+
 #include "sl_memory_manager.h"
+#include "sl_sleeptimer.h"
 
 #if OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE
 #include "sl_gp_interface.h"
@@ -60,26 +62,28 @@
 #include "alarm.h"
 #include "platform-efr32.h"
 
+#if defined(SL_CATALOG_POWER_MANAGER_PRESENT)
+#include "sleep.h"
+#endif
+
 #define USE_EFR32_LOG (OPENTHREAD_CONFIG_LOG_OUTPUT == OPENTHREAD_CONFIG_LOG_OUTPUT_PLATFORM_DEFINED)
 
 #if defined(SL_CATALOG_OPENTHREAD_CLI_PRESENT) && defined(SL_CATALOG_KERNEL_PRESENT)
-#define CLI_TASK_ENABLED (SL_OPENTHREAD_ENABLE_CLI_TASK)
+#define SERIAL_TASK_ENABLED (SL_OPENTHREAD_ENABLE_SERIAL_TASK)
 #else
-#define CLI_TASK_ENABLED (0)
+#define SERIAL_TASK_ENABLED (0)
 #endif
 
 otInstance *sInstance;
 
-static void efr32SerialProcess(void);
-
 #if (OPENTHREAD_RADIO)
 static void efr32NcpProcess(void);
-#elif (CLI_TASK_ENABLED == 0)
+#else
 static void efr32CliProcess(void);
 #endif
 
 #ifndef SL_COMPONENT_CATALOG_PRESENT
-__WEAK void sl_openthread_init(void)
+OT_TOOL_WEAK void sl_openthread_init(void)
 {
     // Placeholder for enabling Silabs specific features available only through Simplicity Studio
 }
@@ -101,8 +105,8 @@ void sl_ot_sys_init(void)
 #if USE_EFR32_LOG
     efr32LogInit();
 #endif
-    efr32RadioInit();
     efr32AlarmInit();
+    efr32RadioInit();
     efr32MiscInit();
 }
 
@@ -129,28 +133,37 @@ void otSysProcessDrivers(otInstance *aInstance)
     efr32GpProcess();
 #endif
 
+#if (SERIAL_TASK_ENABLED == 0)
+    // Serial task is not enabled, process serial events here
     efr32SerialProcess();
+#endif
 
     efr32RadioProcess(aInstance);
 
     // See alarm.c: Wrapped in a critical section
     efr32AlarmProcess(aInstance);
+
+#if !defined(SL_CATALOG_KERNEL_PRESENT)
+    otSysEventSignalPending();
+#endif
 }
 
-__WEAK void otSysEventSignalPending(void)
+OT_TOOL_WEAK void otSysEventSignalPending(void)
 {
-    // Intentionally empty
+#if defined(SL_CATALOG_POWER_MANAGER_PRESENT)
+    sl_ot_sleep_update();
+#endif
 }
 
 /* Serial process helper functions */
 
-static void efr32SerialProcess(void)
+void efr32SerialProcess(void)
 {
 #if (OPENTHREAD_RADIO)
     efr32NcpProcess();
-#elif (CLI_TASK_ENABLED == 0)
+#else
     efr32CliProcess();
-#endif // OPENTHREAD_RADIO0
+#endif // OPENTHREAD_RADIO
 }
 
 #if (OPENTHREAD_RADIO)
@@ -164,7 +177,7 @@ static void efr32NcpProcess(void)
     efr32SpiProcess();
 #endif
 }
-#elif (CLI_TASK_ENABLED == 0)
+#else
 static void efr32CliProcess(void)
 {
     efr32UartProcess();

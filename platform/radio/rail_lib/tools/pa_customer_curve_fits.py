@@ -179,14 +179,18 @@ def ProcessCharDataAndFindPoly(filename, increment=API_INCREMENT_DEFAULT, maxpwr
   return polys
 
 def ReadAndProcessCharData(filename, maxpwr=API_MAX_POWER_DEFAULT):
-  chardata = numpy.loadtxt(filename, delimiter=',')
+  chardata = numpy.genfromtxt(filename, delimiter=',')
   pwrlvls = []
   outpwrs = []
   maxpower = None
 
   # Average powers in case users provide a list of dBm sample for each level
   for entry in chardata:
+    #check for NaN
+    if entry[0] != entry[0]:
+      entry[0] = 0
     pwrlvls.append(entry[0])
+
     avgpower = numpy.average(entry[1:len(entry)])
     outpwrs.append(avgpower)
     if maxpower == None or avgpower > maxpower:

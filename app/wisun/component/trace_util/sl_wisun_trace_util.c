@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_wisun_trace_util.c
+ * @brief Wi-SUN Trace Utility
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -34,25 +34,18 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+
+#include "sl_memory_manager.h"
 #include "sl_sleeptimer.h"
 #include "sl_wisun_trace_util.h"
 #include "sl_wisun_types.h"
 #include "rail_config.h"
 #include "cmsis_os2.h"
-
-#if defined(SL_CATALOG_FREERTOS_KERNEL_PRESENT)
-// FreeRTOS
-  #include "FreeRTOS.h"
-#else
-// MicriumOS
-  #include "sl_memory_manager.h"
-#endif
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
 
-///  Size of the IPv6 string
+/// Size of the IPv6 string
 #define IPV6_STRING_SIZE                (40U)
 
 /// Empty IPv6 string
@@ -88,7 +81,7 @@
 /// PHY mode minimum value
 #define PHY_MODE_MAX_VAL                 8U
 
-/// MAC address srting length
+/// MAC address string length
 #define MAC_ADDR_STR_LEN \
   ((SL_WISUN_MAC_ADDRESS_SIZE * 2) + SL_WISUN_MAC_ADDRESS_SIZE - 1)
 
@@ -107,7 +100,7 @@
 /// Time stamp format string
 #define TIMESTAMP_FORMAT  "%03d-%02d:%02d:%02d"
 
-/// Milisecs in Secs
+/// Millisecs in Secs
 #define MS_IN_SEC         1000U
 
 /// Secs in Day
@@ -326,6 +319,18 @@ const app_enum_t app_wisun_lfn_profile_enum[] =
   { NULL, 0 }
 };
 
+const app_enum_t app_mac_enum[] =
+{
+  { "all", 0 },
+  { "any", 0 },
+  { NULL, 0 }
+};
+
+const sl_wisun_mac_address_t APP_BROADCAST_MAC =
+{
+  { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF }
+};
+
 // -----------------------------------------------------------------------------
 //                                Static Variables
 // -----------------------------------------------------------------------------
@@ -365,26 +370,21 @@ static const rail_ofdm_phy_mode_id_t _ofdm_phy_map[] = {
 
 void *app_wisun_malloc(size_t size)
 {
-  void *ptr = NULL;
-#if defined(SL_CATALOG_FREERTOS_KERNEL_PRESENT)
-  // FreeRTOS
-  ptr =  pvPortMalloc(size);
-#else
-  // MicriumOS
-  ptr = sl_malloc(size);
-#endif
-  return ptr;
+  return sl_malloc(size);
 }
 
 void app_wisun_free(void *addr)
 {
-#if defined(SL_CATALOG_FREERTOS_KERNEL_PRESENT)
-  // FreeRTOS
-  vPortFree(addr);
-#else
-  // MicriumOS
+  sl_memory_region_t heap_region = { 0 };
+
+  heap_region = sl_memory_get_heap_region();
+
+  if (addr < heap_region.addr
+      || addr >= (void *)((uint32_t)heap_region.addr + heap_region.size)) {
+    return;
+  }
+
   sl_free(addr);
-#endif
 }
 
 const char* app_wisun_trace_util_get_ip_str(const void *const addr)
@@ -402,8 +402,16 @@ const char* app_wisun_trace_util_get_ip_str(const void *const addr)
     return IPV6_EMPTY_STRING;
   }
 
-  ipv6_res = ip6tos(addr, dst);  // convert address binary to text for wisun and ipv6
-  return ipv6_res ? dst : IPV6_EMPTY_STRING; // dst -> success, empty string -> error;
+  // convert address binary to text for wisun and ipv6
+  ipv6_res = ip6tos(addr, dst);
+
+  // dst -> success, empty string -> error;
+  if (ipv6_res) {
+    return dst;
+  }
+
+  app_wisun_free(dst);
+  return IPV6_EMPTY_STRING;
 }
 
 const char * app_wisun_trace_util_conn_state_to_str(const uint32_t val)
@@ -496,7 +504,7 @@ app_wisun_phy_list_t *app_wisun_get_phy_list(app_wisun_phy_filter_t filter)
         }
         tail->next = p;
 
-        // increment PHY mode id for FAN11 OFDM PHYs
+        // increment PHY mode id for FAN1.1 OFDM PHYs
         if (phy_cfg.type == SL_WISUN_PHY_CONFIG_FAN11) {
           ++phy_cfg.config.fan11.phy_mode_id;
         }
@@ -625,7 +633,7 @@ const sl_wisun_connection_params_t *sl_wisun_get_conn_param_by_nw_size(const sl_
     case SL_WISUN_NETWORK_SIZE_TEST:
       return &SL_WISUN_PARAMS_PROFILE_TEST;
 
-    // Certifacete and automatic size are not supported
+    // Certificate and automatic size are not supported
     default:
       return NULL;
   }
@@ -637,7 +645,7 @@ void app_wisun_trace_util_timestamp_init(const uint64_t time_ms,
 {
   uint64_t remaining_seconds = 0U;
 
-  time->tot_milisecs = time_ms;
+  time->tot_millisecs = time_ms;
 
   remaining_seconds = time_ms / MS_IN_SEC;
   time->days = (uint16_t)(remaining_seconds / SEC_IN_DAY);
@@ -839,7 +847,7 @@ static sl_status_t _get_phy_cfg_from_ch_cfg_entry(const RAIL_ChannelConfigEntry_
       phy_config->config.fan11.phy_mode_id = stack_info[1];
       break;
     default:
-      // Unsupported version.
+      // Unsupported version
       return SL_STATUS_FAIL;
   }
 
@@ -883,7 +891,7 @@ static uint8_t _get_phy_options(sl_wisun_phy_config_t * const phy_cfg)
 
   for (uint32_t map_idx = 0; map_idx < (sizeof(_ofdm_phy_map) / sizeof(rail_ofdm_phy_mode_id_t)); ++map_idx) {
     if (phy_cfg->config.fan11.phy_mode_id == _ofdm_phy_map[map_idx].rail_phy_mode_id) {
-      // Corrigate first PHY mode ID
+      // Correct first PHY mode ID
       phy_cfg->config.fan11.phy_mode_id = _ofdm_phy_map[map_idx].wisun_phy_mode_id_min;
       return _ofdm_phy_map[map_idx].wisun_phy_mode_id_max - _ofdm_phy_map[map_idx].wisun_phy_mode_id_min + 1U;
     }

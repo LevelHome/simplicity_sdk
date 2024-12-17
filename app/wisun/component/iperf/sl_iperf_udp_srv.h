@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_iperf_udp_srv.h
+ * @brief iPerf UDP server
  *******************************************************************************
  * # License
  * <b>Copyright 2022 Silicon Laboratories Inc. www.silabs.com</b>
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __SL_IPERF_UDP_SRV__
-#define __SL_IPERF_UDP_SRV__
+#ifndef SL_IPERF_UDP_SRV_H
+#define SL_IPERF_UDP_SRV_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,11 +38,10 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include "sl_iperf.h"
 
 /**************************************************************************//**
- * @addtogroup SL_IPERF iPerf
+ * @addtogroup SL_IPERF
  * @{
  *****************************************************************************/
 
@@ -70,4 +69,5 @@ void sl_iperf_test_udp_server(sl_iperf_test_t * test);
 #ifdef __cplusplus
 }
 #endif
-#endif
+
+#endif // SL_IPERF_UDP_SRV_H

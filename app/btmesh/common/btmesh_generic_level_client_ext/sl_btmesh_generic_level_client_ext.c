@@ -3,7 +3,7 @@
  * @brief Generic Level Client module for Delta Set and Move Set Unacknowledged
  *******************************************************************************
  * # License
- * <b>Copyright 2023 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -38,6 +38,7 @@
 #include "sl_btmesh_api.h"
 #include "sl_btmesh_dcd.h"
 #include "sl_btmesh_lib.h"
+#include "app_btmesh_rta.h"
 
 #include "sl_bt_api.h"
 
@@ -286,8 +287,12 @@ void sl_btmesh_generic_level_client_ext_on_event(sl_btmesh_msg_t *evt)
  ******************************************************************************/
 void sl_btmesh_generic_level_client_ext_delta_set_unack(int32_t delta)
 {
-  request_count = SL_BTMESH_GENERIC_LEVEL_EXT_DELTA_RETRANSMISSION_COUNT_CFG_VAL;
+  sl_status_t sc = app_btmesh_rta_acquire();
+  if (sc != SL_STATUS_OK) {
+    return;
+  }
 
+  request_count = SL_BTMESH_GENERIC_LEVEL_EXT_DELTA_RETRANSMISSION_COUNT_CFG_VAL;
   delta_level = delta;
 
   send_request(false, mesh_generic_request_level_delta);  // Send the first request
@@ -302,6 +307,8 @@ void sl_btmesh_generic_level_client_ext_delta_set_unack(int32_t delta)
                                      true);
     app_assert_status_f(sc, "Failed to start delta periodic timer");
   }
+
+  (void) app_btmesh_rta_release();
 }
 
 /*******************************************************************************
@@ -309,8 +316,12 @@ void sl_btmesh_generic_level_client_ext_delta_set_unack(int32_t delta)
  ******************************************************************************/
 void sl_btmesh_generic_level_client_ext_move_set_unack(int16_t delta_level)
 {
-  request_count = SL_BTMESH_GENERIC_LEVEL_EXT_MOVE_RETRANSMISSION_COUNT_CFG_VAL;
+  sl_status_t sc = app_btmesh_rta_acquire();
+  if (sc != SL_STATUS_OK) {
+    return;
+  }
 
+  request_count = SL_BTMESH_GENERIC_LEVEL_EXT_MOVE_RETRANSMISSION_COUNT_CFG_VAL;
   move_level = delta_level;
 
   send_request(false, mesh_generic_request_level_move);  // Send the first request
@@ -325,6 +336,8 @@ void sl_btmesh_generic_level_client_ext_move_set_unack(int16_t delta_level)
                                      true);
     app_assert_status_f(sc, "Failed to start move periodic timer");
   }
+
+  (void) app_btmesh_rta_release();
 }
 
 /*******************************************************************************
@@ -332,6 +345,11 @@ void sl_btmesh_generic_level_client_ext_move_set_unack(int16_t delta_level)
  ******************************************************************************/
 void sl_btmesh_generic_level_client_ext_halt(void)
 {
+  sl_status_t sc = app_btmesh_rta_acquire();
+  if (sc != SL_STATUS_OK) {
+    return;
+  }
+
   request_count = SL_BTMESH_GENERIC_LEVEL_EXT_HALT_RETRANSMISSION_COUNT_CFG_VAL;
 
   send_request(false, mesh_generic_request_level_halt);  // Send the first request
@@ -346,6 +364,8 @@ void sl_btmesh_generic_level_client_ext_halt(void)
                                      true);
     app_assert_status_f(sc, "Failed to start halt periodic timer");
   }
+
+  (void) app_btmesh_rta_release();
 }
 
 // -----------------------------------------------------------------------------
@@ -360,13 +380,20 @@ static void on_delta_retransmission_timer_expiry(app_timer_t *handle,
   (void)data;
   (void)handle;
 
+  sl_status_t sc = app_btmesh_rta_acquire();
+  if (sc != SL_STATUS_OK) {
+    return;
+  }
+
   // First parameter (true) indicates that this is a retransmission
   send_request(true, mesh_generic_request_level_delta);
   // stop retransmission timer if it was the last attempt
   if (request_count == 0) {
-    sl_status_t sc = app_timer_stop(&retransmission_timer);
+    sc = app_timer_stop(&retransmission_timer);
     app_assert_status_f(sc, "Failed to stop periodic timer");
   }
+
+  (void) app_btmesh_rta_release();
 }
 
 /***************************************************************************//**
@@ -378,13 +405,20 @@ static void on_move_retransmission_timer_expiry(app_timer_t *handle,
   (void)data;
   (void)handle;
 
+  sl_status_t sc = app_btmesh_rta_acquire();
+  if (sc != SL_STATUS_OK) {
+    return;
+  }
+
   // First parameter (true) indicates that this is a retransmission
   send_request(true, mesh_generic_request_level_move);
   // stop retransmission timer if it was the last attempt
   if (request_count == 0) {
-    sl_status_t sc = app_timer_stop(&retransmission_timer);
+    sc = app_timer_stop(&retransmission_timer);
     app_assert_status_f(sc, "Failed to stop periodic timer");
   }
+
+  (void) app_btmesh_rta_release();
 }
 
 /***************************************************************************//**
@@ -396,13 +430,20 @@ static void on_halt_retransmission_timer_expiry(app_timer_t *handle,
   (void)data;
   (void)handle;
 
+  sl_status_t sc = app_btmesh_rta_acquire();
+  if (sc != SL_STATUS_OK) {
+    return;
+  }
+
   // First parameter (true) indicates that this is a retransmission
   send_request(true, mesh_generic_request_level_halt);
   // stop retransmission timer if it was the last attempt
   if (request_count == 0) {
-    sl_status_t sc = app_timer_stop(&retransmission_timer);
+    sc = app_timer_stop(&retransmission_timer);
     app_assert_status_f(sc, "Failed to stop periodic timer");
   }
+
+  (void) app_btmesh_rta_release();
 }
 
 /*******************************************************************************

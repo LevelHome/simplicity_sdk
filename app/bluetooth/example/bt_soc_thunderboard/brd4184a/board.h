@@ -3,7 +3,7 @@
  * @brief Board HW abstraction header for BRD4184A
  *******************************************************************************
  * # License
- * <b>Copyright 2022 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -31,15 +31,11 @@
 #ifndef BOARD_H
 #define BOARD_H
 
-//--------------------------------
 #include "sl_simple_led_instances.h"
 
 #define ADV_LED                    SL_SIMPLE_LED_INSTANCE(0)
 #define adv_led_turn_on()          sl_led_turn_on(ADV_LED)
 #define adv_led_turn_off()         sl_led_turn_off(ADV_LED)
 #define adv_led_toggle()           sl_led_toggle(ADV_LED)
-
-//--------------------------------
-#define BOARD_EM4WUEN_BTN  sl_button_btn0 // The button to use for EM4 wake-up
 
 #endif // BOARD_H

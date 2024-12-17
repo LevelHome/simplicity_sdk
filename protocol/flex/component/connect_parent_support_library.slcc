@@ -1,6 +1,6 @@
 id: "connect_parent_support_library"
 label: "Parent Support (Library)"
-package: "Flex"
+package: "Connect"
 category: "Connect"
 quality: "production"
 ui_hints:

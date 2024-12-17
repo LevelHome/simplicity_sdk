@@ -37,8 +37,16 @@
  **************************************************************************************************/
 
 #include "sl_bluetooth_connection_config.h"
+#include "sl_enum.h"
 
 #define CS_REFLECTOR_MAX_CONNECTIONS SL_BT_CONFIG_MAX_CONNECTIONS
+
+// CS antenna usage for CS SYNC packets
+SL_ENUM(cs_sync_antenna_t) {
+  CS_SYNC_ANTENNA_1 = 1,
+  CS_SYNC_ANTENNA_2 = 2,
+  CS_SYNC_SWITCHING = 0xfe
+};
 
 // <<< Use Configuration Wizard in Context Menu >>>
 
@@ -70,10 +78,17 @@
 // <i> Enable reflector component logging
 #define CS_REFLECTOR_LOG                    1
 
+// <o CS_REFLECTOR_CS_SYNC_ANTENNA> Select antenna for CS sync packets
+// <CS_SYNC_ANTENNA_1=> Antenna 1
+// <CS_SYNC_ANTENNA_2=> Antenna 2
+// <CS_SYNC_SWITCHING=> Switching between all antennas
+// <i> Default: CS_SYNC_SWITCHING
+#define CS_REFLECTOR_CS_SYNC_ANTENNA      CS_SYNC_SWITCHING
+
 // <s CS_REFLECTOR_LOG_PREFIX> Log prefix
 // <i> Default: "[Reflector]"
 #ifndef CS_REFLECTOR_LOG_PREFIX
-#define CS_REFLECTOR_LOG_PREFIX                       "[Reflector]"
+#define CS_REFLECTOR_LOG_PREFIX             "[Reflector]"
 #endif
 
 // </e>
@@ -81,5 +96,12 @@
 // </h>
 
 // <<< end of configuration section >>>
+
+#define REFLECTOR_CONFIG_DEFAULT                          \
+  {                                                       \
+    .max_tx_power_dbm =    CS_REFLECTOR_MAX_TX_POWER_DBM, \
+    .cs_sync_antenna =     CS_REFLECTOR_CS_SYNC_ANTENNA   \
+  }
+
 /** @} (end addtogroup cs_reflector) */
 #endif // CS_REFLECTOR_CONFIG_H

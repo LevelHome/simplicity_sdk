@@ -1,12 +1,18 @@
 import enum
 import json
 import re
+import traceback
 from pathlib import Path
 from typing import (Callable, Dict, Iterable, List, NamedTuple, Optional, Set,
                     Union)
 
 from jinja2 import FileSystemLoader
 from jinja2.environment import Environment
+
+if __name__ == '__main__':
+    from BtMeshLogger import ErrorLevel, GeneratorLogger
+else:
+    from .BtMeshLogger import ErrorLevel, GeneratorLogger
 
 BTMESH_GEN_DIR_PATH = Path(__file__).parent
 BTMESH_SIG_MDL_DESC_NAME = "btmesh_sig_model_descriptors.json"
@@ -38,7 +44,7 @@ class ModelUtil:
             elem_offset < cls.MDL_ITEM_SHORT_ELEM_OFFSET_MIN
             or elem_offset > cls.MDL_ITEM_SHORT_ELEM_OFFSET_MAX
         ):
-            raise ValueError(
+            GeneratorLogger.add_marker(ErrorLevel.ERROR,
                 f"Model item element offset ({elem_offset}) is not in supported "
                 f"[{cls.MDL_ITEM_SHORT_ELEM_OFFSET_MIN}, {cls.MDL_ITEM_SHORT_ELEM_OFFSET_MAX}]"
                 f" range of short format."
@@ -50,7 +56,7 @@ class ModelUtil:
             elem_offset < cls.MDL_ITEM_LONG_ELEM_OFFSET_MIN
             or elem_offset > cls.MDL_ITEM_LONG_ELEM_OFFSET_MAX
         ):
-            raise ValueError(
+            GeneratorLogger.add_marker(ErrorLevel.ERROR,
                 f"Model item element offset ({elem_offset}) is not in supported "
                 f"[{cls.MDL_ITEM_LONG_ELEM_OFFSET_MIN}, {cls.MDL_ITEM_LONG_ELEM_OFFSET_MAX}]"
                 f" range of long format."
@@ -62,7 +68,7 @@ class ModelUtil:
             mdl_idx < cls.MDL_ITEM_SHORT_MDL_IDX_MIN
             or mdl_idx > cls.MDL_ITEM_SHORT_MDL_IDX_MAX
         ):
-            raise ValueError(
+            GeneratorLogger.add_marker(ErrorLevel.ERROR,
                 f"Model item element offset ({mdl_idx}) is not in supported "
                 f"[{cls.MDL_ITEM_SHORT_MDL_IDX_MIN}, {cls.MDL_ITEM_SHORT_MDL_IDX_MAX}]"
                 f" range of short format."
@@ -74,7 +80,7 @@ class ModelUtil:
             mdl_idx < cls.MDL_ITEM_LONG_MDL_IDX_MIN
             or mdl_idx > cls.MDL_ITEM_LONG_MDL_IDX_MAX
         ):
-            raise ValueError(
+            GeneratorLogger.add_marker(ErrorLevel.ERROR,
                 f"Model item element offset ({mdl_idx}) is not in supported "
                 f"[{cls.MDL_ITEM_LONG_MDL_IDX_MIN}, {cls.MDL_ITEM_LONG_MDL_IDX_MAX}]"
                 f" range of long format."
@@ -86,7 +92,7 @@ class ModelUtil:
         MIN_VALUE = -(1 << (bit_count - 1))
         MAX_VALUE = (1 << (bit_count - 1)) - 1
         if not (MIN_VALUE <= value <= MAX_VALUE):
-            raise ValueError(
+            GeneratorLogger.add_marker(ErrorLevel.ERROR,
                 f"The {value} signed integer value can't be "
                 f"represented in {bit_count} bits."
             )
@@ -96,8 +102,13 @@ class ModelUtil:
 
 
 class ModelDescriptorRelation:
-    def __init__(self, model_name: str, element_constraint: str):
-        self.model_name = model_name.strip()
+    def __init__(self, element_constraint: str, model_name: str = None, mid: str = None, cid: str = hex(ModelUtil.CID_SIG_MDL)):
+        if model_name:
+            self.model_name = model_name.strip()
+        else:
+            self.model_name = ""
+            self.mid = int(mid,16)
+            self.cid = int(cid,16)
         self.element_constraint = element_constraint.strip()
 
     def __repr__(self) -> str:
@@ -115,12 +126,14 @@ class ModelDescriptor(object):
         name: str,
         multiplicity: str,
         element_constraint: str,
-        publication_support: bool,
-        subscription_support: bool,
-        security: str,
+        publication_support: bool = True,
+        subscription_support: bool = True,
+        security: str = "mixed",
         corresponds=[],
         extends=[],
         cid: int = None,
+        metadata_headers: List[str] = [],
+        metadata_info: Dict[str, int] = {}
     ):
         # Model ID conversion to int from string (bin, oct, dec, hex)
         self.mid = int(mid, 0)
@@ -137,14 +150,33 @@ class ModelDescriptor(object):
         self.publication_support = publication_support
         self.subscription_support = subscription_support
         self.security = security.strip()
-        self.corresponds = [
-            ModelDescriptorRelation(c["model"], c["element_constraint"])
-            for c in corresponds
-        ]
-        self.extends = [
-            ModelDescriptorRelation(e["model"], e["element_constraint"])
-            for e in extends
-        ]
+        self.corresponds = []
+        self.extends = []
+        for c in corresponds:
+            if c.get("cid"):
+                # If CID is present, it's most likely a vendor model
+                self.corresponds.append(ModelDescriptorRelation(c["element_constraint"], None, c["mid"], c["cid"]))
+            elif c.get("mid"):
+                # If CID is not present, it's an SIG model
+                self.corresponds.append(ModelDescriptorRelation(c["element_constraint"], None, c["mid"]))
+            elif c.get("model"):
+                # If only model name is present, it should be an SIG model (but still work if all Vendor Models have unique names)
+                self.corresponds.append(ModelDescriptorRelation(c["element_constraint"], c["model"]))
+        for e in extends:
+            if e.get("cid"):
+                # If CID is present, it's most likely a vendor model
+                self.extends.append(ModelDescriptorRelation(e["element_constraint"], None, e["mid"], e["cid"]))
+            elif e.get("mid"):
+                # If CID is not present, it's an SIG model
+                self.extends.append(ModelDescriptorRelation(e["element_constraint"], None, e["mid"]))
+            elif e.get("model"):
+                # If only model name is present, it should be an SIG model (but still work if all Vendor Models have unique names)
+                self.extends.append(ModelDescriptorRelation(e["element_constraint"], e["model"]))
+        
+        # Metadata header is the (list of) .h files ("sl_btmesh_xy_config.h")
+        self.metadata_headers = metadata_headers
+        # Metadata info is a dict of {"MACRO_NAME" : metadata lenght} pairs
+        self.metadata_info = metadata_info
 
     def __str__(self) -> str:
         return f"{self.name} (cid=0x{self.cid:04X}, mid=0x{self.mid:04X})"
@@ -157,7 +189,7 @@ class ModelElemConstraint(enum.Enum):
 
 
 class ModelRelationElemConstraint(enum.Enum):
-    MAIN = 0
+    SAME = 0
     OTHER_SMALLER_ELEM_INDEX = 1
     OTHER_LARGER_ELEM_INDEX = 2
 
@@ -224,6 +256,8 @@ class Model:
         extends: Iterable[ModelRelation] = [],
         extended_by: Iterable["Model"] = [],
         cid: int = ModelUtil.CID_SIG_MDL,
+        metadata_headers: List[str] = [],
+        metadata_info: Dict[str, int] = {}
     ):
         self.cid = cid
         self.mid = mid
@@ -234,6 +268,8 @@ class Model:
         self.publication_support = publication_support
         self.subscription_support = subscription_support
         self.security = security
+        self.metadata_headers = metadata_headers
+        self.metadata_info = metadata_info
         self._corresponds = []
         self._extends = []
         self._extended_by = []
@@ -251,7 +287,7 @@ class Model:
     @cid.setter
     def cid(self, value) -> None:
         if not (0 <= value <= 0xFFFF):
-            raise ValueError(f"Invalid company id: 0x{value:04X}.")
+            GeneratorLogger.add_marker(ErrorLevel.ERROR,f"Invalid company id: 0x{value:04X}.")
         self._cid = value
 
     @property
@@ -261,7 +297,7 @@ class Model:
     @mid.setter
     def mid(self, value) -> None:
         if not (0 <= value <= 0xFFFF):
-            raise ValueError(f"Invalid model id: 0x{value:04X}.")
+            GeneratorLogger.add_marker(ErrorLevel.ERROR,f"Invalid model id: 0x{value:04X}.")
         self._mid = value
 
     @property
@@ -279,7 +315,7 @@ class Model:
     @multiplicity_lower.setter
     def multiplicity_lower(self, value) -> None:
         if value < 0:
-            raise ValueError(f"Invalid multiplicity: {value}.")
+            GeneratorLogger.add_marker(ErrorLevel.ERROR,f"Invalid multiplicity: {value}.")
         self._multiplicity_lower = value
 
     @property
@@ -289,7 +325,7 @@ class Model:
     @multiplicity_upper.setter
     def multiplicity_upper(self, value) -> None:
         if value < 0:
-            raise ValueError(f"Invalid multiplicity: {value}.")
+            GeneratorLogger.add_marker(ErrorLevel.ERROR,f"Invalid multiplicity: {value}.")
         self._multiplicity_upper = value
 
     @property
@@ -393,7 +429,7 @@ class CorrespondingGroup:
     @classmethod
     def get_unique_group_id(cls) -> int:
         if cls.next_unique_group_id >= ModelUtil.CORRESPONDING_GROUP_MAX_COUNT:
-            raise ValueError(
+            GeneratorLogger.add_marker(ErrorLevel.ERROR,
                 f"Max corresponding group count is exceeded. "
                 f"({ModelUtil.CORRESPONDING_GROUP_MAX_COUNT})"
             )
@@ -524,7 +560,7 @@ class ModelInst:
         else:
             if cid == ModelUtil.CID_SIG_MDL:
                 # All SIG models shall be listed in model descriptor json files
-                raise ValueError(
+                GeneratorLogger.add_marker(ErrorLevel.ERROR,
                     f"No SIG model exists with 0x{mid:04X} identifier. "
                     f"List and content of loaded model descriptor json files "
                     f"shall be checked."
@@ -646,8 +682,11 @@ class ModelInst:
             self._extended_by.append(model_inst)
 
     def link_extended_model_inst(self, model_inst: "ModelInst") -> None:
-        self.add_extends(model_inst)
-        model_inst.add_extended_by(self)
+        if model_inst is None:
+            pass
+        else:
+            self.add_extends(model_inst)
+            model_inst.add_extended_by(self)
 
     @property
     def model_item_header(self) -> int:
@@ -707,10 +746,15 @@ class ModelCollection:
     ELEM_CONSTRAINT_PATTERN = r"primary|primary_any|any"
     SECURITY_PATTERN = r"devkey|appkey|mixed"
     RELATION_ELEM_CONSTRAINT_PATTERN = (
-        r"main|other_larger_elem_index|other_smaller_elem_index"
+        r"same|other_larger_elem_index|other_smaller_elem_index"
     )
     id_mdl_dict: Dict[VendorModelId, Model] = {}
     name_mdl_dict: Dict[VendorModelId, Model] = {}
+
+    @classmethod
+    def reset(cls):
+        cls.id_mdl_dict.clear()
+        cls.name_mdl_dict.clear()
 
     @classmethod
     def get_model_by_ids(cls, mid: int, cid: int = ModelUtil.CID_SIG_MDL):
@@ -737,7 +781,7 @@ class ModelCollection:
     @classmethod
     def add_model(cls, mdl: Model):
         if mdl.vmid in cls.id_mdl_dict or mdl.name in cls.name_mdl_dict:
-            raise ValueError(f"The {mdl} is duplicated.")
+            GeneratorLogger.add_marker(ErrorLevel.ERROR,f"The {mdl} is duplicated.")
         cls.id_mdl_dict[mdl.vmid] = mdl
         cls.name_mdl_dict[mdl.name] = mdl
 
@@ -747,7 +791,7 @@ class ModelCollection:
         # Examples: 1, *, 0..1, 0..*, 1..*
         raw_multiplicity = model_descriptor.multiplicity
         if not re.match(cls.MULTIPLICITY_PATTERN, raw_multiplicity):
-            raise ValueError(
+            GeneratorLogger.add_marker(ErrorLevel.ERROR,
                 f"Invalid multiplicity: {raw_multiplicity} in {model_descriptor} "
                 f"(expected: {cls.MULTIPLICITY_PATTERN})"
             )
@@ -773,7 +817,7 @@ class ModelCollection:
         # Model element constraint is validated and substituted by enum counterpart
         raw_element_constraint = model_descriptor.element_constraint
         if not re.match(cls.ELEM_CONSTRAINT_PATTERN, raw_element_constraint):
-            raise ValueError(
+            GeneratorLogger.add_marker(ErrorLevel.ERROR,
                 f"Invalid element_constraint: {raw_element_constraint} "
                 f"in {model_descriptor} (expected: {cls.ELEM_CONSTRAINT_PATTERN})."
             )
@@ -786,7 +830,7 @@ class ModelCollection:
         # Model security is validated and substituted by enum counterpart
         raw_security = model_descriptor.security
         if not re.match(cls.SECURITY_PATTERN, raw_security):
-            raise ValueError(
+            GeneratorLogger.add_marker(ErrorLevel.ERROR,
                 f"Invalid security: {raw_security} in {model_descriptor}. "
                 f"(expected: {cls.SECURITY_PATTERN})"
             )
@@ -808,6 +852,8 @@ class ModelCollection:
             publication_support=model_descriptor.publication_support,
             subscription_support=model_descriptor.subscription_support,
             security=security,
+            metadata_headers=model_descriptor.metadata_headers,
+            metadata_info=model_descriptor.metadata_info
         )
 
     @classmethod
@@ -819,24 +865,33 @@ class ModelCollection:
     ) -> ModelRelation:
         raw_elem_constraint = mdl_desc_relation.element_constraint
         if not re.match(cls.RELATION_ELEM_CONSTRAINT_PATTERN, raw_elem_constraint):
-            raise ValueError(
+            GeneratorLogger.add_marker(ErrorLevel.ERROR,
                 f"Invalid model relation ({mdl_relation_type.name.lower}) "
                 f"element constraint: {raw_elem_constraint} in {mdl_desc} "
                 f"(expected: {cls.RELATION_ELEM_CONSTRAINT_PATTERN})."
             )
-        if raw_elem_constraint == "main":
-            elem_constraint = ModelRelationElemConstraint.MAIN
+        if raw_elem_constraint == "same":
+            elem_constraint = ModelRelationElemConstraint.SAME
         elif raw_elem_constraint == "other_smaller_elem_index":
             elem_constraint = ModelRelationElemConstraint.OTHER_SMALLER_ELEM_INDEX
         elif raw_elem_constraint == "other_larger_elem_index":
             elem_constraint = ModelRelationElemConstraint.OTHER_LARGER_ELEM_INDEX
-        if not cls.model_name_exists(mdl_desc_relation.model_name):
-            raise ValueError(
+        if mdl_desc_relation.model_name:
+            # Get MID/CID from name
+            mdl = cls.get_model_by_name(mdl_desc_relation.model_name)
+            mdl_desc_relation.mid = mdl.mid
+            mdl_desc_relation.cid = mdl.cid if mdl.cid else ModelUtil.CID_SIG_MDL
+        else:
+            # Get name from MID/CID info
+            mdl = cls.get_model_by_ids(mdl_desc_relation.mid, mdl_desc_relation.cid)
+            mdl_desc_relation.model_name = mdl.name
+
+        if not cls.model_ids_exist(mdl_desc_relation.mid, mdl_desc_relation.cid):
+            GeneratorLogger.add_marker(ErrorLevel.ERROR,
                 f"Related model ({mdl_relation_type.name.lower}) with "
                 f"{mdl_desc_relation.model_name} referenced by {mdl_desc} "
                 "name doesn't exist."
             )
-        mdl = cls.get_model_by_name(mdl_desc_relation.model_name)
         mdl_relation = ModelRelation(mdl, elem_constraint, mdl_relation_type)
         return mdl_relation
 
@@ -937,6 +992,14 @@ class Element(object):
     @property
     def num_v(self) -> int:
         return len(self._vendor_models)
+    
+    @property
+    def num_s_metadata(self) -> int:
+        return len([m for m in self._sig_models if len(m.mdl.metadata_info) > 0])
+    
+    @property
+    def num_v_metadata(self) -> int:
+        return len([m for m in self._vendor_models if len(m.mdl.metadata_info) > 0])
 
     @property
     def sig_models(self) -> Iterable[ModelInst]:
@@ -1006,11 +1069,23 @@ class Element(object):
             self._sig_models.append(mdl_inst)
         self.update_vendor_model_indexes()
 
+    def remove_sig_model(self, mid: int) -> None:
+        for mdl_inst in self.sig_models:
+            if mdl_inst.mid == mid:
+                self._sig_models.remove(mdl_inst)
+                break
+
     def extend_vendor_models(self, mdl_insts: Iterable[ModelInst]) -> None:
         for mdl_inst in mdl_insts:
             mdl_inst.elem = self
             mdl_inst.mdl_index = len(self._sig_models) + len(self._vendor_models)
             self._vendor_models.append(mdl_inst)
+    
+    def remove_vendor_model(self, mid: int) -> None:
+        for mdl_inst in self.vendor_models:
+            if mdl_inst.mid == mid:
+                self._vendor_models.remove(mdl_inst)
+                break
 
     def is_mergeable_with(self, other: "Element") -> bool:
         if self.name != other.name:
@@ -1029,6 +1104,7 @@ class Element(object):
         self.extend_sig_models(other.sig_models)
         self.extend_vendor_models(other.vendor_models)
         self.sources.extend(other.sources)
+
 
 
 class DCD(object):
@@ -1071,12 +1147,22 @@ class DCD(object):
                 e.elem_index = len(self.elements)
                 self.elements.append(e)
 
-    def validate(self) -> None:
+    def validate(self) -> bool:
         # The code below is not running when there is only one element because
         # no cross-checks are necessary.
         # It is not allowed to have the same group name from the same file
         # on different elements because the macro value is ambiguous.
         validation_error_list = []
+        if not self.check_model_multiplicity():
+            validation_error = (
+                f"BtMeshGenerator: Model multiplicity invalid."
+            )
+            validation_error_list.append(validation_error)
+        if not self.check_element_constraints():
+            validation_error = (
+                f"BtMeshGenerator: Element constraint invalid."
+            )
+            validation_error_list.append(validation_error)
         for elem_idx, elem in enumerate(self.elements):
             for elem_other_idx in range(elem_idx + 1, len(self.elements)):
                 elem_other = self.elements[elem_other_idx]
@@ -1097,7 +1183,10 @@ class DCD(object):
                         validation_error_list.append(validation_error)
         if validation_error_list:
             print("\n".join(validation_error_list))
-            exit(-1)
+            for validation_error in validation_error_list:
+                GeneratorLogger.add_marker(ErrorLevel.ERROR,validation_error)
+            return False
+        return True
 
     def build_models_relations(self) -> None:
         self.build_and_link_corresponding_groups()
@@ -1135,10 +1224,11 @@ class DCD(object):
                 origin_elem_index=mdl_inst.elem_index,
             )
             if corresponding_mdl_inst is None:
-                raise ValueError(
+                GeneratorLogger.add_marker(ErrorLevel.ERROR,
                     f"No corresponding {corresponding_relation.model} model "
                     f"instance was found for {mdl_inst} model instance."
                 )
+                break
             if corresponding_mdl_inst.corresponding_group is not None:
                 if corresponding_mdl_inst.corresponding_group.id == corresponding_group.id:
                     # If the function is called recursively to discover model instances
@@ -1178,8 +1268,8 @@ class DCD(object):
                 origin_elem_index=mdl_inst.elem_index,
             )
             if extended_mdl_inst is None:
-                raise ValueError(
-                    f"No {extends_relation.model} extended model instance"
+                GeneratorLogger.add_marker(ErrorLevel.ERROR,
+                    f"No {extends_relation.model} extended model instance "
                     f"was found for {mdl_inst} model instance."
                 )
             # Warning could be reported when when mdl_inst is extended already
@@ -1199,7 +1289,7 @@ class DCD(object):
         if mdl_inst_filter is None:
             mdl_inst_filter = lambda _: True
         mdl_vmid_set = set((mdl.vmid for mdl in mdls))
-        if elem_constraint is ModelRelationElemConstraint.MAIN:
+        if elem_constraint is ModelRelationElemConstraint.SAME:
             elem_index_start = origin_elem_index
             elem_index_end = origin_elem_index + 1
             elem_index_step = 1
@@ -1232,6 +1322,96 @@ class DCD(object):
                 if mdl_inst.mdl.vmid in mdl_vmid_set and mdl_inst_filter(mdl_inst):
                     return mdl_inst
         return None
+
+    def remove_sig_model_from_elem(self, elem_idx: int, mid: int) -> None:
+        for e in self.elements:
+            if e.elem_index == elem_idx:
+                e.remove_sig_model(mid)
+                break
+
+    def remove_vendor_model_from_elem(self, elem_idx: int, mid: int) -> None:
+        for e in self.elements:
+            if e.elem_index == elem_idx:
+                e.remove_vendor_model(mid)
+                break
+
+    def move_sig_model(self, mid: int, elem_from: int, elem_to:int) -> None:
+        model: ModelInst
+        for e in self.elements:
+            if e.elem_index == elem_from:
+                for m in e.models:
+                    if m.mid == mid:
+                        model = m
+                        e.remove_sig_model(mid)
+                        break
+        for e in self.elements:
+            if e.elem_index == elem_to:
+                e.append_sig_model(model)
+                break
+
+    def move_vendor_model(self, mid: int, elem_from: int, elem_to:int) -> None:
+        model: ModelInst
+        for e in self.elements:
+            if e.elem_index == elem_from:
+                for m in e.models:
+                    if m.mid == mid:
+                        model = m
+                        e.remove_vendor_model(mid)
+                        break
+        for e in self.elements:
+            if e.elem_index == elem_to:
+                e.append_vendor_model(model)
+                break
+    def check_model_multiplicity(self) -> bool:
+        # A model is considered mandatory if its multiplicity is '1' or '1..*'
+        mandatory_mdl_list = []
+        # A dictionary of all models present on the device and their instance count
+        model_cnt_dict = {}
+        
+        # Check for mandatory models
+        for model in ModelCollection.id_mdl_dict.values():
+            if model.multiplicity_lower >= 1:
+                mandatory_mdl_list.append(model.vmid)
+        
+        # Check for upper multiplicities
+        for element in self.elements:
+            for model in element.models:
+                if model.vmid not in model_cnt_dict:
+                    model_cnt_dict[model.vmid] = 1
+                else:
+                    model_cnt_dict[model.vmid] += 1
+
+        # Validate that all mandatory models are present
+        for vmid, cnt in model_cnt_dict.items():
+            # Check mandatory, e.g. 1..
+            if vmid in mandatory_mdl_list:
+                mandatory_mdl_list.remove(vmid)
+            # Check upper limits, i.e. ..1
+            if ModelCollection.get_model_by_ids(vmid.mid,vmid.cid).multiplicity_upper < cnt:
+                # More models found than allowed
+                return False
+
+        return len(mandatory_mdl_list) == 0
+
+    def check_element_constraints(self) -> bool:
+        # element_constraint can be the following:
+        # "any":          doesn't matter where the element is
+        # "primary":      the element shall be supported by a primary element
+        # "primary_any":  the element shall be supported by a primary element and any secondary elements
+        # Note that multiplicity 0.. can still have one of the above two constraints,
+        # in this case these apply only if the element is present.
+        primary_any_list = []
+        for element in self.elements:
+            for model in element.models:
+                if model.mdl.elem_constraint == ModelElemConstraint.PRIMARY:
+                    if element.elem_index != 0:
+                        return False
+                elif model.mdl.elem_constraint == ModelElemConstraint.PRIMARY_ANY:
+                    if element.elem_index == 0:
+                        primary_any_list.append(model.mid)
+                    elif model.mid not in primary_any_list:
+                        return False
+        return True
 
 class MIDEntry(object):
     def __init__(self, mid):
@@ -1271,21 +1451,19 @@ def dcd_chunk(filename, elements=[]) -> List[Element]:
     return [Element(**e, sources=[Source(filename, e.get("group"))]) for e in elements]
 
 
-def dcdgen(dcd, profiles):
+def dcdgen(dcd, profiles, metadata, valid):
     dcd.unique_vendor_models = dcd.collect_v_models()
     env = Environment(lstrip_blocks=True, trim_blocks=True, keep_trailing_newline=True)
     env.loader = FileSystemLoader(str(BTMESH_GEN_DIR_PATH))
     return (
-        env.get_template("templates/sl_btmesh_dcd.h.template").render(dcd=dcd, profiles=profiles),
-        env.get_template("templates/sl_btmesh_dcd.c.template").render(dcd=dcd, profiles=profiles),
+        env.get_template("templates/sl_btmesh_dcd.h.template").render(dcd=dcd, profiles=profiles, metadata=metadata, valid=valid ),
+        env.get_template("templates/sl_btmesh_dcd.c.template").render(dcd=dcd, profiles=profiles, metadata=metadata, valid=valid ),
     )
-
-
-def generate(
+    
+def dcd_build(
     input_path: Path,
-    output_path: Path,
     model_descriptor_paths: Iterable[Path] = [BTMESH_SIG_MDL_DESC_PATH],
-):
+) -> tuple[DCD, List[Path]]:
     if input_path.is_dir():
         btmeshconf_file_path = next(
             (p for p in input_path.iterdir() if p.suffix.lower() == ".btmeshconf"), None
@@ -1309,6 +1487,15 @@ def generate(
         profile_paths = []
 
     model_descriptors = []
+    with btmeshconf_file_path.open() as f:
+        btmeshconf = json.load(f)
+
+    if "vendor_model_descriptors" in btmeshconf:
+        vendor_model_descriptor_chunk=btmeshconf["vendor_model_descriptors"]
+        model_descriptors.extend(
+            ModelDescriptor(**raw_md) for raw_md in vendor_model_descriptor_chunk
+        )
+
     for model_descriptor_path in model_descriptor_paths:
         with model_descriptor_path.open() as f:
             raw_model_descriptors_chunk = json.load(f)
@@ -1317,25 +1504,41 @@ def generate(
             )
     ModelCollection.build(model_descriptors)
 
-    with btmeshconf_file_path.open() as f:
-        btmeshconf = json.load(f)
-
     dcd = DCD(**btmeshconf["composition_data"], model_descriptors=model_descriptors)
-    profiles = Profiles()
 
     for dcd_file_path in dcd_file_paths:
         with dcd_file_path.open() as f:
             dcd.add_chunk(dcd_chunk(dcd_file_path.stem, json.load(f)))
-    dcd.validate()
 
+    return dcd, profile_paths
+
+def dcd_validate(dcd: DCD) -> bool:
+    return dcd.validate()
+
+def dcd_build_models_relations(dcd: DCD):
     dcd.build_models_relations()
+
+def generate_profiles(
+        output_path: Path,
+        profile_paths: List[Path],
+        dcd: DCD
+):
+    metadata = False
+    for e in dcd.elements:
+        for s in e.sources:
+            if s.filename == 'btmesh_lcd_server':
+                metadata = True
+                break
+    profiles = Profiles()
     for profile_path in profile_paths:
         with profile_path.open() as f:
             raw_profile = json.load(f)
             profiles.add_profile(ProfileData(**p) for p in raw_profile)
     for profile in profiles.profile_data:
         profile.calculate_offsets(dcd.elements)
-    dcd_h_file, dcd_c_file = dcdgen(dcd, profiles)
+
+    dcd_valid = GeneratorLogger.result_code == 0
+    dcd_h_file, dcd_c_file = dcdgen(dcd, profiles, metadata, dcd_valid)
 
     dcd_c_path = output_path / "sl_btmesh_dcd.c"
     dcd_h_path = output_path / "sl_btmesh_dcd.h"
@@ -1347,6 +1550,32 @@ def generate(
 
     print(f"BtMeshGenerator: DCD written to {dcd_c_path.absolute()}")
 
+def generate(
+    input_path: Path,
+    output_path: Path,
+    model_descriptor_paths: Iterable[Path] = [BTMESH_SIG_MDL_DESC_PATH],
+):
+    try:
+        dcd, profile_paths = dcd_build(input_path, model_descriptor_paths)
+        valid = dcd_validate(dcd)
+        if valid:
+            dcd_build_models_relations(dcd)
+
+        generate_profiles(output_path, profile_paths, dcd)
+    except Exception as err:
+        formatted_lines = traceback.format_exc().splitlines()
+        GeneratorLogger.add_log(2, ErrorLevel.ERROR, f"An exception occured during generation", repr(err), formatted_lines)
+
+    write_logs(output_path)
+    # Print to stdout so the errors appear from command-line 
+    if GeneratorLogger.result_code != 0:
+        for log in GeneratorLogger.logs:
+            print("BtMeshGenerator: " + log.message)
+        for marker in GeneratorLogger.validation_markers:
+            print("BtMeshGenerator: " + marker.message)
+
+def write_logs(log_path: Path):
+    GeneratorLogger.write_logs(log_path)
 
 if __name__ == "__main__":
     import argparse

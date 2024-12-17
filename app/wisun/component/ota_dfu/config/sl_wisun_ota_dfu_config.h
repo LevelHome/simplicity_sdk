@@ -1,5 +1,5 @@
 /***************************************************************************//**
- * @file
+ * @file sl_wisun_ota_dfu_config.h
  * @brief Wi-SUN OTA DFU configuration
  *******************************************************************************
  * # License
@@ -31,7 +31,7 @@
 #define SL_WISUN_OTA_DFU_CONFIG_H
 
 /**************************************************************************//**
- * @defgroup SL_WISUN_OTA_DFU_CONFIG Configuration
+ * @defgroup SL_WISUN_OTA_DFU_CONFIG Configurations
  * @ingroup SL_WISUN_OTA_DFU_API
  * @{
  *****************************************************************************/
@@ -42,49 +42,66 @@
 
 // <q SL_WISUN_OTA_DFU_VERBOSE_MODE_ENABLED> Enable verbose mode
 // <i> Default value: 0
-#define SL_WISUN_OTA_DFU_VERBOSE_MODE_ENABLED       0U
+#define SL_WISUN_OTA_DFU_VERBOSE_MODE_ENABLED       0U ///< Enable verbose mode
+
+// <o SL_WISUN_OTA_DFU_STORAGE_SLOT_ID> Storage slot ID
+// <i> Default: 0
+// <i> This configuration specifies the storage slot ID where the firmware image will be stored
+#define SL_WISUN_OTA_DFU_STORAGE_SLOT_ID            0U ///< Storage slot ID
 
 // <o SL_WISUN_OTA_DFU_STACK_SIZE_WORD> OTA DFU service stack size in CPU word
 // <i> Default: 360
-#define SL_WISUN_OTA_DFU_STACK_SIZE_WORD            360UL
+#define SL_WISUN_OTA_DFU_STACK_SIZE_WORD            360UL ///< OTA DFU service stack size in CPU word
 
 // <o SL_WISUN_OTA_DFU_TFTP_PORT> TFTP service listener port
 // <i> Default: 69
 // <i> This is the port number where TFTP service is listening
 // <1-65536>
-#define SL_WISUN_OTA_DFU_TFTP_PORT                  69U
+#define SL_WISUN_OTA_DFU_TFTP_PORT                  69U ///< TFTP service listener port
+
+// <o SL_WISUN_OTA_DFU_TFTP_DATA_BLOCK_SIZE> TFTP data block size
+// <i> Default: 1228
+// <i> Data block size for GBL file transfer
+// <8-1228>
+#define SL_WISUN_OTA_DFU_TFTP_DATA_BLOCK_SIZE       1228U ///< TFTP data block size
+
+// <o SL_WISUN_OTA_DFU_TFTP_TIMEOUT_SEC> TFTP server retransmission timeout in seconds
+// <i> Default: 1
+// <i> This is the port number where TFTP service is listening
+// <1-255>
+#define SL_WISUN_OTA_DFU_TFTP_TIMEOUT_SEC           1U ///< TFTP server retransmission timeout in seconds
 
 // <s SL_WISUN_OTA_DFU_HOST_ADDR> TFTP service listening address
-#define SL_WISUN_OTA_DFU_HOST_ADDR                  "2001:db8::1"
+#define SL_WISUN_OTA_DFU_HOST_ADDR                  "2001:db8::1" ///< TFTP service listening address
 
 // <s SL_WISUN_OTA_DFU_GBL_FILE> Firmware image (gbl) file name on TFTP server.
-#define SL_WISUN_OTA_DFU_GBL_FILE                   "wisun_firmware.gbl"
+#define SL_WISUN_OTA_DFU_GBL_FILE                   "wisun_firmware.gbl" ///< Firmware image (gbl) file name
 
 // <s SL_WISUN_OTA_DFU_URI_PATH> OTA DFU resource URI path
-#define SL_WISUN_OTA_DFU_URI_PATH                   "/ota/dfu"
+#define SL_WISUN_OTA_DFU_URI_PATH                   "/ota/dfu" ///< OTA DFU resource URI path
 
 // <q SL_WISUN_OTA_DFU_AUTO_INSTALL_ENABLED> Enable auto reboot and install
 // <i> Default value: 1
-#define SL_WISUN_OTA_DFU_AUTO_INSTALL_ENABLED       1U
+#define SL_WISUN_OTA_DFU_AUTO_INSTALL_ENABLED       1U ///< Enable auto reboot and install
 
 // <q SL_WISUN_OTA_DFU_HOST_NOTIFY_ENABLED> Enable host notification
 // <i> Default value: 1
-#define SL_WISUN_OTA_DFU_HOST_NOTIFY_ENABLED        1U
+#define SL_WISUN_OTA_DFU_HOST_NOTIFY_ENABLED        1U ///< Enable host notification
 
 #if SL_WISUN_OTA_DFU_HOST_NOTIFY_ENABLED
 // <s SL_WISUN_OTA_DFU_NOTIFY_HOST_ADDR> OTA DFU notification server address
-#define SL_WISUN_OTA_DFU_NOTIFY_HOST_ADDR           "2001:db8::1"
+#define SL_WISUN_OTA_DFU_NOTIFY_HOST_ADDR           "2001:db8::1" ///< OTA DFU notification server address
 
 // <s SL_WISUN_OTA_DFU_NOTIFY_URI_PATH> OTA DFU notification resource URI path
-#define SL_WISUN_OTA_DFU_NOTIFY_URI_PATH            "/ota/dfu_notify"
+#define SL_WISUN_OTA_DFU_NOTIFY_URI_PATH            "/ota/dfu_notify" ///< OTA DFU notification resource URI path
 
 // <o SL_WISUN_OTA_DFU_NOTIFY_DOWNLOAD_CHUNK_CNT> Count of received chunk to notify in download task
 // <i> Default value: 10
-#define SL_WISUN_OTA_DFU_NOTIFY_DOWNLOAD_CHUNK_CNT  10U
+#define SL_WISUN_OTA_DFU_NOTIFY_DOWNLOAD_CHUNK_CNT  10U ///< Count of received chunk to notify in download task
 
 // <o SL_WISUN_OTA_DFU_NOTIFY_PORT> OTA DFU Host notification listener port.
-// <i> Default: 5685
-#define SL_WISUN_OTA_DFU_NOTIFY_PORT                5685U
+// <i> Default: 5683
+#define SL_WISUN_OTA_DFU_NOTIFY_PORT                5683U ///< OTA DFU Host notification listener port
 #endif
 
 // </h>
@@ -92,4 +109,4 @@
 
 /** @}*/
 
-#endif
+#endif // SL_WISUN_OTA_DFU_CONFIG_H

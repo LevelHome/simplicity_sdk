@@ -2,7 +2,7 @@ id: "app_os_stat"
 label: "Application memory statistic"
 package: "wisun"
 description: >
-  The service systematically collects heap and stack utilization data from
+  The service systematically collects heap and stack usage data from
   active threads across various configurations involving FreeRTOS, MicriumOS,
   and different toolchains such as GCC and IAR. This critical information is
   then relayed to the Real-Time Transfer (RTT) console.
@@ -17,8 +17,8 @@ description: >
   application heap size. Stack size is calculated using the highest watermarks,
   and the last result always displays the maximum values.
 
-category: "Wi-SUN|Application"
-quality: "production"
+category: "Wi-SUN|Wi-SUN Services"
+quality: "evaluation"
 metadata:
   sbom:
     license: Zlib

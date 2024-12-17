@@ -29,16 +29,16 @@
  ******************************************************************************/
 
 #include <stdint.h>
-#include "em_common.h"
-#include "em_core.h"
+#include "sl_common.h"
+#include "sl_core.h"
 #include "sl_bluetooth.h"
 #include "sl_status.h"
-#include "app_assert.h"
-#include "sl_simple_com.h"
+#include "sl_bt_ncp_transport.h"
 #include "sl_ncp.h"
 #include "sl_ncp_evt_filter.h"
 #include "sl_component_catalog.h"
 #include "app_timer.h"
+#include "app_rta.h"
 #if defined(SL_CATALOG_WAKE_LOCK_PRESENT)
 #include "sl_wake_lock.h"
 #endif // SL_CATALOG_WAKE_LOCK_PRESENT
@@ -48,45 +48,73 @@
 #if defined(SL_CATALOG_GECKO_BOOTLOADER_INTERFACE_PRESENT)
 #include "btl_interface.h"
 #endif // SL_CATALOG_GECKO_BOOTLOADER_INTERFACE_PRESENT
-extern void sli_simple_com_cancel_receive(void);
+#ifdef SL_CATALOG_APP_ASSERT_PRESENT
+#include "app_assert.h"
+#endif // SL_CATALOG_APP_ASSERT_PRESENT
+#ifdef SL_CATALOG_BGAPI_TRACE_PRESENT
+#include "sli_bgapi_trace.h"
+#endif // SL_CATALOG_BGAPI_TRACE_PRESENT
+
+void sli_bt_ncp_transport_usart_cancel_receive(void);
 
 // Command buffer
 typedef struct {
   uint16_t len;
-  uint8_t buf[SL_NCP_CMD_BUF_SIZE];
   bool available;
+  union {
+    uint32_t header;
+    uint8_t  buf[SL_NCP_CMD_BUF_SIZE];
+  };
 } cmd_t;
 
 // Event buffer
 typedef struct {
   uint16_t len;
-  uint8_t buf[SL_NCP_EVT_BUF_SIZE];
   bool available;
+  union {
+    uint32_t header;
+    uint8_t  buf[SL_NCP_EVT_BUF_SIZE];
+  };
 } evt_t;
 
 // Timer states
 typedef enum {
   CMD_IDLE = 0,
-  CMD_WAITING,
+  CMD_RECEIVING,
+  CMD_INCOMPLETE,
   CMD_RECEIVED
-} timer_state_t;
+} cmd_state_t;
 
-static cmd_t cmd = { 0 };
-static evt_t evt = { 0 };
+// Application Runtime Adaptor context
+static app_rta_context_t ctx = APP_RTA_INVALID_CONTEXT;
+static SL_ALIGN(4) cmd_t cmd SL_ATTRIBUTE_ALIGN(4) =
+{
+  0
+};
+static SL_ALIGN(4) evt_t evt SL_ATTRIBUTE_ALIGN(4) =
+{
+  0
+};
 static bool busy = false;
+
 #if defined(SL_CATALOG_WAKE_LOCK_PRESENT)
-// semaphore to disable sleep prematurely
-static uint8_t sleep_semaphore = 0;
-// upper bits are flags to store signal value and wait until first cmd is received
-#define SLEEP_SIGNAL_PRESENT   0x80
-#define SLEEP_WAITING_FIRST_RX 0x40
-#define SLEEP_SIGNAL_MASK      SLEEP_WAITING_FIRST_RX | SLEEP_SIGNAL_PRESENT
+#define SEMAPHORE_MAX        63
+// Sleep context to disable sleep prematurely
+static union {
+  uint8_t   data;               // Common data (interpret as a byte)
+  struct {
+    uint8_t wake_signal    : 1; // Wake signal flag
+    uint8_t waiting_for_rx : 1; // Waiting for RX flag
+    uint8_t semaphore      : 6; // Semaphore field
+  }         fields;             // Field interpretation
+} sleep_context;
 #endif // SL_CATALOG_WAKE_LOCK_PRESENT
 
 #define MSG_GET_LEN(x) ((uint16_t)(SL_BT_MSG_LEN((x)->header) \
                                    + SL_BT_MSG_HEADER_LEN))
 
-static bool handle_user_command(uint32_t hdr, void *data);
+static bool is_user_command(uint32_t hdr);
+static void handle_user_command(uint32_t hdr, void *data);
 
 // Command and event buffer helper functions
 static void cmd_enqueue(uint16_t len, uint8_t *data);
@@ -105,14 +133,18 @@ static inline void evt_clr_available(void);
 // Timer handle and callback for command timeout.
 static app_timer_t cmd_timer;
 static void cmd_timer_cb1(app_timer_t *timer, void *data);
-static void cmd_timer_cb2(app_timer_t *timer, void *data);
+static void cmd_timer_cb2(const app_timer_t *timer, const void *data);
 
 #if defined(SL_CATALOG_WAKE_LOCK_PRESENT)
-static inline bool sleep_signal_mask_is_set(void);
-static inline void sleep_signal_mask_set(void);
+static inline void sleep_signal_all_set(void);
 static inline void sleep_signal_flag_clr(void);
 static inline void sleep_signal_wait_clr(void);
 #endif // SL_CATALOG_WAKE_LOCK_PRESENT
+// Runtime error handler
+static void on_runtime_error(app_rta_error_t error,
+                             sl_status_t     result);
+// Step function
+static void ncp_step(void);
 
 // -----------------------------------------------------------------------------
 // Public functions (API implementation)
@@ -122,99 +154,38 @@ static inline void sleep_signal_wait_clr(void);
  *****************************************************************************/
 void sl_ncp_init(void)
 {
+  sl_status_t sc;
+
   // Clear all buffers
   cmd_dequeue();
   evt_dequeue();
 
-  // Start reception
-  sl_simple_com_receive();
   busy = false;
   #if defined(SL_CATALOG_WAKE_LOCK_PRESENT)
-  sleep_semaphore = 0;
+  sleep_context.data = 0;
   #endif // SL_CATALOG_WAKE_LOCK_PRESENT
 
-  sl_ncp_os_task_init();
+  app_rta_config_t config = {
+    .requirement.runtime = true,
+    .requirement.guard   = true,
+    .requirement.signal  = false,
+    .requirement.queue   = false,
+    .step                = ncp_step,
+    .priority            = SL_NCP_TASK_PRIO,
+    .stack_size          = SL_NCP_TASK_STACK,
+    .error               = on_runtime_error,
+    .wait_for_guard      = SL_NCP_WAIT_FOR_GUARD
+  };
+  sc = app_rta_create_context(&config, &ctx);
+  if (sc != SL_STATUS_OK) {
+    on_runtime_error(APP_RTA_ERROR_RUNTIME_INIT_FAILED, sc);
+  }
 }
 
-/**************************************************************************//**
- * Ncp process action function.
- *
- * @note Called through sl_system_process_action
- *****************************************************************************/
-void sl_ncp_step(void)
+void sl_ncp_rta_ready(void)
 {
-  // -------------------------------
-  // Command available and NCP not busy
-  if (cmd_is_available() && !busy) {
-    sl_bt_msg_t *command = (sl_bt_msg_t *)cmd.buf;
-    sl_bt_msg_t *response;
-
-    #if defined(SL_CATALOG_NCP_SEC_PRESENT)
-    uint32_t result = 0;
-    // store if cmd was encrypted during reception for further processing
-    bool cmd_is_encrypted = sl_ncp_sec_is_encrypted(&cmd.buf);
-    result = sl_ncp_sec_command_handler((uint8_t*)&cmd.buf);
-    if ((result & SL_NCP_SEC_CMD_PROCESS) == SL_NCP_SEC_CMD_PROCESS)
-    #endif // SL_CATALOG_NCP_SEC_PRESENT
-    {
-      cmd_clr_available();
-      // Check for user command
-      if (!handle_user_command(command->header, command->data.payload)) {
-        // Call Bluetooth API binary command handler
-        sl_bt_handle_command(command->header, command->data.payload);
-      }
-    }
-    #if defined(SL_CATALOG_NCP_SEC_PRESENT)
-    if ((result & SL_NCP_SEC_EVT_PROCESS) == SL_NCP_SEC_EVT_PROCESS) {
-      // Clear command buffer
-      cmd_dequeue();
-    } else if ((result & SL_NCP_SEC_RSP_PROCESS)
-               == SL_NCP_SEC_RSP_PROCESS) {
-      response = sl_ncp_sec_process_response(
-        sl_bt_get_command_response(), cmd_is_encrypted);
-    #else
-    {
-      response = sl_bt_get_command_response();
-    #endif // SL_CATALOG_NCP_SEC_PRESENT
-      // Clear command buffer
-      cmd_dequeue();
-      busy = true;
-    #if defined(SL_CATALOG_WAKE_LOCK_PRESENT)
-      // Wake up other controller
-      sl_wake_lock_set_remote_req();
-    #endif // SL_CATALOG_WAKE_LOCK_PRESENT
-      // Transmit command response
-      sl_simple_com_transmit((uint32_t)(MSG_GET_LEN(response)),
-                             (uint8_t *)response);
-    }
-  }
-
-  // -------------------------------
-  // Event available and NCP not busy
-  if (evt_is_available() && !busy) {
-    evt_clr_available();
-    busy = true;
-    #if defined(SL_CATALOG_WAKE_LOCK_PRESENT)
-    // Wake up other controller
-    sl_wake_lock_set_remote_req();
-    #endif // SL_CATALOG_WAKE_LOCK_PRESENT
-
-    uint8_t *data_ptr = evt.buf;
-    uint16_t len = evt.len;
-
-    #if defined(SL_CATALOG_NCP_SEC_PRESENT)
-    // encrypt the outgoing event
-    data_ptr = (uint8_t*)sl_ncp_sec_process_event((sl_bt_msg_t*)evt.buf);
-    app_assert(data_ptr, "Error during event encryption.\n");
-    // refresh original len as encrypted msg will be longer than original
-    len = MSG_GET_LEN((sl_bt_msg_t*)data_ptr);
-    #endif // SL_CATALOG_NCP_SEC_PRESENT
-
-    // Transmit events
-    sl_simple_com_transmit((uint32_t)len, data_ptr);
-    // Clear event buffer
-    evt_dequeue();
-  }
+  // Start reception
+  sl_bt_ncp_transport_receive();
 }
 
 /**************************************************************************//**
@@ -235,6 +206,15 @@ SL_WEAK bool sl_ncp_local_evt_process(sl_bt_msg_t *evt)
 {
   (void)evt;
   return true;
+}
+
+SL_WEAK void sl_ncp_on_error(sl_ncp_error_t error, sl_status_t status)
+{
+  (void)error;
+  (void)status;
+  #ifdef SL_CATALOG_APP_ASSERT_PRESENT
+  app_assert_status_f(status, "NCP: Error %u occurred.", error);
+  #endif
 }
 
 #if defined(SL_CATALOG_BTMESH_PRESENT)
@@ -276,7 +256,7 @@ SL_WEAK void sl_ncp_user_cmd_message_to_target_cb(void *data)
  *
  * @note Weak implementation.
  *****************************************************************************/
-SL_WEAK void sl_ncp_user_cs_cmd_message_to_target_cb(void *data)
+SL_WEAK void sl_ncp_user_cs_cmd_message_to_target_cb(const void *data)
 {
   (void)data;
 }
@@ -299,19 +279,35 @@ void sl_ncp_user_evt_message_to_host(uint8_t len, uint8_t *data)
   sl_bt_send_evt_user_message_to_host(len, data);
 }
 
+/******************************************************************************
+ * Check for user commands.
+ *****************************************************************************/
+static bool is_user_command(uint32_t hdr)
+{
+  switch (SL_BT_MSG_ID(hdr)) {
+    // The command IDs listed here have to be in sync with the command IDs in
+    // the handle_user_command function.
+    case sl_bt_cmd_user_message_to_target_id:
+    case sl_bt_cmd_user_manage_event_filter_id:
+    case sl_bt_cmd_user_reset_to_dfu_id:
+    case sl_bt_cmd_user_cs_service_message_to_target_id:
+      return true;
+    default:
+      return false;
+  }
+}
+
 /**************************************************************************//**
  * Handle a user API command in binary format.
  *
  * @param[in] hdr the command header.
  * @param[in] data the command payload in a byte array
- *
- * @retval true User command handled.
- * @retval false No user command found.
  *****************************************************************************/
-static bool handle_user_command(uint32_t hdr, void *data)
+static void handle_user_command(uint32_t hdr, void *data)
 {
-  bool cmd_handled = true;
-
+#ifdef SL_CATALOG_BGAPI_TRACE_PRESENT
+  sli_bgapi_trace_output_message(sli_bgapi_trace_message_type_command, hdr, data);
+#endif // SL_CATALOG_BGAPI_TRACE_PRESENT
   switch (SL_BT_MSG_ID(hdr)) {
     // -------------------------------
     case sl_bt_cmd_user_message_to_target_id:
@@ -343,11 +339,14 @@ static bool handle_user_command(uint32_t hdr, void *data)
         sl_bt_send_rsp_user_cs_service_message_to_target(SL_STATUS_FAIL, 0, NULL);
       }
       break;
+    // -------------------------------
     default:
-      cmd_handled = false;
       break;
   }
-  return cmd_handled;
+#ifdef SL_CATALOG_BGAPI_TRACE_PRESENT
+  sl_bt_msg_t *response = sl_bt_get_command_response();
+  sli_bgapi_trace_output_message(sli_bgapi_trace_message_type_response, response->header, response->data.payload);
+#endif // SL_CATALOG_BGAPI_TRACE_PRESENT
 }
 
 // -----------------------------------------------------------------------------
@@ -362,13 +361,20 @@ static bool handle_user_command(uint32_t hdr, void *data)
  *****************************************************************************/
 void sl_bt_on_event(sl_bt_msg_t *evt)
 {
-  if (!sl_ncp_evt_filter_is_filtered((uint32_t)SL_BT_MSG_ID(evt->header))) {
-    if (sl_ncp_local_common_evt_process(evt)) {
+  // Acquire guard
+  sl_status_t sc = app_rta_acquire(ctx);
+  if (sc == SL_STATUS_OK) {
+    if (!sl_ncp_evt_filter_is_filtered(SL_BT_MSG_ID(evt->header))
+        && sl_ncp_local_common_evt_process(evt)) {
       // Enqueue event
       evt_enqueue(MSG_GET_LEN(evt),
                   (uint8_t *)evt);
-      sl_ncp_os_task_proceed();
+      (void)app_rta_proceed(ctx);
     }
+    // Release guard
+    (void)app_rta_release(ctx);
+  } else {
+    on_runtime_error(APP_RTA_ERROR_ACQUIRE_FAILED, sc);
   }
 }
 
@@ -383,13 +389,21 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
  *****************************************************************************/
 void sl_btmesh_on_event(sl_btmesh_msg_t *evt)
 {
-  if (!sl_ncp_evt_filter_is_filtered((uint32_t)SL_BT_MSG_ID(evt->header))) {
-    if (sl_ncp_local_common_btmesh_evt_process(evt)) {
-      // Enqueue event
-      evt_enqueue(MSG_GET_LEN(evt),
-                  (uint8_t *)evt);
-      sl_ncp_os_task_proceed();
+  // Acquire guard
+  sl_status_t sc = app_rta_acquire(ctx);
+  if (sc == SL_STATUS_OK) {
+    if (!sl_ncp_evt_filter_is_filtered((uint32_t)SL_BT_MSG_ID(evt->header))) {
+      if (sl_ncp_local_common_btmesh_evt_process(evt)) {
+        // Enqueue event
+        evt_enqueue(MSG_GET_LEN(evt),
+                    (uint8_t *)evt);
+        (void)app_rta_proceed(ctx);
+      }
     }
+    // Release guard
+    (void)app_rta_release(ctx);
+  } else {
+    on_runtime_error(APP_RTA_ERROR_ACQUIRE_FAILED, sc);
   }
 }
 #endif
@@ -406,11 +420,17 @@ void sl_btmesh_on_event(sl_btmesh_msg_t *evt)
 static inline bool sl_ncp_can_process_event(uint32_t len)
 {
   bool ret = false;
+  sl_status_t sc = app_rta_acquire(ctx);
+  if (sc != SL_STATUS_OK) {
+    return ret;
+  }
   // event fits into event buffer; otherwise don't pop it from queue
   if ((len <= (uint32_t)(sizeof(evt.buf) - evt.len)) && !evt_is_available()
       && !cmd_is_available()) {
     ret = true;
   }
+  // Release guard
+  (void)app_rta_release(ctx);
   return ret;
 }
 
@@ -441,54 +461,69 @@ bool sl_btmesh_can_process_event(uint32_t len)
 #endif
 
 /**************************************************************************//**
- * Uart transmit completed callback
+ * Transmit completed callback
  *
- * Called after Uart transmit is finished.
+ * Called after transmission is finished.
  *
  * @param[in] status Status of the transmission
  *****************************************************************************/
-void sl_simple_com_transmit_cb(sl_status_t status)
+void sl_bt_ncp_transport_on_transmit(sl_status_t status)
 {
   (void)status;
+  // Acquire guard
+  sl_status_t sc = app_rta_acquire(ctx);
+  if (sc == SL_STATUS_OK) {
+    #if defined(SL_CATALOG_WAKE_LOCK_PRESENT)
+    // Signal other controller that it can go to sleep
+    sl_wake_lock_clear_remote_req();
 
-  #if defined(SL_CATALOG_WAKE_LOCK_PRESENT)
-  // Signal other controller that it can go to sleep
-  sl_wake_lock_clear_remote_req();
-
-  // Command response completed, go to sleep if possible
-  if (sleep_signal_mask_is_set()) {
-    // Only decrease semaphore if a command was received before
-    // i.e. not an event was sent out
-    sleep_semaphore--;
-    if (!sleep_semaphore) {
-      // Go to sleep if signal is down and command answered
-      sl_wake_lock_set_local();
+    // Command response completed, go to sleep if possible
+    if (sleep_context.fields.semaphore > 0) {
+      // Only decrease semaphore if a command was received before
+      // i.e. not an event was sent out
+      sleep_context.fields.semaphore--;
+      if (sleep_context.data == 0) {
+        // Go to sleep if signal is down and command answered
+        sl_wake_lock_set_local();
+      }
     }
+    #endif // SL_CATALOG_WAKE_LOCK_PRESENT
+    busy = false;
+    (void)app_rta_proceed(ctx);
+    // Release guard
+    (void)app_rta_release(ctx);
+  } else {
+    on_runtime_error(APP_RTA_ERROR_ACQUIRE_FAILED, sc);
   }
-  #endif // SL_CATALOG_WAKE_LOCK_PRESENT
-  busy = false;
-  sl_ncp_os_task_proceed();
 }
 
 /**************************************************************************//**
- * Uart receive completed callback
+ * Receive completed callback
  *
- * Called after Uart receive is finished.
+ * Called after reception is finished. Called from ISR context.
  *
  * @param[in] status Status of the reception
  * @param[in] len Received message length
  * @param[in] data Data received
  *****************************************************************************/
-void sl_simple_com_receive_cb(sl_status_t status, uint32_t len, uint8_t *data)
+void sl_bt_ncp_transport_on_receive(sl_status_t status, uint32_t len, uint8_t *data)
 {
   (void)status;
   // Stop on communication error
-  app_assert_status_f(status,
-                      "Receive error. Received %d bytes.\n",
-                      (int)len);
-  // Copy command into buffer
-  cmd_enqueue((uint16_t)len, data);
-  sl_ncp_os_task_proceed();
+  if (status != SL_STATUS_OK) {
+    sl_ncp_on_error(SL_NCP_ERROR_RECEIVE, status);
+  }
+  // Acquire guard
+  sl_status_t sc = app_rta_acquire(ctx);
+  if (sc == SL_STATUS_OK) {
+    // Copy command into buffer
+    cmd_enqueue((uint16_t)len, data);
+    (void)app_rta_proceed(ctx);
+    // Release guard
+    (void)app_rta_release(ctx);
+  } else {
+    on_runtime_error(APP_RTA_ERROR_ACQUIRE_FAILED, sc);
+  }
 }
 
 #if defined(SL_CATALOG_WAKE_LOCK_PRESENT)
@@ -500,7 +535,7 @@ void sl_wake_lock_set_req_rx_cb(void)
 {
   // Other end set wake-up pin, so set signaling flag. Also signal that at least
   // one command needs to be received and processed before sleep.
-  sleep_signal_mask_set();
+  sleep_signal_all_set();
   sl_bt_send_system_awake();
 }
 
@@ -513,7 +548,7 @@ void sl_wake_lock_clear_req_rx_cb(void)
   // Other end released pin, remove signaling flag
   sleep_signal_flag_clr();
 
-  if (!sleep_semaphore) {
+  if (sleep_context.data == 0) {
     // Go to sleep if signal is down and command answered
     sl_wake_lock_set_local();
   }
@@ -521,30 +556,106 @@ void sl_wake_lock_clear_req_rx_cb(void)
 #endif // SL_CATALOG_WAKE_LOCK_PRESENT
 
 // -----------------------------------------------------------------------------
-// Power manager related functions
+// Step function
 
-/**************************************************************************//**
- * Check if NCP allows go to sleep
- *****************************************************************************/
-bool sli_ncp_is_ok_to_sleep(void)
+static void ncp_step(void)
 {
-  bool result;
-
-  result = !cmd_is_available() && !evt_is_available() && !busy;
-  #if defined(SL_CATALOG_WAKE_LOCK_PRESENT)
-  result = result && !sleep_semaphore;
-  #endif
-  return result;
-}
-/**************************************************************************//**
- * Routine for power manager handler
- *****************************************************************************/
-sl_power_manager_on_isr_exit_t sli_ncp_sleep_on_isr_exit(void)
-{
-  if (sli_ncp_is_ok_to_sleep() == false) {
-    return SL_POWER_MANAGER_WAKEUP;
+  // Acquire guard
+  sl_status_t sc = app_rta_acquire(ctx);
+  if (sc != SL_STATUS_OK) {
+    on_runtime_error(APP_RTA_ERROR_ACQUIRE_FAILED, sc);
+    (void)app_rta_proceed(ctx);
+    return;
   }
-  return SL_POWER_MANAGER_IGNORE;
+  // -------------------------------
+  // Command available and NCP not busy
+  if (cmd_is_available() && !busy) {
+    sl_bt_msg_t *command = (sl_bt_msg_t *)cmd.buf;
+    sl_bt_msg_t *response;
+
+    #if defined(SL_CATALOG_NCP_SEC_PRESENT)
+    uint32_t result = 0;
+    // store if cmd was encrypted during reception for further processing
+    bool cmd_is_encrypted = sl_ncp_sec_is_encrypted(cmd.buf);
+    result = sl_ncp_sec_command_handler(cmd.buf);
+    if ((result & SL_NCP_SEC_CMD_PROCESS) == SL_NCP_SEC_CMD_PROCESS)
+    #endif // SL_CATALOG_NCP_SEC_PRESENT
+    {
+      cmd_clr_available();
+      sc = sl_bgapi_lock();
+      if (sc != SL_STATUS_OK) {
+        // Signal fatal error to the app, skip command processing afterwards
+        sl_ncp_on_error(SL_NCP_ERROR_BGAPI_LOCK, SL_STATUS_FAIL);
+        // Drop command from the buffer as locking error is already fatal
+        cmd_dequeue();
+        // Exit processing current command
+        return;
+      }
+      // Check for user command
+      if (is_user_command(command->header)) {
+        handle_user_command(command->header, command->data.payload);
+      } else {
+        // Call Bluetooth API binary command handler
+        sl_bt_handle_command(command->header, command->data.payload);
+      }
+    }
+    #if defined(SL_CATALOG_NCP_SEC_PRESENT)
+    if ((result & SL_NCP_SEC_EVT_PROCESS) == SL_NCP_SEC_EVT_PROCESS) {
+      // Clear command buffer
+      cmd_dequeue();
+    } else if ((result & SL_NCP_SEC_RSP_PROCESS)
+               == SL_NCP_SEC_RSP_PROCESS) {
+      response = sl_ncp_sec_process_response(
+        sl_bt_get_command_response(), cmd_is_encrypted);
+    #else
+    {
+      response = sl_bt_get_command_response();
+    #endif // SL_CATALOG_NCP_SEC_PRESENT
+      busy = true;
+      // Clear command buffer
+      cmd_dequeue();
+    #if defined(SL_CATALOG_WAKE_LOCK_PRESENT)
+      // Wake up other controller
+      sl_wake_lock_set_remote_req();
+    #endif // SL_CATALOG_WAKE_LOCK_PRESENT
+      // Transmit command response
+      sl_bt_ncp_transport_transmit((uint32_t)(MSG_GET_LEN(response)),
+                                   (uint8_t *)response);
+      // Finally unlock the BGAPI to allow other commands to proceed
+      sl_bgapi_unlock();
+    }
+  }
+
+  // -------------------------------
+  // Event available and NCP not busy
+  if (evt_is_available() && !busy) {
+    #if defined(SL_CATALOG_WAKE_LOCK_PRESENT)
+    // Wake up other controller
+    sl_wake_lock_set_remote_req();
+    #endif // SL_CATALOG_WAKE_LOCK_PRESENT
+
+    uint8_t *data_ptr = evt.buf;
+    uint16_t len = evt.len;
+
+    #if defined(SL_CATALOG_NCP_SEC_PRESENT)
+    // encrypt the outgoing event
+    data_ptr = (uint8_t*)sl_ncp_sec_process_event((sl_bt_msg_t*)evt.buf);
+    if (data_ptr == NULL) {
+      sl_ncp_on_error(SL_NCP_ERROR_ENCRYPT, SL_STATUS_FAIL);
+    }
+    // refresh original len as encrypted msg will be longer than original
+    len = MSG_GET_LEN((sl_bt_msg_t*)data_ptr);
+    #endif // SL_CATALOG_NCP_SEC_PRESENT
+
+    busy = true;
+    evt_clr_available();
+    // Transmit events
+    sl_bt_ncp_transport_transmit((uint32_t)len, data_ptr);
+    // Clear event buffer
+    evt_dequeue();
+  }
+
+  (void)app_rta_release(ctx);
 }
 
 // -----------------------------------------------------------------------------
@@ -559,49 +670,72 @@ sl_power_manager_on_isr_exit_t sli_ncp_sleep_on_isr_exit(void)
 static void cmd_enqueue(uint16_t len, uint8_t *data)
 {
   sl_status_t sc;
-  timer_state_t state = CMD_IDLE;
+  cmd_state_t state = CMD_IDLE;
+
+  if (len == 0) {
+    // Nothing to do if the receive has been cancelled by the transport layer RX timeout!
+    return;
+  }
 
   CORE_DECLARE_IRQ_STATE;
   CORE_ENTER_ATOMIC();
+
+  if (cmd.len >= SL_BT_MSG_HEADER_LEN && len > (sizeof(cmd.buf) - cmd.len)) {
+    len = ((uint16_t)SL_BT_MSG_LEN(cmd.header) + SL_BT_MSG_HEADER_LEN) - cmd.len;
+  }
+
   // Command fits into command buffer; otherwise discard it.
   if (len <= (sizeof(cmd.buf) - cmd.len)) {
     memcpy((void *)&cmd.buf[cmd.len], (void *)data, (size_t)len);
+    if (cmd.len == 0) {
+      state = CMD_RECEIVING;
+    }
     cmd.len += len;
+    CORE_EXIT_ATOMIC();
     // Part of the command received, start timer to not get stuck.
-    state = CMD_WAITING;
     // Command header has been received.
     if (cmd.len >= SL_BT_MSG_HEADER_LEN) {
       // 4-byte header + len bytes payload
-      uint32_t len = SL_BT_MSG_LEN(*(uint32_t *)cmd.buf) + SL_BT_MSG_HEADER_LEN;
-      if (cmd.len >= len) {
+      uint16_t bt_msg_len = (uint16_t)SL_BT_MSG_LEN(cmd.header) + SL_BT_MSG_HEADER_LEN;
+      if (cmd.len >= bt_msg_len) {
         // Command has been received entirely.
         cmd_set_available();
         state = CMD_RECEIVED;
   #if defined(SL_CATALOG_WAKE_LOCK_PRESENT)
         // Command received fully, increase semaphore.
-        sleep_semaphore++;
+        if (sleep_context.fields.semaphore < SEMAPHORE_MAX) {
+          sleep_context.fields.semaphore++;
+        }
         // Also signal that a command was received, system can go to sleep after
         sleep_signal_wait_clr();
   #endif // SL_CATALOG_WAKE_LOCK_PRESENT
       }
+    } else if (state != CMD_RECEIVING) {
+      state = CMD_INCOMPLETE;
     }
+  } else {
+    CORE_EXIT_ATOMIC();
+    sl_ncp_on_error(SL_NCP_ERROR_RECEIVE, SL_STATUS_HAS_OVERFLOWED);
   }
-  CORE_EXIT_ATOMIC();
 
   if (state == CMD_RECEIVED) {
     // Stop timer as the whole command was received. No problem if timer was
     // not started before, app_timer is prepared for that.
     sc = app_timer_stop(&cmd_timer);
 
-    app_assert_status(sc);
-  } else if (state == CMD_WAITING) {
+    if (sc != SL_STATUS_OK) {
+      sl_ncp_on_error(SL_NCP_ERROR_TIMER, sc);
+    }
+  } else if (state == CMD_RECEIVING) {
     // Start timer used for max waiting time of fragmented packets.
     sc = app_timer_start(&cmd_timer,
                          SL_NCP_CMD_TIMEOUT_MS,
                          cmd_timer_cb1, // first timeout will try finish the command from buffer
                          (void *)cmd_timer_cb2, // pass the emergency cb as parameter that will respond SL_STATUS_INCOMPLETE, otherwise
                          false);
-    app_assert_status(sc);
+    if (sc != SL_STATUS_OK) {
+      sl_ncp_on_error(SL_NCP_ERROR_TIMER, sc);
+    }
   }
 }
 
@@ -654,7 +788,7 @@ static void evt_dequeue(void)
 static void cmd_timer_cb1(app_timer_t *timer, void *data)
 {
   // Try cancel receive first...
-  sli_simple_com_cancel_receive();
+  sli_bt_ncp_transport_usart_cancel_receive();
   // Restart timer once more to wait for the packet to be finished from buffer
   (void)app_timer_start(timer,
                         SL_NCP_CMD_TIMEOUT_MS,
@@ -663,7 +797,7 @@ static void cmd_timer_cb1(app_timer_t *timer, void *data)
                         false);
 }
 
-static void cmd_timer_cb2(app_timer_t *timer, void *data)
+static void cmd_timer_cb2(const app_timer_t *timer, const void *data)
 {
   (void)data;
   (void)timer;
@@ -671,11 +805,11 @@ static void cmd_timer_cb2(app_timer_t *timer, void *data)
   sl_bt_msg_t *response = (sl_bt_msg_t *)rsp_buf;
   uint32_t cmd_hdr;
 
-  // Signal the other end that the command was received only partially
+  // Clear missing bytes of header if it's also incomplete
   while (cmd.len < sizeof(cmd_hdr)) {
     cmd.buf[cmd.len++] = 0;
   }
-  // then clean buffer. The timer is already stopped.
+  // prepare all known parts of the received header
   memcpy(&cmd_hdr, cmd.buf, sizeof(cmd_hdr));
   // Prepare the response for the other end that the command was received
   // only partially then send the response. The timer is already stopped.
@@ -694,7 +828,14 @@ static void cmd_timer_cb2(app_timer_t *timer, void *data)
   sl_wake_lock_set_remote_req();
 #endif // SL_CATALOG_WAKE_LOCK_PRESENT
   // Transmit command error response
-  sl_simple_com_transmit((uint32_t)(MSG_GET_LEN(response)), rsp_buf);
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
+#endif
+  sl_bt_ncp_transport_transmit((uint32_t)(MSG_GET_LEN(response)), rsp_buf);
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 #if SL_NCP_EMIT_SYSTEM_ERROR_EVT
   // Sending system error event as well to help app devs to give async response
   sl_bt_send_system_error(SL_STATUS_COMMAND_INCOMPLETE, sizeof(cmd_hdr), rsp_buf);
@@ -752,49 +893,31 @@ static inline void evt_clr_available(void)
   evt.available = false;
 }
 
-/**************************************************************************//**
- * OS initialization function
- *
- * @note Weak implementation.
- *****************************************************************************/
-SL_WEAK void sl_ncp_os_task_init(void)
+// Error callback
+static void on_runtime_error(app_rta_error_t error,
+                             sl_status_t     result)
 {
-  // No action on bare metal implementation
-}
-
-/**************************************************************************//**
- * Function to trigger the OS task to proceed
- *
- * @note Weak implementation.
- *****************************************************************************/
-SL_WEAK void sl_ncp_os_task_proceed(void)
-{
-  // No action on bare metal implementation
+  (void)error;
+  sl_ncp_on_error(SL_NCP_ERROR_RUNTIME, result);
 }
 
 #if defined(SL_CATALOG_WAKE_LOCK_PRESENT)
+
 /**************************************************************************//**
- * Get sleep signal flag and wait for rx cmd flag state
+ * Set wake signal flag and wait for rx cmd flag state
  *****************************************************************************/
-static inline bool sleep_signal_mask_is_set(void)
+static inline void sleep_signal_all_set(void)
 {
-  return (sleep_semaphore & ~(SLEEP_SIGNAL_MASK));
+  sleep_context.fields.wake_signal    = true;
+  sleep_context.fields.waiting_for_rx = true;
 }
 
 /**************************************************************************//**
- * Set sleep signal flag and wait for rx cmd flag state
- *****************************************************************************/
-static inline void sleep_signal_mask_set(void)
-{
-  sleep_semaphore |= (SLEEP_SIGNAL_PRESENT | SLEEP_WAITING_FIRST_RX);
-}
-
-/**************************************************************************//**
- * Clear sleep signal flag state
+ * Clear wake signal flag state
  *****************************************************************************/
 static inline void sleep_signal_flag_clr(void)
 {
-  sleep_semaphore &= ~(SLEEP_SIGNAL_PRESENT);
+  sleep_context.fields.wake_signal = false;
 }
 
 /**************************************************************************//**
@@ -802,6 +925,14 @@ static inline void sleep_signal_flag_clr(void)
  *****************************************************************************/
 static inline void sleep_signal_wait_clr(void)
 {
-  sleep_semaphore &= ~(SLEEP_WAITING_FIRST_RX);
+  sleep_context.fields.waiting_for_rx = false;
 }
 #endif // SL_CATALOG_WAKE_LOCK_PRESENT
+
+/*****************************************************************************
+ * USART specific function, not needed for other transport layers.
+ ****************************************************************************/
+SL_WEAK void sli_bt_ncp_transport_usart_cancel_receive(void)
+{
+  // Empty weak implementation for non-USART transport layers.
+}

@@ -62,12 +62,12 @@ The following association groups are available for Z-Wave and Z-Wave Long Range 
         <ul>
             <li>Device Reset Locally: triggered upon reset.</li>
             <li>Central Scene: triggered by button press.</li>
-            <li>Indicator Report: Triggered when LED1 changes state.</li>
+            <li>Indicator Report: Triggered when LED0 changes state.</li>
         </ul>
     </td>
 </tr><tr>
     <td>2</td>
-    <td rowspan="2">BTN0</td>
+    <td rowspan="2">KEY1</td>
     <td>Y</td>
     <td>Basic Set Command</td>
 </tr><tr>
@@ -76,7 +76,7 @@ The following association groups are available for Z-Wave and Z-Wave Long Range 
     <td>Switch Multilevel CC</td>
 </tr><tr>
     <td>4</td>
-    <td rowspan="2">BTN2</td>
+    <td rowspan="2">KEY2</td>
     <td>Y</td>
     <td>Basic Set Command</td>
 </tr><tr>
@@ -85,7 +85,7 @@ The following association groups are available for Z-Wave and Z-Wave Long Range 
     <td>Switch Multilevel CC</td>
 </tr><tr>
     <td>6</td>
-    <td rowspan="2">BTN3</td>
+    <td rowspan="2">KEY3</td>
     <td>Y</td>
     <td>Basic Set Command</td>
 </tr><tr>
@@ -101,90 +101,59 @@ Y: For Z-Wave node count is equal to 5 and for Z-Wave Long Range it is 0.
 
 ## Usage of Buttons and LED Status
 
-To use the sample app, the BRD8029A Button and LEDs Expansion Board must be used. BTN0-BTN3 and LED0-LED3 refer to the buttons and LEDs on the Expansion Board.
+We are differentiating four different types of button presses. The following types are the same for the BTN0 and BTN1 on the WSTK board. The duration values can be configured under the config directory in app_button_press_config.h file in each generated application/project.
 
-The following LEDs and buttons shown in the next table below are used.
+Please note external wakeup is not supported on button 1 in case of brd2603a and brd2603b.
 
 <table>
 <tr>
-    <th rowspan="2">Button</th>
-    <th rowspan="2">Action</th>
-    <th colspan="2">Description</th>
+    <th>Press Type</th>
+    <th>Duration</th>
 </tr><tr>
-    <th>Radio Board <sup>1</sup></th>
-    <th>Thunderboard <sup>1</sup></th>
+    <td>Short Press</td>
+    <td>0 - 400 ms</td>
+</tr><tr>
+    <td>Medium Press</td>
+    <td>401 - 1500 ms</td>
+</tr><tr>
+    <td>Long Press</td>
+    <td>1501 - 5000 ms</td>
+</tr><tr>
+    <td>Very Long Press</td>
+    <td>Every press longer than Long Press</td>
+</tr>
+</table>
+
+
+<table>
+<tr>
+    <th>Button</th>
+    <th>Action</th>
+    <th>Description</th>
 </tr><tr>
     <td>RST</td>
     <td>Press</td>
-    <td colspan="2">Resets the firmware of an application (like losing power). All volatile memory will be cleared.</td>
+    <td>Resets the firmware of an application (like losing power). All volatile memory will be cleared.</td>
 </tr><tr>
     <td rowspan="3">BTN0</td>
-    <td>Press</td>
-    <td colspan="2"><ul>
-        <li>Lifeline with Central Scene Key Attribute "Key Pressed 1 Time"</li>
-        <li>Trigger association group 2: Basic Set</li>
-    </ul></td>
+    <td>Short Press</td>
+    <td>Triggers association group 2: Basic Set</td>
 </tr><tr>
-    <td>Hold start</td>
-    <td colspan="2"><ul>
-        <li>Lifeline with Central Scene Key Attribute "Key Held Down"</li>
-        <li>Trigger association group 3: Multilevel Switch Start Level Change</li>
-    </ul></td>
+    <td>Hold longer than Short Press</td>
+    <td>Association group 3: Multilevel Switch Start Level Change</td>
 </tr><tr>
-    <td>Hold release</td>
-    <td colspan="2"><ul>
-        <li>Lifeline with Central Scene Key Attribute "Key Released"</li>
-        <li>Trigger association group 3: Multilevel Switch Stop Level Change</li>
-    </ul></td>
+    <td>Released after being held longer than Short Press</td>
+    <td>Association group 3: Multilevel Switch Stop Level Change</td>
 </tr><tr>
     <td rowspan="2">BTN1</td>
-    <td>Press</td>
-    <td colspan="2">
-        Enter "learn mode" (sending node info frame) to add/remove the device.<br>
-        Removing the device from a network will reset it.
+    <td>Short Press</td>
+    <td>Enter "learn mode" (sending node info frame) to add/remove the device.<br>
+    Removing the device from a network will reset it.
     </td>
 </tr><tr>
-    <td>Hold for at least 5 seconds and release</td>
-    <td colspan="2">Perform a reset to factory default operation of the device, and a Device Reset Locally Notification Command is sent via Lifeline.</td>
-</tr><tr>
-    <td rowspan="3">BTN2</td>
-    <td>Press</td>
-    <td><ul>
-        <li>Lifeline with Central Scene Key Attribute "Key Pressed 1 Time"</li>
-        <li>Trigger association group 4: Basic Set</li>
-    </ul></td>
-    <td rowspan="6">Not supported</td>
-</tr><tr>
-    <td>Hold start</td>
-    <td><ul>
-        <li>Lifeline with Central Scene Key Attribute "Key Held Down"</li>
-        <li>Trigger association group 5: Multilevel Switch Start Level Change</li>
-    </ul></td>
-</tr><tr>
-    <td>Hold release</td>
-    <td><ul>
-        <li>Lifeline with Central Scene Key Attribute "Key Released"</li>
-        <li>Trigger association group 5: Multilevel Switch Stop Level Change</li>
-    </ul></td>
-</tr><tr>
-    <td rowspan="3">BTN3</td>
-    <td>Press</td>
-    <td><ul>
-        <li>Lifeline with Central Scene Key Attribute "Key Pressed 1 Time"</li>
-        <li>Trigger association group 6: Basic Set</li>
-    </ul></td>
-</tr><tr>
-    <td>Hold start</td>
-    <td><ul>
-        <li>Lifeline with Central Scene Key Attribute "Key Held Down"</li>
-        <li>Trigger association group 7: Multilevel Switch Start Level Change</li>
-    </ul></td>
-</tr><tr>
-    <td>Hold release</td>
-    <td><ul>
-        <li>Lifeline with Central Scene Key Attribute "Key Released"</li>
-        <li>Trigger association group 7: Multilevel Switch Stop Level Change</li>
-    </ul></td>
+    <td>Very Long Press</td>
+    <td>Perform a reset to factory default operation of the device, and a Device Reset Locally Notification Command is sent via Lifeline.
+    </td>
 </tr>
 </table>
 
@@ -193,7 +162,7 @@ The following LEDs and buttons shown in the next table below are used.
     <th>LED</th>
     <th>Description</th>
 </tr><tr>
-    <td>LED1</td>
+    <td>LED0</td>
     <td>
         Blinks with 1 Hz when learn mode is active.
         Used for Indicator Command Class.
@@ -201,12 +170,12 @@ The following LEDs and buttons shown in the next table below are used.
 </tr>
 </table>
 
-<sup>1</sup>: A Radio Board is plug-in board for the Wireless Pro Kit Mainboard.
-A Thunderboard is a stand-alone kit with a direct USB Type-C connection.
 
 ## Firmware Update
 
 This section will describe backward compatibility when upgrading the Wall Controller application from one SDK to a newer version.
+
+Firmware update from previous versions should work without any additional steps.
 
 ## CLI Support
 Please note the zw_cli_common component will modify the power consumption in case of sleeping applications. Like door lock keypad, sensor pir or multilevel sensor. CLI cannot work with sleep mode, after a reset the application stays awake until the user issues the enable_sleeping command. From that point CLI won't work  and sleep mode will be reached until the next reset.
@@ -241,11 +210,7 @@ Please note the zw_cli_common component will modify the power consumption in cas
 <tr>
     <th>send_central_scene_key</th>
     <td>
-    First argument is the number of the key, which could be 1, 2 or 3. Second argument is the action we want to do, which could be press, hold or release. The funcitonality of the keys are equivalent to BTN0, BTN2 and BTN3's from above.
-    Functionality mapping:
-            <li>BTN0 -> parameter 1
-            <li>BTN2 -> parameter 2
-            <li>BTN3 -> parameter 3
+    First argument is the number of the key, which could be 1, 2 or 3. Second argument is used to determine the action of the specified key, which can be press, hold or release.
     </td>
     <td>Triggering central scene key</td>
 </tr>

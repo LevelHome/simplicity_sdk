@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief Wi-SUN OTA DFU Service header
+ * @file sl_wisun_ota_dfu.h
+ * @brief Wi-SUN OTA DFU Service
  *******************************************************************************
  * # License
  * <b>Copyright 2023 Silicon Laboratories Inc. www.silabs.com</b>
@@ -28,22 +28,28 @@
  *
  ******************************************************************************/
 
-#ifndef __SL_WISUN_OTA_DFU_H__
-#define __SL_WISUN_OTA_DFU_H__
+#ifndef SL_WISUN_OTA_DFU_H
+#define SL_WISUN_OTA_DFU_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <stddef.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include "sl_wisun_ota_dfu_config.h"
-#include "sl_status.h"
-#include "em_common.h"
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
+#include <stddef.h>
+#include <stdint.h>
+#include <stdbool.h>
+
+#include "sl_wisun_ota_dfu_config.h"
+#include "sl_status.h"
+#include "em_common.h"
+
+/**************************************************************************//**
+ * @addtogroup SL_WISUN_OTA_DFU_API
+ * @{
+ *****************************************************************************/
 
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
@@ -62,10 +68,6 @@ extern "C" {
 #define SL_WISUN_OTA_DFU_SERVICE_LOOP()                     while (1)
 #endif
 
-/**************************************************************************//**
- * @addtogroup SL_WISUN_OTA_DFU_API Over-The-Air Device Firmware Upgrade (Alpha)
- * @{
- *****************************************************************************/
 
 /**************************************************************************//**
  * @defgroup SL_WISUN_OTA_DFU_TYPES Type definitions
@@ -326,11 +328,12 @@ sl_status_t sl_wisun_ota_dfu_set_notify_download_chunk(const uint16_t chunk_cnt)
  ******************************************************************************/
 sl_status_t sl_wisun_ota_dfu_get_notify_download_chunk(uint16_t * const dst_chunk_cnt);
 
-#endif
+#endif // SL_WISUN_OTA_DFU_HOST_NOTIFY_ENABLED
 
 /** @}*/
 
 #ifdef __cplusplus
 }
 #endif
-#endif
+
+#endif // SL_WISUN_OTA_DFU_H

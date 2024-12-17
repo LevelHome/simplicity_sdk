@@ -92,7 +92,7 @@ static const char *secpr1_key_size_string[] = {
   "SECP192R1",
   "SECP256R1",
   "SECP384R1",
-  "SECP521R1",
+  "SECP521R1"
 };
 
 static const size_t secpr1_key_size[] = {
@@ -145,7 +145,7 @@ void app_process_action(void)
   switch (app_state) {
     case PSA_CRYPTO_INIT:
       printf("\n%s - Core running at %" PRIu32 " kHz.\n", example_string,
-             CMU_ClockFreqGet(cmuClock_CORE) / 1000);
+             SystemHCLKGet() / 1000);
       printf("  . PSA Crypto initialization... ");
       if (init_psa_crypto() == PSA_SUCCESS) {
         print_key_storage();
@@ -225,6 +225,13 @@ void app_process_action(void)
         if (secpr1_key_size_select > SECPR1_SIZE_MAX) {
           secpr1_key_size_select = 0;
         }
+#if defined(_SILICON_LABS_32B_SERIES_3_CONFIG_301)
+        if (asymmetric_key_storage_select > KEY_STORAGE_PLAIN_MAX) {
+          if (secpr1_key_size_select > SECPR1_256_SIZE) {
+            secpr1_key_size_select = 0;
+          }
+        }
+#endif
         printf("  + Current %s key length is %d-bit (%s).\n",
                asymmetric_key_curve_string[asymmetric_key_curve_select],
                secpr1_key_size[secpr1_key_size_select],
@@ -480,14 +487,33 @@ static void print_key_size_option(void)
            asymmetric_key_curve_string[asymmetric_key_curve_select],
            secpr1_key_size[secpr1_key_size_select],
            secpr1_key_size_string[secpr1_key_size_select]);
-    printf("  + Press SPACE to select %s key length (%d or %d or %d or %d), "
-           "press ENTER to run.\n",
-           asymmetric_key_curve_string[asymmetric_key_curve_select],
-           secpr1_key_size[0], secpr1_key_size[1], secpr1_key_size[2],
-           secpr1_key_size[3]);
-    app_state = SELECT_SECPR1_SIZE;
+#if defined(_SILICON_LABS_32B_SERIES_3_CONFIG_301)
+    if (asymmetric_key_storage_select > KEY_STORAGE_PLAIN_MAX) {
+      printf("  + Press SPACE to select %s key length (%d or %d), "
+             "press ENTER to run.\n",
+             asymmetric_key_curve_string[asymmetric_key_curve_select],
+             secpr1_key_size[0], secpr1_key_size[1]);
+      app_state = SELECT_SECPR1_SIZE;
+    } else
+#endif
+    {
+      printf("  + Press SPACE to select %s key length (%d or %d or %d or %d), "
+             "press ENTER to run.\n",
+             asymmetric_key_curve_string[asymmetric_key_curve_select],
+             secpr1_key_size[0], secpr1_key_size[1], secpr1_key_size[2],
+             secpr1_key_size[3]);
+      app_state = SELECT_SECPR1_SIZE;
+    }
   } else {
 #if defined(SEMAILBOX_PRESENT) && (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT)
+#if defined(_SILICON_LABS_32B_SERIES_3_CONFIG_301)
+    if (asymmetric_key_storage_select > KEY_STORAGE_PLAIN_MAX) {
+      selected_key_size = 255;
+      selected_key_string = asymmetric_key_curve_string[asymmetric_key_curve_select];
+      app_state = CREATE_CLIENT_KEY;
+      return;
+    }
+#endif
     printf("\n  . Current %s key length is %d-bit (%s).\n",
            asymmetric_key_curve_string[asymmetric_key_curve_select],
            montgomery_key_size[montgomery_key_size_select],

@@ -1,6 +1,6 @@
 /***************************************************************************//**
  * @file
- * @brief Log RTL events.
+ * @brief RTL log.
  *******************************************************************************
  * # License
  * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
@@ -32,23 +32,13 @@
 #include "cs_initiator_config.h"
 
 #if CS_INITIATOR_RTL_LOG
-// RTL logging enabled
-
 #include "sl_rtl_clib_api.h"
 #include "sl_bt_version.h"
-#include "sl_power_manager.h"
+#include "sli_bgapi_trace.h"
 #include "app_assert.h"
-#include "app_log.h"
-#include <stdint.h>
 #include <stdio.h>
-#include <string.h>
-
-#define LOG_DATA_BUFFER_MAX_SIZE 4096
 
 static void rtl_log_callback(uint8_t *log_data, size_t log_data_len);
-
-static uint8_t log_data_buffer[LOG_DATA_BUFFER_MAX_SIZE + 1];
-static size_t log_data_buffer_len = 0;
 
 void rtl_log_init(void)
 {
@@ -82,42 +72,27 @@ void rtl_log_init(void)
   app_assert(ec == SL_RTL_ERROR_SUCCESS, "sl_rtl_log_configure failed");
 }
 
-void rtl_log_step(void)
+void rtl_log_deinit(void)
 {
-  if (log_data_buffer_len == 0) {
-    return;
-  }
-  app_log("[RTL] %s" APP_LOG_NL, (char *)log_data_buffer);
-  log_data_buffer_len = 0;
-  sl_power_manager_remove_em_requirement(SL_POWER_MANAGER_EM1);
+  enum sl_rtl_error_code ec = sl_rtl_log_deinit();
+  app_assert(ec == SL_RTL_ERROR_SUCCESS, "sl_rtl_log_deinit failed");
 }
 
 static void rtl_log_callback(uint8_t *log_data, size_t log_data_len)
 {
-  if (log_data_len > LOG_DATA_BUFFER_MAX_SIZE) {
-    app_log_error("Log data buffer too small: %zu > %zu" APP_LOG_NL, log_data_len, LOG_DATA_BUFFER_MAX_SIZE);
-    return;
+  while (log_data_len > 0) {
+    size_t log_written = sli_bgapi_trace_log_custom_message(log_data, log_data_len);
+    log_data_len -= log_written;
+    log_data += log_written;
   }
-  if (log_data_buffer_len > 0) {
-    app_log_error("Log data buffer busy" APP_LOG_NL);
-    return;
-  }
-  memcpy(log_data_buffer, log_data, log_data_len);
-  log_data_buffer[log_data_len] = 0;
-  log_data_buffer_len = log_data_len;
-  // Keep the MCU awake until log message is sent.
-  sl_power_manager_add_em_requirement(SL_POWER_MANAGER_EM1);
 }
 
 #else // CS_INITIATOR_RTL_LOG
-// RTL logging disabled
-
 void rtl_log_init(void)
 {
 }
 
-void rtl_log_step(void)
+void rtl_log_deinit(void)
 {
 }
-
 #endif // CS_INITIATOR_RTL_LOG

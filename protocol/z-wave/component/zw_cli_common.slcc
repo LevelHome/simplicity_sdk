@@ -1,9 +1,10 @@
 id: zw_cli_common
-label: ZAF CLI Common Component
-category: Z-Wave|ZAF
+label: Z-Wave CLI Common Component
+category: Z-Wave|CLI
 description: >
   This component provides common CLI (Command Line Interface), that can be used to send commands to the Z-wave device, 
-  instead of using the buttons. 
+  instead of using the buttons, e.g initiating learn mode on a device or performing a factory reset.
+  This component also provides functionalities for getting DSK and current region of the device.
 package: Z-Wave
 quality: production
 metadata:

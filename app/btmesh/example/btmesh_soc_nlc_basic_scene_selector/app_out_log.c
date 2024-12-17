@@ -3,7 +3,7 @@
  * @brief Application Output Log code
  *******************************************************************************
  * # License
- * <b>Copyright 2023 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -32,7 +32,6 @@
 // Includes
 
 #include <stdbool.h>
-#include "em_common.h"
 #include "sl_status.h"
 
 #include "app.h"

@@ -36,19 +36,19 @@
 #define SL_EUSART_EXTFLASH_PERIPHERAL_NO         1
 
 // EUSART1 TX on PC03
-#define SL_EUSART_EXTFLASH_TX_PORT               gpioPortC
+#define SL_EUSART_EXTFLASH_TX_PORT               SL_GPIO_PORT_C
 #define SL_EUSART_EXTFLASH_TX_PIN                3
 
 // EUSART1 RX on PC02
-#define SL_EUSART_EXTFLASH_RX_PORT               gpioPortC
+#define SL_EUSART_EXTFLASH_RX_PORT               SL_GPIO_PORT_C
 #define SL_EUSART_EXTFLASH_RX_PIN                2
 
 // EUSART1 SCLK on PC01
-#define SL_EUSART_EXTFLASH_SCLK_PORT             gpioPortC
+#define SL_EUSART_EXTFLASH_SCLK_PORT             SL_GPIO_PORT_C
 #define SL_EUSART_EXTFLASH_SCLK_PIN              1
 
 // EUSART1 CS on PC00
-#define SL_EUSART_EXTFLASH_CS_PORT               gpioPortC
+#define SL_EUSART_EXTFLASH_CS_PORT               SL_GPIO_PORT_C
 #define SL_EUSART_EXTFLASH_CS_PIN                0
 
 // [EUSART_SL_EUSART_EXTFLASH]$

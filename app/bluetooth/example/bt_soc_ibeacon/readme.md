@@ -1,6 +1,6 @@
 # SoC - iBeacon
 
-An iBeacon device is an implementation that sends non-connectable advertisements in iBeacon format. The iBeacon Service gives Bluetooth accessories a simple and convenient way to send iBeacon to smartphones. This example can be tested together with the EFR Connect mobile app.
+An iBeacon device is an implementation that sends non-connectable advertisements in iBeacon format. The iBeacon Service gives Bluetooth accessories a simple and convenient way to send iBeacon to smartphones. This example can be tested together with the Simplicity Connect mobile app.
 
 > Note: this example expects a specific Gecko Bootloader to be present on your device. For details see the Troubleshooting section.
 
@@ -15,23 +15,23 @@ To get started with Silicon Labs Bluetooth and Simplicity Studio, see [QSG169: B
 To run this example, you will need:
 
 - Any Bluetooth Low Energy-compatible [radio board](https://www.silabs.com/wireless/bluetooth),
-- A smartphone with [EFR Connect app](https://www.silabs.com/developers/efr-connect-mobile-app) installed. (Note: On Android, the distance will not be calculated.)
+- A smartphone with [Simplicity Connect app](https://www.silabs.com/developer-tools/simplicity-connect-mobile-app) installed. (Note: On Android, the distance will not be calculated.)
 
 The following picture shows the system view of how it works.
 
-![SoC-iBeacon-Overview](image/readme_img1.png)
+![SoC iBeacon system overview](image/readme_img1.png)
 
 Follow these steps to set up the project:
 
 1. Create the SoC-iBeacon project based on your hardware, then build and flash the image to your board. Alternatively, you could flash the pre-built demo image.
 
-   ![create-project](image/readme_img2.png)
+   ![Create project](image/readme_img2.png)
 
-2. Open the *EFR Connect* app on your smartphone and allow the permission requested the first time it is opened.
+2. Open the *Simplicity Connect* app on your smartphone and allow the permission requested the first time it is opened.
 
-3. Click [Develop] -> [Browser]. You will see a list of nearby devices that are sending Bluetooth advertisement. Find the one named "iBeacon" .
+3. Click [Scan]. You will see a list of nearby devices that are sending Bluetooth advertisement. Find the one with "iBeacon" tag.
 
-   ![create-project](image/readme_img3.png)
+   ![Scan](image/readme_img3.png)
 
    You can also see the Minor, Major, and UUID number, and the EFR app will estimate the distance. (Note: On Android, the distance will not be calculated.)
 

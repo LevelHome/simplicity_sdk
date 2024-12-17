@@ -1,3 +1,32 @@
+/***************************************************************************//**
+ * @file
+ * @brief
+ *******************************************************************************
+ * # License
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
+ *******************************************************************************
+ *
+ * SPDX-License-Identifier: Zlib
+ *
+ * The licensor of this software is Silicon Laboratories Inc.
+ *
+ * This software is provided 'as-is', without any express or implied
+ * warranty. In no event will the authors be held liable for any damages
+ * arising from the use of this software.
+ *
+ * Permission is granted to anyone to use this software for any purpose,
+ * including commercial applications, and to alter it and redistribute it
+ * freely, subject to the following restrictions:
+ *
+ * 1. The origin of this software must not be misrepresented; you must not
+ *    claim that you wrote the original software. If you use this software
+ *    in a product, an acknowledgment in the product documentation would be
+ *    appreciated but is not required.
+ * 2. Altered source versions must be plainly marked as such, and must not be
+ *    misrepresented as being the original software.
+ * 3. This notice may not be removed or altered from any source distribution.
+ *
+ ******************************************************************************/
 #ifndef SL_BTMESH_HSL_SERVER_CONFIG_H
 #define SL_BTMESH_HSL_SERVER_CONFIG_H
 
@@ -74,7 +103,45 @@
 
 // </h>
 
+// <h> Light HSL Server Metadata Settings
+
+// <o SL_BTMESH_METADATA_LIGHT_HSL_HUE_RANGE_1> Light HSL Hue Range metadata - Minimum Hue value <0x0000-0xFFFF>
+// <i> Determines the minimum non-zero hue value the physical device is capable to emit.
+// <i> This metadata is based on the physical capabilities of the device and
+// <i> restricts the Light HSL Setup Server Hue Range minimum value.
+// <i> Default: 0x0000
+#define SL_BTMESH_METADATA_LIGHT_HSL_HUE_RANGE_1   0x0000
+
+// <o SL_BTMESH_METADATA_LIGHT_HSL_HUE_RANGE_2> Light HSL Hue Range metadata - Maximum Hue value <0x0000-0xFFFF>
+// <i> Determines the maximum non-zero hue value the physical device is capable to emit.
+// <i> This metadata is based on the physical capabilities of the device and
+// <i> restricts the Light HSL Setup Server Hue Range maximum value.
+// <i> Default: 0xFFFF
+#define SL_BTMESH_METADATA_LIGHT_HSL_HUE_RANGE_2   0xFFFF
+
+// <o SL_BTMESH_METADATA_LIGHT_HSL_SATURATION_RANGE_1> Light HSL Saturation Range metadata - Minimum Saturation value <0x0000-0xFFFF>
+// <i> Determines the minimum non-zero saturation value the physical device is capable to emit.
+// <i> This metadata is based on the physical capabilities of the device and
+// <i> restricts the Light HSL Setup Server Saturation Range minimum value.
+// <i> Default: 0x0000
+#define SL_BTMESH_METADATA_LIGHT_HSL_SATURATION_RANGE_1   0x0000
+
+// <o SL_BTMESH_METADATA_LIGHT_HSL_SATURATION_RANGE_2> Light HSL Saturation Range metadata - Maximum Saturation value <0x0000-0xFFFF>
+// <i> Determines the maximum non-zero saturation value the physical device is capable to emit.
+// <i> This metadata is based on the physical capabilities of the device and
+// <i> restricts the Light HSL Setup Server Saturation Range maximum value.
+// <i> Default: 0xFFFF
+#define SL_BTMESH_METADATA_LIGHT_HSL_SATURATION_RANGE_2   0xFFFF
+
+// </h>
+
 // <<< end of configuration section >>>
+
+// Models Metadata additional info
+#define SL_BTMESH_METADATA_LIGHT_HSL_HUE_RANGE_ID          0x0005
+#define SL_BTMESH_METADATA_LIGHT_HSL_HUE_RANGE_LEN         0x02
+#define SL_BTMESH_METADATA_LIGHT_HSL_SATURATION_RANGE_ID   0x0006
+#define SL_BTMESH_METADATA_LIGHT_HSL_SATURATION_RANGE_LEN  0x02
 
 // The hue update period shall not be greater than the hue UI update period
 #if (SL_BTMESH_HSL_SERVER_HUE_UI_UPDATE_PERIOD_CFG_VAL) < (SL_BTMESH_HSL_SERVER_HUE_UPDATE_PERIOD_CFG_VAL)

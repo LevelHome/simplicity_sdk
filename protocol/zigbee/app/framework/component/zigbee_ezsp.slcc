@@ -33,9 +33,6 @@ define:
     value: "\"platform-header.h\""
     unless:
       - zigbee_host_simulation
-  # TEMPORARY define that can be used in the C code to keep the code building
-  # for app builder while we make changes to make it work within UC.
-  - name: UC_BUILD
   - name: GATEWAY_APP
     unless:
       - zigbee_host_simulation
@@ -119,7 +116,6 @@ include:
       - zigbee_host_simulation
   - path: platform/service/legacy_hal/inc/
     file_list:
-      - path: ember-printf-convert.h
       - path: button.h
       - path: em2xx-reset-defs.h
       - path: led.h

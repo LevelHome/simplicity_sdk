@@ -3,7 +3,7 @@
  * @brief Certificate Based Authentication and Pairing header
  *******************************************************************************
  * # License
- * <b>Copyright 2022 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -30,88 +30,62 @@
 #ifndef SL_BT_CBAP_H
 #define SL_BT_CBAP_H
 
-#include <stdbool.h>
-
-/// Role enum type
-typedef enum {
-  SL_BT_CBAP_ROLE_PERIPHERAL,
-  SL_BT_CBAP_ROLE_CENTRAL
-} sl_bt_cbap_role_t;
-
-/// Central device states
-typedef enum {
-  SL_BT_CBAP_CENTRAL_SCANNING,
-  SL_BT_CBAP_CENTRAL_DISCOVER_SERVICES,
-  SL_BT_CBAP_CENTRAL_DISCOVER_CHARACTERISTICS,
-  SL_BT_CBAP_CENTRAL_GET_PERIPHERAL_CERT,
-  SL_BT_CBAP_CENTRAL_SEND_CENTRAL_CERT,
-  SL_BT_CBAP_CENTRAL_GET_PERIPHERAL_OOB,
-  SL_BT_CBAP_CENTRAL_SEND_OOB,
-  SL_BT_CBAP_CENTRAL_INCREASE_SECURITY,
-  SL_BT_CBAP_CENTRAL_DONE,
-  SL_BT_CBAP_CENTRAL_STATE_NUM
-} sl_bt_cbap_central_state_t;
-
-/// Peripheral device states
-typedef enum {
-  SL_BT_CBAP_PERIPHERAL_IDLE,
-  SL_BT_CBAP_PERIPHERAL_CENTRAL_CERT_OK,
-  SL_BT_CBAP_PERIPHERAL_CENTRAL_OOB_OK,
-  SL_BT_CBAP_PERIPHERAL_DONE,
-  SL_BT_CBAP_PERIPHERAL_STATE_NUM
-} sl_bt_cbap_peripheral_state_t;
+#include <stdint.h>
+#include "sl_status.h"
 
 /**************************************************************************//**
- * Initialize the component.
- * Import and validate the device and root certificate.
- *****************************************************************************/
-void sl_bt_cbap_init(void);
-
-/**************************************************************************//**
- * Start CBAP procedure.
- * @param[in] cbap_role Device role. Should be either SL_BT_CBAP_ROLE_PERIPHERAL or
- * SL_BT_CBAP_ROLE_CENTRAL.
- * @param[in] connection Handle of the active connection.
+ * Imports and validates the device with root certificate.
  *
- * @param SL_STATUS_OK if successful otherwise error code.
- *****************************************************************************/
-sl_status_t sl_bt_cbap_start(sl_bt_cbap_role_t cbap_role,
-                             uint8_t connection_handle);
-
-/**************************************************************************//**
- * Bluetooth stack event handler.
- * @param[in] evt Event coming from the Bluetooth stack.
- *****************************************************************************/
-void sli_bt_cbap_on_event(sl_bt_msg_t *evt);
-
-/**************************************************************************//**
- * CBAP Peripheral event handler.
- * @param[in] status Peripheral state
- * @note To be implemented in user code.
- *****************************************************************************/
-void sl_bt_cbap_peripheral_on_event(sl_bt_cbap_peripheral_state_t status);
-
-/**************************************************************************//**
- * CBAP Central event handler
- * @param[in] status Central state
- * @note To be implemented in user code.
- *****************************************************************************/
-void sl_bt_cbap_central_on_event(sl_bt_cbap_central_state_t status);
-
-/**************************************************************************//**
- * Callback to handle CBAP process errors.
- * @note To be implemented in user code.
- *****************************************************************************/
-void sl_bt_on_cbap_error(void);
-
-/**************************************************************************//**
- * Search for a the CBAP Service UUID in scan report.
+ * @param[out] device_certificate_der device certificate in DER format.
+ * @param[out] device_certificate_der_len device certificate length.
  *
- * @param[in] scan_data Data received in scanner advertisement report event
- * @param[in] scan_data_len Length of the scan data
- * @return true if the CBAP service is found
+ * @return SL_STATUS_OK if device certificate is validated, error code otherwise.
  *****************************************************************************/
-bool sl_bt_cbap_find_service_in_advertisement(const uint8_t *scan_data,
-                                              uint8_t scan_data_len);
+sl_status_t sl_bt_cbap_init(uint8_t *device_certificate_der, uint32_t *device_certificate_der_len);
+
+/***************************************************************************//**
+ * Parse and validate remote certificate and extract remote public key.
+ *
+ * @param[in] remote_certificate_der Certificate from remote device in DER.
+ * @param[in] remote_certificate_der_len Length of the remote certificate.
+ *
+ * @return SL_STATUS_OK if remote certificate is verified, error code otherwise.
+ ******************************************************************************/
+sl_status_t sl_bt_cbap_process_remote_cert(uint8_t *remote_certificate_der, uint32_t remote_certificate_der_len);
+
+/***************************************************************************//**
+ * Signs and combines OOB data.
+ *
+ * @param[in] device_random OOB data generated by the bt stack.
+ * @param[in] device_confirm OOB data generated by the bt stack.
+ * @param[out] output_data The signed OOB data
+ * @param[out] output_len The signed OOB data length
+ *
+ * @return SL_STATUS_OK if OOB data signed, error code otherwise.
+ ******************************************************************************/
+sl_status_t sl_bt_cbap_sign_device_oob_data(uint8_t *device_random,
+                                            uint8_t *device_confirm,
+                                            uint8_t *output_data,
+                                            size_t *output_len);
+
+/***************************************************************************//**
+ * Verifies the remote device OOB data signature.
+ *
+ * @param[in] remote_random OOB data from remote device.
+ * @param[in] remote_confirm OOB data from remote device.
+ * @param[in] remote_oob_signature Remote OOB signature.
+ *
+ * @return SL_STATUS_OK if OOB data signature is OK, error code otherwise.
+ ******************************************************************************/
+sl_status_t sl_bt_cbap_verify_remote_oob_data(uint8_t *remote_random,
+                                              uint8_t *remote_confirm,
+                                              uint8_t *remote_oob_signature);
+
+/***************************************************************************//**
+ * Destroys the keys which were used during the CBAP process.
+ *
+ * @return SL_STATUS_OK if OK, error code otherwise.
+ ******************************************************************************/
+sl_status_t sl_bt_cbap_destroy_key(void);
 
 #endif // SL_BT_CBAP_H

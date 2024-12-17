@@ -20,8 +20,8 @@
 //
 // Bootloader Version
 //
-#define BOOTLOADER_VERSION_MAIN_MAJOR             2
-#define BOOTLOADER_VERSION_MAIN_MINOR             5
+#define BOOTLOADER_VERSION_MAIN_MAJOR             3
+#define BOOTLOADER_VERSION_MAIN_MINOR             0
 
 #include "core/btl_util.h"
 MISRAC_DISABLE
@@ -41,7 +41,7 @@ MISRAC_ENABLE
 #endif
 
 #ifndef BOOTLOADER_VERSION_MAIN_CUSTOMER
-#define BOOTLOADER_VERSION_MAIN_CUSTOMER          2
+#define BOOTLOADER_VERSION_MAIN_CUSTOMER          0
 #endif
 
 #define BOOTLOADER_VERSION_MAIN (BOOTLOADER_VERSION_MAIN_MAJOR   << 24 \
@@ -164,6 +164,10 @@ MISRAC_ENABLE
 #define MINIMUM_REQUIRED_UPGRADE_SIZE (0x00018000UL)
 
 #elif defined(_SILICON_LABS_32B_SERIES_2_CONFIG_8)
+// The upgrade location needs to fit upgrades of up to 96k
+#define MINIMUM_REQUIRED_UPGRADE_SIZE (0x00018000UL)
+
+#elif defined(_SILICON_LABS_32B_SERIES_2_CONFIG_9)
 // The upgrade location needs to fit upgrades of up to 96k
 #define MINIMUM_REQUIRED_UPGRADE_SIZE (0x00018000UL)
 

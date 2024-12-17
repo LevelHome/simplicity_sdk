@@ -40,7 +40,8 @@
 // Macros and Typedefs
 typedef struct ble_peer_manager_advertiser_s {
   uint8_t advertising_handle;
-  sl_bt_advertiser_discovery_mode_t adv_discovery_mode;
+  uint8_t adv_discovery_mode;
+  sl_bt_gap_phy_t adv_phy;
 } ble_peer_manager_advertiser_t;
 
 // -----------------------------------------------------------------------------
@@ -60,6 +61,7 @@ void ble_peer_manager_peripheral_init()
   // Set default values
   advertiser.advertising_handle = SL_BT_INVALID_ADVERTISING_SET_HANDLE;
   advertiser.adv_discovery_mode = BLE_PEER_MANAGER_PERIPHERAL_CONFIG_DEFAULT_ADV_DISCOVERY_MODE;
+  advertiser.adv_phy = BLE_PEER_MANAGER_PERIPHERAL_CONFIG_ADV_PHY;
   ble_peer_manager_clear_all_connections();
   set_state(BLE_PEER_MANAGER_STATE_IDLE);
 }
@@ -124,7 +126,7 @@ void ble_peer_manager_peripheral_on_bt_event(sl_bt_msg_t *evt)
   }
 }
 
-sl_status_t ble_peer_manager_peripheral_set_advertiser(sl_bt_advertiser_discovery_mode_t adv_discovery_mode)
+sl_status_t ble_peer_manager_peripheral_set_advertiser_discovery_mode(sl_bt_advertiser_discovery_mode_t adv_discovery_mode)
 {
   if (get_state() == BLE_PEER_MANAGER_ADVERTISING) {
     ble_peer_manager_log_error("Already advertising. \
@@ -132,6 +134,20 @@ sl_status_t ble_peer_manager_peripheral_set_advertiser(sl_bt_advertiser_discover
     return SL_STATUS_INVALID_STATE;
   }
   advertiser.adv_discovery_mode = adv_discovery_mode;
+  return SL_STATUS_OK;
+}
+
+sl_status_t ble_peer_manager_peripheral_set_advertiser_phy(sl_bt_gap_phy_t adv_phy)
+{
+  if (get_state() == BLE_PEER_MANAGER_ADVERTISING) {
+    ble_peer_manager_log_error("Already advertising. \
+                                Please stop the advertiser before changing it's settings." APP_LOG_NL);
+    return SL_STATUS_INVALID_STATE;
+  }
+  if (adv_phy != sl_bt_gap_phy_1m && adv_phy != sl_bt_gap_phy_2m) {
+    return SL_STATUS_INVALID_PARAMETER;
+  }
+  advertiser.adv_phy = adv_phy;
   return SL_STATUS_OK;
 }
 
@@ -159,7 +175,6 @@ sl_status_t ble_peer_manager_peripheral_start_advertising(uint8_t advertising_ha
       return sc;
     }
   }
-
   if (advertising_handle != SL_BT_INVALID_ADVERTISING_SET_HANDLE) {
     advertiser.advertising_handle = advertising_handle;
   } else {
@@ -176,27 +191,58 @@ sl_status_t ble_peer_manager_peripheral_start_advertising(uint8_t advertising_ha
     if (sc != SL_STATUS_OK) {
       return sc;
     }
+  }
+  // Set advertising interval
+  sc = sl_bt_advertiser_set_timing(
+    advertiser.advertising_handle,
+    BLE_PEER_MANAGER_PERIPHERAL_CONFIG_ADV_TIMING_INTERVAL_MIN,   // min. adv. interval (milliseconds * 1.6)
+    BLE_PEER_MANAGER_PERIPHERAL_CONFIG_ADV_TIMING_INTERVAL_MAX,   // max. adv. interval (milliseconds * 1.6)
+    BLE_PEER_MANAGER_PERIPHERAL_CONFIG_ADV_TIMING_DURATION,       // adv. duration
+    BLE_PEER_MANAGER_PERIPHERAL_CONFIG_ADV_TIMING_MAX_EVENTS);    // max. num. adv. events
+  if (sc != SL_STATUS_OK) {
+    return sc;
+  }
 
-    // Generate data for advertising
+  if (advertiser.adv_phy == sl_bt_gap_phy_1m) {
+    // Generate data for advertising using phy_1m
     sc = sl_bt_legacy_advertiser_generate_data(advertiser.advertising_handle,
                                                advertiser.adv_discovery_mode);
     if (sc != SL_STATUS_OK) {
+      ble_peer_manager_log_info("Legacy advertiser generate data failed..." APP_LOG_NL);
+      return sc;
+    }
+    sc = sl_bt_legacy_advertiser_start(advertiser.advertising_handle,
+                                       BLE_PEER_MANAGER_PERIPHERAL_CONFIG_DEFAULT_ADV_CONNECTION_MODE);
+    if (sc != SL_STATUS_OK) {
+      ble_peer_manager_log_info("Legacy advertiser start failed..." APP_LOG_NL);
+      return sc;
+    }
+  } else {
+    // Generate data for advertising using phy_2m
+    sc = sl_bt_extended_advertiser_generate_data(advertiser.advertising_handle,
+                                                 advertiser.adv_discovery_mode);
+    if (sc != SL_STATUS_OK) {
+      ble_peer_manager_log_info("Extended advertiser generate data failed..." APP_LOG_NL);
+      return sc;
+    }
+    sc = sl_bt_extended_advertiser_set_phy(
+      advertiser.advertising_handle,
+      sl_bt_gap_phy_1m,
+      sl_bt_gap_phy_2m);
+    if (sc != SL_STATUS_OK) {
+      ble_peer_manager_log_info("Extended advertiser set phy failed..." APP_LOG_NL);
       return sc;
     }
 
-    // Set advertising interval
-    sc = sl_bt_advertiser_set_timing(
-      advertiser.advertising_handle,
-      BLE_PEER_MANAGER_PERIPHERAL_CONFIG_ADV_TIMING_INTERVAL_MIN,   // min. adv. interval (milliseconds * 1.6)
-      BLE_PEER_MANAGER_PERIPHERAL_CONFIG_ADV_TIMING_INTERVAL_MAX,   // max. adv. interval (milliseconds * 1.6)
-      BLE_PEER_MANAGER_PERIPHERAL_CONFIG_ADV_TIMING_DURATION,       // adv. duration
-      BLE_PEER_MANAGER_PERIPHERAL_CONFIG_ADV_TIMING_MAX_EVENTS);    // max. num. adv. events
+    sc = sl_bt_extended_advertiser_start(advertiser.advertising_handle,
+                                         sl_bt_extended_advertiser_connectable,
+                                         0);
     if (sc != SL_STATUS_OK) {
+      ble_peer_manager_log_info("Extended advertiser start failed..." APP_LOG_NL);
       return sc;
     }
   }
-  sc = sl_bt_legacy_advertiser_start(advertiser.advertising_handle,
-                                     BLE_PEER_MANAGER_PERIPHERAL_CONFIG_DEFAULT_ADV_CONNECTION_MODE);
+
   ble_peer_manager_log_info("Started advertising..." APP_LOG_NL);
   return sc;
 }

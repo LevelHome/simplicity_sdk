@@ -43,9 +43,9 @@ while [[ $# -gt 0 ]]; do
             echo -e "\t-O\tStart ot-cli application in the running multiprotocol container"
             echo -e "\t-T\tStart OTBR and ot-ctl application in the running multiprotocol container"
             echo -e "\t-Z\tStart Zigbeed and Z3GatewayHost application in the running multiprotocol container"
-            echo -e "\t-C\tStart Z3GatewayCpc Host application in the running multiprotocol container"
+            echo -e "\t-C\tStart zigbee_z3_gateway_cpc Host application in the running multiprotocol container"
             echo -e "\t-B\tStart BT Host Empty Host application in the running multiprotocol container"
-            echo -e "\t-P\tStart pro-compliance-posix application in the running multiprotocol container"
+            echo -e "\t-P\tStart zigbee_pro_compliance_posix application in the running multiprotocol container"
             echo -e "\t-L\tStart Bluetooth and bluetoothctl application in the running multiprotocol container"
             echo "By default, this script will start the multiprotocol container"
             exit
@@ -127,12 +127,12 @@ while [[ $# -gt 0 ]]; do
                 echo "(If errors persist, run 'journalctl -fex' inside container for logs.)"
                 docker exec -it multiprotocol systemctl restart zigbeed
             done
-            echo "Starting Z3Gateway..."
-            docker exec -it multiprotocol /usr/local/bin/Z3Gateway -p ttyZigbeeNCP
+            echo "Starting zigbee_z3_gateway..."
+            docker exec -it multiprotocol /usr/local/bin/zigbee_z3_gateway -p ttyZigbeeNCP
             exit
             ;;
         -C|--zigbee-cpc-host)
-            docker exec -it multiprotocol /usr/local/bin/Z3GatewayCpc
+            docker exec -it multiprotocol /usr/local/bin/zigbee_z3_gateway_cpc
             exit
             ;;
         -B|--bt_host_empty)
@@ -141,7 +141,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         -P|--pro-compliance)
             echo "Starting pro-compliance..."
-            docker exec -it multiprotocol /usr/local/bin/pro-compliance-posix -r 'spinel+cpc://cpcd_0?iid=1&iid-list=0'
+            docker exec -it multiprotocol /usr/local/bin/zigbee_pro_compliance_posix -r 'spinel+cpc://cpcd_0?iid=1&iid-list=0'
             exit
             ;;
         -L|--bluetoothctl)

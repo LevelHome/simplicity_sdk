@@ -62,8 +62,14 @@ extern osEventFlagsId_t emAfPluginCmsisRtosFlags;
 void emAfPluginCmsisRtosStackTask(void *p_arg)
 {
   (void)p_arg;
+  sl_connect_radio_priority_t radio_priority;
 
   connect_stack_init();
+
+  radio_priority.rx = SL_CONNECT_RADIO_RX_PRIORITY;
+  radio_priority.starting_tx = SL_CONNECT_RADIO_TX_STARTING_PRIORITY;
+  radio_priority.tx_step = SL_CONNECT_RADIO_TX_STEP_PRIORITY;
+  emApiSetRadioPriority(&radio_priority);
 
   while (true) {
     connect_stack_tick();

@@ -89,11 +89,11 @@ static int32_t receivePacket(XmodemPacket_t *packet)
 
   // Read the first byte
   requestedBytes = 1;
-  ret = uart_receiveBuffer(buf,
-                           requestedBytes,
-                           &receivedBytes,
-                           true,
-                           1000);
+  uart_receiveBuffer(buf,
+                     requestedBytes,
+                     &receivedBytes,
+                     true,
+                     1000);
 
   if (packet->header != XMODEM_CMD_SOH) {
     // All packets except XMODEM_CMD_SOH are single-byte
@@ -121,6 +121,7 @@ static int32_t receivePacket(XmodemPacket_t *packet)
 static XmodemState_t getAction(void)
 {
   uint8_t c;
+  XmodemState_t state;
   int ret = uart_receiveByteTimeout(&c, 1000UL);
 
   if (ret != BOOTLOADER_OK) {
@@ -129,18 +130,19 @@ static XmodemState_t getAction(void)
 
   switch (c) {
     case '1':
-      return INIT_TRANSFER;
+      state = INIT_TRANSFER;
       break;
     case '2':
-      return BOOT;
+      state = BOOT;
       break;
     case '3':
-      return MENU;
+      state = MENU;
       break;
     default:
-      return MENU;
+      state = MENU;
       break;
   }
+  return state;
 }
 
 __STATIC_INLINE uint8_t nibbleToHex(uint8_t nibble)

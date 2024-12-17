@@ -2,7 +2,9 @@ id: zw_zniffer_dependency
 label: Z-Wave Zniffer Application Dependency
 category: Z-Wave
 description: >
-  This component contains header files because of the zniffer component dependencies.
+  This component contains header files that are required for the proper functioning of the Z-Wave Zniffer application.
+  These files are dependencies of the zniffer component and must be included for the application to work correctly.
+  Including these files ensures full compability with the PC Zniffer application.
 package: Z-Wave
 quality: production
 metadata:

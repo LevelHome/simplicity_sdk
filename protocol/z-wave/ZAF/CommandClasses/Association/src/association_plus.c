@@ -387,12 +387,6 @@ AssociationAddNode(
       return false;
     }
 
-    // Weak check for detecting controllers, but still relevant as these node's ID must be below ZW_MAX_NODES!
-    if (pNodeToAdd->nodeId > ZW_MAX_NODES)
-    {
-      return false; // Unexpected Error! (Rejected: Controllers always have an ID equal or below ZW_MAX_NODES (232)!)
-    }
-
     // A Controller is being associated to this Z-Wave LR node!
     DPRINT("Detected InclusionMode: EINCLUSIONMODE_ZWAVE_LR \n");
   }

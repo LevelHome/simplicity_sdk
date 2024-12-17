@@ -37,8 +37,17 @@ typedef enum u3c_db_operation_result_ {
 /*                           GENERAL API FUNCTIONS                          */
 /****************************************************************************/
 
+/**
+ * Resets the User Credential Command Class database to a blank state,
+ * removing all existing users, credentials and the admin code.
+ */
 void CC_UserCredential_factory_reset(void);
 
+/**
+ * Initializes the User Credential Command Class database to a consistent state.
+ * This function is called automatically by the Z-Wave Application Framework
+ * when the application starts.
+ */
 void CC_UserCredential_init_database(void);
 
 /****************************************************************************/
@@ -53,7 +62,8 @@ void CC_UserCredential_init_database(void);
  * @param[out] user The memory location where the User data will be copied,
  *                  or NULL if not requested
  * @param[out] name The memory location where the User name will be copied,
- *                  or NULL if not requested
+ *                  or NULL if not requested. If not NULL, user cannot be NULL
+ *                  either.
  * @return the result of the operation
  */
 u3c_db_operation_result CC_UserCredential_get_user(
@@ -76,6 +86,12 @@ u3c_db_operation_result CC_UserCredential_add_user(
   uint8_t * name
   );
 
+/**
+ * Modifies a user in the database.
+ *
+ * @param[in] user Pointer to the user's new metadata
+ * @param[in] name Pointer to the user's new name (set to NULL to keep old name)
+ */
 u3c_db_operation_result CC_UserCredential_modify_user(
   u3c_user * user,
   uint8_t * name
@@ -139,6 +155,12 @@ bool CC_UserCredential_get_next_credential(
   uint16_t * next_credential_slot
   );
 
+/**
+ * Adds a new credential to the database.
+ *
+ * @param[in] credential Pointer to the credential to be added
+ * @return The result of the operation
+ */
 u3c_db_operation_result CC_UserCredential_add_credential(
   u3c_credential * credential
   );
@@ -157,13 +179,20 @@ u3c_db_operation_result CC_UserCredential_modify_credential(
  * @return the result of the operation
  */
 u3c_db_operation_result CC_UserCredential_delete_credential(
-  uint16_t user_unique_identifier,
   u3c_credential_type credential_type,
   uint16_t credential_slot
   );
 
+/**
+ * Moves a credential from one slot to another and/or assigns a credential from
+ * one User Unique Identifier to another one.
+ *
+ * @param[in] credential_type Type of the credential
+ * @param[in] source_credential_slot Slot of the credential to be moved
+ * @param[in] destination_user_uid The new desired UUID to assign the credential to
+ * @param[in] destination_credential_slot The new desired slot number for the credential
+ */
 u3c_db_operation_result CC_UserCredential_move_credential(
-  uint16_t source_user_uid,
   u3c_credential_type credential_type,
   uint16_t source_credential_slot,
   uint16_t destination_user_uid,

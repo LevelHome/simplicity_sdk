@@ -6,7 +6,6 @@
  */
 #include <Zniffer_hw.h>
 #include <zw_region_config.h>
-#include <board.h>
 //#define DEBUGPRINT
 #include "DebugPrint.h"
 // #include <utils.h>

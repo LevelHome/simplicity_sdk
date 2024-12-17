@@ -4,6 +4,16 @@ package: platform
 description: CMSIS core include path.
 category: Platform|CMSIS
 quality: production
+metadata:
+  sbom:
+    license: Apache 2.0
+    upstream:
+      name: CMSIS_5
+      version: 5.8.0
+      supplier: ARM-software
+      url: https://github.com/ARM-software/CMSIS_5
+      package_url: pkg:github/ARM-software/CMSIS_5@5.8.0
+      comment: The CMSIS is a set of tools, APIs, frameworks, and work flows
 include:
   - path: platform/CMSIS/Core/Include
     file_list:
@@ -56,10 +66,14 @@ include:
         condition: [device_has_mpu, cortexm23]
       - path: mpu_armv8.h
         condition: [device_has_mpu, cortexm33]
+      - path: mpu_armv8.h
+        condition: [device_has_mpu, cortexm55]
       - path: pmu_armv8.h
         condition: [device_has_pmu, cortexm23]
       - path: pmu_armv8.h
         condition: [device_has_pmu, cortexm33]
+      - path: pmu_armv8.h
+        condition: [device_has_pmu, cortexm55]
 provides:
   - name: cmsis_core
 template_file:

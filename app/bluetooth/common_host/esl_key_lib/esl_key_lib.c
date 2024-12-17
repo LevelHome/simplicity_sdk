@@ -47,8 +47,9 @@
 // -----------------------------------------------------------------------------
 // Macros and Typedefs
 
-#define ESL_KEY_LIB_QUERY_FIRST_FIELD       1
+#define ESL_KEY_LIB_QUERY_PRIMARY_FIELD     1
 
+// Note that field indices are only valid if you query all columns in order.
 #define ESL_KEY_LIB_BLE_ADDRESS_FIELD       1
 #define ESL_KEY_LIB_AES_128_KEY_FIELD       2
 #define ESL_KEY_LIB_EAD_KEY_MATERIAL_FIELD  3
@@ -193,16 +194,16 @@ sl_status_t esl_key_lib_init_database(const char *db_id, db_handle_p *hnd_out)
     if (status == SL_STATUS_OK) {
       int        rc;
       static const char *sql_create_ap = "CREATE TABLE IF NOT EXISTS "
-                                         "ap_table(ap_ble_address varchar(6) NOT NULL "
-                                         "PRIMARY KEY, identity_key varchar(16), "
-                                         "ap_key_material varchar(24) NOT NULL);";
+                                         "ap_table(ap_ble_address varbinary(6) NOT NULL PRIMARY KEY,"
+                                         "identity_key varbinary(16),"
+                                         "ap_key_material varbinary(24) NOT NULL);";
 
       static const char *sql_create_tag = "CREATE TABLE IF NOT EXISTS "
-                                          "tag_table(tag_ble_address varchar(6) NOT NULL "
-                                          "PRIMARY KEY, long_term_key varchar(16), "
-                                          "response_key_material varchar(24), "
-                                          "esl_address varchar(2),"
-                                          "bind_address varchar(6), "
+                                          "tag_table(tag_ble_address varbinary(6) NOT NULL PRIMARY KEY,"
+                                          "long_term_key varbinary(16),"
+                                          "response_key_material varbinary(24),"
+                                          "esl_address varbinary(2),"
+                                          "bind_address varbinary(6),"
                                           "FOREIGN KEY (bind_address) "
                                           "REFERENCES ap_table(ap_ble_address),"
                                           "UNIQUE(esl_address) ON CONFLICT ABORT);";
@@ -294,7 +295,9 @@ sl_status_t esl_key_lib_store_record(const db_handle_p db_hnd, const db_record_p
   return internal_store_record(db_hnd, record_hnd, NULL);
 }
 
-sl_status_t esl_key_lib_store_record_and_bind(const db_handle_p db_hnd, const db_record_p record_hnd, const bd_addr *ble_address)
+sl_status_t esl_key_lib_store_record_and_bind(const db_handle_p db_hnd,
+                                              const db_record_p record_hnd,
+                                              const bd_addr *ble_address)
 {
   return internal_store_record(db_hnd, record_hnd, ble_address);
 }
@@ -332,7 +335,7 @@ sl_status_t esl_key_lib_delete_record(const db_handle_p db_hnd, const db_record_
     } else {
       bd_addr *ble_address = &(record_hnd->ble_address);
 
-      sqlite3_bind_blob(stmt, ESL_KEY_LIB_QUERY_FIRST_FIELD, ble_address, address_length, SQLITE_TRANSIENT);
+      sqlite3_bind_blob(stmt, ESL_KEY_LIB_QUERY_PRIMARY_FIELD, ble_address, address_length, SQLITE_TRANSIENT);
       rc = sqlite3_step(stmt);
       if (rc != SQLITE_DONE) {
         app_log_error("Failed to execute step: %s" APP_LOG_NL, sqlite3_errmsg(*db));
@@ -393,7 +396,9 @@ sl_status_t esl_key_lib_clear_database(const db_handle_p hnd)
   return status;
 }
 
-sl_status_t esl_key_lib_get_record_by_ble_address(const db_handle_p db_hnd, const bd_addr *ble_address, db_record_p *record_hnd_out)
+sl_status_t esl_key_lib_get_record_by_ble_address(const db_handle_p db_hnd,
+                                                  const bd_addr *ble_address,
+                                                  db_record_p *record_hnd_out)
 {
   sqlite3_stmt *stmt = NULL;
   sqlite3      **db;
@@ -413,13 +418,15 @@ sl_status_t esl_key_lib_get_record_by_ble_address(const db_handle_p db_hnd, cons
       status = SL_STATUS_FAIL;
     } else {
       // Searching in the ap table
-      rc = sqlite3_prepare_v2(*db, "SELECT * FROM ap_table WHERE ap_ble_address = ?;", -1, &stmt, NULL);
+      rc = sqlite3_prepare_v2(*db, "SELECT ap_ble_address, identity_key, ap_key_material"
+                                   " FROM ap_table WHERE ap_ble_address = ?;",
+                              -1, &stmt, NULL);
 
       if (rc != SQLITE_OK) {
         app_log_error("Failed to execute prepare: %s" APP_LOG_NL, sqlite3_errmsg(*db));
         status = SL_STATUS_INITIALIZATION;
       } else {
-        sqlite3_bind_blob(stmt, ESL_KEY_LIB_BLE_ADDRESS_FIELD, ble_address, address_length, SQLITE_TRANSIENT);
+        sqlite3_bind_blob(stmt, ESL_KEY_LIB_QUERY_PRIMARY_FIELD, ble_address, address_length, SQLITE_TRANSIENT);
       }
     }
   }
@@ -427,31 +434,49 @@ sl_status_t esl_key_lib_get_record_by_ble_address(const db_handle_p db_hnd, cons
   if (status == SL_STATUS_OK) {
     rc = sqlite3_step(stmt);
 
-    if ((rc == SQLITE_ROW) && sqlite3_column_bytes(stmt, ESL_KEY_LIB_BLE_ADDRESS_COLUMN_INDEX)) { // row found in ap table
+    if ((rc == SQLITE_ROW) && sqlite3_column_bytes(stmt, ESL_KEY_LIB_BLE_ADDRESS_COLUMN_INDEX)) {
+      // row found in ap table
       (*record_hnd_out)->type = ESL_KEY_LIB_AP_RECORD;
-      memcpy(&((*record_hnd_out)->ble_address), sqlite3_column_blob(stmt, ESL_KEY_LIB_BLE_ADDRESS_COLUMN_INDEX), sqlite3_column_bytes(stmt, ESL_KEY_LIB_BLE_ADDRESS_COLUMN_INDEX));
-      memcpy(&((*record_hnd_out)->identity_key), sqlite3_column_blob(stmt, ESL_KEY_LIB_AES_128_KEY_COLUMN_INDEX), sqlite3_column_bytes(stmt, ESL_KEY_LIB_AES_128_KEY_COLUMN_INDEX));
-      memcpy(&((*record_hnd_out)->ap_key_material), sqlite3_column_blob(stmt, ESL_KEY_LIB_EAD_KEY_MATERIAL_COLUMN_INDEX), sqlite3_column_bytes(stmt, ESL_KEY_LIB_EAD_KEY_MATERIAL_COLUMN_INDEX));
+      memcpy(&((*record_hnd_out)->ble_address),
+             sqlite3_column_blob(stmt, ESL_KEY_LIB_BLE_ADDRESS_COLUMN_INDEX),
+             sqlite3_column_bytes(stmt, ESL_KEY_LIB_BLE_ADDRESS_COLUMN_INDEX));
+      memcpy(&((*record_hnd_out)->identity_key),
+             sqlite3_column_blob(stmt, ESL_KEY_LIB_AES_128_KEY_COLUMN_INDEX),
+             sqlite3_column_bytes(stmt, ESL_KEY_LIB_AES_128_KEY_COLUMN_INDEX));
+      memcpy(&((*record_hnd_out)->ap_key_material),
+             sqlite3_column_blob(stmt, ESL_KEY_LIB_EAD_KEY_MATERIAL_COLUMN_INDEX),
+             sqlite3_column_bytes(stmt, ESL_KEY_LIB_EAD_KEY_MATERIAL_COLUMN_INDEX));
     } else {
       // Destroy the previous statement, searching in the tag table instead
       sqlite3_finalize(stmt);
       stmt = NULL;
-      rc = sqlite3_prepare_v2(*db, "SELECT * FROM tag_table WHERE tag_ble_address = ?;", -1, &stmt, NULL);
+      rc = sqlite3_prepare_v2(*db, "SELECT tag_ble_address, long_term_key, response_key_material, esl_address"
+                                   " FROM tag_table WHERE tag_ble_address = ?;", -1, &stmt, NULL);
 
       if (rc != SQLITE_OK) {
         app_log_error("Failed to execute prepare: %s" APP_LOG_NL, sqlite3_errmsg(*db));
         status = SL_STATUS_INITIALIZATION;
       } else {
-        sqlite3_bind_blob(stmt, ESL_KEY_LIB_BLE_ADDRESS_FIELD, ble_address, address_length, SQLITE_TRANSIENT);
+        sqlite3_bind_blob(stmt, ESL_KEY_LIB_QUERY_PRIMARY_FIELD, ble_address, address_length, SQLITE_TRANSIENT);
         rc = sqlite3_step(stmt);
 
         if ((rc == SQLITE_ROW) && sqlite3_column_bytes(stmt, ESL_KEY_LIB_BLE_ADDRESS_COLUMN_INDEX)) {
           (*record_hnd_out)->type = ESL_KEY_LIB_TAG_RECORD;
-          memcpy(&((*record_hnd_out)->ble_address), sqlite3_column_blob(stmt, ESL_KEY_LIB_BLE_ADDRESS_COLUMN_INDEX), sqlite3_column_bytes(stmt, ESL_KEY_LIB_BLE_ADDRESS_COLUMN_INDEX));
-          memcpy(&((*record_hnd_out)->long_term_key), sqlite3_column_blob(stmt, ESL_KEY_LIB_AES_128_KEY_COLUMN_INDEX), sqlite3_column_bytes(stmt, ESL_KEY_LIB_AES_128_KEY_COLUMN_INDEX));
-          memcpy(&((*record_hnd_out)->response_key_material), sqlite3_column_blob(stmt, ESL_KEY_LIB_EAD_KEY_MATERIAL_COLUMN_INDEX), sqlite3_column_bytes(stmt, ESL_KEY_LIB_EAD_KEY_MATERIAL_COLUMN_INDEX));
-          if ((*record_hnd_out)->esl_address != NULL) {
-            memcpy((*record_hnd_out)->esl_address, sqlite3_column_blob(stmt, ESL_KEY_LIB_ESL_ADDRESS_COLUMN_INDEX), sqlite3_column_bytes(stmt, ESL_KEY_LIB_ESL_ADDRESS_COLUMN_INDEX));
+          memcpy(&((*record_hnd_out)->ble_address),
+                 sqlite3_column_blob(stmt, ESL_KEY_LIB_BLE_ADDRESS_COLUMN_INDEX),
+                 sqlite3_column_bytes(stmt, ESL_KEY_LIB_BLE_ADDRESS_COLUMN_INDEX));
+          memcpy(&((*record_hnd_out)->long_term_key),
+                 sqlite3_column_blob(stmt, ESL_KEY_LIB_AES_128_KEY_COLUMN_INDEX),
+                 sqlite3_column_bytes(stmt, ESL_KEY_LIB_AES_128_KEY_COLUMN_INDEX));
+          memcpy(&((*record_hnd_out)->response_key_material),
+                 sqlite3_column_blob(stmt, ESL_KEY_LIB_EAD_KEY_MATERIAL_COLUMN_INDEX),
+                 sqlite3_column_bytes(stmt, ESL_KEY_LIB_EAD_KEY_MATERIAL_COLUMN_INDEX));
+
+          if (sqlite3_column_bytes(stmt, ESL_KEY_LIB_ESL_ADDRESS_COLUMN_INDEX) != 0) {
+            memcpy(&((*record_hnd_out)->esl_address_data),
+                   sqlite3_column_blob(stmt, ESL_KEY_LIB_ESL_ADDRESS_COLUMN_INDEX),
+                   sqlite3_column_bytes(stmt, ESL_KEY_LIB_ESL_ADDRESS_COLUMN_INDEX));
+            (*record_hnd_out)->esl_address = &((*record_hnd_out)->esl_address_data);
           }
         } else {
           status = SL_STATUS_NOT_FOUND;
@@ -481,7 +506,9 @@ sl_status_t esl_key_lib_get_record_by_ble_address(const db_handle_p db_hnd, cons
   return status;
 }
 
-sl_status_t esl_key_lib_get_record_by_esl_address(const db_handle_p db_hnd, const esl_address_t esl_address, db_record_p *record_hnd_out)
+sl_status_t esl_key_lib_get_record_by_esl_address(const db_handle_p db_hnd,
+                                                  const esl_address_t esl_address,
+                                                  db_record_p *record_hnd_out)
 {
   sqlite3_stmt *stmt = NULL;
   sqlite3      **db;
@@ -505,13 +532,15 @@ sl_status_t esl_key_lib_get_record_by_esl_address(const db_handle_p db_hnd, cons
       status = SL_STATUS_FAIL;
     } else {
       // Searching in the ap table
-      rc = sqlite3_prepare_v2(*db, "SELECT * FROM tag_table WHERE esl_address = ?;", -1, &stmt, NULL);
+      rc = sqlite3_prepare_v2(*db, "SELECT tag_ble_address, long_term_key, response_key_material, esl_address"
+                                   " FROM tag_table WHERE esl_address = ?;",
+                              -1, &stmt, NULL);
 
       if (rc != SQLITE_OK) {
         app_log_error("Failed to execute prepare: %s" APP_LOG_NL, sqlite3_errmsg(*db));
         status = SL_STATUS_INITIALIZATION;
       } else {
-        sqlite3_bind_blob(stmt, ESL_KEY_LIB_QUERY_FIRST_FIELD, &esl_address, sizeof(esl_address), SQLITE_TRANSIENT);
+        sqlite3_bind_blob(stmt, ESL_KEY_LIB_QUERY_PRIMARY_FIELD, &esl_address, sizeof(esl_address), SQLITE_TRANSIENT);
       }
     }
   }
@@ -521,10 +550,18 @@ sl_status_t esl_key_lib_get_record_by_esl_address(const db_handle_p db_hnd, cons
 
     if ((rc == SQLITE_ROW) && sqlite3_column_bytes(stmt, ESL_KEY_LIB_BLE_ADDRESS_COLUMN_INDEX)) {
       (*record_hnd_out)->type = ESL_KEY_LIB_TAG_RECORD;
-      memcpy(&((*record_hnd_out)->ble_address), sqlite3_column_blob(stmt, ESL_KEY_LIB_BLE_ADDRESS_COLUMN_INDEX), sqlite3_column_bytes(stmt, ESL_KEY_LIB_BLE_ADDRESS_COLUMN_INDEX));
-      memcpy(&((*record_hnd_out)->long_term_key), sqlite3_column_blob(stmt, ESL_KEY_LIB_AES_128_KEY_COLUMN_INDEX), sqlite3_column_bytes(stmt, ESL_KEY_LIB_AES_128_KEY_COLUMN_INDEX));
-      memcpy(&((*record_hnd_out)->response_key_material), sqlite3_column_blob(stmt, ESL_KEY_LIB_EAD_KEY_MATERIAL_COLUMN_INDEX), sqlite3_column_bytes(stmt, ESL_KEY_LIB_EAD_KEY_MATERIAL_COLUMN_INDEX));
-      memcpy(&((*record_hnd_out)->esl_address_data), sqlite3_column_blob(stmt, ESL_KEY_LIB_ESL_ADDRESS_COLUMN_INDEX), sqlite3_column_bytes(stmt, ESL_KEY_LIB_ESL_ADDRESS_COLUMN_INDEX));
+      memcpy(&((*record_hnd_out)->ble_address),
+             sqlite3_column_blob(stmt, ESL_KEY_LIB_BLE_ADDRESS_COLUMN_INDEX),
+             sqlite3_column_bytes(stmt, ESL_KEY_LIB_BLE_ADDRESS_COLUMN_INDEX));
+      memcpy(&((*record_hnd_out)->long_term_key),
+             sqlite3_column_blob(stmt, ESL_KEY_LIB_AES_128_KEY_COLUMN_INDEX),
+             sqlite3_column_bytes(stmt, ESL_KEY_LIB_AES_128_KEY_COLUMN_INDEX));
+      memcpy(&((*record_hnd_out)->response_key_material),
+             sqlite3_column_blob(stmt, ESL_KEY_LIB_EAD_KEY_MATERIAL_COLUMN_INDEX),
+             sqlite3_column_bytes(stmt, ESL_KEY_LIB_EAD_KEY_MATERIAL_COLUMN_INDEX));
+      memcpy(&((*record_hnd_out)->esl_address_data),
+             sqlite3_column_blob(stmt, ESL_KEY_LIB_ESL_ADDRESS_COLUMN_INDEX),
+             sqlite3_column_bytes(stmt, ESL_KEY_LIB_ESL_ADDRESS_COLUMN_INDEX));
       (*record_hnd_out)->esl_address = &((*record_hnd_out)->esl_address_data);
     } else {
       status = SL_STATUS_NOT_FOUND;
@@ -573,11 +610,15 @@ sl_status_t esl_key_lib_set_esl_address(const esl_address_t esl_address, db_reco
   sl_status_t status = SL_STATUS_NULL_POINTER;
 
   if (record_hnd != NULL) {
-    status = validate_esl_addr(esl_address);
+    if (record_hnd->type == ESL_KEY_LIB_TAG_RECORD) {
+      status = validate_esl_addr(esl_address);
 
-    if (status == SL_STATUS_OK) {
-      memcpy(&((record_hnd)->esl_address_data), &esl_address, sizeof(esl_address_t));
-      record_hnd->esl_address = &(record_hnd->esl_address_data);
+      if (status == SL_STATUS_OK) {
+        memcpy(&((record_hnd)->esl_address_data), &esl_address, sizeof(esl_address_t));
+        record_hnd->esl_address = &(record_hnd->esl_address_data);
+      }
+    } else {
+      status = SL_STATUS_INVALID_TYPE;
     }
   }
 
@@ -711,16 +752,23 @@ sl_status_t esl_key_lib_get_bind_address(const db_handle_p db_hnd, const db_reco
     if (rc != SQLITE_OK) {
       app_log_error("Failed to execute prepare: %s" APP_LOG_NL, sqlite3_errmsg(*db));
     } else {
+      int column_index = 0;
       // Check if addr is in tag_table
-      sqlite3_bind_blob(stmt, ESL_KEY_LIB_BLE_ADDRESS_FIELD, &(record_hnd->ble_address), address_length, SQLITE_TRANSIENT);
+      sqlite3_bind_blob(stmt, ESL_KEY_LIB_QUERY_PRIMARY_FIELD,
+                        &(record_hnd->ble_address), address_length, SQLITE_TRANSIENT);
       rc = sqlite3_step(stmt);
+      status = SL_STATUS_NOT_FOUND;
 
-      if ((rc == SQLITE_ROW) && sqlite3_column_bytes(stmt, ESL_KEY_LIB_BLE_ADDRESS_COLUMN_INDEX)) {
-        // Found ble address in tag table, reading bind address
-        memcpy(addr_out, sqlite3_column_blob(stmt, ESL_KEY_LIB_BIND_ADDRESS_COLUMN_INDEX), sqlite3_column_bytes(stmt, ESL_KEY_LIB_BIND_ADDRESS_COLUMN_INDEX));
-        status = SL_STATUS_OK;
-      } else {
-        status = SL_STATUS_NOT_FOUND;
+      if (rc == SQLITE_ROW) {
+        // Found ble address ROW in tag table, reading bind address
+        column_index = sqlite3_column_count(stmt);
+        // Check if bind_address is not empty
+        if (column_index && sqlite3_column_bytes(stmt, --column_index)) {
+          const uint8_t *data = sqlite3_column_blob(stmt, column_index);
+          uint8_t len = sqlite3_column_bytes(stmt, column_index);
+          memcpy(&(addr_out->addr), data, len);
+          status = SL_STATUS_OK;
+        }
       }
 
       // finalize & close, ignore results
@@ -798,7 +846,8 @@ sl_status_t esl_key_lib_get_ap_key_material(const db_record_p record_hnd, sl_bt_
   return status;
 }
 
-sl_status_t esl_key_lib_get_response_key_material(const db_record_p record_hnd, sl_bt_ead_key_material_p response_key_out)
+sl_status_t esl_key_lib_get_response_key_material(const db_record_p record_hnd,
+                                                  sl_bt_ead_key_material_p response_key_out)
 {
   sl_status_t status = SL_STATUS_NULL_POINTER;
 
@@ -865,7 +914,9 @@ sl_status_t esl_key_lib_delete_record_by_esl_address(const db_handle_p db_hnd, c
   return status;
 }
 
-sl_status_t esl_key_lib_get_bind_address_by_ble_address(const db_handle_p db_hnd, const bd_addr *ble_address, bd_addr *bind_addr_out)
+sl_status_t esl_key_lib_get_bind_address_by_ble_address(const db_handle_p db_hnd,
+                                                        const bd_addr *ble_address,
+                                                        bd_addr *bind_addr_out)
 {
   sl_status_t status;
   db_record_p record;
@@ -884,7 +935,9 @@ sl_status_t esl_key_lib_get_bind_address_by_ble_address(const db_handle_p db_hnd
   return status;
 }
 
-sl_status_t esl_key_lib_get_bind_address_by_esl_address(const db_handle_p db_hnd, const esl_address_t esl_address, bd_addr *bind_addr_out)
+sl_status_t esl_key_lib_get_bind_address_by_esl_address(const db_handle_p db_hnd,
+                                                        const esl_address_t esl_address,
+                                                        bd_addr *bind_addr_out)
 {
   sl_status_t status;
   db_record_p record;
@@ -980,7 +1033,7 @@ static sl_status_t validate_ble_addr(const bd_addr *ble_address)
 static sl_status_t validate_esl_addr(const esl_address_t address)
 {
   // ESL address is ESL ID + Group ID
-  // The ESL address lower 8 bits with mask (ESL_Address & 0xff) should be between 0x00 és 0xFE (cannot be 0xFF)
+  // The lower 8 bits of the ESL address should range from 0x00 to 0xFE (shall not be 0xFF).
   // The MSB lower 7 bits is group ID, where the RFU (ESL_Address & 0x8000) should be 0
   if (((address & ESL_ID_MASK) == ESL_BROADCAST_ID)
       || ((address & (esl_address_t)(~(ESL_ID_MASK | ESL_GROUP_ID_MASK))) != 0)) {
@@ -1002,9 +1055,11 @@ static sl_status_t internal_store_record(const db_handle_p db_hnd,
   const aes_key_128  *identity_key = &(record_hnd->identity_key);
   const sl_bt_ead_key_material_p key_material = &(record_hnd->ap_key_material);
   sl_status_t status;
-
-  const char *sql_select = "SELECT * FROM tag_table WHERE tag_ble_address= ?;"; // always check "the other" table if the address already exists: it's a usage error!
-  const char *sql_insert = "INSERT OR REPLACE INTO ap_table (ap_ble_address, identity_key, ap_key_material) VALUES (?,?,?);";
+  // always check "the other" table if the address already exists: it's a usage error!
+  const char *sql_select = "SELECT tag_ble_address, long_term_key, response_key_material, esl_address"
+                           " FROM tag_table WHERE tag_ble_address= ?;";
+  const char *sql_insert = "INSERT OR REPLACE INTO ap_table"
+                           " (ap_ble_address, identity_key, ap_key_material) VALUES (?,?,?);";
 
   // Parameter guards, immediate return on fail
   if ((db_hnd == NULL) || (record_hnd == NULL)) {
@@ -1021,21 +1076,37 @@ static sl_status_t internal_store_record(const db_handle_p db_hnd,
   }
 
   if (record_hnd->type == ESL_KEY_LIB_TAG_RECORD) {
-    sql_select = "SELECT * FROM ap_table WHERE ap_ble_address= ?;"; // please note: we're going to search in the other type of table
+    // please note: we're going to search in the other type of table
+    sql_select = "SELECT ap_ble_address, identity_key, ap_key_material FROM ap_table WHERE ap_ble_address= ?;";
 
     if (bind_addr != NULL) {
       status = validate_ble_addr(bind_addr);
 
-      // do UPSERT on tag_ble_address conflict, while this will abort on esl_address conflict as it has to be UNIQUE (so does the BLE address as well, but in that case we consider it an update)
+      // do UPSERT on tag_ble_address conflict, while this will abort on esl_address conflict as it has to be UNIQUE
+      // (so does the BLE address as well, but in that case we consider it an update)
       if (status == SL_STATUS_OK) {
         // these expressions are called: "UPSERT"s. UPSERT as such isn't standard SQL but SQLite has support since 3.24.0
-        sql_insert = "INSERT INTO tag_table (tag_ble_address, long_term_key, response_key_material, esl_address, bind_address) VALUES (?,?,?,?,?) ON CONFLICT(tag_ble_address) DO UPDATE SET tag_ble_address=excluded.tag_ble_address, long_term_key=excluded.long_term_key, response_key_material=excluded.response_key_material, esl_address=excluded.esl_address, bind_address=excluded.bind_address;";
+        sql_insert = "INSERT INTO"
+                     " tag_table (tag_ble_address, long_term_key, response_key_material, esl_address, bind_address)"
+                     " VALUES (?,?,?,?,?)"
+                     " ON CONFLICT(tag_ble_address) DO UPDATE SET"
+                     " tag_ble_address=excluded.tag_ble_address,"
+                     " long_term_key=excluded.long_term_key,"
+                     " response_key_material=excluded.response_key_material,"
+                     " esl_address=excluded.esl_address,"
+                     " bind_address=excluded.bind_address;";
       } else {
         // still safe to return immediately on error (since there's no sqlite operation yet)
         return status;
       }
     } else {
-      sql_insert = "INSERT INTO tag_table (tag_ble_address, long_term_key, response_key_material, esl_address) VALUES (?,?,?,?) ON CONFLICT(tag_ble_address) DO UPDATE SET tag_ble_address=excluded.tag_ble_address, long_term_key=excluded.long_term_key, response_key_material=excluded.response_key_material, esl_address=excluded.esl_address;";
+      sql_insert = "INSERT INTO"
+                   " tag_table (tag_ble_address, long_term_key, response_key_material, esl_address)"
+                   " VALUES (?,?,?,?) ON CONFLICT(tag_ble_address) DO UPDATE SET"
+                   " tag_ble_address=excluded.tag_ble_address,"
+                   " long_term_key=excluded.long_term_key,"
+                   " response_key_material=excluded.response_key_material,"
+                   " esl_address=excluded.esl_address;";
     }
   }
 
@@ -1052,13 +1123,14 @@ static sl_status_t internal_store_record(const db_handle_p db_hnd,
       app_log_critical("Failed to execute prepare: %s" APP_LOG_NL, sqlite3_errmsg(*db));
       status = SL_STATUS_INITIALIZATION;
     } else {
-      sqlite3_bind_blob(stmt, ESL_KEY_LIB_BLE_ADDRESS_FIELD, ble_address, address_length, SQLITE_TRANSIENT);
+      sqlite3_bind_blob(stmt, ESL_KEY_LIB_QUERY_PRIMARY_FIELD, ble_address, address_length, SQLITE_TRANSIENT);
     }
 
     if (status == SL_STATUS_OK) {
       rc = sqlite3_step(stmt);
 
-      if ((rc == SQLITE_ROW) && sqlite3_column_bytes(stmt, ESL_KEY_LIB_BLE_ADDRESS_COLUMN_INDEX)) { // row already exists, usage error!
+      if ((rc == SQLITE_ROW) && sqlite3_column_bytes(stmt, ESL_KEY_LIB_BLE_ADDRESS_COLUMN_INDEX)) {
+        // row already exists, usage error!
         status = SL_STATUS_INVALID_TYPE;
       } else if (rc != SQLITE_DONE) { // something went wrong with sql engine
         app_log_error("Failed to execute step: %s" APP_LOG_NL, sqlite3_errmsg(*db));
@@ -1082,12 +1154,20 @@ static sl_status_t internal_store_record(const db_handle_p db_hnd,
     }
 
     if (status == SL_STATUS_OK) {
-      sqlite3_bind_blob(stmt, ESL_KEY_LIB_BLE_ADDRESS_FIELD, ble_address, address_length, SQLITE_TRANSIENT);
-      sqlite3_bind_blob(stmt, ESL_KEY_LIB_AES_128_KEY_FIELD, identity_key, sizeof(aes_key_128), SQLITE_TRANSIENT);
-      sqlite3_bind_blob(stmt, ESL_KEY_LIB_EAD_KEY_MATERIAL_FIELD, key_material, SL_BT_EAD_KEY_MATERIAL_SIZE, SQLITE_TRANSIENT);
+      sqlite3_bind_blob(stmt, ESL_KEY_LIB_BLE_ADDRESS_FIELD,
+                        ble_address, address_length, SQLITE_TRANSIENT);
+      sqlite3_bind_blob(stmt, ESL_KEY_LIB_AES_128_KEY_FIELD,
+                        identity_key, sizeof(aes_key_128), SQLITE_TRANSIENT);
+      sqlite3_bind_blob(stmt, ESL_KEY_LIB_EAD_KEY_MATERIAL_FIELD,
+                        key_material, SL_BT_EAD_KEY_MATERIAL_SIZE, SQLITE_TRANSIENT);
 
       if (record_hnd->type == ESL_KEY_LIB_TAG_RECORD) {
-        sqlite3_bind_blob(stmt, ESL_KEY_LIB_ESL_ADDRESS_FIELD, record_hnd->esl_address, sizeof(esl_address_t), SQLITE_TRANSIENT);
+        if (record_hnd->esl_address != NULL) {
+          sqlite3_bind_blob(stmt, ESL_KEY_LIB_ESL_ADDRESS_FIELD,
+                            record_hnd->esl_address, sizeof(esl_address_t), SQLITE_TRANSIENT);
+        } else {
+          sqlite3_bind_null(stmt, ESL_KEY_LIB_ESL_ADDRESS_FIELD);
+        }
         sqlite3_bind_blob(stmt, ESL_KEY_LIB_BIND_ADDRESS_FIELD, bind_addr, address_length, SQLITE_TRANSIENT);
       }
 

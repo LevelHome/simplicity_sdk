@@ -105,6 +105,9 @@ sl_status_t esl_lib_event_list_allocate(esl_lib_evt_type_t event_type,
     case ESL_LIB_EVT_SYSTEM_BOOT:
       size += sizeof(esl_lib_evt_system_boot_t);
       break;
+    case ESL_LIB_EVT_CONNECTION_MODE:
+      size += sizeof(esl_lib_evt_connection_mode_t);
+      break;
     case ESL_LIB_EVT_SCAN_STATUS:
       size += sizeof(esl_lib_evt_scan_status_t);
       break;

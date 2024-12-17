@@ -36,10 +36,8 @@
 #include "sl_device_peripheral.h"
 #include "dmadrv.h"
 
-#if defined(_SILICON_LABS_32B_SERIES_2)
-#include "em_gpio.h"
-#else
-#include "sl_hal_gpio.h"
+#include "sl_gpio.h"
+#if defined(_SILICON_LABS_32B_SERIES_3)
 #include "sl_hal_eusart.h"
 #endif
 #endif
@@ -157,17 +155,10 @@ typedef void (*SPIDRV_Callback_t)(struct SPIDRV_HandleData *handle,
  */
 typedef struct SPIDRV_Init {
   void               *port;             ///< The USART used for SPI.
-#if defined(_SILICON_LABS_32B_SERIES_2)
-  GPIO_Port_TypeDef   portTx;           ///< Tx port.
-  GPIO_Port_TypeDef   portRx;           ///< Rx port.
-  GPIO_Port_TypeDef   portClk;          ///< Clock port.
-  GPIO_Port_TypeDef   portCs;           ///< Chip select port.
-#else
   sl_gpio_port_t      portTx;           ///< Tx port.
   sl_gpio_port_t      portRx;           ///< Rx port.
   sl_gpio_port_t      portClk;          ///< Clock port.
   sl_gpio_port_t      portCs;           ///< Chip select port.
-#endif
   uint8_t             pinTx;            ///< Tx pin.
   uint8_t             pinRx;            ///< Rx pin.
   uint8_t             pinClk;           ///< Clock pin.
@@ -207,11 +198,7 @@ typedef struct SPIDRV_HandleData {
   uint32_t                  dummyRx;
   int                       transferCount;
   int                       remaining;
-#if defined(_SILICON_LABS_32B_SERIES_2)
-  GPIO_Port_TypeDef         portCs;
-#else
   sl_gpio_port_t            portCs;
-#endif
   uint8_t                   pinCs;
   Ecode_t                   transferStatus;
   volatile SPIDRV_State_t   state;
@@ -240,10 +227,10 @@ typedef void * SPIDRV_Handle_t;
 #define SPIDRV_MASTER_DEFAULT                                          \
   {                                                                    \
     USART0,                     /* USART port                       */ \
-    gpioPortC,                  /* USART Tx port location number    */ \
-    gpioPortC,                  /* USART Rx port location number    */ \
-    gpioPortC,                  /* USART Clk port location number   */ \
-    gpioPortC,                  /* USART Cs port location number    */ \
+    SL_GPIO_PORT_C,             /* USART Tx port location number    */ \
+    SL_GPIO_PORT_C,             /* USART Rx port location number    */ \
+    SL_GPIO_PORT_C,             /* USART Clk port location number   */ \
+    SL_GPIO_PORT_C,             /* USART Cs port location number    */ \
     2,                          /* USART Tx port location number    */ \
     3,                          /* USART Rx port location number    */ \
     4,                          /* USART Clk pin location number    */ \
@@ -262,10 +249,10 @@ typedef void * SPIDRV_Handle_t;
 #define SPIDRV_SLAVE_DEFAULT                                           \
   {                                                                    \
     USART0,                     /* USART port                       */ \
-    gpioPortC,                  /* USART Tx port location number    */ \
-    gpioPortC,                  /* USART Rx port location number    */ \
-    gpioPortC,                  /* USART Clk port location number   */ \
-    gpioPortC,                  /* USART Cs port location number    */ \
+    SL_GPIO_PORT_C,             /* USART Tx port location number    */ \
+    SL_GPIO_PORT_C,             /* USART Rx port location number    */ \
+    SL_GPIO_PORT_C,             /* USART Clk port location number   */ \
+    SL_GPIO_PORT_C,             /* USART Cs port location number    */ \
     2,                          /* USART Tx port location number    */ \
     3,                          /* USART Rx port location number    */ \
     4,                          /* USART Clk pin location number    */ \
@@ -286,10 +273,10 @@ typedef void * SPIDRV_Handle_t;
 #define SPIDRV_MASTER_EUSART0                                        \
   {                                                                  \
     EUSART0,                  /* EUSART port                      */ \
-    gpioPortA,                /* EUSART Tx port location number   */ \
-    gpioPortA,                /* EUSART Rx port location number   */ \
-    gpioPortA,                /* EUSART Clk port location number  */ \
-    gpioPortA,                /* EUSART Cs port location number   */ \
+    SL_GPIO_PORT_A,           /* EUSART Tx port location number   */ \
+    SL_GPIO_PORT_A,           /* EUSART Rx port location number   */ \
+    SL_GPIO_PORT_A,           /* EUSART Clk port location number  */ \
+    SL_GPIO_PORT_A,           /* EUSART Cs port location number   */ \
     0,                        /* EUSART Tx port location number   */ \
     6,                        /* EUSART Rx port location number   */ \
     7,                        /* EUSART Clk pin location number   */ \
@@ -307,10 +294,10 @@ typedef void * SPIDRV_Handle_t;
 #define SPIDRV_SLAVE_EUSART0                                         \
   {                                                                  \
     EUSART0,                  /* EUSART port                      */ \
-    gpioPortA,                /* EUSART Tx port location number   */ \
-    gpioPortA,                /* EUSART Rx port location number   */ \
-    gpioPortA,                /* EUSART Clk port location number  */ \
-    gpioPortA,                /* EUSART Cs port location number   */ \
+    SL_GPIO_PORT_A,           /* EUSART Tx port location number   */ \
+    SL_GPIO_PORT_A,           /* EUSART Rx port location number   */ \
+    SL_GPIO_PORT_A,           /* EUSART Clk port location number  */ \
+    SL_GPIO_PORT_A,           /* EUSART Cs port location number   */ \
     0,                        /* EUSART Tx port location number   */ \
     6,                        /* EUSART Rx port location number   */ \
     7,                        /* EUSART Clk pin location number   */ \
@@ -374,10 +361,10 @@ typedef void * SPIDRV_Handle_t;
 #define SPIDRV_MASTER_EUSART1                                        \
   {                                                                  \
     EUSART1,                  /* EUSART port                      */ \
-    gpioPortC,                /* EUSART Tx port location number   */ \
-    gpioPortC,                /* EUSART Rx port location number   */ \
-    gpioPortC,                /* EUSART Clk port location number  */ \
-    gpioPortC,                /* EUSART Cs port location number   */ \
+    SL_GPIO_PORT_C,           /* EUSART Tx port location number   */ \
+    SL_GPIO_PORT_C,           /* EUSART Rx port location number   */ \
+    SL_GPIO_PORT_C,           /* EUSART Clk port location number  */ \
+    SL_GPIO_PORT_C,           /* EUSART Cs port location number   */ \
     0,                        /* EUSART Tx port location number   */ \
     1,                        /* EUSART Rx port location number   */ \
     2,                        /* EUSART Clk pin location number   */ \
@@ -395,10 +382,10 @@ typedef void * SPIDRV_Handle_t;
 #define SPIDRV_SLAVE_EUSART1                                         \
   {                                                                  \
     EUSART1,                  /* EUSART port                      */ \
-    gpioPortC,                /* EUSART Tx port location number   */ \
-    gpioPortC,                /* EUSART Rx port location number   */ \
-    gpioPortC,                /* EUSART Clk port location number  */ \
-    gpioPortC,                /* EUSART Cs port location number   */ \
+    SL_GPIO_PORT_C,           /* EUSART Tx port location number   */ \
+    SL_GPIO_PORT_C,           /* EUSART Rx port location number   */ \
+    SL_GPIO_PORT_C,           /* EUSART Clk port location number  */ \
+    SL_GPIO_PORT_C,           /* EUSART Cs port location number   */ \
     0,                        /* EUSART Tx port location number   */ \
     1,                        /* EUSART Rx port location number   */ \
     2,                        /* EUSART Clk pin location number   */ \
@@ -462,10 +449,10 @@ typedef void * SPIDRV_Handle_t;
 #define SPIDRV_MASTER_EUSART2                                        \
   {                                                                  \
     EUSART2,                  /* EUSART port                      */ \
-    gpioPortC,                /* EUSART Tx port location number   */ \
-    gpioPortC,                /* EUSART Rx port location number   */ \
-    gpioPortC,                /* EUSART Clk port location number  */ \
-    gpioPortC,                /* EUSART Cs port location number   */ \
+    SL_GPIO_PORT_C,           /* EUSART Tx port location number   */ \
+    SL_GPIO_PORT_C,           /* EUSART Rx port location number   */ \
+    SL_GPIO_PORT_C,           /* EUSART Clk port location number  */ \
+    SL_GPIO_PORT_C,           /* EUSART Cs port location number   */ \
     0,                        /* EUSART Tx port location number   */ \
     1,                        /* EUSART Rx port location number   */ \
     2,                        /* EUSART Clk pin location number   */ \
@@ -483,10 +470,10 @@ typedef void * SPIDRV_Handle_t;
 #define SPIDRV_SLAVE_EUSART2                                         \
   {                                                                  \
     EUSART2,                  /* EUSART port                      */ \
-    gpioPortC,                /* EUSART Tx port location number   */ \
-    gpioPortC,                /* EUSART Rx port location number   */ \
-    gpioPortC,                /* EUSART Clk port location number  */ \
-    gpioPortC,                /* EUSART Cs port location number   */ \
+    SL_GPIO_PORT_C,           /* EUSART Tx port location number   */ \
+    SL_GPIO_PORT_C,           /* EUSART Rx port location number   */ \
+    SL_GPIO_PORT_C,           /* EUSART Clk port location number  */ \
+    SL_GPIO_PORT_C,           /* EUSART Cs port location number   */ \
     0,                        /* EUSART Tx port location number   */ \
     1,                        /* EUSART Rx port location number   */ \
     2,                        /* EUSART Clk pin location number   */ \
@@ -550,10 +537,10 @@ typedef void * SPIDRV_Handle_t;
 #define SPIDRV_MASTER_EUSART3                                        \
   {                                                                  \
     EUSART3,                  /* EUSART port                      */ \
-    gpioPortA,                /* EUSART Tx port location number   */ \
-    gpioPortA,                /* EUSART Rx port location number   */ \
-    gpioPortA,                /* EUSART Clk port location number  */ \
-    gpioPortA,                /* EUSART Cs port location number   */ \
+    SL_GPIO_PORT_A,           /* EUSART Tx port location number   */ \
+    SL_GPIO_PORT_A,           /* EUSART Rx port location number   */ \
+    SL_GPIO_PORT_A,           /* EUSART Clk port location number  */ \
+    SL_GPIO_PORT_A,           /* EUSART Cs port location number   */ \
     0,                        /* EUSART Tx port location number   */ \
     6,                        /* EUSART Rx port location number   */ \
     7,                        /* EUSART Clk pin location number   */ \
@@ -571,10 +558,10 @@ typedef void * SPIDRV_Handle_t;
 #define SPIDRV_SLAVE_EUSART3                                         \
   {                                                                  \
     EUSART3,                  /* EUSART port                      */ \
-    gpioPortA,                /* EUSART Tx port location number   */ \
-    gpioPortA,                /* EUSART Rx port location number   */ \
-    gpioPortA,                /* EUSART Clk port location number  */ \
-    gpioPortA,                /* EUSART Cs port location number   */ \
+    SL_GPIO_PORT_A,           /* EUSART Tx port location number   */ \
+    SL_GPIO_PORT_A,           /* EUSART Rx port location number   */ \
+    SL_GPIO_PORT_A,           /* EUSART Clk port location number  */ \
+    SL_GPIO_PORT_A,           /* EUSART Cs port location number   */ \
     0,                        /* EUSART Tx port location number   */ \
     6,                        /* EUSART Rx port location number   */ \
     7,                        /* EUSART Clk pin location number   */ \
@@ -638,10 +625,10 @@ typedef void * SPIDRV_Handle_t;
 #define SPIDRV_MASTER_EUSART4                                        \
   {                                                                  \
     EUSART4,                  /* EUSART port                      */ \
-    gpioPortC,                /* EUSART Tx port location number   */ \
-    gpioPortC,                /* EUSART Rx port location number   */ \
-    gpioPortC,                /* EUSART Clk port location number  */ \
-    gpioPortC,                /* EUSART Cs port location number   */ \
+    SL_GPIO_PORT_C,           /* EUSART Tx port location number   */ \
+    SL_GPIO_PORT_C,           /* EUSART Rx port location number   */ \
+    SL_GPIO_PORT_C,           /* EUSART Clk port location number  */ \
+    SL_GPIO_PORT_C,           /* EUSART Cs port location number   */ \
     0,                        /* EUSART Tx port location number   */ \
     1,                        /* EUSART Rx port location number   */ \
     2,                        /* EUSART Clk pin location number   */ \
@@ -659,10 +646,10 @@ typedef void * SPIDRV_Handle_t;
 #define SPIDRV_SLAVE_EUSART4                                         \
   {                                                                  \
     EUSART4,                  /* EUSART port                      */ \
-    gpioPortC,                /* EUSART Tx port location number   */ \
-    gpioPortC,                /* EUSART Rx port location number   */ \
-    gpioPortC,                /* EUSART Clk port location number  */ \
-    gpioPortC,                /* EUSART Cs port location number   */ \
+    SL_GPIO_PORT_C,           /* EUSART Tx port location number   */ \
+    SL_GPIO_PORT_C,           /* EUSART Rx port location number   */ \
+    SL_GPIO_PORT_C,           /* EUSART Clk port location number  */ \
+    SL_GPIO_PORT_C,           /* EUSART Cs port location number   */ \
     0,                        /* EUSART Tx port location number   */ \
     1,                        /* EUSART Rx port location number   */ \
     2,                        /* EUSART Clk pin location number   */ \

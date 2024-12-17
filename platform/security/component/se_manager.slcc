@@ -38,10 +38,7 @@ requires:
   - name: sl_common
     condition: [native]
   - name: status
-
-    # emlib_se included for backwards compability
-  - name: emlib_se
-    condition: [device_series_2]
+  - name: code_classification
 
   - name: se_manager_mailbox
   - name: hal_generic_common
@@ -51,7 +48,7 @@ requires:
   - name: hal_generic_system
     condition: [device_cortexm]
 
-  - name: se_manager_osal
+  - name: sli_psec_osal
     condition: [device_cortexm]
 
   - name: se_manager_config
@@ -86,6 +83,22 @@ documentation:
     docset: gecko-platform
     document: service/api/group-sl-se-manager
 
+define:
+  - name: SL_CODE_COMPONENT_SE_MANAGER
+    value: se_manager
+
 template_contribution:
   - name: component_catalog
     value: se_manager
+  - name: code_classification_components
+    value: se_manager
+  - name: event_handler
+    value:
+      event: service_init
+      include: sl_se_manager.h
+      handler: sl_se_init
+    priority: 1
+
+metadata:
+  sbom:
+    license: Zlib

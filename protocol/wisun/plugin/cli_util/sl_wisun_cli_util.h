@@ -151,6 +151,16 @@ sl_status_t app_util_get_mac_address_string(char *value_str,
                                             const sl_wisun_mac_address_t *value);
 
 /**************************************************************************//**
+ * @brief App util get byte array.
+ * @details Get the byte array from app util.
+ * @param[in] value_str Byte array string, each byte separated by ':'
+ * @param[out] out Destination of the parsed bytes
+ * @param[in] size Size of the passed 'out' array
+ * @return sl_status_t
+ *****************************************************************************/
+sl_status_t app_util_get_byte_array(const char *value_str, uint8_t *out, int size);
+
+/**************************************************************************//**
  * @brief App util printable data init.
  * @details Initialize printable data.
  * @param[in] ctx app_printable_data_ctx_t stucture ptr

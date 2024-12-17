@@ -34,6 +34,7 @@
 #include "sl_ncp.h"
 #include "ncp_btmesh_user_cmd_handler.h"
 #include "ncp_btmesh_user_cmd.h"
+#include "sl_common.h"
 
 /***************************************************************************//**
  * User command (message_to_target) handler callback.

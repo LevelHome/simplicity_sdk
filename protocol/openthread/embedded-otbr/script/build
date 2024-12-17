@@ -1,0 +1,264 @@
+#!/bin/bash
+#
+#  Copyright (c) 2020, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+
+# ==============================================================================
+# Bash definitions
+# ==============================================================================
+if [[ -n ${BASH_SOURCE[0]} ]]; then
+    script_path="${BASH_SOURCE[0]}"
+else
+    script_path="$0"
+fi
+script_dir="$(realpath "$(dirname "${script_path}")")"
+repo_dir="$(dirname "${script_dir}")"
+
+# CMake Build targets
+OT_CMAKE_NINJA_TARGET=${OT_CMAKE_NINJA_TARGET-}
+
+# CMake Build options
+OT_OPTIONS=(
+    "-DCMAKE_BUILD_TYPE=Debug"
+    "-DOT_DIAGNOSTIC=OFF"
+    "-DOT_EXTERNAL_HEAP=ON"
+    "-DOT_SLAAC=ON"
+    "-DOT_TCP=0"
+)
+
+OT_BR_OPTIONS=(
+    "-DOTBR_MDNS=lwip"
+    "-DOTBR_BORDER_AGENT=ON"
+    "-DOT_BORDER_AGENT=ON"
+)
+
+# Check if ccache is installed and use it if available
+if command -v ccache >/dev/null; then
+    OT_OPTIONS+=("-DCMAKE_C_COMPILER_LAUNCHER=ccache")
+    OT_OPTIONS+=("-DCMAKE_CXX_COMPILER_LAUNCHER=ccache")
+fi
+readonly OT_OPTIONS
+
+# ==============================================================================
+# shellcheck source=script/si91x-definitions
+source "${repo_dir}/script/si91x-definitions"
+
+set -euxo pipefail
+
+# ==============================================================================
+# Build functions
+# ==============================================================================
+generate()
+{
+    if [ "${skip_generation}" = true ]; then
+        return
+    fi
+
+    if [ "${mcu_host}" = true ]; then
+        local slcp_project="openthread-si91x-mcu-host.slcp"
+        local slcp_out_soc="mcu_host"
+    elif [ "${otbr_mcu_host}" = true ]; then
+        local slcp_project="openthread-si91x-otbr-mcu-host.slcp"
+        local slcp_out_soc="otbr_mcu_host"
+    fi
+    set +x
+    echo "========================================================================================================="
+    echo "Generate ${slcp_project}"
+    echo "========================================================================================================="
+    set -x
+    "${repo_dir}/script/generate" \
+        "${repo_dir}/si91x_project/${slcp_project}" \
+        "${slc_generated_projects_dir}/${slcp_out_soc}" \
+        "${board}"
+}
+
+build_mcu_host()
+{
+    set +x
+    echo "======================================================================"
+    echo "Building MCU host app: ot-mcu-cli-ftd"
+    echo "======================================================================"
+    set -x
+
+    builddir="${OT_CMAKE_BUILD_DIR:-$repo_dir/build/${board}}/openthread/mcu_host"
+
+    mkdir -p "${builddir}"
+    cd "${builddir}"
+
+    cmake \
+        -GNinja \
+        -DOT_PLATFORM_MCU_LIB_DIR="${slc_generated_projects_dir}"/mcu_host/openthread-si91x-mcu-host-ftd_cmake \
+        -DOT_PLATFORM_MCU="SI91X" \
+        -DOT_COMPILE_WARNING_AS_ERROR=ON \
+        -DOT_MCU_HOST=ON \
+        "$@" "${repo_dir}"
+
+    ninja "ot-mcu-cli-ftd"
+
+    cd "${repo_dir}"
+}
+
+build_otbr_mcu_host()
+{
+    set +x
+    echo "======================================================================"
+    echo "Building OTBR MCU host app: otbr-mcu-cli-ftd"
+    echo "======================================================================"
+    set -x
+
+    builddir="${OT_CMAKE_BUILD_DIR:-$repo_dir/build/${board}}/openthread/otbr_mcu_host"
+
+    mkdir -p "${builddir}"
+    cd "${builddir}"
+
+    cmake \
+        -GNinja \
+        -DOT_PLATFORM_MCU_LIB_DIR="${slc_generated_projects_dir}"/otbr_mcu_host/openthread-si91x-otbr-mcu-host-ftd_cmake \
+        -DOT_PLATFORM_MCU="SI91X" \
+        -DOT_COMPILE_WARNING_AS_ERROR=ON \
+        -DOT_MCU_HOST=ON \
+        -DOT_BR_MCU_HOST=ON \
+        "$@" "${repo_dir}"
+
+    ninja "otbr-mcu-cli-ftd"
+
+    cd "${repo_dir}"
+}
+
+build_si91x()
+{
+    local options=("${OT_OPTIONS[@]}")
+
+    options+=("-DCMAKE_TOOLCHAIN_FILE=src/${host_platform}/arm-none-eabi.cmake")
+    if [ "${OT_CMAKE_NINJA_TARGET}" = "otbr-mcu-cli-ftd" ]; then
+        for opt in "${OT_BR_OPTIONS[@]}"; do
+            options+=("$@")
+            options+=("${opt}")
+        done
+    fi
+
+    options+=("$@")
+    export OT_CMAKE_BUILD_DIR="$repo_dir/build/${board}"
+    slc_generated_projects_dir="${OT_CMAKE_BUILD_DIR}"/slc
+
+    # Generate the platform libs and related libs
+    generate true
+
+    # Build rcp host targets
+    if [ "${OT_CMAKE_NINJA_TARGET}" = "ot-mcu-cli-ftd" ]; then
+        build_mcu_host "${options[@]}"
+    fi
+    if [ "${OT_CMAKE_NINJA_TARGET}" = "otbr-mcu-cli-ftd" ]; then
+        echo "${options[@]}"
+        build_otbr_mcu_host "${options[@]}"
+    fi
+
+    ls -alh "${OT_CMAKE_BUILD_DIR}"/openthread/*/bin/*
+}
+
+# ==============================================================================
+main()
+{
+    local usage="usage: $0 [-h] [-p|--pristine] <brdXXXXy> [--mcu-host|--otbr-mcu-host] [--skip-generation] [-D<OT_XXXX=ON> -D<OT_YYYY=OFF>]"
+
+    mcu_host=false
+    otbr_mcu_host=false
+    skip_generation=false
+
+    # Parse command-line arguments
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -h | --help)
+                echo "$usage"
+                exit 0
+                ;;
+            -p | --pristine)
+                rm -rf ./build
+                echo "Pristine build"
+                shift
+                ;;
+            --mcu-host)
+                mcu_host=true
+                shift
+                ;;
+            --otbr-mcu-host)
+                otbr_mcu_host=true
+                shift
+                ;;
+            --skip-generation)
+                skip_generation=true
+                shift
+                ;;
+            *)
+                # Assume the first positional argument is the board identifier
+                if [[ -z ${board-} ]]; then
+                    board="$1"
+                fi
+                shift
+                ;;
+        esac
+    done
+
+    if [[ -z $board ]]; then
+        echo "Error: Board is required."
+        echo "$usage"
+        exit 1
+    fi
+
+    # Set OT_CMAKE_NINJA_TARGET based on provided targets or default to existing behavior
+    if [ -z "${OT_CMAKE_NINJA_TARGET}" ]; then
+        if [ "${mcu_host}" = true ]; then
+            OT_CMAKE_NINJA_TARGET=("ot-mcu-cli-ftd")
+        elif [ "${otbr_mcu_host}" = true ]; then
+            OT_CMAKE_NINJA_TARGET=("otbr-mcu-cli-ftd")
+        fi
+    fi
+
+    # Check if a platform can be found for a given board in Simplicity SDK
+    host_platform=$(si91x_get_platform "${board}" "${wssdk_dir}")
+
+    # Check if the platform is supported
+    si91x_check_platform "${host_platform}" || die "Unsupported platform ${host_platform}"
+
+    set +x
+    echo "========================================================================================================="
+    echo "Building OpenThread MCU host app for board ${board} (${host_platform})"
+    echo "========================================================================================================="
+    set -x
+
+    build_si91x
+}
+
+cleanup()
+{
+    # Placeholder for any cleanup tasks
+    :
+}
+
+trap cleanup EXIT
+
+main "$@"

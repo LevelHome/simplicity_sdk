@@ -30,7 +30,7 @@
 
 #include <string.h>
 #include "sl_ncp_sec.h"
-#include "em_core.h"
+#include "sl_core.h"
 #include "psa/crypto.h"
 #include "psa/crypto_values.h"
 

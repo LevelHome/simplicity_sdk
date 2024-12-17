@@ -310,7 +310,7 @@ void sl_zigbee_ezsp_set_pending_network_update_pan_id(
   sl_zigbee_ezsp_status_t sendStatus = sendCommand();
   sli_zigbee_ezsp_set_last_status(sendStatus);
   if (sendStatus == SL_ZIGBEE_EZSP_SUCCESS) {
-    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%x", __func__, sendStatus);
+    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%02X", __func__, sendStatus);
   }
 }
 
@@ -384,7 +384,7 @@ void sl_zigbee_ezsp_nop(void)
   sl_zigbee_ezsp_status_t sendStatus = sendCommand();
   sli_zigbee_ezsp_set_last_status(sendStatus);
   if (sendStatus == SL_ZIGBEE_EZSP_SUCCESS) {
-    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%x", __func__, sendStatus);
+    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%02X", __func__, sendStatus);
   }
 }
 
@@ -634,7 +634,7 @@ void sl_zigbee_ezsp_delay_test(
   sl_zigbee_ezsp_status_t sendStatus = sendCommand();
   sli_zigbee_ezsp_set_last_status(sendStatus);
   if (sendStatus == SL_ZIGBEE_EZSP_SUCCESS) {
-    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%x", __func__, sendStatus);
+    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%02X", __func__, sendStatus);
   }
 }
 
@@ -761,25 +761,25 @@ sl_status_t sl_zigbee_ezsp_setup_delayed_join(
 }
 
 void sl_zigbee_ezsp_radio_get_scheduler_priorities(
-  sl_zigbee_multiprotocol_priorities_t *priorities)
+  sl_802154_radio_priorities_t *priorities)
 {
   startCommand(SL_ZIGBEE_EZSP_RADIO_GET_SCHEDULER_PRIORITIES);
   sl_zigbee_ezsp_status_t sendStatus = sendCommand();
   sli_zigbee_ezsp_set_last_status(sendStatus);
   if (sendStatus == SL_ZIGBEE_EZSP_SUCCESS) {
-    fetch_sl_zigbee_multiprotocol_priorities_t(priorities);
+    fetch_sl_802154_radio_priorities_t(priorities);
   }
 }
 
 void sl_zigbee_ezsp_radio_set_scheduler_priorities(
-  sl_zigbee_multiprotocol_priorities_t *priorities)
+  sl_802154_radio_priorities_t *priorities)
 {
   startCommand(SL_ZIGBEE_EZSP_RADIO_SET_SCHEDULER_PRIORITIES);
-  append_sl_zigbee_multiprotocol_priorities_t(priorities);
+  append_sl_802154_radio_priorities_t(priorities);
   sl_zigbee_ezsp_status_t sendStatus = sendCommand();
   sli_zigbee_ezsp_set_last_status(sendStatus);
   if (sendStatus == SL_ZIGBEE_EZSP_SUCCESS) {
-    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%x", __func__, sendStatus);
+    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%02X", __func__, sendStatus);
   }
 }
 
@@ -802,7 +802,7 @@ void sl_zigbee_ezsp_radio_set_scheduler_sliptime(
   sl_zigbee_ezsp_status_t sendStatus = sendCommand();
   sli_zigbee_ezsp_set_last_status(sendStatus);
   if (sendStatus == SL_ZIGBEE_EZSP_SUCCESS) {
-    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%x", __func__, sendStatus);
+    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%02X", __func__, sendStatus);
   }
 }
 
@@ -1274,7 +1274,7 @@ void sl_zigbee_ezsp_stack_power_down(void)
   sl_zigbee_ezsp_status_t sendStatus = sendCommand();
   sli_zigbee_ezsp_set_last_status(sendStatus);
   if (sendStatus == SL_ZIGBEE_EZSP_SUCCESS) {
-    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%x", __func__, sendStatus);
+    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%02X", __func__, sendStatus);
   }
 }
 
@@ -1284,7 +1284,7 @@ void sl_zigbee_ezsp_stack_power_up(void)
   sl_zigbee_ezsp_status_t sendStatus = sendCommand();
   sli_zigbee_ezsp_set_last_status(sendStatus);
   if (sendStatus == SL_ZIGBEE_EZSP_SUCCESS) {
-    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%x", __func__, sendStatus);
+    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%02X", __func__, sendStatus);
   }
 }
 
@@ -1362,7 +1362,7 @@ void sl_zigbee_ezsp_set_child_power(
   sl_zigbee_ezsp_status_t sendStatus = sendCommand();
   sli_zigbee_ezsp_set_last_status(sendStatus);
   if (sendStatus == SL_ZIGBEE_EZSP_SUCCESS) {
-    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%x", __func__, sendStatus);
+    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%02X", __func__, sendStatus);
   }
 }
 
@@ -1626,7 +1626,7 @@ void sl_zigbee_ezsp_concentrator_start_discovery(void)
   sl_zigbee_ezsp_status_t sendStatus = sendCommand();
   sli_zigbee_ezsp_set_last_status(sendStatus);
   if (sendStatus == SL_ZIGBEE_EZSP_SUCCESS) {
-    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%x", __func__, sendStatus);
+    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%02X", __func__, sendStatus);
   }
 }
 
@@ -1636,7 +1636,7 @@ void sl_zigbee_ezsp_concentrator_stop_discovery(void)
   sl_zigbee_ezsp_status_t sendStatus = sendCommand();
   sli_zigbee_ezsp_set_last_status(sendStatus);
   if (sendStatus == SL_ZIGBEE_EZSP_SUCCESS) {
-    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%x", __func__, sendStatus);
+    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%02X", __func__, sendStatus);
   }
 }
 
@@ -1650,7 +1650,7 @@ void sl_zigbee_ezsp_concentrator_note_route_error(
   sl_zigbee_ezsp_status_t sendStatus = sendCommand();
   sli_zigbee_ezsp_set_last_status(sendStatus);
   if (sendStatus == SL_ZIGBEE_EZSP_SUCCESS) {
-    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%x", __func__, sendStatus);
+    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%02X", __func__, sendStatus);
   }
 }
 
@@ -1998,7 +1998,7 @@ void sl_zigbee_ezsp_reset_rejoining_neighbors_frame_counter(
   sl_zigbee_ezsp_status_t sendStatus = sendCommand();
   sli_zigbee_ezsp_set_last_status(sendStatus);
   if (sendStatus == SL_ZIGBEE_EZSP_SUCCESS) {
-    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%x", __func__, sendStatus);
+    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%02X", __func__, sendStatus);
   }
 }
 
@@ -2121,7 +2121,7 @@ void sl_zigbee_ezsp_set_binding_remote_node_id(
   sl_zigbee_ezsp_status_t sendStatus = sendCommand();
   sli_zigbee_ezsp_set_last_status(sendStatus);
   if (sendStatus == SL_ZIGBEE_EZSP_SUCCESS) {
-    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%x", __func__, sendStatus);
+    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%02X", __func__, sendStatus);
   }
 }
 
@@ -2377,7 +2377,7 @@ void sl_zigbee_ezsp_remove_neighbor(
   sl_zigbee_ezsp_status_t sendStatus = sendCommand();
   sli_zigbee_ezsp_set_last_status(sendStatus);
   if (sendStatus == SL_ZIGBEE_EZSP_SUCCESS) {
-    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%x", __func__, sendStatus);
+    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%02X", __func__, sendStatus);
   }
 }
 
@@ -2658,7 +2658,7 @@ void sl_zigbee_ezsp_set_mac_poll_failure_wait_time(
   sl_zigbee_ezsp_status_t sendStatus = sendCommand();
   sli_zigbee_ezsp_set_last_status(sendStatus);
   if (sendStatus == SL_ZIGBEE_EZSP_SUCCESS) {
-    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%x", __func__, sendStatus);
+    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%02X", __func__, sendStatus);
   }
 }
 
@@ -2916,7 +2916,7 @@ void sl_zigbee_ezsp_clear_transient_link_keys(void)
   sl_zigbee_ezsp_status_t sendStatus = sendCommand();
   sli_zigbee_ezsp_set_last_status(sendStatus);
   if (sendStatus == SL_ZIGBEE_EZSP_SUCCESS) {
-    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%x", __func__, sendStatus);
+    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%02X", __func__, sendStatus);
   }
 }
 
@@ -3096,7 +3096,7 @@ void sl_zigbee_ezsp_set_incoming_tc_link_key_frame_counter(
   sl_zigbee_ezsp_status_t sendStatus = sendCommand();
   sli_zigbee_ezsp_set_last_status(sendStatus);
   if (sendStatus == SL_ZIGBEE_EZSP_SUCCESS) {
-    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%x", __func__, sendStatus);
+    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%02X", __func__, sendStatus);
   }
 }
 
@@ -3865,7 +3865,7 @@ void sl_zigbee_ezsp_zll_set_data_token(
   sl_zigbee_ezsp_status_t sendStatus = sendCommand();
   sli_zigbee_ezsp_set_last_status(sendStatus);
   if (sendStatus == SL_ZIGBEE_EZSP_SUCCESS) {
-    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%x", __func__, sendStatus);
+    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%02X", __func__, sendStatus);
   }
 }
 
@@ -3875,7 +3875,7 @@ void sl_zigbee_ezsp_zll_set_non_zll_network(void)
   sl_zigbee_ezsp_status_t sendStatus = sendCommand();
   sli_zigbee_ezsp_set_last_status(sendStatus);
   if (sendStatus == SL_ZIGBEE_EZSP_SUCCESS) {
-    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%x", __func__, sendStatus);
+    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%02X", __func__, sendStatus);
   }
 }
 
@@ -3900,7 +3900,7 @@ void sl_zigbee_ezsp_zll_set_radio_idle_mode(
   sl_zigbee_ezsp_status_t sendStatus = sendCommand();
   sli_zigbee_ezsp_set_last_status(sendStatus);
   if (sendStatus == SL_ZIGBEE_EZSP_SUCCESS) {
-    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%x", __func__, sendStatus);
+    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%02X", __func__, sendStatus);
   }
 }
 
@@ -3925,7 +3925,7 @@ void sl_zigbee_ezsp_set_zll_node_type(
   sl_zigbee_ezsp_status_t sendStatus = sendCommand();
   sli_zigbee_ezsp_set_last_status(sendStatus);
   if (sendStatus == SL_ZIGBEE_EZSP_SUCCESS) {
-    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%x", __func__, sendStatus);
+    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%02X", __func__, sendStatus);
   }
 }
 
@@ -3937,7 +3937,7 @@ void sl_zigbee_ezsp_set_zll_additional_state(
   sl_zigbee_ezsp_status_t sendStatus = sendCommand();
   sli_zigbee_ezsp_set_last_status(sendStatus);
   if (sendStatus == SL_ZIGBEE_EZSP_SUCCESS) {
-    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%x", __func__, sendStatus);
+    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%02X", __func__, sendStatus);
   }
 }
 
@@ -3973,7 +3973,7 @@ void sl_zigbee_ezsp_zll_scanning_complete(void)
   sl_zigbee_ezsp_status_t sendStatus = sendCommand();
   sli_zigbee_ezsp_set_last_status(sendStatus);
   if (sendStatus == SL_ZIGBEE_EZSP_SUCCESS) {
-    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%x", __func__, sendStatus);
+    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%02X", __func__, sendStatus);
   }
 }
 
@@ -4011,7 +4011,7 @@ void sl_zigbee_ezsp_set_zll_primary_channel_mask(
   sl_zigbee_ezsp_status_t sendStatus = sendCommand();
   sli_zigbee_ezsp_set_last_status(sendStatus);
   if (sendStatus == SL_ZIGBEE_EZSP_SUCCESS) {
-    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%x", __func__, sendStatus);
+    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%02X", __func__, sendStatus);
   }
 }
 
@@ -4023,7 +4023,7 @@ void sl_zigbee_ezsp_set_zll_secondary_channel_mask(
   sl_zigbee_ezsp_status_t sendStatus = sendCommand();
   sli_zigbee_ezsp_set_last_status(sendStatus);
   if (sendStatus == SL_ZIGBEE_EZSP_SUCCESS) {
-    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%x", __func__, sendStatus);
+    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%02X", __func__, sendStatus);
   }
 }
 
@@ -4033,7 +4033,7 @@ void sl_zigbee_ezsp_zll_clear_tokens(void)
   sl_zigbee_ezsp_status_t sendStatus = sendCommand();
   sli_zigbee_ezsp_set_last_status(sendStatus);
   if (sendStatus == SL_ZIGBEE_EZSP_SUCCESS) {
-    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%x", __func__, sendStatus);
+    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%02X", __func__, sendStatus);
   }
 }
 
@@ -4192,7 +4192,7 @@ void sl_zigbee_ezsp_gp_sink_table_remove_entry(
   sl_zigbee_ezsp_status_t sendStatus = sendCommand();
   sli_zigbee_ezsp_set_last_status(sendStatus);
   if (sendStatus == SL_ZIGBEE_EZSP_SUCCESS) {
-    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%x", __func__, sendStatus);
+    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%02X", __func__, sendStatus);
   }
 }
 
@@ -4217,7 +4217,7 @@ void sl_zigbee_ezsp_gp_sink_table_clear_all(void)
   sl_zigbee_ezsp_status_t sendStatus = sendCommand();
   sli_zigbee_ezsp_set_last_status(sendStatus);
   if (sendStatus == SL_ZIGBEE_EZSP_SUCCESS) {
-    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%x", __func__, sendStatus);
+    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%02X", __func__, sendStatus);
   }
 }
 
@@ -4227,7 +4227,7 @@ void sl_zigbee_ezsp_gp_sink_table_init(void)
   sl_zigbee_ezsp_status_t sendStatus = sendCommand();
   sli_zigbee_ezsp_set_last_status(sendStatus);
   if (sendStatus == SL_ZIGBEE_EZSP_SUCCESS) {
-    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%x", __func__, sendStatus);
+    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%02X", __func__, sendStatus);
   }
 }
 
@@ -4241,7 +4241,7 @@ void sl_zigbee_ezsp_gp_sink_table_set_security_frame_counter(
   sl_zigbee_ezsp_status_t sendStatus = sendCommand();
   sli_zigbee_ezsp_set_last_status(sendStatus);
   if (sendStatus == SL_ZIGBEE_EZSP_SUCCESS) {
-    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%x", __func__, sendStatus);
+    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%02X", __func__, sendStatus);
   }
 }
 
@@ -4272,7 +4272,7 @@ void sl_zigbee_ezsp_gp_translation_table_clear(void)
   sl_zigbee_ezsp_status_t sendStatus = sendCommand();
   sli_zigbee_ezsp_set_last_status(sendStatus);
   if (sendStatus == SL_ZIGBEE_EZSP_SUCCESS) {
-    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%x", __func__, sendStatus);
+    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%02X", __func__, sendStatus);
   }
 }
 
@@ -4367,7 +4367,7 @@ void sl_zigbee_ezsp_reset_node(void)
   sl_zigbee_ezsp_status_t sendStatus = sendCommand();
   sli_zigbee_ezsp_set_last_status(sendStatus);
   if (sendStatus == SL_ZIGBEE_EZSP_SUCCESS) {
-    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%x", __func__, sendStatus);
+    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%02X", __func__, sendStatus);
   }
 }
 
@@ -4394,7 +4394,7 @@ void sl_zigbee_ezsp_token_factory_reset(
   sl_zigbee_ezsp_status_t sendStatus = sendCommand();
   sli_zigbee_ezsp_set_last_status(sendStatus);
   if (sendStatus == SL_ZIGBEE_EZSP_SUCCESS) {
-    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%x", __func__, sendStatus);
+    EZSP_ASH_TRACE("%s(): sendCommand() error: 0x%02X", __func__, sendStatus);
   }
 }
 
@@ -4872,6 +4872,7 @@ static void callbackDispatch(void)
       uint8_t proxyTableIndex;
       uint8_t gpdCommandPayloadLength;
       uint8_t *gpdCommandPayload;
+      sl_zigbee_rx_packet_info_t packetInfo;
       gp_status = fetchInt8u();
       gpdLink = fetchInt8u();
       sequenceNumber = fetchInt8u();
@@ -4886,7 +4887,8 @@ static void callbackDispatch(void)
       proxyTableIndex = fetchInt8u();
       gpdCommandPayloadLength = fetchInt8u();
       gpdCommandPayload = (uint8_t *)fetchInt8uPointer(gpdCommandPayloadLength);
-      sl_zigbee_ezsp_gpep_incoming_message_handler(gp_status, gpdLink, sequenceNumber, &addr, gpdfSecurityLevel, gpdfSecurityKeyType, autoCommissioning, bidirectionalInfo, gpdSecurityFrameCounter, gpdCommandId, mic, proxyTableIndex, gpdCommandPayloadLength, gpdCommandPayload);
+      fetch_sl_zigbee_rx_packet_info_t(&packetInfo);
+      sl_zigbee_ezsp_gpep_incoming_message_handler(gp_status, gpdLink, sequenceNumber, &addr, gpdfSecurityLevel, gpdfSecurityKeyType, autoCommissioning, bidirectionalInfo, gpdSecurityFrameCounter, gpdCommandId, mic, proxyTableIndex, gpdCommandPayloadLength, gpdCommandPayload, &packetInfo);
       break;
     }
 

@@ -34,6 +34,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <stdint.h>
+#include <inttypes.h>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -295,7 +296,7 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
   switch (SL_BT_MSG_ID(evt->header)) {
     case sl_bt_evt_system_boot_id:
       // Extract unique ID from BT Address.
-      sc = sl_bt_system_get_identity_address(&address, &address_type);
+      sc = sl_bt_gap_get_identity_address(&address, &address_type);
       app_assert_status(sc);
       app_log_info("Bluetooth %s address: %02X:%02X:%02X:%02X:%02X:%02X" APP_LOG_NL,
                    address_type ? "static random" : "public device",
@@ -433,7 +434,7 @@ static sl_status_t write_log_entry(float time, throughput_value_t throughput)
         ret_val = SL_STATUS_NOT_INITIALIZED;
       }
     }
-    ret = snprintf(line, MAX_LOG_LINE_LEN, "%llu, %f, %u\n",
+    ret = snprintf(line, MAX_LOG_LINE_LEN, "%" PRIu64 ", %f, %u\n",
                    line_id, time, throughput);
     if (ret > 0) {
       ret = write(logfile_descriptor, line, ret);

@@ -35,6 +35,7 @@
 #ifndef _ALARM_H
 #define _ALARM_H
 
+#include <stdbool.h>
 #include <stdint.h>
 #include "openthread/instance.h"
 
@@ -47,11 +48,8 @@
 
 /**
  * This function determines whether the device should sleep after an alarm triggers.
- *
- * @param[in]  aInstance  The OpenThread instance structure.
- *
  */
-sl_power_manager_on_isr_exit_t efr32AlarmSleepOnISRExit(void);
+bool efr32AlarmIsReady(void);
 
 #endif // SL_CATALOG_POWER_MANAGER_PRESENT
 

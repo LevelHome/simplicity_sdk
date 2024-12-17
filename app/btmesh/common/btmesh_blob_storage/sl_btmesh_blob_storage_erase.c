@@ -44,7 +44,7 @@
 #include "app_btmesh_util.h"
 
 struct {
-  struct app_timer timer; ///< Timer to separate two erase steps (chunk)
+  app_timer_t timer; ///< Timer to separate two erase steps (chunk)
   BootloaderEraseStatus_t status; ///< Erase status for chunked erase
   uint32_t slot_id; ///< Currently erasing slot's identifier
   int32_t error_code; ///< Bootloader error code

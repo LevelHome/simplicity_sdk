@@ -31,3 +31,15 @@ upgrade:
       - script: protocol/openthread/component/script/upgrade_multipan_configs.lua
         description: >
           Enable OpenThread multiple static instance configuration options for MultiPAN application.
+
+  - sdk:
+      id: simplicity_sdk
+      version: "2024.12.0"
+    component:
+      - script: protocol/openthread/component/script/upgrade_uart_intf_instances.lua
+        description: >
+          Support for uartdrv instances in thread projects has been deprecated.
+          Replacing uartdrv instances with iostream instances.
+      - script: protocol/openthread/component/script/upgrade_diag_config.lua
+        description: >
+          Diagnostic configuration support has been moved to ot_diags component.

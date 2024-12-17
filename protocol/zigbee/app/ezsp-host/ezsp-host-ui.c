@@ -29,13 +29,7 @@
 #include <stdlib.h>
 #include "stack/include/sl_zigbee_types.h"
 #include "app/util/ezsp/ezsp-protocol.h"
-// TODO: try to remove once EMZIGBEE-11229 is complete
-#ifndef UC_BUILD
-#include "hal/micro/generic/em2xx-reset-defs.h"
-#include "hal/micro/system-timer.h"
-#else
 #include "hal.h"
-#endif
 #include "app/util/ezsp/ezsp-enum-decode.h"
 #include "app/ezsp-host/ezsp-host-common.h"
 #include "app/ezsp-host/ezsp-host-priv.h"

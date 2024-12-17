@@ -91,23 +91,23 @@
   - override:
       component: iostream_eusart
       file_id: iostream_eusart_config
-      instance: vcom
-    path: brd2710a/sl_iostream_eusart_vcom_config.h
-  - override:
-      component: iostream_eusart
-      file_id: iostream_eusart_config
       instance: mikroe
     path: brd2710a/sl_iostream_eusart_mikroe_config.h
   - override:
-      component: iostream_usart
-      file_id: iostream_usart_config
+      component: iostream_eusart
+      file_id: iostream_eusart_config
       instance: vcom
-    path: brd2710a/sl_iostream_usart_vcom_config.h
+    path: brd2710a/sl_iostream_eusart_vcom_config.h
   - override:
       component: iostream_usart
       file_id: iostream_usart_config
       instance: mikroe
     path: brd2710a/sl_iostream_usart_mikroe_config.h
+  - override:
+      component: iostream_usart
+      file_id: iostream_usart_config
+      instance: vcom
+    path: brd2710a/sl_iostream_usart_vcom_config.h
   - override:
       component: iot_flash
       file_id: iot_flash_cfg
@@ -123,6 +123,11 @@
       file_id: iot_i2c_cfg
       instance: mikroe
     path: brd2710a/iot_i2c_cfg_mikroe.h
+  - override:
+      component: iot_pwm
+      file_id: iot_pwm_cfg
+      instance: led0
+    path: brd2710a/iot_pwm_cfg_led0.h
   - override:
       component: iot_pwm
       file_id: iot_pwm_cfg
@@ -148,6 +153,11 @@
       file_id: iot_uart_cfg
       instance: loopback
     path: brd2710a/iot_uart_cfg_loopback.h
+  - override:
+      component: pwm
+      file_id: pwm_config
+      instance: led0
+    path: brd2710a/sl_pwm_init_led0_config.h
   - override:
       component: pwm
       file_id: pwm_config
@@ -184,30 +194,20 @@
   - override:
       component: uartdrv_eusart
       file_id: uartdrv_eusart_config
-      instance: vcom
-    path: brd2710a/sl_uartdrv_eusart_vcom_config.h
-  - override:
-      component: uartdrv_eusart
-      file_id: uartdrv_eusart_config
       instance: mikroe
     path: brd2710a/sl_uartdrv_eusart_mikroe_config.h
   - override:
-      component: uartdrv_usart
-      file_id: uartdrv_usart_config
+      component: uartdrv_eusart
+      file_id: uartdrv_eusart_config
       instance: vcom
-    path: brd2710a/sl_uartdrv_usart_vcom_config.h
+    path: brd2710a/sl_uartdrv_eusart_vcom_config.h
   - override:
       component: uartdrv_usart
       file_id: uartdrv_usart_config
       instance: mikroe
     path: brd2710a/sl_uartdrv_usart_mikroe_config.h
   - override:
-      component: iot_pwm
-      file_id: iot_pwm_cfg
-      instance: led0
-    path: brd2710a/iot_pwm_cfg_led0.h
-  - override:
-      component: pwm
-      file_id: pwm_config
-      instance: led0
-    path: brd2710a/sl_pwm_init_led0_config.h
+      component: uartdrv_usart
+      file_id: uartdrv_usart_config
+      instance: vcom
+    path: brd2710a/sl_uartdrv_usart_vcom_config.h

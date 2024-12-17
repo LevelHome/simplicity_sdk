@@ -1,5 +1,5 @@
 /***************************************************************************//**
- * @file
+ * @file app_custom_callback.c
  * @brief Application custom callback implementations
  *******************************************************************************
  * # License
@@ -33,6 +33,7 @@
 // -----------------------------------------------------------------------------
 #include <stdio.h>
 #include <assert.h>
+
 #include "sl_component_catalog.h"
 #include "sl_status.h"
 #include "sl_wisun_types.h"
@@ -46,7 +47,6 @@
 #include "sl_display.h"
 #include "sl_gui.h"
 #endif
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -96,7 +96,7 @@ void app_custom_socket_data_sent_callback(sl_wisun_evt_t *evt)
 void app_custom_join_state_callback(sl_wisun_evt_t *evt)
 {
 #if defined(SL_CATALOG_GUI_PRESENT)
-  static char nw_name[MAX_SIZE_OF_NETWORK_NAME] = { 0 };
+  static char nw_name[APP_SETTING_NETWORK_NAME_MAX_SIZE] = { 0 };
   static char join_state_str[20U] = { 0 };
   static sl_wisun_nwm_logo_form_args_t args = { 0 };
   sl_status_t stat = SL_STATUS_FAIL;
@@ -107,9 +107,9 @@ void app_custom_join_state_callback(sl_wisun_evt_t *evt)
   args.network_name = nw_name;
 
   if (evt->evt.join_state.join_state == SL_WISUN_JOIN_STATE_SELECT_PAN) {
-    stat = app_wisun_setting_get_network_name(nw_name, MAX_SIZE_OF_NETWORK_NAME);
+    stat = app_wisun_setting_get_network_name(nw_name, APP_SETTING_NETWORK_NAME_MAX_SIZE);
     if (stat != SL_STATUS_OK) {
-      snprintf(nw_name, MAX_SIZE_OF_NETWORK_NAME, "Unknown Network");
+      snprintf(nw_name, APP_SETTING_NETWORK_NAME_MAX_SIZE, "Unknown Network");
     }
   }
 

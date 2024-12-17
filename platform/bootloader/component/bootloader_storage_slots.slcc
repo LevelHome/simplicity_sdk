@@ -15,3 +15,6 @@ config_file:
     file_id: btl_storage_slot_cfg
 validation_helper:
   - path: platform/bootloader/component/scripts/bootloader_storage_validation.lua
+metadata:
+  sbom:
+    license: MSLA

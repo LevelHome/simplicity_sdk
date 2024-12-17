@@ -25,7 +25,7 @@ include:
   - path: ""
     file_list:
       - path: "sl_btmesh_sensor_server.h"
-      - path: "sl_btmesh_sensor_server_cadence.h"
+      - path: "sli_btmesh_sensor_server_cadence.h"
 config_file:
   - path: "config/sl_btmesh_sensor_server_config.h"
     file_id: "btmesh_sensor_server_config"
@@ -40,10 +40,12 @@ requires:
   - name: "app_assert"
   - name: "app_btmesh_util"
   - name: "btmesh_role_init"
+  - name: "app_btmesh_rta"
   - name: "btmesh_stack_node"
   - name: "btmesh_stack_sensor_server"
   - name: "btmesh_stack_sensor_setup_server"
   - name: "component_catalog"
+  - name: "sl_common"
   - name: "app_timer"
 recommends:
   - id: "btmesh_provisionee"

@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief Wi-SUN Application Core Component
+ * @file sl_wisun_app_core.h
+ * @brief Wi-SUN Application Core
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __SL_WISUN_APP_CORE_H__
-#define __SL_WISUN_APP_CORE_H__
+#ifndef SL_WISUN_APP_CORE_H
+#define SL_WISUN_APP_CORE_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,7 +40,7 @@ extern "C" {
 // -----------------------------------------------------------------------------
 
 /**************************************************************************//**
- * @addtogroup SL_WISUN_APP_CORE_API Application Core
+ * @addtogroup SL_WISUN_APP_CORE_API
  * @{
  *****************************************************************************/
 
@@ -49,8 +49,9 @@ extern "C" {
 #include "socket/socket.h"
 #include "sl_wisun_event_mgr.h"
 #include "sl_component_catalog.h"
+
 #if defined(SL_CATALOG_WISUN_LFN_DEVICE_SUPPORT_PRESENT)
-  #include "sl_wisun_lfn_params_api.h"
+#include "sl_wisun_lfn_params_api.h"
 #endif
 
 // -----------------------------------------------------------------------------
@@ -58,7 +59,7 @@ extern "C" {
 // -----------------------------------------------------------------------------
 
 /**************************************************************************//**
- * @addtogroup SL_WISUN_APP_CORE_API_TYPES Application Core API type definitions
+ * @addtogroup SL_WISUN_APP_CORE_API_TYPES Type definitions
  * @ingroup SL_WISUN_APP_CORE_API
  * @{
  *****************************************************************************/
@@ -246,7 +247,6 @@ sl_wisun_join_state_t sl_wisun_app_core_get_join_state(void);
 void sl_wisun_app_core_get_time_stat(sl_wisun_app_core_time_stat_t * const tstat);
 
 #if defined(SL_CATALOG_WISUN_LFN_DEVICE_SUPPORT_PRESENT)
-
 /**************************************************************************//**
  * @brief Get Wi-SUN device type
  * @details Getter to get device type.
@@ -276,4 +276,5 @@ const sl_wisun_lfn_params_t *sl_wisun_app_core_get_lfn_params(void);
 #ifdef __cplusplus
 }
 #endif
-#endif
+
+#endif // SL_WISUN_APP_CORE_H

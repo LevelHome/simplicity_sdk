@@ -33,6 +33,7 @@ requires:
   - name: iostream_retarget_stdio
   - name: iostream_stdlib_config
   - name: component_catalog
+  - name: sl_common
 template_contribution:
   - name: component_catalog
     value: app_log

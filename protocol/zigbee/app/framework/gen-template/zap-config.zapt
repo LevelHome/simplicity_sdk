@@ -305,5 +305,15 @@
 #define SL_ZIGBEE_AF_SUPPORT_COMMAND_DISCOVERY
 {{/if_command_discovery_enabled}}
 
+{{#if_multi_protocol_attributes_enabled}}
+/* Format: Zigbee Cluster Code, Zigbee Cluster Mfg Code, Matter Cluster Code, Matter Cluster Mfg Code, Zigbee Attribute Code, Zigbee Attribute Mfg Code, Zigbee Attribute Type Identifier, Matter Attribute Code, Matter Attribute Mfg Code, Matter Attribute Type Identifier */
+#define GENERATED_MULTI_PROTOCOL_ATTRIBUTE_MAPPING \
+{ \
+  {{#all_multi_protocol_attributes}}
+  { {{as_hex clusterCode1 4}}, {{as_hex clusterMfgCode1 4}}, {{as_hex clusterCode2 4}}, {{as_hex clusterMfgCode2 4}}, {{as_hex attributeCode1 4}}, {{as_hex attributeMfgCode1 4}}, {{as_underlying_atomic_identifier_for_attribute_id attributeRef1}}, {{as_hex attributeCode2 4}}, {{as_hex attributeMfgCode2 4}}, {{as_underlying_atomic_identifier_for_attribute_id attributeRef2}} }{{#not_last}},{{/not_last}} /* {{index}}, Zigbee Cluster: {{clusterName1}}, Matter Cluster: {{clusterName2}}, Zigbee Attribute: {{attributeName1}}, Matter Attribute: {{attributeName2}} */ \
+  {{/all_multi_protocol_attributes}}
+}
+{{/if_multi_protocol_attributes_enabled}}
+
 
 #endif // SILABS_AF_ENDPOINT_CONFIG

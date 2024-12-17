@@ -1,6 +1,6 @@
 id: "connect_cmsis_stack_ipc"
 label: "CMSIS Stack IPC"
-package: "Flex"
+package: "Connect"
 category: "Connect"
 quality: "production"
 description: "Provides an IPC for the Connect stack APIs. If this component is enabled, the stack will be running with CMSIS with the chosen RTOS implementation as a task and the application framework will run as a separate task. APIs are invoked at the application framework using an IPC, similarly stack callbacks are communicated to the application framework task using an IPC. The application can also define up to 3 custom tasks."

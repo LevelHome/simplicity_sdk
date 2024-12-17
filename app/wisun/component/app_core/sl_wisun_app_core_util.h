@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief Wi-SUN Application Core utility functions
+ * @file sl_wisun_app_core_util.h
+ * @brief Wi-SUN Application Core utility
  *******************************************************************************
  * # License
  * <b>Copyright 2020 Silicon Laboratories Inc. www.silabs.com</b>
@@ -37,7 +37,6 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <stdint.h>
 #include <stdlib.h>
 #include "sl_wisun_types.h"
@@ -47,7 +46,6 @@ extern "C" {
 #include "sl_wisun_config.h"
 #include "sl_wisun_app_core_config.h"
 #include "app_project_info.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -101,7 +99,7 @@ void sl_wisun_app_core_util_project_info_init(const char * app_name);
 void sl_wisun_app_core_util_project_info_print(const bool json_format);
 
 /**************************************************************************//**
- * @brief Get Wi-SUN Project info
+ * @brief Get Wi-SUN Project info.
  * @details Get a constant instance of internal Wi-SUN project info
  * @return app_project_info_t * Project info
  *****************************************************************************/
@@ -132,7 +130,7 @@ void sl_wisun_app_core_util_connect_and_wait(void);
 bool sl_wisun_app_core_util_network_is_connected(void);
 
 /**************************************************************************//**
- * @brief Thread dispatch function
+ * @brief Thread dispatch function.
  * @details For low power LFN mode, the delay value is 'SL_WISUN_APP_CORE_THREAD_LP_DISPATCH_MS',
  *          for FFN mode, the delay is 1ms
  *****************************************************************************/
@@ -144,4 +142,4 @@ void sl_wisun_app_core_util_dispatch_thread(void);
 }
 #endif
 
-#endif  // SL_WISUN_APP_UTIL_H
+#endif // SL_WISUN_APP_CORE_UTIL_H

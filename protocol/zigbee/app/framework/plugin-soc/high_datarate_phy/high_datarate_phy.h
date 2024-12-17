@@ -95,7 +95,7 @@ void sl_high_datarate_phy_config_csma_params(RAIL_CsmaConfig_t *csma_params);
  * @param[in]  Pointer to csma params used on high datarate phy packets
  *
  */
-void sl_high_datarate_phy_config_radio_priorities(sl_zigbee_multiprotocol_priorities_t *priorities);
+void sl_high_datarate_phy_config_radio_priorities(sl_802154_radio_priorities_t *priorities);
 
 /**
  * Default receive callback function for High-BW-phy packets

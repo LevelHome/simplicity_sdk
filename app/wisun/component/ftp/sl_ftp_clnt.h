@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief File Transfer Portocol Client header file
+ * @file sl_ftp_clnt.h
+ * @brief File Transfer Protocol Client
  *******************************************************************************
  * # License
  * <b>Copyright 2023 Silicon Laboratories Inc. www.silabs.com</b>
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __SL_FTP_CLIENT_H__
-#define __SL_FTP_CLIENT_H__
+#ifndef SL_FTP_CLNT_H
+#define SL_FTP_CLNT_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,14 +38,12 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <stdint.h>
 #include <stddef.h>
 
 #include "sl_status.h"
 #include "sl_ftp.h"
 #include "sl_ftp_config.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -511,9 +509,10 @@ sl_status_t sl_ftp_clnt_put(sl_ftp_clnt_t * const clnt,
 sl_status_t sl_ftp_clnt_delete_file(sl_ftp_clnt_t * const clnt,
                                     const char *file);
 
-#endif
+#endif // SL_FTP_ENABLE_FTP_PROTOCOL
 
 #ifdef __cplusplus
 }
 #endif
-#endif
+
+#endif // SL_FTP_CLNT_H

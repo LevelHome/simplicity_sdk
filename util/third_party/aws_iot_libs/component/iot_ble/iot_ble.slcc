@@ -6,7 +6,7 @@ category: Third Party|Amazon FreeRTOS - AWS Libraries|Bluetooth Low Energy
 quality: experimental
 metadata:
   sbom:
-    license: MSLA AND MIT
+    license: Zlib AND MIT
     upstream:
       name: amazon-freertos
       version: v202107.00

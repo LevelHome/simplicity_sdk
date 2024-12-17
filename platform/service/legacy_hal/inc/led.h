@@ -84,27 +84,6 @@ typedef enum HalBoardLedPins HalBoardLed;
 //  affect stack-based parameters and local variables, which is the
 //  general case for led paramters.
 
-/** @brief Atomically wraps an XOR or similar operation for a single GPIO
- *  pin attached to an LED.
- *
- *  @param led  Identifier (from BOARD_HEADER) for the LED to be toggled.
- */
-void halToggleLed(HalBoardLed led);
-
-/** @brief Turns on (sets) a GPIO pin connected to an LED so that the LED
- *  turns on.
- *
- *  @param led  Identifier (from BOARD_HEADER) for the LED to turn on.
- */
-void halSetLed(HalBoardLed led);
-
-/** @brief Turns off (clears) a GPIO pin connected to an LED, which turns
- *  off the LED.
- *
- *  @param led  Identifier (from BOARD_HEADER) for the LED to turn off.
- */
-void halClearLed(HalBoardLed led);
-
 /** @brief Called by the stack to indicate activity over the radio (for
  *  both transmission and reception). It is called once with \c turnOn true and
  *  shortly thereafter with \c turnOn false.

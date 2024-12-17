@@ -43,7 +43,7 @@
 
 #include "em_device.h"
 #include "em_cmu.h"
-#include "em_gpio.h"
+#include "sl_device_gpio.h"
 #include "em_usart.h"
 
 /*******************************************************************************
@@ -93,21 +93,13 @@ typedef struct IotUARTDescriptor {
   uint8_t                     ucRtsEn;
   uint8_t                     ucCtsEn;
 
-  /* ports */
-  GPIO_Port_TypeDef           xTxPort;
-  GPIO_Port_TypeDef           xRxPort;
-  GPIO_Port_TypeDef           xClkPort;
-  GPIO_Port_TypeDef           xCsPort;
-  GPIO_Port_TypeDef           xRtsPort;
-  GPIO_Port_TypeDef           xCtsPort;
-
-  /* pins */
-  uint8_t                     ucTxPin;
-  uint8_t                     ucRxPin;
-  uint8_t                     ucClkPin;
-  uint8_t                     ucCsPin;
-  uint8_t                     ucRtsPin;
-  uint8_t                     ucCtsPin;
+  /* GPIO structures */
+  sl_gpio_t                   txGpio;
+  sl_gpio_t                   rxGpio;
+  sl_gpio_t                   clkGpio;
+  sl_gpio_t                   csGpio;
+  sl_gpio_t                   rtsGpio;
+  sl_gpio_t                   ctsGpio;
 
   /* locations */
 #if (_SILICON_LABS_32B_SERIES < 2)

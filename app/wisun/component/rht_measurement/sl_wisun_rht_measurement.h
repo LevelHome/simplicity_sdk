@@ -1,6 +1,6 @@
 /***************************************************************************//**
  * @file sl_wisun_rht_measurement.h
- * @brief Wi-SUN temperature and relative humidity measurement modul
+ * @brief Wi-SUN temperature and relative humidity measurement module
  *******************************************************************************
  * # License
  * <b>Copyright 2019 Silicon Laboratories Inc. www.silabs.com</b>
@@ -27,8 +27,9 @@
  * 3. This notice may not be removed or altered from any source distribution.
  *
  ******************************************************************************/
-#ifndef __SL_WISUN_RHT_MEASUREMENT__
-#define __SL_WISUN_RHT_MEASUREMENT__
+
+#ifndef SL_WISUN_RHT_MEASUREMENT_H
+#define SL_WISUN_RHT_MEASUREMENT_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,10 +38,8 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <inttypes.h>
 #include <sl_status.h>
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -70,7 +69,7 @@ void sl_wisun_rht_deinit(void);
  * @details Used sl_i2cspm_instances
  * @param[out] rh Relative Humidity in [% * 1000]
  * @param[out] t Temperature in [milliCelsius degree]
- * @return sl_status_t Status valueSL_STATUS_OK Success
+ * @return sl_status_t Status value SL_STATUS_OK Success
  *         or SL_STATUS_TRANSMIT I2C on error
  *****************************************************************************/
 sl_status_t sl_wisun_rht_get(uint32_t *rh, int32_t *t);
@@ -79,4 +78,4 @@ sl_status_t sl_wisun_rht_get(uint32_t *rh, int32_t *t);
 }
 #endif
 
-#endif
+#endif // SL_WISUN_RHT_MEASUREMENT_H

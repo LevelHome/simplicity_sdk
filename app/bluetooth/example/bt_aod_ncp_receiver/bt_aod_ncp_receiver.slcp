@@ -43,7 +43,8 @@ component:
   - id: sl_system
   - id: clock_manager
   - id: device_init
-  - id: bt_post_build
+  - id: sl_common
+  - id: app_assert
 
 source:
   - path: main.c
@@ -69,6 +70,10 @@ configuration:
     value: "0"
     condition:
       - psa_crypto
+
+post_build:
+  - profile: bt_common
+    condition: [device_series_2, bootloader_app_properties]
 
 tag:
   - prebuilt_demo

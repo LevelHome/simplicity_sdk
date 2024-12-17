@@ -284,7 +284,7 @@ void sli_zigbee_af_gas_proxy_function_cli_simulate_gbz_msg_creation(sl_cli_comma
 void sli_zigbee_af_gas_proxy_function_cli_simulate_future_dated_msg(sl_cli_command_arg_t *arguments)
 {
   uint32_t futureTime = sl_zigbee_af_get_current_time() + 20000;
-  sl_zigbee_af_gas_proxy_function_println("GPF: Future Time: 0x%4x", futureTime);
+  sl_zigbee_af_gas_proxy_function_println("GPF: Future Time: 0x%08X", futureTime);
 
   // Command
   uint8_t gbzCommand[] = { 0x01, 0x09, // profile id
@@ -340,13 +340,13 @@ void sli_zigbee_af_gas_proxy_function_cli_simulate_gbz_msg(sl_cli_command_arg_t 
 
   uint16_t index = findUseCaseDescription(messageCode);
   if (index >= GBCS_NUM_USE_CASES) {
-    sl_zigbee_af_gas_proxy_function_println("GPF: Unsupported message code: 0x%2x", messageCode);
+    sl_zigbee_af_gas_proxy_function_println("GPF: Unsupported message code: 0x%04X", messageCode);
     sli_zigbee_af_gas_proxy_function_cli_print_supported_use_cases(arguments);
     return;
   }
 
-  sl_zigbee_af_gas_proxy_function_println("GPF: GBCS Use Case: %p", useCaseDescriptions[index].description);
-  sl_zigbee_af_gas_proxy_function_println("GPF: Current Time: 0x%4x", currentTime);
+  sl_zigbee_af_gas_proxy_function_println("GPF: GBCS Use Case: %s", useCaseDescriptions[index].description);
+  sl_zigbee_af_gas_proxy_function_println("GPF: Current Time: 0x%08X", currentTime);
 
   if (messageCode == GCS23_MESSAGE_CODE) {
     // Command
@@ -2351,7 +2351,7 @@ void sli_zigbee_af_gas_proxy_function_cli_print_supported_use_cases(sl_cli_comma
 
   sl_zigbee_af_gas_proxy_function_println("GPF: Supported Use Cases");
   for (index = 0; index < GBCS_NUM_USE_CASES; index++) {
-    sl_zigbee_af_gas_proxy_function_println("GPF: Message Code: 0x%2x, GBCS Use Case: %p",
+    sl_zigbee_af_gas_proxy_function_println("GPF: Message Code: 0x%04X, GBCS Use Case: %s",
                                             useCaseDescriptions[index].messageCode,
                                             useCaseDescriptions[index].description);
   }

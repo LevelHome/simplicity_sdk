@@ -1,0 +1,34 @@
+id: "bluetooth_feature_cis"
+label: Bluetooth Feature CIS CIG
+package: Bluetooth
+description: >
+  Provide CIS and CIG feature
+
+category: Bluetooth|Bluetooth LE Controller (Link Layer)|Features with Commands and Events
+quality: experimental
+root_path: protocol/bluetooth/bgstack/ll
+include:
+  - path: inc
+    file_list:
+      - path: sl_btctrl_hci.h
+      - path: sl_btctrl_iso.h
+provides:
+  - name: "bluetooth_feature_cis"
+requires:
+  - name: bluetooth_hci
+  - name: bluetooth_controller
+template_contribution:
+  - name: event_handler
+    value:
+      event: internal_app_init
+      include: sl_btctrl_hci.h
+      handler: sl_btctrl_hci_parser_init_iso
+    priority: 20
+  - name: bluetooth_controller_init
+    value:
+      include: "sl_btctrl_iso.h"
+      function: sl_btctrl_init_cis()
+    priority: 20
+metadata:
+  sbom:
+    license: MSLA

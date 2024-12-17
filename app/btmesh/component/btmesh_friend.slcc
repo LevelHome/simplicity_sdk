@@ -34,6 +34,7 @@ requires:
   - name: "app_btmesh_util"
   - name: "btmesh_stack_friend"
   - name: "btmesh_stack_node"
+  - name: "sl_common"
   
 template_contribution:
   - name: "btmesh_on_event"

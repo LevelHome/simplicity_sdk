@@ -30,7 +30,7 @@ class ModelProfileMissingVariable(Exception):
 
 class ModelProfile(object):
 
-    def __init__(self, name, category, desc, default=False, readable_name=None, act_logic=''):
+    def __init__(self, name, category, desc, default=False, readable_name=None, act_logic='', skip_target_calc=None):
         self.name = name
         if readable_name is None:
             self.readable_name = name
@@ -45,6 +45,7 @@ class ModelProfile(object):
         self.outputs = ModelOutputContainer()
         self.default_phys = default_phy.ModelDefaultPhyContainer()
         self.zz_eval_act_logic = None
+        self.skip_target_calculation = skip_target_calc
 
     @property
     def name(self):

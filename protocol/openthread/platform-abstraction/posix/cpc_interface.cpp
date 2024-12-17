@@ -49,6 +49,8 @@
 #include <unistd.h>
 
 #include "common/code_utils.hpp"
+#include "common/debug.hpp"
+#include "common/encoding.hpp"
 #include "common/logging.hpp"
 #include "common/new.hpp"
 #include "lib/spinel/spinel.h"
@@ -161,8 +163,8 @@ void CpcInterfaceImpl::Read(uint64_t aTimeoutUs)
     {
         cpc_timeval_t timeout;
 
-        timeout.seconds      = static_cast<int>(aTimeoutUs / US_PER_S);
-        timeout.microseconds = static_cast<int>(aTimeoutUs % US_PER_S);
+        timeout.seconds      = static_cast<int>(aTimeoutUs / OT_US_PER_S);
+        timeout.microseconds = static_cast<int>(aTimeoutUs % OT_US_PER_S);
 
         block = true;
         ret   = cpc_set_endpoint_option(mEndpoint, CPC_OPTION_BLOCKING, &block, sizeof(block));

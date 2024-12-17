@@ -14,8 +14,12 @@ metadata:
     license: Zlib
 root_path: hardware/driver/memlcd
 config_file:
-  - path: config/memlcd_eusart/sl_memlcd_eusart_config.h
+  - path: config/memlcd_eusart/s2/sl_memlcd_eusart_config.h
     file_id: sl_memlcd_eusart_config
+    condition: [device_series_2]
+  - path: config/memlcd_eusart/s3/sl_memlcd_eusart_config.h
+    file_id: sl_memlcd_eusart_config
+    condition: [device_series_3]
 include:
   - path: inc
     file_list:
@@ -31,9 +35,9 @@ requires:
   - name: sleeptimer
   - name: udelay
   - name: status
-  - name: emlib_eusart
+  - name: hal_generic_eusart
   - name: clock_manager_runtime
-  - name: emlib_gpio
+  - name: gpio
   - name: memlcd_screen
 provides:
   - name: memlcd_eusart

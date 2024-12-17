@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2022 Silicon Laboratories Inc. www.silabs.com
+# Copyright 2024 Silicon Laboratories Inc. www.silabs.com
 #
 # SPDX-License-Identifier: Zlib
 #
@@ -22,24 +22,25 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
-'''Authority certificate generator.
+'''Certificate Authority generator
 
-Create an EC key pair and a certificate for either the Central or an 
-Intermediate Authority of the given level.
+Create an EC key pair and a certificate for either the Central or an Intermediate Authority of the given level.
 
 Prerequisites:
-Cryptography, jinja2 modules installed.
-Higher level (n-1) certificate must be present. (Except for root certificate generation.)
+Python 3.
+Python packages contained in `requirements.txt`.
+  Run `pip install -r requirements.txt` to install all requirements for the application.
+For intermediate CA creation, the higher level (n-1) CA must be present. (Except for root CA generation.)
 
 Note:
-This script overwrites the existing private key and certificate that belongs to 
-the given level.
+This script overwrites the existing private key and certificate that belongs to the given level.
 '''
 # Metadata
 __author__ = 'Silicon Laboratories, Inc'
-__copyright__ = 'Copyright 2022, Silicon Laboratories, Inc.'
+__copyright__ = 'Copyright 2024, Silicon Laboratories, Inc.'
 
-import os, pathlib
+import os
+import pathlib
 import stat
 import datetime
 import argparse
@@ -48,15 +49,16 @@ from cryptography import x509
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives import serialization
 from jinja2 import FileSystemLoader, Environment
+from production_line_tool import generate_serial_number, add_certificate_to_database
 
 def main(level,
          validity,
          subj_country,
+         subj_state,
+         subj_locality,
          subj_organization,
          subj_organizational_unit,
-         subj_state,
          subj_common_name,
-         subj_locality,
          subj_email_address,
          subj_policy_oid):
 
@@ -66,20 +68,6 @@ def main(level,
     if validity < 1:
         raise Exception('Valid period must be greater than or equal to one day!')
 
-    # For intermediate certificate creation, check the existance of the higher certificate.
-    if level > 0:
-        if level == 1:
-            prev_name = 'central'
-        else:
-            prev_name = 'intermediate_' + str(level - 1)
-
-        path_prev_dir = os.path.join(os.path.abspath(os.path.join((__file__), '..')), prev_name + '_authority')
-        path_prev_key = os.path.join(path_prev_dir, 'private_key.pem')
-        path_prev_cert = os.path.join(path_prev_dir, 'certificate.pem')
-
-        if not os.path.exists(path_prev_key) or not os.path.exists(path_prev_cert):
-            raise FileNotFoundError(prev_name + ' authority cannot be found at ' + path_prev_dir)
-    
     # Paths
     if level == 0:
         name = 'central'
@@ -91,6 +79,26 @@ def main(level,
     path_cert = os.path.join(path_dir, 'certificate.pem')
     path_template = os.path.join(os.path.abspath(os.path.join((__file__), '..')), 'sl_bt_cbap_root_cert.h.jinja')
 
+    if level == 0:
+        path_database = os.path.join(path_dir, 'issued_certificates.yaml')
+        if os.path.exists(path_database):
+            print(path_database + ' already exists. Removing.')
+            os.remove(path_database)
+    else:
+        # For intermediate certificate creation, check the existence of the higher certificate.
+        if level == 1:
+            prev_name = 'central'
+        else:
+            prev_name = 'intermediate_' + str(level - 1)
+
+        path_prev_dir = os.path.join(os.path.abspath(os.path.join((__file__), '..')), prev_name + '_authority')
+        path_prev_key = os.path.join(path_prev_dir, 'private_key.pem')
+        path_prev_cert = os.path.join(path_prev_dir, 'certificate.pem')
+        path_database = os.path.join(path_prev_dir, 'issued_certificates.yaml')
+
+        if not os.path.exists(path_prev_key) or not os.path.exists(path_prev_cert):
+            raise FileNotFoundError(prev_name + ' authority cannot be found at ' + path_prev_dir)
+
     # Create directory
     if not os.path.exists(path_dir):
         os.makedirs(path_dir)
@@ -99,7 +107,7 @@ def main(level,
     if os.path.exists(path_key):
         print(path_key + ' already exists. Removing.')
         os.remove(path_key)
-    
+
     if os.path.exists(path_cert):
         print(path_cert + ' already exists. Removing.')
         os.remove(path_cert)
@@ -114,7 +122,7 @@ def main(level,
             serialization.PrivateFormat.TraditionalOpenSSL,
             encryption_algorithm=serialization.NoEncryption()
         ))
-    
+
     # Change file permissions
     os.chmod(path_key, stat.S_IREAD + stat.S_IWRITE)
     print(name + ' authority EC private key created.')
@@ -132,24 +140,37 @@ def main(level,
 
     if level == 0:
         # Create root certificate. Self-signing.
-        cert = create_certificate(key.public_key(), key, subjects, subjects, validity, subj_policy_oid)
+        cert = create_certificate(key.public_key(),
+                                  subjects,
+                                  validity,
+                                  subj_policy_oid,
+                                  key,
+                                  subjects,
+                                  path_database)
     else:
         # Create intermediate certificate.
         # Retrieve the private key and the certificate of the higher authority.
         with open(path_prev_key, 'rb') as f:
             root_key = serialization.load_pem_private_key(f.read(), password=None)
-        
+
         with open(path_prev_cert, 'rb') as f:
             root_cert = x509.load_pem_x509_certificate(f.read())
-        
+
         # Check the validity of the higher authority.
         # Note: if there is a revocation list, it should be also checked if the certificate is revoked or not.
-        if datetime.datetime.utcnow() < root_cert.not_valid_before or root_cert.not_valid_after < datetime.datetime.utcnow():
+        now = datetime.datetime.now(datetime.UTC)
+        if now < root_cert.not_valid_before_utc or root_cert.not_valid_after_utc < now:
             raise Exception('The validity period of ' + path_prev_cert + ' has expired.')
 
         # Sign with the key of the higher authority.
-        cert = create_certificate(key.public_key(), root_key, subjects, root_cert.issuer, validity, subj_policy_oid)
-    
+        cert = create_certificate(key.public_key(),
+                                  subjects,
+                                  validity,
+                                  subj_policy_oid,
+                                  root_key,
+                                  root_cert.subject,
+                                  path_database)
+
     # Write the certificate to file in PEM format.
     with open(path_cert, 'wb') as f:
         f.write(cert.public_bytes(serialization.Encoding.PEM))
@@ -157,54 +178,47 @@ def main(level,
     convert_header(path_cert, path_template) # Create header for SoC example
     print(name + ' authority certificate created.')
 
-def create_certificate(public_key, signing_key, subjects, issuer, validity, policy_oid):
+def create_certificate(public_key, subjects, validity, policy_oid, signing_key, issuer, path_database):
     ''' Create an x509 certificate object.
 
     Keyword arguments:
     public_key -- The public key of the certificate.
-    signing_key -- The key to be used to sign the certificate with.
     subjects -- x509 certificate subjects.
-    issuer -- The issuer of the certificate.
     validity -- Validity period in days starting from the moment of creation.
+    policy_oid -- Certificate policy
+    signing_key -- The key to be used to sign the certificate with.
+    issuer -- The issuer of the certificate.
+    path_database -- Path to the database file.
     Return values:
     cert -- The created certificate.
     '''
     # Create certificate
-    cert = x509.CertificateBuilder().subject_name(
-        subjects
-    ).issuer_name(
-        issuer
-    ).public_key(
-        public_key
-    ).serial_number(
-        x509.random_serial_number()
-    ).not_valid_before(
-        datetime.datetime.utcnow()
-    ).not_valid_after(
-        datetime.datetime.utcnow() + datetime.timedelta(validity)
-    )
+    now = datetime.datetime.now(datetime.UTC)
+    cert = (x509.CertificateBuilder()
+        .subject_name(subjects)
+        .issuer_name(issuer)
+        .public_key(public_key)
+        .serial_number(generate_serial_number(path_database))
+        .not_valid_before(now)
+        .not_valid_after(now + datetime.timedelta(days=validity)))
 
     # Add extensions
     cert = cert.add_extension(x509.SubjectKeyIdentifier.from_public_key(public_key), critical=False)
     cert = cert.add_extension(x509.BasicConstraints(ca=True, path_length=None), critical=True)
-    
+
     # Add certificate policy if present
     if policy_oid is not None:
         obj_id = x509.ObjectIdentifier(policy_oid)
-        policy_info = [
-            x509.PolicyInformation(
-                obj_id,
-                []
-            )
-        ]
+        policy_info = [x509.PolicyInformation(obj_id, [])]
         cert = cert.add_extension(x509.CertificatePolicies(policies=policy_info), critical=True)
 
     # Sign certificate
     cert = cert.sign(signing_key, cryptography.hazmat.primitives.hashes.SHA256())
+    add_certificate_to_database(cert, path_database)
     return cert
 
 def convert_header(path_pem, path_template):
-    '''Create a header file out of a PEM certificate that can be used 
+    '''Create a header file out of a PEM certificate that can be used
     directly by the Gecko SDK SoC sample applications.
 
     Keyword arguments:
@@ -220,7 +234,7 @@ def convert_header(path_pem, path_template):
     # Load certificate
     with open(path_pem, 'r') as f:
         crt = f.readlines()
-    
+
     # Remove PEM certificate delimiters
     crt.pop(0)
     crt.pop()
@@ -246,7 +260,7 @@ def convert_header(path_pem, path_template):
 
     with open(path_header, 'w') as f:
         f.write(env.get_template(str(pathlib.Path(path_template).name)).render(sl_bt_cbap_root_cert = crt))
-    
+
     print(str(path_header) + ' created.')
     return path_header
 
@@ -268,51 +282,51 @@ def load_args():
                         type=int,
                         help='The valid period of the certificate in days starting '\
                              'from the moment of generation.')
-    
-    parser.add_argument('-c', '--country',
-                        default='FI',
+
+    parser.add_argument('--country',
+                        default='US',
                         type=str.upper,
                         help='The country subject of the x509 certificate.')
 
-    parser.add_argument('-o', '--organization',
+    parser.add_argument('--state',
+                        default='Texas',
+                        type=str,
+                        help='The state subject of the x509 certificate.')
+
+    parser.add_argument('--locality',
+                        default='Austin',
+                        type=str,
+                        help='The locality subject of the x509 certificate.')
+
+    parser.add_argument('--organization',
                         default='Silicon Laboratories',
                         type=str,
                         help='The organization subject of the x509 certificate.')
 
-    parser.add_argument('-ou', '--organizationalUnit',
+    parser.add_argument('--organizationalUnit',
                         default='Wireless',
                         type=str,
                         help='The organizational unit subject of the x509 certificate.',
                         dest='organizational_unit')
-    
-    parser.add_argument('-st', '--state',
-                        default='Uusimaa',
-                        type=str,
-                        help='The state subject of the x509 certificate.')
 
-    parser.add_argument('-cn', '--commonName',
+    parser.add_argument('--commonName',
                         default='Silabs',
                         type=str,
                         help='The common name unit subject of the x509 certificate.',
                         dest='common_name')
 
-    parser.add_argument('-lo', '--locality',
-                        default='Espoo',
-                        type=str,
-                        help='The locality subject of the x509 certificate.')
-    
-    parser.add_argument('-e', '--emailAddress',
+    parser.add_argument('--emailAddress',
                         default='support@silabs.com',
                         type=str,
                         help='The e-mail address unit subject of the x509 certificate.',
                         dest='email_address')
 
-    parser.add_argument('-cp', '--certificatePolicy',
+    parser.add_argument('-c', '--certificatePolicy',
                         type=str,
                         help='The optional Certificate Policy Information extension. '\
                              'Only a policy OID is supported.',
                         dest='policy_oid')
-    
+
     return parser.parse_args()
 
 if __name__ == '__main__':
@@ -321,10 +335,10 @@ if __name__ == '__main__':
     main(args.level,
          args.validity,
          args.country,
+         args.state,
+         args.locality,
          args.organization,
          args.organizational_unit,
-         args.state,
          args.common_name,
-         args.locality,
          args.email_address,
          args.policy_oid)

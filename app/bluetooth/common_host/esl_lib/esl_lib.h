@@ -31,6 +31,7 @@
 #ifndef ESL_LIB_H
 #define ESL_LIB_H
 
+#include <stddef.h>
 #include <stdint.h>
 #include "sl_status.h"
 #include "sl_slist.h"
@@ -107,6 +108,9 @@ extern "C" {
 #define ESL_LIB_PAWR_MIN_NUM_RESPONSE_SLOTS        0x01
 #define ESL_LIB_PAWR_MAX_NUM_RESPONSE_SLOTS        0xff
 
+// Invalid subevent slot definition for library internal use (for events where subevent is unknown or unspecified)
+#define ESL_LIB_PAWR_UNSPECIFIED_SUBEVENT          0xff
+
 // -------------------------------
 // Connection parameters default settings definition
 
@@ -140,16 +144,21 @@ typedef enum esl_lib_node_id_type_e {
   ESL_LIB_NODE_ID_TYPE_PAWR,
 } esl_lib_node_id_type_t;
 
+/// Connection mode type
+typedef enum esl_lib_connection_mode_e {
+  ESL_LIB_CONNECTION_MODE_SINGLE,
+  ESL_LIB_CONNECTION_MODE_LIST,
+} esl_lib_connection_mode_t;
+
 /// Connection state type
 typedef enum esl_lib_connection_state_e {
   ESL_LIB_CONNECTION_STATE_OFF,
   ESL_LIB_CONNECTION_STATE_CONNECTING,
-  ESL_LIB_CONNECTION_STATE_RECONNECTING,
   ESL_LIB_CONNECTION_STATE_CONNECTION_OPENED,
   ESL_LIB_CONNECTION_STATE_APPLYING_LTK,
   ESL_LIB_CONNECTION_STATE_NEW_BOND_REQUIRED,
   ESL_LIB_CONNECTION_STATE_BONDING,
-  ESL_LIB_CONNECTION_STATE_BONDING_FAIL_RECONNECT,
+  ESL_LIB_CONNECTION_STATE_BONDING_RECOVERY,
   ESL_LIB_CONNECTION_STATE_SERVICE_DISCOVERY,
   ESL_LIB_CONNECTION_STATE_DIS_DISCOVERY,
   ESL_LIB_CONNECTION_STATE_ESL_DISCOVERY,
@@ -169,7 +178,8 @@ typedef enum esl_lib_connection_state_e {
 typedef enum esl_lib_pawr_state_e {
   ESL_LIB_PAWR_STATE_INIT,
   ESL_LIB_PAWR_STATE_IDLE,
-  ESL_LIB_PAWR_STATE_RUNNING
+  ESL_LIB_PAWR_STATE_RUNNING,
+  ESL_LIB_PAWR_STATE_RUNNING_ADVERTISING,
 } esl_lib_pawr_state_t;
 
 /// Common state type
@@ -188,11 +198,17 @@ typedef void *esl_lib_connection_handle_t;
 typedef struct esl_lib_address_s {
   union {
     struct {
-      uint8_t addr[6];  ///<  @brief Bluetooth address in reverse byte order */
-    } address;
-    uint8_t addr[6];    ///<  @brief alternative access to the bd_addr address
+      union {
+        struct {
+          uint8_t addr[6];  ///< Bluetooth address in reverse byte order
+        } address;
+        uint8_t addr[6];    ///< Compatibility access to the bd_addr address
+      };
+      uint8_t address_type; ///< Bluetooth address type
+    };
+    uint64_t  u64;          ///< For fast Filter Address List node comparison
+    uint8_t   bytes[sizeof(uint64_t)];  ///< For byte level access
   };
-  uint8_t address_type; ///<  @brief Bluetooth address type
 } esl_lib_address_t;
 
 typedef struct esl_lib_pawr_subevent_s {
@@ -237,6 +253,7 @@ typedef struct esl_lib_pawr_config_s {
     uint8_t                spacing;          ///< Response slot spacing
     uint8_t                count;            ///< Response slot count
   }                        response_slot;    ///< Response slot config
+  esl_lib_bool_t           advertise;        ///< Extended param. adv. enable
 } esl_lib_pawr_config_t;
 
 /// Scan parameters
@@ -260,6 +277,7 @@ typedef struct esl_lib_scan_parameters_s {
 /// ESL host library event codes
 typedef enum esl_lib_evt_type_e {
   ESL_LIB_EVT_SYSTEM_BOOT,
+  ESL_LIB_EVT_CONNECTION_MODE,
   ESL_LIB_EVT_SCAN_STATUS,
   ESL_LIB_EVT_TAG_FOUND,
   ESL_LIB_EVT_TAG_INFO,
@@ -286,7 +304,7 @@ typedef enum esl_lib_evt_type_e {
 typedef enum esl_lib_status_e {
   ESL_LIB_STATUS_NO_ERROR,
   ESL_LIB_STATUS_UNSPECIFIED_ERROR,
-  ESL_LIB_STATUS_UNASSOCITED,
+  ESL_LIB_STATUS_UNASSOCIATED,
   ESL_LIB_STATUS_GATT_TIMEOUT,
   ESL_LIB_STATUS_BONDING_FAILED,
   ESL_LIB_STATUS_FEATURE_NOT_SUPPORTED,
@@ -299,9 +317,11 @@ typedef enum esl_lib_status_e {
   ESL_LIB_STATUS_CONN_FAILED,
   ESL_LIB_STATUS_CONN_CLOSE_FAILED,
   ESL_LIB_STATUS_CONN_DISCOVERY_FAILED,
+  ESL_LIB_STATUS_CONN_ESL_SERVICE_VIOLATION,
   ESL_LIB_STATUS_CONN_SUBSCRIBE_FAILED,
   ESL_LIB_STATUS_CONN_READ_FAILED,
   ESL_LIB_STATUS_CONN_CONFIG_FAILED,
+  ESL_LIB_STATUS_CONN_SET_MODE_FAILED,
   ESL_LIB_STATUS_LINK_LAYER,
   ESL_LIB_STATUS_NO_PAWR_SYNC,
   ESL_LIB_STATUS_OTS_ERROR,
@@ -323,9 +343,12 @@ typedef enum esl_lib_status_e {
   ESL_LIB_STATUS_PAST_INIT_FAILED,
   ESL_LIB_STATUS_CONN_WRITE_CP_FAILED,
   ESL_LIB_STATUS_CONN_TAG_CONFIG_FAILED,
+  ESL_LIB_STATUS_CONN_INIT_POLICY_FAILED,
   ESL_LIB_STATUS_CONTROL_FAILED,
   ESL_LIB_STATUS_UNKNOWN_COMMAND,
   ESL_LIB_STATUS_SYSTEM_ERROR,
+  ESL_LIB_STATUS_DATABASE_ERROR,
+  ESL_LIB_STATUS_DATABASE_PERMISSION,
 } esl_lib_status_t;
 
 // -------------------------------
@@ -413,6 +436,14 @@ typedef struct esl_lib_evt_system_boot_s {
   sl_status_t       status;      ///< Status code
 } esl_lib_evt_system_boot_t;
 
+/// Connection mode
+typedef struct esl_lib_evt_connection_mode_s {
+  esl_lib_connection_mode_t mode;         ///< Connection mode: manual or automatic using Initiator Filter Policy with Filter Accept List
+  esl_lib_core_state_t      core_state;   ///< ESL Library core internal state (idle or initiating connection)
+  size_t                    filter_size;  ///< Filter Accept List size in auto mode, or [0,1] in manual mode depending on core_state
+  uint8_t                   connections;  ///< Number of active connection handles for open and initiated connections
+} esl_lib_evt_connection_mode_t;
+
 /// Scan status type
 typedef struct esl_lib_evt_scan_status_s {
   esl_lib_bool_t            enabled;         ///< Scan enabled or disabled
@@ -492,7 +523,7 @@ typedef struct esl_lib_evt_bonding_finished_s {
 /// PAwR status event
 typedef struct esl_lib_evt_pawr_status_s {
   esl_lib_pawr_handle_t       pawr_handle; ///< PAwR handle
-  esl_lib_bool_t              enabled;     ///< Started or stopped
+  esl_lib_pawr_state_t        status;      ///< PAWR train status
   esl_lib_bool_t              configured;  ///< Configuration status
   esl_lib_pawr_config_t       config;      ///< PAwR configuration
 } esl_lib_evt_pawr_status_t;
@@ -514,8 +545,8 @@ typedef struct esl_lib_evt_image_type_s {
 /// PAWR response (variable length)
 typedef struct esl_lib_evt_pawr_response_s {
   esl_lib_pawr_handle_t pawr_handle;   ///< PAwR handle
-  uint8_t               response_slot; ///< Response slot
   uint8_t               subevent;      ///< Subevent
+  uint8_t               response_slot; ///< Response slot
   esl_lib_long_array_t  data;          ///< PAwR Data
 } esl_lib_evt_pawr_response_t;
 
@@ -551,6 +582,7 @@ typedef struct esl_lib_evt_error_s {
 /// Event data union type
 typedef union esl_lib_evt_data_u {
   esl_lib_evt_system_boot_t                evt_boot;                       ///< Boot event data
+  esl_lib_evt_connection_mode_t            evt_connection_mode;            ///< Connection mode
   esl_lib_evt_scan_status_t                evt_scan_status;                ///< Scan status data
   esl_lib_evt_tag_found_t                  evt_tag_found;                  ///< Tag found during scanning
   esl_lib_evt_tag_info_t                   evt_tag_info;                   ///< Tag information values
@@ -680,6 +712,22 @@ sl_status_t esl_lib_connect(esl_lib_address_t         address,
  *****************************************************************************/
 sl_status_t esl_lib_close_connection(esl_lib_connection_handle_t connection_handle);
 
+/**************************************************************************//**
+ * Set connection mode.
+ * @param[in] mode Connection mode to set.
+ *
+ * @return Status code. Mode change requests will fail if the stack is busy
+ *         initiating connections.
+ *****************************************************************************/
+sl_status_t esl_lib_set_connection_mode(esl_lib_connection_mode_t mode);
+
+/**************************************************************************//**
+ * Get connection mode.
+ *
+ * @return Status code.
+ *****************************************************************************/
+sl_status_t esl_lib_get_connection_mode(void);
+
 // -------------------------------
 // ESL information
 
@@ -695,13 +743,11 @@ sl_status_t esl_lib_get_tag_info(esl_lib_connection_handle_t connection_handle);
  * Configure a tag during connection.
  * @param[in] connection_handle Connection handle.
  * @param[in] tlv_data          Configuration TLV data.
- * @param[in] att_response      Require ATT response (force Write With Response).
  *
  * @return Status code.
  *****************************************************************************/
 sl_status_t esl_lib_configure_tag(esl_lib_connection_handle_t connection_handle,
-                                  esl_lib_long_array_t        *tlv_data,
-                                  esl_lib_bool_t              att_response);
+                                  esl_lib_long_array_t        *tlv_data);
 
 /**************************************************************************//**
  * Write ESL Control Point with a command.
@@ -738,12 +784,15 @@ sl_status_t esl_lib_pawr_remove(esl_lib_pawr_handle_t pawr_handle);
 /**************************************************************************//**
  * Start periodic advertisement with responses (PAwR).
  * @param[in] pawr_handle PAwR handle.
- * @param[in] enable      Enable (true) or disable (false)
+ * @param[in] enable      Enable (true) or disable (false) PAwR train
+ * @param[in] advertise   Enable (true) or disable (false) extended advertising
+ *                        of train parameters (for sync-scanners)
  *
  * @return Status code.
  *****************************************************************************/
 sl_status_t esl_lib_pawr_enable(esl_lib_pawr_handle_t pawr_handle,
-                                esl_lib_bool_t        enable);
+                                esl_lib_bool_t        enable,
+                                esl_lib_bool_t        advertise);
 
 /**************************************************************************//**
  * Set periodic advertisement with responses data.

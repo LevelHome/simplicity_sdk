@@ -4,7 +4,7 @@ The **Bluetooth Mesh - SoC Switch** example is a working example application tha
 
 The example is an out-of-the-box Software Demo optimized for user experience where the device acts as a switch. Button presses on the mainboard or CLI commands can control the state, lightness, and color temperature of the LEDs as well as scenes on a remote device (for example **Bluetooth Mesh - SoC Light**). The example also acts as a Low Power Node and tries to establish friendship. The status messages are displayed on the LCD (if one is present on the mainboard) and also sent to UART. The example is based on the Bluetooth Mesh Generic On/Off Client Model, the Light Lightness Client Model, the Light CTL Client Model, and the Scene Client Model. This example requires one of the Internal Storage Bootloader (single image) variants, depending on device memory.
 
-In typical cases use the **Bluetooth Mesh - SoC Switch** example, as it is easier to get feedback about the state and operations. But if you want to have the optimal power consumption, use the **Bluetooth Mesh - SoC Switch Low Power** example, which does not have LCD, CLI or logging. Use that especially for the power consumption measurements.
+In typical cases use one of the **Bluetooth Mesh - SoC Switch** examples, as it is easier to get feedback about the state and operations. But if you want to have the optimal power consumption, use one of the **Bluetooth Mesh - SoC Switch Low Power** examples, which do not have LCD, CLI or logging. Use that especially for the power consumption measurements.
 
 The switch requires a friend node to function properly.
 

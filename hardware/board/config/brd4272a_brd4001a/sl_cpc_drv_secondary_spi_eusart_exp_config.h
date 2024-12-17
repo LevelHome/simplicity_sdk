@@ -28,6 +28,8 @@
  *
  ******************************************************************************/
 
+#include "sl_cpc_config.h"
+
 #ifndef SL_CPC_DRV_SPI_EUSART_EXP_SECONDARY_CONFIG_H
 #define SL_CPC_DRV_SPI_EUSART_EXP_SECONDARY_CONFIG_H
 
@@ -36,6 +38,22 @@
 // <h> CPC-Secondary SPI Driver Configuration
 
 // <h> Queues size configuration
+
+// <o SL_CPC_DRV_SPI_EXP_RX_PAYLOAD_MAX_LENGTH>Max Rx Payload Length<1-4087>
+// <i> Default: SL_CPC_RX_PAYLOAD_MAX_LENGTH
+// <i> Maximum size of the payload in bytes of each RX buffer
+#define SL_CPC_DRV_SPI_EXP_RX_PAYLOAD_MAX_LENGTH      SL_CPC_RX_PAYLOAD_MAX_LENGTH
+
+// <o SL_CPC_DRV_SPI_EXP_TX_QUEUE_ITEM_MAX_COUNT> Tx Queue Size
+// <i> Default: SL_CPC_TX_QUEUE_ITEM_MAX_COUNT
+// <i> The maximum number of outgoing messages capable of being queued for transmission.
+#define SL_CPC_DRV_SPI_EXP_TX_QUEUE_ITEM_MAX_COUNT    SL_CPC_TX_QUEUE_ITEM_MAX_COUNT
+
+// <o SL_CPC_DRV_SPI_EXP_RX_BUFFER_MAX_COUNT> Total Number of Rx Buffers
+// <i> Default: SL_CPC_RX_BUFFER_MAX_COUNT
+// <i> Total number of CPC RX buffers available across all endpoints
+// <i> Multiple RX buffers can be associated with a single endpoint
+#define SL_CPC_DRV_SPI_EXP_RX_BUFFER_MAX_COUNT        SL_CPC_RX_BUFFER_MAX_COUNT
 
 // <o SL_CPC_DRV_SPI_EXP_RX_QUEUE_SIZE> Number of frame that can be queued in the driver receive queue
 // <i> A greater number decreases the chances of retransmission due to dropped frames at the cost of memory footprint
@@ -88,7 +106,7 @@
 // <<< sl:start pin_tool >>>
 // <gpio> SL_CPC_DRV_SPI_EXP_IRQ
 // $[GPIO_SL_CPC_DRV_SPI_EXP_IRQ]
-#define SL_CPC_DRV_SPI_EXP_IRQ_PORT              gpioPortA
+#define SL_CPC_DRV_SPI_EXP_IRQ_PORT              SL_GPIO_PORT_A
 #define SL_CPC_DRV_SPI_EXP_IRQ_PIN               5
 
 // [GPIO_SL_CPC_DRV_SPI_EXP_IRQ]$
@@ -99,19 +117,19 @@
 #define SL_CPC_DRV_SPI_EXP_PERIPHERAL_NO         1
 
 // EUSART1 TX on PC00
-#define SL_CPC_DRV_SPI_EXP_COPI_PORT             gpioPortC
+#define SL_CPC_DRV_SPI_EXP_COPI_PORT             SL_GPIO_PORT_C
 #define SL_CPC_DRV_SPI_EXP_COPI_PIN              0
 
 // EUSART1 RX on PC01
-#define SL_CPC_DRV_SPI_EXP_CIPO_PORT             gpioPortC
+#define SL_CPC_DRV_SPI_EXP_CIPO_PORT             SL_GPIO_PORT_C
 #define SL_CPC_DRV_SPI_EXP_CIPO_PIN              1
 
 // EUSART1 SCLK on PC02
-#define SL_CPC_DRV_SPI_EXP_SCLK_PORT             gpioPortC
+#define SL_CPC_DRV_SPI_EXP_SCLK_PORT             SL_GPIO_PORT_C
 #define SL_CPC_DRV_SPI_EXP_SCLK_PIN              2
 
 // EUSART1 CS on PB04
-#define SL_CPC_DRV_SPI_EXP_CS_PORT               gpioPortB
+#define SL_CPC_DRV_SPI_EXP_CS_PORT               SL_GPIO_PORT_B
 #define SL_CPC_DRV_SPI_EXP_CS_PIN                4
 
 // [EUSART_SL_CPC_DRV_SPI_EXP]$

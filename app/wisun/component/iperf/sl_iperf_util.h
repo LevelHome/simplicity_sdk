@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_iperf_util.h
+ * @brief iPerf utility functions
  *******************************************************************************
  * # License
  * <b>Copyright 2022 Silicon Laboratories Inc. www.silabs.com</b>
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __SL_IPERF_UTIL_H__
-#define __SL_IPERF_UTIL_H__
+#ifndef SL_IPERF_UTIL_H
+#define SL_IPERF_UTIL_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,7 +38,6 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include "sl_iperf_types.h"
 
 /**************************************************************************//**
@@ -73,15 +72,15 @@ extern "C" {
 
 /// iPerf time converter enumeration
 typedef enum sl_iperf_time_converter {
-  /// Sec to MiliSec multiplier
+  /// Sec to MilliSec multiplier
   SL_IPERF_TIME_S_TO_MS_ML  = 1000UL,
   /// Sec to MicroSec multiplier
   SL_IPERF_TIME_S_TO_US_ML  = 1000UL * 1000UL,
   /// Sec to NanoSec multiplier
   SL_IPERF_TIME_S_TO_NS_ML  = 1000UL * 1000UL * 1000UL,
-  /// MiliSec to MicroSec multiplier
+  /// MilliSec to MicroSec multiplier
   SL_IPERF_TIME_MS_TO_US_ML = 1000UL,
-  /// Milisec to NanoSec multiplier
+  /// Millisec to NanoSec multiplier
   SL_IPERF_TIME_MS_TO_NS_ML = 1000UL * 1000UL
 } sl_iperf_time_converter_t;
 
@@ -215,10 +214,10 @@ __STATIC_INLINE uint32_t sl_iperf_test_calc_time_duration_sec(const sl_iperf_tes
 }
 
 /**************************************************************************//**
- * @brief Calculate time duration in miliseconds
+ * @brief Calculate time duration in milliseconds
  * @details Helper function
  * @param[in] test Test descriptor
- * @return uint32_t Time duration in miliseconds
+ * @return uint32_t Time duration in milliseconds
  *****************************************************************************/
 __STATIC_INLINE uint32_t sl_iperf_test_calc_time_duration_ms(const sl_iperf_test_t * const test)
 {
@@ -226,10 +225,10 @@ __STATIC_INLINE uint32_t sl_iperf_test_calc_time_duration_ms(const sl_iperf_test
 }
 
 /**************************************************************************//**
- * @brief Calculate time data from miliseconds
+ * @brief Calculate time data from milliseconds
  * @details Helper function
  * @param[out] dst_time Time data structure
- * @param[in] ms Miliseconds
+ * @param[in] ms Milliseconds
  *****************************************************************************/
 __STATIC_INLINE void sl_iperf_calc_time_from_ms(sl_iperf_time_t * const dst_time, const sl_iperf_ts_ms_t ms)
 {
@@ -238,10 +237,10 @@ __STATIC_INLINE void sl_iperf_calc_time_from_ms(sl_iperf_time_t * const dst_time
 }
 
 /**************************************************************************//**
- * @brief Calculate milisec value from time structure
+ * @brief Calculate millisec value from time structure
  * @details Helper function
  * @param[in] time Time data
- * @return sl_iperf_ts_ms_t Time in miliseconds
+ * @return sl_iperf_ts_ms_t Time in milliseconds
  *****************************************************************************/
 __STATIC_INLINE sl_iperf_ts_ms_t sl_iperf_calc_ms_from_time(const sl_iperf_time_t * const time)
 {
@@ -413,7 +412,7 @@ void sl_iperf_print_test_clnt_header_json(sl_iperf_test_t * const test,
  * @param[in,out] test Test descriptor
  * @param[in] size Count of bytes to dump
  *****************************************************************************/
-void sl_iper_test_dump_buff(sl_iperf_test_t * const test, const size_t size);
+void sl_iperf_test_dump_buff(sl_iperf_test_t * const test, const size_t size);
 
 #endif
 
@@ -422,4 +421,5 @@ void sl_iper_test_dump_buff(sl_iperf_test_t * const test, const size_t size);
 #ifdef __cplusplus
 }
 #endif
-#endif
+
+#endif // SL_IPERF_UTIL_H

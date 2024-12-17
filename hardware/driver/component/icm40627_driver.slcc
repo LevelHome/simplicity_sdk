@@ -14,8 +14,8 @@ provides:
 requires:
   - name: hal_generic_common
   - name: clock_manager_runtime
-  - name: emlib_gpio
-  - name: emlib_eusart
+  - name: gpio
+  - name: hal_generic_eusart
   - name: sleeptimer
   - name: status
 include:

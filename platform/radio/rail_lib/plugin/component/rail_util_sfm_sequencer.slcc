@@ -4,6 +4,11 @@ description: Utility to aid with selecting a Software Modem (SFM) sequencer imag
 package: platform
 category: Platform|Radio
 quality: production
+metadata:
+  sbom:
+    id: rail_util_sfm_sequencer
+    name: RAIL Utility, SFM Sequencer Image Selection
+    license: Zlib
 requires:
   - name: rail_lib
 provides:

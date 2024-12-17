@@ -29,24 +29,24 @@ void sli_zigbee_af_reporting_cli_print(sl_cli_command_arg_t *arguments)
   for (i = 0; i < sli_zigbee_af_reporting_num_entries(); i++) {
     sl_zigbee_af_plugin_reporting_entry_t entry;
     sli_zigbee_af_reporting_get_entry(i, &entry);
-    sl_zigbee_af_reporting_print("%x:", i);
+    sl_zigbee_af_reporting_print("%02X:", i);
     if (entry.endpoint != SL_ZIGBEE_AF_PLUGIN_REPORTING_UNUSED_ENDPOINT_ID) {
-      sl_zigbee_af_reporting_print("ep %x clus %2x attr %2x svr %c",
+      sl_zigbee_af_reporting_print("ep %02X clus %04X attr %04X svr %c",
                                    entry.endpoint,
                                    entry.clusterId,
                                    entry.attributeId,
                                    (entry.mask == CLUSTER_MASK_SERVER ? 'y' : 'n'));
       if (entry.manufacturerCode != SL_ZIGBEE_AF_NULL_MANUFACTURER_CODE) {
-        sl_zigbee_af_reporting_print(" mfg %x", entry.manufacturerCode);
+        sl_zigbee_af_reporting_print(" mfg %02X", entry.manufacturerCode);
       }
       if (entry.direction == SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED) {
-        sl_zigbee_af_reporting_print(" report min %2x max %2x rpt-chg %4x",
+        sl_zigbee_af_reporting_print(" report min %04X max %04X rpt-chg %08X",
                                      entry.data.reported.minInterval,
                                      entry.data.reported.maxInterval,
                                      entry.data.reported.reportableChange);
         sl_zigbee_af_reporting_flush();
       } else {
-        sl_zigbee_af_reporting_print(" receive from %2x ep %x timeout %2x",
+        sl_zigbee_af_reporting_print(" receive from %04X ep %02X timeout %04X",
                                      entry.data.received.source,
                                      entry.data.received.endpoint,
                                      entry.data.received.timeout);
@@ -64,14 +64,14 @@ void sli_zigbee_af_reporting_cli_print(sl_cli_command_arg_t *arguments)
 void sli_zigbee_af_reporting_cli_clear(sl_cli_command_arg_t *arguments)
 {
   sl_status_t status = sl_zigbee_af_clear_report_table_cb();
-  sl_zigbee_af_reporting_println("%p 0x%x", "clear", status);
+  sl_zigbee_af_reporting_println("%s 0x%02X", "clear", status);
 }
 
 // plugin reporting remove <index:1>
 void sli_zigbee_af_reporting_cli_remove(sl_cli_command_arg_t *arguments)
 {
   sl_status_t status = sli_zigbee_af_reporting_remove_entry(sl_cli_get_argument_uint16(arguments, 0));
-  sl_zigbee_af_reporting_println("%p 0x%x", "remove", status);
+  sl_zigbee_af_reporting_println("%s 0x%02X", "remove", status);
 }
 
 // plugin reporting add <endpoint:1> <cluster id:2> <attribute id:2> ...
@@ -95,7 +95,7 @@ void sli_zigbee_af_reporting_cli_add(sl_cli_command_arg_t *arguments)
   UNUSED_VAR(status);
   status = sl_zigbee_af_reporting_configure_reported_attribute(&entry);
 
-  sl_zigbee_af_reporting_println("%p 0x%x", "add", status);
+  sl_zigbee_af_reporting_println("%s 0x%02X", "add", status);
 }
 
 // plugin reporting add clear-last-report-time

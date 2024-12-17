@@ -29,12 +29,7 @@
  ******************************************************************************/
 
 #include "sl_simple_led.h"
-
-#if defined(SL_CATALOG_GPIO_PRESENT)
 #include "sl_gpio.h"
-#else
-#include "em_gpio.h"
-#endif
 
 {% for inst in simple_led_instance | sort -%}
 #include "sl_simple_led_{{ inst }}_config.h"

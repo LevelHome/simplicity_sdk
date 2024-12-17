@@ -98,7 +98,6 @@ ZW_WEAK u3c_db_operation_result CC_UserCredential_modify_credential(
 }
 
 ZW_WEAK u3c_db_operation_result CC_UserCredential_delete_credential(
-  __attribute__((unused)) uint16_t user_unique_identifier,
   __attribute__((unused)) u3c_credential_type credential_type,
   __attribute__((unused)) uint16_t credential_slot)
 {
@@ -106,7 +105,6 @@ ZW_WEAK u3c_db_operation_result CC_UserCredential_delete_credential(
 }
 
 ZW_WEAK u3c_db_operation_result CC_UserCredential_move_credential(
-  __attribute__((unused)) uint16_t source_user_uid,
   __attribute__((unused)) u3c_credential_type credential_type,
   __attribute__((unused)) uint16_t source_credential_slot,
   __attribute__((unused)) uint16_t destination_user_uid,

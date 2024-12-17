@@ -30,7 +30,33 @@
 #ifndef SL_BTMESH_WSTK_LCD_CONFIG_H
 #define SL_BTMESH_WSTK_LCD_CONFIG_H
 
+#include "app_rta.h"
+
 // <<< Use Configuration Wizard in Context Menu >>>
+
+// <h> LCD context configuration
+
+// <o SL_BTMESH_WSTK_LCD_CONFIG_PRIORITY> Priority of the runtime
+// <APP_RTA_PRIORITY_LOW=> Low
+// <APP_RTA_PRIORITY_BELOW_NORMAL=> Below normal
+// <APP_RTA_PRIORITY_NORMAL=> Normal
+// <APP_RTA_PRIORITY_ABOVE_NORMAL=> Above normal
+// <APP_RTA_PRIORITY_HIGH=> High
+// <i> Default: Normal
+// <i> Only applicable for RTOS
+#define SL_BTMESH_WSTK_LCD_CONFIG_PRIORITY      APP_RTA_PRIORITY_LOW
+
+// <o SL_BTMESH_WSTK_LCD_CONFIG_STACK> Stack size (in bytes)
+// <i> Default: 2048
+// <i> Only applicable for RTOS
+#define SL_BTMESH_WSTK_LCD_CONFIG_STACK         2048
+
+// <o SL_BTMESH_WSTK_LCD_CONFIG_WAIT> Timeout for guard (in ticks)
+// <i> Default: 100
+// <i> Only applicable for RTOS
+#define SL_BTMESH_WSTK_LCD_CONFIG_WAIT          100
+
+// </h>
 
 // <h> LCD rows configuration
 

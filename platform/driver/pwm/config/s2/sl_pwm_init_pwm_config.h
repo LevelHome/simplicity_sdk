@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef SL_PWM_INIT_PWM_CONFIG_H
-#define SL_PWM_INIT_PWM_CONFIG_H
+#ifndef SL_PWM_INIT_INSTANCE_CONFIG_H
+#define SL_PWM_INIT_INSTANCE_CONFIG_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,7 +61,7 @@ extern "C" {
 // #define SL_PWM_INSTANCE_PERIPHERAL_NO           0
 
 // #define SL_PWM_INSTANCE_OUTPUT_CHANNEL          0
-// #define SL_PWM_INSTANCE_OUTPUT_PORT             gpioPortA
+// #define SL_PWM_INSTANCE_OUTPUT_PORT             SL_GPIO_PORT_A
 // #define SL_PWM_INSTANCE_OUTPUT_PIN              0
 // [TIMER_SL_PWM_INSTANCE]$
 
@@ -71,4 +71,4 @@ extern "C" {
 }
 #endif
 
-#endif // SL_PWM_INIT_PWM_CONFIG_H
+#endif // SL_PWM_INIT_INSTANCE_CONFIG_H

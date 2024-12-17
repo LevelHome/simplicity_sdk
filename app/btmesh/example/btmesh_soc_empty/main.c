@@ -51,6 +51,10 @@ int main(void)
   // task(s) if the kernel is present.
   app_init();
 
+  // Initialize the application runtime. For example create task(s) if a
+  // kernel is present.
+  app_init_runtime();
+
 #if defined(SL_CATALOG_KERNEL_PRESENT)
   // Start the kernel. Task(s) created in app_init() will start running.
   sl_system_kernel_start();

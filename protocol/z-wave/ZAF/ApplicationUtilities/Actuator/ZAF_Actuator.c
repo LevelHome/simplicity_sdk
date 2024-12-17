@@ -63,6 +63,7 @@
 #include <DebugPrint.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <math.h>
 #include <AppTimer.h>
 
 // valueCurrent, valueTarget and singleStepValue are saved as 10 times higher.
@@ -175,6 +176,11 @@ eActuatorState ZAF_Actuator_StartChange(s_Actuator *pActuator,
     // valueTarget must be calculated before triggering CC callback,
     // because caller of Actuator compares current and target value to check is there any change happening at the moment.
     triggerCCCallback(pActuator);
+
+    // Calculate effective duration for both directions
+    // Application of straight proportionality to the duration based on the startLevel
+    float calculated_slope = (float)(pActuator->valueTarget - pActuator->valueCurrent) / CONVERT_TO_INTERNAL(pActuator->max);
+    duration = roundf((float)(duration * fabs(calculated_slope)));
   }
   if (pActuator->valueCurrent == pActuator->valueTarget) {
     DPRINTF("Already at target value %X, done\n", CONVERT_FROM_INTERNAL(pActuator->valueCurrent));

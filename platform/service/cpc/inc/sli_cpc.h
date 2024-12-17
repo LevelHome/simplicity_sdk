@@ -59,13 +59,16 @@
 #define SL_CPC_JOURNAL_RECORD_WARNING(string, value) ((void)(string), (void)(value))
 #define SL_CPC_JOURNAL_RECORD_INFO(string, value) ((void)(string), (void)(value))
 #define SL_CPC_JOURNAL_RECORD_DEBUG(string, value) ((void)(string), (void)(value))
-#define SL_CPC_JOURNAL_RECORD_TRACE(string, value) ((void)(string), (void)(value))
 #endif
 
-#if (!defined(SL_CATALOG_EMLIB_CORE_PRESENT))
+#if !defined(SL_CATALOG_EMLIB_CORE_PRESENT) && !defined(SL_CATALOG_SL_CORE_PRESENT)
 #include "mcu.h"
 #else
+#if defined(SL_CATALOG_EMLIB_CORE_PRESENT)
 #include "em_core.h"
+#elif defined(SL_CATALOG_SL_CORE_PRESENT)
+#include "sl_core.h"
+#endif
 #include "sl_atomic.h"
 
 #define MCU_DECLARE_IRQ_STATE   CORE_DECLARE_IRQ_STATE
@@ -302,15 +305,49 @@ SL_ENUM(sl_cpc_service_endpoint_id_t){
 #define SLI_CPC_SYSTEM_COMMAND_HANDLE_COUNT 2
 #endif
 
+// Length of the maximum CPC payload that can be received. This take into
+// account: user payload + CRC (2B) [ + Security Tag (8B) ]
 #if (SL_CPC_ENDPOINT_SECURITY_ENABLED >= 1)
-#define SLI_CPC_RX_DATA_MAX_LENGTH          (SL_CPC_RX_PAYLOAD_MAX_LENGTH + 2 + SLI_SECURITY_TAG_LENGTH_BYTES)
+  #define SLI_CPC_RX_DATA_MAX_LENGTH_CFG(_user_payload_max) (_user_payload_max \
+                                                             + 2               \
+                                                             + SLI_SECURITY_TAG_LENGTH_BYTES)
 #else
-#define SLI_CPC_RX_DATA_MAX_LENGTH             (SL_CPC_RX_PAYLOAD_MAX_LENGTH + 2)
+  #define SLI_CPC_RX_DATA_MAX_LENGTH_CFG(_user_payload_max) (_user_payload_max \
+                                                             + 2)
 #endif
-#define SLI_CPC_HDLC_REJECT_MAX_COUNT          ((SL_CPC_RX_BUFFER_MAX_COUNT / 2) + 1)
-#define SLI_CPC_RX_QUEUE_ITEM_MAX_COUNT        (SL_CPC_RX_BUFFER_MAX_COUNT - 1)
-#define SLI_CPC_TX_QUEUE_ITEM_SFRAME_MAX_COUNT (SLI_CPC_RX_QUEUE_ITEM_MAX_COUNT)
-#define SLI_CPC_BUFFER_HANDLE_MAX_COUNT        (SL_CPC_TX_QUEUE_ITEM_MAX_COUNT + SL_CPC_RX_BUFFER_MAX_COUNT + SLI_CPC_TX_QUEUE_ITEM_SFRAME_MAX_COUNT)
+
+// Number of payload to allocate to send HDLC reject reasons
+#define SLI_CPC_HDLC_REJECT_MAX_COUNT_CFG(_user_rx_buffer_max)         ((_user_rx_buffer_max) / 2 + 1)
+
+// Maximum number of RX queue item. It is _user_rx_buffer_max - 1 to make sure
+// there is one RX buffer available to receive an acknowledgement from the
+// remote, otherwise the bus could end up deadlock
+#define SLI_CPC_RX_QUEUE_ITEM_MAX_COUNT_CFG(_user_rx_buffer_max)       ((_user_rx_buffer_max) - 1)
+
+// Maximum number of S-Frame, it matches the number of RX queue item to make
+// sure they can be all acked
+#define SLI_CPC_TX_QUEUE_ITEM_SFRAME_MAX_COUNT_CFG(_rx_queue_item_max) (_rx_queue_item_max)
+
+// Maximum number of buffer handles. There must be enough for all TX queue
+// item (user data), RX buffer and TX S-Frames, so it's just the sum of that.
+#define SLI_CPC_BUFFER_HANDLE_MAX_COUNT_CFG(_user_tx_queue_item_max, _user_rx_buffer_max, _tx_queue_item_sframe_max) \
+  (_user_tx_queue_item_max + _user_rx_buffer_max + _tx_queue_item_sframe_max)
+
+// Maximum number of HDLC header. There is one header per buffer handle.
+#define SLI_CPC_HDLC_HEADER_MAX_COUNT_CFG(_buffer_handle_max_cnt)      (_buffer_handle_max_cnt)
+
+// Maximum frame size, ie. the maximum size for a full CPC frame on the bus
+// (header + user payload)
+#define SLI_CPC_RX_FRAME_MAX_LENGTH_CFG(_rx_data_max_length)           ((uint16_t)((_rx_data_max_length) + SLI_CPC_HDLC_HEADER_RAW_SIZE))
+
+// define for the size that must be allocated to have an sli_cpc_rx_buffer_t
+// with a data array of size "_rx_frame_max_length"
+#define SLI_CPC_RX_BUFFER_MAX_LENGTH_CFG(_rx_frame_max_length)         ((_rx_frame_max_length) + sizeof(sli_cpc_rx_buffer_t))
+
+// Signal count max = closing signal per endpoint + tx queue items + rx queue items
+#define SLI_CPC_EVENT_SIGNAL_MAX_COUNT_CFG(_user_tx_queue_item_max, _rx_queue_item_max) \
+  (SL_CPC_ENDPOINT_MAX_COUNT + _user_tx_queue_item_max + _rx_queue_item_max)
+
 #define SLI_CPC_RE_TRANSMIT                    (10)
 #define SLI_CPC_INIT_RE_TRANSMIT_TIMEOUT_MS    (100)
 #define SLI_CPC_MAX_RE_TRANSMIT_TIMEOUT_MS     (5000)
@@ -319,26 +356,11 @@ SL_ENUM(sl_cpc_service_endpoint_id_t){
 #define SLI_CPC_MIN_RE_TRANSMIT_TIMEOUT_MINIMUM_VARIATION_MS (5)
 #define SLI_CPC_SYSTEM_CMD_TIMEOUT_MS           (10000)
 
-#if (SL_CPC_ENDPOINT_SECURITY_ENABLED >= 1)
-#if (SL_CPC_RX_PAYLOAD_MAX_LENGTH > 4079)
-  #error Invalid SL_CPC_RX_PAYLOAD_MAX_LENGTH; Must be less or equal to 4079
-#endif
-#else
-#if (SL_CPC_RX_PAYLOAD_MAX_LENGTH > 4087)
-  #error Invalid SL_CPC_RX_PAYLOAD_MAX_LENGTH; Must be less or equal to 4087
-#endif
-#endif
-
 #define SLI_CPC_TEMPORARY_ENDPOINT_ID_START   100
 #define SLI_CPC_TEMPORARY_ENDPOINT_ID_END     255
 #define SLI_CPC_ENDPOINT_TEMPORARY_MAX_COUNT  (SLI_CPC_TEMPORARY_ENDPOINT_ID_END - SLI_CPC_TEMPORARY_ENDPOINT_ID_START + 1)
 
 #define SLI_CPC_ENDPOINT_MIN_COUNT  (SLI_CPC_ENDPOINT_SYSTEM + SL_CPC_ENDPOINT_SECURITY_ENABLED)
-
-#define SLI_CPC_HDLC_HEADER_MAX_COUNT       (SLI_CPC_BUFFER_HANDLE_MAX_COUNT)
-
-// Signal count max = closing signal per endpoint + tx queue items + rx queue items
-#define EVENT_SIGNAL_MAX_COUNT    SL_CPC_ENDPOINT_MAX_COUNT + SL_CPC_TX_QUEUE_ITEM_MAX_COUNT + SLI_CPC_RX_QUEUE_ITEM_MAX_COUNT
 
 SL_ENUM(sl_cpc_signal_type_t) {
   SL_CPC_SIGNAL_RX,
@@ -484,6 +506,25 @@ sl_status_t sli_cpc_open_service_endpoint (sl_cpc_endpoint_handle_t *endpoint_ha
                                            uint8_t tx_window_size);
 
 /***************************************************************************//**
+ * Open Silicon Labs Internal Service endpoint with an explicit instance to
+ * operate on. This is reserved for the system endpoint and MUST NOT be used
+ * outside of CPC.
+ *
+ * @param[in] endpoint_handle  Endpoint Handle.
+ * @param[in] inst             Instance pointer.
+ * @param[in] id               Endpoint ID.
+ * @param[in] flags  Endpoint flags.
+ * @param[in] tx_window_size  Endpoint TX Window size.
+ *
+ * @return Status code.
+ ******************************************************************************/
+sl_status_t sli_cpc_open_service_endpoint_in_instance(sl_cpc_endpoint_handle_t *endpoint_handle,
+                                                      sli_cpc_instance_t *inst,
+                                                      sl_cpc_service_endpoint_id_t id,
+                                                      uint8_t flags,
+                                                      uint8_t tx_window_size);
+
+/***************************************************************************//**
  * Open temporary endpoint.
  *
  * @param[in] endpoint_handle  Endpoint Handle.
@@ -626,14 +667,14 @@ sl_status_t sli_cpc_set_security_counters(uint8_t endpoint_id, uint32_t primary_
 /***************************************************************************//**
  * Set the maximum payload length that the remote can receive
  ******************************************************************************/
-void sli_cpc_set_remote_tx_max_payload_length(uint16_t remote_tx_max_payload_length);
+void sli_cpc_set_remote_tx_max_payload_length(sli_cpc_instance_t *inst, uint16_t remote_tx_max_payload_length);
 // -----------------------------------------------------------------------------
 // Driver to core notifications
 
 /***************************************************************************//**
  * Notifies core of rx completion.
  ******************************************************************************/
-void sli_cpc_notify_rx_data_from_drv(void);
+void sli_cpc_notify_rx_data_from_drv(sli_cpc_instance_t *inst);
 
 /***************************************************************************//**
  * Notifies core of tx completion by the driver.

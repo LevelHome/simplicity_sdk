@@ -87,7 +87,7 @@ void sli_zigbee_af_poll_complete_handler(sl_status_t status, uint8_t limit)
       }
       break;
     default:
-      sl_zigbee_af_debug_println("poll nwk %d: 0x%x", networkIndex, status);
+      sl_zigbee_af_debug_println("poll nwk %d: 0x%02X", networkIndex, status);
   }
 
   (void) sl_zigbee_af_pop_network_index();

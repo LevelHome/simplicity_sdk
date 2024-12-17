@@ -24,3 +24,6 @@ provides:
     condition: [bootloader_core_nonsecure]
 requires:
   - name: bootloader_serial_transport
+metadata:
+  sbom:
+    license: MSLA

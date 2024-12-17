@@ -8,7 +8,7 @@ local zll_commissioning_client = slc.is_selected("zigbee_zll_commissioning_clien
 local zll_commissioning_server = slc.is_selected("zigbee_zll_commissioning_server")
 local zigbee_multi_network = slc.is_selected("zigbee_multi_network")
 
-if zll_commissioning_common == true or zll_commissioning_common == true or zll_commissioning_common == true then
+if zll_commissioning_common == true or zll_commissioning_client == true or zll_commissioning_server == true then
     if zigbee_multi_network == true then
         validation.error(
             "ZLL is not supported with multiple networks. Either disable the multi-network component or disable ZLL components.",

@@ -82,16 +82,16 @@
 #define SL_SPIDRV_EXP_EPD_PERIPHERAL        USART0
 #define SL_SPIDRV_EXP_EPD_PERIPHERAL_NO     0
 
-#define SL_SPIDRV_EXP_EPD_TX_PORT           gpioPortC
+#define SL_SPIDRV_EXP_EPD_TX_PORT           SL_GPIO_PORT_C
 #define SL_SPIDRV_EXP_EPD_TX_PIN            0
 
-#define SL_SPIDRV_EXP_EPD_RX_PORT           gpioPortC
+#define SL_SPIDRV_EXP_EPD_RX_PORT           SL_GPIO_PORT_C
 #define SL_SPIDRV_EXP_EPD_RX_PIN            1
 
-#define SL_SPIDRV_EXP_EPD_CLK_PORT          gpioPortC
+#define SL_SPIDRV_EXP_EPD_CLK_PORT          SL_GPIO_PORT_C
 #define SL_SPIDRV_EXP_EPD_CLK_PIN           2
 
-#define SL_SPIDRV_EXP_EPD_CS_PORT           gpioPortC
+#define SL_SPIDRV_EXP_EPD_CS_PORT           SL_GPIO_PORT_C
 #define SL_SPIDRV_EXP_EPD_CS_PIN            3
 // <s.128 SL_SPIDRV_EXP_EPD_USART>
 #define SL_SPIDRV_EXP_EPD_USART             "spi_epd"

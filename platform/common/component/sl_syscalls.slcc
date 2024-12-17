@@ -15,4 +15,4 @@ source:
 provides:
   - name: sl_syscalls
 requires:
-  - name: cmsis_core
+  - name: sl_common

@@ -100,7 +100,7 @@ static void printDiscoverCommandsResponse(bool generated,
                                         ? "Generated"
                                         : "Received"));
   for (i = 0; i < length; i++) {
-    sl_zigbee_af_service_discovery_print("0x%X ", buffer[i]);
+    sl_zigbee_af_service_discovery_print("0x%02X ", buffer[i]);
   }
   sl_zigbee_af_service_discovery_println(".");
 }
@@ -131,7 +131,7 @@ bool sli_zigbee_af_process_global_command(sl_zigbee_af_cluster_command_t *cmd)
       && zclCmd != ZCL_WRITE_ATTRIBUTES_NO_RESPONSE_COMMAND_ID
       && clusterId != ZCL_IDENTIFY_CLUSTER_ID) {
     sl_zigbee_af_core_println("disabled");
-    sl_zigbee_af_debug_println("%pd, dropping global cmd:%x", "disable", zclCmd);
+    sl_zigbee_af_debug_println("%sd, dropping global cmd:%02X", "disable", zclCmd);
     sl_zigbee_af_send_default_response(cmd, SL_ZIGBEE_ZCL_STATUS_FAILURE);
     return true;
   }
@@ -183,7 +183,7 @@ bool sli_zigbee_af_process_global_command(sl_zigbee_af_cluster_command_t *cmd)
     case ZCL_READ_ATTRIBUTES_COMMAND_ID:
     {
       sl_zigbee_af_status_t status;
-      sl_zigbee_af_attributes_println("%p: clus %2x", "READ_ATTR", clusterId);
+      sl_zigbee_af_attributes_println("%s: clus %04X", "READ_ATTR", clusterId);
       // Set the cmd byte - this is byte 3 index 2, but since we have
       // already incremented past the 3 byte ZCL header (our index is at 3),
       // this gets written to "-1" since 3 - 1 = 2.
@@ -309,8 +309,8 @@ bool sli_zigbee_af_process_global_command(sl_zigbee_af_cluster_command_t *cmd)
           (void) sl_zigbee_af_put_int8u_in_resp(status);
           (void) sl_zigbee_af_put_int16u_in_resp(attrId);
 
-          sl_zigbee_af_attributes_println("WRITE: clus %2x attr %2x ", clusterId, attrId);
-          sl_zigbee_af_attributes_println("FAIL %x", status);
+          sl_zigbee_af_attributes_println("WRITE: clus %04X attr %04X ", clusterId, attrId);
+          sl_zigbee_af_attributes_println("FAIL %02X", status);
           sl_zigbee_af_core_flush();
           if (status == SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND) {
             // this attribute is malformed, terminate attribute processing.
@@ -400,7 +400,7 @@ bool sli_zigbee_af_process_global_command(sl_zigbee_af_cluster_command_t *cmd)
                                                          &(message[msgIndex + 3u]),
   #endif //(BIGENDIAN_CPU)
                                                          dataType);
-          sl_zigbee_af_attributes_print("WRITE: clus %2x attr %2x ",
+          sl_zigbee_af_attributes_print("WRITE: clus %04X attr %04X ",
                                         clusterId,
                                         attrId);
           if (status == SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
@@ -411,7 +411,7 @@ bool sli_zigbee_af_process_global_command(sl_zigbee_af_cluster_command_t *cmd)
             // write to the response buffer - status and then attrID
             (void) sl_zigbee_af_put_int8u_in_resp(status);
             (void) sl_zigbee_af_put_int16u_in_resp(attrId);
-            sl_zigbee_af_attributes_println("FAIL %x", status);
+            sl_zigbee_af_attributes_println("FAIL %02X", status);
           }
           sl_zigbee_af_core_flush();
 
@@ -424,7 +424,7 @@ bool sli_zigbee_af_process_global_command(sl_zigbee_af_cluster_command_t *cmd)
           // write to the response buffer - status and then attrID
           (void) sl_zigbee_af_put_int8u_in_resp(status);
           (void) sl_zigbee_af_put_int16u_in_resp(attrId);
-          sl_zigbee_af_attributes_println("FAIL %x", status);
+          sl_zigbee_af_attributes_println("FAIL %02X", status);
           // size exceeds buffer, terminate loop
           break;
         }
@@ -463,7 +463,7 @@ bool sli_zigbee_af_process_global_command(sl_zigbee_af_cluster_command_t *cmd)
       uint8_t numberAttributes;
       uint8_t *complete;
 
-      sl_zigbee_af_attributes_println("%p%p: clus %2x", "DISC_ATTR",
+      sl_zigbee_af_attributes_println("%s%s: clus %04X", "DISC_ATTR",
                                       (zclCmd == ZCL_DISCOVER_ATTRIBUTES_EXTENDED_COMMAND_ID ? "_EXT" : ""),
                                       clusterId);
 
@@ -555,7 +555,7 @@ bool sli_zigbee_af_process_global_command(sl_zigbee_af_cluster_command_t *cmd)
             && (sl_zigbee_af_get_int8u(message, msgIndex + 3u, msgLen)
                 == ZCL_UTC_TIME_ATTRIBUTE_TYPE)) {
           sl_zigbee_af_set_time(sl_zigbee_af_get_int32u(message, msgIndex + 4u, msgLen));
-          sl_zigbee_af_debug_println("time sync ok, time: %4x", sl_zigbee_af_get_current_time());
+          sl_zigbee_af_debug_println("time sync ok, time: %08X", sl_zigbee_af_get_current_time());
           sli_zigbee_af_syncing_time = false;
         }
 #ifdef SL_ZIGBEE_AF_PLUGIN_SMART_ENERGY_REGISTRATION_TIME_SOURCE_REQUIRED

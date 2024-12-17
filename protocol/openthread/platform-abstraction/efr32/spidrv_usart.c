@@ -40,8 +40,14 @@
 #include <stddef.h>
 #include <string.h>
 
-#include "em_core.h"
+#include "sl_core.h"
+
+#if defined(SL_CATALOG_GPIO_PRESENT)
+#include "sl_device_gpio.h"
+#else
 #include "em_gpio.h"
+#endif
+
 #include "em_ldma.h"
 
 #include "gpiointerrupt.h"

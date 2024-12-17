@@ -4,8 +4,16 @@ package: "wisun"
 description: >
   FTP (File Transfer Protocol) and TFTP (Trivial File Transfer Protocol)
   implementation. The FTP Client facilitates file exchange between a client and
-  any remote host over TCP, while the TFTP Client accomplishes the same task
-  over UDP.
+  any remote host over TCP.
+  The TFTP Client facilitates file exchange between a client and any remote host over UDP. 
+  This component provides an easy-to-use solution for downloading and uploading files from a remote host. 
+  The TFTP client can be initialized with sl_tftp_clnt_init(), and the functions sl_tftp_clnt_get() 
+  and sl_tftp_clnt_put() can be used to download and upload files, respectively. 
+  Additionally, the block size and timeout options can be configured to negotiate between the server and the client, 
+  optimizing the transmission.
+  The component implements the TFTP protocol as specified in RFC 1350. 
+  To ensure proper functionality, a TFTP server, such as tftpd-hpa, must be prepared on the remote host.
+  
 category: "Wi-SUN|Wi-SUN Services"
 quality: "production"
 metadata:
@@ -29,6 +37,8 @@ include:
 config_file:
   - path: "config/sl_ftp_config.h"
 
+requires:
+  - name: sl_wisun_ftp_posix_port
 
 #-------------- Template Contribution ----------------
 template_contribution:
@@ -37,7 +47,6 @@ template_contribution:
       event: "internal_app_init"
       include: "sl_ftp.h"
       handler: "sl_ftp_init"
-
 
 #---------------- Component Catalog ------------------
   - name: component_catalog

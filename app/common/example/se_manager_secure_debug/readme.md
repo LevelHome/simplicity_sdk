@@ -1,6 +1,6 @@
 # SE Manager Secure Debug
 
-This example uses the SE Manager API to perform secure debug on the supported Series 2 device.
+This example uses the SE Manager API to perform secure debug on the supported device.
 
 For demonstration purposes, a private command key is stored in the device’s memory to sign the access certificate for secure debug unlock. The device’s public command key in the SE OTP must match with the public key of this private command key to perform secure debug unlock.
 

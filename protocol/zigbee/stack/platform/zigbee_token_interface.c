@@ -114,11 +114,10 @@ sl_status_t sli_zigbee_stack_get_token_data(uint32_t token,
   for (uint8_t i = 0; i < sli_zigbee_stack_get_token_count(); i++) {
     if (token == tokenNvm3Keys[i]) {
       tokenData->size = tokenSize[i];
-      Ecode_t s = sl_token_get_data(token,
-                                    index,
-                                    tokenData->data,
-                                    tokenData->size);
-      return (s == ECODE_OK ? SL_STATUS_OK : SL_STATUS_FAIL);
+      return sl_token_get_data(token,
+                               index,
+                               tokenData->data,
+                               tokenData->size);
     }
   }
   tokenData->size = 0;
@@ -129,14 +128,14 @@ sl_status_t sli_zigbee_stack_set_token_data(uint32_t token,
                                             uint32_t index,
                                             sl_zigbee_token_data_t *tokenData)
 {
-  Ecode_t s = sl_token_set_data(token,
-                                index,
-                                tokenData->data,
-                                tokenData->size);
-  if (s != ECODE_OK) {
+  sl_status_t status = sl_token_set_data(token,
+                                         index,
+                                         tokenData->data,
+                                         tokenData->size);
+  if (status != SL_STATUS_OK) {
     tokenData->size = 0;
   }
-  return (s == ECODE_OK ? SL_STATUS_OK : SL_STATUS_FAIL);
+  return status;
 }
 
 // Strong implementation to restore the EUI64 incase backup/restore

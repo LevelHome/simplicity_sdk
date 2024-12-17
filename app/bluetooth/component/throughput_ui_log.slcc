@@ -4,6 +4,9 @@ label: Throughput User Interface API with logging
 description: |-
   API for printing throughput test state and results to log
 category: Bluetooth|Application|Test
+metadata:
+  sbom:
+    license: Zlib
 quality: production
 root_path: app/bluetooth/common/throughput_ui
 tag:

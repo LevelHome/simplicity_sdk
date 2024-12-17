@@ -36,6 +36,7 @@ provides:
     allow_multiple: true
 requires:
   - name: "uartdrv_core"
+  - name: "device_has_usart"
 template_contribution:
   - name: component_catalog
     value: uartdrv_usart

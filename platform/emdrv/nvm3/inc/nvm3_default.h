@@ -52,18 +52,18 @@ extern nvm3_Init_t   *nvm3_defaultInit;         ///< Default initialization data
  *  nvm3_defaultHandle as the nvm3_Handle_t handle.
  *
  * @return
- *   @ref ECODE_NVM3_OK on success and a NVM3 @ref Ecode_t on failure.
+ *   @ref SL_STATUS_OK on success and a NVM3 @ref sl_status_t on failure.
  ******************************************************************************/
-Ecode_t nvm3_initDefault(void);
+sl_status_t nvm3_initDefault(void);
 
 /***************************************************************************//**
  * @brief
  *  Deinit the default NVM3 instance.
  *
  * @return
- *   @ref ECODE_NVM3_OK on success and a NVM3 @ref Ecode_t on failure.
+ *   @ref SL_STATUS_OK on success and a NVM3 @ref sl_status_t on failure.
  ******************************************************************************/
-Ecode_t nvm3_deinitDefault(void);
+sl_status_t nvm3_deinitDefault(void);
 
 /** @} (end addtogroup nvm3default) */
 /** @} (end addtogroup nvm3) */

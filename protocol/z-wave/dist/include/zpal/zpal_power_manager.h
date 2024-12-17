@@ -24,7 +24,7 @@ extern "C" {
  * @brief
  * Defines a platform abstraction layer for the Z-Wave power manager.
  *
- * The ZPAL power manager offers an API for registering power locks and for receiving events on power mode 
+ * The ZPAL power manager offers an API for registering power locks and for receiving events on power mode
  * transitions. Power lock forces the chip to stay awake in a given power mode for a given time.
  * An event handler is invoked every time the transition between power modes occurs.
  *
@@ -35,13 +35,13 @@ extern "C" {
  *                                                                      // Other stuff
  * zpal_pm_cancel(handle);                                              // The chip may go to sleep now
  * @endcode
- * 
+ *
  * Lock with timeout example:\n
  * @code{.c}
  * zpal_pm_handle_t handle = zpal_pm_register(ZPAL_PM_TYPE_USE_RADIO);  // Register the power lock that keeps radio active
  * zpal_pm_stay_awake(handle, 2000);                                    // Keep the radio active for 2000 ms from now
  * @endcode
- * 
+ *
  * Requirements:
  * - The storage for power locks should be able to hold at least 20 items. Note that this number may change in the future.
  *
@@ -69,6 +69,8 @@ typedef enum
   ZPAL_PM_DEVICE_NOT_LISTENING,
 } zpal_pm_device_t;
 
+typedef struct zpal_pm_context zpal_pm_context_t;
+
 void zpal_pm_set_device_type(zpal_pm_device_t device_type);
 
 /**
@@ -87,7 +89,7 @@ typedef void * zpal_pm_handle_t;
 /**
 * @brief Registers a power lock of a given type.
 * This function must be invoked once to allocate power lock before any other API calls are made on that lock.
-* @note Keep in mind that it's not possible to unregister (destroy) locks already created using zpal_pm_register(). 
+* @note To unregister (destroy) locks already created using zpal_pm_register() use @ref zpal_pm_unregister().
 *
 * @param[in] type  Power lock type.
 * @return A handle if successfully registered, NULL otherwise.
@@ -122,6 +124,16 @@ bool zpal_pm_is_active(zpal_pm_handle_t handle);
 * @param[in] handle Power lock handle registered by @ref zpal_pm_register().
 */
 void zpal_pm_cancel(zpal_pm_handle_t handle);
+
+/**
+* @brief Unregister previously registered  power lock.
+* If the power lock is active, it will be cancelled.
+* It removes the power lock from context and updates pm context accordingly.
+* If @p handle points to NULL, nothing happens.
+*
+* @param[in] handle Power lock handle registered by @ref zpal_pm_register().
+*/
+void zpal_pm_unregister(zpal_pm_handle_t handle);
 
 /**
 * @brief Cancels all active power locks.

@@ -56,7 +56,7 @@ extern "C"
 #define CS_INITIATOR_DISPLAY_DISTANCE_TEXT              "Distance:"
 #define CS_INITIATOR_DISPLAY_RSSI_DISTANCE_TEXT         "Distance [RSSI]:"
 #define CS_INITIATOR_DISPLAY_LIKELINESS_TEXT            "Likeliness:"
-#define CS_INITIATOR_DISPLAY_BER_TEXT                   "Bit error:"
+#define CS_INITIATOR_DISPLAY_BER_TEXT                   "Bit error rate:"
 
 #define CS_INITIATOR_DISPLAY_STATE_ESTIMATE_TEXT        "ST: Estimate"
 #define CS_INITIATOR_DISPLAY_STATE_CONNECTED_TEXT       "ST: Connected"

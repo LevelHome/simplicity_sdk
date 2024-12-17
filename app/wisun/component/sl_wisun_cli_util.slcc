@@ -1,8 +1,8 @@
 id: "sl_wisun_cli_util"
-label: "CLI Util"
+label: "Wi-SUN CLI Util"
 package: "wisun"
 description: "Provides Wi-SUN CLI utility functions."
-category: "Wi-SUN|Utility"
+category: "Wi-SUN|Wi-SUN Services"
 quality: "production"
 metadata:
   sbom:

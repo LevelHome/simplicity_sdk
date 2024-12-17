@@ -105,21 +105,21 @@
 #define IOT_UART_CFG_VCOM_PERIPHERAL_NO          0
 
 // USART0 TX on PC07
-#define IOT_UART_CFG_VCOM_TX_PORT                gpioPortC
+#define IOT_UART_CFG_VCOM_TX_PORT                SL_GPIO_PORT_C
 #define IOT_UART_CFG_VCOM_TX_PIN                 7
 
 // USART0 RX on PB03
-#define IOT_UART_CFG_VCOM_RX_PORT                gpioPortB
+#define IOT_UART_CFG_VCOM_RX_PORT                SL_GPIO_PORT_B
 #define IOT_UART_CFG_VCOM_RX_PIN                 3
 
 
 
 // USART0 RTS on PB02
-#define IOT_UART_CFG_VCOM_RTS_PORT               gpioPortB
+#define IOT_UART_CFG_VCOM_RTS_PORT               SL_GPIO_PORT_B
 #define IOT_UART_CFG_VCOM_RTS_PIN                2
 
 // USART0 CTS on PB04
-#define IOT_UART_CFG_VCOM_CTS_PORT               gpioPortB
+#define IOT_UART_CFG_VCOM_CTS_PORT               SL_GPIO_PORT_B
 #define IOT_UART_CFG_VCOM_CTS_PIN                4
 
 // [USART_IOT_UART_CFG_VCOM]$

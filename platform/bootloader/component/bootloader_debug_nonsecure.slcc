@@ -19,3 +19,6 @@ provides:
   - name: bootloader_debug_nonsecure
 config_file:
   - path: platform/bootloader/debug/config/btl_debug_cfg.h
+metadata:
+  sbom:
+    license: MSLA

@@ -53,6 +53,14 @@
 #define SL_WISUN_ADVERT_FRAGMENT_DISABLE UINT32_MAX
 /// Maximum number of PhyModeId allowed in POM-IE
 #define SL_WISUN_MAX_PHY_MODE_ID_COUNT 15
+/// Number of GTKs returned by sl_wisun_get_gtks()
+#define SL_WISUN_GTK_NUM  4
+/// Length of a GTK in bytes
+#define SL_WISUN_GTK_LEN  16
+/// Number of LGTKs returned by sl_wisun_get_gtks()
+#define SL_WISUN_LGTK_NUM  3
+/// Length of a PMK in bytes
+#define SL_WISUN_PMK_LEN 32
 
 /// Enumerations for device type
 typedef enum {
@@ -650,7 +658,8 @@ typedef struct {
 SL_PACK_END()
 
 /// Enumerations for socket protocol
-/// Deprecated
+/// Deprecated since v2.0
+/// MUST NOT be used with POSIX socket API
 typedef enum {
   /// User Datagram Protocol (UDP)
   SL_WISUN_SOCKET_PROTOCOL_UDP  = 0,
@@ -661,7 +670,8 @@ typedef enum {
 } sl_wisun_socket_protocol_t;
 
 /// Enumerations for socket option
-/// Deprecated
+/// Deprecated since v2.0
+/// MUST NOT be used with POSIX socket API
 typedef enum {
   /// Option for socket event mode
   SL_WISUN_SOCKET_OPTION_EVENT_MODE = 0,
@@ -678,7 +688,8 @@ typedef enum {
 } sl_wisun_socket_option_t;
 
 /// Socket option for event mode
-/// Deprecated
+/// Deprecated since v2.0
+/// MUST NOT be used with POSIX socket API
 typedef struct {
   /// Socket event mode
   uint32_t mode;
@@ -688,7 +699,8 @@ typedef struct {
 typedef in6_addr_t sl_wisun_ip_address_t;
 
 /// Socket option for multicast group
-/// Deprecated
+/// Deprecated since v2.0
+/// MUST NOT be used with POSIX socket API
 typedef struct {
   /// Multicast group action
   uint32_t action;
@@ -697,21 +709,24 @@ typedef struct {
 } sl_wisun_socket_option_multicast_group_t;
 
 /// Socket option for send buffer limit
-/// Deprecated
+/// Deprecated since v2.0
+/// MUST NOT be used with POSIX socket API
 typedef struct {
   /// Send buffer limit
   uint32_t limit;
 } sl_wisun_socket_option_send_buffer_limit_t;
 
 /// Socket option for EDFE mode
-/// Deprecated
+/// Deprecated since v2.0
+/// MUST NOT be used with POSIX socket API
 typedef struct {
   /// Socket EDFE mode (1 to enable, 0 to disable)
   uint32_t mode;
 } sl_wisun_socket_option_edfe_mode_t;
 
 /// Socket option for socket unicast hop limit
-/// Deprecated
+/// Deprecated since v2.0
+/// MUST NOT be used with POSIX socket API
 typedef struct {
   /// Socket unicast hop limit (0 to 255 hops, -1 to use default)
   int16_t hop_limit;
@@ -720,7 +735,8 @@ typedef struct {
 } sl_wisun_socket_option_unicast_hop_limit;
 
 /// Socket option for socket multicast hop limit
-/// Deprecated
+/// Deprecated since v2.0
+/// MUST NOT be used with POSIX socket API
 typedef struct {
   /// Socket multicast hop limit (0 to 255 hops, -1 to use default)
   int16_t hop_limit;
@@ -728,7 +744,9 @@ typedef struct {
   uint16_t reserved;
 } sl_wisun_socket_option_multicast_hop_limit;
 
-/// socket options
+/// Socket options
+/// Deprecated since v2.0
+/// MUST NOT be used with POSIX socket API
 SL_PACK_START(1)
 typedef union {
   /// Socket event mode
@@ -814,6 +832,48 @@ typedef struct {
 } SL_ATTRIBUTE_PACKED sl_wisun_neighbor_info_t;
 SL_PACK_END()
 
+/// Adaptive rate algorithm rate stats
+SL_PACK_START(1)
+typedef struct {
+  /// Frame tx time
+  uint32_t frame_duration_us;
+  /// Number of times the rate was selected
+  uint32_t sample_count;
+  /// Estimated chance of success
+  float success_probability;
+  /// Estimated troughput in kb/s
+  float throughput;
+  /// Number of successful transmissions
+  uint16_t success_count;
+  /// Number of tx without acknowledgement
+  uint16_t fail_count;
+  /// Number of times this rate was skipped
+  uint8_t skipped_sample_count;
+  /// Indicates if the rate can be probed
+  int8_t probe_limit;
+  /// Reserved, set to zero
+  uint8_t reserved[2];
+} SL_ATTRIBUTE_PACKED sl_wisun_rate_stats_t;
+SL_PACK_END()
+
+/// Adaptive rate algorithm rates
+SL_PACK_START(1)
+typedef struct {
+  /// Struct containig the rate's tx statistics
+  sl_wisun_rate_stats_t stats;
+  /// Rate in kb/s
+  uint32_t rate;
+  /// Rate index on the rate list
+  uint8_t index;
+  /// Rate phy mode id
+  uint8_t phy_mode_id;
+  /// Maximum amount of retries with current rate
+  uint8_t max_retries;
+  /// Indicates if rate is supported by both the node and the neighbor
+  uint8_t is_supported;
+} SL_ATTRIBUTE_PACKED sl_wisun_rate_t;
+SL_PACK_END()
+
 /// Enumeration for trace group
 typedef enum {
   SL_WISUN_TRACE_GROUP_MAC     = 0,     ///< Mac
@@ -853,6 +913,9 @@ typedef enum {
   SL_WISUN_TRACE_GROUP_CONFIG  = 36,    ///< Configuration
   SL_WISUN_TRACE_GROUP_TIM_SRV = 37,    ///< Timer service
   SL_WISUN_TRACE_GROUP_LFN_TIM = 38,    ///< LFN timing measurement
+  SL_WISUN_TRACE_GROUP_RALG    = 39,    ///< Adaptive rate algorithms
+  SL_WISUN_TRACE_GROUP_FSM     = 40,    ///< Finite state machine
+  SL_WISUN_TRACE_GROUP_APP     = 41,    ///< Application
   // 36 to 63 reserved for future used
   SL_WISUN_TRACE_GROUP_INT     = 63,    ///< Internal usage
   SL_WISUN_TRACE_GROUP_COUNT   = 64     ///< Max number of trace group in this enum
@@ -1031,6 +1094,33 @@ typedef enum {
   /// Excluded channel mask applied to broadcast frequency hopping
   SL_WISUN_CHANNEL_MASK_TYPE_EFFECTIVE_BROADCAST
 } sl_wisun_channel_mask_type_t;
+
+/// Enumeration for Direct Connect Link status
+typedef enum {
+  /// Direct Connect Link connected
+  SL_WISUN_DIRECT_CONNECT_LINK_STATUS_CONNECTED,
+  /// Direct Connect Link error
+  SL_WISUN_DIRECT_CONNECT_LINK_STATUS_ERROR,
+  /// Direct Connect Link disconnected
+  SL_WISUN_DIRECT_CONNECT_LINK_STATUS_DISCONNECTED,
+} sl_direct_connect_link_status_t;
+
+/// Border Router state
+typedef enum {
+  /// Border Router is initialized
+  SL_WISUN_BR_STATE_INITIALIZED = 0,
+  /// Border Router is started
+  SL_WISUN_BR_STATE_OPERATIONAL = 1
+} sl_wisun_br_state_t;
+
+/**************************************************************************//**
+ * Handler called for an IPv6 packet from Wi-SUN network.
+ *
+ * @param[in] data Pointer to IPv6 header
+ * @param[out] data_length Length of IPv6 packet data in bytes
+ * @return SL_STATUS_OK if successful, an error code otherwise
+ *****************************************************************************/
+typedef sl_status_t (*sl_wisun_ipv6_up_handler_t)(const uint8_t* data, size_t data_length);
 
 /** @} (end SL_WISUN_TYPES) */
 

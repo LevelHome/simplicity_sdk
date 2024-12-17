@@ -21,11 +21,7 @@
  *  http://csrc.nist.gov/publications/fips/fips180-2/fips180-2.pdf
  */
 
-#if !defined(MBEDTLS_CONFIG_FILE)
-#include "mbedtls/config.h"
-#else
-#include MBEDTLS_CONFIG_FILE
-#endif
+#include <mbedtls/build_info.h>
 
 #include "mbedtls/platform_util.h"
 #include "mbedtls/md.h"
@@ -205,5 +201,3 @@ int btl_sha256_finish_ret(btl_sha256_context *ctx, unsigned char output[32])
                       ctx->total,
                       output);
 }
-
-

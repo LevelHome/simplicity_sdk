@@ -3,7 +3,7 @@
  * @brief Sensor client module
  *******************************************************************************
  * # License
- * <b>Copyright 2023 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -28,11 +28,12 @@
  *
  ******************************************************************************/
 
-#include "em_common.h"
+#include "sl_common.h"
 #include "sl_status.h"
 #include "sl_bt_api.h"
 #include "sl_btmesh_api.h"
 #include "sl_btmesh_dcd.h"
+#include "app_btmesh_rta.h"
 
 #include "app_assert.h"
 
@@ -144,6 +145,10 @@ SL_WEAK void sl_btmesh_sensor_client_on_new_illuminance_data(uint8_t sensor_idx,
 sl_status_t sl_btmesh_sensor_client_update_registered_devices(mesh_device_properties_t property)
 {
   sl_status_t sc;
+  sc = app_btmesh_rta_acquire();
+  if (sc != SL_STATUS_OK) {
+    return sc;
+  }
   registered_devices.count = 0;
   memset(registered_devices.address_table,
          0,
@@ -164,6 +169,7 @@ sl_status_t sl_btmesh_sensor_client_update_registered_devices(mesh_device_proper
                         "Registration of devices for property ID %4.4x failed" NL,
                         property);
   }
+  (void) app_btmesh_rta_release();
   return sc;
 }
 
@@ -177,6 +183,11 @@ static void handle_sensor_client_descriptor_status(
 {
   sensor_descriptor_t descriptor;
   if (evt->descriptors.len >= SIZE_OF_DESCRIPTOR) {
+    sl_status_t sc;
+    sc = app_btmesh_rta_acquire();
+    if (sc != SL_STATUS_OK) {
+      return;
+    }
     mesh_lib_sensor_descriptors_from_buf(&descriptor,
                                          evt->descriptors.data,
                                          SIZE_OF_DESCRIPTOR);
@@ -190,6 +201,7 @@ static void handle_sensor_client_descriptor_status(
       sl_btmesh_sensor_client_on_new_device_found(descriptor.property_id,
                                                   evt->server_address);
     }
+    (void) app_btmesh_rta_release();
   }
 }
 
@@ -226,6 +238,17 @@ static void handle_sensor_client_status(sl_btmesh_evt_sensor_client_status_t *ev
   uint8_t *sensor_data = evt->sensor_data.data;
   uint8_t data_len = evt->sensor_data.len;
   uint8_t pos = 0;
+  sl_status_t sc;
+  mesh_registered_device_properties_address_t devices;
+  sc = app_btmesh_rta_acquire();
+  if (sc != SL_STATUS_OK) {
+    return;
+  }
+  devices.count = registered_devices.count;
+  for (int i = 0; i < registered_devices.count; i++) {
+    devices.address_table[i] = registered_devices.address_table[i];
+  }
+  (void) app_btmesh_rta_release();
   while (pos < data_len) {
     if (data_len - pos > PROPERTY_ID_SIZE) {
       mesh_device_properties_t property_id = (mesh_device_properties_t)(sensor_data[pos]
@@ -233,7 +256,7 @@ static void handle_sensor_client_status(sl_btmesh_evt_sensor_client_status_t *ev
       uint8_t property_len = sensor_data[pos + PROPERTY_ID_SIZE];
       uint8_t *property_data = NULL;
 
-      if (mesh_address_already_exists(&registered_devices, evt->server_address)) {
+      if (mesh_address_already_exists(&devices, evt->server_address)) {
         sl_btmesh_sensor_client_data_status_t status;
         uint16_t address;
         uint8_t sensor_idx;
@@ -243,7 +266,7 @@ static void handle_sensor_client_status(sl_btmesh_evt_sensor_client_status_t *ev
         }
 
         address = evt->server_address;
-        sensor_idx = mesh_get_sensor_index(&registered_devices, address);
+        sensor_idx = mesh_get_sensor_index(&devices, address);
         status = SL_BTMESH_SENSOR_CLIENT_DATA_NOT_AVAILABLE;
 
         switch (property_id) {

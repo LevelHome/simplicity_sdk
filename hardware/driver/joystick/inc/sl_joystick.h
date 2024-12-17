@@ -33,7 +33,7 @@
 
 #include "sl_common.h"
 #include "sl_status.h"
-#include "em_gpio.h"
+#include "sl_gpio.h"
 #include "sl_enum.h"
 #include "sl_joystick_config.h"
 
@@ -110,7 +110,7 @@ SL_ENUM(sl_joystick_state_t) {
 
 /// Joystick handle
 typedef struct {
-  GPIO_Port_TypeDef          port;           ///< Joystick port
+  sl_gpio_port_t             port;           ///< Joystick port
   uint8_t                    pin;            ///< Joystick pin
   sl_joystick_state_t        state;          ///< State of joystick
 } sl_joystick;

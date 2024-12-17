@@ -39,17 +39,17 @@
 // #define SL_ICM20648_SPI_PERIPHERAL_NO               3
 
 // // USART3 TX on PC0
-// #define SL_ICM20648_SPI_TX_PORT                     gpioPortC
+// #define SL_ICM20648_SPI_TX_PORT                     SL_GPIO_PORT_C
 // #define SL_ICM20648_SPI_TX_PIN                      0
 // #define SL_ICM20648_SPI_TX_LOC                      18
 
 // // USART3 RX on PC1
-// #define SL_ICM20648_SPI_RX_PORT                     gpioPortC
+// #define SL_ICM20648_SPI_RX_PORT                     SL_GPIO_PORT_C
 // #define SL_ICM20648_SPI_RX_PIN                      1
 // #define SL_ICM20648_SPI_RX_LOC                      18
 
 // // USART3 CLK on PC2
-// #define SL_ICM20648_SPI_CLK_PORT                    gpioPortC
+// #define SL_ICM20648_SPI_CLK_PORT                    SL_GPIO_PORT_C
 // #define SL_ICM20648_SPI_CLK_PIN                     2
 // #define SL_ICM20648_SPI_CLK_LOC                     18
 
@@ -58,13 +58,13 @@
 // <gpio> SL_ICM20648_SPI_CS
 // $[GPIO_SL_ICM20648_SPI_CS]
 #warning "ICM20648 SPI CS pin not configured"
-// #define SL_ICM20648_SPI_CS_PORT                     gpioPortC
+// #define SL_ICM20648_SPI_CS_PORT                     SL_GPIO_PORT_C
 // #define SL_ICM20648_SPI_CS_PIN                      3
 // [GPIO_SL_ICM20648_SPI_CS]$
 
 // <gpio optional=true> SL_ICM20648_INT
 // $[GPIO_SL_ICM20648_INT]
-// #define SL_ICM20648_INT_PORT                        gpioPortF
+// #define SL_ICM20648_INT_PORT                        SL_GPIO_PORT_F
 // #define SL_ICM20648_INT_PIN                         12
 // [GPIO_SL_ICM20648_INT]$
 

@@ -29,7 +29,14 @@
  ******************************************************************************/
 
 #include "sl_joystick.h"
+#include "em_device.h"
+#if defined(_SILICON_LABS_32B_SERIES_3)
+#include "sl_hal_adc.h"
+#include "sl_device_peripheral.h"
+#include "sl_device_clock.h"
+#else
 #include "em_iadc.h"
+#endif
 #include "sl_clock_manager.h"
 #include "sl_status.h"
 
@@ -45,12 +52,12 @@
  * @param[in] pin           Analog Joystick GPIO pin
  *
  ******************************************************************************/
-static sl_status_t _joystick_IADC_busAllocation(GPIO_Port_TypeDef port, uint8_t pin)
+static sl_status_t _joystick_IADC_busAllocation(sl_gpio_port_t port, uint8_t pin)
 {
   sl_status_t status = SL_STATUS_OK;
   switch (port) {
-#if (_GPIO_PORT_A_PIN_COUNT > 0)
-    case gpioPortA:
+#if (GPIO_PA_COUNT > 0)
+    case SL_GPIO_PORT_A:
 
       if (0 == pin % 2) {
         if ((GPIO->ABUSALLOC & _GPIO_ABUSALLOC_AEVEN0_MASK) == GPIO_ABUSALLOC_AEVEN0_TRISTATE) {
@@ -72,8 +79,8 @@ static sl_status_t _joystick_IADC_busAllocation(GPIO_Port_TypeDef port, uint8_t 
       break;
 #endif
 
-#if (_GPIO_PORT_B_PIN_COUNT > 0)
-    case gpioPortB:
+#if (GPIO_PB_COUNT > 0)
+    case SL_GPIO_PORT_B:
 
       if (0 == pin % 2) {
         if ((GPIO->BBUSALLOC & _GPIO_BBUSALLOC_BEVEN0_MASK) == GPIO_BBUSALLOC_BEVEN0_TRISTATE) {
@@ -95,9 +102,9 @@ static sl_status_t _joystick_IADC_busAllocation(GPIO_Port_TypeDef port, uint8_t 
       break;
 #endif
 
-#if (_GPIO_PORT_C_PIN_COUNT > 0 || _GPIO_PORT_D_PIN_COUNT > 0)
-    case gpioPortC:
-    case gpioPortD:
+#if (GPIO_PC_COUNT > 0 || GPIO_PD_COUNT > 0)
+    case SL_GPIO_PORT_C:
+    case SL_GPIO_PORT_D:
 
       if (0 == pin % 2) {
         if ((GPIO->CDBUSALLOC & _GPIO_CDBUSALLOC_CDEVEN0_MASK) == GPIO_CDBUSALLOC_CDEVEN0_TRISTATE) {
@@ -129,6 +136,7 @@ sl_status_t sl_joystick_init(sl_joystick_t *joystick_handle)
 {
   sl_status_t status = SL_STATUS_OK;
 
+#if defined(_SILICON_LABS_32B_SERIES_2)
   // Declare initialization structures
   IADC_Init_t init = IADC_INIT_DEFAULT;
   IADC_AllConfigs_t initAllConfigs = IADC_ALLCONFIGS_DEFAULT;
@@ -199,6 +207,34 @@ sl_status_t sl_joystick_init(sl_joystick_t *joystick_handle)
   // Initialize a single-channel conversion
   IADC_initSingle(IADC0, &initSingle, &singleInput);
 
+#else
+  // Declare initialization structures
+  sl_hal_adc_init_t init = SL_HAL_ADC_INIT_DEFAULT;
+
+  // Enable ADC0 and GPIO register clock.
+  sl_clock_manager_enable_bus_clock(SL_BUS_CLOCK_ADC0);
+  sl_clock_manager_enable_bus_clock(SL_BUS_CLOCK_GPIO);
+
+  // Shutdown between conversions to reduce current
+  init.warmup_mode = SL_HAL_ADC_WARMUP_NORMAL;
+
+  // Allocate the analog bus for ADC0 inputs
+  status = _joystick_IADC_busAllocation(joystick_handle->port,
+                                        joystick_handle->pin);
+  if (SL_STATUS_OK != status) {
+    return status;
+  }
+
+  sl_clock_branch_t clock_branch;
+  clock_branch = sl_device_peripheral_get_clock_branch(SL_PERIPHERAL_ADC0);
+
+  uint32_t branch_clock_freq;
+  sl_clock_manager_get_clock_branch_frequency(clock_branch, &branch_clock_freq);
+
+  // Initialize IADC
+  sl_hal_adc_init(ADC0, &init, branch_clock_freq);
+
+#endif
   return status;
 }
 
@@ -214,6 +250,7 @@ void sl_joystick_start(sl_joystick_t *joystick_handle)
 
   joystick_handle->state = SL_JOYSTICK_ENABLED;
 
+#if defined(_SILICON_LABS_32B_SERIES_2)
   IADC_command(IADC0, iadcCmdEnableTimer);
 
   /*
@@ -221,6 +258,10 @@ void sl_joystick_start(sl_joystick_t *joystick_handle)
    * ready to be read
    */
   while (0 == (IADC0->STATUS_CLR & IADC_STATUS_SINGLEFIFODV)) ;
+#else
+  sl_hal_adc_enable_timer(ADC0);
+  /* check how to handle above while loop*/
+#endif
 }
 
 /***************************************************************************//**
@@ -235,7 +276,11 @@ void sl_joystick_stop(sl_joystick_t *joystick_handle)
 
   joystick_handle->state = SL_JOYSTICK_DISABLED;
 
+#if defined(_SILICON_LABS_32B_SERIES_2)
   IADC_command(IADC0, iadcCmdDisableTimer);
+#else
+  sl_hal_adc_disable_timer(ADC0);
+#endif
 }
 
 /***************************************************************************//**
@@ -245,8 +290,6 @@ sl_status_t sl_joystick_get_position(sl_joystick_t *joystick_handle, sl_joystick
 {
   sl_joystick_position_t joystickDirection;
 
-  IADC_Result_t sample;
-
   uint32_t singleResult;
 
   // Return error if joystick data acquisistion not started
@@ -254,8 +297,12 @@ sl_status_t sl_joystick_get_position(sl_joystick_t *joystick_handle, sl_joystick
     return SL_STATUS_NOT_READY;
   }
 
+#if defined(_SILICON_LABS_32B_SERIES_2)
   // Read most recent single conversion result
-  sample = IADC_readSingleResult(IADC0);
+  IADC_Result_t sample = IADC_readSingleResult(IADC0);
+#else
+  sl_hal_adc_result_t sample = sl_hal_adc_peek(ADC0);
+#endif
 
   /*
    * Calculate the voltage converted as follows:

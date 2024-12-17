@@ -1248,6 +1248,7 @@ psa_status_t sli_se_driver_aead_update(sli_se_driver_aead_operation_t *operation
 
   (void)key_buffer;
   sl_status_t status;
+  size_t final_data_length = 0;
 
   sl_se_command_context_t cmd_ctx = { 0 };
 
@@ -1256,12 +1257,52 @@ psa_status_t sli_se_driver_aead_update(sli_se_driver_aead_operation_t *operation
     return PSA_ERROR_HARDWARE_FAILURE;
   }
 
-  if (output_size < input_length) {
+  if (operation == NULL) {
+    return PSA_ERROR_INVALID_ARGUMENT;
+  }
+
+  // Check output buffer size is not too small. The required size =
+  // input_length + residual data stored in context object from previous update
+  // The PSA Crypto tests require output buffer can hold the residual bytes in
+  // the last AES block even if these are not processed and written in this call
+  // ( they are postponed to the next call to update or finish ).
+  psa_algorithm_t alg = PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(operation->alg);
+  switch (alg) {
+    #if defined(SLI_PSA_DRIVER_FEATURE_GCM)
+    case PSA_ALG_GCM:
+    {
+      #if defined(_SILICON_LABS_32B_SERIES_2_CONFIG_1)
+      // On xG21 devices, if the final_data_length is 16 from the previous call
+      // to the sl_se_gcm_multipart_update function we should not count in the
+      // final_data since it should be processed already.
+      if (operation->ctx.gcm.final_data_length == 16) {
+        final_data_length = 0;
+      } else
+      #endif
+      {
+        final_data_length = operation->ctx.gcm.final_data_length;
+      }
+      break;
+    }
+    #endif   // SLI_PSA_DRIVER_FEATURE_GCM
+
+    #if defined(SLI_PSA_DRIVER_FEATURE_CCM)
+    case PSA_ALG_CCM:
+    {
+      final_data_length = operation->ctx.ccm.final_data_length;
+      break;
+    }
+    #endif   // SLI_PSA_DRIVER_FEATURE_CCM
+
+    default:
+      return PSA_ERROR_NOT_SUPPORTED;
+  }
+
+  if (output_size < input_length + final_data_length) {
     return PSA_ERROR_BUFFER_TOO_SMALL;
   }
 
-  if (operation == NULL
-      || ((input == NULL || output == NULL) && input_length > 0)
+  if (((input == NULL || output == NULL) && input_length > 0)
       || output_length == NULL) {
     return PSA_ERROR_INVALID_ARGUMENT;
   }
@@ -1274,8 +1315,6 @@ psa_status_t sli_se_driver_aead_update(sli_se_driver_aead_operation_t *operation
   if (input_length == 0) {
     return PSA_SUCCESS;
   }
-
-  psa_algorithm_t alg = PSA_ALG_AEAD_WITH_DEFAULT_LENGTH_TAG(operation->alg);
 
   psa_status_t psa_status;
 
@@ -1326,10 +1365,6 @@ psa_status_t sli_se_driver_aead_update(sli_se_driver_aead_operation_t *operation
       break;
     }
     #endif   // SLI_PSA_DRIVER_FEATURE_CCM
-
-    default:
-      psa_status = PSA_ERROR_NOT_SUPPORTED;
-      break;
   }
 
   return psa_status;

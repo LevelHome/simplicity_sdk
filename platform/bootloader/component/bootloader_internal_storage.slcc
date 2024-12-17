@@ -36,3 +36,6 @@ requires:
 config_file:
   - path: platform/bootloader/config/btl_internal_storage_cfg.h
     file_id: btl_internal_storage_config
+metadata:
+  sbom:
+    license: MSLA

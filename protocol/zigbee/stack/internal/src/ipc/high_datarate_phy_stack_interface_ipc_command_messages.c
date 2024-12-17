@@ -67,7 +67,7 @@ void sl_mac_lower_mac_set_high_datarate_csma_params(RAIL_CsmaConfig_t *csma_para
   }
 }
 
-void sl_mac_lower_mac_set_high_datarate_phy_radio_priorities(sl_zigbee_multiprotocol_priorities_t *priorities)
+void sl_mac_lower_mac_set_high_datarate_phy_radio_priorities(sl_802154_radio_priorities_t *priorities)
 {
   sli_zigbee_ipc_cmd_t msg;
 
@@ -88,18 +88,18 @@ sl_status_t sl_mac_send_raw_high_datarate_phy_message(uint8_t nwk_index,
   sli_zigbee_ipc_cmd_t msg;
   msg.data.send_raw_high_datarate_phy_message.request.nwk_index = nwk_index;
 
-  if ((((payload[1] << 8) + payload[0] + 2)) > (MAX_HIGH_DATARATE_PHY_PACKET_LENGTH)) {
+  if (((payload[1] << 8) + payload[0] + 2) > (MAX_HIGH_DATARATE_PHY_PACKET_LENGTH)) {
     assert(false); // "vector payload length exceeds expected maximum
   }
 
-  memmove(msg.data.send_raw_high_datarate_phy_message.request.payload, payload, sizeof(uint8_t) * (((payload[1] << 8) + payload[0] + 2)));
+  memmove(msg.data.send_raw_high_datarate_phy_message.request.payload, payload, sizeof(uint8_t) * ((payload[1] << 8) + payload[0] + 2));
   sli_zigbee_send_ipc_cmd(sli_mac_stack_send_raw_high_datarate_phy_message_process_ipc_command, &msg);
 
-  if ((((payload[1] << 8) + payload[0] + 2)) > (MAX_HIGH_DATARATE_PHY_PACKET_LENGTH)) {
+  if (((payload[1] << 8) + payload[0] + 2) > (MAX_HIGH_DATARATE_PHY_PACKET_LENGTH)) {
     assert(false); // "vector payload length exceeds expected maximum
   }
 
-  memmove(payload, msg.data.send_raw_high_datarate_phy_message.request.payload, sizeof(uint8_t) * (((payload[1] << 8) + payload[0] + 2)));
+  memmove(payload, msg.data.send_raw_high_datarate_phy_message.request.payload, sizeof(uint8_t) * ((payload[1] << 8) + payload[0] + 2));
   return msg.data.send_raw_high_datarate_phy_message.response.result;
 }
 

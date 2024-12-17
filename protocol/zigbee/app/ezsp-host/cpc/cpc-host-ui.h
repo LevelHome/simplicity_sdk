@@ -24,8 +24,6 @@ static const char usage[] =
   "    -h                       display usage information\n"
   "    -c <cpcd instance name>  use the specified instance name; e.g. -c cpcd_1\n"
   "                             default: cpcd_0\n"
-  "    -t <trace flags>         trace B0=frames, B1=verbose frames, B2=events, B3=EZSP\n"
-  "                             default: no tracing\n"
   "    -d <OTA dir>             sets the directory to search OTA files.\n"
   "                             NOTE: Option is useful only when zigbee OTA storage\n"
   "                             posix filesystem component is present.\n";

@@ -1,7 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief Wi-SUN Network Measurement component configuration header.
- *
+ * @file sl_wisun_network_measurement_config.h
+ * @brief Wi-SUN Network Measurement component configuration
  *******************************************************************************
  * # License
  * <b>Copyright 2019 Silicon Laboratories Inc. www.silabs.com</b>
@@ -15,7 +14,6 @@
  * sections of the MSLA applicable to Source Code.
  *
  ******************************************************************************/
-
 #ifndef SL_WISUN_NETWORK_MEASUREMENT_CONFIG_H
 #define SL_WISUN_NETWORK_MEASUREMENT_CONFIG_H
 

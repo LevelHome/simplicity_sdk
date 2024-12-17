@@ -31,7 +31,7 @@
 #ifndef SL_JOYSTICK_CONFIG_H
 #define SL_JOYSTICK_CONFIG_H
 
-#include "em_gpio.h"
+#include "sl_gpio.h"
 
 // <<< Use Configuration Wizard in Context Menu >>>
 
@@ -117,7 +117,7 @@
 
 // <gpio> SL_JOYSTICK
 // $[GPIO_SL_JOYSTICK]
-#define SL_JOYSTICK_PORT                         gpioPortC
+#define SL_JOYSTICK_PORT                         SL_GPIO_PORT_C
 #define SL_JOYSTICK_PIN                          6
 
 // [GPIO_SL_JOYSTICK]$

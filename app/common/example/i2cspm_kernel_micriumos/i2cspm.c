@@ -229,6 +229,7 @@ static void initialise_temp_limits()
   high_limit = start_temperature + (TEMPERATURE_BAND_C / 2);
 }
 
+#if SL_SIMPLE_LED_COUNT > 1
 /***************************************************************************//**
  * Helper function to turn on led 0 or 1 based on current temperature
  *
@@ -237,18 +238,18 @@ static void initialise_temp_limits()
  ******************************************************************************/
 static void set_leds(int32_t temp)
 {
+  // Check if LED1 is available
   if (temp > high_limit) {
     // For higher temperature, turn led0 on and turn led1 off
     sl_led_turn_on(&sl_led_led0);
     sl_led_turn_off(&sl_led_led1);
-    printf("Turning LED0 on!\r\n");
   } else if (temp < low_limit) {
     // For lower temperature, turn led1 on and turn led0 off
     sl_led_turn_off(&sl_led_led0);
     sl_led_turn_on(&sl_led_led1);
-    printf("Turning LED1 on!\r\n");
   }
 }
+#endif
 
 /*******************************************************************************
  **************************   GLOBAL FUNCTIONS   *******************************
@@ -320,7 +321,15 @@ static void i2cspm_task(void *arg)
     printf("Relative Humidity = %ld%%\r\n", relative_humidity);
     printf("Temperature = %ld C\r\n", temperature);
 
-    // set appropriate LEDs (led0 or 1) based on temperature
+#if SL_SIMPLE_LED_COUNT > 1
+    // Set appropriate LEDs (led0 or 1) based on temperature
     set_leds(temperature);
+#endif
+
+    if (temperature > high_limit) {
+      printf("Temperature is high.\r\n");
+    } else if (temperature < low_limit) {
+      printf("Temperature is low.\r\n");
+    }
   }
 }

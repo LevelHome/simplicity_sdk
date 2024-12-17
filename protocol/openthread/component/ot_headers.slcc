@@ -123,7 +123,7 @@ include:
       - path: common/array.hpp
       - path: common/as_core_type.hpp
       - path: common/binary_search.hpp
-      - path: common/bit_vector.hpp
+      - path: common/bit_set.hpp
       - path: common/callback.hpp
       - path: common/clearable.hpp
       - path: common/code_utils.hpp
@@ -144,7 +144,6 @@ include:
       - path: common/iterator_utils.hpp
       - path: common/linked_list.hpp
       - path: common/locator.hpp
-      - path: common/locator_getters.hpp
       - path: common/log.hpp
       - path: common/logging.hpp
       - path: common/message.hpp
@@ -153,6 +152,7 @@ include:
       - path: common/notifier.hpp
       - path: common/num_utils.hpp
       - path: common/numeric_limits.hpp
+      - path: common/offset_range.hpp
       - path: common/owned_ptr.hpp
       - path: common/owning_list.hpp
       - path: common/pool.hpp
@@ -219,6 +219,7 @@ include:
       - path: config/time_sync.h
       - path: config/tmf.h
       - path: config/trel.h
+      - path: config/wakeup.h
       - path: crypto/aes_ccm.hpp
       - path: crypto/aes_ecb.hpp
       - path: crypto/context_size.hpp
@@ -238,14 +239,15 @@ include:
       - path: mac/mac.hpp
       - path: mac/mac_filter.hpp
       - path: mac/mac_frame.hpp
+      - path: mac/mac_header_ie.hpp
       - path: mac/mac_links.hpp
       - path: mac/mac_types.hpp
       - path: mac/sub_mac.hpp
+      - path: mac/wakeup_tx_scheduler.hpp
       - path: meshcop/announce_begin_client.hpp
       - path: meshcop/border_agent.hpp
       - path: meshcop/commissioner.hpp
       - path: meshcop/dataset.hpp
-      - path: meshcop/dataset_local.hpp
       - path: meshcop/dataset_manager.hpp
       - path: meshcop/dataset_updater.hpp
       - path: meshcop/energy_scan_client.hpp
@@ -360,6 +362,7 @@ include:
       - path: utils/power_calibration.hpp
       - path: utils/slaac_address.hpp
       - path: utils/srp_client_buffers.hpp
+      - path: utils/static_counter.hpp
       - path: utils/verhoeff_checksum.hpp
   - path: ../lib
     file_list:

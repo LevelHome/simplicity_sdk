@@ -60,6 +60,8 @@
 // -----------------------------------------------------------------------------
 // Types
 
+#define PSA_KEY_LOCATION_SLI_SE_TRANSPARENT  ((psa_key_location_t)0x000002UL)
+
 /// PSA transparent accelerator driver compatible context structure
 typedef struct {
   sl_se_hash_type_t       hash_type;    ///< Hash type

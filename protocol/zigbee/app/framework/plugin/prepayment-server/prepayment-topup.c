@@ -87,7 +87,7 @@ static void print_publish_top_up_payload(sl_zigbee_zcl_top_up_payload_t *ptopUpP
 //-----------------------
 // ZCL commands callbacks
 
-bool sl_zigbee_af_prepayment_cluster_consumer_top_up_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_prepayment_cluster_consumer_top_up_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_prepayment_cluster_consumer_top_up_command_t cmd_data;
   sl_zigbee_af_status_t status;
@@ -102,7 +102,7 @@ bool sl_zigbee_af_prepayment_cluster_consumer_top_up_cb(sl_zigbee_af_cluster_com
 
   if (zcl_decode_prepayment_cluster_consumer_top_up_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   topUpDateTime = sl_zigbee_af_get_current_time();
@@ -112,7 +112,7 @@ bool sl_zigbee_af_prepayment_cluster_consumer_top_up_cb(sl_zigbee_af_cluster_com
 
   if ( !sl_zigbee_af_prepayment_server_consumer_top_up_cb(cmd_data.originatingDevice, cmd_data.topUpCode) ) {
     // TODO:  Do what?  -- Send default response?
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   // Before updating the Top Up #1 attribute set, push the existing #1,#2,#3,#4 attributes down.
@@ -177,12 +177,12 @@ bool sl_zigbee_af_prepayment_cluster_consumer_top_up_cb(sl_zigbee_af_cluster_com
 // status = sl_zigbee_af_write_attribute( endpoint, ZCL_PREPAYMENT_CLUSTER_ID, ZCL_TOP_UP_AMOUNT_1_ATTRIBUTE_ID,
 //                                 CLUSTER_MASK_SERVER, topUpAmount, ZCL_INT32S_ATTRIBUTE_TYPE );
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
 #define MAX_TOP_UPS   5
 
-bool sl_zigbee_af_prepayment_cluster_get_top_up_log_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_prepayment_cluster_get_top_up_log_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_prepayment_cluster_get_top_up_log_command_t cmd_data;
   sl_802154_short_addr_t nodeId;
@@ -190,7 +190,7 @@ bool sl_zigbee_af_prepayment_cluster_get_top_up_log_cb(sl_zigbee_af_cluster_comm
 
   if (zcl_decode_prepayment_cluster_get_top_up_log_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   if ( cmd_data.numberOfRecords == 0 ) {
@@ -198,7 +198,7 @@ bool sl_zigbee_af_prepayment_cluster_get_top_up_log_cb(sl_zigbee_af_cluster_comm
     cmd_data.numberOfRecords = MAX_TOP_UPS;
   }
 
-  sl_zigbee_af_prepayment_cluster_println("RX: GetTopUpLog, endTime=0x%4x, numRec=%d", cmd_data.latestEndTime, cmd_data.numberOfRecords);
+  sl_zigbee_af_prepayment_cluster_println("RX: GetTopUpLog, endTime=0x%08X, numRec=%d", cmd_data.latestEndTime, cmd_data.numberOfRecords);
 
   nodeId = sl_zigbee_af_current_command()->source;
   srcEndpoint = sl_zigbee_af_get_command_aps_frame()->destinationEndpoint;
@@ -206,7 +206,7 @@ bool sl_zigbee_af_prepayment_cluster_get_top_up_log_cb(sl_zigbee_af_cluster_comm
 
   sl_zigbee_af_send_publish_top_up_log(nodeId, srcEndpoint, dstEndpoint, cmd_data.latestEndTime, cmd_data.numberOfRecords);
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
 static uint8_t NumTopUpPayloads;
@@ -318,6 +318,6 @@ void sl_zigbee_af_prepayment_server_publish_top_up_log(sl_802154_short_addr_t no
   if ( status == SL_STATUS_OK ) {
     sl_zigbee_af_prepayment_cluster_println("Sent Publish Top Up Log, %d top ups", NumTopUpPayloads);
   } else {
-    sl_zigbee_af_prepayment_cluster_println("Error in Publish Top Up Log %x", status);
+    sl_zigbee_af_prepayment_cluster_println("Error in Publish Top Up Log %02X", status);
   }
 }

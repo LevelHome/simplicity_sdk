@@ -113,7 +113,7 @@ void sl_zigbee_af_time_cluster_server_init_cb(uint8_t endpoint)
                                         (uint8_t *)&timeStatus,
                                         ZCL_BITMAP8_ATTRIBUTE_TYPE);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_time_cluster_println("ERR: writing time status %x", status);
+    sl_zigbee_af_time_cluster_println("ERR: writing time status %02X", status);
   }
 
   // Ticks are scheduled for all endpoints that do not have a singleton time
@@ -239,7 +239,7 @@ static sl_zigbee_af_status_t readTime(uint8_t endpoint, uint32_t *time)
                                                              NULL); // data type
 #if ((defined(EMBER_AF_PRINT_ENABLE) && defined(EMBER_AF_PRINT_TIME_CLUSTER)) || defined(SL_CATALOG_ZIGBEE_DEBUG_PRINT_PRESENT))
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_time_cluster_println("ERR: reading time %x", status);
+    sl_zigbee_af_time_cluster_println("ERR: reading time %02X", status);
   }
 #endif // ((defined(EMBER_AF_PRINT_ENABLE) && defined(EMBER_AF_PRINT_TIME_CLUSTER)) || defined(SL_CATALOG_ZIGBEE_DEBUG_PRINT_PRESENT))
   return status;
@@ -255,7 +255,7 @@ static sl_zigbee_af_status_t writeTime(uint8_t endpoint, uint32_t time)
                                                               ZCL_UTC_TIME_ATTRIBUTE_TYPE);
 #if ((defined(EMBER_AF_PRINT_ENABLE) && defined(EMBER_AF_PRINT_TIME_CLUSTER)) || defined(SL_CATALOG_ZIGBEE_DEBUG_PRINT_PRESENT))
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_time_cluster_println("ERR: writing time %x", status);
+    sl_zigbee_af_time_cluster_println("ERR: writing time %02X", status);
   }
 #endif // ((defined(EMBER_AF_PRINT_ENABLE) && defined(EMBER_AF_PRINT_TIME_CLUSTER)) || defined(SL_CATALOG_ZIGBEE_DEBUG_PRINT_PRESENT))
   return status;

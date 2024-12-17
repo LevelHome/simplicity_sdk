@@ -48,12 +48,6 @@
 #include "mbedtls/error.h"
 #include <string.h>
 
-/* Parameter validation macros based on platform_util.h */
-#define ECJPAKE_VALIDATE_RET(cond) \
-  MBEDTLS_INTERNAL_VALIDATE_RET(cond, MBEDTLS_ERR_ECP_BAD_INPUT_DATA)
-#define ECJPAKE_VALIDATE(cond) \
-  MBEDTLS_INTERNAL_VALIDATE(cond)
-
 static const char * const ecjpake_id[] = {
   "client",
   "server"
@@ -262,8 +256,6 @@ static int write_tls_zkp(uint8_t **obuf, size_t *olen, size_t *wlen,
 
 void mbedtls_ecjpake_init(mbedtls_ecjpake_context *ctx)
 {
-  ECJPAKE_VALIDATE(ctx != NULL);
-
   memset(ctx, 0, sizeof(*ctx));
 }
 
@@ -274,10 +266,9 @@ int mbedtls_ecjpake_setup(mbedtls_ecjpake_context *ctx,
                           const unsigned char *secret,
                           size_t len)
 {
-  ECJPAKE_VALIDATE_RET(ctx != NULL);
-  ECJPAKE_VALIDATE_RET(role == MBEDTLS_ECJPAKE_CLIENT
-                       || role == MBEDTLS_ECJPAKE_SERVER);
-  ECJPAKE_VALIDATE_RET(secret != NULL || len == 0);
+  if ( role != MBEDTLS_ECJPAKE_CLIENT && role != MBEDTLS_ECJPAKE_SERVER ) {
+    return(MBEDTLS_ERR_ECP_BAD_INPUT_DATA);
+  }
 
   // SE only supports passphrases of maximum 32 bytes
   if (len > 32) {
@@ -304,8 +295,6 @@ int mbedtls_ecjpake_setup(mbedtls_ecjpake_context *ctx,
 
 int mbedtls_ecjpake_check(const mbedtls_ecjpake_context *ctx)
 {
-  ECJPAKE_VALIDATE_RET(ctx != NULL);
-
   if (ctx->curve_flags == 0) {
     return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
   }
@@ -337,11 +326,6 @@ int mbedtls_ecjpake_write_round_one(mbedtls_ecjpake_context *ctx,
   (void)p_rng;
 
   int ret = 0;
-
-  ECJPAKE_VALIDATE_RET(ctx   != NULL);
-  ECJPAKE_VALIDATE_RET(buf   != NULL);
-  ECJPAKE_VALIDATE_RET(olen  != NULL);
-  ECJPAKE_VALIDATE_RET(f_rng != NULL);
 
   // local storage for ZKPs
   uint8_t zkp1[32 + 64];
@@ -376,7 +360,7 @@ int mbedtls_ecjpake_write_round_one(mbedtls_ecjpake_context *ctx,
   }
 
   sli_se_mailbox_execute_command(&command);
-  sli_se_mailbox_response_t res = sli_se_mailbox_read_response();
+  sli_se_mailbox_response_t res = sli_se_handle_mailbox_response();
 
   se_management_release();
 
@@ -427,9 +411,6 @@ int mbedtls_ecjpake_read_round_one(mbedtls_ecjpake_context *ctx,
                                    size_t len)
 {
   int ret = 0;
-
-  ECJPAKE_VALIDATE_RET(ctx != NULL);
-  ECJPAKE_VALIDATE_RET(buf != NULL);
 
   // Should receive 2 binary points and 2 ZKPs
 
@@ -502,7 +483,7 @@ int mbedtls_ecjpake_read_round_one(mbedtls_ecjpake_context *ctx,
   }
 
   sli_se_mailbox_execute_command(&command);
-  sli_se_mailbox_response_t res = sli_se_mailbox_read_response();
+  sli_se_mailbox_response_t res = sli_se_handle_mailbox_response();
 
   se_management_release();
 
@@ -523,11 +504,6 @@ int mbedtls_ecjpake_write_round_two(mbedtls_ecjpake_context *ctx,
   (void)p_rng;
 
   int ret = 0;
-
-  ECJPAKE_VALIDATE_RET(ctx   != NULL);
-  ECJPAKE_VALIDATE_RET(buf   != NULL);
-  ECJPAKE_VALIDATE_RET(olen  != NULL);
-  ECJPAKE_VALIDATE_RET(f_rng != NULL);
 
   *olen = 0;
 
@@ -568,7 +544,7 @@ int mbedtls_ecjpake_write_round_two(mbedtls_ecjpake_context *ctx,
   }
 
   sli_se_mailbox_execute_command(&command);
-  sli_se_mailbox_response_t res = sli_se_mailbox_read_response();
+  sli_se_mailbox_response_t res = sli_se_handle_mailbox_response();
 
   se_management_release();
 
@@ -624,9 +600,6 @@ int mbedtls_ecjpake_read_round_two(mbedtls_ecjpake_context *ctx,
                                    const unsigned char *buf,
                                    size_t len)
 {
-  ECJPAKE_VALIDATE_RET(ctx != NULL);
-  ECJPAKE_VALIDATE_RET(buf != NULL);
-
   int ret = 0;
 
   // local storage for ZKP
@@ -712,7 +685,7 @@ int mbedtls_ecjpake_read_round_two(mbedtls_ecjpake_context *ctx,
   }
 
   sli_se_mailbox_execute_command(&command);
-  sli_se_mailbox_response_t res = sli_se_mailbox_read_response();
+  sli_se_mailbox_response_t res = sli_se_handle_mailbox_response();
 
   se_management_release();
 
@@ -731,11 +704,6 @@ int mbedtls_ecjpake_derive_secret(mbedtls_ecjpake_context *ctx,
   // SE has internal RNG
   (void)f_rng;
   (void)p_rng;
-
-  ECJPAKE_VALIDATE_RET(ctx   != NULL);
-  ECJPAKE_VALIDATE_RET(buf   != NULL);
-  ECJPAKE_VALIDATE_RET(olen  != NULL);
-  ECJPAKE_VALIDATE_RET(f_rng != NULL);
 
   if (len < 32) {
     return MBEDTLS_ERR_ECP_BUFFER_TOO_SMALL;
@@ -773,7 +741,7 @@ int mbedtls_ecjpake_derive_secret(mbedtls_ecjpake_context *ctx,
   }
 
   sli_se_mailbox_execute_command(&command);
-  sli_se_mailbox_response_t res = sli_se_mailbox_read_response();
+  sli_se_mailbox_response_t res = sli_se_handle_mailbox_response();
 
   se_management_release();
 

@@ -63,7 +63,8 @@ sl_zigbee_af_status_t sli_zigbee_af_write_attribute(uint8_t endpoint,
                                                     uint8_t* data,
                                                     sl_zigbee_af_attribute_type_t dataType,
                                                     bool overrideReadOnlyAndDataType,
-                                                    bool justTest);
+                                                    bool justTest,
+                                                    bool updateNvm);
 
 sl_zigbee_af_status_t sli_zigbee_af_read_attribute(uint8_t endpoint,
                                                    sl_zigbee_af_cluster_id_t cluster,

@@ -46,11 +46,11 @@
 #define SL_MIC_PDM_PERIPHERAL                    PDM
 
 // PDM DAT0 on PC07
-#define SL_MIC_PDM_DAT0_PORT                     gpioPortC
+#define SL_MIC_PDM_DAT0_PORT                     SL_GPIO_PORT_C
 #define SL_MIC_PDM_DAT0_PIN                      7
 
 // PDM CLK on PC06
-#define SL_MIC_PDM_CLK_PORT                      gpioPortC
+#define SL_MIC_PDM_CLK_PORT                      SL_GPIO_PORT_C
 #define SL_MIC_PDM_CLK_PIN                       6
 
 // [PDM_SL_MIC_PDM]$

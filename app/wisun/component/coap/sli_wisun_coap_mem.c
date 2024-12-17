@@ -1,5 +1,5 @@
 /***************************************************************************//**
- * @file
+ * @file sli_wisun_coap_mem.c
  * @brief Wi-SUN CoAP memory handler module
  *******************************************************************************
  * # License
@@ -32,10 +32,11 @@
 //                                   Includes
 // -----------------------------------------------------------------------------
 
-#include "sli_wisun_coap_mem.h"
-#include "sl_wisun_types.h"
 #include <assert.h>
 #include "sl_memory_manager.h"
+#include "sli_wisun_coap_mem.h"
+#include "sl_wisun_types.h"
+#include "sl_wisun_trace_util.h"
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -115,64 +116,16 @@ static _coap_mem_t _mem[WISUN_COAP_MEMORY_OPTION_COUNT] = {
   }
 };
 
-#else
+#endif
 
 // -----------------------------------------------------------------------------
 //                          Static Function Declarations
 // -----------------------------------------------------------------------------
 
-static sl_memory_region_t _heap_region = {
-  .addr = 0U,
-  .size = 0U
-};
-/* Using dynamic memory allocation which provided by OS */
-/**************************************************************************//**
- * @brief OS malloc
- * @details based on the OS (FreeRTOS or Micrium OS)
- * @param size size
- * @return void* allocated memory ptr, on failure NULL
- *****************************************************************************/
-__STATIC_INLINE void* __os_malloc(size_t size);
-
-/**************************************************************************//**
- * @brief OS free
- * @details based on the OS (FreeRTOS or Micrium OS)
- * @param addr address to set free
- *****************************************************************************/
-__STATIC_INLINE void  __os_free(void *addr);
 
 // -----------------------------------------------------------------------------
 //                          Static Function Definitions
 // -----------------------------------------------------------------------------
-
-/* os malloc */
-__STATIC_INLINE void* __os_malloc(size_t size)
-{
-#if defined(SL_CATALOG_FREERTOS_KERNEL_PRESENT)
-  // FreeRTOS
-  return pvPortMalloc(size);
-#else
-  // MicriumOS
-  return sl_malloc(size);
-#endif
-}
-
-/* os free */
-__STATIC_INLINE void __os_free(void *addr)
-{
-  if (addr < _heap_region.addr
-      || addr >= (void *)((uint32_t)_heap_region.addr + _heap_region.size)) {
-    return;
-  }
-#if defined(SL_CATALOG_FREERTOS_KERNEL_PRESENT)
-  // FreeRTOS
-  vPortFree(addr);
-#else
-  // MicriumOS
-  sl_free(addr);
-#endif
-}
-#endif
 
 // -----------------------------------------------------------------------------
 //                          Public Function Definitions
@@ -191,7 +144,7 @@ void sli_wisun_coap_mem_init(void)
                              _mem[i].block_count * _mem[i].block_size) == SL_STATUS_OK);
   }
 #else
-  _heap_region = sl_memory_get_heap_region();
+  (void) 0;
 #endif
 }
 
@@ -214,9 +167,9 @@ void *sli_wisun_coap_mem_malloc(size_t size)
     }
   }
 
-// OS MALLOC
+// HEAP MALLOC
 #else
-  p = __os_malloc(size);
+  p = app_wisun_malloc(size);
 #endif
 
   return p;
@@ -238,8 +191,8 @@ void sli_wisun_coap_mem_free(void *addr)
     }
   }
 
-// OS FREE
+// HEAP FREE
 #else
-  __os_free(addr);
+  app_wisun_free(addr);
 #endif
 }

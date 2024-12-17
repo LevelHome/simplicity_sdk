@@ -53,7 +53,6 @@ Revision: $Rev: 9599 $
 */
 
 #include <stddef.h>
-#include "em_core.h"
 #include "sl_sysview_custom_api.h"
 #include "SEGGER_SYSVIEW.h"
 #include "SEGGER_SYSVIEW_Conf.h"

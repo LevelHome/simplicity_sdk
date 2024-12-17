@@ -187,7 +187,9 @@
 
 #else /* portUSING_MPU_WRAPPERS */
 
-    #define PRIVILEGED_FUNCTION
+    #include "sl_code_classification.h"
+
+    #define PRIVILEGED_FUNCTION       SL_CODE_CLASSIFY(SL_CODE_COMPONENT_FREERTOS_KERNEL, SL_CODE_CLASS_TIME_CRITICAL)
     #define PRIVILEGED_DATA
     #define FREERTOS_SYSTEM_CALL
     #define portUSING_MPU_WRAPPERS    0

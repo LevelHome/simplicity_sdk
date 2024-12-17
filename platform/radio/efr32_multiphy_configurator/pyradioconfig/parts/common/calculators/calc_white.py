@@ -57,11 +57,14 @@ class CALC_Whitening(ICalculator):
         """
         #Outputs
         """
-        self._addModelRegister(model, 'FRC.WHITECTRL.SHROUTPUTSEL', int, ModelVariableFormat.HEX )
-        self._addModelRegister(model, 'FRC.WHITECTRL.XORFEEDBACK', int, ModelVariableFormat.HEX )
-        self._addModelRegister(model, 'FRC.WHITECTRL.FEEDBACKSEL', int, ModelVariableFormat.HEX )
-        self._addModelRegister(model, 'FRC.WHITEPOLY.POLY', int, ModelVariableFormat.HEX )
-        self._addModelRegister(model, 'FRC.WHITEINIT.WHITEINIT', int, ModelVariableFormat.HEX )
+        self._build_white_regs(model)
+
+    def _build_white_regs(self, model):
+        self._addModelRegister(model, 'FRC.WHITECTRL.SHROUTPUTSEL', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'FRC.WHITECTRL.XORFEEDBACK', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'FRC.WHITECTRL.FEEDBACKSEL', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'FRC.WHITEPOLY.POLY', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'FRC.WHITEINIT.WHITEINIT', int, ModelVariableFormat.HEX)
 
     def _calc_init(self, model):
         """

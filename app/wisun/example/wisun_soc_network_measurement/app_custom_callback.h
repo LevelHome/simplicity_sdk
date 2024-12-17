@@ -1,5 +1,5 @@
 /***************************************************************************//**
- * @file
+ * @file app_custom_callback.h
  * @brief Application custom callback implementations
  *******************************************************************************
  * # License
@@ -39,7 +39,6 @@ extern "C" {
 //                                   Includes
 // -----------------------------------------------------------------------------
 #include "sl_wisun_api.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -73,6 +72,11 @@ void app_custom_socket_data_sent_callback(sl_wisun_evt_t *evt);
  *****************************************************************************/
 void app_custom_socket_data_callback(sl_wisun_evt_t *evt);
 
+/**************************************************************************//**
+ * @brief Application custom join state callback
+ * @details This function registered as join state custom callback
+ * @param[in] evt event argument
+ *****************************************************************************/
 void app_custom_join_state_callback(sl_wisun_evt_t *evt);
 
 /**************************************************************************//**

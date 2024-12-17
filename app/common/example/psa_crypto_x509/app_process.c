@@ -133,7 +133,7 @@ void app_process_action(void)
   switch (app_state) {
     case PSA_CRYPTO_INIT:
       printf("\n%s - Core running at %" PRIu32 " kHz.\n", example_string,
-             CMU_ClockFreqGet(cmuClock_CORE) / 1000);
+             SystemHCLKGet() / 1000);
       printf("  . PSA Crypto initialization... ");
       if (init_psa_crypto() == PSA_SUCCESS) {
         print_key_storage();
@@ -168,10 +168,20 @@ void app_process_action(void)
         printf("\n  . Current SECPxxxR1 key length is %d-bit (%s).\n",
                secpr1_key_size[secpr1_key_size_select],
                secpr1_key_size_string[secpr1_key_size_select]);
-        printf("  + Press SPACE to select SECPxxxR1 key length (%d or %d or %d "
-               "or %d), press ENTER to next option.\n", secpr1_key_size[0],
-               secpr1_key_size[1], secpr1_key_size[2], secpr1_key_size[3]);
-        app_state = SELECT_SECPR1_SIZE;
+#if defined(_SILICON_LABS_32B_SERIES_3_CONFIG_301)
+        if (asymmetric_key_storage_select > KEY_STORAGE_PLAIN_MAX) {
+          printf("  + Press SPACE to select SECPxxxR1 key length (%d or %d),"
+                 "press ENTER to next option.\n", secpr1_key_size[0],
+                 secpr1_key_size[1]);
+          app_state = SELECT_SECPR1_SIZE;
+        } else
+#endif
+        {
+          printf("  + Press SPACE to select SECPxxxR1 key length (%d or %d or %d "
+                 "or %d), press ENTER to next option.\n", secpr1_key_size[0],
+                 secpr1_key_size[1], secpr1_key_size[2], secpr1_key_size[3]);
+          app_state = SELECT_SECPR1_SIZE;
+        }
       }
       break;
 
@@ -182,6 +192,13 @@ void app_process_action(void)
         if (secpr1_key_size_select > SECPR1_SIZE_MAX) {
           secpr1_key_size_select = 0;
         }
+#if defined(_SILICON_LABS_32B_SERIES_3_CONFIG_301)
+        if (asymmetric_key_storage_select > KEY_STORAGE_PLAIN_MAX) {
+          if (secpr1_key_size_select > SECPR1_256_SIZE) {
+            secpr1_key_size_select = 0;
+          }
+        }
+#endif
         printf("  + Current SECPxxxR1 key length is %d-bit (%s).\n",
                secpr1_key_size[secpr1_key_size_select],
                secpr1_key_size_string[secpr1_key_size_select]);

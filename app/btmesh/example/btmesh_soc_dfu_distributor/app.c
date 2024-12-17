@@ -29,10 +29,10 @@
  ******************************************************************************/
 #include <stdbool.h>
 #include <stdio.h>
-#include "em_common.h"
+#include "sl_common.h"
 
 #include "sl_status.h"
-#include "sl_sleeptimer.h"
+#include "sl_udelay.h"
 
 #include "sl_bluetooth.h"
 #include "sl_bt_api.h"
@@ -133,7 +133,7 @@ void change_leds_to_buttons(void)
   sl_simple_button_enable(&sl_button_btn1);
 #endif
   // Wait
-  sl_sleeptimer_delay_millisecond(1);
+  sl_udelay_wait(1000);
   // Enable button presses
   app_button_press_enable();
 }
@@ -329,7 +329,7 @@ void sl_btmesh_on_node_provisioning_failed(uint16_t result)
 {
   app_show_btmesh_node_provisioning_failed(result);
   // Small delay before reboot
-  sl_sleeptimer_delay_millisecond(2000);
+  sl_udelay_wait(2000000);
   sl_bt_system_reboot();
 }
 

@@ -110,7 +110,7 @@ template_contribution:
     value:
       group: green-power-client
       name: clear-proxy-table
-      handler: sl_zigbee_af_green_power_client_clear_proxy_table
+      handler: sl_zigbee_af_green_power_client_clear_proxy_table_command
       help: Clears the proxy table.
   - name: cli_command
     value:

@@ -8,6 +8,10 @@
   - name: EFM32PG22C200F128IM32
     unless:
     - device_content_override
+  - name: SL_CODE_COMPONENT_SYSTEM
+    unless:
+    - device_content_override
+    value: system
 - source:
   - path: platform/Device/SiliconLabs/EFM32PG22/Source/startup_efm32pg22.c
     unless:
@@ -131,6 +135,8 @@
   - id: trustzone_unaware
 - requires:
   - name: cmsis_core
+  - name: code_classification
+  - name: component_catalog
 - template_contribution:
   - name: device_opn
     value: EFM32PG22C200F128IM32
@@ -180,6 +186,8 @@
       count: '2'
       mask: '0x0003'
       name: gpio_port_d
+  - name: code_classification_components
+    value: system
 - tag:
   - device:opn:efm32pg22c200f128im32
 - toolchain_settings:

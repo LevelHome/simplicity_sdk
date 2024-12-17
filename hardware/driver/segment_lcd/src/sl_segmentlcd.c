@@ -34,7 +34,7 @@
 #include <stdbool.h>
 #include "em_device.h"
 #include "sl_clock_manager.h"
-#include "em_gpio.h"
+#include "sl_gpio.h"
 #include "em_lcd.h"
 
 #include "sl_segmentlcd.h"
@@ -241,7 +241,7 @@ void sl_segment_lcd_all_off(void)
 #if defined(_SILICON_LABS_32B_SERIES_1) || defined(_SILICON_LABS_32B_SERIES_2)
   /* Switching charge redistribution OFF (if dynamic change is enabled)*/
   if (dynamic_chg_redist_enabled) {
-      /* Disable the controller before reconfiguration. */
+    /* Disable the controller before reconfiguration. */
     LCD_Enable(false);
 #if defined(_SILICON_LABS_32B_SERIES_2)
     LCD_ReadyWait();
@@ -268,7 +268,7 @@ void sl_segment_lcd_all_on(void)
 #if defined(_SILICON_LABS_32B_SERIES_1) || defined(_SILICON_LABS_32B_SERIES_2)
   /* Switching charge redistribution ON (if dynamic change is enabled) */
   if (dynamic_chg_redist_enabled) {
-      /* Disable the controller before reconfiguration. */
+    /* Disable the controller before reconfiguration. */
     LCD_Enable(false);
 #if defined(_SILICON_LABS_32B_SERIES_2)
     LCD_ReadyWait();
@@ -536,14 +536,14 @@ void sl_segment_lcd_temp_display(int32_t temp_data)
     sl_segment_lcd_symbol(SL_LCD_SYMBOL_DEGC, 1);  // Display Degree C symbol
     sl_segment_lcd_symbol(SL_LCD_SYMBOL_P3, 1);    // Display decimal symbol
 
-  /* Used when the temperature is above 100 degrees Celsius */
+    /* Used when the temperature is above 100 degrees Celsius */
   } else if (temp_data >= SL_SEGMENT_LCD_THREE_DIGIT_CASE) {
     temp_data = temp_data / 10;
     sl_segment_lcd_number(temp_data);           // Display the value of temp_data
     sl_segment_lcd_symbol(SL_LCD_SYMBOL_DEGC, 1);  // Display Degree C symbol
     sl_segment_lcd_symbol(SL_LCD_SYMBOL_P3, 1);    // Display decimal symbol
 
-   /* Used when the temperature is between 0-100 degrees Celsius */
+    /* Used when the temperature is between 0-100 degrees Celsius */
   } else {
     sl_segment_lcd_number(temp_data);           // Display the value of temp_data
     sl_segment_lcd_symbol(SL_LCD_SYMBOL_DEGC, 1);  // Display Degree C symbol
@@ -1377,7 +1377,7 @@ void sl_segment_lcd_update_chg_rdst(void)
   switch_chg_redist_on =
     (threshold_hi_reached)
     || (threshold_lo_reached && (seg_cnt_acc >= SEG_TOTAL_THRESHOLD));
-  if(switch_chg_redist_on_old != switch_chg_redist_on){
+  if (switch_chg_redist_on_old != switch_chg_redist_on) {
     /* Disable the controller before reconfiguration. */
     LCD_Enable(false);
   #if defined(_SILICON_LABS_32B_SERIES_2)

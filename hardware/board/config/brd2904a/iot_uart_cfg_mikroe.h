@@ -105,11 +105,11 @@
 #define IOT_UART_CFG_MIKROE_PERIPHERAL_NO        0
 
 // USART0 TX on PB01
-#define IOT_UART_CFG_MIKROE_TX_PORT              gpioPortB
+#define IOT_UART_CFG_MIKROE_TX_PORT              SL_GPIO_PORT_B
 #define IOT_UART_CFG_MIKROE_TX_PIN               1
 
 // USART0 RX on PB02
-#define IOT_UART_CFG_MIKROE_RX_PORT              gpioPortB
+#define IOT_UART_CFG_MIKROE_RX_PORT              SL_GPIO_PORT_B
 #define IOT_UART_CFG_MIKROE_RX_PIN               2
 
 

@@ -49,6 +49,7 @@
 #endif
 
 #include "dmadrv_config.h"
+#include "sl_code_classification.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -150,17 +151,28 @@ Ecode_t DMADRV_LdmaStartTransfer(int                channelId,
                                  LDMA_Descriptor_t  *descriptor,
                                  DMADRV_Callback_t  callback,
                                  void               *cbUserParam);
+#elif defined(EMDRV_DMADRV_LDMA_S3)
+Ecode_t DMADRV_LdmaStartTransfer(int                            channelId,
+                                 sl_hal_ldma_transfer_config_t  *transfer,
+                                 sl_hal_ldma_descriptor_t       *descriptor,
+                                 DMADRV_Callback_t              callback,
+                                 void                           *cbUserParam);
 #endif
 
 Ecode_t DMADRV_PauseTransfer(unsigned int channelId);
 Ecode_t DMADRV_ResumeTransfer(unsigned int channelId);
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_DMADRV, SL_CODE_CLASS_TIME_CRITICAL)
 Ecode_t DMADRV_StopTransfer(unsigned int channelId);
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_DMADRV, SL_CODE_CLASS_TIME_CRITICAL)
 Ecode_t DMADRV_TransferActive(unsigned int channelId,
                               bool         *active);
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_DMADRV, SL_CODE_CLASS_TIME_CRITICAL)
 Ecode_t DMADRV_TransferCompletePending(unsigned int channelId,
                                        bool         *pending);
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_DMADRV, SL_CODE_CLASS_TIME_CRITICAL)
 Ecode_t DMADRV_TransferDone(unsigned int channelId,
                             bool         *done);
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_DMADRV, SL_CODE_CLASS_TIME_CRITICAL)
 Ecode_t DMADRV_TransferRemainingCount(unsigned int channelId,
                                       int          *remaining);
 

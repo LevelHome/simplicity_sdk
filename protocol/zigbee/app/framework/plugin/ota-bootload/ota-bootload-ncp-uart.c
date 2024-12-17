@@ -310,7 +310,7 @@ bool sli_zigbee_af_bootload_wait_char(uint8_t *data, bool expect, uint8_t expect
   }
 
   // debug
-  // printf("Got <%c,%x>\n", (char)*data, (char)*data);
+  // printf("Got <%c,%02X>\n", (char)*data, (char)*data);
 
   if (expect) {
     return ((*data) == expected);

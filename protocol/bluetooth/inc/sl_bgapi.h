@@ -201,17 +201,25 @@ enum sl_bgapi_dev_types {
  */
 #define SL_BGAPI_MSG_ENCRYPTED(HDR) ((HDR)&SL_BGAPI_BIT_ENCRYPTED)
 
+/**
+ * @brief Construct a BGAPI message header from an event ID and payload length.
+ *
+ * It is the caller's responsibility to verify that the input values are within
+ * valid range.
+ *
+ * @param[in] evt_id The full event ID constant, for example
+ *   `sl_bt_evt_system_boot_id`
+ * @param[in] payload_len Length of the full BGAPI message payload
+ *
+ * @return The header as a `uint32_t` value
+ */
+#define SL_BGAPI_MSG_HEADER_FROM_ID_AND_LEN(evt_id, payload_len) \
+  ((uint32_t) (((uint32_t) (evt_id))                             \
+               | (((uint32_t) (payload_len) & 0x00FF) << 8)      \
+               | (((uint32_t) (payload_len) & 0x0700) >> 8)))    \
+
 /** @} */ // end addtogroup sl_bgapi_types
 /******************************************************************************/
-
-/**
- * Internal function for setting the command handler function. Used by API library.
- *
- * @param cmd_handler_delegate Pointer to command handler delegate function
- */
-void sli_bgapi_set_cmd_handler_delegate(void (*cmd_handler_delegate)(uint32_t,
-                                                                     sl_bgapi_handler,
-                                                                     const void*));
 
 /**
  * @addtogroup sl_bgapi_functions BGAPI Functions

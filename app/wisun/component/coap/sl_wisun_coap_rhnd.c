@@ -1,5 +1,5 @@
 /***************************************************************************//**
- * @file
+ * @file sl_wisun_coap_rhnd.c
  * @brief Wi-SUN CoAP resource handler
  *******************************************************************************
  * # License
@@ -27,28 +27,25 @@
  * 3. This notice may not be removed or altered from any source distribution.
  *
  ******************************************************************************/
+
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <string.h>
 #include <assert.h>
-#include "sl_string.h"
-#include "sl_wisun_types.h"
-#include "sl_wisun_coap_rhnd.h"
-#include "sli_wisun_coap_mem.h"
-#include "sl_wisun_coap.h"
-#include "cmsis_os2.h"
-#include "sl_cmsis_os2_common.h"
-#include "sl_status.h"
-#include "sl_mempool.h"
-#include "sl_wisun_app_core_util.h"
-#include "socket/socket.h"
-#include "sli_wisun_coap_rd.h"
 
-#if SL_WISUN_COAP_RESOURCE_HND_SERVICE_ENABLE
+#include "cmsis_os2.h"
+#include "sl_status.h"
+#include "sl_string.h"
+#include "sl_mempool.h"
+#include "sl_wisun_types.h"
 #include "socket/socket.h"
-#endif
+#include "sl_wisun_trace_util.h"
+#include "sl_wisun_app_core.h"
+#include "sl_wisun_app_core_util.h"
+#include "sl_wisun_coap.h"
+#include "sli_wisun_coap_rd.h"
+#include "sl_wisun_coap_rhnd.h"
 
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
@@ -168,6 +165,7 @@ static sl_mempool_t _resources = { 0U };
 #if SL_WISUN_COAP_RESOURCE_HND_SERVICE_ENABLE
 /// Socket communication buffer to receive/send
 static uint8_t _rhnd_sock_buff[SL_WISUN_COAP_RESOURCE_HND_SOCK_BUFF_SIZE] = { 0 };
+
 #endif
 
 // -----------------------------------------------------------------------------
@@ -345,10 +343,19 @@ SL_WEAK void sl_wisun_coap_rhnd_service_resp_received_hnd(sl_wisun_coap_packet_t
   printf("[CoAP-RHND-Service: Response packet received]\n");
 }
 
+SL_WEAK void sl_wisun_coap_rhnd_service_resp_received_ext_hnd(const sockaddr_in6_t * const src_addr,
+                                                              sl_wisun_coap_packet_t * req_packet)
+{
+  (void) src_addr;
+  sl_wisun_coap_rhnd_service_resp_received_hnd(req_packet);
+
+  printf("[CoAP-RHND-Service: Response packet received]\n");
+}
+
 SL_WEAK void sl_wisun_coap_rhnd_service_uri_path_error_hnd(sl_wisun_coap_packet_t * req_packet)
 {
   (void) req_packet;
-  printf("[CoAP-RHND-Service: Error occured in URI path handling]\n");
+  printf("[CoAP-RHND-Service: Error occurred in URI path handling]\n");
 }
 
 SL_WEAK void sl_wisun_coap_rhnd_service_buff_ovflow_error_hnd(sl_wisun_coap_packet_t * req_packet,
@@ -356,7 +363,7 @@ SL_WEAK void sl_wisun_coap_rhnd_service_buff_ovflow_error_hnd(sl_wisun_coap_pack
 {
   (void) req_packet;
   (void) resp_packet;
-  printf("[CoAP-RHND-Service: Buffer overflow occured]\n");
+  printf("[CoAP-RHND-Service: Buffer overflow occurred]\n");
 }
 
 SL_WEAK void sl_wisun_coap_rhnd_service_packet_build_error_hnd(sl_wisun_coap_packet_t * req_packet,
@@ -364,7 +371,7 @@ SL_WEAK void sl_wisun_coap_rhnd_service_packet_build_error_hnd(sl_wisun_coap_pac
 {
   (void) req_packet;
   (void) resp_packet;
-  printf("[CoAP-RHND-Service: Response build error occured]\n");
+  printf("[CoAP-RHND-Service: Response build error occurred]\n");
 }
 
 SL_WEAK void sl_wisun_coap_rhnd_service_resp_send_error_hnd(sl_wisun_coap_packet_t * req_packet,
@@ -372,7 +379,7 @@ SL_WEAK void sl_wisun_coap_rhnd_service_resp_send_error_hnd(sl_wisun_coap_packet
 {
   (void) req_packet;
   (void) resp_packet;
-  printf("[CoAP-RHND-Service: Response send error occured]\n");
+  printf("[CoAP-RHND-Service: Response send error occurred]\n");
 }
 #endif
 
@@ -441,17 +448,20 @@ static void _rhnd_thr_fnc(void * args)
   const sl_wisun_coap_rhnd_resource_t *resource = NULL;
   const char *uri_path                          = NULL;
   char *discovery_payload                       = NULL;
+#if SL_WISUN_COAP_RESOURCE_HND_VERBOSE_MODE_ENABLE
+  const char *ip_str                            = NULL;
+#endif
   int32_t sockid                                = SOCKET_INVALID_ID;
   int32_t sockid_active                         = SOCKET_INVALID_ID;
   int32_t r                                     = SOCKET_INVALID_ID;
   socklen_t sock_len                            = 0UL;
   size_t resp_len                               = 0UL;
   uint16_t discovery_paylod_len                 = 0U;
-  static sockaddr_in6_t srv_addr                  = { 0U };
-  static sockaddr_in6_t clnt_addr                 = { 0U };
+  static sockaddr_in6_t srv_addr                = { 0U };
+  static sockaddr_in6_t clnt_addr               = { 0U };
 #if SL_WISUN_COAP_RD_SOCKET_REQUIRED
   int32_t sockid_rd                             = SOCKET_INVALID_ID;
-  static sockaddr_in6_t srv_addr_rd               = { 0U };
+  static sockaddr_in6_t srv_addr_rd             = { 0U };
 #endif
 
 // Clean-up code
@@ -465,11 +475,10 @@ static void _rhnd_thr_fnc(void * args)
   (void) args;
 
   SL_COAP_SERVICE_LOOP() {
-    // wait for network connected state
-    if (!sl_wisun_app_core_util_network_is_connected()) {
-      osDelay(1000UL);
-      continue;
-    }
+    
+    // waiting for network connected state
+    (void) sl_wisun_app_core_wait_state((1UL << SL_WISUN_APP_CORE_STATE_NETWORK_CONNECTED), 
+                                         osWaitForever);
 
     // creating socket
     sockid = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
@@ -501,10 +510,7 @@ static void _rhnd_thr_fnc(void * args)
 #endif
 
     // Receiver loop
-    while (1) {
-      // Dispatch
-      sl_wisun_app_core_util_dispatch_thread();
-
+    SL_COAP_SERVICE_LOOP() {
       // Receive UDP packets
       sockid_active = sockid;
       r = recvfrom(sockid_active, _rhnd_sock_buff,
@@ -529,12 +535,16 @@ static void _rhnd_thr_fnc(void * args)
         if (req_pkt == NULL) {
           continue;
         }
-        printf("[CoAP-RHND-Service: Received packet]\n");
+#if SL_WISUN_COAP_RESOURCE_HND_VERBOSE_MODE_ENABLE
+        ip_str = app_wisun_trace_util_get_ip_str(&clnt_addr.sin6_addr);
+        printf("[CoAP-RHND-Service: Received packet from '%s']\n", ip_str);
         sl_wisun_coap_print_packet(req_pkt, false);
+        app_wisun_trace_util_destroy_ip_str(ip_str);
+#endif
 
         // Handling response and empty packets
         if (!sl_wisun_coap_rhnd_is_request_packet(req_pkt)) {
-          sl_wisun_coap_rhnd_service_resp_received_hnd(req_pkt);
+          sl_wisun_coap_rhnd_service_resp_received_ext_hnd(&clnt_addr, req_pkt);
           continue;
         }
 
@@ -560,18 +570,29 @@ static void _rhnd_thr_fnc(void * args)
           }
 
           // Get resource
-          resource = _get_resource((const char *) uri_path);
+          resource = _get_resource(uri_path);
 
           // Free URI path string
-          sl_wisun_coap_destroy_uri_path_str((char *)uri_path);
+          sl_wisun_coap_destroy_uri_path_str(uri_path);
 
           // Check resource and its auto response callback
-          if (resource != NULL && resource->auto_response != NULL) {
+          if (resource != NULL
+              && ((resource->auto_response != NULL)
+                  || (resource->auto_response_ext != NULL))) {
             // Create auto-response packet
-            resp_pkt = resource->auto_response(req_pkt);
+            if (resource->auto_response == NULL) {
+              resp_pkt = resource->auto_response_ext(&clnt_addr, req_pkt);
+            } else {
+              resp_pkt = resource->auto_response(req_pkt);
+            }
             if (resp_pkt == NULL) {
               __cleanup_service();
               continue;
+            }
+
+            // Initialise new clnt address with redirect response callback (optional)
+            if (resource->redirect_response != NULL) {
+              resource->redirect_response(&clnt_addr, req_pkt);
             }
           } else {
             // Create "Not found" packet
@@ -596,9 +617,12 @@ static void _rhnd_thr_fnc(void * args)
           __cleanup_service();
           continue;
         }
-
-        printf("[CoAP-RHND-Service: Response packet]\n");
+#if SL_WISUN_COAP_RESOURCE_HND_VERBOSE_MODE_ENABLE
+        ip_str = app_wisun_trace_util_get_ip_str(&clnt_addr.sin6_addr);
+        printf("[CoAP-RHND-Service: Response packet to '%s']\n", ip_str);
         sl_wisun_coap_print_packet(resp_pkt, false);
+        app_wisun_trace_util_destroy_ip_str(ip_str);
+#endif
 
         // Send response
         if (sendto(sockid_active, _rhnd_sock_buff, resp_len, 0L,
@@ -614,7 +638,6 @@ static void _rhnd_thr_fnc(void * args)
 #if SL_WISUN_COAP_RD_SOCKET_REQUIRED
         close(sockid_rd);
 #endif
-        osDelay(1000UL);
 
         // Free packets
         __cleanup_service();

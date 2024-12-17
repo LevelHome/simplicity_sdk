@@ -96,9 +96,9 @@ extern void    OT_API_REAL_NAME(otCoapSecureSetCertificate)(otInstance    *aInst
                                                          uint32_t       aX509Length,
                                                          const uint8_t *aPrivateKey,
                                                          uint32_t       aPrivateKeyLength);
-extern void    OT_API_REAL_NAME(otCoapSecureSetClientConnectedCallback)(otInstance                     *aInstance,
-                                                                     otHandleCoapSecureClientConnect aHandler,
-                                                                     void                           *aContext);
+extern void    OT_API_REAL_NAME(otCoapSecureSetClientConnectEventCallback)(otInstance                     *aInstance,
+                                                                        otHandleCoapSecureClientConnect aHandler,
+                                                                        void                           *aContext);
 extern void    OT_API_REAL_NAME(otCoapSecureSetDefaultHandler)(otInstance          *aInstance,
                                                             otCoapRequestHandler aHandler,
                                                             void                *aContext);
@@ -281,12 +281,12 @@ void OT_API_WRAPPER_NAME(otCoapSecureSetCertificate)(otInstance    *aInstance,
     sl_ot_rtos_release_stack_mutex();
 }
 
-void OT_API_WRAPPER_NAME(otCoapSecureSetClientConnectedCallback)(otInstance                     *aInstance,
-                                                                 otHandleCoapSecureClientConnect aHandler,
-                                                                 void                           *aContext)
+void OT_API_WRAPPER_NAME(otCoapSecureSetClientConnectEventCallback)(otInstance                     *aInstance,
+                                                                    otHandleCoapSecureClientConnect aHandler,
+                                                                    void                           *aContext)
 {
     sl_ot_rtos_acquire_stack_mutex();
-    OT_API_REAL_NAME(otCoapSecureSetClientConnectedCallback)(aInstance, aHandler, aContext);
+    OT_API_REAL_NAME(otCoapSecureSetClientConnectEventCallback)(aInstance, aHandler, aContext);
     sl_ot_rtos_release_stack_mutex();
 }
 

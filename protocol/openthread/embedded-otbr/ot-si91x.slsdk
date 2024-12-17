@@ -1,0 +1,9 @@
+# Properties file for Simplicity Studio metadata
+id=com.silabs.sdk.ot-si91x
+
+version=0.0.1
+
+label=Silicon Labs ot-si91x
+description=ot-si91x extension for Simplicity SDK Suite
+
+prop.subLabel=Silicon Labs ot-si91x\\ 0.0.1-1.0

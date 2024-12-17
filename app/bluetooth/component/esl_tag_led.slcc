@@ -8,6 +8,9 @@ description: >
   for the actual LED control is needed. See SoC ESL Tag example as an
   implementation reference, hence this is a Custom-Code component.
 category: Bluetooth|Application|GATT Services
+metadata:
+  sbom:
+    license: Zlib
 quality: production
 root_path: app/bluetooth/common/esl_tag_led
 tag:

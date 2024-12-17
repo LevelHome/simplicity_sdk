@@ -39,9 +39,6 @@ requires:
   # (trustzone_unaware) should be used.
   - name: trustzone_security_state
 
-conflicts:
-  - name: device_series_3
-
 recommends:
   # Assume that projects are TZ unaware unless a state is explicitly included.
   - id: trustzone_unaware
@@ -49,3 +46,7 @@ recommends:
 template_contribution:
   - name: psa_crypto_config
     value: MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
+
+metadata:
+  sbom:
+    license: Zlib

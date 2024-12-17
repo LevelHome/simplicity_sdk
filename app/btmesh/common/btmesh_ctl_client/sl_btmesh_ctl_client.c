@@ -3,7 +3,7 @@
  * @brief Bt Mesh CTL Client module
  *******************************************************************************
  * # License
- * <b>Copyright 2020 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -28,7 +28,6 @@
  *
  ******************************************************************************/
 #include <stdbool.h>
-#include "em_common.h"
 #include "sl_status.h"
 
 #include "sl_btmesh_api.h"
@@ -37,6 +36,7 @@
 
 #include "sl_btmesh_generic_model_capi_types.h"
 #include "sl_btmesh_lib.h"
+#include "app_btmesh_rta.h"
 
 #include "app_assert.h"
 #include "app_timer.h"
@@ -165,6 +165,11 @@ void sl_btmesh_ctl_client_set_temperature(uint8_t temperature_percent)
     return;
   }
 
+  sl_status_t sc = app_btmesh_rta_acquire();
+  if (sc != SL_STATUS_OK) {
+    return;
+  }
+
   // Using square of percentage to change temperature more uniformly
   // just for demonstration
   temperature_level = TEMPERATURE_MIN                              \
@@ -191,6 +196,8 @@ void sl_btmesh_ctl_client_set_temperature(uint8_t temperature_percent)
                                      true);
     app_assert_status_f(sc, "Failed to start periodic timer");
   }
+
+  (void) app_btmesh_rta_release();
 }
 
 /*******************************************************************************
@@ -200,6 +207,11 @@ void sl_btmesh_ctl_client_set_lightness(uint8_t lightness_percent)
 {
   // Adjust lightness, using Light CTL model
   if (lightness_percent > LIGHTNESS_PCT_MAX) {
+    return;
+  }
+
+  sl_status_t sc = app_btmesh_rta_acquire();
+  if (sc != SL_STATUS_OK) {
     return;
   }
 
@@ -221,6 +233,8 @@ void sl_btmesh_ctl_client_set_lightness(uint8_t lightness_percent)
                                      true);
     app_assert_status_f(sc, "Failed to start periodic timer");
   }
+
+  (void) app_btmesh_rta_release();
 }
 
 /***************************************************************************//**
@@ -234,11 +248,18 @@ static void  ctl_retransmission_timer_cb(app_timer_t *handle,
   (void)data;
   (void)handle;
 
+  sl_status_t sc = app_btmesh_rta_acquire();
+  if (sc != SL_STATUS_OK) {
+    return;
+  }
+
   send_ctl_request(1);   // Retransmit ctl message
   // Stop retransmission timer if it was the last attempt
   if (ctl_request_count == 0) {
-    sl_status_t sc = app_timer_stop(&ctl_retransmission_timer);
+    sc = app_timer_stop(&ctl_retransmission_timer);
     app_assert_status_f(sc, "Failed to stop periodic timer");
   }
+
+  (void) app_btmesh_rta_release();
 }
 /** @} (end addtogroup Lighting) */

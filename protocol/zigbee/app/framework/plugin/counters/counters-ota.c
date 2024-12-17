@@ -16,7 +16,6 @@
  ******************************************************************************/
 
 #include "app/framework/include/af.h"
-#include "app/util/serial/sl_zigbee_command_interpreter.h"
 #include "app/util/common/common.h"
 #include "counters.h"
 #include "counters-ota.h"

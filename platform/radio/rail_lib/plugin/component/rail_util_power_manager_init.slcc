@@ -4,6 +4,11 @@ description: Utility to aid with RAIL power manager initialization
 package: platform
 category: Platform|Radio
 quality: production
+metadata:
+  sbom:
+    id: rail_util_power_manager_init
+    name: RAIL Utility, Power manager init
+    license: Zlib
 ui_hints:
   visibility: never
 requires:

@@ -56,6 +56,7 @@ typedef esl_lib_evt_scan_status_t esl_lib_scan_status_t;
 /// Access Point state data
 typedef struct {
   esl_lib_scan_status_t      scan;             ///< Scan status
+  esl_lib_bool_t             scanner_suspended;///< Scanner - lib internal state
   esl_lib_command_list_cmd_t *command;         ///< Command in progress
   bool                       command_complete; ///< Finished command
   sl_slist_node_t            *command_list;    ///< Command list
@@ -92,6 +93,24 @@ sl_status_t esl_lib_core_add_command(esl_lib_command_list_cmd_t *cmd);
  * Connection request complete callback.
  *****************************************************************************/
 void esl_lib_core_connection_complete(void);
+
+/***************************************************************************//**
+ *
+ * Read the Bluetooth identity address used by the ESL AP, which can be a public
+ * or random static device address.
+ *
+ * @param[out] address Bluetooth identity address in little endian format
+ * @param[out] type Enum @ref sl_bt_gap_address_type_t. Identity address type.
+ *   Values:
+ *     - <b>sl_bt_gap_public_address (0x0):</b> Public device address
+ *     - <b>sl_bt_gap_static_address (0x1):</b> Static device address
+ *
+ * @return SL_STATUS_OK if successful or SL_STATUS_INITIALIZATION if called
+ *       before the sl_bt_evt_system_boot_id event from the radio has arrived
+ *       and been processed. Returns SL_STATUS_NULL_POINTER in case of NULL
+ *       argument(s).
+ ******************************************************************************/
+sl_status_t esl_lib_core_get_identity_address(bd_addr *address, uint8_t *type);
 
 #ifdef __cplusplus
 };

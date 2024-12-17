@@ -46,6 +46,10 @@ include:
           - toolchain_gcc
 provides:
   - name: kernel_port_armv7m
+  - name: kernel_port
+    condition: [cortexm3]
+  - name: kernel_port
+    condition: [cortexm4]
 requires:
   - name: kernel_port_generic
   - name: component_catalog

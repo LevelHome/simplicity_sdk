@@ -1,6 +1,6 @@
 id: "connect_ncp"
 label: "Connect NCP"
-package: "Flex"
+package: "Connect"
 category: "Connect"
 quality: "production"
 ui_hints:

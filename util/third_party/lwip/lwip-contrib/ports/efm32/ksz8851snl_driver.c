@@ -46,7 +46,6 @@
 
 #include "em_device.h"
 #include "em_core.h"
-#include "em_gpio.h"
 
 #include "bsp.h"
 
@@ -109,7 +108,6 @@ err_t ksz8851snl_driver_init(struct netif *netif)
   return ERR_OK;
 }
 
-
 /****************************************************************************//**
  * @brief
  *   Transmit a raw packet.
@@ -141,32 +139,22 @@ err_t ksz8851snl_driver_output(struct netif *netif, struct pbuf *p)
   CORE_ENTER_ATOMIC();
 
   /* Check for LwIP chained buffers */
-  if (p->next)
-  {
-    if (KSZ8851SNL_TransmitBegin(p->tot_len))
-    {
-      for (q = p; q != NULL; q = q->next)
-      {
+  if (p->next) {
+    if (KSZ8851SNL_TransmitBegin(p->tot_len)) {
+      for (q = p; q != NULL; q = q->next) {
         KSZ8851SNL_Transmit(q->len, q->payload);
       }
       KSZ8851SNL_TransmitEnd(p->tot_len);
-    }
-    else
-    {
+    } else {
       /* else - PHY is out of memory - drop this packet */
       LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_LEVEL_WARNING, ("ksz8851snl_driver: Unable to send packet of size %u\n", p->len));
     }
-  }
-  else
-  {
+  } else {
     /* When only one pbuf, use p->len */
-    if (KSZ8851SNL_TransmitBegin(p->len))
-    {
+    if (KSZ8851SNL_TransmitBegin(p->len)) {
       KSZ8851SNL_Transmit(p->len, p->payload);
       KSZ8851SNL_TransmitEnd(p->len);
-    }
-    else
-    {
+    } else {
       /* else - PHY is out of memory - drop this packet */
       LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_LEVEL_WARNING, ("ksz8851snl_driver: Unable to send packet of size %u\n", p->len));
     }
@@ -202,56 +190,52 @@ void ksz8851snl_driver_input(struct netif *netif)
 
   CORE_ATOMIC_SECTION(
     KSZ8851SNL_FrameCounterSet();
-  )
+    )
 
   /* Process frames. LWIPDRIVER_LowLevelInput()/KSZ8851SNL_Receive() decrements the frame count. */
-  while (KSZ8851SNL_FrameCounterGet() > 0)
-  {
+  while (KSZ8851SNL_FrameCounterGet() > 0) {
     /* Frame Counter is decremented by KSZ8851SNL_Receive - some frames might be dropped due to errors */
     /* This is a recommendation in a programmer's guide */
     CORE_ATOMIC_SECTION(
       p = ksz8851snl_driver_low_level_input(netif);
-    )
+      )
     /* no packet could be read, ignore, but report as DBG_3 */
-    if (p == NULL)
-    {
+    if (p == NULL) {
       LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_LEVEL_WARNING, ("ksz8851snl_driver: ksz8851snl_driver_low_level_input returned NULL\n"));
       continue;
     }
     /* points to packet payload, which starts with an Ethernet header */
     ethhdr = p->payload;
 
-    switch (htons(ethhdr->type))
-    {
-    /* IP or ARP packet? */
-    case ETHTYPE_IP:
-    case ETHTYPE_ARP:
+    switch (htons(ethhdr->type)) {
+      /* IP or ARP packet? */
+      case ETHTYPE_IP:
+      case ETHTYPE_ARP:
   #if PPPOE_SUPPORT
-    /* PPPoE packet? */
-    case ETHTYPE_PPPOEDISC:
-    case ETHTYPE_PPPOE:
+      /* PPPoE packet? */
+      case ETHTYPE_PPPOEDISC:
+      case ETHTYPE_PPPOE:
   #endif /* PPPOE_SUPPORT */
-         /* full packet send to tcpip_thread to process */
-      err = netif->input(p, netif);
-      if (err != ERR_OK)
-      {
-        LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_LEVEL_WARNING, ("ksz8851snl_driver: netif->input input error err=%d\n", err));
+        /* full packet send to tcpip_thread to process */
+        err = netif->input(p, netif);
+        if (err != ERR_OK) {
+          LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_LEVEL_WARNING, ("ksz8851snl_driver: netif->input input error err=%d\n", err));
+          pbuf_free(p);
+          p = NULL;
+        }
+        break;
+
+      case ETHTYPE_IPV6:
+        LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_LEVEL_WARNING, ("ksz8851snl_driver: IPv6 frame type is not supported. Frame ignored.\n"));
         pbuf_free(p);
         p = NULL;
-      }
-      break;
+        break;
 
-    case ETHTYPE_IPV6:
-      LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_LEVEL_WARNING, ("ksz8851snl_driver: IPv6 frame type is not supported. Frame ignored.\n"));
-      pbuf_free(p);
-      p = NULL;
-      break;
-
-    default:
-      LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_LEVEL_WARNING, ("ksz8851snl_driver: Unsupported Ethernet type = 0x%04lX\n", (uint32_t) htons(ethhdr->type)));
-      pbuf_free(p);
-      p = NULL;
-      break;
+      default:
+        LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_LEVEL_WARNING, ("ksz8851snl_driver: Unsupported Ethernet type = 0x%04lX\n", (uint32_t) htons(ethhdr->type)));
+        pbuf_free(p);
+        p = NULL;
+        break;
     }
   }
 }
@@ -275,27 +259,20 @@ static struct pbuf *ksz8851snl_driver_low_level_input(struct netif *netif)
 
   /* We allocate a pbuf chain of pbufs from the pool. */
   p = pbuf_alloc(PBUF_RAW, PBUF_POOL_BUFSIZE, PBUF_POOL);
-  if (p != NULL)
-  {
+  if (p != NULL) {
     frameLength = KSZ8851SNL_Receive(PBUF_POOL_BUFSIZE, p->payload);
-    if (frameLength != 0)
-    {
+    if (frameLength != 0) {
       p->len = frameLength;
-      if (p->next == NULL)
-      {
+      if (p->next == NULL) {
         p->tot_len = frameLength;
       }
       LINK_STATS_INC(link.recv);
-    }
-    else
-    {
+    } else {
       LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_LEVEL_WARNING, ("ksz8851snl_driver: KSZ8851SNL_Receive returns NULL frameLength \n"));
       pbuf_free(p);
       p = NULL;
     }
-  }
-  else
-  {
+  } else {
     LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_LEVEL_WARNING, ("LWIPDRIVER_LowLevelInput: pbuff_alloc returns NULL \n"));
     LINK_STATS_INC(link.memerr);
     LINK_STATS_INC(link.drop);
@@ -313,12 +290,9 @@ static struct pbuf *ksz8851snl_driver_low_level_input(struct netif *netif)
 static void ksz8851snl_driver_phy(struct netif *netif)
 {
   uint16_t phyStatus = KSZ8851SNL_PHYStatusGet();
-  if (phyStatus & LINKGOOD_MASK)
-  {
+  if (phyStatus & LINKGOOD_MASK) {
     netif_set_link_up(netif);
-  }
-  else
-  {
+  } else {
     netif_set_link_down(netif);
   }
 }
@@ -331,7 +305,7 @@ static void ksz8851snl_driver_phy(struct netif *netif)
  *   This can involve reading data from the rx queue and sending it to the ip
  *   stack. This code should be called from the main loop and not from the
  *   gpio isr since it will call into the ip stack to manage received packets.
-  *
+ *
  * @param[in] netif
  *   The network interface
  ******************************************************************************/
@@ -341,39 +315,32 @@ void ksz8851snl_driver_isr(struct netif *netif)
   uint16_t ethIsrFlags = KSZ8851SNL_IntGet();
   KSZ8851SNL_IntClear(ethIsrFlags);
 
-  if (ethIsrFlags & KSZ8851SNL_INT_LINKUP)
-  {
+  if (ethIsrFlags & KSZ8851SNL_INT_LINKUP) {
     KSZ8851SNL_PMECRStatusClear(0x003C);
     ksz8851snl_driver_phy(netif);
   }
 
-  if (ethIsrFlags & KSZ8851SNL_INT_LINK_CHANGE)
-  {
+  if (ethIsrFlags & KSZ8851SNL_INT_LINK_CHANGE) {
     ksz8851snl_driver_phy(netif);
   }
 
-  if (ethIsrFlags & KSZ8851SNL_INT_SPI_ERROR)
-  {
+  if (ethIsrFlags & KSZ8851SNL_INT_SPI_ERROR) {
     /* Loop here to enable the debugger to see what has happened */
     while (1)
       ;
   }
 
-  if (ethIsrFlags & KSZ8851SNL_INT_RX_STOPPED)
-  {
+  if (ethIsrFlags & KSZ8851SNL_INT_RX_STOPPED) {
     KSZ8851SNL_RxQueueReset();
   }
 
-  if (ethIsrFlags & KSZ8851SNL_INT_TX_STOPPED)
-  {
+  if (ethIsrFlags & KSZ8851SNL_INT_TX_STOPPED) {
     KSZ8851SNL_TxQueueReset();
   }
 
-  if (ethIsrFlags & KSZ8851SNL_INT_RX_DONE)
-  {
+  if (ethIsrFlags & KSZ8851SNL_INT_RX_DONE) {
     ksz8851snl_driver_input(netif);
   }
 
   KSZ8851SNL_IntEnable();
 }
-

@@ -154,8 +154,7 @@ typedef struct {
 
 #endif // SLI_MBEDTLS_DEVICE_HSE
 
-/// @endcond
 /** \} (end addtogroup sl_psa_drivers_se) */
 /** \} (end addtogroup sl_psa_drivers) */
-
+/// @endcond
 #endif // SLI_SE_OPAQUE_TYPES_H

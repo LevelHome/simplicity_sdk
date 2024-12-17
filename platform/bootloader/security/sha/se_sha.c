@@ -21,12 +21,7 @@
  *  http://csrc.nist.gov/publications/fips/fips180-2/fips180-2.pdf
  */
 
-#if !defined(MBEDTLS_CONFIG_FILE)
-#include "mbedtls/config.h"
-#else
-#include MBEDTLS_CONFIG_FILE
-#endif
-
+#include <mbedtls/build_info.h>
 #include "em_device.h"
 
 #if defined(SEMAILBOX_PRESENT)
@@ -49,18 +44,16 @@ int sha_x_process(SHA_Type_t algo,
   sli_se_datatransfer_t iv_in = SLI_SE_DATATRANSFER_DEFAULT(state_in, 0);
   sli_se_datatransfer_t iv_out = SLI_SE_DATATRANSFER_DEFAULT(state_out, 0);
 
-  switch (algo) {
-    case SHA256:
-      command.command |= SLI_SE_COMMAND_OPTION_HASH_SHA256;
-      // SHA256 block size is 64 bytes
-      sli_se_mailbox_command_add_parameter(&command, 64 * num_blocks);
-      data_in.length |= 64 * num_blocks;
-      // SHA256 state size is 32 bytes
-      iv_in.length |= 32;
-      iv_out.length |= 32;
-      break;
-    default:
-      return MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED;
+  if (algo == SHA256) {
+    command.command |= SLI_SE_COMMAND_OPTION_HASH_SHA256;
+    // SHA256 block size is 64 bytes
+    sli_se_mailbox_command_add_parameter(&command, 64 * num_blocks);
+    data_in.length |= 64 * num_blocks;
+    // SHA256 state size is 32 bytes
+    iv_in.length |= 32;
+    iv_out.length |= 32;
+  } else {
+    return MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED;
   }
 
   sli_se_mailbox_command_add_input(&command, &iv_in);

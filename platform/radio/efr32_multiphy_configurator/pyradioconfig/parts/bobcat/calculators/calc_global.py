@@ -17,6 +17,8 @@ class Calc_Global_Bobcat(CALC_Global_ocelot):
         self._add_ADPC_regs(model)
         self._add_CHFCTRL_regs(model)
 
+    def _add_common_regs(self, model):
+        super()._add_common_regs(model)
         self._addModelRegister(model, 'MODEM.AFC.DISAFCCTE', int, ModelVariableFormat.HEX)
         self._addModelRegister(model, 'MODEM.CHFSWCTRL.CHFSWTIME', int, ModelVariableFormat.HEX)
 

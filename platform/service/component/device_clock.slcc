@@ -5,7 +5,7 @@ description: >
   The Device Manager Clock component defines the different oscillators,
   clock branches and bus clock values that exist accross all Silicon Labs
   devices.
-category: Services
+category: Services|Device Manager
 quality: production
 metadata:
   sbom:

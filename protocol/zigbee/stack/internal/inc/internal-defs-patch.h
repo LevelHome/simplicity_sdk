@@ -72,7 +72,6 @@
 #include "sl_zigbee_zdo_security_internal_def.h"
 #endif
 #include "zigbee-security-manager-internal-def.h"
-//#include "sl_zigbee_tlv_core_internal_def.h"
 #if !defined (SL_COMPONENT_CATALOG_PRESENT) || defined(SL_CATALOG_ZIGBEE_SOURCE_ROUTE_PRESENT)
 #include "source-route-internal-def.h"
 #endif

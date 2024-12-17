@@ -1,6 +1,6 @@
 id: "connect_mailbox_server"
 label: "Mailbox Server"
-package: "Flex"
+package: "Connect"
 category: "Connect|Mailbox"
 quality: "production"
 description: "Implements the server side of the Connect mailbox protocol. It stores messages from mailbox client(s) and delivers them upon the destination node checks in. When a message expires it is removed from the queue. In both cases, delivery status is reported back to the mailbox client(s)."

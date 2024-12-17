@@ -30,6 +30,6 @@ void sl_zigbee_af_device_database_discovery_complete_cb(const sl_zigbee_af_devic
     }
     sl_zigbee_af_core_print("Updating trust center link key of joining device ");
     sl_zigbee_af_print_big_endian_eui64(info->eui64);
-    sl_zigbee_af_core_println(": 0x%X", status);
+    sl_zigbee_af_core_println(": 0x%02X", status);
   }
 }

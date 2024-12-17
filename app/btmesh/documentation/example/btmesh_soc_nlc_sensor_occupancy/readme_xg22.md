@@ -17,7 +17,7 @@ To get started with Bluetooth Mesh and Simplicity Studio, see [QSG176: Bluetooth
 
 The term SoC stands for "System on Chip", meaning that this is a standalone application that runs on the EFR32/BGM and does not require any external MCU or other active components to operate.
 
-**Bluetooth Mesh - NLC Occupancy Sensor** example makes Occupancy Sensor measurements and forwards them to another node, for example an NLC Basic Lightness Controller (**Bluetooth Mesh - NLC Basic Lightness Controller**) or a Sensor Client Node (**Bluetooth Mesh - Sensor Client**). This measurement can be faked by pressing the buttons on the mainboard:
+**Bluetooth Mesh - NLC Occupancy Sensor** example makes Occupancy Sensor measurements and forwards them to another node, for example an NLC Basic Lightness Controller (**Bluetooth Mesh - NLC Basic Lightness Controller**) or a Sensor Client Node (one of the **Bluetooth Mesh - Sensor Client** examples). This measurement can be faked by pressing the buttons on the mainboard:
 
 - BTN1 increases people count
 - BTN0 decreases people count

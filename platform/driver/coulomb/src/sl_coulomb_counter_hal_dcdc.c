@@ -49,15 +49,12 @@ sli_coulomb_counter_output_t* sli_coulomb_counter_hal_get_output(sl_coulomb_coun
   switch (mask) {
     case SL_COULOMB_COUNTER_OUTPUT_DCDC_EM0:
       return &output_dcdc_em0;
-      break;
 
     case SL_COULOMB_COUNTER_OUTPUT_DCDC_EM2:
       return &output_dcdc_em2;
-      break;
 
     default:
       return NULL;
-      break;
   }
 }
 
@@ -142,7 +139,7 @@ sl_status_t sli_coulomb_counter_hal_int_clear(uint8_t flag)
  *   HAL-specific initialization. This is called by
  *   @ref sl_coulomb_counter_init().
  ******************************************************************************/
-sl_status_t sli_coulomb_counter_hal_init(sli_coulomb_counter_handle_t *handle)
+sl_status_t sli_coulomb_counter_hal_init(const sli_coulomb_counter_handle_t *handle)
 {
   sl_hal_dcdc_coulomb_counter_config_t config = DCDC_COULOMB_COUNTER_CONFIG_DEFAULT;
   const uint16_t COUNTER_THRESHOLD_50 = ((UINT16_MAX + 1) / 2);
@@ -208,7 +205,7 @@ sl_status_t sli_coulomb_counter_hal_clear_counters(void)
 sl_status_t sli_coulomb_counter_hal_read_output(sli_coulomb_counter_output_t *output,
                                                 bool *need_recalibration)
 {
-  uint16_t read_val = 0U;
+  uint32_t read_val = 0U;
 
   if (output->calibration_state != SLI_COULOMB_COUNTER_CALIBRATION_COMPLETE) {
     return SL_STATUS_FAIL;
@@ -277,7 +274,7 @@ float sli_coulomb_counter_hal_cal_get_load_current(int8_t ccl_level)
       EFM_ASSERT(false);
   }
 
-  return (float) (0.2f * ccload);
+  return (0.2f * ccload);
 }
 
 /***************************************************************************//**
@@ -293,7 +290,7 @@ float sli_coulomb_counter_hal_get_osc_frequency(void)
  * @brief
  *   Check if output is available in EM2 or not.
  ******************************************************************************/
-bool sli_coulomb_counter_hal_output_supports_em2(sli_coulomb_counter_output_t *output)
+bool sli_coulomb_counter_hal_output_supports_em2(const sli_coulomb_counter_output_t *output)
 {
   if (output == &output_dcdc_em2) {
     return true;
@@ -413,7 +410,7 @@ sl_status_t sli_coulomb_counter_hal_cal_read_result(uint16_t *result)
  *   The Charge-Per-Pulse (CPP) Calculation is explained in the
  *   reference manual in the Calibration Section.
  ******************************************************************************/
-float sli_coulomb_counter_hal_compute_cpp(sli_coulomb_counter_handle_t *handle)
+float sli_coulomb_counter_hal_compute_cpp(const sli_coulomb_counter_handle_t *handle)
 {
   float cpp = 0.0f;
 
@@ -456,7 +453,7 @@ float sli_coulomb_counter_hal_compute_cpp(sli_coulomb_counter_handle_t *handle)
    * Finally, divide that cpp by the calibration oscillator frequency (fHF)
    * times the number of pulses to capture (Ncal).
    */
-  cpp = cpp / (fhf * ncal);
+  cpp = cpp / (fhf * (float) ncal);
 
   return cpp;
 }

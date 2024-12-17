@@ -19,11 +19,14 @@ source:
 provides:
   - name: freertos_heap
   - name: freertos_heap_3
+  - name: freertos_heap_3_arch
+    condition: [device_cortexm]
 requires:
   - name: cmsis_core
   - name: freertos
   - name: memory_manager
     condition: [device_efx]
+  - name: freertos_heap_3_arch
 template_contribution:
   - name: rte_components
     value: RTE_RTOS_FreeRTOS_HEAP_3

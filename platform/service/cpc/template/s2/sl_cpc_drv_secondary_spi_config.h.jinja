@@ -1,8 +1,8 @@
 #ifndef SL_CPC_DRV_SPI_SECONDARY_CONFIG_H
 #define SL_CPC_DRV_SPI_SECONDARY_CONFIG_H
 
-{% for instance in cpc_instance_name %}
-{% for periph in cpc_periph_type %}
+{% for instance in cpc_spi_instance_name %}
+{% for periph in cpc_spi_periph_type %}
 #include "sl_cpc_drv_secondary_spi_{{ periph }}_{{ instance }}_config.h"
 
 #define SL_CPC_DRV_SPI_IS_{{ periph | upper }}

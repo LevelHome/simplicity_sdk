@@ -92,6 +92,58 @@ typedef struct sl_bgapi_debug_evt_trace_message_metadata_s sl_bgapi_debug_evt_tr
 
 /** @} */ // end addtogroup sl_bgapi_debug_evt_trace_message_metadata
 
+/**
+ * @addtogroup sl_bgapi_debug_evt_trace_custom_message sl_bgapi_debug_evt_trace_custom_message
+ * @{
+ * @brief This event is emitted when a component or application has called @ref
+ * sli_bgapi_trace_log_custom_message to output a custom log message
+ */
+
+/** @brief Identifier of the custom_message event */
+#define sl_bgapi_debug_evt_trace_custom_message_id                            0x010000b0
+
+/***************************************************************************//**
+ * @brief Data structure of the custom_message event
+ ******************************************************************************/
+PACKSTRUCT( struct sl_bgapi_debug_evt_trace_custom_message_s
+{
+  uint64_t   timestamp_us; /**< Timestamp of the custom log message. The value
+                                is a monotonically increasing number of
+                                microseconds that have elapsed after the device
+                                booted up. */
+  uint8array message;      /**< The custom log message. This is typically a
+                                human-readable string, but may also contain
+                                binary data. */
+});
+
+typedef struct sl_bgapi_debug_evt_trace_custom_message_s sl_bgapi_debug_evt_trace_custom_message_t;
+
+/** @} */ // end addtogroup sl_bgapi_debug_evt_trace_custom_message
+
+/**
+ * @addtogroup sl_bgapi_debug_evt_trace_sync sl_bgapi_debug_evt_trace_sync
+ * @{
+ * @brief This event is emitted by the @ref sli_bgapi_trace_sync API in order to
+ * synchronize with the host
+ */
+
+/** @brief Identifier of the sync event */
+#define sl_bgapi_debug_evt_trace_sync_id                                      0x020000b0
+
+/***************************************************************************//**
+ * @brief Data structure of the sync event
+ ******************************************************************************/
+PACKSTRUCT( struct sl_bgapi_debug_evt_trace_sync_s
+{
+  uint64_t timestamp_us; /**< Timestamp of the sync message. The value is a
+                              monotonically increasing number of microseconds
+                              that have elapsed after the device booted up. */
+});
+
+typedef struct sl_bgapi_debug_evt_trace_sync_s sl_bgapi_debug_evt_trace_sync_t;
+
+/** @} */ // end addtogroup sl_bgapi_debug_evt_trace_sync
+
 /** @} */ // end addtogroup sl_bgapi_debug_trace
 
 
@@ -112,6 +164,8 @@ PACKSTRUCT( struct sl_bgapi_debug_msg {
   union {
     uint8_t handle;
     sl_bgapi_debug_evt_trace_message_metadata_t                  evt_trace_message_metadata; /**< Data field for trace message_metadata event*/
+    sl_bgapi_debug_evt_trace_custom_message_t                    evt_trace_custom_message; /**< Data field for trace custom_message event*/
+    sl_bgapi_debug_evt_trace_sync_t                              evt_trace_sync; /**< Data field for trace sync event*/
     uint8_t payload[SL_BGAPI_MAX_PAYLOAD_SIZE];
   } data;
 });

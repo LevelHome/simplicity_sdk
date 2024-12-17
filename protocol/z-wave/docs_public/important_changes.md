@@ -3,6 +3,81 @@
 The changes described in this file will possibly break the build and/or functionality of an
 existing application. The description serves the purpose of helping to fix the failing build.
 
+# 7.23.0 {#section-7-23-0}
+
+## Migration guide
+
+See the new [migration guide](migration_guide.md) on how to migrate projects to the latest SDK.
+
+## Expansion board removal
+The expansion board was removed, so the functionalities are remapped to the *Wireless Starter Kit Mainboard*/*Wireless Pro Kit Mainboard*. Because of the reduced number of LEDs and buttons, some functionalities are only available through the CLI. For more information, please refer to the README file of each example application.
+
+## Change zwave_soc_sensor_pir notification sending
+SensorPIR's behavior has been changed slightly. Now, if the button is pressed for medium time (check readme for exact duration), then the device will send a `NOTIFICATION_EVENT_HOME_SECURITY_MOTION_DETECTION_UNKNOWN_LOCATION` notification and start a timer with a 10 second timeout. If the timeout event occurs or the user sends the `motion_detected deactivate` command through the CLI, then the device will send a `NOTIFICATION_EVENT_HOME_SECURITY_NO_EVENT` notification.
+
+## Enable all examples for all boards
+All examples are now enabled for all boards. Previously, some example applications required an RGB LED or multiple buttons to access all of the features. Now, the CLI is enabled by default in all example applications, so every feature can be controlled using the CLI. The functionality of each application is described in the README file in each application's respective folder, with the available commands. This section contains a summary of the changes. For more detailed information, please refer to the README file of each example application.
+
+### zwave_soc_door_lock_keypad
+Previously, this example required four buttons to control all the features. Now, the user code is no longer simulated, the user can enter/modify the user code manually. The door handle is also accessible through the CLI.
+
+The default PIN code for this application was changed from 1234 to 3494 to comply with the rules recommended by the specification for the User Credential Command class.
+
+### zwave_soc_led_bulb
+Previously, this example required an RGB LED to control the color of the LED. Now, the color can be read through the CLI. If the RGB LED is not available, then a monochrome LED is used to represent the overall brightness of the set color, which will be calculated from the RGB color with the following formula:
+```
+uint16_t sum_colors = ((rgb_led_attributes.color.red * rgb_led_attributes.intensity) / multilevel_switch_max)
+                        + ((rgb_led_attributes.color.green * rgb_led_attributes.intensity) / multilevel_switch_max)
+                        + ((rgb_led_attributes.color.blue * rgb_led_attributes.intensity) / multilevel_switch_max);
+// The PWM duty cycle is a percentage in the range of 0-100
+uint16_t monochrome_value = (100 * sum_colors) / (3 * 255);
+```
+
+### zwave_soc_power_strip
+Previously, this example displayed the Multilevel Switch value on the RGB LED. Now, if an RGB LED is available, the brightness of that LED 
+is controlled by the Multilevel Switch value. Otherwise, a monochrome LED is used to display this value.
+
+## Reduce the number of demo applications
+The number of the demo applications has been reduced. From now on, two different variants are supported for each SoC and SerialAPI demo application:
+- Default: The default firmware with the default region, which is the EU region.
+- V255: The default firmware with 255.0.0 application version. This demo is available to test the OTA and OTW firmware update.
+
+For Zniffer applications, only the default firmware is available.
+
+The default region for this firmware is EU. This region is only applied by the Zniffer PTI and the SoC applications if the dedicated MFG_ZWAVE_COUNTRY_FREQ token is empty (0xFF) when the application first starts up. If another region is needed, then the MFG_ZWAVE_COUNTRY_FREQ token must be set with Simplicity Commander using the following command: `commander flash --tokengroup znet --token MFG_ZWAVE_COUNTRY_FREQ:{region_hex}`, where the {region_hex} is the desired region. The available regions can be found in the `zpal_radio.h` file, such as REGION_EU.
+
+The Long-Range capability can be enabled for any of the demo applications by setting the region to US_LR or EU_LR.
+
+The region of the Serial API and NCP Zniffer applications can be set by the host application.
+
+## RF Configuration in Apps
+The range for APP_MAX_TX_POWER_LR & APP_MAX_TX_POWER values is now set at their highest (200 deci-dBm) by default for all chips.
+
+## Removing support of deprecated SAPI commands
+Remove handling of SAPI commands `Replication Send Data (0x44)` and `Replication Command Complete (0x45)`
+
+## New serial API commands
+Add new serial API commands: Z-Wave API Setup Get Supported Regions Sub Command (0x15) & Z-Wave API Setup Regions Info (0x16).
+
+## Non-Listening and Frequently Listening Apps behavior using CLI
+The behavior is changed on Non-Listening (Sensor PIR, Multilevel Sensor) and Frequently Listening (Door Lock Keypad) applications in case of installed CLI component. After pressing the reset button (or use `commander reset`), the device will wake up for 10 seconds. This allows the user to interact with the device and disable sleeping. The wakeup time can be configurable through the `zw_cli_sleeping` component.
+
+## Removal of postbuild.sh
+The postbuild.sh script has been removed from the SDK. This script was used to sign the applications with the Z-Wave SDK's sample keys and generate GBL files. The script is no longer needed as the signing is now done by the SLC's postbuild profile (SLPB). The keys can be set in the projects' YAML file or interactively in the Studio's GUI. For key generation check the UG489 User Guide.
+
+## CC Configurator moved
+The CC Configurator has been moved from the `ZAF/tool/cc_configurator`. The new location is `DevTools/cc_configurator`.
+
+## Multilevel sensor
+Multilevel sensor can now be assigned to an endpoint, also, multiple multilevel sensors can be used in a single end device. The cc_config file has been changed to follow this format. Endpoint is now part of the "ID" of a given sensor. The sensor structure changed to include information about the assigned endpoint.
+
+## Workspace usage
+The workspace solutions are now signing the bootloader and application binaries with the same key, which is stored by the `application` post build configuration.
+The signing keys can be freely set by the developer in the SLPB files. The solution will generate three gbl files with the same keys, one for the bootloader, one for the application and one for the combined bootloader and application.
+
+## Door Lock Keypad with U3C Beta Application
+The Door Lock Keypad with U3C Beta application has been removed and its functionalities has been merged into Door Lock Keypad application. For certain devices, the Door Lock Keypad application now supports and uses the User Credential Command Class. See application README file for details.
+
 # 7.22.0 {#section-7-22-0}
 
 ## RF Configuration in Apps

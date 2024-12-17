@@ -66,16 +66,16 @@ static void printScheduleEntryData(uint8_t calendarType, uint8_t data)
     case SL_ZIGBEE_ZCL_CALENDAR_TYPE_DELIVERED_CALENDAR:
     case SL_ZIGBEE_ZCL_CALENDAR_TYPE_RECEIVED_CALENDAR:
     case SL_ZIGBEE_ZCL_CALENDAR_TYPE_DELIVERED_AND_RECEIVED_CALENDAR:
-      sl_zigbee_af_calendar_cluster_print("Price Tier: 0x%X", data);
+      sl_zigbee_af_calendar_cluster_print("Price Tier: 0x%02X", data);
       break;
     case SL_ZIGBEE_ZCL_CALENDAR_TYPE_FRIENDLY_CREDIT_CALENDAR:
-      sl_zigbee_af_calendar_cluster_print("Friendly credit: %p",
+      sl_zigbee_af_calendar_cluster_print("Friendly credit: %s",
                                           (data == 0
                                            ? "not available"
                                            : "enabled"));
       break;
     case SL_ZIGBEE_ZCL_CALENDAR_TYPE_AUXILLIARY_LOAD_SWITCH_CALENDAR:
-      sl_zigbee_af_calendar_cluster_print("Auxilliary Switch state: 0x%X", data);
+      sl_zigbee_af_calendar_cluster_print("Auxilliary Switch state: 0x%02X", data);
       break;
     default:
       sl_zigbee_af_calendar_cluster_print("Invalid calendar type (%d), data: %d",
@@ -90,8 +90,8 @@ static void printTime(const char* prefix,
 {
   sl_zigbee_af_time_struct_t time;
   sl_zigbee_af_fill_time_struct_from_utc(zigbeeUtcTime, &time);
-  sl_zigbee_af_calendar_cluster_print("%p", prefix);
-  sl_zigbee_af_calendar_cluster_println("%4X (%d/%p%d/%p%d, %p%d:%p%d:%p%d)",
+  sl_zigbee_af_calendar_cluster_print("%s", prefix);
+  sl_zigbee_af_calendar_cluster_println("%08X (%d/%s%d/%s%d, %s%d:%s%d:%s%d)",
                                         zigbeeUtcTime,
                                         time.year,
                                         (time.month < 10 ? "0" : ""),
@@ -171,10 +171,10 @@ static void printCalendar(const sl_zigbee_af_calendar_struct_t* calendar)
   sl_zigbee_af_calendar_cluster_print("Name: ");
   sl_zigbee_af_calendar_cluster_print_string(calendar->name);
   sl_zigbee_af_calendar_cluster_println("");
-  sl_zigbee_af_calendar_cluster_println("ID:              0x%4X", calendar->calendarId);
-  sl_zigbee_af_calendar_cluster_println("Issuer Event ID: 0x%4X", calendar->issuerEventId);
-  sl_zigbee_af_calendar_cluster_println("Provider ID:     0x%4X", calendar->providerId);
-  sl_zigbee_af_calendar_cluster_println("Type:            %d (%p)",
+  sl_zigbee_af_calendar_cluster_println("ID:              0x%08X", calendar->calendarId);
+  sl_zigbee_af_calendar_cluster_println("Issuer Event ID: 0x%08X", calendar->issuerEventId);
+  sl_zigbee_af_calendar_cluster_println("Provider ID:     0x%08X", calendar->providerId);
+  sl_zigbee_af_calendar_cluster_println("Type:            %d (%s)",
                                         calendar->calendarType,
                                         (calendar->calendarType <= MAX_CALENDAR_TYPE
                                          ? calendarTypeStrings[calendar->calendarType]
@@ -282,13 +282,13 @@ void sl_zigbee_af_calendar_common_print_weeks_command(sl_cli_command_arg_t *argu
   for (i = 0; i <  calendars[calendarIndexForPrinting].numberOfWeekProfiles; i++) {
     sl_zigbee_af_calendar_week_struct_t *week = &(calendars[calendarIndexForPrinting].weeks[i]);
     sl_zigbee_af_calendar_cluster_println("  Week ID: %d", week->id);
-    sl_zigbee_af_calendar_cluster_println("    Monday    (Day ID Ref):      0x%x", calendars[calendarIndexForPrinting].normalDays[week->normalDayIndexes[0]].id);
-    sl_zigbee_af_calendar_cluster_println("    Tuesday   (Day ID Ref):      0x%x", calendars[calendarIndexForPrinting].normalDays[week->normalDayIndexes[1]].id);
-    sl_zigbee_af_calendar_cluster_println("    Wednesday (Day ID Ref):      0x%x", calendars[calendarIndexForPrinting].normalDays[week->normalDayIndexes[2]].id);
-    sl_zigbee_af_calendar_cluster_println("    Thursday  (Day ID Ref):      0x%x", calendars[calendarIndexForPrinting].normalDays[week->normalDayIndexes[3]].id);
-    sl_zigbee_af_calendar_cluster_println("    Friday    (Day ID Ref):      0x%x", calendars[calendarIndexForPrinting].normalDays[week->normalDayIndexes[4]].id);
-    sl_zigbee_af_calendar_cluster_println("    Saturday  (Day ID Ref):      0x%x", calendars[calendarIndexForPrinting].normalDays[week->normalDayIndexes[5]].id);
-    sl_zigbee_af_calendar_cluster_println("    Sunday    (Day ID Ref):      0x%x", calendars[calendarIndexForPrinting].normalDays[week->normalDayIndexes[6]].id);
+    sl_zigbee_af_calendar_cluster_println("    Monday    (Day ID Ref):      0x%02X", calendars[calendarIndexForPrinting].normalDays[week->normalDayIndexes[0]].id);
+    sl_zigbee_af_calendar_cluster_println("    Tuesday   (Day ID Ref):      0x%02X", calendars[calendarIndexForPrinting].normalDays[week->normalDayIndexes[1]].id);
+    sl_zigbee_af_calendar_cluster_println("    Wednesday (Day ID Ref):      0x%02X", calendars[calendarIndexForPrinting].normalDays[week->normalDayIndexes[2]].id);
+    sl_zigbee_af_calendar_cluster_println("    Thursday  (Day ID Ref):      0x%02X", calendars[calendarIndexForPrinting].normalDays[week->normalDayIndexes[3]].id);
+    sl_zigbee_af_calendar_cluster_println("    Friday    (Day ID Ref):      0x%02X", calendars[calendarIndexForPrinting].normalDays[week->normalDayIndexes[4]].id);
+    sl_zigbee_af_calendar_cluster_println("    Saturday  (Day ID Ref):      0x%02X", calendars[calendarIndexForPrinting].normalDays[week->normalDayIndexes[5]].id);
+    sl_zigbee_af_calendar_cluster_println("    Sunday    (Day ID Ref):      0x%02X", calendars[calendarIndexForPrinting].normalDays[week->normalDayIndexes[6]].id);
   }
 }
 

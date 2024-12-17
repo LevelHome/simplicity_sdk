@@ -18,7 +18,6 @@ component:
   - id: zw_core
   - id: zw_zaf
   - id: zw_true_status
-  - id: zw_appshw_multilevelsensor
   - id: zw_ota
   - id: zw_cc_manufacturerspecific
   - id: zw_cc_common
@@ -36,23 +35,55 @@ component:
   - id: zw_cc_wakeup
   - id: zw_cc_configuration
   - id: zw_cc_multilevel_sensor
+  - id: zw_appshw
   - id: sl_system
   - id: device_init
   - id: mpu # disable execution from RAM
   # Unlatch pin retention
   - id: app_em4h_reset
   - id: ZW_MIGRATION_TO_7_19
-
+  - id: zw_cli_common
+    condition: [zw_release, hardware_board_from_stk] # WSTK specific
+  - id: zw_cli_common
+    condition: [zw_release, brd2705a] # Explorer kit 
+  - id: app_button_press
+  - id: app_assert
+  - id: simple_button
+    instance: [btn0, btn1]
+  - id: simple_led
+    instance: [led0, led1]
+  - id: si70xx_driver
+    condition: [hardware_board_has_si70xx]
+  - id: veml6035_driver
+  - id: imu_driver
+    condition: [brd2603a]
+  
 source:
   - path: app.c
   - path: main.c
   - path: app_cli.c
+    condition: [zw_cli_common]
+  - path: app_btn_handler.c
+    condition: [simple_button]
+  - path: app_sleep_callbacks.c
+  - path: app_cc_battery_callbacks.c
+  - path: "MultilevelSensor_interface_sensor.c"
+    unless: [brd2705a]
+  - path: "MultilevelSensor_interface_icm20689.c"
+    condition: [brd2603a]
+  - path: "MultilevelSensor_interface_nosensor.c"
+    condition: [brd2705a]
+
 include:
   - path: .
     file_list:
       - path: events.h
-      - path: app_cli.h
+
 configuration:
+  - name: SHORT_BUTTON_PRESS_DURATION
+    value: (400)
+  - name: MEDIUM_BUTTON_PRESS_DURATION
+    value: (1500)
   - name: ZAF_CONFIG_REQUEST_KEY_S2_UNAUTHENTICATED
     value: 1
   - name: ZAF_CONFIG_REQUEST_KEY_S2_AUTHENTICATED
@@ -133,6 +164,8 @@ configuration:
     value: 1
   - name: ZAF_APP_NAME
     value: '"multilevel_sensor"'
+  - name: SL_RAIL_UTIL_RAIL_POWER_MANAGER_INIT
+    value: 0
 
 define:
   - name: APP_PROPERTIES_CONFIG_FILE
@@ -143,33 +176,23 @@ define:
 config_file:
   - path: MultilevelSensor.cc_config
     directory: cc_config
-
-other_file:
-  - path: ../../DevTools/postbuild.sh
+  # Sample keys for signing
+  - path: ../../platform/SiliconLabs/PAL/BootLoader/sample-keys/sample_encrypt.key
+    directory: sample_keys
+  - path: ../../platform/SiliconLabs/PAL/BootLoader/sample-keys/sample_sign.key
+    directory: sample_keys
 
 template_contribution:
 #------------------ CLI commands ---------------------
   - name: cli_command
     condition: [zw_cli_common]
     value:
-      name: enable_sleeping
-      handler: cli_enable_sleeping
-      help: Lets the application go to sleep mode, just like without CLI
-  - name: cli_command
-    condition: [zw_cli_common] 
-    value:
-      name: enable_sleeping
-      handler: cli_enable_sleeping
-      help: Lets the application go to sleep mode, just like without CLI
-  - name: cli_command
-    condition: [zw_cli_common]
-    value:
-      name: send_battery_and_sensor_report
-      handler: cli_send_battery_and_sensor_report
+      name: send_reports
+      handler: cli_send_reports
       help: Send battery and sensor report
 
 post_build:
-  profile: zwave_soc_multilevel_sensor
+  profile: zwave_application
 
 tag:
   - prebuilt_demo

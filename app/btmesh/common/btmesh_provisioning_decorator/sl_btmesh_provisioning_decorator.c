@@ -32,16 +32,10 @@
 #include "sl_bt_api.h"
 #include "sl_btmesh_api.h"
 
-#include "em_common.h"
-#include "app_assert.h"
-#include "app_timer.h"
+#include "sl_common.h"
 
 #include "sl_btmesh_provisioning_decorator.h"
 #include "sl_btmesh_provisioning_decorator_config.h"
-
-// Warning! The app_btmesh_util shall be included after the component configuration
-// header file in order to provide the component specific logging macro.
-#include "app_btmesh_util.h"
 
 /***************************************************************************//**
  * @addtogroup ProvisioningDecorator

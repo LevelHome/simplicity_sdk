@@ -34,6 +34,8 @@
 
 #include "em_device.h"
 
+#include "sl_gpio.h"
+
 #if defined(SL_COMPONENT_CATALOG_PRESENT)
 #include "sl_component_catalog.h"
 #endif
@@ -220,7 +222,11 @@ static const debugSignal_t debugSignals[] =
     .loc = {
       .prs = {
         .signal = _PRS_ASYNC_CH_CTRL_SIGSEL_MODEMLDOUT,
+#if SLI_HAL_RAIL_NEEDS_DOUT_DCLK_WORKAROUND
+        .source = _PRS_ASYNC_CH_CTRL_SOURCESEL_DOUT_DCLK_WORKAROUND,
+#else
         .source = _PRS_ASYNC_CH_CTRL_SOURCESEL_MODEML,
+#endif
       }
     }
   },
@@ -230,7 +236,11 @@ static const debugSignal_t debugSignals[] =
     .loc = {
       .prs = {
         .signal = _PRS_ASYNC_CH_CTRL_SIGSEL_MODEMLDCLK,
+#if SLI_HAL_RAIL_NEEDS_DOUT_DCLK_WORKAROUND
+        .source = _PRS_ASYNC_CH_CTRL_SOURCESEL_DOUT_DCLK_WORKAROUND,
+#else
         .source = _PRS_ASYNC_CH_CTRL_SOURCESEL_MODEML,
+#endif
       }
     }
   },
@@ -256,6 +266,19 @@ static const debugSignal_t debugSignals[] =
     .loc = {
       .prs = {
         .signal = _PRS_ASYNC_CH_CTRL_SIGSEL_PROTIMERLCC1,
+        .source = _PRS_ASYNC_CH_CTRL_SOURCESEL_PROTIMERL,
+      }
+    }
+  },
+#ifndef _PRS_ASYNC_CH_CTRL_SIGSEL_PROTIMERLCC3
+#define _PRS_ASYNC_CH_CTRL_SIGSEL_PROTIMERLCC3 (0x00000002UL)
+#endif
+  {
+    .name = "CC3",
+    .isPrs = true,
+    .loc = {
+      .prs = {
+        .signal = _PRS_ASYNC_CH_CTRL_SIGSEL_PROTIMERLCC3,
         .source = _PRS_ASYNC_CH_CTRL_SOURCESEL_PROTIMERL,
       }
     }
@@ -333,6 +356,49 @@ static const debugSignal_t debugSignals[] =
     }
   },
 #endif//RAIL_SUPPORTS_OFDM_PA
+#ifdef _SILICON_LABS_32B_SERIES_3
+  // Requires custom firmware with debug channels enabled from RAC
+  {
+    .name = "RAC_SWDBG0",
+    .isPrs = true,
+    .loc = {
+      .prs = {
+        .signal = _PRS_ASYNC_CH_CTRL_SIGSEL_RACLCTIOUT0,
+        .source = _PRS_ASYNC_CH_CTRL_SOURCESEL_RACL,
+      }
+    }
+  },
+  {
+    .name = "RAC_SWDBG1",
+    .isPrs = true,
+    .loc = {
+      .prs = {
+        .signal = _PRS_ASYNC_CH_CTRL_SIGSEL_RACLCTIOUT1,
+        .source = _PRS_ASYNC_CH_CTRL_SOURCESEL_RACL,
+      }
+    }
+  },
+  {
+    .name = "RAC_SWDBG2",
+    .isPrs = true,
+    .loc = {
+      .prs = {
+        .signal = _PRS_ASYNC_CH_CTRL_SIGSEL_RACLCTIOUT2,
+        .source = _PRS_ASYNC_CH_CTRL_SOURCESEL_RACL,
+      }
+    }
+  },
+  {
+    .name = "RAC_SWDBG3",
+    .isPrs = true,
+    .loc = {
+      .prs = {
+        .signal = _PRS_ASYNC_CH_CTRL_SIGSEL_RACCTIOUT3,
+        .source = _PRS_ASYNC_CH_CTRL_SOURCESEL_RAC,
+      }
+    }
+  },
+#endif
 };
 
 const debugSignal_t* halGetDebugSignals(uint32_t *size)

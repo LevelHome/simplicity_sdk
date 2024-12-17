@@ -11,6 +11,8 @@ quality: production
 source:
   - path: util/third_party/mbedtls/library/cipher.c
     unless: [trustzone_nonsecure]
+  - path: util/third_party/mbedtls/library/block_cipher.c
+    unless: [trustzone_nonsecure]
   - path: util/third_party/mbedtls/library/cipher_wrap.c
     unless: [trustzone_nonsecure]
 provides:
@@ -23,3 +25,12 @@ recommends:
 template_contribution:
   - name: mbedtls_config
     value: MBEDTLS_CIPHER_C
+metadata:
+  sbom:
+    license: Apache-2.0
+    upstream:
+      name: Mbed TLS
+      version: v3.6.2
+      supplier: Trusted Firmware
+      url: https://github.com/Mbed-TLS/mbedtls.git
+      comment: Mbed TLS is a C library implementing the PSA Cryptography API, cryptographic primitives, X.509 certificate manipulation and the SSL/TLS and DTLS protocols

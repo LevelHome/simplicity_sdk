@@ -30,7 +30,7 @@ typedef struct {
 } sli_mac_stack_lower_mac_set_high_datarate_csma_params_ipc_msg_t;
 
 typedef struct {
-  sl_zigbee_multiprotocol_priorities_t priorities;
+  sl_802154_radio_priorities_t priorities;
 } sli_mac_stack_lower_mac_set_high_datarate_phy_radio_priorities_ipc_req_t;
 
 typedef struct {

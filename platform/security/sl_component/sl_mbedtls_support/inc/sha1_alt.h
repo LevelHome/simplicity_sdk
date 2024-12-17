@@ -52,9 +52,6 @@
 #if defined(SEMAILBOX_PRESENT)
 #include "sli_se_transparent_types.h"
 #define SL_HASH_OPERATION_CTX_TYPE sli_se_transparent_hash_operation_t
-#elif defined(CRYPTO_PRESENT)
-#include "sli_crypto_transparent_types.h"
-#define SL_HASH_OPERATION_CTX_TYPE sli_crypto_transparent_hash_operation_t
 #elif defined(CRYPTOACC_PRESENT)
 #include "sli_cryptoacc_transparent_types.h"
 #define SL_HASH_OPERATION_CTX_TYPE sli_cryptoacc_transparent_hash_operation_t

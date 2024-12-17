@@ -20,11 +20,3 @@ provides:
 requires:
   - name: memory_manager
   - name: cpp_support
-template_contribution:
-  - name: event_handler
-    condition: [sl_system, toolchain_iar]
-    value:
-      event: platform_init
-      include: sl_memory_manager.h
-      handler: sl_memory_init
-    priority: -9202

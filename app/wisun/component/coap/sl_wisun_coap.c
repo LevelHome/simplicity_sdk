@@ -1,5 +1,5 @@
 /***************************************************************************//**
- * @file
+ * @file sl_wisun_coap.c
  * @brief Wi-SUN CoAP handler
  *******************************************************************************
  * # License
@@ -31,16 +31,15 @@
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
+
 #include "sl_wisun_coap.h"
 #include "sl_wisun_coap_rhnd.h"
 #include "sl_wisun_coap_notify.h"
 #include "cmsis_os2.h"
 #include "sl_cmsis_os2_common.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -310,13 +309,13 @@ sl_status_t sl_wisun_coap_srv_sendto(sl_wisun_coap_srv_t * const srv,
   resp_len = sl_wisun_coap_builder_calc_size(packet);
 
   if (resp_len > srv->buf_size) {
-    printf("[Buffer overflow occured]\n");
+    printf("[Buffer overflow occurred]\n");
     return SL_STATUS_FAIL;
   }
 
   res = sl_wisun_coap_builder(srv->buf, packet);
   if (res < 0L) {
-    printf("[Response build error occured]\n");
+    printf("[Response build error occurred]\n");
     return SL_STATUS_FAIL;
   }
 
@@ -327,7 +326,7 @@ sl_status_t sl_wisun_coap_srv_sendto(sl_wisun_coap_srv_t * const srv,
                     (const struct sockaddr *) &clnt->addr,
                     sock_len);
   if (sock_res == SOCKET_RETVAL_ERROR) {
-    printf("[Response send error occured]\n");
+    printf("[Response send error occurred]\n");
     return SL_STATUS_FAIL;
   }
 
@@ -385,13 +384,13 @@ sl_status_t sl_wisun_coap_clnt_sendto(sl_wisun_coap_clnt_t * const clnt,
   resp_len = sl_wisun_coap_builder_calc_size(packet);
 
   if (resp_len > clnt->buf_size) {
-    printf("[Buffer overflow occured]\n");
+    printf("[Buffer overflow occurred]\n");
     return SL_STATUS_FAIL;
   }
 
   res = sl_wisun_coap_builder(clnt->buf, packet);
   if (res < 0L) {
-    printf("[Response build error occured]\n");
+    printf("[Response build error occurred]\n");
     return SL_STATUS_FAIL;
   }
 
@@ -402,7 +401,7 @@ sl_status_t sl_wisun_coap_clnt_sendto(sl_wisun_coap_clnt_t * const clnt,
                     (const struct sockaddr *) &srv->addr,
                     sock_len);
   if (sock_res == SOCKET_RETVAL_ERROR) {
-    printf("[Response send error occured]\n");
+    printf("[Response send error occurred]\n");
     return SL_STATUS_FAIL;
   }
 
@@ -571,7 +570,7 @@ char * sl_wisun_coap_get_uri_path_str(const sl_wisun_coap_packet_t * const packe
 
   // Allocate buffer to string
   buff_len = packet->uri_path_len + 2U;
-  uri_path = (char *)sl_wisun_coap_malloc(buff_len);
+  uri_path = (char *)sl_wisun_coap_malloc((uint16_t)buff_len);
   if (uri_path == NULL) {
     return NULL;
   }

@@ -32,10 +32,14 @@
 #include "sl_clock_manager.h"
 #include "em_usart.h"
 #include "em_ldma.h"
-#include "em_gpio.h"
+#include "sl_gpio.h"
 #include "dmadrv.h"
 #include "sl_mic.h"
 #include "sl_mic_i2s_config.h"
+
+#if (defined(SL_CATALOG_POWER_MANAGER_PRESENT))
+#include "sl_power_manager.h"
+#endif
 
 /** @cond DO_NOT_INCLUDE_WITH_DOXYGEN */
 
@@ -98,15 +102,27 @@ sl_status_t sl_mic_init(uint32_t sample_rate, uint8_t n_channels)
 
   uint32_t status;
   USART_InitI2s_TypeDef usartInit = USART_INITI2S_DEFAULT;
+  sl_gpio_t mic_i2s_rx_gpio = {
+    .port = SL_MIC_I2S_RX_PORT,
+    .pin = SL_MIC_I2S_RX_PIN,
+  };
+  sl_gpio_t mic_i2s_clk_gpio = {
+    .port = SL_MIC_I2S_CLK_PORT,
+    .pin = SL_MIC_I2S_CLK_PIN,
+  };
+  sl_gpio_t mic_i2s_cs_gpio = {
+    .port = SL_MIC_I2S_CS_PORT,
+    .pin = SL_MIC_I2S_CS_PIN,
+  };
 
   /* Enable clocks */
   sl_clock_manager_enable_bus_clock(SL_BUS_CLOCK_GPIO);
   sl_clock_manager_enable_bus_clock(MIC_I2S_USART_CLOCK(SL_MIC_I2S_PERIPHERAL_NO));
 
   /* Setup GPIO pins */
-  GPIO_PinModeSet(SL_MIC_I2S_RX_PORT, SL_MIC_I2S_RX_PIN, gpioModeInput, 0);
-  GPIO_PinModeSet(SL_MIC_I2S_CLK_PORT, SL_MIC_I2S_CLK_PIN, gpioModePushPull, 0);
-  GPIO_PinModeSet(SL_MIC_I2S_CS_PORT, SL_MIC_I2S_CS_PIN, gpioModePushPull, 0);
+  sl_gpio_set_pin_mode(&mic_i2s_rx_gpio, SL_GPIO_MODE_INPUT, 0);
+  sl_gpio_set_pin_mode(&mic_i2s_clk_gpio, SL_GPIO_MODE_PUSH_PULL, 0);
+  sl_gpio_set_pin_mode(&mic_i2s_cs_gpio, SL_GPIO_MODE_PUSH_PULL, 0);
 
   /* Setup USART in I2S mode to get data from microphone */
   usartInit.sync.enable   = usartEnable;
@@ -158,6 +174,11 @@ sl_status_t sl_mic_init(uint32_t sample_rate, uint8_t n_channels)
     dma_descriptor_right[1].xfer.dstInc = ldmaCtrlDstIncNone;
   }
 
+#if defined(SL_CATALOG_POWER_MANAGER_PRESENT)
+  //Add EM1 request to use LDMA
+  sl_power_manager_add_em_requirement(SL_POWER_MANAGER_EM1);
+#endif
+
   /* Driver parameters */
   num_channels = n_channels;
   reading_samples_to_buffer = false;
@@ -173,6 +194,19 @@ sl_status_t sl_mic_init(uint32_t sample_rate, uint8_t n_channels)
  ******************************************************************************/
 sl_status_t sl_mic_deinit(void)
 {
+  sl_gpio_t mic_i2s_clk_gpio = {
+    .port = SL_MIC_I2S_CLK_PORT,
+    .pin = SL_MIC_I2S_CLK_PIN,
+  };
+  sl_gpio_t mic_i2s_rx_gpio = {
+    .port = SL_MIC_I2S_RX_PORT,
+    .pin = SL_MIC_I2S_RX_PIN,
+  };
+  sl_gpio_t mic_i2s_cs_gpio = {
+    .port = SL_MIC_I2S_CS_PORT,
+    .pin = SL_MIC_I2S_CS_PIN,
+  };
+
   /* Stop sampling */
   sl_mic_stop();
 
@@ -180,13 +214,18 @@ sl_status_t sl_mic_deinit(void)
   USART_Reset(SL_MIC_I2S_PERIPHERAL);
   SL_MIC_I2S_PERIPHERAL->I2SCTRL = 0;
 
-  GPIO_PinModeSet(SL_MIC_I2S_CLK_PORT, SL_MIC_I2S_CLK_PIN, gpioModeDisabled, 0);
-  GPIO_PinModeSet(SL_MIC_I2S_RX_PORT, SL_MIC_I2S_RX_PIN, gpioModeDisabled, 0);
-  GPIO_PinModeSet(SL_MIC_I2S_CS_PORT, SL_MIC_I2S_CS_PIN, gpioModeDisabled, 0);
+  sl_gpio_set_pin_mode(&mic_i2s_clk_gpio, SL_GPIO_MODE_DISABLED, 0);
+  sl_gpio_set_pin_mode(&mic_i2s_rx_gpio, SL_GPIO_MODE_DISABLED, 0);
+  sl_gpio_set_pin_mode(&mic_i2s_cs_gpio, SL_GPIO_MODE_DISABLED, 0);
 
   /* Free resources */
   DMADRV_FreeChannel(dma_channel_left);
   DMADRV_FreeChannel(dma_channel_right);
+
+#if defined(SL_CATALOG_POWER_MANAGER_PRESENT)
+  //Remove EM1 request
+  sl_power_manager_remove_em_requirement(SL_POWER_MANAGER_EM1);
+#endif
 
   initialized = false;
 

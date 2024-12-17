@@ -38,6 +38,7 @@
 #include "app_assert.h"
 #include "app_bluetooth.h"
 #include "app_proprietary.h"
+#include "sl_common.h"
 // -----------------------------------------------------------------------------
 // Constant definitions and macros
 
@@ -110,7 +111,10 @@ static uint8_t data_packet[] =
 };
 
 /// Receive FIFO
-static __ALIGNED(RAIL_FIFO_ALIGNMENT) uint8_t rx_fifo[RAIL_FIFO_SIZE];
+static SL_ALIGN(RAIL_FIFO_ALIGNMENT) uint8_t rx_fifo[RAIL_FIFO_SIZE] SL_ATTRIBUTE_ALIGN(RAIL_FIFO_ALIGNMENT);
+
+/// Transmit FIFO
+static SL_ALIGN(RAIL_FIFO_ALIGNMENT) uint8_t tx_fifo[RAIL_FIFO_SIZE] SL_ATTRIBUTE_ALIGN(RAIL_FIFO_ALIGNMENT);
 
 static uint8_t proprietary_rx_buf[PROP_RX_BUF_SIZE];
 
@@ -138,7 +142,7 @@ static void handle_receive(RAIL_Handle_t rail_handle)
   RAIL_Status_t rail_status = RAIL_STATUS_NO_ERROR;
   uint8_t rx_tmp_buff[RAIL_FIFO_SIZE];
 
-  app_log_info("RX event triggered handle", rail_status);
+  app_log_info("RX event triggered handle:%lu", rail_status);
   app_log_nl();
 
   rx_packet_handle = RAIL_GetRxPacketInfo(rail_handle, RAIL_RX_PACKET_HANDLE_OLDEST_COMPLETE, &packet_info);
@@ -149,7 +153,7 @@ static void handle_receive(RAIL_Handle_t rail_handle)
     // after the copy of the packet, the RX packet can be release for RAIL
     rail_status = RAIL_ReleaseRxPacket(rail_handle, rx_packet_handle);
     if (rail_status != RAIL_STATUS_NO_ERROR) {
-      app_log_warning("RAIL_ReleaseRxPacket() result:%d", rail_status);
+      app_log_warning("RAIL_ReleaseRxPacket() result:%lu", rail_status);
       app_log_nl();
     }
 
@@ -166,6 +170,22 @@ static void handle_receive(RAIL_Handle_t rail_handle)
   }
 }
 
+/*******************************************************************************
+ * Initialize TX FIFO
+ ******************************************************************************/
+static void set_up_tx_fifo(RAIL_Handle_t rail_handle)
+{
+  uint16_t allocated_tx_fifo_size = 0;
+  allocated_tx_fifo_size = RAIL_SetTxFifo(rail_handle,
+                                          tx_fifo,
+                                          0,
+                                          RAIL_FIFO_SIZE);
+  app_assert(allocated_tx_fifo_size == RAIL_FIFO_SIZE,
+             "RAIL_SetTxFifo() failed to allocate a large enough fifo (%u bytes instead of %u bytes)" APP_LOG_NEW_LINE,
+             allocated_tx_fifo_size,
+             RAIL_FIFO_SIZE);
+}
+
 // -----------------------------------------------------------------------------
 // Public functions
 
@@ -175,6 +195,9 @@ static void handle_receive(RAIL_Handle_t rail_handle)
  *****************************************************************************/
 void init_prop_app(void)
 {
+  // Initialize TX FIFO
+  set_up_tx_fifo(sl_rail_util_get_handle(SL_RAIL_UTIL_HANDLE_INST0));
+
   proprietary_timer = xTimerCreate("Proprietary Timer",
                                    10,
                                    pdTRUE,

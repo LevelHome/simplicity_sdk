@@ -69,6 +69,14 @@ config_file:
     condition: [device_sdid_235]
     unless: [device_pa_14dbm, device_pa_20dbm]
 
+  - path: config/s2/sdid240/buck/sl_device_init_dcdc_config.h
+    file_id: device_init_dcdc_config
+    condition: [device_sdid_240, device_dcdc_buck]
+  - path: config/s2/sdid240/boost/sl_device_init_dcdc_config.h
+    file_id: device_init_dcdc_config
+    condition: [device_sdid_240, device_dcdc_boost]
+    unless: [device_dcdc_buck]
+
   - path: config/s2/sl_device_init_dcdc_config.h
     file_id: device_init_dcdc_config
     unless:
@@ -79,6 +87,7 @@ config_file:
         device_sdid_225,
         device_sdid_230,
         device_sdid_235,
+        device_sdid_240,
       ]
 include:
   - path: inc

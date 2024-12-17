@@ -30,6 +30,10 @@
 #include "af-support-host.h"
 #endif //defined(EZSP_HOST) && defined(SL_CATALOG_ZIGBEE_AF_SUPPORT_PRESENT)
 
+#if defined(SL_ZIGBEE_AF_PLUGIN_ZCL_CLUSTER_DEFER_ATTRIBUTE_WRITES_TO_NVM_MS) && (SL_ZIGBEE_AF_PLUGIN_ZCL_CLUSTER_DEFER_ATTRIBUTE_WRITES_TO_NVM_MS > 0) && defined(NUM_PERSISTED_ZCL_ATTRIBUTES)
+ #define DEFER_ATTRIBUTE_UPDATES_IN_NVM
+#endif // defined(SL_ZIGBEE_AF_PLUGIN_ZCL_CLUSTER_DEFER_ATTRIBUTE_WRITES_TO_NVM_MS) && (SL_ZIGBEE_AF_PLUGIN_ZCL_CLUSTER_DEFER_ATTRIBUTE_WRITES_TO_NVM_MS > 0) && defined(NUM_PERSISTED_ZCL_ATTRIBUTES)
+
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
@@ -71,7 +75,8 @@ sl_zigbee_af_status_t sl_zigbee_af_write_attribute_external(uint8_t endpoint,
                                            dataType,
                                            (extWritePermission
                                             == SL_ZIGBEE_ZCL_ATTRIBUTE_WRITE_PERMISSION_ALLOW_WRITE_OF_READ_ONLY),
-                                           false);
+                                           false,
+                                           true); // update NVM
     default:
       return (sl_zigbee_af_status_t)extWritePermission;
   }
@@ -93,7 +98,8 @@ sl_zigbee_af_status_t sl_zigbee_af_write_attribute(uint8_t endpoint,
                                        dataPtr,
                                        dataType,
                                        true, // override read-only?
-                                       false); // just test?
+                                       false, // just test?
+                                       true); // update NVM
 }
 
 sl_zigbee_af_status_t sl_zigbee_af_write_client_attribute(uint8_t endpoint,
@@ -110,7 +116,8 @@ sl_zigbee_af_status_t sl_zigbee_af_write_client_attribute(uint8_t endpoint,
                                        dataPtr,
                                        dataType,
                                        true, // override read-only?
-                                       false); // just test?
+                                       false, // just test?
+                                       true); // update NVM
 }
 
 sl_zigbee_af_status_t sl_zigbee_af_write_server_attribute(uint8_t endpoint,
@@ -127,7 +134,8 @@ sl_zigbee_af_status_t sl_zigbee_af_write_server_attribute(uint8_t endpoint,
                                        dataPtr,
                                        dataType,
                                        true, // override read-only?
-                                       false); // just test?
+                                       false, // just test?
+                                       true); // update NVM
 }
 
 sl_zigbee_af_status_t sl_zigbee_af_write_manufacturer_specific_client_attribute(uint8_t endpoint,
@@ -145,7 +153,8 @@ sl_zigbee_af_status_t sl_zigbee_af_write_manufacturer_specific_client_attribute(
                                        dataPtr,
                                        dataType,
                                        true, // override read-only?
-                                       false); // just test?
+                                       false, // just test?
+                                       true); // update NVM
 }
 
 sl_zigbee_af_status_t sl_zigbee_af_write_manufacturer_specific_server_attribute(uint8_t endpoint,
@@ -163,7 +172,8 @@ sl_zigbee_af_status_t sl_zigbee_af_write_manufacturer_specific_server_attribute(
                                        dataPtr,
                                        dataType,
                                        true, // override read-only?
-                                       false); // just test?
+                                       false, // just test?
+                                       true); // update NVM
 }
 
 sl_zigbee_af_status_t sl_zigbee_af_verify_attribute_write(uint8_t endpoint,
@@ -182,7 +192,8 @@ sl_zigbee_af_status_t sl_zigbee_af_verify_attribute_write(uint8_t endpoint,
                                        dataPtr,
                                        dataType,
                                        false, // override read-only?
-                                       true); // just test?
+                                       true, // just test?
+                                       true); // update NVM, doesn't matter
 }
 
 sl_zigbee_af_status_t sl_zigbee_af_read_attribute(uint8_t endpoint,
@@ -438,7 +449,7 @@ void sl_zigbee_af_print_attribute_table(void)
        endpointIndex < sl_zigbee_af_endpoint_count();
        endpointIndex++) {
     sl_zigbee_af_defined_endpoint_t *ep = &(sli_zigbee_af_endpoints[endpointIndex]);
-    sl_zigbee_af_attributes_println("ENDPOINT %x", ep->endpoint);
+    sl_zigbee_af_attributes_println("ENDPOINT %02X", ep->endpoint);
     sl_zigbee_af_attributes_println("clus / side / attr / mfg  /type(len)/ rw / storage / data (raw)");
     sl_zigbee_af_attributes_flush();
     for (clusterIndex = 0;
@@ -456,7 +467,7 @@ void sl_zigbee_af_print_attribute_table(void)
         // manually reset the watchdog.
         halResetWatchdog();
 
-        sl_zigbee_af_attributes_print("%2x / %p / %2x / ",
+        sl_zigbee_af_attributes_print("%04X / %s / %04X / ",
                                       cluster->clusterId,
                                       (sl_zigbee_af_attribute_is_client(metaData) ? "clnt" : "srvr"),
                                       metaData->attributeId);
@@ -464,9 +475,9 @@ void sl_zigbee_af_print_attribute_table(void)
         if (mfgCode == SL_ZIGBEE_AF_NULL_MANUFACTURER_CODE) {
           sl_zigbee_af_attributes_print("----");
         } else {
-          sl_zigbee_af_attributes_print("%2x", mfgCode);
+          sl_zigbee_af_attributes_print("%04X", mfgCode);
         }
-        sl_zigbee_af_attributes_print(" / %x (%x) / %p / %p / ",
+        sl_zigbee_af_attributes_print(" / %02X (%02X) / %s / %s / ",
                                       metaData->attributeType,
                                       sl_zigbee_af_attribute_size(metaData),
                                       (sl_zigbee_af_attribute_is_read_only(metaData) ? "RO" : "RW"),
@@ -530,7 +541,7 @@ sl_zigbee_af_status_t sl_zigbee_af_retrieve_attribute_and_craft_response(uint8_t
     return SL_ZIGBEE_ZCL_STATUS_INSUFFICIENT_SPACE;
   }
 
-  sl_zigbee_af_attributes_println("OTA READ: ep:%x cid:%2x attid:%2x msk:%x mfcode:%2x",
+  sl_zigbee_af_attributes_println("OTA READ: ep:%02X cid:%04X attid:%04X msk:%02X mfcode:%04X",
                                   endpoint,
                                   clusterId, attrId, mask, manufacturerCode);
 
@@ -550,7 +561,7 @@ sl_zigbee_af_status_t sl_zigbee_af_retrieve_attribute_and_craft_response(uint8_t
       status = SL_ZIGBEE_ZCL_STATUS_INSUFFICIENT_SPACE;
     }
   } else {
-    sl_zigbee_af_attributes_println("READ: clus %2x, attr %2x failed %x",
+    sl_zigbee_af_attributes_println("READ: clus %04X, attr %04X failed %02X",
                                     clusterId,
                                     attrId,
                                     status);
@@ -590,7 +601,7 @@ sl_zigbee_af_status_t sl_zigbee_af_retrieve_attribute_and_craft_response(uint8_t
     return SL_ZIGBEE_ZCL_STATUS_INSUFFICIENT_SPACE;
   }
 
-  sl_zigbee_af_attributes_println("READ: clus %2x, attr %2x, dataLen: %x, OK",
+  sl_zigbee_af_attributes_println("READ: clus %04X, attr %04X, dataLen: %02X, OK",
                                   clusterId,
                                   attrId,
                                   dataLen);
@@ -649,7 +660,7 @@ sl_zigbee_af_status_t sl_zigbee_af_append_attribute_report_fields(uint8_t endpoi
   *bufIndex += size;
 
   kickout:
-  sl_zigbee_af_attributes_println("REPORT: clus 0x%2x, attr 0x%2x: 0x%x",
+  sl_zigbee_af_attributes_println("REPORT: clus 0x%04X, attr 0x%04X: 0x%02X",
                                   clusterId,
                                   attributeId,
                                   status);
@@ -678,6 +689,12 @@ sl_zigbee_af_status_t sl_zigbee_af_append_attribute_report_fields(uint8_t endpoi
 //
 // if true is passed for justTest, then the type is not written but all
 // checks are done to see if the type could be written
+//
+// if true is passed for updateNvm, then NVM is updated if the attribute is
+// stored in NVM (in addition to RAM). Startup code is typically the case
+// for not writing to NVM, since values in NVM are used to update the RAM
+// contents.
+//
 // reads the attribute specified, returns false if the attribute is not in
 // the table or the data is too large, returns true and writes to dataPtr
 // if the attribute is supported and the readLength specified is less than
@@ -690,7 +707,8 @@ sl_zigbee_af_status_t sli_zigbee_af_write_attribute(uint8_t endpoint,
                                                     uint8_t *data,
                                                     sl_zigbee_af_attribute_type_t dataType,
                                                     bool overrideReadOnlyAndDataType,
-                                                    bool justTest)
+                                                    bool justTest,
+                                                    bool updateNvm)
 {
   sl_zigbee_af_attribute_metadata_t *metadata = NULL;
   sl_zigbee_af_attribute_search_record_t record;
@@ -716,7 +734,7 @@ sl_zigbee_af_status_t sli_zigbee_af_write_attribute(uint8_t endpoint,
     } else
 #endif
     {
-      sl_zigbee_af_attributes_println("%pep %x clus %2x attr %2x not supported",
+      sl_zigbee_af_attributes_println("%sep %02X clus %04X attr %04X not supported",
                                       "WRITE ERR: ",
                                       endpoint,
                                       cluster,
@@ -729,13 +747,13 @@ sl_zigbee_af_status_t sli_zigbee_af_write_attribute(uint8_t endpoint,
   // if the data type specified by the caller is incorrect
   if (!(overrideReadOnlyAndDataType)) {
     if (dataType != metadata->attributeType) {
-      sl_zigbee_af_attributes_println("%pinvalid data type", "WRITE ERR: ");
+      sl_zigbee_af_attributes_println("%sinvalid data type", "WRITE ERR: ");
       sl_zigbee_af_attributes_flush();
       return SL_ZIGBEE_ZCL_STATUS_INVALID_DATA_TYPE;
     }
 
     if (sl_zigbee_af_attribute_is_read_only(metadata)) {
-      sl_zigbee_af_attributes_println("%pattr not writable", "WRITE ERR: ");
+      sl_zigbee_af_attributes_println("%sattr not writable", "WRITE ERR: ");
       sl_zigbee_af_attributes_flush();
       return SL_ZIGBEE_ZCL_STATUS_READ_ONLY;
     }
@@ -821,9 +839,16 @@ sl_zigbee_af_status_t sli_zigbee_af_write_attribute(uint8_t endpoint,
       return status;
     }
 
-    // Save the attribute to token if needed
-    // Function itself will weed out tokens that are not tokenized.
-    sli_zigbee_af_save_attribute_to_token(data, endpoint, cluster, metadata);
+    // Startup code that restores attributes from NVM will call this function with updateNvm=false
+    if (updateNvm) {
+      // Save the attribute to token if needed
+      // Function itself will weed out tokens that are not tokenized.
+#ifdef DEFER_ATTRIBUTE_UPDATES_IN_NVM
+      defer_attribute_write_to_token(data, endpoint, cluster, metadata, mask, manufacturerCode);
+#else // DEFER_ATTRIBUTE_UPDATES_IN_NVM
+      sli_zigbee_af_save_attribute_to_token(data, endpoint, cluster, metadata);
+#endif // DEFER_ATTRIBUTE_UPDATES_IN_NVM
+    }
 
     sl_zigbee_af_reporting_attribute_change_cb(endpoint,
                                                cluster,
@@ -915,4 +940,139 @@ sl_zigbee_af_status_t sli_zigbee_af_read_attribute(uint8_t endpoint,
   }
 
   return status;
+}
+
+#ifdef DEFER_ATTRIBUTE_UPDATES_IN_NVM
+
+typedef struct {
+  sl_zigbee_af_cluster_id_t   cluster_id;
+  sl_zigbee_af_attribute_id_t attribute_id;
+  sl_zigbee_af_cluster_mask_t cluster_mask;
+  uint8_t                     endpoint;
+  uint16_t                    manufacturer_code;
+} deferred_zcl_write_attribute_record_t;
+
+static deferred_zcl_write_attribute_record_t deferred_write_values[NUM_PERSISTED_ZCL_ATTRIBUTES];
+static sl_zigbee_af_event_t deferred_attribute_write_events[NUM_PERSISTED_ZCL_ATTRIBUTES];
+
+uint8_t find_event_index(sl_zigbee_af_event_t* event, sl_zigbee_af_event_t events[])
+{
+  for (uint8_t i = 0; i < NUM_PERSISTED_ZCL_ATTRIBUTES; i++) {
+    if (event == &events[i]) {
+      return i;
+    }
+  }
+  return 0xFF;
+}
+
+// When deferring an attribute write, we need to arm an event. To find that event,
+// we search for currently armed events to see if we already armed an event for the
+// write that we want to do, else, we find a free event
+sl_zigbee_af_event_t* find_armed_or_free_event(deferred_zcl_write_attribute_record_t write_record, sl_zigbee_af_event_t events[], uint8_t* event_index)
+{
+  for (uint8_t i = 0; i < NUM_PERSISTED_ZCL_ATTRIBUTES; i++) {
+    bool is_scheduled = sli_zigbee_event_is_scheduled(&events[i]);
+    if (is_scheduled) {
+      deferred_zcl_write_attribute_record_t armed_write_record = deferred_write_values[i];
+      if (write_record.endpoint == armed_write_record.endpoint
+          && write_record.cluster_id == armed_write_record.cluster_id
+          && write_record.attribute_id == armed_write_record.attribute_id
+          && write_record.cluster_mask == armed_write_record.cluster_mask
+          && write_record.manufacturer_code == armed_write_record.manufacturer_code) {
+        *event_index = i;
+        return &events[i];
+      }
+    }
+  }
+
+  // There isn't an event armed already for this write. Find a free event
+  for (uint8_t i = 0; i < NUM_PERSISTED_ZCL_ATTRIBUTES; i++) {
+    bool is_scheduled = sli_zigbee_event_is_scheduled(&events[i]);
+    if (is_scheduled == false) {
+      *event_index = i;
+      return &events[i];
+    }
+  }
+  return NULL;
+}
+
+void defer_attribute_write_to_token(uint8_t *data,
+                                    uint8_t endpoint,
+                                    sl_zigbee_af_cluster_id_t clusterId,
+                                    sl_zigbee_af_attribute_metadata_t *metadata,
+                                    sl_zigbee_af_cluster_mask_t clusterMask,
+                                    uint16_t manufacturerCode)
+{
+  // If the attribute isn't saved in NVM, exit
+  if (!sl_zigbee_af_attribute_is_tokenized(metadata)) {
+    return;
+  }
+
+  deferred_zcl_write_attribute_record_t write_record = {
+    .endpoint = endpoint,
+    .cluster_id = clusterId,
+    .attribute_id = metadata->attributeId,
+    .cluster_mask = clusterMask,
+    .manufacturer_code = manufacturerCode
+  };
+
+  // Arm an event to update the attribute after a delay
+  uint8_t event_index;
+  sl_zigbee_af_event_t* event = find_armed_or_free_event(write_record, deferred_attribute_write_events, &event_index);
+  if (!event || (event_index >= NUM_PERSISTED_ZCL_ATTRIBUTES)) {
+    // This shouldn't happen. We allocated one event for every persisted attribute, but just
+    // in case, we'll write directly to NVM as a fallback
+    sli_zigbee_af_save_attribute_to_token(data, endpoint, clusterId, metadata);
+    return;
+  }
+
+  // Save info and arm event to update NVM later
+  deferred_write_values[event_index] = write_record;
+  sl_zigbee_af_event_set_delay_ms(event, SL_ZIGBEE_AF_PLUGIN_ZCL_CLUSTER_DEFER_ATTRIBUTE_WRITES_TO_NVM_MS);
+}
+
+static void deferred_attribute_write_event_handler(sl_zigbee_af_event_t *event)
+{
+  sl_zigbee_af_event_set_inactive(event);
+
+  uint8_t index = find_event_index(event, deferred_attribute_write_events);
+  if (index >= NUM_PERSISTED_ZCL_ATTRIBUTES) {
+    return;
+  }
+
+  deferred_zcl_write_attribute_record_t write_value = deferred_write_values[index];
+
+  uint8_t data[ZCL_ATTRIBUTE_LARGEST];
+
+  sl_zigbee_af_attribute_metadata_t *metadata = NULL;
+  sl_zigbee_af_attribute_search_record_t record;
+  record.endpoint = write_value.endpoint;
+  record.clusterId = write_value.cluster_id;
+  record.clusterMask = write_value.cluster_mask;
+  record.attributeId = write_value.attribute_id;
+  record.manufacturerCode = write_value.manufacturer_code;
+  sl_zigbee_af_status_t status = sli_zigbee_af_read_or_write_attribute(&record,
+                                                                       &metadata,
+                                                                       data,
+                                                                       sizeof(data),
+                                                                       false); // write
+
+  if (status == SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
+    sli_zigbee_af_save_attribute_to_token(data,
+                                          write_value.endpoint,
+                                          write_value.cluster_id,
+                                          metadata);
+  }
+}
+
+#endif // DEFER_ATTRIBUTE_UPDATES_IN_NVM
+
+void sli_zigbee_af_init_attribute_storage(void)
+{
+#ifdef DEFER_ATTRIBUTE_UPDATES_IN_NVM
+  // Initialize events
+  for (uint8_t i = 0; i < NUM_PERSISTED_ZCL_ATTRIBUTES; i++) {
+    sl_zigbee_af_event_init(&deferred_attribute_write_events[i], deferred_attribute_write_event_handler);
+  }
+#endif // DEFER_ATTRIBUTE_UPDATES_IN_NVM
 }

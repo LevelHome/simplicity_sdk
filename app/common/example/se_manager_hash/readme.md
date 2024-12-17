@@ -1,6 +1,6 @@
 # SE Manager Hash
 
-This example uses the SE Manager API to perform different Hash operations on the supported Series 2 device.
+This example uses the SE Manager API to perform different Hash operations on the supported device.
 
 In this example, test vectors are used to verify the Hash streaming operations.
 

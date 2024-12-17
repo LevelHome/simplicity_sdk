@@ -1,6 +1,8 @@
 <?xml version="1.0" ?>
 <contentItems>
 	<contentItemData category="Application Notes" description="Provides an overview and hyperlinks to all packaged documentation." itemURI="file:slOpenthread-index.html" label="Documentation Index" priority="9"/>
+	<contentItemData category="Application Notes" description="Provides instructions for configuring OpenThread SoC and Border Router applications to use Thread 1.4 features.
+" itemURI="file:an1499-configuring-for-thread-1-4.pdf" label="AN1499: Configuring OpenThread Applications for Thread 1.4" priority="12"/>
 	<contentItemData category="Application Notes" description="Provides details on developing Dynamic Multiprotocol applications using Bluetooth and OpenThread.
 " itemURI="file:an1265-openthread-bluetooth-dynamic-multiprotocol-gsdk-v3x.pdf" label="AN1265: Dynamic Multiprotocol Development with Bluetooth and OpenThread in GSDK v3.x" priority="25"/>
 	<contentItemData category="User's Guides" description="Includes a brief background on the emergence of Thread, provides a technology overview,  and describes some key features of Thread to consider when implementing a Thread solution.

@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_wisun_network_measurement_gui.c
+ * @brief Wi-SUN Network Measurement GUI
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -31,11 +31,11 @@
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
 #include <assert.h>
+
 #include "sl_component_catalog.h"
 #include "sl_wisun_trace_util.h"
 #include "sl_wisun_app_core.h"
@@ -52,7 +52,6 @@
 #include "socket/socket.h"
 #include "sl_wisun_ping.h"
 #include "silabs_wisun_logo.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -259,7 +258,7 @@ void sl_wisun_nwm_main_form(void *args)
   sl_gui_optionlist_add_item("iPerf", sli_wisun_nwm_iperf_form, NULL);
   sl_gui_optionlist_add_item("Node info", _node_info_form, NULL);
   sl_gui_optionlist_add_item("Neighbors info", sli_wisun_neighbors_select_form,
-                             (sl_widget_event_args_t)_set_nbinfo_txtbox);
+                             (sl_widget_event_args_t)&_set_nbinfo_txtbox);
   sl_gui_optionlist_add_item("Settings", sli_wisun_settings_form, NULL);
   sl_gui_optionlist_assign_event_hnd_to_btn(SL_GUI_BUTTON0);
   sl_gui_optionlist_update();
@@ -374,7 +373,7 @@ static void _node_info_form(void *args)
   const char *ip_str_br        = NULL;
   const char *ip_str_pp        = NULL;
   const char *ip_str_sp        = NULL;
-  uint32_t tx_remaining_budget = 0UL;            // Hold the remaning TX budget if applicable
+  uint32_t tx_remaining_budget = 0UL;            // Hold the remaining TX budget if applicable
   sl_status_t valid            = SL_STATUS_FAIL; // Indicates if the remaining budget returned is a usable value.
 
   (void) args;

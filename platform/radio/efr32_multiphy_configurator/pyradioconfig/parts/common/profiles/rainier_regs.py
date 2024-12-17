@@ -5,6 +5,7 @@ from pyradioconfig.parts.common.profiles.bobcat_regs import build_modem_regs_bob
 def build_modem_regs_rainier(model, profile):
     build_modem_regs_bobcat(model, profile)
     build_synth_regs_s3(model, profile)
+    build_syctrl_regs_s3(model, profile)
 
     profile.outputs.append(ModelOutput(model.vars.MODEM_SYNC2_SYNC2, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.SYNC2.SYNC2'                       ))
 
@@ -88,13 +89,10 @@ def build_modem_regs_rainier(model, profile):
     profile.outputs.append(ModelOutput(model.vars.RAC_CLKMULTEN2_CLKMULTDIVRTX, '', ModelOutputType.SVD_REG_FIELD,readable_name='RAC.CLKMULTEN2.CLKMULTDIVRTX'))
     profile.outputs.append(ModelOutput(model.vars.RAC_CLKMULTEN2_CLKMULTDIVXTX, '', ModelOutputType.SVD_REG_FIELD,readable_name='RAC.CLKMULTEN2.CLKMULTDIVXTX'))
     profile.outputs.append(ModelOutput(model.vars.RAC_CLKMULTEN2_CLKMULTENBYPASS40MHZTX, '', ModelOutputType.SVD_REG_FIELD,readable_name='RAC.CLKMULTEN2.CLKMULTENBYPASS40MHZTX'))
-    profile.outputs.append(ModelOutput(model.vars.RAC_TIAEN_TIAENLATCHI, '', ModelOutputType.SVD_REG_FIELD,readable_name='RAC.TIAEN.TIAENLATCHI'))
-    profile.outputs.append(ModelOutput(model.vars.RAC_TIAEN_TIAENLATCHQ, '', ModelOutputType.SVD_REG_FIELD,readable_name='RAC.TIAEN.TIAENLATCHQ'))
 
     profile.outputs.append(ModelOutput(model.vars.MODEM_DIGMIXCTRL_FWHOPPING, '', ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.DIGMIXCTRL.FWHOPPING'))
     profile.outputs.append(ModelOutput(model.vars.MODEM_PHDMODCTRL_FASTHOPPINGEN, '', ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.PHDMODCTRL.FASTHOPPINGEN'))
     profile.outputs.append(ModelOutput(model.vars.MODEM_PHDMODCTRL_CHPWRQUAL, '', ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.PHDMODCTRL.CHPWRQUAL'))
-    profile.outputs.append(ModelOutput(model.vars.MODEM_SRCCHF_CHMUTETIMER, '', ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.SRCCHF.CHMUTETIMER'))
     # profile.outputs.append(ModelOutput(model.vars., '', ModelOutputType.SVD_REG_FIELD, readable_name=''))
     profile.outputs.append(ModelOutput(model.vars.MODEM_CTRL3_ANTDIVMODE, '', ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.CTRL3.ANTDIVMODE'))
 
@@ -138,13 +136,13 @@ def build_modem_regs_rainier(model, profile):
     profile.outputs.append(ModelOutput(model.vars.RAC_CLKMULTEN0_CLKMULTLDCNIB, '', ModelOutputType.SVD_REG_FIELD,   readable_name='RAC.CLKMULTEN0.CLKMULTLDCNIB'))
     profile.outputs.append(ModelOutput(model.vars.RAC_ADCCTRL1_ADCENHALFMODE, '', ModelOutputType.SVD_REG_FIELD,     readable_name='RAC.ADCCTRL1.ADCENHALFMODE'))
     profile.outputs.append(ModelOutput(model.vars.RAC_ADCCTRL0_ADCCLKSEL, '', ModelOutputType.SVD_REG_FIELD,         readable_name='RAC.ADCCTRL0.ADCCLKSEL'))
-    profile.outputs.append(ModelOutput(model.vars.RAC_ADCTRIM0_ADCSIDETONEAMP, '', ModelOutputType.SVD_REG_FIELD,    readable_name='RAC.ADCTRIM0.ADCSIDETONEAMP'))
     profile.outputs.append(ModelOutput(model.vars.RAC_ADCEN0_ADCENNEGRES, '', ModelOutputType.SVD_REG_FIELD,         readable_name='RAC.ADCEN0.ADCENNEGRES'))
     profile.outputs.append(ModelOutput(model.vars.RAC_LNAMIXCTRL1_LNAMIXRFPKDTHRESHSELHI, '', ModelOutputType.SVD_REG_FIELD,  readable_name='RAC.LNAMIXCTRL1.LNAMIXRFPKDTHRESHSELHI'))
     profile.outputs.append(ModelOutput(model.vars.RAC_LNAMIXCTRL1_LNAMIXRFPKDTHRESHSELLO, '', ModelOutputType.SVD_REG_FIELD, readable_name='RAC_LNAMIXCTRL1_LNAMIXRFPKDTHRESHSELLO'))
     profile.outputs.append(ModelOutput(model.vars.RAC_TIACTRL0_TIATHRPKDHISEL, '', ModelOutputType.SVD_REG_FIELD,            readable_name='RAC.TIACTRL0.TIATHRPKDHISEL'))
     profile.outputs.append(ModelOutput(model.vars.RAC_TIACTRL0_TIATHRPKDLOSEL, '', ModelOutputType.SVD_REG_FIELD,            readable_name='RAC.TIACTRL0.TIATHRPKDLOSEL'))
     profile.outputs.append(ModelOutput(model.vars.RAC_SYLOCTRL0_SYLODIVADCDIVRATIO, '', ModelOutputType.SVD_REG_FIELD,         readable_name='RAC.SYLOCTRL0.SYLODIVADCDIVRATIO'))
+    profile.outputs.append(ModelOutput(model.vars.RAC_SYLOCTRL0_SYLODIVREGTRIMVREG, '', ModelOutputType.SVD_REG_FIELD,         readable_name='RAC.SYLOCTRL0.SYLODIVREGTRIMVREG'))
 
     profile.outputs.append(ModelOutput(model.vars.MODEM_TXCTRL_BR2M, '', ModelOutputType.SVD_REG_FIELD,readable_name='MODEM.TXCTRL.BR2M'))
     profile.outputs.append(ModelOutput(model.vars.MODEM_TXCTRL_TXMOD, '', ModelOutputType.SVD_REG_FIELD,readable_name='MODEM.TXCTRL.TXMOD'))
@@ -197,18 +195,6 @@ def build_modem_regs_rainier(model, profile):
     profile.outputs.append(ModelOutput(model.vars.AGC_TIACODE1_TIACOMP10, '', ModelOutputType.SVD_REG_FIELD, readable_name='AGC.TIACODE1.TIACOMP10'))
     profile.outputs.append(ModelOutput(model.vars.AGC_TIACODE1_TIACOMP11, '', ModelOutputType.SVD_REG_FIELD, readable_name='AGC.TIACODE1.TIACOMP11'))
 
-    profile.outputs.append(ModelOutput(model.vars.AGC_TIACODE2_TIACAPFB1, '', ModelOutputType.SVD_REG_FIELD, readable_name='AGC.TIACODE2.TIACAPFB1'))
-    profile.outputs.append(ModelOutput(model.vars.AGC_TIACODE2_TIACAPFB2, '', ModelOutputType.SVD_REG_FIELD, readable_name='AGC.TIACODE2.TIACAPFB2'))
-    profile.outputs.append(ModelOutput(model.vars.AGC_TIACODE2_TIACAPFB3, '', ModelOutputType.SVD_REG_FIELD, readable_name='AGC.TIACODE2.TIACAPFB3'))
-    profile.outputs.append(ModelOutput(model.vars.AGC_TIACODE2_TIACAPFB4, '', ModelOutputType.SVD_REG_FIELD, readable_name='AGC.TIACODE2.TIACAPFB4'))
-    profile.outputs.append(ModelOutput(model.vars.AGC_TIACODE3_TIACAPFB5, '', ModelOutputType.SVD_REG_FIELD, readable_name='AGC.TIACODE3.TIACAPFB5'))
-    profile.outputs.append(ModelOutput(model.vars.AGC_TIACODE3_TIACAPFB6, '', ModelOutputType.SVD_REG_FIELD, readable_name='AGC.TIACODE3.TIACAPFB6'))
-    profile.outputs.append(ModelOutput(model.vars.AGC_TIACODE3_TIACAPFB7, '', ModelOutputType.SVD_REG_FIELD, readable_name='AGC.TIACODE3.TIACAPFB7'))
-    profile.outputs.append(ModelOutput(model.vars.AGC_TIACODE3_TIACAPFB8, '', ModelOutputType.SVD_REG_FIELD, readable_name='AGC.TIACODE3.TIACAPFB8'))
-    profile.outputs.append(ModelOutput(model.vars.AGC_TIACODE4_TIACAPFB9, '', ModelOutputType.SVD_REG_FIELD, readable_name='AGC.TIACODE4.TIACAPFB9'))
-    profile.outputs.append(ModelOutput(model.vars.AGC_TIACODE4_TIACAPFB10, '', ModelOutputType.SVD_REG_FIELD, readable_name='AGC.TIACODE4.TIACAPFB10'))
-    profile.outputs.append(ModelOutput(model.vars.AGC_TIACODE4_TIACAPFB11, '', ModelOutputType.SVD_REG_FIELD, readable_name='AGC.TIACODE4.TIACAPFB11'))
-
     profile.outputs.append(ModelOutput(model.vars.AGC_PGAGAIN1_PGAGAINDB1, '', ModelOutputType.SVD_REG_FIELD, readable_name='AGC.PGAGAIN1.PGAGAINDB1'))
     profile.outputs.append(ModelOutput(model.vars.AGC_PGAGAIN1_PGAGAINDB2, '', ModelOutputType.SVD_REG_FIELD, readable_name='AGC.PGAGAIN1.PGAGAINDB2'))
     profile.outputs.append(ModelOutput(model.vars.AGC_PGAGAIN1_PGAGAINDB3, '', ModelOutputType.SVD_REG_FIELD, readable_name='AGC.PGAGAIN1.PGAGAINDB3'))
@@ -238,8 +224,9 @@ def build_modem_regs_rainier(model, profile):
     profile.outputs.append(ModelOutput(model.vars.AGC_PNRFATT7_LNAMIXRFATT15, '', ModelOutputType.SVD_REG_FIELD, readable_name='AGC.PNRFATT7.LNAMIXRFATT15'))
     profile.outputs.append(ModelOutput(model.vars.AGC_PNRFATT7_LNAMIXRFATT16, '', ModelOutputType.SVD_REG_FIELD, readable_name='AGC.PNRFATT7.LNAMIXRFATT16'))
 
-    profile.outputs.append(ModelOutput(model.vars.MODEM_CTRL5_FEFILTCLKSEL, '', ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.CTRL5.FEFILTCLKSEL'))
-    profile.outputs.append(ModelOutput(model.vars.MODEM_CTRL5_AFIFOBYP, '', ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.CTRL5.AFIFOBYP'))
+    if model.part_family.lower() not in []:
+        profile.outputs.append(ModelOutput(model.vars.MODEM_CTRL5_FEFILTCLKSEL, '', ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.CTRL5.FEFILTCLKSEL'))
+        profile.outputs.append(ModelOutput(model.vars.MODEM_CTRL5_AFIFOBYP, '', ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.CTRL5.AFIFOBYP'))
     profile.outputs.append(ModelOutput(model.vars.MODEM_TXCTRL_TXAFIFOBYP, '', ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.TXCTRL.TXAFIFOBYP'))
 
     profile.outputs.append(ModelOutput(model.vars.SEQ_MODEMINFO_LEGACY_EN, '', ModelOutputType.SVD_REG_FIELD, readable_name='SEQ.MODEMINFO.LEGACY_EN'))
@@ -251,9 +238,19 @@ def build_modem_regs_rainier(model, profile):
     profile.outputs.append(ModelOutput(model.vars.SEQ_MODEMINFO_ENHDSSS_EN, '', ModelOutputType.SVD_REG_FIELD, readable_name='SEQ.MODEMINFO.ENHDSSS_EN'))
     profile.outputs.append(ModelOutput(model.vars.SEQ_MODEMINFO_SPARE1, '', ModelOutputType.SVD_REG_FIELD, readable_name='SEQ.MODEMINFO.SPARE1'))
     profile.outputs.append(ModelOutput(model.vars.SEQ_MODEMINFO_SOFTMODEM_EN, '', ModelOutputType.SVD_REG_FIELD, readable_name='SEQ.MODEMINFO.SOFTMODEM_EN'))
-    profile.outputs.append(ModelOutput(model.vars.SEQ_MODEMINFO_BTC_EN, '', ModelOutputType.SVD_REG_FIELD, readable_name='SEQ.MODEMINFO.BTC_EN'))
     profile.outputs.append(ModelOutput(model.vars.SEQ_MODEMINFO_SPARE2, '', ModelOutputType.SVD_REG_FIELD, readable_name='SEQ.MODEMINFO.SPARE2'))
-
+    profile.outputs.append(ModelOutput(model.vars.SEQ_MMDDENOMINIT_CALC_DENOMINIT0, '', ModelOutputType.SVD_REG_FIELD, readable_name='SEQ.MMDDENOMINIT_CALC.DENOMINIT0'))
+    profile.outputs.append(ModelOutput(model.vars.SEQ_MMDDENOMINIT_CALC_DENOMINIT1, '', ModelOutputType.SVD_REG_FIELD, readable_name='SEQ.MMDDENOMINIT_CALC.DENOMINIT1'))
+    profile.outputs.append(ModelOutput(model.vars.SEQ_MMDDENOMINIT_CALC_DOUBLED_DENOMINIT0, '', ModelOutputType.SVD_REG_FIELD, readable_name='SEQ.MMDDENOMINIT_CALC_DOUBLED.DENOMINIT0'))
+    profile.outputs.append(ModelOutput(model.vars.SEQ_MMDDENOMINIT_CALC_DOUBLED_DENOMINIT1, '', ModelOutputType.SVD_REG_FIELD, readable_name='SEQ.MMDDENOMINIT_CALC_DOUBLED.DENOMINIT1'))
+    profile.outputs.append(ModelOutput(model.vars.SEQ_MODINDEX_CALC_MODINDEXE, '', ModelOutputType.SVD_REG_FIELD, readable_name='SEQ.MODINDEX_CALC.MODINDEXE'))
+    profile.outputs.append(ModelOutput(model.vars.SEQ_MODINDEX_CALC_MODINDEXM, '', ModelOutputType.SVD_REG_FIELD, readable_name='SEQ.MODINDEX_CALC.MODINDEXM'))
+    profile.outputs.append(ModelOutput(model.vars.SEQ_MODINDEX_CALC_FREQGAINE, '', ModelOutputType.SVD_REG_FIELD, readable_name='SEQ.MODINDEX_CALC.FREQGAINE'))
+    profile.outputs.append(ModelOutput(model.vars.SEQ_MODINDEX_CALC_FREQGAINM, '', ModelOutputType.SVD_REG_FIELD, readable_name='SEQ.MODINDEX_CALC.FREQGAINM'))
+    profile.outputs.append(ModelOutput(model.vars.SEQ_MODINDEX_CALC_MODINDEXE_DOUBLED_MODINDEXE, '', ModelOutputType.SVD_REG_FIELD, readable_name='SEQ.MODINDEX_CALC_MODINDEXE_DOUBLED.MODINDEXE'))
+    profile.outputs.append(ModelOutput(model.vars.SEQ_MODINDEX_CALC_MODINDEXE_DOUBLED_MODINDEXM, '', ModelOutputType.SVD_REG_FIELD,readable_name='SEQ.MODINDEX_CALC_MODINDEXE_DOUBLED.MODINDEXM'))
+    profile.outputs.append(ModelOutput(model.vars.SEQ_MODINDEX_CALC_MODINDEXE_DOUBLED_FREQGAINE, '', ModelOutputType.SVD_REG_FIELD,readable_name='SEQ.MODINDEX_CALC_MODINDEXE_DOUBLED.FREQGAINE'))
+    profile.outputs.append(ModelOutput(model.vars.SEQ_MODINDEX_CALC_MODINDEXE_DOUBLED_FREQGAINM, '', ModelOutputType.SVD_REG_FIELD,readable_name='SEQ.MODINDEX_CALC_MODINDEXE_DOUBLED.FREQGAINM'))
 ## Synth_IF Series 3 Reigsters
 def build_synth_regs_s3(model, profile):
     ## LPF
@@ -285,8 +282,10 @@ def build_synth_regs_s3(model, profile):
     profile.outputs.append(ModelOutput(model.vars.SYNTH_DSMCTRLRX_DEMMODERX, '',             ModelOutputType.SVD_REG_FIELD, readable_name='SYNTH.DSMCTRLRX.DEMMODERX'))
     profile.outputs.append(ModelOutput(model.vars.SYNTH_DSMCTRLRX_REQORDERRX, '',            ModelOutputType.SVD_REG_FIELD, readable_name='SYNTH.DSMCTRLRX.REQORDERRX'))
     profile.outputs.append(ModelOutput(model.vars.SYNTH_DSMCTRLRX_QNCMODERX, '',             ModelOutputType.SVD_REG_FIELD, readable_name='SYNTH.DSMCTRLRX.QNCMODERX'))
+    profile.outputs.append(ModelOutput(model.vars.SYNTH_DSMCTRLRX_GLMSOVERRIDEVALRX, '',     ModelOutputType.SVD_REG_FIELD, readable_name='SYNTH.DSMCTRLRX.GLMSOVERRIDEVALRX'))
     profile.outputs.append(ModelOutput(model.vars.SYNTH_DSMCTRLTX_LSBFORCETX, '',            ModelOutputType.SVD_REG_FIELD, readable_name='SYNTH.DSMCTRLTX.LSBFORCETX'))
     profile.outputs.append(ModelOutput(model.vars.SYNTH_DSMCTRLTX_PHISELTX, '',              ModelOutputType.SVD_REG_FIELD, readable_name='SYNTH.DSMCTRLTX.PHISELTX'))
+    profile.outputs.append(ModelOutput(model.vars.SYNTH_DSMCTRLRX_PHISELRX, '',              ModelOutputType.SVD_REG_FIELD, readable_name='SYNTH.DSMCTRLRX.PHISELRX'))
     profile.outputs.append(ModelOutput(model.vars.SYNTH_DSMCTRLTX_REQORDERTX, '',            ModelOutputType.SVD_REG_FIELD, readable_name='SYNTH.DSMCTRLTX.REQORDERTX'))
     profile.outputs.append(ModelOutput(model.vars.SYNTH_DSMCTRLTX_QNCMODETX, '',             ModelOutputType.SVD_REG_FIELD, readable_name='SYNTH.DSMCTRLTX.QNCMODETX'))
     profile.outputs.append(ModelOutput(model.vars.SYNTH_QNCCTRL_QNCOFFSET, '',               ModelOutputType.SVD_REG_FIELD, readable_name='SYNTH.QNCCTRL.QNCOFFSET'))
@@ -314,7 +313,6 @@ def build_synth_regs_s3(model, profile):
     profile.outputs.append(ModelOutput(model.vars.SYNTH_PLMS_PLMSGEARSLOT, '',                ModelOutputType.SVD_REG_FIELD, readable_name='SYNTH.PLMS.PLMSGEARSLOT'))
     profile.outputs.append(ModelOutput(model.vars.SYNTH_LMSOVERRIDE_GLMSOVERRIDEEN, '',       ModelOutputType.SVD_REG_FIELD, readable_name='SYNTH.LMSOVERRIDE.GLMSOVERRIDEEN'))
     profile.outputs.append(ModelOutput(model.vars.SYNTH_LMSOVERRIDE_PLMSOVERRIDEEN, '',       ModelOutputType.SVD_REG_FIELD, readable_name='SYNTH.LMSOVERRIDE.PLMSOVERRIDEEN'))
-    profile.outputs.append(ModelOutput(model.vars.SYNTH_LMSOVERRIDE_PLMSOVERRIDEVAL, '',      ModelOutputType.SVD_REG_FIELD, readable_name='SYNTH.LMSOVERRIDE.PLMSOVERRIDEVAL'))
     ## FCAL
     profile.outputs.append(ModelOutput(model.vars.SYNTH_COMPANION_COMPANION0, '',             ModelOutputType.SVD_REG_FIELD, readable_name='SYNTH.COMPANION.COMPANION0'))
     profile.outputs.append(ModelOutput(model.vars.SYNTH_COMPANION_COMPANION1, '',             ModelOutputType.SVD_REG_FIELD, readable_name='SYNTH.COMPANION.COMPANION1'))
@@ -350,8 +348,23 @@ def build_synth_regs_s3(model, profile):
     # RFSYNTH CTRL
     profile.outputs.append(ModelOutput(model.vars.RAC_SYLOCTRL0_SYLODIVDSMDACCLKDIVRATIO, '', ModelOutputType.SVD_REG_FIELD, readable_name='RAC.SYLOCTRL0.SYLODIVDSMDACCLKDIVRATIO'))
     profile.outputs.append(ModelOutput(model.vars.RAC_SYLOCTRLTX0_SYLODIVDSMDACCLKDIVRATIOTX, '', ModelOutputType.SVD_REG_FIELD, readable_name='RAC.SYLOCTRLTX0.SYLODIVDSMDACCLKDIVRATIOTX'))
+    # Select LODIV path (normal vs HADM)
+    profile.outputs.append(ModelOutput(model.vars.RAC_LNAMIXEN1_LNAMIXMXRLOSEL, '', ModelOutputType.SVD_REG_FIELD, readable_name='RAC.LNAMIXEN1.LNAMIXMXRLOSEL'))
+
   # fp select depend on TX power, move to rail code
   #  profile.outputs.append(ModelOutput(model.vars.RAC_SYCTRL1_SYLODIVSELFP4G82G4, '',          ModelOutputType.SVD_REG_FIELD, readable_name='RAC.SYCTRL1.SYLODIVSELFP4G82G4'))
   #  profile.outputs.append(ModelOutput(model.vars.RAC_SYCTRL1_SYLODIVSELFP4G82G4TX, '',       ModelOutputType.SVD_REG_FIELD, readable_name='RAC.SYCTRL1.SYLODIVSELFP4G82G4TX'))
   #  profile.outputs.append(ModelOutput(model.vars.RAC_SYMMDCTRL_SYMMDSEL56STG, '',            ModelOutputType.SVD_REG_FIELD, readable_name='RAC.SYMMDCTRL.SYMMDSEL56STG'))
   #  profile.outputs.append(ModelOutput(model.vars.RAC_SYMMDCTRL_SYMMDSEL56STGTX, '',          ModelOutputType.SVD_REG_FIELD, readable_name='RAC.SYMMDCTRL.SYMMDSEL56STGTX'))
+
+def build_syctrl_regs_s3(model, profile):
+    profile.outputs.append(ModelOutput(model.vars.RAC_SYCTRL0_SYVCOTRIMIPTAT, '', ModelOutputType.SVD_REG_FIELD, readable_name='RAC.SYCTRL0.SYVCOTRIMIPTAT'))
+    profile.outputs.append(ModelOutput(model.vars.RAC_SYCTRL0_SYVCOTRIMIBIAS, '', ModelOutputType.SVD_REG_FIELD, readable_name='RAC.SYCTRL0.SYVCOTRIMIBIAS'))
+    profile.outputs.append(ModelOutput(model.vars.RAC_SYCTRL0_SYDSMDACTRIMLOADBALDLF, '', ModelOutputType.SVD_REG_FIELD, readable_name='RAC.SYCTRL0.SYDSMDACTRIMLOADBALDLF'))
+    profile.outputs.append(ModelOutput(model.vars.RAC_SYCTRL0_SYDSMDACTRIMLOADBALDSM, '', ModelOutputType.SVD_REG_FIELD, readable_name='RAC.SYCTRL0.SYDSMDACTRIMLOADBALDSM'))
+    profile.outputs.append(ModelOutput(model.vars.RAC_SYCTRL0_SYENMMDREGREPLICA, '', ModelOutputType.SVD_REG_FIELD, readable_name='RAC.SYCTRL0.SYENMMDREGREPLICA'))
+
+    profile.outputs.append(ModelOutput(model.vars.RAC_SYCTRLTX0_SYVCOTRIMIPTATTX, '', ModelOutputType.SVD_REG_FIELD, readable_name='RAC.SYCTRLTX0.SYVCOTRIMIPTATTX'))
+    profile.outputs.append(ModelOutput(model.vars.RAC_SYCTRLTX0_SYVCOTRIMIBIASTX, '', ModelOutputType.SVD_REG_FIELD, readable_name='RAC.SYCTRLTX0.SYVCOTRIMIBIASTX'))
+    profile.outputs.append(ModelOutput(model.vars.RAC_SYCTRLTX0_SYDSMDACTRIMLOADBALDLFTX, '', ModelOutputType.SVD_REG_FIELD, readable_name='RAC.SYCTRLTX0.SYDSMDACTRIMLOADBALDLFTX'))
+    profile.outputs.append(ModelOutput(model.vars.RAC_SYCTRLTX0_SYENMMDREGREPLICATX, '', ModelOutputType.SVD_REG_FIELD, readable_name='RAC.SYCTRLTX0.SYENMMDREGREPLICATX'))

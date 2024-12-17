@@ -40,9 +40,10 @@ requires:
   - name: "bluetooth_feature_system"
   - name: "btmesh_stack_node"
   - name: "component_catalog"
-  - name: "sleeptimer"
+  - name: "sl_common"
+  - name: "udelay"
 
-template_contribution: 
+template_contribution:
   - name: cli_command
     value:
       group: factory

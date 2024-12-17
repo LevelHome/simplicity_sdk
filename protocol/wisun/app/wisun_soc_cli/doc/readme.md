@@ -59,10 +59,13 @@ The list of available commands is output on the console with the associated help
 | wisun reset_statistics | Reset the statistics | > wisun reset_statistics |
 | wisun set_trace_level \<string> | Set [trace level](https://docs.silabs.com/wisun/latest/wisun-stack-api/sl-wisun-types#sl-wisun-trace-level-t) for a [trace group](https://docs.silabs.com/wisun/latest/wisun-stack-api/sl-wisun-types#sl-wisun-trace-group-t) | > wisun set_trace_level all,debug<br>[Set 64 trace groups]<br>> wisun set_trace_level 1,none;4,info<br>[Set 2 trace groups]|
 | wisun set_lfn_support \<lfn_limit> | configure LFN support: <br> - [uint8] lfn_limit: Number of LFN children (10 maximum) | > wisun set_lfn_support 3 |
-| wisun mode_switch \<mode> \<phy_mode_id> \<neighbor_mac_address> |  configure mode switch: <br> - [uint8] mode: 0=disabled, 1=enabled, 2=default <br> - [uint8] PhyModeId <br> - [string] neighbor MAC address (optional)   | > wisun mode_switch 1 84 <br> > wisun mode_switch 1 84 01:02:03:04:05:06:07:08 |
+| wisun mode_switch \<mode> \<phy_mode_id> \<neighbor_mac_address> |  configure mode switch: <br> - [uint8] mode: 0=disabled, 1=enabled, 2=default <br> - [uint8] PhyModeID <br> - [string] neighbor MAC address (optional)   | > wisun mode_switch 1 84 <br> > wisun mode_switch 1 84 01:02:03:04:05:06:07:08 |
 | wisun trigger \<frame type> | Trigger a transmission of a periodic frame <br> - [string] pas: PAN Advertisement Solicit, pa: PAN Advertisement, pcs: PAN Configuration Solicit, pc: PAN Configuration, dis: DODAG Information Solicitation, dio: DODAG Information Object | > wisun trigger pas |
 | wisun getsockname \<socket> | Get local IP address of the socket | > wisun getsockname 3 |
 | wisun getpeername \<socket> | Get peer IP address of the socket | > wisun getpeername 3 |
+| wisun set_phy_sens \<phy_mode_id> \<sensitivy> | Set the sensitivity for the given PhyModeID <br> - [uint8] PhyModeID <br> - [int16] sensitivy in dBm | > wisun set_phy_sens 1 -70 |
+| wisun set_direct_connect_state \<state> | Set Direct Connect state <br> - [uint8] state: 0=disabled, 1=enabled <br> | wisun set_direct_connect_state 1 |
+| wisun accept_direct_connect_link \<remote address> | Accept a Direct Connect link request | wisun accept_direct_connect_link fe80::b6e3:f9ff:fec5:83df |
 
 ## Wi-SUN Settings
 
@@ -94,6 +97,7 @@ Next time you issue the `wisun join_xxxxx` command, the device starts a connecti
 | wisun.operating_mode                 | R/W | integer     | - 0x1a (1a) <br> - 0x1b (1b) <br> - 0x2a (2a) <br> - 0x2b (2b) <br> - 0x3 (3) <br> - 0x4a (4a) <br> - 0x4b (4b) <br> - 0x5 (5) | Wi-SUN FAN1.0 operating mode | FAN1.0 |
 | wisun.network_size                   | R/W | integer     | - automatic (0) <br> - small (default): less than 100 nodes (1) <br> - medium: 100 to 1000 nodes (2) <br> - large: more than 1000 nodes (3) <br> - test (4) <br> - certification (6) |  Used to optimize network timings considering the number of expected nodes on the network. |  |
 | wisun.tx_power                       | R/W | integer     | -45 to 20 | Maximum TX power in dBm                      |  |
+| wisun.tx_power_ddbm                  | R/W | integer     | -450 to 200 | Maximum TX power in deci-dBm               |  |
 | wisun.unicast_dwell_interval         | R/W | integer     | 10 to 255 | Unicast dwell interval in milliseconds       |  |
 | wisun.chan_plan_id                   | R/W | integer     | - Europe: 32-37 <br> - North America: 1-5 <br> - Brazil: 1-5 <br> - Japan: 21-24 | Wi-SUN channel plan ID [uint8] | FAN1.1 |
 | wisun.phy_mode_id                    | R/W | integer     | - Europe: <br> FSK without FEC: 1/3/5 <br> FSK FEC: 17/19/21 <br> OFDM: 84-86 <br> - North America: <br> FSK without FEC: 2/3/5/6/8 <br> FSK FEC: 18/19/21/22/24 <br> OFDM: 34-38 / 51-54 / 68-70 / 84-86 <br> - Brazil: <br> FSK without FEC: 2/3/5/6/8 <br> FSK FEC: 18/19/21/22/24 <OFDM> 34-38 / 51-54 / 68-70 / 84-86 <BR> - Japan: <br> FSK without FEC: 2/4/5/7/8 <br> FSK FEC: 18/20/21/23/24 <br> OFDM: 51-54 / 68-70 / 84-86 | Wi-SUN FAN1.1 PHY mode ID                                       | - FAN1.1 <br> - explicit <br> - join by IDs |
@@ -127,6 +131,7 @@ Next time you issue the `wisun join_xxxxx` command, the device starts a connecti
 | wisun.neighbor_table_size | R/W | integer | 1 to 254 | Size of the neighbor table, excluding temporary entries and RPL parents | |
 | wisun.keychain | R/W | integer | - automatic (0) <br> - built-in (1) <br> - NVM (2) | Keychain to use for device credentials | |
 | wisun.keychain_index | R/W | integer | 0 to 255 | Device credential index to use for built-in keychain | |
+| wisun.direct_connect_pmk \<pmk> | R/W | string | 64 hex characters | Preshared Master Key for Direct Connect |
 
 #### Non-Standard ('explicit') Channel Plan
 

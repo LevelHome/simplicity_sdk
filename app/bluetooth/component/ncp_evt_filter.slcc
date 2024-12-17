@@ -5,6 +5,9 @@ description: Component that provides the Bluetooth Network Co-Processor (NCP) Ev
 
   This is a No-Code component if used together with NCP Interface component.
 category: Bluetooth|NCP Interface
+metadata:
+  sbom:
+    license: Zlib
 quality: production
 root_path: app/bluetooth/common/ncp_evt_filter
 tag:

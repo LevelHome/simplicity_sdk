@@ -37,6 +37,10 @@ requires:
     condition: [se_manager]
   - name: tz_sl_interface_crypto
   - name: tz_sl_interface
+  - name: sli_psec_osal
+    condition: [freertos]
+  - name: sli_psec_osal
+    condition: [micriumos]
 
 source:
   - path: ../../util/third_party/trusted-firmware-m/platform/ext/target/siliconlabs/common/tfm_ns_interface.c
@@ -57,4 +61,6 @@ template_contribution:
       include: sli_tz_ns_interface.h
       handler: sli_tz_ns_interface_init
 
-
+metadata:
+  sbom:
+    license: Zlib

@@ -43,21 +43,23 @@
 #include "app_common.h"
 #include "app_trx.h"
 
+#include "sl_hal_gpio.h"
+
 #include "em_device.h"
 #ifndef _GPIO_PORT_MASK
 #warning "_GPIO_PORT_MASK not currently present in sl_gpio.h, using a workaround."
-#define _GPIO_PORT_MASK(port) (                \
-    ((int)port) == 0  ? GPIO_PORT_A_PIN_MASK   \
-    : ((int)port) == 1  ? GPIO_PORT_B_PIN_MASK \
-    : ((int)port) == 2  ? GPIO_PORT_C_PIN_MASK \
-    : ((int)port) == 3  ? GPIO_PORT_D_PIN_MASK \
-    : ((int)port) == 4  ? GPIO_PORT_E_PIN_MASK \
-    : ((int)port) == 5  ? GPIO_PORT_F_PIN_MASK \
-    : ((int)port) == 6  ? GPIO_PORT_G_PIN_MASK \
-    : ((int)port) == 7  ? GPIO_PORT_H_PIN_MASK \
-    : ((int)port) == 8  ? GPIO_PORT_I_PIN_MASK \
-    : ((int)port) == 9  ? GPIO_PORT_J_PIN_MASK \
-    : ((int)port) == 10 ? GPIO_PORT_K_PIN_MASK \
+#define _GPIO_PORT_MASK(port) (                       \
+    ((int)port) == 0  ? SL_HAL_GPIO_PORT_A_PIN_MASK   \
+    : ((int)port) == 1  ? SL_HAL_GPIO_PORT_B_PIN_MASK \
+    : ((int)port) == 2  ? SL_HAL_GPIO_PORT_C_PIN_MASK \
+    : ((int)port) == 3  ? SL_HAL_GPIO_PORT_D_PIN_MASK \
+    : ((int)port) == 4  ? SL_HAL_GPIO_PORT_E_PIN_MASK \
+    : ((int)port) == 5  ? SL_HAL_GPIO_PORT_F_PIN_MASK \
+    : ((int)port) == 6  ? SL_HAL_GPIO_PORT_G_PIN_MASK \
+    : ((int)port) == 7  ? SL_HAL_GPIO_PORT_H_PIN_MASK \
+    : ((int)port) == 8  ? SL_HAL_GPIO_PORT_I_PIN_MASK \
+    : ((int)port) == 9  ? SL_HAL_GPIO_PORT_J_PIN_MASK \
+    : ((int)port) == 10 ? SL_HAL_GPIO_PORT_K_PIN_MASK \
     : 0UL)
 #endif
 
@@ -78,11 +80,11 @@ void setGpioOutPin(sl_cli_command_arg_t *args)
   int16_t diffNum = portChar - '0';
 
   //find port name from input
-  if (diff >= 0 && diff <= GPIO_PORT_MAX) {
+  if (diff >= 0 && diff <= SL_HAL_GPIO_PORT_MAX) {
     port = (sl_gpio_port_t)diff;
-  } else if (diffCap >= 0 && diffCap <= GPIO_PORT_MAX) {
+  } else if (diffCap >= 0 && diffCap <= SL_HAL_GPIO_PORT_MAX) {
     port = (sl_gpio_port_t)diffCap;
-  } else if (diffNum >= 0 && diffNum <= GPIO_PORT_MAX) {
+  } else if (diffNum >= 0 && diffNum <= SL_HAL_GPIO_PORT_MAX) {
     port = (sl_gpio_port_t)diffNum;
   } else {
     responsePrint(sl_cli_get_command_string(args, 0), "Error:%s is not a valid port.", sl_cli_get_argument_string(args, 0));

@@ -32,15 +32,8 @@
 
 #include "rail.h"
 #include "em_device.h"
-
-#ifdef _SILICON_LABS_32B_SERIES_2
-#include "gpiointerrupt.h"
-#else
-#warning "Once supported, GPIO interrupt should be included for non series 2 platforms."
-#endif
-#include "hal_common.h"
-
 #include "app_common.h"
+#include "hal_common.h"
 #include "sl_rail_test_config.h"
 
 #if defined(SL_RAIL_TEST_GRAPHICS_SUPPORT_ENABLE)
@@ -75,8 +68,9 @@ volatile bool buttonWakeEvent = false;
 
 #ifdef _SILICON_LABS_32B_SERIES_2
 #if defined(SL_CATALOG_IOSTREAM_USART_PRESENT) || defined(SL_CATALOG_IOSTREAM_EUSART_PRESENT)
-static void gpioSerialWakeupCallback(uint8_t pin)
+static void gpioSerialWakeupCallback(uint8_t pin, void *context)
 {
+  (void)context;
 #ifdef SL_CATALOG_IOSTREAM_USART_PRESENT
   if (pin == SL_IOSTREAM_USART_VCOM_RX_PIN) {
 #elif defined(SL_CATALOG_IOSTREAM_EUSART_PRESENT)
@@ -102,12 +96,18 @@ void appHalInit(void)
 #ifdef _SILICON_LABS_32B_SERIES_2
 #if defined(SL_CATALOG_IOSTREAM_USART_PRESENT) || defined(SL_CATALOG_IOSTREAM_EUSART_PRESENT)
   // For 'sleep'
-  GPIOINT_Init();
+  sl_gpio_init();
 #ifdef SL_CATALOG_IOSTREAM_USART_PRESENT
-  GPIOINT_CallbackRegister(SL_IOSTREAM_USART_VCOM_RX_PIN, gpioSerialWakeupCallback);
+  {
+    int32_t int_no = SL_IOSTREAM_USART_VCOM_RX_PIN;
+    sl_gpio_configure_external_interrupt(&(sl_gpio_t){.port = SL_IOSTREAM_USART_VCOM_RX_PORT, .pin = SL_IOSTREAM_USART_VCOM_RX_PIN }, &int_no, SL_GPIO_INTERRUPT_NO_EDGE, gpioSerialWakeupCallback, (void *)NULL);
+  }
 #endif
 #ifdef SL_CATALOG_IOSTREAM_EUSART_PRESENT
-  GPIOINT_CallbackRegister(SL_IOSTREAM_EUSART_VCOM_RX_PIN, gpioSerialWakeupCallback);
+  {
+    int32_t int_no = SL_IOSTREAM_EUSART_VCOM_RX_PIN;
+    sl_gpio_configure_external_interrupt(&(sl_gpio_t){.port = SL_IOSTREAM_EUSART_VCOM_RX_PORT, .pin = SL_IOSTREAM_EUSART_VCOM_RX_PIN }, &int_no, SL_GPIO_INTERRUPT_NO_EDGE, gpioSerialWakeupCallback, (void *)NULL);
+  }
 #endif
 #endif // SL_CATALOG_IOSTREAM_USART_PRESENT || SL_CATALOG_IOSTREAM_EUSART_PRESENT
 #endif // _SILICON_LABS_32B_SERIES_2

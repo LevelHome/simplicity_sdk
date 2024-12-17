@@ -297,7 +297,8 @@ void init_database_variables()
 }
 
 bool is_user_identical(
-  u3c_user * p_user, uint8_t * p_name, uint16_t object_offset
+  const u3c_user * const p_user, const uint8_t * const p_name,
+  const uint16_t object_offset
 )
 {
   // Check whether the incoming and stored metadata are identical
@@ -320,17 +321,21 @@ bool is_user_identical(
   }
 
   // Check whether the incoming and stored names are identical
-  uint8_t stored_name[U3C_BUFFER_SIZE_USER_NAME] = { 0 };
-  if (!nvm(U3C_READ, AREA_USER_NAMES, object_offset, stored_name,
-            stored_user.name_length)
-  ) {
-    return false; // Database error
+  if (p_name) {
+    uint8_t stored_name[U3C_BUFFER_SIZE_USER_NAME] = { 0 };
+    if (!nvm(U3C_READ, AREA_USER_NAMES, object_offset, stored_name,
+              stored_user.name_length)
+    ) {
+      return false; // Database error
+    }
+    return (bool)(memcmp(p_name, stored_name, p_user->name_length) == 0);
   }
-  return (bool)(memcmp(p_name, stored_name, p_user->name_length) == 0);
+
+  return true;
 }
 
 bool is_credential_identical(
-  u3c_credential * p_credential, uint16_t object_offset
+  const u3c_credential * const p_credential, const uint16_t object_offset
 )
 {
   // Check whether the incoming and stored metadata are identical
@@ -408,6 +413,9 @@ u3c_db_operation_result CC_UserCredential_get_user(
   if (n_users < 1) {
     return U3C_DB_OPERATION_RESULT_FAIL_DNE;
   }
+
+  // Name can only be requested if user is requested too.
+  assert(user || !name);
 
   // Read the User descriptor table from NVM
   u3c_user_descriptor users[U3C_BUFFER_SIZE_USER_DESCRIPTORS];
@@ -576,19 +584,18 @@ u3c_db_operation_result CC_UserCredential_modify_user(
         return U3C_DB_OPERATION_RESULT_FAIL_IDENTICAL;
       }
       
+      bool write_successful = true;
       // Overwrite User object in NVM
-      if (nvm(U3C_WRITE, AREA_USERS, object_offset, user, 0)) {
-        if (name) {
-          // Overwrite User name in NVM
-          if (false == nvm(U3C_WRITE, AREA_USER_NAMES, object_offset, name, user->name_length)) {
-            return U3C_DB_OPERATION_RESULT_ERROR_IO;
-          }
-        }
-      } else {
-        return U3C_DB_OPERATION_RESULT_ERROR_IO;
+      write_successful &= nvm(U3C_WRITE, AREA_USERS, object_offset, user, 0);
+      if (write_successful && name) {
+        // Overwrite User name in NVM
+        write_successful &= nvm(U3C_WRITE, AREA_USER_NAMES, object_offset, name,
+                                user->name_length);
       }
 
-      return U3C_DB_OPERATION_RESULT_SUCCESS;
+      return write_successful
+        ? U3C_DB_OPERATION_RESULT_SUCCESS
+        : U3C_DB_OPERATION_RESULT_ERROR_IO;
     }
   }
 
@@ -919,7 +926,7 @@ u3c_db_operation_result CC_UserCredential_modify_credential(
 }
 
 u3c_db_operation_result CC_UserCredential_delete_credential(
-  uint16_t user_unique_identifier, u3c_credential_type credential_type,
+  u3c_credential_type credential_type,
   uint16_t credential_slot)
 {
   // Check if the database is empty
@@ -933,13 +940,9 @@ u3c_db_operation_result CC_UserCredential_delete_credential(
     return U3C_DB_OPERATION_RESULT_ERROR_IO;
   }
 
-  bool match_any_user = (user_unique_identifier == 0);
-
   // Find Credential
   for (uint16_t i = 0; i < n_credentials; ++i) {
-    if ((match_any_user
-         || credentials[i].user_unique_identifier == user_unique_identifier)
-        && credentials[i].credential_type == credential_type
+    if (credentials[i].credential_type == credential_type
         && credentials[i].credential_slot == credential_slot) {
       --n_credentials;
 
@@ -975,7 +978,7 @@ u3c_db_operation_result CC_UserCredential_delete_credential(
 }
 
 u3c_db_operation_result CC_UserCredential_move_credential(
-  uint16_t source_user_uid, u3c_credential_type credential_type,
+  u3c_credential_type credential_type,
   uint16_t source_credential_slot, uint16_t destination_user_uid,
   uint16_t destination_credential_slot)
 {
@@ -992,7 +995,8 @@ u3c_db_operation_result CC_UserCredential_move_credential(
 
   bool source_exists = false;
   bool same_slot = (source_credential_slot == destination_credential_slot);
-  bool same_uuid = (source_user_uid == destination_user_uid);
+  bool same_uuid = false;
+  bool destination_occupied = false;
   uint16_t source_index;
 
   // Find source and destination Credentials
@@ -1002,6 +1006,9 @@ u3c_db_operation_result CC_UserCredential_move_credential(
       if (credentials[i].credential_slot == source_credential_slot) {
         source_index = i;
         source_exists = true;
+        if (credentials[i].user_unique_identifier == destination_user_uid) {
+          same_uuid = true;
+        }
         if (same_slot) {
           break;
         }
@@ -1011,12 +1018,15 @@ u3c_db_operation_result CC_UserCredential_move_credential(
       if (!same_slot
           && (credentials[i].credential_slot == destination_credential_slot)
       ) {
-        return U3C_DB_OPERATION_RESULT_FAIL_OCCUPIED;
+        destination_occupied = true;
       }
     }
   }
   if (!source_exists) {
     return U3C_DB_OPERATION_RESULT_FAIL_DNE;
+  }
+  if (destination_occupied) {
+    return U3C_DB_OPERATION_RESULT_FAIL_OCCUPIED;
   }
 
   uint16_t object_offset = credentials[source_index].object_offset;

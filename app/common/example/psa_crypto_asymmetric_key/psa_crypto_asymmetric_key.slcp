@@ -39,7 +39,7 @@ component:
   - id: psa_its
   - id: sl_system
   - id: device_init
-  - id: device_init_hfrco
+  - id: clock_manager
   - id: printf
   - id: iostream_retarget_stdio
   - id: iostream_recommended_stream
@@ -49,12 +49,8 @@ requires:
   - name: psa_crypto_ecc_edwards25519
     condition: [device_has_semailbox]
 configuration:
-  - name: SL_DEVICE_INIT_HFRCO_BAND
-    value: cmuHFRCOFreq_38M0Hz
-    condition: [device_series_1]
-  - name: SL_DEVICE_INIT_HFRCO_BAND
-    value: cmuHFRCODPLLFreq_38M0Hz
-    condition: [device_series_2]
+  - name: SL_CLOCK_MANAGER_HFRCO_BAND
+    value: 38000000
   - name: SL_BOARD_ENABLE_VCOM
     value: 1
   - name: SL_HEAP_SIZE

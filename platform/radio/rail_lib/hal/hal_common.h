@@ -36,11 +36,10 @@
 
 #include "sl_core.h"
 #include "em_device.h"
-#if defined(_SILICON_LABS_32B_SERIES_2)
-#include "em_gpio.h"
-#include "rail_types.h"
-#else
 #include "sl_gpio.h"
+
+#if defined(_SILICON_LABS_32B_SERIES_2)
+#include "rail_types.h"
 #endif
 
 #ifdef __cplusplus
@@ -145,6 +144,19 @@ bool halIsPrsChannelFree(uint8_t channel);
  * macro.  Something which is atomic cannot be interrupted by interrupts.
  */
 #define ATOMIC(blah)          CORE_ATOMIC_SECTION(blah)
+
+#if defined(MODEM_PRSCTRL_PRESENTSEL_LR_or_RXD) \
+  && defined(MODEM_PRSCTRL_SYNCSENTSEL_LR_or_RXD_VALID)
+#define SLI_HAL_RAIL_NEEDS_DOUT_DCLK_WORKAROUND 1
+#else
+#define SLI_HAL_RAIL_NEEDS_DOUT_DCLK_WORKAROUND 0
+#endif
+
+#if SLI_HAL_RAIL_NEEDS_DOUT_DCLK_WORKAROUND
+// Invalid PRS source, used to trigger DOUT DCLK workaround
+// without impacting MODEML PRS source usage as a CUSTOM_PRS.
+#define _PRS_ASYNC_CH_CTRL_SOURCESEL_DOUT_DCLK_WORKAROUND (0x000000FFUL)
+#endif
 
 #ifdef __cplusplus
 }

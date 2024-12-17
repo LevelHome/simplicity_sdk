@@ -66,6 +66,7 @@
 #define MONITOR_PRS_CH_0     (0U)
 #define MONITOR_PRS_CH_1     (1U)
 #define MONITOR_PRS_CH_2     (2U)
+#define INVALID_PRS_CHANNEL  (-1)
 #define TOGGLES (&monitor_samples[0]) // Pin monitor on Series-1
 #define RISING (&monitor_samples[0]) // Pin monitor on Series-2
 #define FALLING (&monitor_samples[MONITOR_NUM_SAMPLES]) // Pin monitor on Series-2
@@ -76,6 +77,10 @@ static uint32_t monitor_samples[MONITOR_NUM_SAMPLES * 2];
 #if defined(_SILICON_LABS_32B_SERIES_1)
 uint32_t initialState = false;
 #endif
+
+static int8_t monitor_prs_free_channel_0 = INVALID_PRS_CHANNEL;
+static int8_t monitor_prs_free_channel_1 = INVALID_PRS_CHANNEL;
+static int8_t monitor_prs_free_channel_2 = INVALID_PRS_CHANNEL;
 
 static unsigned int dma_ch0;
 static unsigned int dma_ch1;
@@ -115,12 +120,18 @@ static sl_monitor_state_t sl_init_port_monitor(uint8_t port, uint8_t pin)
 
   // Allocate DMA channels based on RAIL_DMA_CHANNEL
 #if RAIL_DMA_CHANNEL == DMA_CHANNEL_DMADRV
-  Ecode_t dma_error = DMADRV_AllocateChannel(&dma_ch0, NULL);
-  if (dma_error != ECODE_EMDRV_DMADRV_OK) {
-    return SL_UNINITIALIZED;
-  }
-  dma_error = DMADRV_AllocateChannel(&dma_ch1, NULL);
-  if (dma_error != ECODE_EMDRV_DMADRV_OK) {
+  Ecode_t dmaError = DMADRV_Init();
+  if ((dmaError == ECODE_EMDRV_DMADRV_ALREADY_INITIALIZED)
+      || (dmaError == ECODE_EMDRV_DMADRV_OK)) {
+    Ecode_t dma_error = DMADRV_AllocateChannel(&dma_ch0, NULL);
+    if (dma_error != ECODE_EMDRV_DMADRV_OK) {
+      return SL_UNINITIALIZED;
+    }
+    dma_error = DMADRV_AllocateChannel(&dma_ch1, NULL);
+    if (dma_error != ECODE_EMDRV_DMADRV_OK) {
+      return SL_UNINITIALIZED;
+    }
+  } else {
     return SL_UNINITIALIZED;
   }
 #elif RAIL_DMA_CHANNEL == DMA_CHANNEL_INVALID
@@ -140,23 +151,38 @@ static sl_monitor_state_t sl_init_port_monitor(uint8_t port, uint8_t pin)
   // being passed to both inputs of an XNOR to always be 1, but passing it
   // between PRS channels like this causes enough of a glitch low to trigger
   // the next capture. This is the only case that needs three PRS signals,
-  // and MONITOR_PRS_CH_2 is otherwise unused
+  // and monitor_prs_free_channel_2 is otherwise unused
 #if defined(_SILICON_LABS_32B_SERIES_2)
-  PRS_SourceAsyncSignalSet(MONITOR_PRS_CH_2,
+  // Set up free PRS channel 0
+  monitor_prs_free_channel_0 = PRS_GetFreeChannel(prsTypeAsync);
+  if (monitor_prs_free_channel_0 == INVALID_PRS_CHANNEL) {
+    return SL_UNINITIALIZED;
+  }
+  PRS_SourceAsyncSignalSet((uint8_t)monitor_prs_free_channel_0,
                            PRS_ASYNC_CH_CTRL_SOURCESEL_GPIO,
                            pin);
-  PRS_ConnectConsumer(MONITOR_PRS_CH_2, prsTypeAsync, prsConsumerLDMA_REQUEST0);
-
-  PRS_SourceAsyncSignalSet(MONITOR_PRS_CH_0,
+  // Set up free PRS channel 1
+  monitor_prs_free_channel_1 = PRS_GetFreeChannel(prsTypeAsync);
+  if (monitor_prs_free_channel_1 == INVALID_PRS_CHANNEL) {
+    return SL_UNINITIALIZED;
+  }
+  PRS_SourceAsyncSignalSet((uint8_t)monitor_prs_free_channel_1,
                            PRS_ASYNC_CH_CTRL_SOURCESEL_GPIO,
                            pin);
-  PRS_ConnectConsumer(MONITOR_PRS_CH_0, prsTypeAsync, prsConsumerLDMA_REQUEST0);
-  PRS_SourceAsyncSignalSet(MONITOR_PRS_CH_1,
+  // Set up free PRS channel 2
+  monitor_prs_free_channel_2 = PRS_GetFreeChannel(prsTypeAsync);
+  if (monitor_prs_free_channel_2 == INVALID_PRS_CHANNEL) {
+    return SL_UNINITIALIZED;
+  }
+  PRS_SourceAsyncSignalSet((uint8_t)monitor_prs_free_channel_2,
                            PRS_ASYNC_CH_CTRL_SOURCESEL_GPIO,
                            pin);
-  PRS_ConnectConsumer(MONITOR_PRS_CH_1, prsTypeAsync, prsConsumerLDMA_REQUEST1);
-  PRS_Combine(MONITOR_PRS_CH_1, MONITOR_PRS_CH_2, prsLogic_A_XNOR_B);
-  PRS_Combine(MONITOR_PRS_CH_0, MONITOR_PRS_CH_2, prsLogic_A_XNOR_B);
+  // Connect PRS channels to LDMA
+  PRS_ConnectConsumer(monitor_prs_free_channel_2, prsTypeAsync, prsConsumerLDMA_REQUEST0);
+  PRS_ConnectConsumer(monitor_prs_free_channel_0, prsTypeAsync, prsConsumerLDMA_REQUEST0);
+  PRS_ConnectConsumer(monitor_prs_free_channel_1, prsTypeAsync, prsConsumerLDMA_REQUEST1);
+  PRS_Combine(monitor_prs_free_channel_1, monitor_prs_free_channel_2, prsLogic_A_XNOR_B);
+  PRS_Combine(monitor_prs_free_channel_0, monitor_prs_free_channel_2, prsLogic_A_XNOR_B);
 
   ldma_prs_conn0 = ldmaPeripheralSignal_LDMAXBAR_PRSREQ0;
   ldma_prs_conn1 = ldmaPeripheralSignal_LDMAXBAR_PRSREQ1;
@@ -165,9 +191,6 @@ static sl_monitor_state_t sl_init_port_monitor(uint8_t port, uint8_t pin)
   // channel we're using.
   GPIO_ExtIntConfig((GPIO_Port_TypeDef)port, pin, pin, false, false, false);
 
-  // Connect the DMA channels
-  LDMA_Init_t ldma_init = LDMA_INIT_DEFAULT;
-  LDMA_Init(&ldma_init);
   // There's no SINGLE_P2M_WORD define, so modify a SINGLE_P2M_BYTE descriptor
   LDMA_Descriptor_t descriptor = LDMA_DESCRIPTOR_SINGLE_P2M_BYTE(
     RAIL_TimerTick, TIMESTAMPS, MONITOR_NUM_SAMPLES);
@@ -187,13 +210,16 @@ static sl_monitor_state_t sl_init_port_monitor(uint8_t port, uint8_t pin)
                                                                          | ((uint32_t)pin << _PRS_ASYNC_CH_CTRL_SIGSEL_SHIFT));
   monitorGpioCfg.consumer_event = SL_HAL_PRS_CONSUMER_LDMAXBAR0_DMAREQ0;
   sl_hal_prs_async_init_channel(&monitorGpioCfg);
+  sl_hal_prs_connect_channel_consumer(MONITOR_PRS_CH_2, SL_HAL_PRS_TYPE_ASYNC, monitorGpioCfg.consumer_event);
 
   monitorGpioCfg.channel = MONITOR_PRS_CH_0;
   sl_hal_prs_async_init_channel(&monitorGpioCfg);
+  sl_hal_prs_connect_channel_consumer(MONITOR_PRS_CH_0, SL_HAL_PRS_TYPE_ASYNC, monitorGpioCfg.consumer_event);
 
   monitorGpioCfg.channel = MONITOR_PRS_CH_1;
   monitorGpioCfg.consumer_event = SL_HAL_PRS_CONSUMER_LDMAXBAR0_DMAREQ1;
   sl_hal_prs_async_init_channel(&monitorGpioCfg);
+  sl_hal_prs_connect_channel_consumer(MONITOR_PRS_CH_1, SL_HAL_PRS_TYPE_ASYNC, monitorGpioCfg.consumer_event);
 
   sl_hal_prs_async_combine_signals(MONITOR_PRS_CH_1, MONITOR_PRS_CH_2, SL_HAL_PRS_LOGIC_A_XNOR_B);
   sl_hal_prs_async_combine_signals(MONITOR_PRS_CH_0, MONITOR_PRS_CH_2, SL_HAL_PRS_LOGIC_A_XNOR_B);
@@ -206,22 +232,21 @@ static sl_monitor_state_t sl_init_port_monitor(uint8_t port, uint8_t pin)
   int32_t int_no = pin;
   sl_gpio_configure_external_interrupt(&(sl_gpio_t){port, pin }, &int_no, SL_GPIO_INTERRUPT_NO_EDGE, NULL, (void *)NULL);
 
-  sl_hal_ldma_config_t ldma_init = SL_HAL_LDMA_INIT_DEFAULT;
-  sl_hal_ldma_init(LDMA0, &ldma_init);
-  sl_hal_ldma_enable(LDMA0);
+  sl_hal_ldma_descriptor_t descriptor0 = SL_HAL_LDMA_DESCRIPTOR_SINGLE_P2M(SL_HAL_LDMA_CTRL_SIZE_WORD,
+                                                                           RAIL_TimerTick,
+                                                                           TIMESTAMPS,
+                                                                           MONITOR_NUM_SAMPLES);
+  sl_hal_ldma_transfer_config_t transferCfg0 = SL_HAL_LDMA_TRANSFER_CFG_PERIPHERAL(ldma_prs_conn0);
+  sl_hal_ldma_init_transfer(LDMA0, dma_ch0, &transferCfg0, &descriptor0);
+  sl_hal_ldma_start_transfer(LDMA0, dma_ch0);
 
-  sl_hal_ldma_descriptor_t descriptor = SL_HAL_LDMA_DESCRIPTOR_SINGLE_P2M(SL_HAL_LDMA_CTRL_SIZE_WORD,
-                                                                          RAIL_TimerTick,
-                                                                          TIMESTAMPS,
-                                                                          MONITOR_NUM_SAMPLES);
-  sl_hal_ldma_transfer_config_t transferCfg = SL_HAL_LDMA_TRANSFER_CFG_PERIPHERAL(ldma_prs_conn0);
-  sl_hal_ldma_init_transfer(LDMA0, dma_ch0, &transferCfg, &descriptor);
-
-  descriptor.xfer.src_addr = (uint32_t) &(GPIO->P[port].DIN);
-  descriptor.xfer.dst_addr = (uint32_t) GPIO_VALUES;
-  transferCfg.request_sel = ldma_prs_conn1;
-  sl_hal_ldma_init_transfer(LDMA0, dma_ch1, &transferCfg, &descriptor);
-
+  sl_hal_ldma_descriptor_t descriptor1 = SL_HAL_LDMA_DESCRIPTOR_SINGLE_P2M(SL_HAL_LDMA_CTRL_SIZE_WORD,
+                                                                           &(GPIO->P[port].DIN),
+                                                                           GPIO_VALUES,
+                                                                           MONITOR_NUM_SAMPLES);
+  sl_hal_ldma_transfer_config_t transferCfg1 = SL_HAL_LDMA_TRANSFER_CFG_PERIPHERAL(ldma_prs_conn1);
+  sl_hal_ldma_init_transfer(LDMA0, dma_ch1, &transferCfg1, &descriptor1);
+  sl_hal_ldma_start_transfer(LDMA0, dma_ch1);
 #endif
   return SL_PORT_MONITOR;
 }
@@ -253,12 +278,18 @@ static sl_monitor_state_t sl_init_pin_monitor(uint8_t port, uint8_t pin)
 
   // Allocate DMA channels based on RAIL_DMA_CHANNEL
 #if RAIL_DMA_CHANNEL == DMA_CHANNEL_DMADRV
-  Ecode_t dma_error = DMADRV_AllocateChannel(&dma_ch0, NULL);
-  if (dma_error != ECODE_EMDRV_DMADRV_OK) {
-    return SL_UNINITIALIZED;
-  }
-  dma_error = DMADRV_AllocateChannel(&dma_ch1, NULL);
-  if (dma_error != ECODE_EMDRV_DMADRV_OK) {
+  Ecode_t dmaError = DMADRV_Init();
+  if ((dmaError == ECODE_EMDRV_DMADRV_ALREADY_INITIALIZED)
+      || (dmaError == ECODE_EMDRV_DMADRV_OK)) {
+    Ecode_t dma_error = DMADRV_AllocateChannel(&dma_ch0, NULL);
+    if (dma_error != ECODE_EMDRV_DMADRV_OK) {
+      return SL_UNINITIALIZED;
+    }
+    dma_error = DMADRV_AllocateChannel(&dma_ch1, NULL);
+    if (dma_error != ECODE_EMDRV_DMADRV_OK) {
+      return SL_UNINITIALIZED;
+    }
+  } else {
     return SL_UNINITIALIZED;
   }
 #elif RAIL_DMA_CHANNEL == DMA_CHANNEL_INVALID
@@ -273,12 +304,23 @@ static sl_monitor_state_t sl_init_pin_monitor(uint8_t port, uint8_t pin)
 
 #if defined(_SILICON_LABS_32B_SERIES_2)
   // Configure the PRS logic we need on Series 2
-  PRS_SourceAsyncSignalSet(MONITOR_PRS_CH_0,
+  // Set up free PRS channel 0
+  monitor_prs_free_channel_0 = (int8_t)PRS_GetFreeChannel(prsTypeAsync);
+  if (monitor_prs_free_channel_0 == INVALID_PRS_CHANNEL) {
+    return SL_UNINITIALIZED;
+  }
+  PRS_SourceAsyncSignalSet(monitor_prs_free_channel_0,
                            PRS_ASYNC_CH_CTRL_SOURCESEL_GPIO,
                            pin);
-  PRS_ConnectConsumer(MONITOR_PRS_CH_0, prsTypeAsync, prsConsumerLDMA_REQUEST0);
-  PRS_ConnectConsumer(MONITOR_PRS_CH_1, prsTypeAsync, prsConsumerLDMA_REQUEST1);
-  PRS_Combine(MONITOR_PRS_CH_1, MONITOR_PRS_CH_0, prsLogic_NOT_B);
+  // Set up free PRS channel 1
+  monitor_prs_free_channel_1 = (int8_t)PRS_GetFreeChannel(prsTypeAsync);
+  if (monitor_prs_free_channel_1 == INVALID_PRS_CHANNEL) {
+    return SL_UNINITIALIZED;
+  }
+  // Connect PRS channels to LDMA
+  PRS_ConnectConsumer(monitor_prs_free_channel_0, prsTypeAsync, prsConsumerLDMA_REQUEST0);
+  PRS_ConnectConsumer(monitor_prs_free_channel_1, prsTypeAsync, prsConsumerLDMA_REQUEST1);
+  PRS_Combine(monitor_prs_free_channel_1, monitor_prs_free_channel_0, prsLogic_NOT_B);
 
   uint32_t ldma_prs_conn0 = ldmaPeripheralSignal_LDMAXBAR_PRSREQ0;
   uint32_t ldma_prs_conn1 = ldmaPeripheralSignal_LDMAXBAR_PRSREQ1;
@@ -287,9 +329,6 @@ static sl_monitor_state_t sl_init_pin_monitor(uint8_t port, uint8_t pin)
   // channel we're using.
   GPIO_ExtIntConfig((GPIO_Port_TypeDef)port, pin, pin, false, false, false);
 
-  // Connect the DMA channels
-  LDMA_Init_t ldma_init = LDMA_INIT_DEFAULT;
-  LDMA_Init(&ldma_init);
   // There's no SINGLE_P2M_WORD define, so modify a SINGLE_P2M_BYTE descriptor
   LDMA_Descriptor_t descriptor = LDMA_DESCRIPTOR_SINGLE_P2M_BYTE(
     RAIL_TimerTick, RISING, MONITOR_NUM_SAMPLES);
@@ -301,14 +340,24 @@ static sl_monitor_state_t sl_init_pin_monitor(uint8_t port, uint8_t pin)
   transfer.ldmaReqSel = ldma_prs_conn1;
   LDMA_StartTransfer(dma_ch1, &transfer, &descriptor);
 #else
-  sl_hal_prs_async_channel_config_t monitorGpioCfg = \
-    SL_HAL_PRS_ASYNC_INIT_DEFAULT(MONITOR_PRS_CH_2, SL_HAL_PRS_ASYNC_NONE, SL_HAL_PRS_CONSUMER_NONE);
-  monitorGpioCfg.producer_signal = (sl_hal_prs_async_producer_signal_t) (PRS_ASYNC_CH_CTRL_SOURCESEL_GPIO
-                                                                         | ((uint32_t)pin << _PRS_ASYNC_CH_CTRL_SIGSEL_SHIFT));
-  monitorGpioCfg.consumer_event = SL_HAL_PRS_CONSUMER_LDMAXBAR0_DMAREQ0;
-  sl_hal_prs_async_init_channel(&monitorGpioCfg);
-  sl_hal_prs_connect_channel_consumer(MONITOR_PRS_CH_1, SL_HAL_PRS_TYPE_ASYNC, monitorGpioCfg.consumer_event);
-  sl_hal_prs_async_combine_signals(MONITOR_PRS_CH_0, MONITOR_PRS_CH_1, SL_HAL_PRS_LOGIC_NOT_B);
+  sl_hal_prs_async_channel_config_t monitorGpioCfg0 = \
+    SL_HAL_PRS_ASYNC_INIT_DEFAULT(MONITOR_PRS_CH_0, SL_HAL_PRS_ASYNC_NONE, SL_HAL_PRS_CONSUMER_NONE);
+  monitorGpioCfg0.producer_signal = (sl_hal_prs_async_producer_signal_t) (PRS_ASYNC_CH_CTRL_SOURCESEL_GPIO
+                                                                          | ((uint32_t)pin << _PRS_ASYNC_CH_CTRL_SIGSEL_SHIFT));
+  monitorGpioCfg0.consumer_event = SL_HAL_PRS_CONSUMER_LDMAXBAR0_DMAREQ0;
+
+  sl_hal_prs_async_channel_config_t monitorGpioCfg1 = \
+    SL_HAL_PRS_ASYNC_INIT_DEFAULT(MONITOR_PRS_CH_1, SL_HAL_PRS_ASYNC_NONE, SL_HAL_PRS_CONSUMER_NONE);
+  monitorGpioCfg1.producer_signal = (sl_hal_prs_async_producer_signal_t) (PRS_ASYNC_CH_CTRL_SOURCESEL_GPIO
+                                                                          | ((uint32_t)pin << _PRS_ASYNC_CH_CTRL_SIGSEL_SHIFT));
+  monitorGpioCfg1.consumer_event = SL_HAL_PRS_CONSUMER_LDMAXBAR0_DMAREQ1;
+
+  sl_hal_prs_async_init_channel(&monitorGpioCfg0);
+  sl_hal_prs_connect_channel_consumer(MONITOR_PRS_CH_0, SL_HAL_PRS_TYPE_ASYNC, monitorGpioCfg0.consumer_event);
+
+  sl_hal_prs_async_init_channel(&monitorGpioCfg1);
+  sl_hal_prs_connect_channel_consumer(MONITOR_PRS_CH_1, SL_HAL_PRS_TYPE_ASYNC, monitorGpioCfg1.consumer_event);
+  sl_hal_prs_async_combine_signals(MONITOR_PRS_CH_1, MONITOR_PRS_CH_0, SL_HAL_PRS_LOGIC_NOT_B);
 
   uint32_t ldma_prs_conn0 = SL_HAL_LDMA_PERIPHERAL_SIGNAL_LDMAXBAR0_PRSREQ0;
   uint32_t ldma_prs_conn1 = SL_HAL_LDMA_PERIPHERAL_SIGNAL_LDMAXBAR0_PRSREQ1;
@@ -318,20 +367,21 @@ static sl_monitor_state_t sl_init_pin_monitor(uint8_t port, uint8_t pin)
   int32_t int_no = pin;
   sl_gpio_configure_external_interrupt(&(sl_gpio_t){port, pin }, &int_no, SL_GPIO_INTERRUPT_NO_EDGE, NULL, (void *)NULL);
 
-  sl_hal_ldma_config_t ldma_init = SL_HAL_LDMA_INIT_DEFAULT;
-  sl_hal_ldma_init(LDMA0, &ldma_init);
-  sl_hal_ldma_enable(LDMA0);
+  sl_hal_ldma_descriptor_t descriptor0 = SL_HAL_LDMA_DESCRIPTOR_SINGLE_P2M(SL_HAL_LDMA_CTRL_SIZE_WORD,
+                                                                           RAIL_TimerTick,
+                                                                           RISING,
+                                                                           MONITOR_NUM_SAMPLES);
+  sl_hal_ldma_transfer_config_t transferCfg0 = SL_HAL_LDMA_TRANSFER_CFG_PERIPHERAL(ldma_prs_conn0);
+  sl_hal_ldma_init_transfer(LDMA0, dma_ch0, &transferCfg0, &descriptor0);
+  sl_hal_ldma_start_transfer(LDMA0, dma_ch0);
 
-  sl_hal_ldma_descriptor_t descriptor = SL_HAL_LDMA_DESCRIPTOR_SINGLE_P2M(SL_HAL_LDMA_CTRL_SIZE_WORD,
-                                                                          RAIL_TimerTick,
-                                                                          TIMESTAMPS,
-                                                                          MONITOR_NUM_SAMPLES);
-  sl_hal_ldma_transfer_config_t transferCfg = SL_HAL_LDMA_TRANSFER_CFG_PERIPHERAL(ldma_prs_conn0);
-  sl_hal_ldma_init_transfer(LDMA0, dma_ch0, &transferCfg, &descriptor);
-
-  descriptor.xfer.dst_addr = (uint32_t) FALLING;
-  transferCfg.request_sel = ldma_prs_conn1;
-  sl_hal_ldma_init_transfer(LDMA0, dma_ch1, &transferCfg, &descriptor);
+  sl_hal_ldma_descriptor_t descriptor1 = SL_HAL_LDMA_DESCRIPTOR_SINGLE_P2M(SL_HAL_LDMA_CTRL_SIZE_WORD,
+                                                                           RAIL_TimerTick,
+                                                                           FALLING,
+                                                                           MONITOR_NUM_SAMPLES);
+  sl_hal_ldma_transfer_config_t transferCfg1 = SL_HAL_LDMA_TRANSFER_CFG_PERIPHERAL(ldma_prs_conn1);
+  sl_hal_ldma_init_transfer(LDMA0, dma_ch1, &transferCfg1, &descriptor1);
+  sl_hal_ldma_start_transfer(LDMA0, dma_ch1);
 #endif
   return SL_PIN_MONITOR;
 }
@@ -357,7 +407,7 @@ static void sl_print_port_monitor_data(sl_cli_command_arg_t *args)
     printf(" %.8lx", FALLING[i]);
     i++;
   }
-  printf("}}\n");
+  responsePrintEnd("}}");
 }
 
 static void sl_print_pin_monitor_data(sl_cli_command_arg_t *args)
@@ -423,7 +473,7 @@ static void sl_print_pin_monitor_data(sl_cli_command_arg_t *args)
     i++;
   }
 #endif
-  printf("}}\n");
+  responsePrintEnd("}}");
 }
 
 static void sl_print_monitor_data(sl_cli_command_arg_t *args)
@@ -452,6 +502,16 @@ static void sl_print_monitor_help(sl_cli_command_arg_t *args)
                   sl_cli_get_command_string(args, 0));
 }
 
+#if defined(_SILICON_LABS_32B_SERIES_2)
+static void sl_deinit_prs_channel(int8_t *channel)
+{
+  if (*channel != INVALID_PRS_CHANNEL) {
+    PRS_ConnectSignal(*channel, prsTypeAsync, prsSignalNone);
+  }
+  *channel = INVALID_PRS_CHANNEL;
+}
+#endif
+
 static void sl_stop_monitor(void)
 {
 #if defined(_SILICON_LABS_32B_SERIES_2)
@@ -459,6 +519,10 @@ static void sl_stop_monitor(void)
   // can be left as is. Leave clocks running, in case they are needed elsewhere
   LDMA_StopTransfer(dma_ch0);
   LDMA_StopTransfer(dma_ch1);
+  // Deinit PRS channels
+  sl_deinit_prs_channel(&monitor_prs_free_channel_0);
+  sl_deinit_prs_channel(&monitor_prs_free_channel_1);
+  sl_deinit_prs_channel(&monitor_prs_free_channel_2);
 #else
   sl_hal_ldma_stop_transfer(LDMA0, dma_ch0);
   sl_hal_ldma_stop_transfer(LDMA0, dma_ch1);
@@ -483,7 +547,12 @@ void monitorGpio(sl_cli_command_arg_t *args)
       responsePrintError(sl_cli_get_command_string(args, 0), 0x53,
                          "Invalid parameters for 'init' - Need GPIO port and pin");
       return;
+    } else if (sl_monitor_state == SL_PIN_MONITOR || sl_monitor_state == SL_PORT_MONITOR) {
+      responsePrintError(sl_cli_get_command_string(args, 0), 0x53,
+                         "Gpio monitor is already running - call stop first");
+      return;
     }
+
     sl_monitor_state = sl_init_pin_monitor(
       strtoul(sl_cli_get_argument_string(args, 1), NULL, 0),
       strtoul(sl_cli_get_argument_string(args, 2), NULL, 0));
@@ -491,6 +560,7 @@ void monitorGpio(sl_cli_command_arg_t *args)
     if (sl_monitor_state == SL_PIN_MONITOR) {
       responsePrint(sl_cli_get_command_string(args, 0), "Status:Initialized");
     } else {
+      sl_stop_monitor();
       responsePrintError(sl_cli_get_command_string(args, 0), 0x54,
                          "Error during monitor initialization.");
     }
@@ -498,6 +568,10 @@ void monitorGpio(sl_cli_command_arg_t *args)
     if (sl_cli_get_argument_count(args) < 3) {
       responsePrintError(sl_cli_get_command_string(args, 0), 0x53,
                          "Invalid parameters for 'init' - Need GPIO port and pin");
+      return;
+    } else if (sl_monitor_state == SL_PIN_MONITOR || sl_monitor_state == SL_PORT_MONITOR) {
+      responsePrintError(sl_cli_get_command_string(args, 0), 0x53,
+                         "Gpio monitor is already running - call stop first");
       return;
     }
     sl_monitor_state = sl_init_port_monitor(
@@ -507,6 +581,7 @@ void monitorGpio(sl_cli_command_arg_t *args)
     if (sl_monitor_state == SL_PORT_MONITOR) {
       responsePrint(sl_cli_get_command_string(args, 0), "Status:Initialized");
     } else {
+      sl_stop_monitor();
       responsePrintError(sl_cli_get_command_string(args, 0), 0x54,
                          "Error during monitor initialization.");
     }

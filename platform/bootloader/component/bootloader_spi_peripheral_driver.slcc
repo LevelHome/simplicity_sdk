@@ -25,3 +25,6 @@ requires:
   - name: bootloader_spi_peripheral_transport
 ui_hints:
   visibility: never
+metadata:
+  sbom:
+    license: MSLA

@@ -6,6 +6,8 @@ category: Platform|Radio
 quality: production
 metadata:
   sbom:
+    id: zigbee_ant_div_cli
+    name: Zigbee Utility, Antenna Diversity CLI
     license: Zlib
 requires:
   - name: rail_util_ant_div

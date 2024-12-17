@@ -40,6 +40,9 @@
 /* Simplicity SDK emdrv includes */
 #include "spidrv.h"
 
+/* SDK dirver layer */
+#include "sl_gpio.h"
+
 /* SPI driver layer */
 #include "iot_spi_cb.h"
 #include "iot_spi_desc.h"
@@ -48,7 +51,6 @@
 /*******************************************************************************
  *                        iot_spi_drv_cb_read
  ******************************************************************************/
-
 static void iot_spi_drv_cb_read(SPIDRV_HandleData_t *pxHandle,
                                 Ecode_t xEcode,
                                 int lCount)
@@ -60,7 +62,7 @@ static void iot_spi_drv_cb_read(SPIDRV_HandleData_t *pxHandle,
   (void) lCount;
 
   /* search for matched descriptor */
-  while (&iot_spi_desc_get(++lInstNum)->xHandleData != pxHandle);
+  while (&iot_spi_desc_get(++lInstNum)->xHandleData != pxHandle) ;
 
   /* transfer was successful? */
   xStatus = xEcode == ECODE_EMDRV_SPIDRV_OK ? SL_STATUS_OK : SL_STATUS_FAIL;
@@ -72,7 +74,6 @@ static void iot_spi_drv_cb_read(SPIDRV_HandleData_t *pxHandle,
 /*******************************************************************************
  *                        iot_spi_drv_cb_write
  ******************************************************************************/
-
 static void iot_spi_drv_cb_write(SPIDRV_HandleData_t *pxHandle,
                                  Ecode_t xEcode,
                                  int lCount)
@@ -84,7 +85,7 @@ static void iot_spi_drv_cb_write(SPIDRV_HandleData_t *pxHandle,
   (void) lCount;
 
   /* search for matched descriptor */
-  while (&iot_spi_desc_get(++lInstNum)->xHandleData != pxHandle);
+  while (&iot_spi_desc_get(++lInstNum)->xHandleData != pxHandle) ;
 
   /* transfer was successful? */
   xStatus = xEcode == ECODE_EMDRV_SPIDRV_OK ? SL_STATUS_OK : SL_STATUS_FAIL;
@@ -96,7 +97,6 @@ static void iot_spi_drv_cb_write(SPIDRV_HandleData_t *pxHandle,
 /*******************************************************************************
  *                       iot_spi_drv_cb_transfer
  ******************************************************************************/
-
 static void iot_spi_drv_cb_transfer(SPIDRV_HandleData_t *pxHandle,
                                     Ecode_t xEcode,
                                     int lCount)
@@ -108,7 +108,7 @@ static void iot_spi_drv_cb_transfer(SPIDRV_HandleData_t *pxHandle,
   (void) lCount;
 
   /* search for matched descriptor */
-  while (&iot_spi_desc_get(++lInstNum)->xHandleData != pxHandle);
+  while (&iot_spi_desc_get(++lInstNum)->xHandleData != pxHandle) ;
 
   /* transfer was successful? */
   xStatus = xEcode == ECODE_EMDRV_SPIDRV_OK ? SL_STATUS_OK : SL_STATUS_FAIL;
@@ -120,11 +120,10 @@ static void iot_spi_drv_cb_transfer(SPIDRV_HandleData_t *pxHandle,
 /*******************************************************************************
  *                       iot_spi_drv_driver_init
  ******************************************************************************/
-
 sl_status_t iot_spi_drv_driver_init(void *pvHndl)
 {
   IotSPIDescriptor_t *pvDesc = pvHndl;
-  SPIDRV_Init_t           xInit  = {0};
+  SPIDRV_Init_t           xInit  = { 0 };
 
   /* re-initialize init struct */
   pvDesc->xInit = xInit;
@@ -141,14 +140,14 @@ sl_status_t iot_spi_drv_driver_init(void *pvHndl)
   pvDesc->xInit.portLocationClk = pvDesc->ucClkLoc;
   pvDesc->xInit.portLocationCs  = pvDesc->ucCsLoc;
 #else
-  pvDesc->xInit.portTx          = pvDesc->xTxPort;
-  pvDesc->xInit.portRx          = pvDesc->xRxPort;
-  pvDesc->xInit.portClk         = pvDesc->xClkPort;
-  pvDesc->xInit.portCs          = pvDesc->xCsPort;
-  pvDesc->xInit.pinTx           = pvDesc->ucTxPin;
-  pvDesc->xInit.pinRx           = pvDesc->ucRxPin;
-  pvDesc->xInit.pinClk          = pvDesc->ucClkPin;
-  pvDesc->xInit.pinCs           = pvDesc->ucCsPin;
+  pvDesc->xInit.portTx          = pvDesc->txGpio.port;
+  pvDesc->xInit.portRx          = pvDesc->rxGpio.port;
+  pvDesc->xInit.portClk         = pvDesc->clkGpio.port;
+  pvDesc->xInit.portCs          = pvDesc->csGpio.port;
+  pvDesc->xInit.pinTx           = pvDesc->txGpio.pin;
+  pvDesc->xInit.pinRx           = pvDesc->rxGpio.pin;
+  pvDesc->xInit.pinClk          = pvDesc->clkGpio.pin;
+  pvDesc->xInit.pinCs           = pvDesc->csGpio.pin;
 #endif
 
   /* apply default configs to xInit */
@@ -168,11 +167,10 @@ sl_status_t iot_spi_drv_driver_init(void *pvHndl)
 /*******************************************************************************
  *                      iot_spi_drv_driver_deinit
  ******************************************************************************/
-
 sl_status_t iot_spi_drv_driver_deinit(void *pvHndl)
 {
   IotSPIDescriptor_t *pvDesc = pvHndl;
-  SPIDRV_Init_t           xInit  = {0};
+  SPIDRV_Init_t           xInit  = { 0 };
 
   /* reset init struct */
   pvDesc->xInit = xInit;
@@ -184,12 +182,11 @@ sl_status_t iot_spi_drv_driver_deinit(void *pvHndl)
 /*******************************************************************************
  *                        iot_spi_drv_config_set
  ******************************************************************************/
-
 sl_status_t iot_spi_drv_config_set(void *pvHndl,
-                                      uint32_t ulFreq,
-                                      uint8_t ucMode,
-                                      uint8_t ucBitOrder,
-                                      uint8_t ucDummyValue)
+                                   uint32_t ulFreq,
+                                   uint8_t ucMode,
+                                   uint8_t ucBitOrder,
+                                   uint8_t ucDummyValue)
 {
   IotSPIDescriptor_t *pvDesc = pvHndl;
 
@@ -197,7 +194,7 @@ sl_status_t iot_spi_drv_config_set(void *pvHndl,
   pvDesc->xInit.bitRate = ulFreq;
 
   /* set spi mode */
-  switch(ucMode) {
+  switch (ucMode) {
     case 0:
       pvDesc->xInit.clockMode = spidrvClockMode0;
       break;
@@ -215,7 +212,7 @@ sl_status_t iot_spi_drv_config_set(void *pvHndl,
   }
 
   /* set bit order */
-  switch(ucBitOrder) {
+  switch (ucBitOrder) {
     case 0:
       pvDesc->xInit.bitOrder = spidrvBitOrderMsbFirst;
       break;
@@ -236,12 +233,11 @@ sl_status_t iot_spi_drv_config_set(void *pvHndl,
 /*******************************************************************************
  *                        iot_spi_drv_config_get
  ******************************************************************************/
-
 sl_status_t iot_spi_drv_config_get(void *pvHndl,
-                                      uint32_t *pulFreq,
-                                      uint8_t *pucMode,
-                                      uint8_t *pucBitOrder,
-                                      uint8_t *pucDummyValue)
+                                   uint32_t *pulFreq,
+                                   uint8_t *pucMode,
+                                   uint8_t *pucBitOrder,
+                                   uint8_t *pucDummyValue)
 {
   IotSPIDescriptor_t *pvDesc = pvHndl;
 
@@ -249,7 +245,7 @@ sl_status_t iot_spi_drv_config_get(void *pvHndl,
   *pulFreq = pvDesc->xInit.bitRate;
 
   /* get spi mode */
-  switch(pvDesc->xInit.clockMode) {
+  switch (pvDesc->xInit.clockMode) {
     case spidrvClockMode0:
       *pucMode = 0;
       break;
@@ -267,7 +263,7 @@ sl_status_t iot_spi_drv_config_get(void *pvHndl,
   }
 
   /* get bit order */
-  switch(pvDesc->xInit.bitOrder) {
+  switch (pvDesc->xInit.bitOrder) {
     case spidrvBitOrderMsbFirst:
       *pucBitOrder = 0;
       break;
@@ -288,7 +284,6 @@ sl_status_t iot_spi_drv_config_get(void *pvHndl,
 /*******************************************************************************
  *                        iot_spi_drv_hw_enable
  ******************************************************************************/
-
 sl_status_t iot_spi_drv_hw_enable(void *pvHndl)
 {
   IotSPIDescriptor_t  *pvDesc   = pvHndl;
@@ -299,10 +294,10 @@ sl_status_t iot_spi_drv_hw_enable(void *pvHndl)
   xEcode = SPIDRV_Init(pxHandle, &pvDesc->xInit);
 
   /* set pin modes for SPI pins */
-  GPIO_PinModeSet(pvDesc->xRxPort,  pvDesc->ucRxPin,  gpioModeInput,    0);
-  GPIO_PinModeSet(pvDesc->xTxPort,  pvDesc->ucTxPin,  gpioModePushPull, 1);
-  GPIO_PinModeSet(pvDesc->xClkPort, pvDesc->ucClkPin, gpioModePushPull, 1);
-  GPIO_PinModeSet(pvDesc->xCsPort,  pvDesc->ucCsPin,  gpioModePushPull, 1);
+  sl_gpio_set_pin_mode(&(pvDesc->rxGpio), SL_GPIO_MODE_INPUT, 0);
+  sl_gpio_set_pin_mode(&(pvDesc->txGpio), SL_GPIO_MODE_PUSH_PULL, 1);
+  sl_gpio_set_pin_mode(&(pvDesc->clkGpio), SL_GPIO_MODE_PUSH_PULL, 1);
+  sl_gpio_set_pin_mode(&(pvDesc->csGpio), SL_GPIO_MODE_PUSH_PULL, 1);
 
   /* done */
   return xEcode == ECODE_EMDRV_SPIDRV_OK ? SL_STATUS_OK : SL_STATUS_FAIL;
@@ -311,7 +306,6 @@ sl_status_t iot_spi_drv_hw_enable(void *pvHndl)
 /*******************************************************************************
  *                       iot_spi_drv_hw_disable
  ******************************************************************************/
-
 sl_status_t iot_spi_drv_hw_disable(void *pvHndl)
 {
   IotSPIDescriptor_t  *pvDesc   = pvHndl;
@@ -328,10 +322,9 @@ sl_status_t iot_spi_drv_hw_disable(void *pvHndl)
 /*******************************************************************************
  *                       iot_spi_drv_read_sync
  ******************************************************************************/
-
 sl_status_t iot_spi_drv_read_sync(void *pvHndl,
-                                     uint8_t *pvBuf,
-                                     uint32_t ulCount)
+                                  uint8_t *pvBuf,
+                                  uint32_t ulCount)
 {
   IotSPIDescriptor_t  *pvDesc   = pvHndl;
   SPIDRV_HandleData_t *pxHandle = &pvDesc->xHandleData;
@@ -349,10 +342,9 @@ sl_status_t iot_spi_drv_read_sync(void *pvHndl,
 /*******************************************************************************
  *                      iot_spi_drv_read_async
  ******************************************************************************/
-
 sl_status_t iot_spi_drv_read_async(void *pvHndl,
-                                      uint8_t *pvBuf,
-                                      uint32_t ulCount)
+                                   uint8_t *pvBuf,
+                                   uint32_t ulCount)
 {
   IotSPIDescriptor_t  *pvDesc   = pvHndl;
   SPIDRV_HandleData_t *pxHandle = &pvDesc->xHandleData;
@@ -371,7 +363,6 @@ sl_status_t iot_spi_drv_read_async(void *pvHndl,
 /*******************************************************************************
  *                       iot_spi_drv_read_abort
  ******************************************************************************/
-
 sl_status_t iot_spi_drv_read_abort(void *pvHndl)
 {
   IotSPIDescriptor_t  *pvDesc   = pvHndl;
@@ -388,10 +379,9 @@ sl_status_t iot_spi_drv_read_abort(void *pvHndl)
 /*******************************************************************************
  *                       iot_spi_drv_write_sync
  ******************************************************************************/
-
 sl_status_t iot_spi_drv_write_sync(void *pvHndl,
-                                      uint8_t *pvBuf,
-                                      uint32_t ulCount)
+                                   uint8_t *pvBuf,
+                                   uint32_t ulCount)
 {
   IotSPIDescriptor_t  *pvDesc   = pvHndl;
   SPIDRV_HandleData_t     *pxHandle = &pvDesc->xHandleData;
@@ -409,10 +399,9 @@ sl_status_t iot_spi_drv_write_sync(void *pvHndl,
 /*******************************************************************************
  *                       iot_spi_drv_write_async
  ******************************************************************************/
-
 sl_status_t iot_spi_drv_write_async(void *pvHndl,
-                                       uint8_t *pvBuf,
-                                       uint32_t ulCount)
+                                    uint8_t *pvBuf,
+                                    uint32_t ulCount)
 {
   IotSPIDescriptor_t  *pvDesc   = pvHndl;
   SPIDRV_HandleData_t     *pxHandle = &pvDesc->xHandleData;
@@ -431,7 +420,6 @@ sl_status_t iot_spi_drv_write_async(void *pvHndl,
 /*******************************************************************************
  *                        iot_spi_drv_write_abort
  ******************************************************************************/
-
 sl_status_t iot_spi_drv_write_abort(void *pvHndl)
 {
   IotSPIDescriptor_t  *pvDesc   = pvHndl;
@@ -448,11 +436,10 @@ sl_status_t iot_spi_drv_write_abort(void *pvHndl)
 /*******************************************************************************
  *                      iot_spi_drv_transfer_sync
  ******************************************************************************/
-
 sl_status_t iot_spi_drv_transfer_sync(void *pvHndl,
-                                         uint8_t *pvTxBuf,
-                                         uint8_t *pvRxBuf,
-                                         uint32_t ulCount)
+                                      uint8_t *pvTxBuf,
+                                      uint8_t *pvRxBuf,
+                                      uint32_t ulCount)
 {
   IotSPIDescriptor_t  *pvDesc   = pvHndl;
   SPIDRV_HandleData_t     *pxHandle = &pvDesc->xHandleData;
@@ -468,11 +455,10 @@ sl_status_t iot_spi_drv_transfer_sync(void *pvHndl,
 /*******************************************************************************
  *                      iot_spi_drv_transfer_async
  ******************************************************************************/
-
 sl_status_t iot_spi_drv_transfer_async(void *pvHndl,
-                                          uint8_t *pvTxBuf,
-                                          uint8_t *pvRxBuf,
-                                          uint32_t ulCount)
+                                       uint8_t *pvTxBuf,
+                                       uint8_t *pvRxBuf,
+                                       uint32_t ulCount)
 {
   IotSPIDescriptor_t  *pvDesc   = pvHndl;
   SPIDRV_HandleData_t     *pxHandle = &pvDesc->xHandleData;
@@ -492,7 +478,6 @@ sl_status_t iot_spi_drv_transfer_async(void *pvHndl,
 /*******************************************************************************
  *                     iot_spi_drv_transfer_abort
  ******************************************************************************/
-
 sl_status_t iot_spi_drv_transfer_abort(void *pvHndl)
 {
   IotSPIDescriptor_t  *pvDesc   = pvHndl;
@@ -509,8 +494,8 @@ sl_status_t iot_spi_drv_transfer_abort(void *pvHndl)
 /*******************************************************************************
  *                       iot_spi_drv_status_tx
  ******************************************************************************/
-
-sl_status_t iot_spi_drv_status_tx(void *pvHndl, uint32_t *pulCount) {
+sl_status_t iot_spi_drv_status_tx(void *pvHndl, uint32_t *pulCount)
+{
   IotSPIDescriptor_t  *pvDesc   = pvHndl;
   SPIDRV_HandleData_t     *pxHandle = &pvDesc->xHandleData;
   Ecode_t                  xEcode   = ECODE_EMDRV_SPIDRV_OK;
@@ -526,8 +511,8 @@ sl_status_t iot_spi_drv_status_tx(void *pvHndl, uint32_t *pulCount) {
 /*******************************************************************************
  *                       iot_spi_drv_status_rx
  ******************************************************************************/
-
-sl_status_t iot_spi_drv_status_rx(void *pvHndl, uint32_t *pulCount) {
+sl_status_t iot_spi_drv_status_rx(void *pvHndl, uint32_t *pulCount)
+{
   IotSPIDescriptor_t  *pvDesc   = pvHndl;
   SPIDRV_HandleData_t     *pxHandle = &pvDesc->xHandleData;
   Ecode_t                  xEcode   = ECODE_EMDRV_SPIDRV_OK;

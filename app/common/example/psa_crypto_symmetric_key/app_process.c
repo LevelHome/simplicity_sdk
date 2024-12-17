@@ -125,7 +125,7 @@ void app_process_action(void)
   switch (app_state) {
     case PSA_CRYPTO_INIT:
       printf("\n%s - Core running at %" PRIu32 " kHz.\n", example_string,
-             CMU_ClockFreqGet(cmuClock_CORE) / 1000);
+             SystemHCLKGet() / 1000);
       printf("  . PSA Crypto initialization... ");
       if (init_psa_crypto() == PSA_SUCCESS) {
         print_key_storage();

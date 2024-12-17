@@ -1,0 +1,5 @@
+from pyradioconfig.parts.leopard.phys.Phys_RAIL_Base_Standard_Bluetooth_LE import PhysRailBaseStandardBluetoothLeLeopard
+
+
+class PhysRailBaseStandardBluetoothLeLion(PhysRailBaseStandardBluetoothLeLeopard):
+    pass

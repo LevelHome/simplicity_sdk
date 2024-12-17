@@ -41,9 +41,6 @@
 #if !defined(SL_CATALOG_CLOCK_MANAGER_PRESENT)
 #include "em_cmu.h"
 #endif
-#if (EMDRV_UARTDRV_FLOW_CONTROL_ENABLE)
-#include "gpiointerrupt.h"
-#endif
 #if defined(SL_CATALOG_POWER_MANAGER_PRESENT)
 #include "sl_power_manager.h"
 #include "sl_sleeptimer.h"
@@ -83,32 +80,7 @@
 #error "No valid UARTDRV DMA engine defined."
 #endif
 
-// UARTDRV use low-level drivers from platform/peripheral.
 #if defined(UARTDRV_USE_PERIPHERAL)
-
-#define uartdrv_gpio_port_t sl_gpio_port_t
-#define UARTDRV_GPIO_MODE_DISABLED SL_HAL_GPIO_MODE_DISABLED
-#define UARTDRV_GPIO_MODE_INPUT SL_HAL_GPIO_MODE_INPUT
-#define UARTDRV_GPIO_MODE_INPUT_PULL SL_HAL_GPIO_MODE_INPUT_PULL
-#define UARTDRV_GPIO_MODE_PUSH_PULL SL_HAL_GPIO_MODE_PUSH_PULL
-
-#define uartdrv_gpio_get_pin_input(port, pin) sl_hal_gpio_get_pin_input(&(sl_gpio_t){port, pin })
-#define uartdrv_gpio_set_pin_output(port, pin) sl_hal_gpio_set_pin(&(sl_gpio_t){port, pin })
-#define uartdrv_gpio_clear_pin_output(port, pin) sl_hal_gpio_clear_pin(&(sl_gpio_t){port, pin })
-#define uartdrv_gpio_set_pin_mode(port, pin, mode, output) sl_hal_gpio_set_pin_mode(&(sl_gpio_t){port, pin }, mode, output)
-#define uartdrv_gpio_config_ext_int(port, pin, intNo, risingEdge, fallingEdge, enable)          \
-  do {                                                                                          \
-    sl_hal_gpio_configure_external_interrupt(&(sl_gpio_t){port, pin },                          \
-                                             intNo,                                             \
-                                             (risingEdge * SL_GPIO_INTERRUPT_RISING_EDGE        \
-                                              & fallingEdge * SL_GPIO_INTERRUPT_FALLING_EDGE)); \
-    if (enable) {                                                                               \
-      sl_hal_gpio_enable_interrupts(1 << intNo);                                                \
-    } else {                                                                                    \
-      sl_hal_gpio_disable_interrupts(1 << intNo);                                               \
-    }                                                                                           \
-  } while (0)
-
 #define uartdrv_eusart_data_bits_t sl_hal_eusart_data_bits_t
 #define uartdrv_eusart_stop_bits_t  sl_hal_eusart_stop_bits_t
 #define uartdrv_eusart_parity_t  sl_hal_eusart_parity_t
@@ -132,22 +104,7 @@
                                                    else if (enable == UARTDRV_EUSART_ENABLE)                                                            \
                                                    { sl_hal_eusart_enable(eusart); sl_hal_eusart_enable_rx(eusart); sl_hal_eusart_enable_tx(eusart); } } while (0)
 
-// UARTDRV use low-level drivers from platform/emlib.
 #else
-#define uartdrv_gpio_port_t GPIO_Port_TypeDef
-
-#define UARTDRV_GPIO_MODE_DISABLED gpioModeDisabled
-#define UARTDRV_GPIO_MODE_INPUT gpioModeInput
-#define UARTDRV_GPIO_MODE_INPUT_PULL gpioModeInputPull
-#define UARTDRV_GPIO_MODE_PUSH_PULL gpioModePushPull
-
-#define uartdrv_gpio_get_pin_input(port, pin) GPIO_PinInGet(port, pin)
-#define uartdrv_gpio_set_pin_output(port, pin) GPIO_PinOutSet(port, pin)
-#define uartdrv_gpio_clear_pin_output(port, pin) GPIO_PinOutClear(port, pin)
-#define uartdrv_gpio_set_pin_mode(port, pin, mode, output) GPIO_PinModeSet(port, pin, mode, output)
-#define uartdrv_gpio_config_ext_int(port, pin, intNo, risingEdge, fallingEdge, enable) \
-  GPIO_ExtIntConfig(port, pin, intNo, risingEdge, fallingEdge, enable)
-
 #define uartdrv_eusart_data_bits_t EUSART_Databits_TypeDef
 #define uartdrv_eusart_stop_bits_t  EUSART_Stopbits_TypeDef
 #define uartdrv_eusart_parity_t  EUSART_Parity_TypeDef
@@ -164,14 +121,13 @@
 #define uartdrv_eusart_reset(eusart) EUSART_Reset(eusart)
 #define uartdrv_eusart_enable(eusart, enable) EUSART_Enable(eusart, enable)
 #endif
-
 //****************************************************************************
 
 #if (HANDLES_ARE_AVAILABLE)
 static bool uartdrvHandleIsInitialized = false;
 static UARTDRV_Handle_t uartdrvHandle[EMDRV_UARTDRV_MAX_DRIVER_INSTANCES];
 #endif
-static bool enableRxWhenSleeping = UARTDRV_RESTRICT_ENERGY_MODE_TO_ALLOW_RECEPTION;
+static const bool enableRxWhenSleeping = UARTDRV_RESTRICT_ENERGY_MODE_TO_ALLOW_RECEPTION;
 
 //****************************************************************************
 
@@ -201,6 +157,7 @@ static void em1RequestAdd(UARTDRV_Handle_t handle)
 #endif
 }
 
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_UARTDRV, SL_CODE_CLASS_TIME_CRITICAL)
 static void em1RequestRemove(UARTDRV_Handle_t handle)
 {
   EFM_ASSERT(handle->em1RequestCount > 0);
@@ -266,19 +223,20 @@ static UARTDRV_Handle_t HwFcCtsIrqGetDrvHandle(uint32_t gpioPinNo)
  ******************************************************************************/
 static UARTDRV_FlowControlState_t HwFcGetClearToSendPin(UARTDRV_Handle_t handle)
 {
+  UARTDRV_FlowControlState_t flow_control = uartdrvFlowControlOn;
   if (handle->fcType == uartdrvFlowControlHw) {
-    return (UARTDRV_FlowControlState_t)uartdrv_gpio_get_pin_input(handle->ctsPort, handle->ctsPin);
-  } else {
-    return uartdrvFlowControlOn;
+    sl_gpio_get_pin_input(&(sl_gpio_t){handle->ctsPort, handle->ctsPin }, (bool*)&flow_control);
   }
+  return flow_control;
 }
 
 /***************************************************************************//**
  * @brief Manage CTS pin change.
  ******************************************************************************/
-static void HwFcManageClearToSend(uint8_t gpioPinNo)
+static void HwFcManageClearToSend(uint8_t gpioPinNo, void *context)
 {
   UARTDRV_Handle_t handle = HwFcCtsIrqGetDrvHandle(gpioPinNo);
+  (void)context;
 
   if (handle && handle->fcType == uartdrvFlowControlHw) {
     // If not auto mode, assign the CTS pin state to the self state
@@ -307,17 +265,17 @@ static Ecode_t FcApplyState(UARTDRV_Handle_t handle)
   if (handle->fcType == uartdrvFlowControlHw) {
     if (handle->fcSelfCfg == uartdrvFlowControlOn) {
       // Assert nRTS (application control)
-      uartdrv_gpio_clear_pin_output(handle->rtsPort, handle->rtsPin);
+      sl_gpio_clear_pin(&(sl_gpio_t){handle->rtsPort, handle->rtsPin });
     } else if (handle->fcSelfCfg == uartdrvFlowControlOff) {
       // Deassert nRTS (application control)
-      uartdrv_gpio_set_pin_output(handle->rtsPort, handle->rtsPin);
+      sl_gpio_set_pin(&(sl_gpio_t){handle->rtsPort, handle->rtsPin });
     } else { // Auto mode
       if (handle->fcSelfState == uartdrvFlowControlOn) {
         // Assert nRTS
-        uartdrv_gpio_clear_pin_output(handle->rtsPort, handle->rtsPin);
+        sl_gpio_clear_pin(&(sl_gpio_t){handle->rtsPort, handle->rtsPin });
       } else { // Off
                // Deassert nRTS
-        uartdrv_gpio_set_pin_output(handle->rtsPort, handle->rtsPin);
+        sl_gpio_set_pin(&(sl_gpio_t){handle->rtsPort, handle->rtsPin });
       }
     }
   } else if (handle->fcType == uartdrvFlowControlSw) {
@@ -860,6 +818,7 @@ static bool ReceiveDmaComplete(unsigned int channel,
  * @brief Calculate the number of sleeptimer ticks to flush the uart tx buffers.
  ******************************************************************************/
 #if defined(SL_CATALOG_POWER_MANAGER_PRESENT)
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_UARTDRV, SL_CODE_CLASS_TIME_CRITICAL)
 static uint32_t calculateSleeptimerTicksToFlushTxBuffers(UARTDRV_Handle_t handle)
 {
   uint32_t baud = 0;
@@ -867,6 +826,7 @@ static uint32_t calculateSleeptimerTicksToFlushTxBuffers(UARTDRV_Handle_t handle
 
 #if defined(EUSART_PRESENT) && !defined(_SILICON_LABS_32B_SERIES_2)
   sl_clock_branch_t clock_branch;
+  sl_hal_eusart_ovs_t ovs;
   uint32_t freq;
   uint32_t div;
 #endif
@@ -884,7 +844,8 @@ static uint32_t calculateSleeptimerTicksToFlushTxBuffers(UARTDRV_Handle_t handle
       clock_branch = sl_device_peripheral_get_clock_branch(handle->usartPeripheral);
       sl_clock_manager_get_clock_branch_frequency(clock_branch, &freq);
       div = sl_hal_eusart_uart_get_clock_div(handle->peripheral.euart);
-      baud =  freq / (div + 1);
+      ovs = sl_hal_eusart_uart_get_oversampling(handle->peripheral.euart);
+      baud = sl_hal_eusart_uart_calculate_baudrate(div, ovs, freq);
 #endif
       break;
 #endif
@@ -913,6 +874,7 @@ static uint32_t calculateSleeptimerTicksToFlushTxBuffers(UARTDRV_Handle_t handle
  * @brief Delayed transmit complete timer callback.
  ******************************************************************************/
 #if defined(SL_CATALOG_POWER_MANAGER_PRESENT)
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_UARTDRV, SL_CODE_CLASS_TIME_CRITICAL)
 static void TransmitDmaCompleteDelayed(sl_sleeptimer_timer_handle_t *timer_handle, void *userParam)
 {
   (void)timer_handle;
@@ -1042,78 +1004,78 @@ static Ecode_t SetupGpioUart(UARTDRV_Handle_t handle,
   if (false) {
 #if defined(USARTRF0)
   } else if (handle->peripheral.uart == USARTRF0) {
-    handle->txPort = (uartdrv_gpio_port_t)AF_USARTRF0_TX_PORT(initData->portLocationTx);
-    handle->rxPort = (uartdrv_gpio_port_t)AF_USARTRF0_RX_PORT(initData->portLocationRx);
+    handle->txPort = (sl_gpio_port_t)AF_USARTRF0_TX_PORT(initData->portLocationTx);
+    handle->rxPort = (sl_gpio_port_t)AF_USARTRF0_RX_PORT(initData->portLocationRx);
     handle->txPin  = AF_USARTRF0_TX_PIN(initData->portLocationTx);
     handle->rxPin  = AF_USARTRF0_RX_PIN(initData->portLocationRx);
 #endif
 #if defined(USARTRF1)
   } else if (handle->peripheral.uart == USARTRF1) {
-    handle->txPort = (uartdrv_gpio_port_t)AF_USARTRF1_TX_PORT(initData->portLocationTx);
-    handle->rxPort = (uartdrv_gpio_port_t)AF_USARTRF1_RX_PORT(initData->portLocationRx);
+    handle->txPort = (sl_gpio_port_t)AF_USARTRF1_TX_PORT(initData->portLocationTx);
+    handle->rxPort = (sl_gpio_port_t)AF_USARTRF1_RX_PORT(initData->portLocationRx);
     handle->txPin  = AF_USARTRF1_TX_PIN(initData->portLocationTx);
     handle->rxPin  = AF_USARTRF1_RX_PIN(initData->portLocationRx);
 #endif
 #if defined(USART0)
   } else if (handle->peripheral.uart == USART0) {
-    handle->txPort = (uartdrv_gpio_port_t)AF_USART0_TX_PORT(initData->portLocationTx);
-    handle->rxPort = (uartdrv_gpio_port_t)AF_USART0_RX_PORT(initData->portLocationRx);
+    handle->txPort = (sl_gpio_port_t)AF_USART0_TX_PORT(initData->portLocationTx);
+    handle->rxPort = (sl_gpio_port_t)AF_USART0_RX_PORT(initData->portLocationRx);
     handle->txPin  = AF_USART0_TX_PIN(initData->portLocationTx);
     handle->rxPin  = AF_USART0_RX_PIN(initData->portLocationRx);
 #endif
 #if defined(USART1)
   } else if (handle->peripheral.uart == USART1) {
-    handle->txPort = (uartdrv_gpio_port_t)AF_USART1_TX_PORT(initData->portLocationTx);
-    handle->rxPort = (uartdrv_gpio_port_t)AF_USART1_RX_PORT(initData->portLocationRx);
+    handle->txPort = (sl_gpio_port_t)AF_USART1_TX_PORT(initData->portLocationTx);
+    handle->rxPort = (sl_gpio_port_t)AF_USART1_RX_PORT(initData->portLocationRx);
     handle->txPin  = AF_USART1_TX_PIN(initData->portLocationTx);
     handle->rxPin  = AF_USART1_RX_PIN(initData->portLocationRx);
 #endif
 #if defined(USART2)
   } else if (handle->peripheral.uart == USART2) {
-    handle->txPort = (uartdrv_gpio_port_t)AF_USART2_TX_PORT(initData->portLocationTx);
-    handle->rxPort = (uartdrv_gpio_port_t)AF_USART2_RX_PORT(initData->portLocationRx);
+    handle->txPort = (sl_gpio_port_t)AF_USART2_TX_PORT(initData->portLocationTx);
+    handle->rxPort = (sl_gpio_port_t)AF_USART2_RX_PORT(initData->portLocationRx);
     handle->txPin  = AF_USART2_TX_PIN(initData->portLocationTx);
     handle->rxPin  = AF_USART2_RX_PIN(initData->portLocationRx);
 #endif
 #if defined(USART3)
   } else if (handle->peripheral.uart == USART3) {
-    handle->txPort = (uartdrv_gpio_port_t)AF_USART3_TX_PORT(initData->portLocationTx);
-    handle->rxPort = (uartdrv_gpio_port_t)AF_USART3_RX_PORT(initData->portLocationRx);
+    handle->txPort = (sl_gpio_port_t)AF_USART3_TX_PORT(initData->portLocationTx);
+    handle->rxPort = (sl_gpio_port_t)AF_USART3_RX_PORT(initData->portLocationRx);
     handle->txPin  = AF_USART3_TX_PIN(initData->portLocationTx);
     handle->rxPin  = AF_USART3_RX_PIN(initData->portLocationRx);
 #endif
 #if defined(USART4)
   } else if (handle->peripheral.uart == USART4) {
-    handle->txPort = (uartdrv_gpio_port_t)AF_USART4_TX_PORT(initData->portLocationTx);
-    handle->rxPort = (uartdrv_gpio_port_t)AF_USART4_RX_PORT(initData->portLocationRx);
+    handle->txPort = (sl_gpio_port_t)AF_USART4_TX_PORT(initData->portLocationTx);
+    handle->rxPort = (sl_gpio_port_t)AF_USART4_RX_PORT(initData->portLocationRx);
     handle->txPin  = AF_USART4_TX_PIN(initData->portLocationTx);
     handle->rxPin  = AF_USART4_RX_PIN(initData->portLocationRx);
 #endif
 #if defined(USART5)
   } else if (handle->peripheral.uart == USART5) {
-    handle->txPort = (uartdrv_gpio_port_t)AF_USART5_TX_PORT(initData->portLocationTx);
-    handle->rxPort = (uartdrv_gpio_port_t)AF_USART5_RX_PORT(initData->portLocationRx);
+    handle->txPort = (sl_gpio_port_t)AF_USART5_TX_PORT(initData->portLocationTx);
+    handle->rxPort = (sl_gpio_port_t)AF_USART5_RX_PORT(initData->portLocationRx);
     handle->txPin  = AF_USART5_TX_PIN(initData->portLocationTx);
     handle->rxPin  = AF_USART5_RX_PIN(initData->portLocationRx);
 #endif
 #if defined(UART0)
   } else if (handle->peripheral.uart == UART0) {
-    handle->txPort = (uartdrv_gpio_port_t)AF_UART0_TX_PORT(initData->portLocationTx);
-    handle->rxPort = (uartdrv_gpio_port_t)AF_UART0_RX_PORT(initData->portLocationRx);
+    handle->txPort = (sl_gpio_port_t)AF_UART0_TX_PORT(initData->portLocationTx);
+    handle->rxPort = (sl_gpio_port_t)AF_UART0_RX_PORT(initData->portLocationRx);
     handle->txPin  = AF_UART0_TX_PIN(initData->portLocationTx);
     handle->rxPin  = AF_UART0_RX_PIN(initData->portLocationRx);
 #endif
 #if defined(UART1)
   } else if (handle->peripheral.uart == UART1) {
-    handle->txPort = (uartdrv_gpio_port_t)AF_UART1_TX_PORT(initData->portLocationTx);
-    handle->rxPort = (uartdrv_gpio_port_t)AF_UART1_RX_PORT(initData->portLocationRx);
+    handle->txPort = (sl_gpio_port_t)AF_UART1_TX_PORT(initData->portLocationTx);
+    handle->rxPort = (sl_gpio_port_t)AF_UART1_RX_PORT(initData->portLocationRx);
     handle->txPin  = AF_UART1_TX_PIN(initData->portLocationTx);
     handle->rxPin  = AF_UART1_RX_PIN(initData->portLocationRx);
 #endif
 #if defined(UART2)
   } else if (handle->peripheral.uart == UART2) {
-    handle->txPort = (uartdrv_gpio_port_t)AF_UART2_TX_PORT(initData->portLocationTx);
-    handle->rxPort = (uartdrv_gpio_port_t)AF_UART2_RX_PORT(initData->portLocationRx);
+    handle->txPort = (sl_gpio_port_t)AF_UART2_TX_PORT(initData->portLocationTx);
+    handle->rxPort = (sl_gpio_port_t)AF_UART2_RX_PORT(initData->portLocationRx);
     handle->txPin  = AF_UART2_TX_PIN(initData->portLocationTx);
     handle->rxPin  = AF_UART2_RX_PIN(initData->portLocationRx);
 #endif
@@ -1125,50 +1087,50 @@ static Ecode_t SetupGpioUart(UARTDRV_Handle_t handle,
   if (false) {
 #if defined(USARTRF0)
   } else if (handle->peripheral.uart == USARTRF0) {
-    handle->txPort = (uartdrv_gpio_port_t)AF_USARTRF0_TX_PORT(initData->portLocation);
-    handle->rxPort = (uartdrv_gpio_port_t)AF_USARTRF0_RX_PORT(initData->portLocation);
+    handle->txPort = (sl_gpio_port_t)AF_USARTRF0_TX_PORT(initData->portLocation);
+    handle->rxPort = (sl_gpio_port_t)AF_USARTRF0_RX_PORT(initData->portLocation);
     handle->txPin  = AF_USARTRF0_TX_PIN(initData->portLocation);
     handle->rxPin  = AF_USARTRF0_RX_PIN(initData->portLocation);
 #endif
 #if defined(USARTRF1)
   } else if (handle->peripheral.uart == USARTRF1) {
-    handle->txPort = (uartdrv_gpio_port_t)AF_USARTRF1_TX_PORT(initData->portLocation);
-    handle->rxPort = (uartdrv_gpio_port_t)AF_USARTRF1_RX_PORT(initData->portLocation);
+    handle->txPort = (sl_gpio_port_t)AF_USARTRF1_TX_PORT(initData->portLocation);
+    handle->rxPort = (sl_gpio_port_t)AF_USARTRF1_RX_PORT(initData->portLocation);
     handle->txPin  = AF_USARTRF1_TX_PIN(initData->portLocation);
     handle->rxPin  = AF_USARTRF1_RX_PIN(initData->portLocation);
 #endif
 #if defined(USART0)
   } else if (handle->peripheral.uart == USART0) {
-    handle->txPort  = (uartdrv_gpio_port_t)AF_USART0_TX_PORT(initData->portLocation);
-    handle->rxPort  = (uartdrv_gpio_port_t)AF_USART0_RX_PORT(initData->portLocation);
+    handle->txPort  = (sl_gpio_port_t)AF_USART0_TX_PORT(initData->portLocation);
+    handle->rxPort  = (sl_gpio_port_t)AF_USART0_RX_PORT(initData->portLocation);
     handle->txPin   = AF_USART0_TX_PIN(initData->portLocation);
     handle->rxPin   = AF_USART0_RX_PIN(initData->portLocation);
 #endif
 #if defined(USART1)
   } else if (handle->peripheral.uart == USART1) {
-    handle->txPort  = (uartdrv_gpio_port_t)AF_USART1_TX_PORT(initData->portLocation);
-    handle->rxPort  = (uartdrv_gpio_port_t)AF_USART1_RX_PORT(initData->portLocation);
+    handle->txPort  = (sl_gpio_port_t)AF_USART1_TX_PORT(initData->portLocation);
+    handle->rxPort  = (sl_gpio_port_t)AF_USART1_RX_PORT(initData->portLocation);
     handle->txPin   = AF_USART1_TX_PIN(initData->portLocation);
     handle->rxPin   = AF_USART1_RX_PIN(initData->portLocation);
 #endif
 #if defined(USART2)
   } else if (handle->peripheral.uart == USART2) {
-    handle->txPort  = (uartdrv_gpio_port_t)AF_USART2_TX_PORT(initData->portLocation);
-    handle->rxPort  = (uartdrv_gpio_port_t)AF_USART2_RX_PORT(initData->portLocation);
+    handle->txPort  = (sl_gpio_port_t)AF_USART2_TX_PORT(initData->portLocation);
+    handle->rxPort  = (sl_gpio_port_t)AF_USART2_RX_PORT(initData->portLocation);
     handle->txPin   = AF_USART2_TX_PIN(initData->portLocation);
     handle->rxPin   = AF_USART2_RX_PIN(initData->portLocation);
 #endif
 #if defined(UART0)
   } else if (handle->peripheral.uart == UART0) {
-    handle->txPort  = (uartdrv_gpio_port_t)AF_UART0_TX_PORT(initData->portLocation);
-    handle->rxPort  = (uartdrv_gpio_port_t)AF_UART0_RX_PORT(initData->portLocation);
+    handle->txPort  = (sl_gpio_port_t)AF_UART0_TX_PORT(initData->portLocation);
+    handle->rxPort  = (sl_gpio_port_t)AF_UART0_RX_PORT(initData->portLocation);
     handle->txPin   = AF_UART0_TX_PIN(initData->portLocation);
     handle->rxPin   = AF_UART0_RX_PIN(initData->portLocation);
 #endif
 #if defined(UART1)
   } else if (handle->peripheral.uart == UART1) {
-    handle->txPort  = (uartdrv_gpio_port_t)AF_UART1_TX_PORT(initData->portLocation);
-    handle->rxPort  = (uartdrv_gpio_port_t)AF_UART1_RX_PORT(initData->portLocation);
+    handle->txPort  = (sl_gpio_port_t)AF_UART1_TX_PORT(initData->portLocation);
+    handle->rxPort  = (sl_gpio_port_t)AF_UART1_RX_PORT(initData->portLocation);
     handle->txPin   = AF_UART1_TX_PIN(initData->portLocation);
     handle->rxPin   = AF_UART1_RX_PIN(initData->portLocation);
 #endif
@@ -1203,15 +1165,15 @@ static Ecode_t SetupGpioLeuart(UARTDRV_Handle_t handle,
   if (false) {
 #if defined(LEUART0)
   } else if (handle->peripheral.leuart == LEUART0) {
-    handle->txPort  = (uartdrv_gpio_port_t)AF_LEUART0_TX_PORT(initData->portLocationTx);
-    handle->rxPort  = (uartdrv_gpio_port_t)AF_LEUART0_RX_PORT(initData->portLocationRx);
+    handle->txPort  = (sl_gpio_port_t)AF_LEUART0_TX_PORT(initData->portLocationTx);
+    handle->rxPort  = (sl_gpio_port_t)AF_LEUART0_RX_PORT(initData->portLocationRx);
     handle->txPin   = AF_LEUART0_TX_PIN(initData->portLocationTx);
     handle->rxPin   = AF_LEUART0_RX_PIN(initData->portLocationRx);
 #endif
 #if defined(LEUART1)
   } else if (handle->peripheral.leuart == LEUART1) {
-    handle->txPort  = (uartdrv_gpio_port_t)AF_LEUART1_TX_PORT(initData->portLocationTx);
-    handle->rxPort  = (uartdrv_gpio_port_t)AF_LEUART1_RX_PORT(initData->portLocationRx);
+    handle->txPort  = (sl_gpio_port_t)AF_LEUART1_TX_PORT(initData->portLocationTx);
+    handle->rxPort  = (sl_gpio_port_t)AF_LEUART1_RX_PORT(initData->portLocationRx);
     handle->txPin   = AF_LEUART1_TX_PIN(initData->portLocationTx);
     handle->rxPin   = AF_LEUART1_RX_PIN(initData->portLocationRx);
 #endif
@@ -1223,15 +1185,15 @@ static Ecode_t SetupGpioLeuart(UARTDRV_Handle_t handle,
   if (false) {
 #if defined(LEUART0)
   } else if (handle->peripheral.leuart == LEUART0) {
-    handle->txPort  = (uartdrv_gpio_port_t)AF_LEUART0_TX_PORT(initData->portLocation);
-    handle->rxPort  = (uartdrv_gpio_port_t)AF_LEUART0_RX_PORT(initData->portLocation);
+    handle->txPort  = (sl_gpio_port_t)AF_LEUART0_TX_PORT(initData->portLocation);
+    handle->rxPort  = (sl_gpio_port_t)AF_LEUART0_RX_PORT(initData->portLocation);
     handle->txPin   = AF_LEUART0_TX_PIN(initData->portLocation);
     handle->rxPin   = AF_LEUART0_RX_PIN(initData->portLocation);
 #endif
 #if defined(LEUART1)
   } else if (handle->peripheral.leuart == LEUART1) {
-    handle->txPort  = (uartdrv_gpio_port_t)AF_LEUART1_TX_PORT(initData->portLocation);
-    handle->rxPort  = (uartdrv_gpio_port_t)AF_LEUART1_RX_PORT(initData->portLocation);
+    handle->txPort  = (sl_gpio_port_t)AF_LEUART1_TX_PORT(initData->portLocation);
+    handle->rxPort  = (sl_gpio_port_t)AF_LEUART1_RX_PORT(initData->portLocation);
     handle->txPin   = AF_LEUART1_TX_PIN(initData->portLocation);
     handle->rxPin   = AF_LEUART1_RX_PIN(initData->portLocation);
 #endif
@@ -1282,29 +1244,27 @@ static Ecode_t SetupGpioEuart(UARTDRV_Handle_t handle,
 static Ecode_t ConfigGpio(UARTDRV_Handle_t handle, bool enable)
 {
   if (enable) {
-    uartdrv_gpio_set_pin_mode(handle->txPort, handle->txPin, UARTDRV_GPIO_MODE_PUSH_PULL, 1);
-    uartdrv_gpio_set_pin_mode(handle->rxPort, handle->rxPin, UARTDRV_GPIO_MODE_INPUT_PULL, 1);
+    sl_gpio_set_pin_mode(&(sl_gpio_t){handle->txPort, handle->txPin }, SL_GPIO_MODE_PUSH_PULL, 1);
+    sl_gpio_set_pin_mode(&(sl_gpio_t){handle->rxPort, handle->rxPin }, SL_GPIO_MODE_INPUT_PULL, 1);
 #if (EMDRV_UARTDRV_FLOW_CONTROL_ENABLE)
     if (handle->fcType == uartdrvFlowControlHw) {
-      uartdrv_gpio_set_pin_mode(handle->ctsPort, handle->ctsPin, UARTDRV_GPIO_MODE_INPUT, 0);
-      uartdrv_gpio_set_pin_mode(handle->rtsPort, handle->rtsPin, UARTDRV_GPIO_MODE_PUSH_PULL, 0);
-      uartdrv_gpio_config_ext_int(handle->ctsPort, handle->ctsPin, handle->ctsPin, true, true, true);
+      sl_gpio_set_pin_mode(&(sl_gpio_t){handle->ctsPort, handle->ctsPin }, SL_GPIO_MODE_INPUT, 0);
+      sl_gpio_set_pin_mode(&(sl_gpio_t){handle->rtsPort, handle->rtsPin }, SL_GPIO_MODE_PUSH_PULL, 0);
     } else if (handle->fcType == uartdrvFlowControlHwUart) {
-      uartdrv_gpio_set_pin_mode(handle->ctsPort, handle->ctsPin, UARTDRV_GPIO_MODE_INPUT, 0);
-      uartdrv_gpio_set_pin_mode(handle->rtsPort, handle->rtsPin, UARTDRV_GPIO_MODE_PUSH_PULL, 0);
+      sl_gpio_set_pin_mode(&(sl_gpio_t){handle->ctsPort, handle->ctsPin }, SL_GPIO_MODE_INPUT, 0);
+      sl_gpio_set_pin_mode(&(sl_gpio_t){handle->rtsPort, handle->rtsPin }, SL_GPIO_MODE_PUSH_PULL, 0);
     }
 #endif
   } else {
-    uartdrv_gpio_set_pin_mode(handle->txPort, handle->txPin, UARTDRV_GPIO_MODE_DISABLED, 0);
-    uartdrv_gpio_set_pin_mode(handle->rxPort, handle->rxPin, UARTDRV_GPIO_MODE_DISABLED, 0);
+    sl_gpio_set_pin_mode(&(sl_gpio_t){handle->txPort, handle->txPin }, SL_GPIO_MODE_DISABLED, 0);
+    sl_gpio_set_pin_mode(&(sl_gpio_t){handle->rxPort, handle->rxPin }, SL_GPIO_MODE_DISABLED, 0);
 #if (EMDRV_UARTDRV_FLOW_CONTROL_ENABLE)
     if (handle->fcType == uartdrvFlowControlHw) {
-      uartdrv_gpio_set_pin_mode(handle->ctsPort, handle->ctsPin, UARTDRV_GPIO_MODE_DISABLED, 0);
-      uartdrv_gpio_set_pin_mode(handle->rtsPort, handle->rtsPin, UARTDRV_GPIO_MODE_DISABLED, 0);
-      uartdrv_gpio_config_ext_int(handle->ctsPort, handle->ctsPin, handle->ctsPin, true, true, false);
+      sl_gpio_set_pin_mode(&(sl_gpio_t){handle->ctsPort, handle->ctsPin }, SL_GPIO_MODE_DISABLED, 0);
+      sl_gpio_set_pin_mode(&(sl_gpio_t){handle->rtsPort, handle->rtsPin }, SL_GPIO_MODE_DISABLED, 0);
     } else if (handle->fcType == uartdrvFlowControlHwUart) {
-      uartdrv_gpio_set_pin_mode(handle->ctsPort, handle->ctsPin, UARTDRV_GPIO_MODE_DISABLED, 0);
-      uartdrv_gpio_set_pin_mode(handle->rtsPort, handle->rtsPin, UARTDRV_GPIO_MODE_DISABLED, 0);
+      sl_gpio_set_pin_mode(&(sl_gpio_t){handle->ctsPort, handle->ctsPin }, SL_GPIO_MODE_DISABLED, 0);
+      sl_gpio_set_pin_mode(&(sl_gpio_t){handle->rtsPort, handle->rtsPin }, SL_GPIO_MODE_DISABLED, 0);
     }
 #endif
   }
@@ -1399,8 +1359,15 @@ static void InitializeQueues(UARTDRV_Handle_t handle,
  ******************************************************************************/
 static void InitializeGpioFlowControl(UARTDRV_Handle_t handle)
 {
-  GPIOINT_CallbackRegister(handle->ctsPin, HwFcManageClearToSend);
-  GPIOINT_Init();
+  sl_gpio_t gpio;
+  gpio.port = handle->ctsPort;
+  gpio.pin = handle->ctsPin;
+  int32_t int_no = handle->ctsPin;
+  sl_gpio_configure_external_interrupt(&gpio,
+                                       &int_no,
+                                       SL_GPIO_INTERRUPT_RISING_FALLING_EDGE,
+                                       HwFcManageClearToSend,
+                                       NULL);
   handle->fcPeerState = uartdrvFlowControlOn;
   handle->fcSelfState = uartdrvFlowControlOn;
   handle->fcSelfCfg = uartdrvFlowControlAuto;
@@ -1867,7 +1834,11 @@ Ecode_t UARTDRV_InitEuart(UARTDRV_Handle_t handle,
       (initData->ctsPort << _GPIO_EUSART_CTSROUTE_PORT_SHIFT)
       | (initData->ctsPin << _GPIO_EUSART_CTSROUTE_PIN_SHIFT);
 #endif
+#if defined(UARTDRV_USE_PERIPHERAL)
+    uartAdvancedInit.hw_flow_control_mode = SL_HAL_EUSART_HW_FLOW_CONTROL_CTS_RTS;
+#else
     uartAdvancedInit.hwFlowControl = eusartHwFlowControlCtsAndRts;
+#endif
   } else if (initData->fcType == uartdrvFlowControlHw) {
     InitializeGpioFlowControl(handle);
   }
@@ -1959,7 +1930,15 @@ Ecode_t UARTDRV_DeInit(UARTDRV_Handle_t handle)
 
 #if (EMDRV_UARTDRV_FLOW_CONTROL_ENABLE)
   if (handle->fcType == uartdrvFlowControlHw) {
-    GPIOINT_CallbackRegister(handle->ctsPin, NULL);
+    sl_gpio_t gpio;
+    gpio.port = handle->ctsPort;
+    gpio.pin = handle->ctsPin;
+    int32_t int_no = handle->ctsPin;
+    sl_gpio_configure_external_interrupt(&gpio,
+                                         &int_no,
+                                         SL_GPIO_INTERRUPT_RISING_FALLING_EDGE,
+                                         NULL,
+                                         NULL);
   }
 #endif
 
@@ -2039,7 +2018,7 @@ Ecode_t UARTDRV_Abort(UARTDRV_Handle_t handle, UARTDRV_AbortType_t type)
         if (txBuffer->callback != NULL) {
           txBuffer->callback(handle,
                              ECODE_EMDRV_UARTDRV_ABORTED,
-                             NULL,
+                             txBuffer->data,
                              txBuffer->itemsRemaining);
         }
       }
@@ -2048,6 +2027,9 @@ Ecode_t UARTDRV_Abort(UARTDRV_Handle_t handle, UARTDRV_AbortType_t type)
     // Wait for peripheral to finish cleaning up, to prevent framing errors
     // on subsequent transfers
     while (!(UARTDRV_GetPeripheralStatus(handle) & UARTDRV_STATUS_TXIDLE)) {
+    }
+    if (handle->em1RequestCount > 0) {
+      em1RequestRemove(handle);
     }
   }
   if ((type == uartdrvAbortReceive) || (type == uartdrvAbortAll)) {
@@ -2070,7 +2052,7 @@ Ecode_t UARTDRV_Abort(UARTDRV_Handle_t handle, UARTDRV_AbortType_t type)
         if (rxBuffer->callback != NULL) {
           rxBuffer->callback(handle,
                              ECODE_EMDRV_UARTDRV_ABORTED,
-                             NULL,
+                             rxBuffer->data,
                              rxBuffer->itemsRemaining);
         }
       }
@@ -2080,10 +2062,9 @@ Ecode_t UARTDRV_Abort(UARTDRV_Handle_t handle, UARTDRV_AbortType_t type)
     if (handle->fcType != uartdrvFlowControlHwUart) {
       DisableReceiver(handle);
     }
-  }
-
-  if (handle->em1RequestCount > 0) {
-    em1RequestRemove(handle);
+    if (enableRxWhenSleeping && handle->em1RequestCount > 0) {
+      em1RequestRemove(handle);
+    }
   }
 
   CORE_EXIT_ATOMIC();
@@ -3057,7 +3038,7 @@ sl_power_manager_on_isr_exit_t sl_uartdrv_sleep_on_isr_exit(void)
    @par GPIO Hardware Flow Control
 
    To support hardware flow control on devices that don't have UART CTS/RTS
-   hardware support, the driver includes the GPIOINT driver to emulate a
+   hardware support, the driver includes the sl_gpio driver to emulate a
    hardware implementation of UART CTS/RTS flow control on these devices.
 
    To enable hardware flow control, perform the following steps:

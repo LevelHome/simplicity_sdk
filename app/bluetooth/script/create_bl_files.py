@@ -76,7 +76,7 @@ def print(level, *args, **kwargs):
 
     Override built in print function to display information in the following format (with colors):
     [   OK   ] Operation Finished.
-    
+
     :param level: INFO, OK, WARNING or ERROR levels, see definition of lvl class
     :type level: lvl enumerator class
     """
@@ -145,7 +145,7 @@ def print_tip(t, delay=1.5):
         msg += "  the selected bootloader .s37 file\n" + offset
         msg += "Note: Series-2 devices support merged bootloaders a.k.a. bootloader-apploader.s37\n" + offset
         msg += "      for applications that are utilize in-place OTA DFU.\n" + offset
-        
+
     elif t == tip.ENCRYPT or t == tip.SIGN:
         if t == tip.ENCRYPT:
             action = "encrypt"
@@ -201,7 +201,7 @@ def display_menu(elems_list, title):
     print(lvl.INFO,title)
     for i in range(0, len(elems_list)):
         print(lvl.INFO,f"[{i+1}] ", str(elems_list[i]))
-    
+
     message = f"Select one from above [ 1 - {len(elems_list)} ] and press Enter!\n" + " " * 12
     message += "To abort press any other key and press Enter!"
     print(lvl.INFO,message)
@@ -235,22 +235,22 @@ def interactive_menu(sep):
     :rtype: bool, bool, bool, str, bool
     """
     offset = " " * 12
-    
+
     print_tip(tip.INTERACTIVE)
     print(lvl.INFO,sep)
     print(lvl.INFO,"Select generation steps below ...")
     print(lvl.INFO,sep)
-    
+
     question = "Would you like to "+ ansi.yl + "sign" + ansi.cl + " your GBL files?\n" + offset
     question += "Note: if you don't have .pem files this script will generate them\n" + offset
     question += "for you later on if you want to."
     sign = print_question(question)
-    
+
     question = "Would you like to "+ ansi.yl + "encrypt" + ansi.cl + " your GBL files?\n" + offset
     question += "Note: if you don't have an encryption key .txt this script will generate them\n" + offset
     question += "for you later on if you want to."
     encrypt = print_question(question)
-    
+
     question = "Would you like to "+ ansi.yl + "compress" + ansi.cl + " your GBL files?\n" + offset
     question += "Note: for compressed GBLs you have to use a bootloader that is capable to\n" + offset
     question += ansi.yl + "decompress" + ansi.cl + " those images!"
@@ -262,9 +262,9 @@ def interactive_menu(sep):
         cpress_method = ""
         print(lvl.WARN, "Did not selected compression method!")
         print(lvl.INFO, "Compression will be skipped!")
-    
+
     uartdfu = print_question("Would you like to generate "+ ansi.yl + "UARTDFU" + ansi.cl + " GBL files?")
-    
+
     print(lvl.INFO, sep)
     print(lvl.INFO, "Setup finished:")
     print(lvl.INFO, sep)
@@ -679,7 +679,7 @@ def create_gbl_file(gbl_name, app_data, app_encrypt=None, app_sign=None, boot=No
         print(lvl.ERR,"Could not find " + app_data + "! Aborting GBL generation!")
         return None
     cmd = [COMMANDER, 'gbl', 'create']
-    
+
     if app_data is not None:
         cmd.extend(['--app', app_data])
     if app_sign is not None:
@@ -698,7 +698,7 @@ def create_gbl_file(gbl_name, app_data, app_encrypt=None, app_sign=None, boot=No
     gbl_name += '.gbl'
     gbl_file = reformat_path(os.path.join(OUTDIR, gbl_name))
     cmd.insert(3, gbl_file)
-    
+
     if is_file_exist(gbl_file):
         print(lvl.WARN, ansi.yl + f"{gbl_name}" + ansi.cl + " already exists!")
         backup_text = '_bkp' + dt.now().strftime("%Y-%m-%d-%H-%M-%S")
@@ -708,7 +708,7 @@ def create_gbl_file(gbl_name, app_data, app_encrypt=None, app_sign=None, boot=No
         gbl_name = "New " + ansi.gn + gbl_name + ansi.cl
     else:
         gbl_name = ansi.gn + gbl_name + ansi.cl
-    
+
     response = run_cmd(cmd, verbose=VERBOSE)
     match_res = re.search(r'Writing GBL file', response)
     if match_res:
@@ -755,7 +755,7 @@ def generate_gbls(name, srec, s1=True, boot_img=None, encrypt_k=None, sign_k=Non
             if cpress_m in ('lzma', 'both'):
                 # full-lzma.gbl
                 create_gbl_file(name, srec, cpress_a='lzma')
-        
+
         if is_file_exist(encrypt_k):
             # full-encrypted.gbl
             create_gbl_file(name, srec, app_encrypt=encrypt_k)
@@ -766,7 +766,7 @@ def generate_gbls(name, srec, s1=True, boot_img=None, encrypt_k=None, sign_k=Non
                 if cpress_m in ('lzma', 'both'):
                     # full-encrypted-lzma.gbl
                     create_gbl_file(name, srec, app_encrypt=encrypt_k, cpress_a='lzma')
-        
+
         apploader_srec = reformat_path(os.path.join(OUTDIR, APPLO_N + '-crc.srec'))
         app_srec = reformat_path(os.path.join(OUTDIR, APPLI_N + '-crc.srec'))
 
@@ -808,7 +808,7 @@ def generate_gbls(name, srec, s1=True, boot_img=None, encrypt_k=None, sign_k=Non
                                         app_sign=sign_k, boot=boot_img)
                     # appl*-bootloader-signed.gbl
                     create_gbl_file(name + '-bootloader', srec_signed, app_sign=sign_k, boot=boot_img)
-                
+
                 if is_file_exist(encrypt_k, suppress_ex=True):
                     # appl*-bootloader-encrypted.gbl
                     create_gbl_file(name + '-bootloader', srec, app_encrypt=encrypt_k, boot=boot_img)
@@ -865,7 +865,7 @@ def generate_gbls(name, srec, s1=True, boot_img=None, encrypt_k=None, sign_k=Non
                     create_gbl_file(name, srec, cpress_a='lz4')
                 if cpress_m in ('lzma', 'both'):
                     # appl*-lzma.gbl
-                    create_gbl_file(name, srec, cpress_a='lzma')                                    
+                    create_gbl_file(name, srec, cpress_a='lzma')
 
 def main():
     # Platform
@@ -876,16 +876,16 @@ def main():
     global OBJCOPY
 
     global OUTDIR
-    
+
     # .axf or .out file to generate from
     global PRJ_ARTIFACT
     global SERIES_1
-    
+
     global BOOT_S1_F
     global BOOT_S2_F
 
     SIGN_KEY_EXIST = False
-    
+
     # file globals
     global SIGN_F
     global ENCRYPT_F
@@ -914,12 +914,12 @@ def main():
     parser = argparse.ArgumentParser(
         prog="create_bl_files.py", description=f"Create Gecko Bootloader Files")
     # arguments
-    parser.add_argument("-o", "--outdir", dest="outdir", type=str, help="output directory for the generated files", 
+    parser.add_argument("-o", "--outdir", dest="outdir", type=str, help="output directory for the generated files",
                         metavar="DIRECTORY")
     parser.add_argument("-w", "--overwrite", dest="overwrite_old", action="store_true", help="Overwrite existing GBLs")
-    parser.add_argument("-i", "--interactive", dest="interactive", action="store_true", 
+    parser.add_argument("-i", "--interactive", dest="interactive", action="store_true",
                         help="ignore args and give choices to the user")
-    parser.add_argument("-k", "--key", dest="encryption_key", help="encryption key .txt", metavar="FILE", 
+    parser.add_argument("-k", "--key", dest="encryption_key", help="encryption key .txt", metavar="FILE",
                         type=argparse.FileType('r', encoding='UTF-8'))
     parser.add_argument("-b", "--boot", dest="boot_img", help="bootloader.s37 file", metavar="FILE",
                         type=argparse.FileType('r', encoding='UTF-8'))
@@ -927,10 +927,10 @@ def main():
                         type=argparse.FileType('r', encoding='UTF-8'))
     parser.add_argument("-a", "--all", dest="all", action="store_true", help="create every possible GBL files")
     parser.add_argument("-u", "--uartdfu", dest="uartdfu", action="store_true", help="create GBLs for UART DFU")
-    parser.add_argument("-cpr", "--compress", dest="compress", choices=["lz4", "lzma", "both"], 
+    parser.add_argument("-cpr", "--compress", dest="compress", choices=["lz4", "lzma", "both"],
                         help="Compress GBLs with the chosen method")
     args = parser.parse_args()
-            
+
     if args.outdir is not None and os.path.isdir(args.outdir):
         OUTDIR = reformat_path(args.outdir)
         print(lvl.OKAY, "Custom output directory set to " + ansi.yl + f"{OUTDIR}"+ ansi.cl + ".")
@@ -998,7 +998,7 @@ def main():
         print(lvl.ERR,"Neither *.axf or *.out build artifacts found!")
         print(lvl.INFO,ansi.yl+"Project built successfully before running this script?\n"+ansi.cl)
         sys.exit(1)
-    
+
     if args.interactive == True:
         SIGN, ENCRYPT, CPRESS, CPRESS_METHOD, UARTDFU = interactive_menu(separator)
     elif args.interactive == False:
@@ -1037,7 +1037,7 @@ def main():
                 CPRESS_METHOD = args.compress
             if args.uartdfu:
                 UARTDFU = True
-                
+
     time.sleep(delay_display)
 
     builtins.print("")
@@ -1052,7 +1052,7 @@ def main():
         builtins.print(ansi.gn + "Series-1\n" + ansi.cl)
     else:
         builtins.print(ansi.gn + "Series-2\n" + ansi.cl)
-    
+
     if args.boot_img is not None:
         BOOT_EXIST = is_file_exist(args.boot_img)
         print(lvl.OKAY,f"Bootloader image added as argument: {args.boot_img}")
@@ -1102,7 +1102,7 @@ def main():
         print(lvl.OKAY,"Bootloader image detected.\n")
         time.sleep(delay_display)
 
-    if SIGN:    
+    if SIGN:
         builtins.print("")
         print(lvl.INFO,separator)
         print(lvl.INFO,"Check prerequisites for signed GBL generation ...")
@@ -1206,7 +1206,7 @@ def main():
     print(lvl.INFO, "Generate application GBLs ...")
     print(lvl.INFO, separator)
     time.sleep(delay_display)
-    
+
     # extract all sections except the .text_apploader* and .text_signature*
     app_srec = extract_to_srec(APPLI_N, ['.text_apploader*', '.text_signature*'], PRJ_ARTIFACT)
     if app_srec is not None:

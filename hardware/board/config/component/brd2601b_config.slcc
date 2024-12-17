@@ -119,6 +119,66 @@
       file_id: device_init_lfxo_config
     path: brd2601b/sl_device_init_lfxo_config.h
   - override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_3
+    path: brd2601b/sl_emlib_gpio_init_exp_3_config.h
+  - override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_4
+    path: brd2601b/sl_emlib_gpio_init_exp_4_config.h
+  - override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_6
+    path: brd2601b/sl_emlib_gpio_init_exp_6_config.h
+  - override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_8
+    path: brd2601b/sl_emlib_gpio_init_exp_8_config.h
+  - override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_9
+    path: brd2601b/sl_emlib_gpio_init_exp_9_config.h
+  - override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_10
+    path: brd2601b/sl_emlib_gpio_init_exp_10_config.h
+  - override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_11
+    path: brd2601b/sl_emlib_gpio_init_exp_11_config.h
+  - override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_12
+    path: brd2601b/sl_emlib_gpio_init_exp_12_config.h
+  - override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_13
+    path: brd2601b/sl_emlib_gpio_init_exp_13_config.h
+  - override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_14
+    path: brd2601b/sl_emlib_gpio_init_exp_14_config.h
+  - override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_15
+    path: brd2601b/sl_emlib_gpio_init_exp_15_config.h
+  - override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_16
+    path: brd2601b/sl_emlib_gpio_init_exp_16_config.h
+  - override:
       component: i2cspm
       file_id: i2cspm_config
       instance: sensor
@@ -135,23 +195,33 @@
   - override:
       component: iostream_eusart
       file_id: iostream_eusart_config
-      instance: vcom
-    path: brd2601b/sl_iostream_eusart_vcom_config.h
-  - override:
-      component: iostream_eusart
-      file_id: iostream_eusart_config
       instance: exp
     path: brd2601b/sl_iostream_eusart_exp_config.h
   - override:
-      component: iostream_usart
-      file_id: iostream_usart_config
+      component: iostream_eusart
+      file_id: iostream_eusart_config
+      instance: exp_2
+    path: brd2601b/sl_iostream_eusart_exp_2_config.h
+  - override:
+      component: iostream_eusart
+      file_id: iostream_eusart_config
       instance: vcom
-    path: brd2601b/sl_iostream_usart_vcom_config.h
+    path: brd2601b/sl_iostream_eusart_vcom_config.h
   - override:
       component: iostream_usart
       file_id: iostream_usart_config
       instance: exp
     path: brd2601b/sl_iostream_usart_exp_config.h
+  - override:
+      component: iostream_usart
+      file_id: iostream_usart_config
+      instance: exp_2
+    path: brd2601b/sl_iostream_usart_exp_2_config.h
+  - override:
+      component: iostream_usart
+      file_id: iostream_usart_config
+      instance: vcom
+    path: brd2601b/sl_iostream_usart_vcom_config.h
   - override:
       component: iot_flash
       file_id: iot_flash_cfg
@@ -304,20 +374,30 @@
   - override:
       component: uartdrv_eusart
       file_id: uartdrv_eusart_config
-      instance: vcom
-    path: brd2601b/sl_uartdrv_eusart_vcom_config.h
-  - override:
-      component: uartdrv_eusart
-      file_id: uartdrv_eusart_config
       instance: exp
     path: brd2601b/sl_uartdrv_eusart_exp_config.h
   - override:
-      component: uartdrv_usart
-      file_id: uartdrv_usart_config
+      component: uartdrv_eusart
+      file_id: uartdrv_eusart_config
+      instance: exp_2
+    path: brd2601b/sl_uartdrv_eusart_exp_2_config.h
+  - override:
+      component: uartdrv_eusart
+      file_id: uartdrv_eusart_config
       instance: vcom
-    path: brd2601b/sl_uartdrv_usart_vcom_config.h
+    path: brd2601b/sl_uartdrv_eusart_vcom_config.h
   - override:
       component: uartdrv_usart
       file_id: uartdrv_usart_config
       instance: exp
     path: brd2601b/sl_uartdrv_usart_exp_config.h
+  - override:
+      component: uartdrv_usart
+      file_id: uartdrv_usart_config
+      instance: exp_2
+    path: brd2601b/sl_uartdrv_usart_exp_2_config.h
+  - override:
+      component: uartdrv_usart
+      file_id: uartdrv_usart_config
+      instance: vcom
+    path: brd2601b/sl_uartdrv_usart_vcom_config.h

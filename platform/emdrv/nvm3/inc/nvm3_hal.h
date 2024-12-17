@@ -31,7 +31,7 @@
 #ifndef NVM3_HAL_H
 #define NVM3_HAL_H
 
-#include "ecode.h"
+#include "sl_status.h"
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -129,9 +129,9 @@ typedef uint8_t nvm3_HalNvmAccessCode_t; ///< Definition of the access data type
  *
  * @return
  *   The result of the open call.
- *   @ref ECODE_NVM3_OK on success or a NVM3 @ref Ecode_t on failure.
+ *   @ref SL_STATUS_OK on success or a NVM3 @ref sl_status_t on failure.
  ******************************************************************************/
-typedef Ecode_t (*nvm3_HalOpen_t)(nvm3_HalPtr_t nvmAdr, size_t nvmSize);
+typedef sl_status_t (*nvm3_HalOpen_t)(nvm3_HalPtr_t nvmAdr, size_t nvmSize);
 
 /***************************************************************************//**
  * @brief
@@ -155,7 +155,7 @@ typedef void(*nvm3_HalClose_t)(void);
  * @param[in] info
  *   A pointer to a structure that will receive the device information.
  ******************************************************************************/
-typedef Ecode_t (*nvm3_HalGetInfo_t)(nvm3_HalInfo_t *info);
+typedef sl_status_t (*nvm3_HalGetInfo_t)(nvm3_HalInfo_t *info);
 
 /***************************************************************************//**
  * @brief
@@ -183,7 +183,7 @@ typedef void (*nvm3_HalNvmAccess_t)(nvm3_HalNvmAccessCode_t access);
  * @return
  *   The result of the erase operation.
  ******************************************************************************/
-typedef Ecode_t (*nvm3_HalPageErase_t)(nvm3_HalPtr_t nvmAdr);
+typedef sl_status_t (*nvm3_HalPageErase_t)(nvm3_HalPtr_t nvmAdr);
 
 /***************************************************************************//**
  * @brief
@@ -203,7 +203,7 @@ typedef Ecode_t (*nvm3_HalPageErase_t)(nvm3_HalPtr_t nvmAdr);
  * @param[in] wordCnt
  *   The number of words to read.
  ******************************************************************************/
-typedef Ecode_t (*nvm3_HalReadWords_t)(nvm3_HalPtr_t nvmAdr, void *dst, size_t wordCnt);
+typedef sl_status_t (*nvm3_HalReadWords_t)(nvm3_HalPtr_t nvmAdr, void *dst, size_t wordCnt);
 
 /***************************************************************************//**
  * @brief
@@ -224,9 +224,9 @@ typedef Ecode_t (*nvm3_HalReadWords_t)(nvm3_HalPtr_t nvmAdr, void *dst, size_t w
  *
  * @return
  *   The result of the write operation.
- *   @ref ECODE_NVM3_OK on success or a NVM3 @ref Ecode_t on failure.
+ *   @ref SL_STATUS_OK on success or a NVM3 @ref sl_status_t on failure.
  ******************************************************************************/
-typedef Ecode_t (*nvm3_HalWriteWords_t)(nvm3_HalPtr_t nvmAdr, void const *pSrc, size_t cnt);
+typedef sl_status_t (*nvm3_HalWriteWords_t)(nvm3_HalPtr_t nvmAdr, void const *pSrc, size_t cnt);
 
 /// @brief The HAL handle definition.
 typedef struct {

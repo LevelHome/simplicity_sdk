@@ -33,7 +33,7 @@
 WEAK(void sl_zigbee_af_gas_proxy_function_non_tap_off_message_handler_completed_cb(uint8_t *gbzCommandsResponse,
                                                                                    uint16_t gbzCommandsResponseLength))
 {
-  sl_zigbee_af_app_println("GBCS sl_zigbee_af_gas_proxy_function_non_tap_off_message_handler_completed_cb: gbzCommandsResponseLength=0x%2x", gbzCommandsResponseLength);
+  sl_zigbee_af_app_println("GBCS sl_zigbee_af_gas_proxy_function_non_tap_off_message_handler_completed_cb: gbzCommandsResponseLength=0x%04X", gbzCommandsResponseLength);
   free(gbzCommandsResponse);
   gbzCommandsResponse = NULL;
 }
@@ -53,7 +53,7 @@ WEAK(void sl_zigbee_af_gas_proxy_function_alert_w_a_n_cb(uint16_t alertCode,
                                                          uint8_t *gbzAlert,
                                                          uint16_t gbzAlertLength))
 {
-  sl_zigbee_af_app_println("GBCS sl_zigbee_af_gas_proxy_function_alert_w_a_n_cb: alertCode=0x%2x, gbzAlertLength=0x%2x", alertCode, gbzAlertLength);
+  sl_zigbee_af_app_println("GBCS sl_zigbee_af_gas_proxy_function_alert_w_a_n_cb: alertCode=0x%04X, gbzAlertLength=0x%04X", alertCode, gbzAlertLength);
   free(gbzAlert);
   gbzAlert = NULL;
 }
@@ -180,7 +180,7 @@ WEAK(void sl_zigbee_af_gas_proxy_function_unknown_season_week_id_cb(uint32_t iss
                                                                     uint8_t seasonEntriesLength,
                                                                     uint8_t unknownWeekIdSeasonsMask))
 {
-  sl_zigbee_af_app_println("GBCS: sl_zigbee_af_gas_proxy_function_unknown_season_week_id_cb: 0x%X", unknownWeekIdSeasonsMask);
+  sl_zigbee_af_app_println("GBCS: sl_zigbee_af_gas_proxy_function_unknown_season_week_id_cb: 0x%02X", unknownWeekIdSeasonsMask);
 }
 
 /** @brief Unknown Special Days Day Id
@@ -204,5 +204,5 @@ WEAK(void sl_zigbee_af_gas_proxy_function_unknown_special_days_day_id_cb(uint32_
                                                                          uint8_t specialDayEntriesLength,
                                                                          uint8_t unknownDayIdMask))
 {
-  sl_zigbee_af_app_println("GBCS: sl_zigbee_af_gas_proxy_function_unknown_special_days_day_id_cb: 0x%X", unknownDayIdMask);
+  sl_zigbee_af_app_println("GBCS: sl_zigbee_af_gas_proxy_function_unknown_special_days_day_id_cb: 0x%02X", unknownDayIdMask);
 }

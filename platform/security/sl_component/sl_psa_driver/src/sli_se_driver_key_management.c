@@ -413,7 +413,7 @@ static psa_status_t sli_se_driver_validate_ecc_key(
             break;
             #endif // SLI_PSA_DRIVER_FEATURE_P256R1
 
-            #if defined(SLI_MBEDTLS_DEVICE_HSE_VAULT_HIGH)
+            #if defined(SLI_MBEDTLS_DEVICE_HSE_VAULT_HIGH) && !defined(_SILICON_LABS_32B_SERIES_3)
 
             #if defined(SLI_PSA_DRIVER_FEATURE_P384R1)
           case 384:
@@ -432,14 +432,14 @@ static psa_status_t sli_se_driver_validate_ecc_key(
             break;
             #endif // SLI_PSA_DRIVER_FEATURE_P521R1
 
-            #else // SLI_MBEDTLS_DEVICE_HSE_VAULT_HIGH
+            #else // SLI_MBEDTLS_DEVICE_HSE_VAULT_HIGH && !defined(_SILICON_LABS_32B_SERIES_3)
 
           case 384:     // fall through
           case 528:
             return PSA_ERROR_NOT_SUPPORTED;
             break;
 
-            #endif // SLI_MBEDTLS_DEVICE_HSE_VAULT_HIGH
+            #endif // SLI_MBEDTLS_DEVICE_HSE_VAULT_HIGH && !defined(_SILICON_LABS_32B_SERIES_3)
 
           default:
             return PSA_ERROR_INVALID_ARGUMENT;
@@ -1028,6 +1028,7 @@ psa_status_t sli_se_set_key_desc_output(const psa_key_attributes_t* attributes,
 
 #include "mbedtls/ecp.h"
 #include "psa_crypto_core.h"
+#include "mbedtls/psa_util.h"
 
 psa_status_t sli_se_driver_validate_pubkey_with_fallback(psa_key_type_t key_type,
                                                          size_t key_bits,
@@ -1046,9 +1047,8 @@ psa_status_t sli_se_driver_validate_pubkey_with_fallback(psa_key_type_t key_type
   mbedtls_ecp_point_init(&pubkey_point);
 
   // Get software-defined curve structure
-  grp_id = mbedtls_ecc_group_of_psa(PSA_KEY_TYPE_ECC_GET_FAMILY(key_type),
-                                    key_bits,
-                                    1);
+  grp_id = mbedtls_ecc_group_from_psa(PSA_KEY_TYPE_ECC_GET_FAMILY(key_type),
+                                      key_bits);
   if (grp_id == MBEDTLS_ECP_DP_NONE) {
     goto exit;
   }

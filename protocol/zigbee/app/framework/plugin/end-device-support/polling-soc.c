@@ -28,8 +28,9 @@ void sl_zigbee_af_end_device_support_polling_network_event_handler(sl_zigbee_af_
 // *****************************************************************************
 // Functions
 
-void sli_zigbee_af_end_device_support_polling_init(void)
+void sli_zigbee_af_end_device_support_polling_init(uint8_t init_level)
 {
+  (void) init_level;
   sl_zigbee_af_network_event_init(sl_zigbee_af_end_device_support_polling_network_events,
                                   sl_zigbee_af_end_device_support_polling_network_event_handler);
 }
@@ -50,7 +51,7 @@ void sl_zigbee_af_end_device_support_tick_cb(void)
         state->pollIntervalMs = sl_zigbee_af_get_current_poll_interval_ms_cb();
         if (state->pollIntervalMs != lastPollIntervalMs
             || !sl_zigbee_af_event_is_scheduled(sl_zigbee_af_end_device_support_polling_network_events)) {
-          sl_zigbee_af_debug_println("Next poll nwk %d in %l ms",
+          sl_zigbee_af_debug_println("Next poll nwk %d in %ld ms",
                                      i,
                                      state->pollIntervalMs);
           sl_zigbee_af_event_set_delay_ms(sl_zigbee_af_end_device_support_polling_network_events,
@@ -71,7 +72,7 @@ void sl_zigbee_af_end_device_support_polling_network_event_handler(sl_zigbee_af_
   if (state == SL_ZIGBEE_JOINED_NETWORK) {
     sl_status_t status = sl_zigbee_poll_for_data();
     if (status != SL_STATUS_OK) {
-      sl_zigbee_af_core_println("poll nwk %d: 0x%x", sl_zigbee_get_current_network(), status);
+      sl_zigbee_af_core_println("poll nwk %d: 0x%02X", sl_zigbee_get_current_network(), status);
     }
   }
 }

@@ -63,12 +63,6 @@
 #include "cryptolib_def.h"
 #include <string.h>
 
-/* Parameter validation macros */
-#define GCM_VALIDATE_RET(cond) \
-  MBEDTLS_INTERNAL_VALIDATE_RET(cond, MBEDTLS_ERR_GCM_BAD_INPUT)
-#define GCM_VALIDATE(cond) \
-  MBEDTLS_INTERNAL_VALIDATE(cond)
-
 /* Implementation that should never be optimized out by the compiler */
 static void mbedtls_zeroize(void *v, size_t n)
 {
@@ -110,8 +104,6 @@ static int sli_validate_gcm_params(size_t tag_len,
  */
 void mbedtls_gcm_init(mbedtls_gcm_context *ctx)
 {
-  GCM_VALIDATE(ctx != NULL);
-
   memset(ctx, 0, sizeof(mbedtls_gcm_context) );
 }
 
@@ -123,10 +115,13 @@ int mbedtls_gcm_setkey(mbedtls_gcm_context *ctx,
 {
   (void) cipher;
 
-  GCM_VALIDATE_RET(ctx != NULL);
-  GCM_VALIDATE_RET(key != NULL);
-  GCM_VALIDATE_RET(cipher == MBEDTLS_CIPHER_ID_AES);
-  GCM_VALIDATE_RET(keybits == 128 || keybits == 192 || keybits == 256);
+  if ( cipher != MBEDTLS_CIPHER_ID_AES ) {
+    return(MBEDTLS_ERR_GCM_BAD_INPUT);
+  }
+
+  if ( keybits != 128 && keybits != 192 && keybits != 256 ) {
+    return MBEDTLS_ERR_GCM_BAD_INPUT;
+  }
 
   /* Store key in gcm context */
   ctx->keybits = keybits;
@@ -140,9 +135,6 @@ int mbedtls_gcm_starts(mbedtls_gcm_context *ctx,
                        const unsigned char *iv,
                        size_t iv_len)
 {
-  GCM_VALIDATE_RET(ctx != NULL);
-  GCM_VALIDATE_RET(iv != NULL);
-
   int status = sli_validate_gcm_params(16, iv_len, 0);
   if (status) {
     return status;
@@ -168,8 +160,6 @@ int mbedtls_gcm_update_ad(mbedtls_gcm_context *ctx,
   block_t  hw_ctx;
   block_t  dummy = NULL_blk;
 
-  GCM_VALIDATE_RET(ctx != NULL);
-  GCM_VALIDATE_RET(add_len == 0 || add != NULL);
   int status = sli_validate_gcm_params(16, 12, add_len);
   if (status) {
     return status;
@@ -225,10 +215,6 @@ int mbedtls_gcm_update(mbedtls_gcm_context *ctx,
   block_t  nonce;
   block_t  hw_ctx;
   block_t  dummy = NULL_blk;
-
-  GCM_VALIDATE_RET(ctx != NULL);
-  GCM_VALIDATE_RET(input_length == 0 || input != NULL);
-  GCM_VALIDATE_RET(input_length == 0 || output != NULL);
 
   *output_length = 0;
 
@@ -321,9 +307,6 @@ int mbedtls_gcm_finish(mbedtls_gcm_context *ctx,
   block_t dummy = NULL_blk;
   block_t hw_ctx;
 
-  GCM_VALIDATE_RET(ctx != NULL);
-  GCM_VALIDATE_RET(tag != NULL);
-
   status = sli_validate_gcm_params(tag_len, 12, 16);
   if (status) {
     return status;
@@ -392,13 +375,6 @@ int mbedtls_gcm_crypt_and_tag(mbedtls_gcm_context *ctx,
   block_t data_out;
   uint8_t tagbuf[16];
 
-  GCM_VALIDATE_RET(ctx != NULL);
-  GCM_VALIDATE_RET(iv != NULL);
-  GCM_VALIDATE_RET(add_len == 0 || add != NULL);
-  GCM_VALIDATE_RET(length == 0 || input != NULL);
-  GCM_VALIDATE_RET(length == 0 || output != NULL);
-  GCM_VALIDATE_RET(tag != NULL);
-
   status = sli_validate_gcm_params(tag_len, iv_len, add_len);
   if (status) {
     return status;
@@ -454,14 +430,6 @@ int mbedtls_gcm_auth_decrypt(mbedtls_gcm_context *ctx,
   block_t data_in;
   block_t data_out;
   uint8_t tagbuf[16];
-
-  /* Check input parameters. */
-  GCM_VALIDATE_RET(ctx != NULL);
-  GCM_VALIDATE_RET(iv != NULL);
-  GCM_VALIDATE_RET(add_len == 0 || add != NULL);
-  GCM_VALIDATE_RET(tag != NULL);
-  GCM_VALIDATE_RET(length == 0 || input != NULL);
-  GCM_VALIDATE_RET(length == 0 || output != NULL);
 
   status = sli_validate_gcm_params(tag_len, iv_len, add_len);
   if (status) {

@@ -15,7 +15,10 @@ include:
     file_list:
       - path: sl_rtl_clib_api.h
 library:
-  - path: lib/release/gcc/arm_m33/generic/librtl_static.a
+  - path: lib/gcc/cortex-m33/release/librtl_static.a
+    condition:
+      - toolchain_gcc
+      - cortexm33
 
 requires:
   - name: cortexm33
@@ -27,5 +30,5 @@ requires:
   - name: rtllib_printf
 
 documentation:
-    docset: rtl-lib
-    document: modules
+  docset: rtl-lib
+  document: modules

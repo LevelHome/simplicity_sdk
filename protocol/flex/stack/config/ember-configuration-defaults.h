@@ -79,6 +79,8 @@
 #include "mac-queue-config.h"
 #endif
 
+#include "sl_connect_radio_priority_config.h"
+
 // TODO: include here other stack components configuration headers
 
 /**

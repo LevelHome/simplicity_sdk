@@ -111,7 +111,7 @@ void zdoMatchCommand(sl_cli_command_arg_t *args)
                                                sli_zigbee_af_cli_zdo_in_clusters,
                                                sli_zigbee_af_cli_zdo_out_clusters,
                                                SL_ZIGBEE_AF_DEFAULT_APS_OPTIONS);
-  sl_zigbee_app_debug_println("ZDO match desc req %x", status);
+  sl_zigbee_app_debug_println("ZDO match desc req %02X", status);
 }
 
 static sl_status_t copyOrLookupEui64(sl_cli_command_arg_t *args,
@@ -263,7 +263,7 @@ void zdoNetworkUpdateScanCommand(sl_cli_command_arg_t *args)
                                                        scanChannelsMask,
                                                        scanDuration,
                                                        scanCount);
-    sl_zigbee_af_app_print("scan status 0x%x", status);
+    sl_zigbee_af_app_print("scan status 0x%02X", status);
   }
 }
 
@@ -273,7 +273,7 @@ void zdoNetworkUpdateSetCommand(sl_cli_command_arg_t *args)
   uint32_t activeChannels = sl_cli_get_argument_uint32(args, 1);
   sl_status_t status = sl_zigbee_set_network_manager_request(networkManager,
                                                              activeChannels);
-  sl_zigbee_af_app_print("network update set status 0x%x", status);
+  sl_zigbee_af_app_print("network update set status 0x%02X", status);
 }
 
 void zdoActiveEpCommand(sl_cli_command_arg_t *args)
@@ -281,7 +281,7 @@ void zdoActiveEpCommand(sl_cli_command_arg_t *args)
   sl_802154_short_addr_t target = (sl_802154_short_addr_t)sl_cli_get_argument_uint16(args, 0);
   sl_status_t status = sl_zigbee_active_endpoints_request(target,
                                                           SL_ZIGBEE_APS_OPTION_RETRY);
-  sl_zigbee_af_app_print("Active EP request status: 0x%X",
+  sl_zigbee_af_app_print("Active EP request status: 0x%02X",
                          status);
 }
 
@@ -292,7 +292,7 @@ void zdoMgmtLqiCommand(sl_cli_command_arg_t *args)
   sl_status_t status = sl_zigbee_lqi_table_request(target,
                                                    index,
                                                    SL_ZIGBEE_APS_OPTION_RETRY);
-  sl_zigbee_af_app_print("LQI Table request: 0x%X", status);
+  sl_zigbee_af_app_print("LQI Table request: 0x%02X", status);
 }
 
 void zdoMgmtBindCommand(sl_cli_command_arg_t *args)
@@ -302,7 +302,7 @@ void zdoMgmtBindCommand(sl_cli_command_arg_t *args)
   sl_status_t status = sl_zigbee_binding_table_request(target,
                                                        index,
                                                        SL_ZIGBEE_APS_OPTION_RETRY);
-  sl_zigbee_af_app_print("Binding Table request: 0x%X", status);
+  sl_zigbee_af_app_print("Binding Table request: 0x%02X", status);
 }
 
 void zdoLeaveRequestCommand(sl_cli_command_arg_t *args)
@@ -326,7 +326,7 @@ void zdoLeaveRequestCommand(sl_cli_command_arg_t *args)
                                    options,
                                    SL_ZIGBEE_APS_OPTION_RETRY);
 
-  sl_zigbee_app_debug_println("Leave %p0x%X", "Request: ", status);
+  sl_zigbee_app_debug_println("Leave %s0x%02X", "Request: ", status);
 }
 
 void zdoPowerDescriptorRequestCommand(sl_cli_command_arg_t *args)
@@ -334,7 +334,7 @@ void zdoPowerDescriptorRequestCommand(sl_cli_command_arg_t *args)
   sl_802154_short_addr_t target = (sl_802154_short_addr_t)sl_cli_get_argument_uint16(args, 0);
   sl_status_t status = sl_zigbee_power_descriptor_request(target,
                                                           SL_ZIGBEE_APS_OPTION_RETRY);
-  sl_zigbee_app_debug_println("Power Descriptor %p0x%X", "Request: ", status);
+  sl_zigbee_app_debug_println("Power Descriptor %s0x%02X", "Request: ", status);
 }
 
 static void unbindRequest(sl_cli_command_arg_t *args,
@@ -373,7 +373,7 @@ static void unbindRequest(sl_cli_command_arg_t *args,
                                     destinationEndpoint,
                                     SL_ZIGBEE_APS_OPTION_RETRY);
   UNUSED_VAR(status);
-  sl_zigbee_app_debug_println("Unbind %p %p0x%X",
+  sl_zigbee_app_debug_println("Unbind %s %s0x%02X",
                               (isGroupAddress
                                ? "Group"
                                : "Unicast"),
@@ -413,7 +413,7 @@ void zdoRouteRequestCommand(sl_cli_command_arg_t *args)
   sl_status_t status = sl_zigbee_routing_table_request(target,
                                                        index,
                                                        SL_ZIGBEE_APS_OPTION_RETRY);
-  sl_zigbee_app_debug_println("Route Table %p0x%X", "Request: ", status);
+  sl_zigbee_app_debug_println("Route Table %s0x%02X", "Request: ", status);
 }
 
 //------------------------------------------------------------------------------

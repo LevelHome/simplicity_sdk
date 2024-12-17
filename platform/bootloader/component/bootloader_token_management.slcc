@@ -15,3 +15,6 @@ provides:
   - name: bootloader_token_management
   - name: bootloader_nonsecure_incompatible
     condition: [bootloader_core_nonsecure]
+metadata:
+  sbom:
+    license: MSLA

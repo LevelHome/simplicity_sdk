@@ -188,7 +188,7 @@ static int32_t installImageFromSlot(int32_t slotId)
   }
 #endif // SEMAILBOX_PRESENT || CRYPTOACC_PRESENT
 
-  if ((parseContext.imageProperties.contents & BTL_IMAGE_CONTENT_BOOTLOADER)) {
+  if (parseContext.imageProperties.contents & BTL_IMAGE_CONTENT_BOOTLOADER) {
     BTL_DEBUG_PRINT("BL upg ");
     BTL_DEBUG_PRINT_WORD_HEX(mainBootloaderTable->header.version);
     BTL_DEBUG_PRINT(" -> ");

@@ -11,7 +11,5 @@ ui_hints:
   visibility: never
 provides:
   - name: iostream_uart_core_si91x
-  - name: iostream_transport_core
-    allow_multiple: true
 requires:
   - name: iostream

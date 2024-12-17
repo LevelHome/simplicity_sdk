@@ -35,7 +35,7 @@
 #include "sl_power_manager.h"
 #include "sl_board_control.h"
 #include "app_assert.h"
-#include "circular_buff.h"
+#include "circular_queue.h"
 #include "filter.h"
 #include "adpcm.h"
 #include "sl_mic.h"
@@ -50,12 +50,11 @@
 #define VOICE_ENCODE_DEFAULT      true
 
 #define MIC_CHANNELS_MAX        2
-#define MIC_SAMPLE_SIZE         2
 #define MIC_SAMPLE_BUFFER_SIZE  112
-#define MIC_SEND_BUFFER_SIZE    (MIC_SAMPLE_BUFFER_SIZE * MIC_SAMPLE_SIZE)
+#define MIC_SEND_BUFFER_SIZE    (MIC_SAMPLE_BUFFER_SIZE * MIC_CHANNELS_MAX)
 #define ADPCM_COMPRESS_FACTOR   2         // 2 * 16 bit -> 2 * 4 bit = 1 * 8 bit
 #define ADPCM_PAYLOAD_SIZE      (MIC_SAMPLE_BUFFER_SIZE / ADPCM_COMPRESS_FACTOR)
-#define CIRCULAR_BUFFER_SIZE    (MIC_SAMPLE_BUFFER_SIZE * 10)
+#define CIRCULAR_QUEUE_SIZE     MIC_SEND_BUFFER_SIZE
 
 #define SR2FS(sr)               ((sr) * 1000)
 
@@ -77,7 +76,7 @@ static filter_context_t filter = { 0, biquads };
 static bool voice_running = false;
 static int16_t mic_buffer[2 * MIC_SAMPLE_BUFFER_SIZE];
 static voice_config_t voice_config;
-static circular_buffer_t circular_buffer;
+static Queue_t circular_queue;
 static const int16_t *sample_buffer;
 static uint32_t frames;
 static bool event_process = false;
@@ -121,15 +120,14 @@ static void mic_buffer_ready(const void *buffer, uint32_t n_frames);
  ******************************************************************************/
 void voice_init(void)
 {
-  cb_err_code_t err;
   voice_config.sampleRate = VOICE_SAMPLE_RATE_DEFAULT;
   voice_config.channels = VOICE_CHANNELS_DEFAULT;
   voice_config.filter_enabled = VOICE_FILTER_DEFAULT;
   voice_config.encoding_enabled = VOICE_ENCODE_DEFAULT;
-  err = cb_init(&circular_buffer, CIRCULAR_BUFFER_SIZE, sizeof(uint8_t));
-  app_assert(err == cb_err_ok,
-             "[E: 0x%04x] Circular buffer init failed\n",
-             (int)err);
+  bool init_status = queueInit(&circular_queue, CIRCULAR_QUEUE_SIZE);
+  app_assert(init_status == true,
+             "[E: 0x%04x] Circular queue init failed\n",
+             (int)init_status);
 }
 
 /***************************************************************************//**
@@ -267,7 +265,7 @@ void voice_set_encoding_enable(bool status)
 
 static void voice_process_data(void)
 {
-  cb_err_code_t err;
+  bool add_status = false;
   int16_t buffer[MIC_SAMPLE_BUFFER_SIZE];
   uint32_t sample_count = frames * voice_config.channels;
 
@@ -284,27 +282,34 @@ static void voice_process_data(void)
   if (voice_config.encoding_enabled) {
     // Encode samples.
     ADPCM_encode(&adpcm, buffer, adpcm_payload, frames);
-    err = cb_push_buff(&circular_buffer, adpcm_payload, sample_count / ADPCM_COMPRESS_FACTOR);
+    for (uint16_t i = 0; i < ADPCM_PAYLOAD_SIZE; i++) {
+      add_status = queueAdd(&circular_queue, (void *)(uint32_t)adpcm_payload[i]);
+      app_assert(add_status == true,
+                 "[E: 0x%04x] Circular queue add failed\n",
+                 (int)add_status);
+    }
   } else {
-    err = cb_push_buff(&circular_buffer, buffer, sample_count * MIC_SAMPLE_SIZE);
+    for (uint16_t i = 0; i < sample_count; i++) {
+      add_status = queueAdd(&circular_queue, (void *)(uint32_t)buffer[i]);
+      app_assert(add_status == true,
+                 "[E: 0x%04x] Circular queue add failed\n",
+                 (int)add_status);
+    }
   }
-  app_assert(err == cb_err_ok,
-             "[E: 0x%04x] Circular buffer push failed\n",
-             (int)err);
 
   event_send = true;
 }
 
 static void voice_send_data(void)
 {
-  cb_err_code_t cb_error;
   uint8_t buffer[MIC_SEND_BUFFER_SIZE];
 
-  cb_error = cb_pop_buff(&circular_buffer, buffer, MIC_SEND_BUFFER_SIZE);
+  if (circular_queue.count >= MIC_SEND_BUFFER_SIZE) {
+    for (uint8_t i = 0; i < MIC_SEND_BUFFER_SIZE; i++) {
+      buffer[i] = (uint8_t)(uint32_t)queueRemove(&circular_queue);
+    }
 
-  if ( cb_error == cb_err_ok ) {
     voice_transmit(buffer, MIC_SEND_BUFFER_SIZE);
-    event_send = true;
   }
 }
 

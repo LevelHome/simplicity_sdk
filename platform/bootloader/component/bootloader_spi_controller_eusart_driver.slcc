@@ -12,9 +12,7 @@ source:
 define:
   - name: BTL_SPI_EUSART_ENABLE
   - name: SYSTEM_NO_STATIC_MEMORY
-    value: 1
-  - name: BOOTLOADER_SYSTEM_NO_STATIC_MEMORY
-    value: 1  
+    value: 1 
 include:
   - path: platform/bootloader/driver
     file_list:
@@ -29,3 +27,6 @@ requires:
 config_file:
   - path: platform/bootloader/config/btl_spi_controller_eusart_driver_cfg.h
     file_id: btl_spi_controller_eusart_driver_cfg
+metadata:
+  sbom:
+    license: MSLA

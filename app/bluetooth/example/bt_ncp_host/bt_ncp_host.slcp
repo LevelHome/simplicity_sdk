@@ -28,10 +28,9 @@ component:
       - exp
   - id: mpu
   - id: bootloader_interface
-  - id: bt_post_build
   - id: sl_system
   - id: clock_manager
-  - id: device_init
+  - id: sl_common
 
 source:
   - path: main.c
@@ -67,12 +66,14 @@ configuration:
     value: uartdrvFlowControlNone
   - name: EMDRV_UARTDRV_FLOW_CONTROL_ENABLE
     value: 0
-  - name: SL_SIMPLE_COM_UARTDRV_INSTANCE
-    value: SL_SIMPLE_COM_UARTDRV_INSTANCE_EXP
   - name: SL_PSA_KEY_USER_SLOT_COUNT
     value: "0"
     condition:
       - psa_crypto
+
+post_build:
+  - profile: bt_common
+    condition: [device_series_2, bootloader_app_properties]
 
 ui_hints:
   highlight:

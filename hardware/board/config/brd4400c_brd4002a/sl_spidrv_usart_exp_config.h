@@ -81,19 +81,19 @@
 #define SL_SPIDRV_USART_EXP_PERIPHERAL_NO        0
 
 // USART0 TX on PD07
-#define SL_SPIDRV_USART_EXP_TX_PORT              gpioPortD
+#define SL_SPIDRV_USART_EXP_TX_PORT              SL_GPIO_PORT_D
 #define SL_SPIDRV_USART_EXP_TX_PIN               7
 
 // USART0 RX on PD08
-#define SL_SPIDRV_USART_EXP_RX_PORT              gpioPortD
+#define SL_SPIDRV_USART_EXP_RX_PORT              SL_GPIO_PORT_D
 #define SL_SPIDRV_USART_EXP_RX_PIN               8
 
 // USART0 CLK on PD09
-#define SL_SPIDRV_USART_EXP_CLK_PORT             gpioPortD
+#define SL_SPIDRV_USART_EXP_CLK_PORT             SL_GPIO_PORT_D
 #define SL_SPIDRV_USART_EXP_CLK_PIN              9
 
 // USART0 CS on PD10
-#define SL_SPIDRV_USART_EXP_CS_PORT              gpioPortD
+#define SL_SPIDRV_USART_EXP_CS_PORT              SL_GPIO_PORT_D
 #define SL_SPIDRV_USART_EXP_CS_PIN               10
 
 // [USART_SL_SPIDRV_USART_EXP]$

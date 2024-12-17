@@ -91,7 +91,7 @@ void xmodem_reset(void);
  *
  * @return @ref BOOTLOADER_OK on success, else error code
  ******************************************************************************/
-int32_t xmodem_parsePacket(XmodemPacket_t *packet, uint8_t *response);
+int32_t xmodem_parsePacket(const XmodemPacket_t *packet, uint8_t *response);
 
 /***************************************************************************//**
  * Return the packet number of the last packet that was successfully parsed.

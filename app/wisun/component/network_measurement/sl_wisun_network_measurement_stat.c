@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_wisun_network_measurement_stat.c
+ * @brief Wi-SUN Network Measurement Statistics
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -31,16 +31,15 @@
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+
 #include "cmsis_os2.h"
 #include "sl_cmsis_os2_common.h"
 #include "sl_wisun_app_core.h"
 #include "sl_wisun_network_measurement_stat.h"
 #include "sl_wisun_api.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -232,7 +231,7 @@ uint8_t sl_wisun_nwm_get_nodes(sl_wisun_nwm_measurable_node_t * const storage,
 
   // Get Border Router
   sl_wisun_get_ip_address(SL_WISUN_IP_ADDRESS_TYPE_BORDER_ROUTER,
-                          (in6_addr_t *)&_nodes[0].addr.sin6_addr);
+                          &_nodes[0].addr.sin6_addr);
   _nodes[0].type = SL_WISUN_NWM_NODE_TYPE_BORDER_ROUTER;
   _nodes[0].name =  _node_type_to_str(_nodes[0].type);
   if (storage != NULL) {

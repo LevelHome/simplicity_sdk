@@ -39,6 +39,12 @@ template_contribution:
     value: tfm_crypto_key_derivation_output_key
 
   - name: tfm_interface_func
+    value: tfm_crypto_key_derivation_output_key_custom
+
+  - name: tfm_interface_func
+    value: tfm_crypto_key_derivation_output_key_ext
+
+  - name: tfm_interface_func
     value: tfm_crypto_key_derivation_abort
 
   - name: tfm_interface_func
@@ -47,3 +53,7 @@ template_contribution:
   - name: tfm_interface_func
     value: tfm_crypto_raw_key_agreement
 
+
+metadata:
+  sbom:
+    license: Zlib

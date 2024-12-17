@@ -61,7 +61,7 @@ extern "C" {
 
 #define SL_PWM_LED0_OUTPUT_CHANNEL               0
 // TIMER0 CC0 on PA04
-#define SL_PWM_LED0_OUTPUT_PORT                  gpioPortA
+#define SL_PWM_LED0_OUTPUT_PORT                  SL_GPIO_PORT_A
 #define SL_PWM_LED0_OUTPUT_PIN                   4
 
 // [TIMER_SL_PWM_LED0]$

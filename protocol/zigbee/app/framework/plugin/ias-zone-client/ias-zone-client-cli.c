@@ -32,7 +32,7 @@ void sli_zigbee_af_ias_zone_client_print_servers_command(sl_cli_command_arg_t *a
     if (i < 10) {
       sl_zigbee_af_ias_zone_cluster_print(" ");
     }
-    sl_zigbee_af_ias_zone_cluster_print("%d    (>)%X%X%X%X%X%X%X%X  ",
+    sl_zigbee_af_ias_zone_cluster_print("%d    (>)%02X%02X%02X%02X%02X%02X%02X%02X  ",
                                         i,
                                         sl_zigbee_af_ias_zone_client_known_servers[i].ieeeAddress[7],
                                         sl_zigbee_af_ias_zone_client_known_servers[i].ieeeAddress[6],
@@ -49,7 +49,7 @@ void sli_zigbee_af_ias_zone_client_print_servers_command(sl_cli_command_arg_t *a
       sl_zigbee_af_ias_zone_cluster_print(" ");
     }
     sl_zigbee_af_ias_zone_cluster_print("%d  ", sl_zigbee_af_ias_zone_client_known_servers[i].endpoint);
-    sl_zigbee_af_ias_zone_cluster_println("0x%2X 0x%2X 0x%X 0x%X",
+    sl_zigbee_af_ias_zone_cluster_println("0x%04X 0x%04X 0x%02X 0x%02X",
                                           sl_zigbee_af_ias_zone_client_known_servers[i].zoneType,
                                           sl_zigbee_af_ias_zone_client_known_servers[i].zoneStatus,
                                           sl_zigbee_af_ias_zone_client_known_servers[i].zoneState,

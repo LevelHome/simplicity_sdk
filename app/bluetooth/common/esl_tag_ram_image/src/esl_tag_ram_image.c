@@ -36,7 +36,7 @@
 #include "esl_tag_image.h"
 #include "esl_tag_core.h"
 #include "esl_tag_log.h"
-#include "em_common.h"
+#include "sl_common.h"
 #include "gatt_db.h"
 
 // Single image object storage type
@@ -78,34 +78,38 @@ sl_status_t esl_image_chunk_received(uint8_t const *data,
 
   // if there's a valid image object selected
   if (active_image != NULL) {
+    size_t decompressed_size = 0;
     // check if it is the start from the beginning
     if (offset == 0) {
       // there's no temporary storage -> initiating image transfer on current
       // object at offset 0 it will destroy the previous image content (if any)
       active_image->size = 0;
+      // (re)initialize decompressor on start
+      esl_image_unpack_init();
     }
 
-    // check for overflow condition
-    if ((active_image->size + length) > active_image->max_size) {
-      sl_bt_esl_log(ESL_LOG_COMPONENT_RAM_IMAGE,
-                    ESL_LOG_LEVEL_ERROR,
-                    "Image size overflow!");
-      // invalidate the image in this case by clearing it's size
-      active_image->size = 0;
-      // return the error
-      result = SL_STATUS_WOULD_OVERFLOW;
-    } else {
-      // store the data, otherwise
-      memcpy(&(active_image->data[active_image->size]), data, length);
+    // decompression procedure will avoid overflow condition
+    result = esl_image_unpack_chunk(data, length,
+                                    active_image->data, active_image->size,
+                                    active_image->max_size,
+                                    &decompressed_size);
+    if (result == SL_STATUS_OK) {
       // adjust the size
-      active_image->size += length;
-
+      active_image->size += decompressed_size;
       // improve OTS response by not sending credit after the storage is full
       if (active_image->size < active_image->max_size) {
         result = SL_STATUS_OK;
       } else {
         result = SL_STATUS_FULL;
       }
+    } else {
+      sl_bt_esl_log(ESL_LOG_COMPONENT_RAM_IMAGE,
+                    ESL_LOG_LEVEL_ERROR,
+                    "Image data receive failed (content or size mismatch)!");
+      // invalidate the image in this case by clearing it's size
+      active_image->size = 0;
+      // return an error
+      result = SL_STATUS_ABORT;
     }
   }
 
@@ -168,13 +172,16 @@ void esl_image_characteristic_update(void)
 }
 
 sl_status_t esl_image_add(uint16_t width, uint16_t height,
-                          uint8_t bits_per_pixel)
+                          uint8_t bits_per_pixel,
+                          sl_bt_ots_object_type_t *type)
 {
   sl_status_t result = SL_STATUS_INVALID_STATE;
   esl_state_t state  = esl_core_get_status();
 
   // ESL Image: adding images after ESL boot event is disallowed!
   sl_bt_esl_assert(esl_state_boot == state);
+  // Type can't be NULL!
+  sl_bt_esl_assert(type != NULL);
 
   if (state == esl_state_boot) {
     result = SL_STATUS_NO_MORE_RESOURCE;
@@ -190,10 +197,6 @@ sl_status_t esl_image_add(uint16_t width, uint16_t height,
 
       if (size <= available) {
         uint8_t new_image_index = image_registry.images_count;
-        const sl_bt_ots_object_type_t* type;
-        // currently, there are only two types of images available
-        type = bits_per_pixel == 1 ? &esl_image_type_1b : &esl_image_type_2b;
-
         // store maximum size of the image object
         image_object[new_image_index].max_size = (uint16_t)size;
         // set actual size to zero, initially
@@ -203,6 +206,11 @@ sl_status_t esl_image_add(uint16_t width, uint16_t height,
         // finish registration
         ++image_registry.images_count;
         image_registry.next_object += size;
+
+        if (((sl_bt_esl_image_ots_uuid_t *)(type->uuid_data))->custom_flags & ESL_IMAGE_FLAGS_FORMAT_LZJB) {
+          // virtual size adjustment for image data that cannot be compressed
+          size += (size + 4) / 8; // image store real size will prevent overflow
+        }
         result = esl_tag_ots_add_object(type, size, ESL_OTS_IMAGE_OBJECT);
       } else {
         sl_bt_esl_log(ESL_LOG_COMPONENT_RAM_IMAGE,

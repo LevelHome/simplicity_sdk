@@ -20,7 +20,8 @@
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-#include "em_gpio.h"
+#include "sl_hal_gpio.h"
+#include "sl_gpio.h"
 #include "app_swd_task.h"
 #include "app_prog_error.h"
 

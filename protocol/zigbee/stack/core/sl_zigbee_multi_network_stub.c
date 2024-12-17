@@ -24,6 +24,7 @@
 #include "stack/include/sl_zigbee_types_internal.h" // for PAN_ID_OKAY and NETWORK_INITIAL
 #include "stack/internal/inc/internal-callbacks-patch.h"
 #include "stack/internal/inc/internal-defs-patch.h"
+#include "sl_code_classification.h"
 
 extern sl_mac_tx_options_bitmask_t sli_802154mac_prepare_tx_handler(sli_zigbee_packet_header_t packet,
                                                                     uint8_t *flat_packet_buffer,
@@ -266,6 +267,7 @@ sl_status_t sli_zigbee_stack_set_current_network(uint8_t index)
   return SL_STATUS_INVALID_STATE;
 }
 
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_ZIGBEE_STACK, SL_CODE_CLASS_TIME_CRITICAL)
 uint8_t sli_zigbee_stack_get_callback_network(void)
 {
   return 0;
@@ -412,6 +414,7 @@ void sli_zigbee_stack_call_populate_counters(sl_zigbee_counter_type_t type, uint
   info.otherFields = NULL;
   sli_zigbee_stack_populate_counters(type, info);
 }
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_ZIGBEE_STACK, SL_CODE_CLASS_TIME_CRITICAL)
 void sli_zigbee_build_and_send_counter_info(sl_zigbee_counter_type_t counter, sl_802154_short_addr_t dst, uint8_t data)
 {
   sl_zigbee_counter_info_t info;

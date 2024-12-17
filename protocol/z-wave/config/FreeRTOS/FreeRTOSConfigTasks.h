@@ -49,7 +49,7 @@
  * SerialAPI is based on the controller_static library which doesn't have built-in security code.
  * We don't need to increase the stack size for the controller_static library
 */
-#ifdef ZW_CONTROLLER_STATIC
+#ifdef ZW_CONTROLLER
 #define TASK_STACK_SIZE_Z_WAVE_STACK            ( 4608 / sizeof(StackType_t) )  // 4608 bytes (security library requires this)
 #else
 #define TASK_STACK_SIZE_Z_WAVE_STACK            ( 5632 / sizeof(StackType_t) )  // 5632 bytes (security library requires this)

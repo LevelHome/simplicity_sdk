@@ -22,3 +22,6 @@ provides:
 config_file:
   - path: platform/bootloader/config/btl_gpio_activation_cfg.h
     file_id: btl_gpio_activation_cfg
+metadata:
+  sbom:
+    license: MSLA

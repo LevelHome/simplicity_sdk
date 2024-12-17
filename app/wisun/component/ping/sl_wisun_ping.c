@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_wisun_ping.c
+ * @brief Wi-SUN Ping
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -31,17 +31,16 @@
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
+
 #include "sl_wisun_ping.h"
 #include "cmsis_os2.h"
 #include "sl_cmsis_os2_common.h"
 #include "sl_sleeptimer.h"
 #include "sl_wisun_trace_util.h"
 #include "sl_wisun_app_core_util.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -96,24 +95,24 @@ __STATIC_INLINE void _fill_payload(sl_wisun_ping_echo_request_t * const icmp_req
  * @details Helper function
  * @param[in] req Request
  * @param[in] resp
- * @return true Request and response are mached
- * @return false Comparision failed
+ * @return true Request and response are matched
+ * @return false Comparison failed
  *****************************************************************************/
 __STATIC_INLINE bool _compare_req_resp(const sl_wisun_ping_echo_request_t * const req,
                                        const sl_wisun_ping_echo_response_t * const resp);
 
 /**************************************************************************//**
- * @brief Get milisec value of time spent from start time stamp.
+ * @brief Get millisec value of time spent from start time stamp.
  * @details Helper function
  * @param[in] ping Ping packet
- * @return uint32_t Milisec value
+ * @return uint32_t Millisec value
  *****************************************************************************/
 __STATIC_INLINE uint32_t _get_ms_val_from_start_time_stamp(const sl_wisun_ping_info_t * const ping);
 
 /**************************************************************************//**
- * @brief Preapre failed response
+ * @brief Prepare failed response
  * @details Helper function
- * @param[out] resp Destinatino response
+ * @param[out] resp Destination response
  * @param[in] status_flags Status flags
  *****************************************************************************/
 __STATIC_INLINE void _prepare_and_push_failed_response(sl_wisun_ping_info_t * const resp, const uint32_t status_flags);
@@ -129,7 +128,7 @@ static void _ping_task_fnc(void *args);
  * @brief Event error getter
  * @details Helper function
  * @param[in] flags Flags
- * @return true Error occured
+ * @return true Error occurred
  * @return false No error
  *****************************************************************************/
 __STATIC_INLINE bool _is_ping_evt_error(const uint32_t flags);
@@ -139,21 +138,21 @@ __STATIC_INLINE bool _is_ping_evt_error(const uint32_t flags);
 // -----------------------------------------------------------------------------
 
 /// Ping task attributions
-static  const osThreadAttr_t _ping_task_attr = {
-  .name        = "Ping",
-  .attr_bits   = osThreadDetached,
-  .cb_mem      = NULL,
-  .cb_size     = 0,
-  .stack_mem   = NULL,
-  .stack_size  = (SL_WISUN_PING_STACK_SIZE_WORD * sizeof(void *)) & 0xFFFFFFF8U,
-  .priority    = osPriorityNormal2,
-  .tz_module   = 0
+static const osThreadAttr_t _ping_task_attr = {
+  .name       = "Ping",
+  .attr_bits  = osThreadDetached,
+  .cb_mem     = NULL,
+  .cb_size    = 0,
+  .stack_mem  = NULL,
+  .stack_size = app_stack_size_word_to_byte(SL_WISUN_PING_STACK_SIZE_WORD),
+  .priority   = osPriorityNormal2,
+  .tz_module  = 0
 };
 
 /// Ping request message queue
 static osMessageQueueId_t _ping_req_msg_queue = NULL;
 
-/// Ping request messagequeue attributions
+/// Ping request message queue attributions
 static const osMessageQueueAttr_t _ping_req_msg_queue_attr = {
   .name = "PingReqMsgQueue",
   .attr_bits = 0,
@@ -439,7 +438,7 @@ static void _ping_task_fnc(void *args)
       continue;
     }
 
-    // create socket and slect port
+    // create socket and select port
     req.remote_addr.sin6_family = AF_INET6;
     req.remote_addr.sin6_port = htons(SL_WISUN_PING_ICMP_PORT);
 
@@ -467,7 +466,7 @@ static void _ping_task_fnc(void *args)
     // create timestamp after send/sendto
     req.start_time_stamp = sl_sleeptimer_get_tick_count();
 
-    // calculate time milisec counter
+    // calculate time millisec counter
     do {
       time_cnt = _get_ms_val_from_start_time_stamp(&req);
 
@@ -491,7 +490,7 @@ static void _ping_task_fnc(void *args)
         break;
       }
 
-      // if address is not the requeste address (multicast address)
+      // if address is not the requested address (multicast address)
       if (memcmp(&resp.remote_addr.sin6_addr,
                  &req.remote_addr.sin6_addr,
                  sizeof(req.remote_addr.sin6_addr))) {
@@ -537,7 +536,7 @@ __STATIC_INLINE void _prepare_and_push_failed_response(sl_wisun_ping_info_t * co
   osMessageQueuePut(_ping_resp_msg_queue, resp, 0U, 0U);
 }
 
-/* Get milisec value from start time stamp*/
+/* Get millisec value from start time stamp */
 __STATIC_INLINE uint32_t _get_ms_val_from_start_time_stamp(const sl_wisun_ping_info_t * const ping)
 {
   return sl_sleeptimer_tick_to_ms(sl_sleeptimer_get_tick_count() - ping->start_time_stamp);

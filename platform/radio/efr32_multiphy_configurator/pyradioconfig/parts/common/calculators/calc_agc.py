@@ -54,6 +54,9 @@ class CALC_AGC(ICalculator):
         self._addModelVariable(model, 'fast_loop_delay'       ,float, ModelVariableFormat.DECIMAL)
         self._addModelVariable(model, 'if_pga_delay'          ,float, ModelVariableFormat.DECIMAL)
 
+        self._build_agc_regs(model)
+
+    def _build_agc_regs(self, model):
         # Output variables
         self._addModelRegister(model, 'AGC.CTRL0.ADCRESETDURATION'     , int, ModelVariableFormat.HEX )
         self._addModelRegister(model, 'AGC.CTRL0.PWRTARGET'            , int, ModelVariableFormat.HEX )

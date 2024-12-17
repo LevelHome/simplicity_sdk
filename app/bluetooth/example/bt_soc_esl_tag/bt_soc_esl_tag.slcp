@@ -38,10 +38,10 @@ component:
   - id: simple_button
     instance:
       - btn0
-  - id: bt_post_build
   - id: sl_system
   - id: clock_manager
   - id: device_init
+  - id: sl_common
 
 source:
   - path: main.c
@@ -63,8 +63,6 @@ readme:
   - path: readme.md
 
 other_file:
-  - path: create_bl_files_lzma.bat
-  - path: create_bl_files_lzma.sh
   - path: image/aem.png
   - path: image/components.png
   - path: image/folder-struct.png
@@ -162,6 +160,10 @@ configuration:
       - esl_tag_user_display_driver
   - name: ESL_TAG_MAX_LEDS
     value: "2"
+
+post_build:
+  - profile: bt_esl
+    condition: [device_series_2]
 
 tag:
   - hardware:device:flash:512

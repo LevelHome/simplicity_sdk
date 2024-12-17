@@ -30,6 +30,8 @@
 
 #include <stdio.h>
 
+#include "sli_cpc_assert.h"
+
 #if defined(SL_CPC_DEBUG_TRACES)
 
 #define PRINT_INFO(string, ...)   printf("Info : "  string "\n", ##__VA_ARGS__)
@@ -42,12 +44,12 @@
 #define FATAL(string, ...)                                                                    \
   do {                                                                                        \
     printf("FATAL in file %s at line #%d : " string "\n", __FILE__, __LINE__, ##__VA_ARGS__); \
-    EFM_ASSERT(false);                                                                        \
+    SLI_CPC_ASSERT(0);                                                                        \
   } while (0)
 #define BUG(string, ...)                                                                    \
   do {                                                                                      \
     printf("BUG in file %s at line #%d : " string "\n", __FILE__, __LINE__, ##__VA_ARGS__); \
-    EFM_ASSERT(false);                                                                      \
+    SLI_CPC_ASSERT(0);                                                                      \
   } while (0)
 #else
 
@@ -58,7 +60,7 @@
 #define WARN(string, ...)         (void)0
 #define TRACE_DRIVER(string, ...) (void)0
 #define TRACE_NAKED(string, ...)  (void)0
-#define FATAL(string, ...)        EFM_ASSERT(false)
-#define BUG(string, ...)          EFM_ASSERT(false)
+#define FATAL(string, ...)        SLI_CPC_ASSERT(0)
+#define BUG(string, ...)          SLI_CPC_ASSERT(0)
 
 #endif

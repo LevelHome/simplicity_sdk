@@ -41,20 +41,20 @@
 
 #ifndef EM_DEVICE_H
 #define EM_DEVICE_H
-#if defined(EFR32MG26B210F2048IM68)
-#include "efr32mg26b210f2048im68.h"
+#if defined(EFR32MG26B211F2048IM68)
+#include "efr32mg26b211f2048im68.h"
 
-#elif defined(EFR32MG26B210F3200IM48)
-#include "efr32mg26b210f3200im48.h"
+#elif defined(EFR32MG26B211F3200IM48)
+#include "efr32mg26b211f3200im48.h"
 
-#elif defined(EFR32MG26B220F2048IM68)
-#include "efr32mg26b220f2048im68.h"
+#elif defined(EFR32MG26B221F2048IM68)
+#include "efr32mg26b221f2048im68.h"
 
-#elif defined(EFR32MG26B220F3200IM48)
-#include "efr32mg26b220f3200im48.h"
+#elif defined(EFR32MG26B221F3200IM48)
+#include "efr32mg26b221f3200im48.h"
 
-#elif defined(EFR32MG26B310F3200IL136)
-#include "efr32mg26b310f3200il136.h"
+#elif defined(EFR32MG26B311F3200IL136)
+#include "efr32mg26b311f3200il136.h"
 
 #elif defined(EFR32MG26B410F3200IM48)
 #include "efr32mg26b410f3200im48.h"
@@ -62,11 +62,23 @@
 #elif defined(EFR32MG26B410F3200IM68)
 #include "efr32mg26b410f3200im68.h"
 
+#elif defined(EFR32MG26B411F3200IM48)
+#include "efr32mg26b411f3200im48.h"
+
+#elif defined(EFR32MG26B411F3200IM68)
+#include "efr32mg26b411f3200im68.h"
+
 #elif defined(EFR32MG26B420F3200IM48)
 #include "efr32mg26b420f3200im48.h"
 
 #elif defined(EFR32MG26B420F3200IM68)
 #include "efr32mg26b420f3200im68.h"
+
+#elif defined(EFR32MG26B421F3200IM48)
+#include "efr32mg26b421f3200im48.h"
+
+#elif defined(EFR32MG26B421F3200IM68)
+#include "efr32mg26b421f3200im68.h"
 
 #elif defined(EFR32MG26B510F3200IL136)
 #include "efr32mg26b510f3200il136.h"
@@ -77,11 +89,26 @@
 #elif defined(EFR32MG26B510F3200IM68)
 #include "efr32mg26b510f3200im68.h"
 
+#elif defined(EFR32MG26B511F3200IL136)
+#include "efr32mg26b511f3200il136.h"
+
+#elif defined(EFR32MG26B511F3200IM48)
+#include "efr32mg26b511f3200im48.h"
+
+#elif defined(EFR32MG26B511F3200IM68)
+#include "efr32mg26b511f3200im68.h"
+
 #elif defined(EFR32MG26B520F3200IM48)
 #include "efr32mg26b520f3200im48.h"
 
 #elif defined(EFR32MG26B520F3200IM68)
 #include "efr32mg26b520f3200im68.h"
+
+#elif defined(EFR32MG26B521F3200IM48)
+#include "efr32mg26b521f3200im48.h"
+
+#elif defined(EFR32MG26B521F3200IM68)
+#include "efr32mg26b521f3200im68.h"
 
 #elif defined(EFR32MG26B610F3200IM48)
 #include "efr32mg26b610f3200im48.h"

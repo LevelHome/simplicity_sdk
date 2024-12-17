@@ -4,6 +4,11 @@ description: Utility to aid with RAIL thermistor conversions support
 package: platform
 category: Platform|Radio
 quality: production
+metadata:
+  sbom:
+    id: rail_util_thermistor
+    name: RAIL Utility, Thermistor Utility
+    license: Zlib
 requires:
   - name: device
   - name: rail_lib

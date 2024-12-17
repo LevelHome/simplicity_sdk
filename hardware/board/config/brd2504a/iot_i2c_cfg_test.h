@@ -88,11 +88,11 @@
 #define IOT_I2C_CFG_TEST_PERIPHERAL_NO           0
 
 // I2C0 SCL on PA08
-#define IOT_I2C_CFG_TEST_SCL_PORT                gpioPortA
+#define IOT_I2C_CFG_TEST_SCL_PORT                SL_GPIO_PORT_A
 #define IOT_I2C_CFG_TEST_SCL_PIN                 8
 
 // I2C0 SDA on PA07
-#define IOT_I2C_CFG_TEST_SDA_PORT                gpioPortA
+#define IOT_I2C_CFG_TEST_SDA_PORT                SL_GPIO_PORT_A
 #define IOT_I2C_CFG_TEST_SDA_PIN                 7
 
 // [I2C_IOT_I2C_CFG_TEST]$

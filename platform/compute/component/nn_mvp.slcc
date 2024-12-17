@@ -9,6 +9,9 @@ description: >
 category: Platform|Compute
 quality: production
 root_path: platform/compute/nn/mvp
+metadata:
+  sbom:
+    license: Zlib and MSLA
 config_file:
   - path: config/sl_nn_mvp_config.h
 source:

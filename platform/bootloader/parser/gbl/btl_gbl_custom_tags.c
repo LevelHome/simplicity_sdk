@@ -65,7 +65,7 @@ const GblCustomTag_t gblCustomTags[] = {
 };
 #endif
 
-bool gbl_isCustomTag(GblTagHeader_t *tagHeader)
+bool gbl_isCustomTag(const GblTagHeader_t *tagHeader)
 {
 #if defined(BTL_PARSER_SUPPORT_CUSTOM_TAGS)
   for (size_t i = 0; i < sizeof(gblCustomTags) / sizeof(GblCustomTag_t); i++) {

@@ -29,7 +29,7 @@
  ******************************************************************************/
 #include <stdbool.h>
 #include <math.h>
-#include "em_common.h"
+#include "sl_common.h"
 #include "app_log.h"
 #include "app_assert.h"
 #include "sl_bluetooth.h"
@@ -531,7 +531,7 @@ static bd_addr *read_and_cache_bluetooth_address(uint8_t *address_type_out)
   static bool cached = false;
 
   if (!cached) {
-    sl_status_t sc = sl_bt_system_get_identity_address(&address, &address_type);
+    sl_status_t sc = sl_bt_gap_get_identity_address(&address, &address_type);
     app_assert_status(sc);
     cached = true;
   }

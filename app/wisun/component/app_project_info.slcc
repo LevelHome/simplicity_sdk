@@ -4,7 +4,7 @@ package: "wisun"
 description: >
   The component offers a comprehensive compilation of project-related
   information, with a particular focus on software layer versions and toolchains.
-category: "Wi-SUN|Application"
+category: "Wi-SUN|Wi-SUN Services"
 quality: "production"
 metadata:
   sbom:
@@ -23,8 +23,6 @@ include:
 config_file:
   - path: "config/app_project_info_config.h"
 
-ui_hints:
-  visibility: never
 #-------------- Template Contribution ----------------
 template_contribution:
 #---------------- Component Catalog ------------------

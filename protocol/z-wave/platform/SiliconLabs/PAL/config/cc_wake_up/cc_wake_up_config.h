@@ -19,7 +19,7 @@
 
 // <h> Command Class Wake Up Configuration
 
-// <o CC_WAKE_UP_CONFIG_DEFAULT_SLEEP_TIME_SEC> Default sleep time between Wake Up Notifications <1..255:1> <f.d>
+// <o CC_WAKE_UP_CONFIG_DEFAULT_SLEEP_TIME_SEC> Default sleep time between Wake Up Notifications <1..86400:1> <f.d>
 // <i> Default: 300
 #define CC_WAKE_UP_CONFIG_DEFAULT_SLEEP_TIME_SEC  300
 

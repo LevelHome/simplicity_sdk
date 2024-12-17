@@ -1,5 +1,5 @@
 /***************************************************************************//**
- * @file
+ * @file sl_wisun_coap_rhnd.h
  * @brief Wi-SUN CoAP resource handler
  *******************************************************************************
  * # License
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __SL_WISUN_COAP_RHND_H__
-#define __SL_WISUN_COAP_RHND_H__
+#ifndef SL_WISUN_COAP_RHND_H
+#define SL_WISUN_COAP_RHND_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,18 +38,25 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+
 #include "sl_status.h"
 #include "sl_wisun_coap.h"
 #include "sl_wisun_coap_config.h"
+#include "socket/socket.h"
 
 /**************************************************************************//**
- * @addtogroup SL_WISUN_COAP_API CoAP
- * @ingroup SL_WISUN_COAP
+ * @addtogroup SL_WISUN_COAP_RHND_API CoAP Resource Handler API
+ * @ingroup SL_WISUN_COAP_API
+ * @{
+ *****************************************************************************/
+
+/**************************************************************************//**
+ * @addtogroup SL_WISUN_COAP_RHND_TYPES Type definitions
+ * @ingroup SL_WISUN_COAP_RHND_API
  * @{
  *****************************************************************************/
 
@@ -57,14 +64,18 @@ extern "C" {
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
 
-/**************************************************************************//**
- * @defgroup SL_WISUN_COAP_RESOURCE_TYPES CoAP Resource Handler type definitions
- * @ingroup SL_WISUN_COAP
- * @{
- *****************************************************************************/
-
 /// Auto-Response callback for resorces
-typedef sl_wisun_coap_packet_t * (*sl_wisun_coap_rhnd_auto_resp_t)(const sl_wisun_coap_packet_t * const req_packet);
+typedef sl_wisun_coap_packet_t *
+(*sl_wisun_coap_rhnd_auto_resp_t)(const sl_wisun_coap_packet_t * const req_packet);
+
+/// Extended auto response callback for resources.
+typedef sl_wisun_coap_packet_t *
+(*sl_wisun_coap_rhnd_auto_resp_ext_t)(const sockaddr_in6_t * const src_addr,
+                                      const sl_wisun_coap_packet_t * const req_packet);
+
+/// Redirect response callback type to create new destination socket address
+typedef void (*sl_wisun_coap_rhnd_redirect_resp_t)(sockaddr_in6_t * const new_addr,
+                                                   const sl_wisun_coap_packet_t * const req_packet);
 
 /// Resource table data
 typedef struct sl_wisun_coap_rhnd_resource_data {
@@ -84,6 +95,12 @@ typedef struct sl_wisun_coap_rhnd_resource {
   bool discoverable;
   /// Auto response
   sl_wisun_coap_rhnd_auto_resp_t auto_response;
+  /// Auto response extended
+  /// If it's registered in the resource descriptor,
+  /// it will be called instead of auto_response
+  sl_wisun_coap_rhnd_auto_resp_ext_t auto_response_ext;
+  /// Redirect response callback
+  sl_wisun_coap_rhnd_redirect_resp_t redirect_response;
   /// Next pointer
   struct sl_wisun_coap_rhnd_resource * next;
 } sl_wisun_coap_rhnd_resource_t;
@@ -98,6 +115,23 @@ typedef struct sl_wisun_coap_rhnd_resource {
  * @brief Initialization of the CoAP Resource Discovery internals.
  *****************************************************************************/
 void sl_wisun_coap_rhnd_init(void);
+
+/**************************************************************************//**
+ * @brief Initialise empty resource
+ * @details Set pointers to NULL and flags to false
+ * @param[in] src_resource Resource descriptor
+ *****************************************************************************/
+__STATIC_INLINE void sl_wisun_coap_rhnd_resource_init(sl_wisun_coap_rhnd_resource_t * const src_resource)
+{
+  src_resource->data.uri_path = NULL;
+  src_resource->data.resource_type = NULL;
+  src_resource->data.interface = NULL;
+  src_resource->discoverable = false;
+  src_resource->auto_response = NULL;
+  src_resource->auto_response_ext = NULL;
+  src_resource->redirect_response = NULL;
+  src_resource->next = NULL;
+}
 
 /**************************************************************************//**
  * @brief Register a new resource into the CoAP Resource table
@@ -127,7 +161,7 @@ const sl_wisun_coap_rhnd_resource_t * sl_wisun_coap_rhnd_get_resources(void);
  * @param[in] response Response callback
  * @return sl_status_t SL_STATUS_OK on succes, SL_STATUS_FAIL on error
  *****************************************************************************/
-sl_status_t sl_wisun_coap_rhnd_set_auto_response(const char*  uri_path,
+sl_status_t sl_wisun_coap_rhnd_set_auto_response(const char * uri_path,
                                                  sl_wisun_coap_rhnd_auto_resp_t response);
 
 /**************************************************************************//**
@@ -147,11 +181,26 @@ void sl_wisun_coap_rhnd_print_resources(void);
 #if SL_WISUN_COAP_RESOURCE_HND_SERVICE_ENABLE
 
 /**************************************************************************//**
- * @brief ACK packet received handler
- * @details Weak function, used in the service
+ * @brief Response packet received handler
+ * @details Weak function, used in the service.
+ *          If simple handler is implemented: simple handler will be executed
+ *          If extended handler is implemented: extended handler will be executed
+ *          If both are implemented: extended handler will be executed
  * @param[in,out] req_packet Request packet
  *****************************************************************************/
 void sl_wisun_coap_rhnd_service_resp_received_hnd(sl_wisun_coap_packet_t * req_packet);
+
+/**************************************************************************//**
+ * @brief Response packet received extended handler
+ * @details Weak function, used in the service
+ *          If simple handler is implemented: simple handler will be executed
+ *          If extended handler is implemented: extended handler will be executed
+ *          If both are implemented: extended handler will be executed
+ * @param[in] src_addr Address of the source
+ * @param[in,out] req_packet Request packet
+ *****************************************************************************/
+void sl_wisun_coap_rhnd_service_resp_received_ext_hnd(const sockaddr_in6_t * const src_addr,
+                                                      sl_wisun_coap_packet_t * req_packet);
 
 /**************************************************************************//**
  * @brief URI path string error handler
@@ -204,4 +253,4 @@ bool sl_wisun_coap_rhnd_is_request_packet(const sl_wisun_coap_packet_t * const p
 }
 #endif
 
-#endif
+#endif // SL_WISUN_COAP_RHND_H

@@ -33,6 +33,7 @@
 #include "sl_coulomb_counter_config.h"
 #include "sli_coulomb_counter_hal.h"
 #include "sl_efp_instances.h"
+#include "sl_assert.h"
 
 /// @cond DO_NOT_INCLUDE_WITH_DOXYGEN
 #define EFP_INSTANCE_IMPL(_inst) sl_efp_efp ## _inst
@@ -227,7 +228,7 @@ sl_status_t sli_coulomb_counter_hal_int_clear(uint8_t flag)
  *   HAL-specific initialization. This is called by
  *   @ref sl_coulomb_counter_init().
  ******************************************************************************/
-sl_status_t sli_coulomb_counter_hal_init(sli_coulomb_counter_handle_t *handle)
+sl_status_t sli_coulomb_counter_hal_init(const sli_coulomb_counter_handle_t *handle)
 {
   sl_status_t status;
   uint8_t reg;
@@ -485,7 +486,7 @@ float sli_coulomb_counter_hal_get_osc_frequency(void)
  * @brief
  *   Check if output is available in EM2 or not.
  ******************************************************************************/
-bool sli_coulomb_counter_hal_output_supports_em2(sli_coulomb_counter_output_t *output)
+bool sli_coulomb_counter_hal_output_supports_em2(const sli_coulomb_counter_output_t *output)
 {
   if (output == &output_vob_em2) {
     return true;
@@ -682,7 +683,7 @@ sl_status_t sli_coulomb_counter_hal_cal_read_result(uint16_t *result)
  * @note
  *   The Charge-Per-Pulse (CPP) Calculation is explained in the AN1188.
  ******************************************************************************/
-float sli_coulomb_counter_hal_compute_cpp(sli_coulomb_counter_handle_t *handle)
+float sli_coulomb_counter_hal_compute_cpp(const sli_coulomb_counter_handle_t *handle)
 {
   float cpp;
 

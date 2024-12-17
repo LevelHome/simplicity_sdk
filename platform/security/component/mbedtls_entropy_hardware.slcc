@@ -17,9 +17,15 @@ provides:
   - name: mbedtls_entropy_source
     allow_multiple: true
     condition: [rail_lib]
+  - name: mbedtls_entropy_source
+    allow_multiple: true
+    condition: [device_series_3]
   - name: mbedtls_entropy_hardware
     allow_multiple: true
     condition: [device_series_2]
+  - name: mbedtls_entropy_hardware
+    allow_multiple: true
+    condition: [device_series_3]
   - name: mbedtls_entropy_hardware
     allow_multiple: true
     condition: [rail_lib]
@@ -31,11 +37,20 @@ requires:
     condition: [device_series_2]
   - name: psa_crypto_trng
     condition: [device_si91x]
-conflicts:
-  - name: device_series_3
+  - name: psa_crypto_trng
+    condition: [device_series_3]
 template_contribution:
   - name: mbedtls_config
     value: MBEDTLS_ENTROPY_HARDWARE_ALT
   - name: mbedtls_config
     value: MBEDTLS_ENTROPY_RAIL_PRESENT
     condition: [rail_lib]
+metadata:
+  sbom:
+    license: Zlib AND Apache-2.0
+    upstream:
+      name: Mbed TLS
+      version: v3.6.2
+      supplier: Trusted Firmware
+      url: https://github.com/Mbed-TLS/mbedtls.git
+      comment: Mbed TLS is a C library implementing the PSA Cryptography API, cryptographic primitives, X.509 certificate manipulation and the SSL/TLS and DTLS protocols

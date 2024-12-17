@@ -53,6 +53,8 @@
 #include "em_device.h"
 #endif
 
+#include "sl_assert.h"
+
 #if defined(SL_CATALOG_CLI_STORAGE_NVM3_PRESENT)
 #include "sl_cli_storage_nvm3.h"
 #endif

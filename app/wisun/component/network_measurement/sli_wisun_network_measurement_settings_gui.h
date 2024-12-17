@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief Wi-SUN Network measurement component
+ * @file sli_wisun_network_measurement_settings_gui.h
+ * @brief Wi-SUN Network Measurement Settings GUI
  *******************************************************************************
  * # License
  * <b>Copyright 2022 Silicon Laboratories Inc. www.silabs.com</b>
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __SLI_WISUN_NETWORK_MEASUREMENT_SETTINGS_GUI_H__
-#define __SLI_WISUN_NETWORK_MEASUREMENT_SETTINGS_GUI_H__
+#ifndef SLI_WISUN_NETWORK_MEASUREMENT_SETTINGS_GUI_H
+#define SLI_WISUN_NETWORK_MEASUREMENT_SETTINGS_GUI_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,4 +62,4 @@ void sli_wisun_nwm_phy_select_form(void *args);
 }
 #endif
 
-#endif // __SLI_WISUN_NETWORK_MEASUREMENT_SETTINGS_GUI_H__
+#endif // SLI_WISUN_NETWORK_MEASUREMENT_SETTINGS_GUI_H

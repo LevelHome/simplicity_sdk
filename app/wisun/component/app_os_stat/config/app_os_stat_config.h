@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief Application OS statistic configuration header.
+ * @file app_os_stat_config.h
+ * @brief Application OS statistic configuration
  *******************************************************************************
  * # License
  * <b>Copyright 2022 Silicon Laboratories Inc. www.silabs.com</b>
@@ -32,44 +32,63 @@
 
 #include "cmsis_os2.h"
 
+/**************************************************************************//**
+ * @defgroup APP_OS_STAT_CONFIG Configurations
+ * @ingroup APP_OS_STAT
+ * @{
+ *****************************************************************************/
+
 // <<< Use Configuration Wizard in Context Menu >>>
 
 // // <h> App OS Statistic configuration
 
+// <q APP_OS_STAT_VERBOSE_MODE_ENABLED> Enable verbose mode
+// <i> Default value: 0
+#define APP_OS_STAT_VERBOSE_MODE_ENABLED        0U ///< Enable verbose mode
+
+// <q APP_OS_STAT_ASYNC_MODE_ENABLED> Enable async mode
+// <i> Default value: 0
+// <i> If enabled, max stack/heap usage statistics are printed asynchronously, when the values are changed
+// <i> If disabled, stack/heap usage statistics are printed periodically
+// <i> Hint: In a long test run without issues, checking the last entry includes everything and can be used to adjust the memory settings for the SDK threads'
+#define APP_OS_STAT_ASYNC_MODE_ENABLED          0U ///< Enable async mode
+
 // <o APP_OS_STAT_THREAD_PRIO> App OS statistic thread priority
 // <i> Default: osPriorityHigh
-#define APP_OS_STAT_THREAD_PRIO                  osPriorityHigh
+#define APP_OS_STAT_THREAD_PRIO                 osPriorityHigh ///< App OS statistic thread priority
 
 // <o APP_OS_STAT_STACK_SIZE_WORD> App OS statistic thread stack size in word
 // <i> Default: 256
-#define APP_OS_STAT_STACK_SIZE_WORD              256U
+#define APP_OS_STAT_STACK_SIZE_WORD             256U ///< App OS statistic thread stack size in word
 
-// <o APP_OS_STAT_UPDATE_PERIODE_TIME_MS> App OS statistic update periode time
+// <o APP_OS_STAT_UPDATE_PERIOD_TIME_MS> App OS statistic update period time
 // <i> Default: 1000
-#define APP_OS_STAT_UPDATE_PERIODE_TIME_MS       1000U
+#define APP_OS_STAT_UPDATE_PERIOD_TIME_MS       1000U ///< App OS statistic update period time
 
 // <o APP_OS_STAT_MAX_THREAD_CNT> Maximum registerable thread count
 // <i> Default: 20
-#define APP_OS_STAT_MAX_THREAD_CNT               20U
+#define APP_OS_STAT_MAX_THREAD_CNT              20U ///< Maximum registerable thread count
 
 // <o APP_OS_STAT_RTT_LOG_CHANNEL> RTT Log channel for app os statistics
 // <i> Default: 0
-#define APP_OS_STAT_RTT_LOG_CHANNEL              0U
+#define APP_OS_STAT_RTT_LOG_CHANNEL             0U ///< RTT Log channel for app os statistics
 
 // <q APP_OS_STAT_THREAD_STACK_ENABLED> Enable thread stack usage statistic
 // <i> default 1
-#define APP_OS_STAT_THREAD_STACK_ENABLED         1U
+#define APP_OS_STAT_THREAD_STACK_ENABLED        1U ///< Enable thread stack usage statistic
 
 // <q APP_OS_STAT_HEAP_ENABLED> Enable heap usage statistic
 // <i> default 1
-#define APP_OS_STAT_HEAP_ENABLED                 1U
+#define APP_OS_STAT_HEAP_ENABLED                1U ///< Enable heap usage statistic
 
 // <q APP_OS_STAT_MANUAL_REGISTER_THREADS> Enable manual thread registering
 // <i> default 0
-#define APP_OS_STAT_MANUAL_REGISTER_THREADS      0U
+#define APP_OS_STAT_MANUAL_REGISTER_THREADS     0U ///< Enable manual thread registering
 
 // </h>
 
 // <<< end of configuration section >>>
 
-#endif
+/** @}*/
+
+#endif // APP_OS_STAT_CONFIG_H

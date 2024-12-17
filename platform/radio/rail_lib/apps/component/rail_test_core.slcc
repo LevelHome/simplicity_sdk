@@ -4,6 +4,11 @@ description: RAILtest Application Core Support
 package: platform
 category: Platform|Radio
 quality: production
+metadata:
+  sbom:
+    id: rail_test_core
+    name: RAILtest Application, Core
+    license: Zlib
 provides:
   - name: rail_test_core
   - name: wireless_stack # RAILtest is considered a "RAIL stack"
@@ -33,7 +38,7 @@ requires:
     condition:
       - device_series_2
   - name: sl_core
-  - name: hal_generic_gpio
+  - name: gpio
   - name: emlib_cmu
     condition:
       - device_series_2
@@ -77,6 +82,9 @@ config_file:
   - path: platform/radio/rail_lib/apps/railtest/config/efr32xg28/sl_rail_test_config.h
     condition:
       - device_sdid_235
+  - path: platform/radio/rail_lib/apps/railtest/config/efr32xg29/sl_rail_test_config.h
+    condition:
+      - device_sdid_240
   - path: platform/radio/rail_lib/apps/railtest/config/sixg301/sl_rail_test_config.h
     condition:
       - device_generic_family_sixx301
@@ -116,6 +124,12 @@ include:
       - path: sl_iostream.h
     unless:
       - cli
+  - path: platform/radio/rail_lib/apps/railtest
+    file_list:
+      - path: app_task_init.h
+      - path: railtest_response_print_mapping.h
+    condition:
+      - kernel
 
 source:
   - path: platform/radio/rail_lib/apps/railtest/app_main.c
@@ -154,6 +168,12 @@ source:
   - path: platform/radio/rail_lib/hal/efr32/hal_efr.c
 
   - path: platform/radio/rail_lib/plugin/pa-auto-mode/pa_auto_mode.c
+  - path: platform/radio/rail_lib/apps/railtest/app_task_init.c
+    condition:
+      - kernel
+  - path: platform/radio/rail_lib/apps/railtest/railtest_response_print.c
+    condition:
+      - kernel
 
 template_contribution:
   - name: component_catalog
@@ -498,7 +518,7 @@ template_contribution:
         - type: uint32
           help: "0=Disable 1=Enable"
         - type: uint32opt
-          help: "streamMode: [1=PN9] 2=1010 3=phaseNoise 0=tone\\n                    [uint32opt] antenna: [0]/1"
+          help: "streamMode: 0=tone [1=PN9] 2=1010 3=phaseNoise\\n                                See RAIL_StreamMode_t for other values.\\n                    [uint32opt] antenna: [0]/1"
 
   - name: cli_command
     value:
@@ -1239,6 +1259,15 @@ template_contribution:
 
   - name: cli_command
     value:
+      name: config2Mbps802154RxChannel
+      handler: ieee802154Config2MbpsRxChannel
+      help: "Configure channel to receive 2Mbps mode switch packets."
+      argument:
+        - type: uint16
+          help: "channel"
+
+  - name: cli_command
+    value:
       name: acceptFrames
       handler: ieee802154AcceptFrames
       help: "Control 802.15.4 frame type acceptance."
@@ -1437,7 +1466,7 @@ template_contribution:
       help: "Configure BLE PhySwitchToRx parameters. RX is\\n                    entered timeDeltaUs after sync word of received packet."
       argument:
         - type: uint8
-          help: "0=Disable 1=Enable"
+          help: "0=Disable, >0=number of RX switches to perform"
         - type: uint32opt
           help: "phy timeDelta physicalChannel\\n                    [uint32opt] logicalChannel accessAddr crcInit\\n                    [uint32opt] disableWhiten\\n                    [uint32opt] extraDelayUs"
 
@@ -1874,10 +1903,12 @@ template_contribution:
     value:
       name: setConfigIndex
       handler: setConfigIndex
-      help: "Activate a multi-PHY radio configuration.\\n                    See the entries in *channelConfigs[]. Start with index 0."
+      help: "Activate a multi-PHY radio configuration.\\n                    See the entries in *channelConfigs[]. Start with index 0.\\n                    If optional 'channel' parameter is not provided, the first available channel is set."
       argument:
         - type: uint8
           help: "multiPhyIndex"
+        - type: uint16opt
+          help: "channel"
 
   - name: cli_command
     value:

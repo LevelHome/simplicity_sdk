@@ -86,8 +86,6 @@ configuration:
     value: 1
   - name: SL_BTMESH_PROVISIONEE_OOB_PUBLIC_KEY_ENABLE_CFG_VAL
     value: 1
-  - name: SL_HEAP_SIZE
-    value: "0x4000"
   - name: SL_IOSTREAM_USART_VCOM_RESTRICT_ENERGY_MODE_TO_ALLOW_RECEPTION
     value: "0"
   - name: SL_PSA_KEY_USER_SLOT_COUNT

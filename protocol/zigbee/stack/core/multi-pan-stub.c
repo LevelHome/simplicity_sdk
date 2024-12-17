@@ -21,6 +21,7 @@
 #include "core/sl_zigbee_multi_network.h" // for sli_zigbee_network_descriptor and sli_zigbee_pan_info_data
 #include "mac-child.h" // for sl_mac_child_entry_t
 #include "stack/include/sl_zigbee_types_internal.h" // for PAN_ID_OKAY
+#include "sl_code_classification.h"
 
 const sl_zigbee_library_status_t sli_zigbee_multi_pan_library_status = SL_ZIGBEE_LIBRARY_IS_STUB;
 
@@ -55,6 +56,7 @@ void sli_zigbee_network_pan_info_data_init(uint8_t nwkIndex, sl_zigbee_network_i
   curNetwork->panInfoData->newPanId = PAN_ID_OKAY;
 }
 
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_ZIGBEE_STACK, SL_CODE_CLASS_TIME_CRITICAL)
 void sli_zigbee_set_child_table_for_current_network(void)
 {
 }

@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_wisun_tcp_server_config.h
+ * @brief Wi-SUN TCP Server configuration
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -32,7 +32,7 @@
 
 // <<< Use Configuration Wizard in Context Menu >>>
 
-// <h>Wi-SUN TCP Server configuration
+// <h> Wi-SUN TCP Server configuration
 // <o SL_WISUN_TCP_SERVER_PORT> TCP Server port
 // <i> Default: 4567
 // <i> This is the port number where TCP server is listening
@@ -43,6 +43,7 @@
 // <i> Default: 128
 // <1-2048>
 #define SL_WISUN_TCP_SERVER_BUFF_SIZE               128U
+
 // </h>
 
 // <<< end of configuration section >>>

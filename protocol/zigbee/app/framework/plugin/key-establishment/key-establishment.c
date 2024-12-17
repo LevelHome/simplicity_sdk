@@ -741,7 +741,7 @@ static bool askApplicationWithDelay(sl_zigbee_af_key_establishment_notify_messag
   }
 
   sl_zigbee_af_key_establishment_cluster_flush();
-  sl_zigbee_af_key_establishment_cluster_print("%p: %p %p: %p (%d), %p ",
+  sl_zigbee_af_key_establishment_cluster_print("%s: %s %s: %s (%d), %s ",
                                                (!keyEstPartner.isInitiator
                                                 ? "Initiator"
                                                 : "Responder"),
@@ -755,7 +755,7 @@ static bool askApplicationWithDelay(sl_zigbee_af_key_establishment_notify_messag
                                                message,
                                                "keyEstPartner");
   if (keyEstPartner.isIntraPan) {
-    sl_zigbee_af_key_establishment_cluster_println("0x%2x", keyEstPartner.pan.intraPan.nodeId);
+    sl_zigbee_af_key_establishment_cluster_println("0x%04X", keyEstPartner.pan.intraPan.nodeId);
     return sl_zigbee_af_key_establishment_event_cb(message,
                                                    !keyEstPartner.isInitiator,
                                                    keyEstPartner.pan.intraPan.nodeId,
@@ -907,7 +907,7 @@ static void messageSentHandler(sl_zigbee_outgoing_message_type_t type,
   }
 
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_key_establishment_cluster_println("Error: Failed to send key establish message to 0x%2x, status: 0x%x",
+    sl_zigbee_af_key_establishment_cluster_println("Error: Failed to send key establish message to 0x%04X, status: 0x%02X",
                                                    indexOrDestination,
                                                    status);
     cleanupAndStop(MESSAGE_SEND_FAILURE);
@@ -1001,7 +1001,7 @@ static void writeKeyEstablishmentClusterAttribute(uint8_t endpoint)
                                                      (uint8_t*)&keSuiteId,
                                                      ZCL_ENUM16_ATTRIBUTE_TYPE);
       if (attrWriteStatus != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-        sl_zigbee_af_key_establishment_cluster_println("%p%p%p%X",
+        sl_zigbee_af_key_establishment_cluster_println("%s%s%s%02X",
                                                        "Key Est. Suite attr write failed (",
                                                        ((mask == CLUSTER_MASK_SERVER)
                                                         ? "server"
@@ -1017,7 +1017,7 @@ static void writeKeyEstablishmentClusterAttribute(uint8_t endpoint)
 
 static void debugPrintSmac(bool initiatorSmac, uint8_t *smac)
 {
-  sl_zigbee_af_key_establishment_cluster_println("%p SMAC",
+  sl_zigbee_af_key_establishment_cluster_println("%s SMAC",
                                                  (initiatorSmac
                                                   ? "Initiator"
                                                   : "Responder"));
@@ -1027,7 +1027,7 @@ static void debugPrintSmac(bool initiatorSmac, uint8_t *smac)
 
 static void debugPrintOtherSmac(bool received, uint8_t *smac)
 {
-  sl_zigbee_af_key_establishment_cluster_println("%p SMAC",
+  sl_zigbee_af_key_establishment_cluster_println("%s SMAC",
                                                  (received ? "Received" : "Calculated"));
   // Conveniently Zigbee Keys are the same length as the SMAC
   sl_zigbee_af_print_zigbee_key(smac);
@@ -1035,7 +1035,7 @@ static void debugPrintOtherSmac(bool received, uint8_t *smac)
 
 static void debugPrintCert(bool initiatorCert, uint8_t *cert)
 {
-  sl_zigbee_af_key_establishment_cluster_println("%p Cert",
+  sl_zigbee_af_key_establishment_cluster_println("%s Cert",
                                                  (initiatorCert
                                                   ? "Initiator"
                                                   : "Responder"));
@@ -1050,7 +1050,7 @@ static void debugPrintCert(bool initiatorCert, uint8_t *cert)
 
 static void debugPrintKey(bool initiatorKey, uint8_t *key)
 {
-  sl_zigbee_af_key_establishment_cluster_println("%p public key",
+  sl_zigbee_af_key_establishment_cluster_println("%s public key",
                                                  (initiatorKey
                                                   ? "Initiator"
                                                   : "Responder"));
@@ -1185,7 +1185,7 @@ void cleanupAndStopWithDelay(sl_zigbee_af_key_establishment_notify_message_t mes
   }
 
   sl_zigbee_af_key_establishment_cluster_flush();
-  sl_zigbee_af_key_establishment_cluster_println("End Key Establishment Status: 0x%x, Store Link Key Status: 0x%x",
+  sl_zigbee_af_key_establishment_cluster_println("End Key Establishment Status: 0x%02X, Store Link Key Status: 0x%02X",
                                                  message,
                                                  storeLinkKeyStatus);
 
@@ -1458,8 +1458,8 @@ void sl_zigbee_af_key_establishment_cluster_server_init_cb(uint8_t endpoint)
 
   // We use a "core" print in hopes that this message will be seen.
   // Key establishment will not work and mysteriously fail when started.
-  sl_zigbee_af_core_println("Key Est. Init %p 0x%x", (isCbkeKeyEstablishmentSuiteValid() ? "Success" : "FAILED!"), LOW_BYTE(sli_zigbee_af_available_cbke_suite));
-  sl_zigbee_af_key_establishment_cluster_println("Key Est. Init %p",
+  sl_zigbee_af_core_println("Key Est. Init %s 0x%02X", (isCbkeKeyEstablishmentSuiteValid() ? "Success" : "FAILED!"), LOW_BYTE(sli_zigbee_af_available_cbke_suite));
+  sl_zigbee_af_key_establishment_cluster_println("Key Est. Init %s",
                                                  (isCbkeKeyEstablishmentSuiteValid()
                                                   ? "Success"
                                                   : "FAILED!"));
@@ -1534,7 +1534,7 @@ bool sl_zigbee_af_key_establishment_cluster_terminate_key_establishment_cb(uint8
       apsSequenceNumbers[apsSequenceNumbersReceived] = cmd->apsFrame->sequence;
       apsSequenceNumbersReceived++;
     }
-    sl_zigbee_af_key_establishment_cluster_println("Terminate Received, Status(%d): %p",
+    sl_zigbee_af_key_establishment_cluster_println("Terminate Received, Status(%d): %s",
                                                    statusCode,
                                                    terminateStatus[((statusCode > UNKNOWN_TERMINATE_STATUS)
                                                                     ? UNKNOWN_TERMINATE_STATUS
@@ -1648,7 +1648,7 @@ void sl_zigbee_af_key_establishment_cluster_client_message_sent_cb(sl_zigbee_out
 void sli_zigbee_af_key_establishment_generate_cbke_keys_handler(sl_status_t status,
                                                                 sl_zigbee_public_key_data_t *ephemeralPublicKey)
 {
-  sl_zigbee_af_key_establishment_cluster_println("GenerateCbkeKeysHandler() returned: 0x%x",
+  sl_zigbee_af_key_establishment_cluster_println("GenerateCbkeKeysHandler() returned: 0x%02X",
                                                  status);
   sli_zigbee_af_crypto_operation_complete();
 
@@ -1676,7 +1676,7 @@ void sli_zigbee_af_key_establishment_calculate_smacs_handler(sl_status_t status,
                                                              sl_zigbee_smac_data_t *initiatorSmac,
                                                              sl_zigbee_smac_data_t *responderSmac)
 {
-  sl_zigbee_af_key_establishment_cluster_println("CalculateSmacsHandler() returned: 0x%x",
+  sl_zigbee_af_key_establishment_cluster_println("CalculateSmacsHandler() returned: 0x%02X",
                                                  status);
   sli_zigbee_af_crypto_operation_complete();
   debugPrintSmac(true, sl_zigbee_smac_contents(initiatorSmac));
@@ -1705,7 +1705,7 @@ void sli_zigbee_af_key_establishment_calculate_smacs_handler(sl_status_t status,
 void sli_zigbee_af_key_establishment_generate_cbke_keys_handler283k1(sl_status_t status,
                                                                      sl_zigbee_public_key_283k1_data_t *ephemeralPublicKey)
 {
-  sl_zigbee_af_key_establishment_cluster_println("GenerateCbkeKeysHandler283k1() returned: 0x%x",
+  sl_zigbee_af_key_establishment_cluster_println("GenerateCbkeKeysHandler283k1() returned: 0x%02X",
                                                  status);
   sli_zigbee_af_crypto_operation_complete();
 
@@ -1733,7 +1733,7 @@ void sli_zigbee_af_key_establishment_calculate_smacs_handler283k1(sl_status_t st
                                                                   sl_zigbee_smac_data_t* initiatorSmac,
                                                                   sl_zigbee_smac_data_t* responderSmac)
 {
-  sl_zigbee_af_key_establishment_cluster_println("CalculateSmacsHandler() returned: 0x%x",
+  sl_zigbee_af_key_establishment_cluster_println("CalculateSmacsHandler() returned: 0x%02X",
                                                  status);
   sli_zigbee_af_crypto_operation_complete();
 
@@ -1893,7 +1893,7 @@ uint32_t sl_zigbee_af_key_establishment_cluster_server_command_parse(sl_service_
 
   postZclCommandProcedure(cmd, zclStatus);
 
-  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
 uint32_t sl_zigbee_af_key_establishment_cluster_client_command_parse(sl_service_opcode_t opcode,
@@ -1978,5 +1978,5 @@ uint32_t sl_zigbee_af_key_establishment_cluster_client_command_parse(sl_service_
 
   postZclCommandProcedure(cmd, zclStatus);
 
-  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }

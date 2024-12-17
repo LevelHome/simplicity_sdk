@@ -126,7 +126,7 @@ group.
             <li>Device Reset Locally: triggered upon reset.</li>
             <li>Binary Switch Report: Triggered when the switch changes state.</li>
             <li>Notification: triggered by the endpoints</li>
-            <li>Indicator Report: Triggered when LED1 changes state.</li>
+            <li>Indicator Report: Triggered when LED0 changes state.</li>
         </ul>
     </td>
 </tr><tr>
@@ -206,50 +206,44 @@ Y: For Z-Wave node count is equal to 5 and for Z-Wave Long Range it is 0.
 
 ## Usage of Buttons and LED Status
 
-To use the sample app, the BRD8029A Button and LEDs Expansion Board must be used. BTN0-BTN3 and LED0-LED3 refer to the buttons and LEDs on the Expansion Board.
+We are differentiating four different types of button presses. The following types are the same for the BTN0 and BTN1 on the WSTK board. The duration values can be configured under the config directory in app_button_press_config.h file in each generated application/project.
 
-The following LEDs and buttons shown in the next table below are used.
+Please note external wakeup is not supported on button 1 in case of brd2603a and brd2603b.
 
 <table>
 <tr>
-    <th rowspan="2">Button</th>
-    <th rowspan="2">Action</th>
-    <th colspan="2">Description</th>
+    <th>Press Type</th>
+    <th>Duration</th>
 </tr><tr>
-    <th>Radio Board <sup>1</sup></th>
-    <th>Thunderboard <sup>1</sup></th>
+    <td>Short Press</td>
+    <td>0 - 400 ms</td>
+</tr><tr>
+    <td>Medium Press</td>
+    <td>401 - 1500 ms</td>
+</tr><tr>
+    <td>Long Press</td>
+    <td>1501 - 5000 ms</td>
+</tr><tr>
+    <td>Very Long Press</td>
+    <td>Every press longer than Long Press</td>
+</tr>
+</table>
+
+
+<table>
+<tr>
+    <th>Button</th>
+    <th>Action</th>
+    <th>Description</th>
 </tr><tr>
     <td>RST</td>
     <td>Press</td>
-    <td colspan="2">Resets the firmware of an application (like losing power). All volatile memory will be cleared.</td>
+    <td>Resets the firmware of an application (like losing power). All volatile memory will be cleared.</td>
 </tr><tr>
-    <td>BTN0</td>
-    <td>Keypress</td>
-    <td colspan="2">Switch on/off endpoint 1</td>
-</tr><tr>
-    <td rowspan="2">BTN1</td>
-    <td>Press</td>
-    <td colspan="2">
-        Enter "learn mode" (sending node info frame) to add/remove the device.<br>
-        Removing the device from a network will reset it.
-    </td>
-</tr><tr>
-    <td>Hold for at least 5 seconds and release</td>
-    <td colspan="2">Perform a reset to factory default operation of the device, and a Device Reset Locally Notification Command is sent via Lifeline.</td>
-</tr><tr>
-    <td>BTN2</td>
-    <td>Keypress</td>
+    <td rowspan="2">BTN0</td>
+    <td>Short Press</td>
     <td>
-      Dimming or switch on/off endpoint 2.
-      Pressing push-button turns light on/off and holding push-button
-      performs dimming of light (toggle up/down)
-    </td>
-    <td></td>
-</tr><tr>
-    <td>BTN3</td>
-    <td>Keypress</td>
-    <td>
-      <p>
+    <p>
         Toggles the transmission of an "Overload detected" notification.
         The first transmission, when enabled, will always be the first in the following list.
       </p>
@@ -262,37 +256,46 @@ The following LEDs and buttons shown in the next table below are used.
       </ol>
       <p>One notification will be transmitted every 30 seconds.</p>
     </td>
-    <td></td>
+</tr><tr>
+    <td>Medium Press</td>
+    <td>Toggles the binary switch</td>
+</tr><tr>
+    <td rowspan="2">BTN1</td>
+    <td>Short Press</td>
+    <td>Enter "learn mode" (sending node info frame) to add/remove the device.<br>
+    Removing the device from a network will reset it.
+    </td>
+</tr><tr>
+    <td>Very Long Press</td>
+    <td>Perform a reset to factory default operation of the device, and a Device Reset Locally Notification Command is sent via Lifeline.
+    </td>
 </tr>
 </table>
+
 
 <table>
 <tr>
-    <th rowspan="2">LED</th>
-    <th colspan="2">Description</th>
-</tr><tr>
-    <th>Radio Board <sup>1</sup></th>
-    <th>Thunderboard <sup>1</sup></th>
+    <th>LED</th>
+    <th>Description for boards with RGB LED</th>
+    <th>Description for boards without RGB LED<sup>1</sup></th>
 </tr><tr>
     <td>LED0</td>
-    <td colspan="2">Endpoint 1 (switch on/off)</td>
-</tr><tr>
-    <td>LED1</td>
-    <td>
+    <td colspan="2">
       Blinks with 1 Hz when learn mode is active.
       Used for Indicator Command Class.
     </td>
-    <td>Endpoint 2 (dimmer)</td>
+</tr><tr>
+    <td>LED1</td>
+    <td>Endpoint 1 (switch on/off)</td>
+    <td>Endpoint 2 (dimmer, average of the three colors)</td>
 </tr><tr>
     <td>RGB</td>
     <td>Endpoint 2 (dimmer)</td>
-    <td>
-    </td>
+    <td>-</td>
 </tr>
 </table>
 
-<sup>1</sup>: A Radio Board is plug-in board for the Wireless Pro Kit Mainboard.
-A Thunderboard is a stand-alone kit with a direct USB Type-C connection.
+<sup>1</sup>: Some boards do not have an RGB LED. On such boards, the command line interface can be used to monitor the binary switch endpoint and all the levels of the multilevel switch endpoint.
 
 ## Firmware Update
 
@@ -344,5 +347,17 @@ Please note the zw_cli_common component will modify the power consumption in cas
     <td>Toggles the transmission of an "Overload detected" notification.
         The first transmission, when enabled, will always be the first in the following list.
     </td>
+</tr>
+<tr>
+    <th>get_led_state</th>
+    <td>-</td>
+    <td>Get the state of the LED1. Can be "on" or "off".
+    <br>Only available on hardware with an RGB LED (otherwise, LED1 is assigned
+    to the multilevel switch and its state can be queried with get_rgb_values).</td>
+</tr>
+<tr>
+    <th>get_rgb_values</th>
+    <td>-</td>
+    <td>Shows the current Red Green and Blue values. The range is 0-65535 for each component. In case the target does not have RGB LED it shows the LED intensity on a scale 0- 255.</td>
 </tr>
 </table>

@@ -35,7 +35,7 @@
 /* Simplicity SDK emlib layer */
 #include "sl_core.h"
 #include "em_device.h"
-#include "em_gpio.h"
+#include "sl_device_gpio.h"
 
 /* GPIO driver layer */
 #include "iot_adc_pinout_drv.h"
@@ -43,121 +43,121 @@
 /*******************************************************************************
  *                              slGetPort()
  ******************************************************************************/
-GPIO_Port_TypeDef slGetPort(slPin pin)
+sl_gpio_port_t slGetPort(slPin pin)
 {
-  GPIO_Port_TypeDef ret = (GPIO_Port_TypeDef) - 1;
+  sl_gpio_port_t ret = (sl_gpio_port_t) -1;
 
   switch (pin & 0xF0) {
     case 0x00:
-      ret = (GPIO_Port_TypeDef) - 1;
+      ret = (sl_gpio_port_t) -1;
       break;
 
     case 0x10:
-#if (_GPIO_PORT_I_PIN_COUNT > 0)
-      ret = gpioPortI;
+#if (GPIO_PI_COUNT > 0)
+      ret = SL_GPIO_PORT_I;
 #else
-      ret = (GPIO_Port_TypeDef) - 1;
+      ret = (sl_gpio_port_t) -1;
 #endif
       break;
 
     case 0x20:
-      ret = (GPIO_Port_TypeDef) - 1;
+      ret = (sl_gpio_port_t) -1;
       break;
 
     case 0x30:
-      ret = (GPIO_Port_TypeDef) - 1;
+      ret = (sl_gpio_port_t) -1;
       break;
 
     case 0x40:
-      ret = (GPIO_Port_TypeDef) - 1;
+      ret = (sl_gpio_port_t) -1;
       break;
 
     case 0x50:
-      ret = (GPIO_Port_TypeDef) - 1;
+      ret = (sl_gpio_port_t) -1;
       break;
 
     case 0x60:
-#if (_GPIO_PORT_G_PIN_COUNT > 0)
-      ret = gpioPortG;
+#if (GPIO_PG_COUNT > 0)
+      ret = SL_GPIO_PORT_G;
 #else
-      ret = (GPIO_Port_TypeDef) - 1;
+      ret = (sl_gpio_port_t) -1;
 #endif
       break;
 
     case 0x70:
-#if (_GPIO_PORT_J_PIN_COUNT > 0)
-      ret = gpioPortJ;
+#if (GPIO_PJ_COUNT > 0)
+      ret = SL_GPIO_PORT_J;
 #else
-      ret = (GPIO_Port_TypeDef) - 1;
+      ret = (sl_gpio_port_t) -1;
 #endif
       break;
 
     case 0x80:
-#if (_GPIO_PORT_H_PIN_COUNT > 0)
-      ret = gpioPortH;
+#if (GPIO_PH_COUNT > 0)
+      ret = SL_GPIO_PORT_H;
 #else
-      ret = (GPIO_Port_TypeDef) - 1;
+      ret = (sl_gpio_port_t) -1;
 #endif
       break;
 
     case 0x90:
-#if (_GPIO_PORT_K_PIN_COUNT > 0)
-      ret = gpioPortK;
+#if (GPIO_PK_COUNT > 0)
+      ret = SL_GPIO_PORT_K;
 #else
-      ret = (GPIO_Port_TypeDef) - 1;
+      ret = (sl_gpio_port_t) -1;
 #endif
       break;
 
     case 0xA0:
-#if (_GPIO_PORT_A_PIN_COUNT > 0)
-      ret = gpioPortA;
+#if (GPIO_PA_COUNT > 0)
+      ret = SL_GPIO_PORT_A;
 #else
-      ret = (GPIO_Port_TypeDef) - 1;
+      ret = (sl_gpio_port_t) -1;
 #endif
       break;
 
     case 0xB0:
-#if (_GPIO_PORT_B_PIN_COUNT > 0)
-      ret = gpioPortB;
+#if (GPIO_PB_COUNT > 0)
+      ret = SL_GPIO_PORT_B;
 #else
-      ret = (GPIO_Port_TypeDef) - 1;
+      ret = (sl_gpio_port_t) -1;
 #endif
       break;
 
     case 0xC0:
-#if (_GPIO_PORT_C_PIN_COUNT > 0)
-      ret = gpioPortC;
+#if (GPIO_PC_COUNT > 0)
+      ret = SL_GPIO_PORT_C;
 #else
-      ret = (GPIO_Port_TypeDef) - 1;
+      ret = (sl_gpio_port_t) -1;
 #endif
       break;
 
     case 0xD0:
-#if (_GPIO_PORT_D_PIN_COUNT > 0)
-      ret = gpioPortD;
+#if (GPIO_PD_COUNT > 0)
+      ret = SL_GPIO_PORT_D;
 #else
-      ret = (GPIO_Port_TypeDef) - 1;
+      ret = (sl_gpio_port_t) -1;
 #endif
       break;
 
     case 0xE0:
-#if (_GPIO_PORT_E_PIN_COUNT > 0)
-      ret = gpioPortE;
+#if (GPIO_PE_COUNT > 0)
+      ret = SL_GPIO_PORT_E;
 #else
-      ret = (GPIO_Port_TypeDef) - 1;
+      ret = (sl_gpio_port_t) -1;
 #endif
       break;
 
     case 0xF0:
-#if (_GPIO_PORT_F_PIN_COUNT > 0)
-      ret = gpioPortF;
+#if (GPIO_PF_COUNT > 0)
+      ret = SL_GPIO_PORT_F;
 #else
-      ret = (GPIO_Port_TypeDef) - 1;
+      ret = (sl_gpio_port_t) -1;
 #endif
       break;
 
     default:
-      ret = (GPIO_Port_TypeDef) - 1;
+      ret = (sl_gpio_port_t) -1;
       break;
   }
   return ret;

@@ -60,10 +60,21 @@
 #endif // SL_CATALOG_NCP_RESET_PRESENT
 #ifdef SL_CATALOG_BLE_PEER_MANAGER_CENTRAL_PRESENT
 #include "ble_peer_manager_central_internal.h"
+#include "ble_peer_manager_central.h"
 #endif // SL_CATALOG_BLE_PEER_MANAGER_CENTRAL_PRESENT
 #ifdef SL_CATALOG_BLE_PEER_MANAGER_PERIPHERAL_PRESENT
 #include "ble_peer_manager_peripheral_internal.h"
+#include "ble_peer_manager_peripheral.h"
 #endif // SL_CATALOG_BLE_PEER_MANAGER_PERIPHERAL_PRESENT
+#ifdef SL_CATALOG_BLE_PEER_MANAGER_FILTER_PRESENT
+#include "ble_peer_manager_filter.h"
+#endif // SL_CATALOG_BLE_PEER_MANAGER_FILTER_PRESENT
+#ifdef SL_CATALOG_MEMORY_MANAGER_PRESENT
+#include "sl_memory_manager.h"
+#endif // SL_CATALOG_MEMORY_MANAGER_PRESENT
+#ifdef SL_CATALOG_CS_INITIATOR_PRESENT
+#include "cs_initiator.h"
+#endif // SL_CATALOG_CS_INITIATOR_PRESENT
 
 static void sl_bt_init(void);
 static void sl_bt_step(void);
@@ -75,6 +86,9 @@ extern void sl_btmesh_step(void);
 
 void sl_system_init(void)
 {
+#ifdef SL_CATALOG_MEMORY_MANAGER_PRESENT
+  sl_memory_init();
+#endif // SL_CATALOG_MEMORY_MANAGER_PRESENT
   sl_bt_init();
 #ifdef BTMESH
   sl_btmesh_init();
@@ -85,6 +99,18 @@ void sl_system_init(void)
 #ifdef SL_CATALOG_NCP_RESET_PRESENT
   ncp_reset_init();
 #endif // SL_CATALOG_NCP_RESET_PRESENT
+#ifdef SL_CATALOG_BLE_PEER_MANAGER_CENTRAL_PRESENT
+  ble_peer_manager_central_init();
+#endif // SL_CATALOG_BLE_PEER_MANAGER_CENTRAL_PRESENT
+#ifdef SL_CATALOG_BLE_PEER_MANAGER_PERIPHERAL_PRESENT
+  ble_peer_manager_peripheral_init();
+#endif // SL_CATALOG_BLE_PEER_MANAGER_PERIPHERAL_PRESENT
+#ifdef SL_CATALOG_BLE_PEER_MANAGER_FILTER_PRESENT
+  ble_peer_manager_filter_init();
+#endif // SL_CATALOG_BLE_PEER_MANAGER_FILTER_PRESENT
+#ifdef SL_CATALOG_CS_INITIATOR_PRESENT
+  cs_initiator_init();
+#endif // SL_CATALOG_CS_INITIATOR_PRESENT
 }
 
 void sl_system_process_action(void)

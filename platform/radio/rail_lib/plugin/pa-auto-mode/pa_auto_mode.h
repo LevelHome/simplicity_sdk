@@ -38,11 +38,6 @@ extern "C" {
 #endif
 
 /**
- * @addtogroup RAIL_API
- * @{
- */
-
-/**
  * @addtogroup PA Power Amplifier (PA)
  * @ingroup Transmit
  * @{
@@ -53,25 +48,25 @@ extern "C" {
  * @brief Enum used to specify the band for a PA
  */
 RAIL_ENUM(RAIL_PaBand_t) {
-  /** Indicates a 2.4GHz band PA. */
+  /** Indicates a 2.4 GHz band PA. */
   RAIL_PA_BAND_2P4GIG,
   /** Indicates a Sub-GHz band PA. */
   RAIL_PA_BAND_SUBGIG,
   /** A count of the choices in this enumeration. Must be last. */
-  RAIL_PA_BAND_COUNT,
+  RAIL_PA_BAND_COUNT
 };
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 // Self-referencing defines minimize compiler complaints when using RAIL_ENUM
 #define RAIL_PA_BAND_2P4GIG ((RAIL_PaBand_t)RAIL_PA_BAND_2P4GIG)
 #define RAIL_PA_BAND_SUBGIG ((RAIL_PaBand_t)RAIL_PA_BAND_SUBGIG)
-#define RAIL_PA_BAND_COUNT ((RAIL_PaBand_t)RAIL_PA_BAND_COUNT)
-#endif
+#define RAIL_PA_BAND_COUNT  ((RAIL_PaBand_t)RAIL_PA_BAND_COUNT)
+#endif//DOXYGEN_SHOULD_SKIP_THIS
 
 /**
  * @struct RAIL_PaAutoModeConfigEntry_t
  * @brief Struct to ease specification of appropriate ranges
- * within which a PA should be used.
+ *   within which a PA should be used.
  */
 typedef struct RAIL_PaAutoModeConfigEntry {
   /** The minimum (inclusive) deci-dBm power to use with this entry. */
@@ -94,17 +89,14 @@ extern const RAIL_PaAutoModeConfigEntry_t *RAIL_PaAutoModeConfig;
  * Configure the PA auto mode entries.
  *
  * @param[in] railHandle A RAIL instance handle.
- * @param[in] paAutoModeEntry Entries used to configure PA auto mode decision points.
+ * @param[in] paAutoModeEntry A pointer to entries used to configure PA auto mode decision points.
+ *   The final entry must set its \ref RAIL_PaAutoModeConfigEntry_t::band to \ref RAIL_PA_BAND_COUNT.
  * @return Status parameter indicating success of function call.
  */
 RAIL_Status_t RAIL_ConfigPaAutoEntry(RAIL_Handle_t railHandle,
                                      const RAIL_PaAutoModeConfigEntry_t *paAutoModeEntry);
-/** @} */ // PA Power Amplifier (PA)
 
-/**
- * @}
- * end of RAIL_API
- */
+/** @} */ // PA Power Amplifier (PA)
 
 #ifdef RAIL_INTERNAL_BUILD
 #include "pa_auto_mode_internal.h"

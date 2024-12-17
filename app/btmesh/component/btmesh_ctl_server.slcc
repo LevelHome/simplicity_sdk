@@ -48,6 +48,7 @@ requires:
   - name: "btmesh_generic_server"
   - name: "btmesh_lighting_server"
   - name: "component_catalog"
+  - name: "sl_common"
   - name: "app_timer"
 
 template_contribution:

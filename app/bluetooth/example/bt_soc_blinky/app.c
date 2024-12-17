@@ -27,10 +27,10 @@
  * 3. This notice may not be removed or altered from any source distribution.
  *
  ******************************************************************************/
-#include "em_common.h"
+#include "sl_common.h"
 #include "app_assert.h"
 #include "app_log.h"
-#include "sl_bluetooth.h"
+#include "sl_bt_api.h"
 #include "gatt_db.h"
 #include "app.h"
 #include "sl_simple_button_instances.h"
@@ -38,15 +38,12 @@
 
 // The advertising set handle allocated from Bluetooth stack.
 static uint8_t advertising_set_handle = 0xff;
-
-static bool report_button_flag = false;
-
 // Updates the Report Button characteristic.
 static sl_status_t update_report_button_characteristic(void);
 // Sends notification of the Report Button characteristic.
 static sl_status_t send_report_button_notification(void);
 
-/**************************************************************************//**
+/******************************************************************************
  * Application Init.
  *****************************************************************************/
 SL_WEAK void app_init(void)
@@ -60,16 +57,14 @@ SL_WEAK void app_init(void)
   /////////////////////////////////////////////////////////////////////////////
 }
 
-/**************************************************************************//**
+/******************************************************************************
  * Application Process Action.
  *****************************************************************************/
 SL_WEAK void app_process_action(void)
 {
   // Check if there was a report button interaction.
-  if (report_button_flag) {
+  if (app_get_button_state()) {
     sl_status_t sc;
-
-    report_button_flag = false; // Reset flag
 
     sc = update_report_button_characteristic();
     app_log_status_error(sc);
@@ -78,16 +73,15 @@ SL_WEAK void app_process_action(void)
       sc = send_report_button_notification();
       app_log_status_error(sc);
     }
+    /////////////////////////////////////////////////////////////////////////////
+    // Put your additional application code here!                              //
+    // This is called when button state changes.                               //
+    // Do not call blocking functions from here!                               //
+    /////////////////////////////////////////////////////////////////////////////
   }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Put your additional application code here!                              //
-  // This is called infinitely.                                              //
-  // Do not call blocking functions from here!                               //
-  /////////////////////////////////////////////////////////////////////////////
 }
 
-/**************************************************************************//**
+/******************************************************************************
  * Bluetooth stack event handler.
  * This overrides the dummy weak implementation.
  *
@@ -128,27 +122,20 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
       // Button events can be received from now on.
       sl_button_enable(SL_SIMPLE_BUTTON_INSTANCE(0));
 
-      // Check the report button state, then update the characteristic and
-      // send notification.
-      sc = update_report_button_characteristic();
-      app_log_status_error(sc);
+      app_log_info("Blinky example initialized." APP_LOG_NL);
 
-      if (sc == SL_STATUS_OK) {
-        sc = send_report_button_notification();
-        app_log_status_error(sc);
-      }
       break;
 
     // -------------------------------
     // This event indicates that a new connection was opened.
     case sl_bt_evt_connection_opened_id:
-      app_log_info("Connection opened.\n");
+      app_log_info("Connection opened." APP_LOG_NL);
       break;
 
     // -------------------------------
     // This event indicates that a connection was closed.
     case sl_bt_evt_connection_closed_id:
-      app_log_info("Connection closed.\n");
+      app_log_info("Connection closed." APP_LOG_NL);
 
       // Generate data for advertising
       sc = sl_bt_legacy_advertiser_generate_data(advertising_set_handle,
@@ -186,12 +173,12 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
         // Toggle LED.
         if (data_recv == 0x00) {
           sl_led_turn_off(SL_SIMPLE_LED_INSTANCE(0));
-          app_log_info("LED off.\n");
+          app_log_info("LED off." APP_LOG_NL);
         } else if (data_recv == 0x01) {
           sl_led_turn_on(SL_SIMPLE_LED_INSTANCE(0));
-          app_log_info("LED on.\n");
+          app_log_info("LED on." APP_LOG_NL);
         } else {
-          app_log_error("Invalid attribute value: 0x%02x\n", (int)data_recv);
+          app_log_error("Invalid attribute value: 0x%02x" APP_LOG_NL, (int)data_recv);
         }
       }
       break;
@@ -207,12 +194,12 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
             & sl_bt_gatt_notification) {
           // The client just enabled the notification. Send notification of the
           // current button state stored in the local GATT table.
-          app_log_info("Notification enabled.");
+          app_log_info("Notification enabled." APP_LOG_NL);
 
           sc = send_report_button_notification();
           app_log_status_error(sc);
         } else {
-          app_log_info("Notification disabled.\n");
+          app_log_info("Notification disabled." APP_LOG_NL);
         }
       }
       break;
@@ -236,7 +223,7 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
 void sl_button_on_change(const sl_button_t *handle)
 {
   if (SL_SIMPLE_BUTTON_INSTANCE(0) == handle) {
-    report_button_flag = true;
+    app_set_button_state();
   }
 }
 
@@ -270,7 +257,7 @@ static sl_status_t update_report_button_characteristic(void)
                                                sizeof(data_send),
                                                &data_send);
   if (sc == SL_STATUS_OK) {
-    app_log_info("Attribute written: 0x%02x", (int)data_send);
+    app_log_info("Attribute written: 0x%02x" APP_LOG_NL, (int)data_send);
   }
 
   return sc;
@@ -303,7 +290,7 @@ static sl_status_t send_report_button_notification(void)
                                     sizeof(data_send),
                                     &data_send);
   if (sc == SL_STATUS_OK) {
-    app_log_append(" Notification sent: 0x%02x\n", (int)data_send);
+    app_log_info("Notification sent: 0x%02x" APP_LOG_NL, (int)data_send);
   }
   return sc;
 }

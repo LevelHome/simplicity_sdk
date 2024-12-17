@@ -36,11 +36,10 @@
 
 #if defined(_SILICON_LABS_32B_SERIES_3)
 #include "sl_device_peripheral.h"
-#include "sl_gpio.h"
 #include "sl_hal_i2c.h"
-#else
-#include "em_gpio.h"
 #endif //_SILICON_LABS_32B_SERIES_3
+
+#include "sl_gpio.h"
 
 /*******************************************************************************
  *******************************   DEFINES   ***********************************
@@ -226,16 +225,25 @@ void I2CSPM_Init(I2CSPM_Init_TypeDef *init)
 
   // Update I2C device handle of an instance.
   i2cDevice->port = init->port;
+#else
+  if (i2cInstance < 0 || i2cInstance >= I2C_COUNT) {
+    // Assert on invalid instance number.
+    EFM_ASSERT(false);
+  }
+#endif //_SILICON_LABS_32B_SERIES_3
 
   // Output value must be set to 1 to not drive lines low.
   // Set SCL first, to ensure it is high before changing SDA.
-  sl_gpio_t scl_gpio, sda_gpio;
-  scl_gpio.port = init->sclPort;
-  scl_gpio.pin = init->sclPin;
-  sda_gpio.port = init->sdaPort;
-  sda_gpio.pin = init->sdaPin;
-  sl_gpio_set_pin_mode(&scl_gpio, SL_GPIO_MODE_OPEN_DRAIN_PULLUP, 1);
-  sl_gpio_set_pin_mode(&sda_gpio, SL_GPIO_MODE_OPEN_DRAIN_PULLUP, 1);
+  sl_gpio_t scl_gpio = {
+    .port = init->sclPort,
+    .pin = init->sclPin
+  };
+  sl_gpio_t sda_gpio = {
+    .port = init->sdaPort,
+    .pin = init->sdaPin
+  };
+  sl_gpio_set_pin_mode(&scl_gpio, SL_GPIO_MODE_WIRED_AND_PULLUP, 1);
+  sl_gpio_set_pin_mode(&sda_gpio, SL_GPIO_MODE_WIRED_AND_PULLUP, 1);
 
   // In some situations, after a reset during an I2C transfer, the slave device may be
   // left in an unknown state. Send 9 clock pulses to set slave in a defined state.
@@ -245,25 +253,6 @@ void I2CSPM_Init(I2CSPM_Init_TypeDef *init)
     sl_gpio_set_pin(&scl_gpio);
     sl_udelay_wait(SL_I2CSPM_SCL_HOLD_TIME_US);
   }
-#else
-  if (i2cInstance < 0 || i2cInstance >= I2C_COUNT) {
-    // Assert on invalid instance number.
-    EFM_ASSERT(false);
-  }
-  // Output value must be set to 1 to not drive lines low.
-  // Set SCL first, to ensure it is high before changing SDA.
-  GPIO_PinModeSet(init->sclPort, init->sclPin, gpioModeWiredAndPullUp, 1);
-  GPIO_PinModeSet(init->sdaPort, init->sdaPin, gpioModeWiredAndPullUp, 1);
-
-  // In some situations, after a reset during an I2C transfer, the slave device may be
-  // left in an unknown state. Send 9 clock pulses to set slave in a defined state.
-  for (clkPulses = 0; clkPulses < SL_I2CSPM_RECOVER_NUM_CLOCKS; clkPulses++) {
-    GPIO_PinOutClear(init->sclPort, init->sclPin);
-    sl_udelay_wait(SL_I2CSPM_SCL_HOLD_TIME_US);
-    GPIO_PinOutSet(init->sclPort, init->sclPin);
-    sl_udelay_wait(SL_I2CSPM_SCL_HOLD_TIME_US);
-  }
-#endif //_SILICON_LABS_32B_SERIES_3
 
   // Enable pins and set location.
   GPIO->I2CROUTE[i2cInstance].ROUTEEN = GPIO_I2C_ROUTEEN_SDAPEN | GPIO_I2C_ROUTEEN_SCLPEN;

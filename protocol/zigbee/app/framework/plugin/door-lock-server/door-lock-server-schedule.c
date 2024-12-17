@@ -32,7 +32,7 @@ static void printWeekdayScheduleTable(void)
   for (i = 0; i < SL_ZIGBEE_AF_PLUGIN_DOOR_LOCK_SERVER_WEEKDAY_SCHEDULE_TABLE_SIZE; i++ ) {
     sl_zigbee_af_door_lock_schedule_entry_t *entry = &weekdayScheduleTable[i];
     if (entry->inUse) {
-      sl_zigbee_af_door_lock_cluster_println("%x %2x  %x %4x   %4x   %4x  %4x",
+      sl_zigbee_af_door_lock_cluster_println("%02X %04X  %02X %08X   %08X   %08X  %08X",
                                              i,
                                              entry->userId,
                                              entry->daysMask,
@@ -113,13 +113,13 @@ static void sendResponse(const char *responseName)
 {
   sl_status_t status = sl_zigbee_af_send_response();
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_door_lock_cluster_println("Failed to send %s: 0x%X",
+    sl_zigbee_af_door_lock_cluster_println("Failed to send %s: 0x%02X",
                                            responseName,
                                            status);
   }
 }
 
-bool sl_zigbee_af_door_lock_cluster_set_weekday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_set_weekday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_door_lock_cluster_set_weekday_schedule_command_t cmd_data;
   uint8_t status = 0x00;
@@ -128,7 +128,7 @@ bool sl_zigbee_af_door_lock_cluster_set_weekday_schedule_cb(sl_zigbee_af_cluster
 
   if (zcl_decode_door_lock_cluster_set_weekday_schedule_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   if (!sli_zigbee_af_door_lock_server_check_for_sufficient_space(cmd_data.scheduleId,
@@ -164,10 +164,10 @@ bool sl_zigbee_af_door_lock_cluster_set_weekday_schedule_cb(sl_zigbee_af_cluster
     SEND_COMMAND_UNICAST_TO_BINDINGS();
   }
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_door_lock_cluster_get_weekday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_get_weekday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_door_lock_cluster_get_weekday_schedule_command_t cmd_data;
   sl_zigbee_af_status_t zclStatus;
@@ -175,7 +175,7 @@ bool sl_zigbee_af_door_lock_cluster_get_weekday_schedule_cb(sl_zigbee_af_cluster
 
   if (zcl_decode_door_lock_cluster_get_weekday_schedule_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   zclStatus = ((cmd_data.scheduleId > SL_ZIGBEE_AF_PLUGIN_DOOR_LOCK_SERVER_WEEKDAY_SCHEDULE_TABLE_SIZE)
@@ -215,17 +215,17 @@ bool sl_zigbee_af_door_lock_cluster_get_weekday_schedule_cb(sl_zigbee_af_cluster
 
   sendResponse("GetWeekdayScheduleResponse");
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_door_lock_cluster_clear_weekday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_clear_weekday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_door_lock_cluster_clear_weekday_schedule_command_t cmd_data;
   sl_zigbee_af_status_t zclStatus;
 
   if (zcl_decode_door_lock_cluster_clear_weekday_schedule_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   zclStatus = ((cmd_data.scheduleId > SL_ZIGBEE_AF_PLUGIN_DOOR_LOCK_SERVER_WEEKDAY_SCHEDULE_TABLE_SIZE)
@@ -241,17 +241,17 @@ bool sl_zigbee_af_door_lock_cluster_clear_weekday_schedule_cb(sl_zigbee_af_clust
 
   sendResponse("ClearWeekdayScheduleResponse");
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_door_lock_cluster_set_yearday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_set_yearday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_door_lock_cluster_set_yearday_schedule_command_t cmd_data;
   uint8_t status;
 
   if (zcl_decode_door_lock_cluster_set_yearday_schedule_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   if (cmd_data.scheduleId >= SL_ZIGBEE_AF_PLUGIN_DOOR_LOCK_SERVER_YEARDAY_SCHEDULE_TABLE_SIZE) {
@@ -267,10 +267,10 @@ bool sl_zigbee_af_door_lock_cluster_set_yearday_schedule_cb(sl_zigbee_af_cluster
 
   sendResponse("SetYeardayScheduleResponse");
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_door_lock_cluster_get_yearday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_get_yearday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_door_lock_cluster_get_yearday_schedule_command_t cmd_data;
   sl_zigbee_af_plugin_door_lock_server_yearday_schedule_entry_t *entry = &yeardayScheduleTable[0];
@@ -278,7 +278,7 @@ bool sl_zigbee_af_door_lock_cluster_get_yearday_schedule_cb(sl_zigbee_af_cluster
 
   if (zcl_decode_door_lock_cluster_get_yearday_schedule_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   if (cmd_data.scheduleId >= SL_ZIGBEE_AF_PLUGIN_DOOR_LOCK_SERVER_YEARDAY_SCHEDULE_TABLE_SIZE
@@ -314,17 +314,17 @@ bool sl_zigbee_af_door_lock_cluster_get_yearday_schedule_cb(sl_zigbee_af_cluster
 
   sendResponse("GetYeardayScheduleResponse");
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_door_lock_cluster_clear_yearday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_clear_yearday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_door_lock_cluster_clear_yearday_schedule_command_t cmd_data;
   uint8_t status;
 
   if (zcl_decode_door_lock_cluster_clear_yearday_schedule_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   if (cmd_data.scheduleId >= SL_ZIGBEE_AF_PLUGIN_DOOR_LOCK_SERVER_YEARDAY_SCHEDULE_TABLE_SIZE) {
@@ -339,17 +339,17 @@ bool sl_zigbee_af_door_lock_cluster_clear_yearday_schedule_cb(sl_zigbee_af_clust
 
   sendResponse("ClearYeardayScheduleResponse");
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_door_lock_cluster_set_holiday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_set_holiday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_door_lock_cluster_set_holiday_schedule_command_t cmd_data;
   uint8_t status;
 
   if (zcl_decode_door_lock_cluster_set_holiday_schedule_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   if (cmd_data.scheduleId
@@ -370,10 +370,10 @@ bool sl_zigbee_af_door_lock_cluster_set_holiday_schedule_cb(sl_zigbee_af_cluster
 
   sendResponse("SetHolidayScheduleResponse");
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_door_lock_cluster_get_holiday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_get_holiday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_door_lock_cluster_get_holiday_schedule_command_t cmd_data;
   sl_zigbee_af_plugin_door_lock_server_holiday_schedule_entry_t *entry = &holidayScheduleTable[0];
@@ -381,7 +381,7 @@ bool sl_zigbee_af_door_lock_cluster_get_holiday_schedule_cb(sl_zigbee_af_cluster
 
   if (zcl_decode_door_lock_cluster_get_holiday_schedule_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   if (cmd_data.scheduleId >= SL_ZIGBEE_AF_PLUGIN_DOOR_LOCK_SERVER_HOLIDAY_SCHEDULE_TABLE_SIZE) {
@@ -415,17 +415,17 @@ bool sl_zigbee_af_door_lock_cluster_get_holiday_schedule_cb(sl_zigbee_af_cluster
 
   sendResponse("GetHolidayScheduleResponse");
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_door_lock_cluster_clear_holiday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_clear_holiday_schedule_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_door_lock_cluster_clear_holiday_schedule_command_t cmd_data;
   uint8_t status;
 
   if (zcl_decode_door_lock_cluster_clear_holiday_schedule_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   if (cmd_data.scheduleId >= SL_ZIGBEE_AF_PLUGIN_DOOR_LOCK_SERVER_YEARDAY_SCHEDULE_TABLE_SIZE) {
@@ -438,17 +438,17 @@ bool sl_zigbee_af_door_lock_cluster_clear_holiday_schedule_cb(sl_zigbee_af_clust
 
   sendResponse("ClearYeardayScheduleResponse");
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_door_lock_cluster_set_disposable_schedule_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_set_disposable_schedule_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_door_lock_cluster_set_disposable_schedule_command_t cmd_data;
   uint8_t status = 0;
 
   if (zcl_decode_door_lock_cluster_set_disposable_schedule_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   sl_zigbee_af_door_lock_cluster_println("Set Disposable Schedule ");
@@ -464,16 +464,12 @@ bool sl_zigbee_af_door_lock_cluster_set_disposable_schedule_cb(sl_zigbee_af_clus
 
   sl_zigbee_af_fill_command_door_lock_cluster_set_disposable_schedule_response(status);
 
-  sl_status_t sl_zigbee_status = sl_zigbee_af_send_response();
-  if (sl_zigbee_status != SL_STATUS_OK) {
-    sl_zigbee_af_door_lock_cluster_println("Failed to send SetDisposableScheduleResponse: 0x%X",
-                                           sl_zigbee_status);
-  }
+  sendResponse("SetDisposableScheduleResponse");
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_door_lock_cluster_get_disposable_schedule_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_get_disposable_schedule_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_door_lock_cluster_get_disposable_schedule_command_t cmd_data;
   sl_zigbee_af_plugin_door_lock_server_disposable_schedule_entry_t *entry = &disposableScheduleTable[0];
@@ -481,7 +477,7 @@ bool sl_zigbee_af_door_lock_cluster_get_disposable_schedule_cb(sl_zigbee_af_clus
 
   if (zcl_decode_door_lock_cluster_get_disposable_schedule_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   sl_zigbee_af_door_lock_cluster_println("Get Disposable Schedule ");
@@ -516,17 +512,17 @@ bool sl_zigbee_af_door_lock_cluster_get_disposable_schedule_cb(sl_zigbee_af_clus
 
   sendResponse("GetDisposableScheduleResponse");
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_door_lock_cluster_clear_disposable_schedule_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_clear_disposable_schedule_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_door_lock_cluster_clear_disposable_schedule_command_t cmd_data;
   uint8_t status = 0;
 
   if (zcl_decode_door_lock_cluster_clear_disposable_schedule_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   sl_zigbee_af_door_lock_cluster_println("Clear Disposable Schedule ");
@@ -544,5 +540,5 @@ bool sl_zigbee_af_door_lock_cluster_clear_disposable_schedule_cb(sl_zigbee_af_cl
 
   sendResponse("ClearDisposableScheduleResponse");
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }

@@ -27,7 +27,7 @@ WEAK(sl_zigbee_af_status_t sl_zigbee_af_read_attribute_wrapper(uint8_t endpoint,
                                                                uint8_t readLength,
                                                                sl_zigbee_af_attribute_type_t *dataType))
 {
-  return 0xff;
+  return SL_ZIGBEE_ZCL_STATUS_FAILURE;
 }
 
 WEAK(sl_zigbee_af_status_t sl_zigbee_af_write_attribute_wrapper(uint8_t endpoint,
@@ -37,7 +37,7 @@ WEAK(sl_zigbee_af_status_t sl_zigbee_af_write_attribute_wrapper(uint8_t endpoint
                                                                 uint8_t* dataPtr,
                                                                 sl_zigbee_af_attribute_type_t dataType))
 {
-  return 0xff;
+  return SL_ZIGBEE_ZCL_STATUS_FAILURE;
 }
 
 WEAK(sl_zigbee_af_status_t sl_zigbee_af_write_client_attribute_wrapper(uint8_t endpoint,
@@ -46,7 +46,7 @@ WEAK(sl_zigbee_af_status_t sl_zigbee_af_write_client_attribute_wrapper(uint8_t e
                                                                        uint8_t* dataPtr,
                                                                        sl_zigbee_af_attribute_type_t dataType))
 {
-  return 0xff;
+  return SL_ZIGBEE_ZCL_STATUS_FAILURE;
 }
 
 WEAK(bool sl_zigbee_af_contains_server_wrapper(uint8_t endpoint, sl_zigbee_af_cluster_id_t clusterId))
@@ -74,19 +74,19 @@ WEAK(sl_zigbee_aps_frame_t *sl_zigbee_af_get_command_aps_frame_wrapper(void))
 WEAK(sl_status_t sl_zigbee_af_send_command_unicast_wrapper(sl_zigbee_outgoing_message_type_t type,
                                                            uint16_t indexOrDestination))
 {
-  return 0xff;
+  return SL_STATUS_NOT_AVAILABLE;
 }
 
 WEAK(sl_status_t sl_zigbee_af_send_command_broadcast_wrapper(sl_802154_short_addr_t destination,
                                                              sl_802154_short_addr_t alias,
                                                              uint8_t sequence))
 {
-  return 0xff;
+  return SL_STATUS_NOT_AVAILABLE;
 }
 
 WEAK(sl_status_t sl_zigbee_af_send_command_multicast_wrapper(sl_zigbee_multicast_id_t multicastId, sl_802154_short_addr_t alias, uint8_t sequence))
 {
-  return 0xff;
+  return SL_STATUS_NOT_AVAILABLE;
 }
 
 WEAK(uint16_t sl_zigbee_af_fill_external_buffer_wrapper(uint8_t frameControl,
@@ -95,7 +95,7 @@ WEAK(uint16_t sl_zigbee_af_fill_external_buffer_wrapper(uint8_t frameControl,
                                                         const char *format,
                                                         ...))
 {
-  return 0xff;
+  return 0xFFFF;
 }
 #endif // (SL_ZIGBEE_AF_PLUGIN_GREEN_POWER_ADAPTER_USE_CUSTOM_AF_INTERFACE == 1)
 

@@ -4,12 +4,16 @@ package: platform
 description: Token Manager. This component requires a compatible stack which are ZigBee or Connect.
 category: Services|Token Manager
 quality: production
+metadata:
+  sbom:
+    license: MSLA
 requires:
   - name: token_manager_storage
   - name: component_catalog
   - name: se_manager
     condition: [device_series_2]
   - name: wireless_stack
+  - name: code_classification
 recommends:
   - id: token_manager_nvm3
 provides:
@@ -22,6 +26,10 @@ config_file:
 define:
   - name: CUSTOM_TOKEN_HEADER
     value: '"sl_token_manager_af_token_header.h"'
+  - name: NVM3_OVERRIDE_ENABLE
+    condition: [device_series_3]
+  - name: SL_CODE_COMPONENT_TOKEN_MANAGER
+    value: token_manager
 source:
   - path: platform/service/token_manager/src/sl_token_def.c
   - path: platform/service/token_manager/src/sl_token_manager.c
@@ -40,6 +48,20 @@ include:
 template_contribution:
   - name: component_catalog
     value: token_manager
+
+  # Series-3
+  - name: static_tokens_enable
+    value: 1
+    condition: [device_series_3]
+  - name: userdata_size
+    value: 4096
+    condition: [device_series_3]
+  - name: lockbits_size
+    value: 8192
+    condition: [device_series_3]
+  - name: code_classification_components
+    value: token_manager
+
 documentation:
     docset: gecko-platform
     document: platform-service/token-manager

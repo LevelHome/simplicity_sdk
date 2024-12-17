@@ -243,3 +243,41 @@ class MultiPHYConfig(object):
         ModelDiff.process_diffs(multi_phy_model, skip_running_radio_config_on_channel=True)
 
         return multi_phy_model
+
+    @staticmethod
+    def generate_multi_phy_model_from_single_phy_models(single_phy_model_list):
+
+        # : generate multi phy configuration using info from first phy in the list
+        single_phy_model = single_phy_model_list[0]
+        multi_phy_model = multi_phy_configuration(part_family=single_phy_model.part_family.lower(),
+                                                  part_revision=single_phy_model.part_revision,
+                                                  rail_adapter_version="rail_api_2.x",
+                                                  xsd_version=MultiPHYConfig.xsd_version(),
+                                                  status_code=ModelDiffCodes.OK.value,
+                                                  target=single_phy_model.target)
+
+        # : create and add base channel configuration
+        base_channel_configuration = base_channel_configurationType()
+        base_channel_configuration.name = "UNKNOWN"
+        multi_phy_model.base_channel_configurations.add_base_channel_configuration(base_channel_configuration)
+
+        # : loop through each phy and add channel config
+        for single_phy_model in single_phy_model_list:
+
+            channel_config_entry = channel_config_entryType(name=single_phy_model.phy.name,
+                                                            base_frequency=single_phy_model.vars.base_frequency_hz.value,
+                                                            channel_spacing=single_phy_model.vars.channel_spacing_hz.value,
+                                                            physical_channel_offset=0,
+                                                            channel_number_start=0,
+                                                            channel_number_end=0,
+                                                            max_power="RAIL_TX_POWER_MAX")
+
+            channel_config_entry.radio_configurator_output_model = single_phy_model
+
+            base_channel_configuration.channel_config_entries.add_channel_config_entry(channel_config_entry)
+
+        # : Process diffs
+        from pylib_multi_phy_model.register_diff_tool.model_diff import ModelDiff
+        ModelDiff.process_diffs(multi_phy_model, skip_running_radio_config_on_channel=True)
+
+        return multi_phy_model

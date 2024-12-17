@@ -32,6 +32,11 @@ void mfglibInternalGetChannel_process_ipc_command(sli_zigbee_ipc_cmd_t *msg)
   msg->data.mfgGetChannel.response.result = mfglibInternalGetChannel();
 }
 
+void mfglibInternalGetCtune_process_ipc_command(sli_zigbee_ipc_cmd_t *msg)
+{
+  msg->data.mfgGetCtune.response.result = mfglibInternalGetCtune();
+}
+
 void mfglibInternalGetOptions_process_ipc_command(sli_zigbee_ipc_cmd_t *msg)
 {
   msg->data.mfgGetOptions.response.result = mfglibInternalGetOptions();
@@ -56,6 +61,11 @@ void mfglibInternalSendPacket_process_ipc_command(sli_zigbee_ipc_cmd_t *msg)
 void mfglibInternalSetChannel_process_ipc_command(sli_zigbee_ipc_cmd_t *msg)
 {
   msg->data.mfgSetChannel.response.result = mfglibInternalSetChannel(msg->data.mfgSetChannel.request.chan);
+}
+
+void mfglibInternalSetCtune_process_ipc_command(sli_zigbee_ipc_cmd_t *msg)
+{
+  msg->data.mfgSetCtune.response.result = mfglibInternalSetCtune(msg->data.mfgSetCtune.request.ctune);
 }
 
 void mfglibInternalSetOptions_process_ipc_command(sli_zigbee_ipc_cmd_t *msg)
@@ -119,6 +129,15 @@ uint8_t mfglibGetChannel(void)
   return msg.data.mfgGetChannel.response.result;
 }
 
+uint16_t mfglibGetCtune(void)
+{
+  sli_zigbee_ipc_cmd_t msg;
+
+  sli_zigbee_send_ipc_cmd(mfglibInternalGetCtune_process_ipc_command, &msg);
+
+  return msg.data.mfgGetCtune.response.result;
+}
+
 uint8_t mfglibGetOptions(void)
 {
   sli_zigbee_ipc_cmd_t msg;
@@ -174,6 +193,15 @@ sl_status_t mfglibSetChannel(uint8_t chan)
   sli_zigbee_send_ipc_cmd(mfglibInternalSetChannel_process_ipc_command, &msg);
 
   return msg.data.mfgSetChannel.response.result;
+}
+
+sl_status_t mfglibSetCtune(uint16_t ctune)
+{
+  sli_zigbee_ipc_cmd_t msg;
+  msg.data.mfgSetCtune.request.ctune = ctune;
+  sli_zigbee_send_ipc_cmd(mfglibInternalSetCtune_process_ipc_command, &msg);
+
+  return msg.data.mfgSetCtune.response.result;
 }
 
 sl_status_t mfglibSetOptions(uint8_t options)

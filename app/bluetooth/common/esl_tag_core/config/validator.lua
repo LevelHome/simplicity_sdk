@@ -11,6 +11,8 @@ local config_leds = slc.config("ESL_TAG_MAX_LEDS")
 local const_min_scheduler_queue = 1
 local const_min_queue_data_size = 48
 local const_min_data_size = 18
+local sync_scanner_present = slc.is_selected("bluetooth_feature_sync_scanner")
+local config_scan_enabled = slc.config("ESL_TAG_SYNC_SCAN_ENABLE")
 
 if config_displays ~= nil then
   const_min_scheduler_queue = const_min_scheduler_queue + autonumber_common.autonumber(config_displays.value)
@@ -41,6 +43,26 @@ if config_scheduler_data_size ~= nil then
       validation.target_for_defines({"APP_SCHEDULER_MAX_DATA_SIZE"}),
       "Please set the APP_SCHEDULER_MAX_DATA_SIZE to at least " .. tostring(const_min_data_size) .. "!",
       nil)
+  end
+end
+
+if config_scan_enabled ~= nil then
+  if autonumber_common.autonumber(config_scan_enabled.value) ~= 0 then
+    if not sync_scanner_present then
+      validation.error(
+        "Sync-by-scan is enabled, but will not work unless bluetooth_feature_sync_scanner component is added to the project.", 
+        validation.target_for_defines({"ESL_TAG_SYNC_SCAN_ENABLE, ESL_TAG_SCAN_TIMEOUT_SEC"}),
+        "Please add the required 'Bluetooth LE Controller: Synchronization to periodic advertising trains by scanning' feature to the project before proceeding!",
+        nil)
+    end
+  else
+    if sync_scanner_present then
+      validation.warning(
+        "Sync-by-scan is disabled while the bluetooth_feature_sync_scanner component is still present in the project.", 
+        validation.target_for_defines({"ESL_TAG_SYNC_SCAN_ENABLE"}),
+        "You may want to consider removing the 'Bluetooth LE Controller: Synchronization to periodic advertising trains by scanning' feature to reduce code size before proceeding!",
+        nil)
+    end
   end
 end
 

@@ -1,0 +1,13 @@
+[Unit]
+Description=wpantund
+After=network.target
+ConditionPathExists=/usr/sbin/wpantund
+[Service]
+EnvironmentFile=-/etc/default/wpantund
+ExecStart=/usr/sbin/wpantund $WPANTUND_OPTS
+Restart=on-failure
+RestartSec=5
+RestartPreventExitStatus=SIGKILL
+[Install]
+WantedBy=multi-user.target
+Alias=wpantund.service

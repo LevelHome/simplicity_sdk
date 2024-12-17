@@ -130,3 +130,7 @@ template_contribution:
       sid: SLI_TZ_SERVICE_NVM3_ENUMDELETEDOBJECTS_SID
       func: sli_tz_nvm3_enum_deleted_objects
     condition: [trustzone_nonsecure]
+
+metadata:
+  sbom:
+    license: Zlib

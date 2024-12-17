@@ -40,6 +40,7 @@
 #include "rail.h"
 #include "app_common.h"
 #include "app_trx.h"
+#include "sl_power_manager.h"
 
 #if defined(SL_CATALOG_IOSTREAM_EUSART_PRESENT)
 #include "sl_iostream_eusart_vcom_config.h"
@@ -462,7 +463,11 @@ void setRxOptions(sl_cli_command_arg_t *args)
                 (rxOptions & RAIL_RX_OPTION_SKIP_DC_CAL) ? "True" : "False",
                 (rxOptions & RAIL_RX_OPTION_SKIP_SYNTH_CAL) ? "True" : "False",
                 (rxOptions & RAIL_RX_OPTION_CHANNEL_SWITCHING) ? "True" : "False",
+#if RAIL_SUPPORTS_FAST_RX2RX
                 (rxOptions & RAIL_RX_OPTION_FAST_RX2RX) ? "True" : "False",
+#else
+                "False",
+#endif
                 (rxOptions & RAIL_RX_OPTION_ENABLE_COLLISION_DETECTION) ? "On" : "Off");
 }
 
@@ -638,8 +643,8 @@ void sleep(sl_cli_command_arg_t *args)
 #endif
   emMode &= ~0x80;
 
-#if _SILICON_LABS_32B_SERIES_3_CONFIG >= 1
-  uint8_t maxEmMode = 1;
+#if (_SILICON_LABS_32B_SERIES_3_CONFIG >= 300)
+  uint8_t maxEmMode = 3;
 #else
   uint8_t maxEmMode = 4;
 #endif
@@ -712,7 +717,7 @@ void sleep(sl_cli_command_arg_t *args)
 #endif
                   emMode, em4State,
 #if defined(_SILICON_LABS_32B_SERIES_2) && defined (VCOM_TX_PORT)
-                  (VCOM_TX_PORT == gpioPortC || VCOM_TX_PORT == gpioPortD)
+                  (VCOM_TX_PORT == SL_GPIO_PORT_C || VCOM_TX_PORT == SL_GPIO_PORT_D)
                   ? ((emMode < 2) ? "On" : "Off") :
 #endif
                   (emMode < 4) ? "On" : "Off",
@@ -810,7 +815,9 @@ void sleep(sl_cli_command_arg_t *args)
       switch (emMode) {
         case 0:                      break;
 #if defined(_SILICON_LABS_32B_SERIES_3)
-        case 1:  __WFI();            break;
+        case 1:  sli_power_manager_apply_em(SL_POWER_MANAGER_EM1); break;
+        case 2:  sli_power_manager_apply_em(SL_POWER_MANAGER_EM2); break;
+        case 3:  sli_power_manager_apply_em(SL_POWER_MANAGER_EM3); break;
 #else // Series-2
         case 1:  EMU_EnterEM1(    ); break;
         case 2:  EMU_EnterEM2(true); break;
@@ -1141,16 +1148,23 @@ void enableCacheSynthCal(sl_cli_command_arg_t *args)
 
 void enableAutoLnaBypass(sl_cli_command_arg_t *args)
 {
+#if !RAIL_SUPPORTS_PRS_LNA_BYPASS
+  responsePrintError(sl_cli_get_command_string(args, 0), 0x15, "Automatic LNA Bypass Unsupported");
+  return;
+#else
   bool enable = !!sl_cli_get_argument_uint8(args, 0);
-  RAIL_AutoLnaBypassConfig_t autoLnaBypassConfig = {
+  sl_gpio_set_pin_mode(&(sl_gpio_t){sl_cli_get_argument_uint8(args, 4), sl_cli_get_argument_uint8(args, 5) }, SL_GPIO_MODE_PUSH_PULL, enable);
+  uint8_t prsLnaBypassChannel = PRS_GetFreeChannel(prsTypeAsync);
+  PRS_PinOutput(prsLnaBypassChannel, prsTypeAsync, sl_cli_get_argument_uint8(args, 4), sl_cli_get_argument_uint8(args, 5));
+  RAIL_PrsLnaBypassConfig_t prsLnaBypassConfig = {
     .timeoutUs = (RAIL_Time_t)sl_cli_get_argument_uint32(args, 1),
     .threshold = sl_cli_get_argument_uint8(args, 2),
     .deltaRssiDbm = sl_cli_get_argument_uint8(args, 3),
-    .port = sl_cli_get_argument_uint8(args, 4),
-    .pin = sl_cli_get_argument_uint8(args, 5),
+    .prsChannel = prsLnaBypassChannel,
     .polarity = (bool)sl_cli_get_argument_uint8(args, 6)
   };
-  RAIL_Status_t status = RAIL_EnableAutoLnaBypass(railHandle, enable, &autoLnaBypassConfig);
+  RAIL_Status_t status = RAIL_EnablePrsLnaBypass(railHandle, enable, &prsLnaBypassConfig);
   responsePrint(sl_cli_get_command_string(args, 0), "Result:%s",
                 ((status == RAIL_STATUS_NO_ERROR) ? "Success" : "Failure"));
+#endif
 }

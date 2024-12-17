@@ -28,9 +28,8 @@
  ******************************************************************************/
 
 #include <stdint.h>
-#include "em_core.h"
+#include <sl_core.h>
 #include <em_device.h>
-#include <em_chip.h>
 
 static uint32_t sli_btctrl_events;
 

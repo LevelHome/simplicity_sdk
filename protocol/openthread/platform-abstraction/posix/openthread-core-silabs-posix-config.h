@@ -51,7 +51,8 @@ sudo INFRA_IF_NAME=eth0 \
      RELEASE=1 REFERENCE_DEVICE=1 BACKBONE_ROUTER=1 BORDER_ROUTING=1 NAT64=1 DNS64=1 \
      OTBR_OPTIONS="-DOT_THREAD_VERSION=1.4 \
                    -DOT_PLATFORM_CONFIG=openthread-core-silabs-posix-config.h \
-                   -DOTBR_DUA_ROUTING=ON -DOTBR_DNSSD_DISCOVERY_PROXY=ON -DOTBR_SRP_ADVERTISING_PROXY=ON" \
+                   -DOTBR_DUA_ROUTING=ON -DOTBR_DNSSD_DISCOVERY_PROXY=ON -DOTBR_SRP_ADVERTISING_PROXY=ON \
+                   -DOTBR_TREL=ON -DOTBR_DHCP6_PD=ON" \
      ./script/setup
 */
 
@@ -75,7 +76,8 @@ sudo INFRA_IF_NAME=eth0 \
                    -DOT_POSIX_CONFIG_RCP_VENDOR_INTERFACE=$GSDK_DIR/protocol/openthread/platform-abstraction/posix/cpc_interface.cpp \
                    -DOT_CLI_VENDOR_EXTENSION=$GSDK_DIR/protocol/openthread/platform-abstraction/posix/posix_vendor_cli.cmake \
                    -DOT_PLATFORM_CONFIG=openthread-core-silabs-posix-config.h \
-                   -DOTBR_DUA_ROUTING=ON -DOTBR_DNSSD_DISCOVERY_PROXY=ON -DOTBR_SRP_ADVERTISING_PROXY=ON" \
+                   -DOTBR_DUA_ROUTING=ON -DOTBR_DNSSD_DISCOVERY_PROXY=ON -DOTBR_SRP_ADVERTISING_PROXY=ON \
+                   -DOTBR_TREL=ON -DOTBR_DHCP6_PD=ON" \
      ./script/setup
 */
 
@@ -91,7 +93,8 @@ sudo INFRA_IF_NAME=eth0 \
      RELEASE=1 REFERENCE_DEVICE=1 BACKBONE_ROUTER=1 BORDER_ROUTING=1 NAT64=1 DNS64=1 \
      OTBR_OPTIONS="-DOT_THREAD_VERSION=1.3 \
                    -DOT_PLATFORM_CONFIG=openthread-core-silabs-posix-config.h \
-                   -DOTBR_DUA_ROUTING=ON -DOTBR_DNSSD_DISCOVERY_PROXY=ON -DOTBR_SRP_ADVERTISING_PROXY=ON" \
+                   -DOTBR_DUA_ROUTING=ON -DOTBR_DNSSD_DISCOVERY_PROXY=ON -DOTBR_SRP_ADVERTISING_PROXY=ON \
+                   -DOTBR_TREL=ON -DOTBR_DHCP6_PD=ON" \
      ./script/setup
 */
 
@@ -115,7 +118,8 @@ sudo INFRA_IF_NAME=eth0 \
                    -DOT_POSIX_CONFIG_RCP_VENDOR_INTERFACE=$GSDK_DIR/protocol/openthread/platform-abstraction/posix/cpc_interface.cpp \
                    -DOT_CLI_VENDOR_EXTENSION=$GSDK_DIR/protocol/openthread/platform-abstraction/posix/posix_vendor_cli.cmake \
                    -DOT_PLATFORM_CONFIG=openthread-core-silabs-posix-config.h \
-                   -DOTBR_DUA_ROUTING=ON -DOTBR_DNSSD_DISCOVERY_PROXY=ON -DOTBR_SRP_ADVERTISING_PROXY=ON" \
+                   -DOTBR_DUA_ROUTING=ON -DOTBR_DNSSD_DISCOVERY_PROXY=ON -DOTBR_SRP_ADVERTISING_PROXY=ON \
+                   -DOTBR_TREL=ON -DOTBR_DHCP6_PD=ON" \
      ./script/setup
 */
 
@@ -188,24 +192,11 @@ sudo INFRA_IF_NAME=eth0 RELEASE=1 REFERENCE_DEVICE=1 BACKBONE_ROUTER=1 BORDER_RO
     "    cpc-bus-speed[=speed]         CPC bus speed used for communicating with RCP.\n"
 
 /******************************************************************************
- * CLI Interpreter defaults
- *****************************************************************************/
-
-/**
- * Default to 2 to allow adding cli user commands in addition to posix commands
- */
-
-#ifndef OPENTHREAD_CONFIG_CLI_MAX_USER_CMD_ENTRIES
-#define OPENTHREAD_CONFIG_CLI_MAX_USER_CMD_ENTRIES 2
-#endif
-
-/******************************************************************************
  * Stack / MAC defaults for OTBR
  *****************************************************************************/
 
-#ifndef OPENTHREAD_CONFIG_THREAD_VERSION
-#define OPENTHREAD_CONFIG_THREAD_VERSION OT_THREAD_VERSION_1_3
-#endif
+#undef OPENTHREAD_CONFIG_THREAD_VERSION
+#define OPENTHREAD_CONFIG_THREAD_VERSION OT_THREAD_VERSION_1_4
 
 /**
  * OPENTHREAD_CONFIG_DUA_ENABLE
@@ -233,15 +224,6 @@ sudo INFRA_IF_NAME=eth0 RELEASE=1 REFERENCE_DEVICE=1 BACKBONE_ROUTER=1 BORDER_RO
  */
 #undef OPENTHREAD_CONFIG_BORDER_ROUTING_ENABLE
 #define OPENTHREAD_CONFIG_BORDER_ROUTING_ENABLE (OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_3)
-
-/**
- * OPENTHREAD_CONFIG_BORDER_AGENT_EPHEMERAL_KEY_ENABLE
- *
- * Define to 1 to enable ephemeral key mechanism and its APIs in Border Agent.
- *
- */
-#undef OPENTHREAD_CONFIG_BORDER_AGENT_EPHEMERAL_KEY_ENABLE
-#define OPENTHREAD_CONFIG_BORDER_AGENT_EPHEMERAL_KEY_ENABLE (OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_4)
 
 /**
  * OPENTHREAD_CONFIG_DHCP6_CLIENT_ENABLE
@@ -278,6 +260,34 @@ sudo INFRA_IF_NAME=eth0 RELEASE=1 REFERENCE_DEVICE=1 BACKBONE_ROUTER=1 BORDER_RO
  */
 #undef OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE
 #define OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE (OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_3)
+
+/**
+ * OPENTHREAD_CONFIG_TCP_ENABLE
+ *
+ * Set to 1 to enable TCP.
+ *
+ */
+#undef OPENTHREAD_CONFIG_TCP_ENABLE
+#define OPENTHREAD_CONFIG_TCP_ENABLE (OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_3)
+
+/**
+ * OPENTHREAD_CONFIG_DNS_CLIENT_OVER_TCP_ENABLE
+ *
+ * Set to 1 to enable support for sending DNS Queries over TCP.
+ *
+ */
+#undef OPENTHREAD_CONFIG_DNS_CLIENT_OVER_TCP_ENABLE
+#define OPENTHREAD_CONFIG_DNS_CLIENT_OVER_TCP_ENABLE (OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_3)
+
+/**
+ * @def OPENTHREAD_CONFIG_NET_DIAG_VENDOR_INFO_SET_API_ENABLE
+ *
+ * Set to 1 to add APIs to allow Vendor Name, Model, SW Version to change at run-time.
+ *
+ */
+#undef OPENTHREAD_CONFIG_NET_DIAG_VENDOR_INFO_SET_API_ENABLE
+#define OPENTHREAD_CONFIG_NET_DIAG_VENDOR_INFO_SET_API_ENABLE \
+    (OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_3)
 
 /**
  * OPENTHREAD_CONFIG_MLE_MAX_CHILDREN
@@ -472,6 +482,13 @@ sudo INFRA_IF_NAME=eth0 RELEASE=1 REFERENCE_DEVICE=1 BACKBONE_ROUTER=1 BORDER_RO
  */
 #undef OPENTHREAD_CONFIG_LOG_CLI
 #define OPENTHREAD_CONFIG_LOG_CLI 0
+
+/**
+ * Define to 1 if you want to enable radio coexistence implemented in platform.
+ *
+ */
+#undef OPENTHREAD_CONFIG_PLATFORM_RADIO_COEX_ENABLE
+#define OPENTHREAD_CONFIG_PLATFORM_RADIO_COEX_ENABLE 1
 
 /******************************************************************************
  * Include OpenThread project's POSIX defaults

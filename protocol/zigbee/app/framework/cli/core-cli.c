@@ -96,7 +96,7 @@ static void printMfgString(void)
   sl_zigbee_af_format_mfg_string(mfgString);
 
   // Note: We use '%s' here because this is a RAM string. Normally,
-  // most strings are literals or constants in flash and use '%p'.
+  // most strings are literals or constants in flash and use '%s'.
   sl_zigbee_core_debug_print("MFG String: %s", mfgString);
 }
 #endif
@@ -234,7 +234,7 @@ void sli_zigbee_af_cli_info_command(sl_cli_command_arg_t *arguments)
 #if defined SL_CATALOG_ZIGBEE_TEST_HARNESS_Z3_PRESENT && !defined SL_ZIGBEE_TEST
   char versionString[10] = { 0 };
   sli_get_ztt_version_number_string(versionString);
-  sl_zigbee_app_debug_println("Silicon Labs ZTT Firmware Application v%p", versionString);
+  sl_zigbee_app_debug_println("Silicon Labs ZTT Firmware Application v%s", versionString);
 #else
   printMfgString();
 #endif
@@ -271,7 +271,7 @@ void sli_zigbee_af_cli_info_command(sl_cli_command_arg_t *arguments)
           sl_zigbee_core_debug_println("not active");
           break;
         default:
-          sl_zigbee_core_debug_println("error 0x%8X", status);
+          sl_zigbee_core_debug_println("error 0x%08X", status);
           break;
       }
     }
@@ -304,7 +304,7 @@ void sli_zigbee_af_cli_info_command(sl_cli_command_arg_t *arguments)
   sl_zigbee_core_debug_println("]");
   sl_zigbee_af_app_flush();
 
-  sl_zigbee_core_debug_println("Security level [%x]", sl_zigbee_af_get_security_level());
+  sl_zigbee_core_debug_println("Security level [%02X]", sl_zigbee_af_get_security_level());
 
   printSmartEnergySecurityInfo();
   printSmartEnergySecurityInfo283k1();
@@ -329,7 +329,7 @@ void sli_zigbee_af_cli_info_command(sl_cli_command_arg_t *arguments)
                                  (sl_zigbee_af_is_device_enabled(sl_zigbee_af_endpoint_from_index(i))
                                   ? "enabled"
                                   : "disabled"));
-      sl_zigbee_core_debug_println("nwk [%d] profile [0x%04X] devId [0x%04X] ver [0x%x]",
+      sl_zigbee_core_debug_println("nwk [%d] profile [0x%04X] devId [0x%04X] ver [0x%02X]",
                                    sl_zigbee_af_network_index_from_endpoint_index(i),
                                    sl_zigbee_af_profile_id_from_index(i),
                                    sl_zigbee_af_device_id_from_index(i),

@@ -42,6 +42,12 @@ extern "C" {
 // <d> 1
 #define SL_RAIL_UTIL_CS_ANTENNA_COUNT                     1
 
+// <o SL_RAIL_UTIL_CS_ANTENNA_CONFIG_TYPE> Antenna offset configuration type
+// <SL_RAIL_UTIL_CS_ANTENNA_OFFSET_CONFIG_TYPE_WIRELESS=> Wireless antenna connection
+// <SL_RAIL_UTIL_CS_ANTENNA_OFFSET_CONFIG_TYPE_WIRED=> Wired antenna connection
+// <d> SL_RAIL_UTIL_CS_ANTENNA_OFFSET_CONFIG_TYPE_WIRELESS
+#define SL_RAIL_UTIL_CS_ANTENNA_CONFIG_TYPE               SL_RAIL_UTIL_CS_ANTENNA_OFFSET_CONFIG_TYPE_WIRELESS
+
 // <a.1 SL_RAIL_UTIL_CS_ANTENNA_OFFSET_WIRELESS_CM> Antenna wireless offset array in centimeters <-32768..32767>
 // <d> { 59 }
 #define SL_RAIL_UTIL_CS_ANTENNA_OFFSET_WIRELESS_CM        { 59 }

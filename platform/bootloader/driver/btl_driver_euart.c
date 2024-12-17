@@ -329,7 +329,7 @@ void uart_deinit(void)
  *
  * @return BOOTLOADER_OK if successful, error code otherwise
  */
-int32_t uart_sendBuffer(uint8_t* buffer, size_t length, bool blocking)
+int32_t uart_sendBuffer(const uint8_t* buffer, size_t length, bool blocking)
 {
   BTL_ASSERT(initialized == true);
   BTL_ASSERT(length > 0);

@@ -34,9 +34,9 @@
 #include "sl_component_catalog.h"
 #endif // SL_COMPONENT_CATALOG_PRESENT
 
-sl_zigbee_af_status_t sl_zigbee_af_cluster_specific_command_parse(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_cluster_specific_command_parse(sl_zigbee_af_cluster_command_t *cmd)
 {
-  sl_zigbee_af_status_t zcl_status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
+  sl_zigbee_af_zcl_request_status_t zcl_status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   sl_service_function_entry_t *service_entry = sl_service_function_get_first_entry();
   sl_service_function_context_t service_context;
   service_context.data = (void*)cmd;
@@ -51,11 +51,11 @@ sl_zigbee_af_status_t sl_zigbee_af_cluster_specific_command_parse(sl_zigbee_af_c
         && service_entry->key == cmd->apsFrame->clusterId
         && (service_entry->subkey & 0xFFFF) == (cmd->mfgSpecific ? cmd->mfgCode : 0xFFFF)
         && (service_entry->subkey >> 16) == cmd->direction) {
-      zcl_status = (sl_zigbee_af_status_t)(service_entry->function)(SL_SERVICE_FUNCTION_TYPE_ZCL_COMMAND, &service_context);
+      zcl_status = (service_entry->function)(SL_SERVICE_FUNCTION_TYPE_ZCL_COMMAND, &service_context);
 
-      // Keep going through the list if the service function returned a
-      // non-success ZCL status.
-      if (zcl_status == SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
+      // Keep going through the list of the service function as there may be
+      // a service function that can handle this cluster command
+      if (zcl_status != SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND) {
         break;
       }
     }
@@ -67,13 +67,13 @@ sl_zigbee_af_status_t sl_zigbee_af_cluster_specific_command_parse(sl_zigbee_af_c
 
 bool sli_zigbee_af_process_cluster_specific_command(sl_zigbee_af_cluster_command_t *cmd)
 {
-  sl_zigbee_af_status_t zcl_status = SL_ZIGBEE_ZCL_STATUS_UNSUPPORTED_CLUSTER;
+  sl_zigbee_af_zcl_request_status_t zcl_status = SL_ZIGBEE_ZCL_STATUS_UNSUPPORTED_CLUSTER;
 
   // if we are disabled then we can only respond to read or write commands
   // or identify cluster (see device enabled attr of basic cluster)
   if (!sl_zigbee_af_is_device_enabled(cmd->apsFrame->destinationEndpoint)
       && cmd->apsFrame->clusterId != ZCL_IDENTIFY_CLUSTER_ID) {
-    sl_zigbee_af_core_println("%pd, dropping ep 0x%x clus 0x%2x cmd 0x%x",
+    sl_zigbee_af_core_println("%sd, dropping ep 0x%02X clus 0x%04X cmd 0x%02X",
                               "disable",
                               cmd->apsFrame->destinationEndpoint,
                               cmd->apsFrame->clusterId,
@@ -93,8 +93,9 @@ bool sli_zigbee_af_process_cluster_specific_command(sl_zigbee_af_cluster_command
     zcl_status = sl_zigbee_af_cluster_specific_command_parse(cmd);
   }
 
-  if (zcl_status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_send_default_response(cmd, zcl_status);
+  if (!sli_command_or_default_response_submitted
+      && zcl_status != SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED) {
+    sl_zigbee_af_send_default_response(cmd, (sl_zigbee_af_status_t)zcl_status);
   }
 
   return true;

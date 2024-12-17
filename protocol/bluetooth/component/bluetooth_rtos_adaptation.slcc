@@ -7,11 +7,15 @@ description: >
   not be included directly by the application.
 category: Bluetooth|RTOS Adaptation
 quality: "production"
-ui_hints:
-  visibility: never
 root_path: "protocol/bluetooth"
 config_file:
   - path: "config/sl_bt_rtos_config.h"
+  - path: "config/sl_bt_rtos_config_s2.h"
+    condition:
+      - "device_series_2"
+  - path: "config/sl_bt_rtos_config_s3.h"
+    condition:
+      - "device_series_3"
 include:
   - path: "inc/"
     file_list:
@@ -20,6 +24,7 @@ source:
   - path: "src/sl_bt_rtos_adaptation.c"
 requires:
   - name: bluetooth_stack
+  - name: sl_core
 template_contribution:
   - name: component_catalog
     value: bluetooth_rtos_adaptation

@@ -247,6 +247,9 @@ sl_status_t DLL_EXPORT esl_key_lib_set_ble_address(const bd_addr *addr, db_recor
  * @retval SL_STATUS_OK Setting the address was successful.
  * @retval SL_STATUS_NULL_POINTER If record_hnd is NULL.
  * @retval SL_STATUS_INVALID_PARAMETER The given ESL address is invalid by ESLP.
+ * @retval SL_STATUS_INVALID_TYPE If record type is AP type.
+ * @note Once an ESL address has been assigned for a TAG record, it can't be
+ *       unset. Instead, it may be changed to another valid address.
  *****************************************************************************/
 sl_status_t DLL_EXPORT esl_key_lib_set_esl_address(const esl_address_t addr,
                                                    db_record_p record_hnd);

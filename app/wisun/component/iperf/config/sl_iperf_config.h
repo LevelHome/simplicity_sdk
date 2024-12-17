@@ -1,5 +1,5 @@
 /***************************************************************************//**
- * @file
+ * @file sl_iperf_config.h
  * @brief iPerf component configuration
  *******************************************************************************
  * # License
@@ -31,7 +31,7 @@
 #define SL_IPERF_CONFIG_H
 
 /**************************************************************************//**
- * @defgroup SL_IPERF_CONFIG Configuration
+ * @defgroup SL_IPERF_CONFIG Configurations
  * @ingroup SL_IPERF
  * @{
  *****************************************************************************/
@@ -41,51 +41,51 @@
 // <h>iPerf common configuration
 // <o SL_IPERF_SOCKET_ADDR_LEN> Set the address length buffer size
 // <i> This parameter must be set for different port of network layer
-#define SL_IPERF_SOCKET_ADDR_LEN                   32U
+#define SL_IPERF_SOCKET_ADDR_LEN                   32U ///< Set the address length buffer size
 
 // <o SL_IPERF_MESSAGE_QUEUE_SIZE> Set test message queue size
 // <i> Default value: 16
-#define SL_IPERF_MESSAGE_QUEUE_SIZE                16U
+#define SL_IPERF_MESSAGE_QUEUE_SIZE                16U ///< Set test message queue size
 
 // <o SL_IPERF_STACK_SIZE_WORD> Set test thread stack size in word depth
 // <i> Default value: 512
-#define SL_IPERF_STACK_SIZE_WORD                   256U
+#define SL_IPERF_STACK_SIZE_WORD                   256U ///< Set test thread stack size in word depth
 
 // <o SL_IPERF_BUFFER_SIZE> Server receiver buffer size
 // <i> Default value 1234 (UDPv6 size without fragmentation)
-#define SL_IPERF_BUFFER_SIZE                       1232U
+#define SL_IPERF_BUFFER_SIZE                       1232U ///< Server receiver buffer size
 
 // <o SL_IPERF_LOG_JSON_INDENT> Set json formated log indent in space count
 // <i> Default value: 2
-#define SL_IPERF_LOG_JSON_INDENT                   2U
+#define SL_IPERF_LOG_JSON_INDENT                   2U ///< Set json formated log indent in space count
 
 // <q SL_IPERF_VERBOSE_MODE> Enable verbose prints
 // <i> Default value: 0
-#define SL_IPERF_VERBOSE_MODE                      0U
+#define SL_IPERF_VERBOSE_MODE                      0U ///< Enable verbose prints
 
 // <o SL_IPERF_DEFAULT_INTERVAL_MS> Default statistic update interval
 // <i> Default value 1000
-#define SL_IPERF_DEFAULT_INTERVAL_MS               1000U
+#define SL_IPERF_DEFAULT_INTERVAL_MS               1000U ///< Default statistic update interval
 
 // <o SL_IPERF_MAX_TEST_TIMEOUT_MS> Maximum possible additional test timeout after duration time
 // <i> Default value 2000
-#define SL_IPERF_MAX_TEST_TIMEOUT_MS               2000U
+#define SL_IPERF_MAX_TEST_TIMEOUT_MS               2000U ///< Maximum possible additional test timeout after duration time
 // </h>
 
 // <h>iPerf Server configuration
 // <o SL_IPERF_SERVER_DEFAULT_PORT> Default Server port
 // <i> Default value: 5001
-#define SL_IPERF_SERVER_DEFAULT_PORT               5001U
+#define SL_IPERF_SERVER_DEFAULT_PORT               5001U ///< Default Server port
 // </h>
 
 // <h>iPerf Client configuration
-// <o SL_IPERF_SERVER_DEFAULT_PORT> Default sending time in milisec
+// <o SL_IPERF_SERVER_DEFAULT_PORT> Default sending time in millisec
 // <i> Default value: 10000
-#define SL_IPERF_CLIENT_DEFAULT_SEND_TIME_MS       10000U
+#define SL_IPERF_CLIENT_DEFAULT_SEND_TIME_MS       10000U ///< Default sending time in millisec
 
 // <o SL_IPERF_CLIENT_DEFAULT_BANDWIDTH_BPS> Default bandwidth in bits/sec
 // <i> Default value: 20000
-#define SL_IPERF_CLIENT_DEFAULT_BANDWIDTH_BPS      20000U
+#define SL_IPERF_CLIENT_DEFAULT_BANDWIDTH_BPS      20000U ///< Default bandwidth in bits/sec
 // </h>
 
 // <<< end of configuration section >>>

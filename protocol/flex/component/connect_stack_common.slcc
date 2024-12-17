@@ -1,6 +1,6 @@
 id: "connect_stack_common"
 label: "Stack Common"
-package: "Flex"
+package: "Connect"
 category: "Connect"
 quality: "production"
 description: "Provides Connect Stack common functionalities such
@@ -38,6 +38,7 @@ requires:
     condition:
       - "bluetooth_stack"
   - name: "platform_version"
+  - name: "silabs_core_buffer_manager"
 recommends:
   - id: "connect_stack_common_source"
   - id: "rail_lib_singleprotocol"
@@ -50,6 +51,7 @@ include:
       - path: "config/token-stack.h"
       - path: "config/ember-configuration-defaults.h"
       - path: "config/ember-configuration.h"
+      - path: "config/sl_connect_radio_priority_config.h"
   - path: "stack/include/"
     file_list:
       - path: "byte-utilities.h"
@@ -115,7 +117,13 @@ define:
   - name: "STACK_HEADER"
     value: "\"stack/include/ember.h\""
   - name: "STACK_CORE_HEADER"
+    value: "\"stack/include/ember.h\""
+    unless:
+      - "device_host"
+  - name: "STACK_CORE_HEADER"
     value: "\"stack/core/ember-stack.h\""
+    condition:
+      - "device_host"
 template_contribution:
   - name: component_catalog
     value: connect_stack_common

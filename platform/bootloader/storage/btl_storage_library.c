@@ -141,7 +141,7 @@ static void advanceParser(BootloaderParserContext_t         *ctx,
 {
   #if defined(BOOTLOADER_SUPPORT_INTERNAL_STORAGE) && defined(_SILICON_LABS_32B_SERIES_2)
   // Only activate the check if we have a bootloader blob that will be parsed
-  if (callbacks->bootloaderCallback == bootload_bootloaderCallback) {
+  if (callbacks->bootloaderCallback == &bootload_bootloaderCallback) {
     uint32_t upgradeLocation = bootload_getUpgradeLocation();
     // Perform conservative check with the "worst" case upgrade size.
     uint32_t startAddr = storageLayout.slot[ctx->slotId].address + ctx->slotOffset;
@@ -382,10 +382,10 @@ static bool read_old_firmware(size_t offset, size_t nbytes, uint8_t *out_buf, vo
   if (nbytes == 0x00) {
     return false;
   }
-  struct callback_streams *ctx;
+  const struct callback_streams *ctx;
   ctx = (struct callback_streams *)user_ctx;
   uint32_t read_addr = ctx->old_fw_addr + offset;
-  if ((read_addr >= BTL_APPLICATION_BASE)) {
+  if (read_addr >= BTL_APPLICATION_BASE) {
     //old firmware will always be in the internal flash.
     memcpy(out_buf, (const void *)read_addr, nbytes);
   } else {
@@ -398,7 +398,6 @@ static bool read_old_firmware(size_t offset, size_t nbytes, uint8_t *out_buf, vo
 static bool write_new_firmware(uint8_t *buf, size_t nbyte, void *user_ctx)
 {
   uint32_t ret = BOOTLOADER_OK;
-  uint32_t itr = 0;
   struct callback_streams *ctx = (struct callback_streams *)user_ctx;
 
   if (nbyte == 0x00) {
@@ -409,12 +408,12 @@ static bool write_new_firmware(uint8_t *buf, size_t nbyte, void *user_ctx)
     return false;
   }
 
-  for (itr = 0; itr < nbyte; itr++) {
+  for (uint32_t itr = 0; itr < nbyte; itr++) {
     ctx->data_buf[ctx->data_index] = buf[itr];
     ctx->data_index++;
     //Write 32 bytes at a time.
     if (ctx->data_index == DELTA_DFU_WRITE_SIZE) {
-      ret = storage_writeRaw((uint32_t)ctx->new_fw_addr, ctx->data_buf, DELTA_DFU_WRITE_SIZE);
+      ret = storage_writeRaw(ctx->new_fw_addr, ctx->data_buf, DELTA_DFU_WRITE_SIZE);
       if (ret != BOOTLOADER_OK) {
         return false;
       }
@@ -430,9 +429,8 @@ static bool write_new_firmware(uint8_t *buf, size_t nbyte, void *user_ctx)
 static bool seek_new_firmware(size_t nbyte, void *user_ctx)
 {
   uint32_t ret = BOOTLOADER_OK;
-  uint32_t itr = 0;
   struct callback_streams *ctx = (struct callback_streams *)user_ctx;
-  for (itr = 0; itr < nbyte; itr++) {
+  for (uint32_t itr = 0; itr < nbyte; itr++) {
     ctx->data_buf[ctx->data_index] = 0xFF;
     ctx->data_index++;
     //Write 32 bytes at a time.
@@ -467,7 +465,6 @@ static bool is_end_of_patch(void *user_ctx)
     }
     return true;
   }
-  return false;
 }
 
 // Callback implementation to read patch for delta dfu library

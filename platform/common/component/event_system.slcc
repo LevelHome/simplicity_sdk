@@ -22,6 +22,7 @@ requires:
   - name: status
   - name: sl_assert
   - name: sl_core
+  - name: memory_manager
 template_contribution:
   - name: event_handler
     value:

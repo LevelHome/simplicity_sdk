@@ -33,7 +33,6 @@
 #include <math.h>
 
 #include <stdbool.h>
-#include "em_common.h"
 #include "sl_status.h"
 #include "sl_bt_api.h"
 #include "sl_btmesh_api.h"

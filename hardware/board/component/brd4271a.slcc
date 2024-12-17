@@ -20,9 +20,14 @@
   - name: hardware_board_from_fg25-pk6012a
   - name: hardware_board_from_fg25-rb4271a
   - name: hardware_board_from_wi-sun-pk6015a
+  - name: hardware_board_supports_wstk_lcd
   - name: hardware_board_has_vcom
   - name: hardware_board_has_spiflash
+  - name: hardware_board_has_spi
+  - name: hardware_board_has_uart
+  - name: hardware_board_has_i2c
   - name: hardware_board_has_thermistor
+  - name: board_config_clock_manager
   - name: hardware_board_has_hfxo_freq_39mhz
   - name: hardware_board_has_hfxo
   - name: hardware_board_has_lfxo

@@ -33,7 +33,7 @@
 #include "semphr.h"
 #include "queue.h"
 #include "sl_status.h"
-#include "em_common.h"
+#include "sl_common.h"
 #include "app_assert.h"
 #include "sl_bt_ots_server.h"
 #include "sli_bt_ots_server_adaptation.h"

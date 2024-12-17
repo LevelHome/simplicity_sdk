@@ -84,6 +84,7 @@ sl_status_t cs_initiator_display_init(void)
 
   memset(&lcd_content, 0, sizeof(cs_initiator_display_content_t));
   memset(&prev_lcd_content, 0, sizeof(cs_initiator_display_content_t));
+  lcd_content.bit_error_rate = NAN;
 
   status = DMD_init(0);
   if (status != DMD_OK) {
@@ -119,10 +120,10 @@ sl_status_t cs_initiator_display_init(void)
   cs_initiator_display_write_text(CS_INITIATOR_DISPLAY_RSSI_DISTANCE_TEXT, ROW_RSSI_DISTANCE_TEXT);
   cs_initiator_display_print_float_value(lcd_content.rssi_distance, ROW_RSSI_DISTANCE_VALUE, "m");
   cs_initiator_display_write_text(CS_INITIATOR_DISPLAY_LIKELINESS_TEXT, ROW_LIKELINESS_TEXT);
-  cs_initiator_display_print_float_value(lcd_content.likeliness, ROW_LIKELINESS_VALUE, NULL);
+  cs_initiator_display_print_float_value(lcd_content.likeliness, ROW_LIKELINESS_VALUE, "%");
 
   cs_initiator_display_write_text(CS_INITIATOR_DISPLAY_BER_TEXT, ROW_BIT_ERROR_RATE_TEXT);
-  cs_initiator_display_print_float_value(lcd_content.bit_error_rate, ROW_BIT_ERROR_RATE_VALUE, NULL);
+  cs_initiator_display_write_text("---", ROW_BIT_ERROR_RATE_VALUE);
 
   cs_initiator_display_write_text(CS_INITIATOR_DISPLAY_STATE_SCANNING_TEXT, ROW_STATE);
 

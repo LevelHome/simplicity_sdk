@@ -58,11 +58,11 @@
 #define SL_RAIL_UTIL_PTI_PERIPHERAL              PTI
 
 // PTI DOUT on PD02
-#define SL_RAIL_UTIL_PTI_DOUT_PORT               gpioPortD
+#define SL_RAIL_UTIL_PTI_DOUT_PORT               SL_GPIO_PORT_D
 #define SL_RAIL_UTIL_PTI_DOUT_PIN                2
 
 // PTI DFRAME on PD03
-#define SL_RAIL_UTIL_PTI_DFRAME_PORT             gpioPortD
+#define SL_RAIL_UTIL_PTI_DFRAME_PORT             SL_GPIO_PORT_D
 #define SL_RAIL_UTIL_PTI_DFRAME_PIN              3
 
 

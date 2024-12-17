@@ -25,10 +25,6 @@ The controller MUST support security S2_Access_Control or S0 in order to be able
 - Target mode
 - Auto-Relock, Hold And Release, Block to Block, and Twist Assist
 
-A variant of this application supporting the User Credential Command Class
-called "Door Lock Key Pad with U3C Beta" is also available in this directory.\
-This variant is not yet certifiable and not suitable for production.
-
 ## Supported Command Classes
 
 The Door Lock application implements mandatory and some optional command classes. The table below lists the supported Command Classes, their version, and their required Security class, if any.
@@ -55,8 +51,31 @@ The Door Lock application implements mandatory and some optional command classes
 | Version                   | 3       | S0 or Access Control    |
 | Z-Wave Plus Info          | 2       | None                    |
 
-\*: The User Credential Command Class is currently only available in the
-"U3C Beta" variant of the application.
+\*: The User Credential Command Class is only available on specific boards. See the section [User Credential Command Class](#user-credential-command-class).
+
+### User Credential Command Class
+
+The User Credential Command Class is enabled by default on the following boards:
+ - BRD2705A
+ - BRD4400B
+ - BRD4400C
+ - BRD4401B
+ - BRD4401C
+
+Support for this command class can be disabled if the User Code Command Class is sufficient, by disabling the *User Credential Command Class* component.
+
+To enable this command class on other boards, due to flash memory constraints, it is recommended to first disable the *Z-Wave CLI Common* component before enabling the *User Credential Command Class* component.
+
+The default credentials are created when the inclusion process finishes.
+
+- If the User Code Command Class is enabled:
+    - User Code 1 is created with a value of 3494.
+- If the User Credential Command Class is enabled:
+    - A Programming User with the unique identifier 1, called "Admin" is created.
+    - A PIN Code associated with user 1 is created with a value of 3494.
+
+To operate the door bolt with the default credentials, the end device must first
+be included in a Z-Wave network.
 
 ## Basic Command Class mapping
 
@@ -90,7 +109,7 @@ The table below shows the available association groups, including supported comm
             <li>Battery: Triggered upon low battery.</li>
             <li>Door Lock: Triggered upon a change in door lock configuration.</li>
             <li>Door Lock: Triggered upon a change in door lock operation.</li>
-            <li>Indicator Report: Triggered when LED1 changes state.</li>
+            <li>Indicator Report: Triggered when LED0 changes state.</li>
             <li>User Code: Triggered when a user code record is modified.</li>
             <li>User Credential*: Triggered when a Duress User enters a Credential.</li>
         </ul>
@@ -99,15 +118,34 @@ The table below shows the available association groups, including supported comm
 </table>
 
 X: For Z-Wave node count is equal to 5 and for Z-Wave Long Range it is 1.\
-\*: The User Credential Command Class is currently only available in the
-"U3C Beta" variant of the application.
+\*: The User Credential Command Class is only available on specific boards. See the section [User Credential Command Class](#user-credential-command-class).
 
 
 ## Usage of Buttons and LED Status
 
-To use the sample app, the BRD8029A Button and LEDs Expansion Board must be used. BTN0-BTN3 and LED0-LED3 refer to the buttons and LEDs on the Expansion Board.
+We are differentiating four different types of button presses. The following types are the same for the BTN0 and BTN1 on the WSTK board. The duration values can be configured under the config directory in app_button_press_config.h file in each generated application/project.
 
-The following LEDs and buttons shown in the next table below are used.
+Please note external wakeup is not supported on button 1 in case of brd2603a and brd2603b.
+
+<table>
+<tr>
+    <th>Press Type</th>
+    <th>Duration</th>
+</tr><tr>
+    <td>Short Press</td>
+    <td>0 - 400 ms</td>
+</tr><tr>
+    <td>Medium Press</td>
+    <td>401 - 1500 ms</td>
+</tr><tr>
+    <td>Long Press</td>
+    <td>1501 - 5000 ms</td>
+</tr><tr>
+    <td>Very Long Press</td>
+    <td>Every press longer than Long Press</td>
+</tr>
+</table>
+
 
 <table>
 <tr>
@@ -119,80 +157,54 @@ The following LEDs and buttons shown in the next table below are used.
     <td>Press</td>
     <td>Resets the firmware of an application (like losing power). All volatile memory will be cleared.</td>
 </tr><tr>
-    <td>BTN0</td>
-    <td>Button up/down</td>
-    <td>
-        If the outside door handle state is active:<br>
-        Button down sets the outside door handle mode active.<br>
-        Button up sets the outside door handle mode inactive.
-    </td>
-</tr><tr>
-    <td rowspan="2">BTN1</td>
-    <td>Press</td>
-    <td>
-        Enter "learn mode" (sending node info frame) to add/remove the device.<br>
-        Removing the device from a network will reset it.
-    </td>
-</tr><tr>
-    <td>Hold for at least 5 seconds and release</td>
-    <td>Perform a reset to factory default operation of the device, and a Device Reset Locally Notification Command is sent via Lifeline.</td>
-</tr><tr>
-    <td rowspan="2">BTN2</td>
-    <td>Button press</td>
-    <td>Sends Battery Report.</td>
-</tr><tr>
-    <td>Hold for at least 5 seconds and release*</td>
-    <td>
-        Initiates the Credential Learn process locally with Target UUID: 1, Type: PIN Code, Slot: 2<br>
-        If this target is valid (the User exists and the Slot is not occupied),
-        the application will report having read PIN Code 1167 after a simulated delay of 7 seconds.<br>
-        If this PIN Code does not already exist in the database, the new Credential will be saved.
-    </td>
-</tr><tr>
-    <td rowspan="2">BTN3</td>
-    <td>Button press</td>
-    <td>
-        Simulates entering a user code on a keypad via the User Code API.<br>
-        The entered user code is hard-coded with the value of the default user code of the application. The default user code is 1234.<br>
-        A valid user code entry (i.e., button press) toggles the Door Lock Mode between Secured and Unsecured,<br>
-        with a delay of 2 seconds, to simulate timed hardware operation.<br>
-        If the user code for user ID 1 is changed to something else than the default user code, the Door Lock Mode can no longer be toggled by pressing this button.
-    </td>
-</tr>
-</tr><tr>
-    <td>Hold for at least 5 seconds and release*</td>
-    <td>
-        Simulates entering a PIN Code on a keypad via the User Credential API.<br>
-        The entered PIN Code is hard-coded with the value of 1234.<br>
+    <td rowspan="3">BTN0</td>
+    <td>Short Press</td>
+    <td>Simulates entering a PIN Code on a keypad via the User Credential API.<br>
+        The entered PIN Code is hard-coded with the value of 3494.<br>
         A valid Credential entry (i.e., button press) toggles the Door Lock Mode between Secured and Unsecured,
         with a delay of 2 seconds, to simulate timed hardware operation.<br>
         If Credential data for User UID 1, Slot 1 is changed to something other than the default PIN Code, the Door Lock Mode can no longer be toggled by pressing this button.
     </td>
+</tr><tr>
+    <td>Medium Press</td>
+    <td>Sends Battery Report</td>
+</tr><tr>
+    <td>Long Press</td>
+    <td>Changes the outside door handle mode to active if it was inactive and vice versa.</td>
+</tr><tr>
+    <td rowspan="2">BTN1</td>
+    <td>Short Press</td>
+    <td>Enter "learn mode" (sending node info frame) to add/remove the device.<br>
+    Removing the device from a network will reset it.
+    </td>
+</tr><tr>
+    <td>Very Long Press</td>
+    <td>Perform a reset to factory default operation of the device, and a Device Reset Locally Notification Command is sent via Lifeline.
+    </td>
+</tr>
 </table>
-
-\*: This functionality is currently only available in the "U3C Beta" variant of
-the application.
 
 <table>
 <tr>
     <th>LED</th>
-    <th colspan="3">Description</th>
+    <th>Functionality</th>
+    <th>Description</th>
 </tr><tr>
     <td>LED0</td>
-    <td>Latch:</td>
-    <td>Led on -> latch open [bit 0]</td>
-    <td>Led off -> latch closed [bit 1]</td>
-</tr><tr>
-    <td>LED1</td>
-    <td colspan="3">
+    <td>Indicator:</td>
+    <td>
         Blinks with 1 Hz when learn mode is active.<br>
         Used for Indicator Command Class.
     </td>
 </tr><tr>
-    <td>LED3</td>
+    <td>LED1</td>
     <td>Bolt:</td>
-    <td>Led on -> bolt locked [bit 0]</td>
-    <td>Led off -> bolt unlocked [bit 1]</td>
+    <td>
+        <ul>
+            <li>Led off -> bolt unlocked</li>
+            <li>Led on -> bolt locked</li>
+        </ul>
+    </td>
 </tr>
 </table>
 
@@ -251,15 +263,30 @@ In case CLI support is needed pelase install zw_cli_common component to the proj
     <td>Updating the doorhandle state to locked or unlocked</td>
 </tr>
 <tr>
-    <th>enable_sleeping</th>
+    <th>sleeping</th>
+    <td>[string] "enable" or "disable"</td>
+    <td>Enable or disable sleeping. After pushing the reset button (or resetting with commander) the device will be awake for a given amount of time if the CLI component is added to the project. During this time the user can prevent the sleeping. For more information check the `zw_cli_sleeping` component.</td>
+</tr>
+<tr>
+    <th>get_doorhandle_state</th>
     <td>-</td>
-    <td>Lets the application go into sleep mode. After this command the CLI won't work until the next reset</td>
+    <td>Shows the state of the door handle. Can be "pressed" or "released"</td>
+</tr>
+<tr>
+    <th>get_doorbolt_state</th>
+    <td>-</td>
+    <td>Shows the state of the door bolt. Can be "unlocked" or "locked"</td>
+</tr>
+<tr>
+    <th>get_doorlatch_state</th>
+    <td>-</td>
+    <td>Shows the state of the door latch. Can be "closed" or "open"</td>
 </tr>
 </table>
 
 ### User Credential Related CLI commands
 
-The following commands exist only in the User Credential variant of the door lock application.
+The following commands exist only if User Credential Command class is available. See the section [User Credential Command Class](#user-credential-command-class).
 
 <table>
 <tr>
@@ -277,10 +304,10 @@ The following commands exist only in the User Credential variant of the door loc
     <th>u3c_add_credential</th>
     <td>
         <ul>
-            <li>[uint16] User UID to assign to</li>
-            <li>[uint16] Number of the slot where to store the new credential</li>
+            <li>[uint16] Associated User UID</li>
             <li>[string] Type of the new credential. Can be "pin" or "password"</li>
-            <li>[string] Credential data. E.g. 1234</li>
+            <li>[uint16] Slot number of the new credential</li>
+            <li>[string] Credential data. E.g. 3494</li>
         </ul>
     </td>
     <td>This command will create a new credential and assign it to an existing user.</td>
@@ -300,9 +327,8 @@ The following commands exist only in the User Credential variant of the door loc
     <th>u3c_modify_credential</th>
     <td>
         <ul>
-            <li>[uint16] User UID what's assigned to the credential</li>
-            <li>[uint16] Slot of the credential</li>
             <li>[string] Type of the credential. Can be "pin" or "password"</li>
+            <li>[uint16] Slot of the credential</li>
             <li>[string] Attribute to change. Can be "data", "uuid" or "slot"</li>
             <li>[string] New value of the attribute</li>
         </ul>
@@ -322,7 +348,6 @@ The following commands exist only in the User Credential variant of the door loc
     <th>u3c_delete_credential</th>
     <td>
         <ul>
-            <li>[uint16] User UID of the user that the credential belongs to</li>
             <li>[string] Type of the credential. Can be "pin" or "password"</li>
             <li>[uint16] Slot of the credential</li>
         </ul>
@@ -330,26 +355,52 @@ The following commands exist only in the User Credential variant of the door loc
     <td>This command deletes an existing credential from the database.</td>
 </tr>
 <tr>
+    <th>u3c_get_user</th>
+    <td>
+        <ul>
+            <li>[uint16] User UID of an existing user</li>
+        </ul>
+    </td>
+    <td>This command prints the information of an existing user.</td>
+</tr>
+<tr>
+    <th>u3c_get_credential</th>
+    <td>
+        <ul>
+            <li>[string] Type of the credential. Can be "pin" or "password"</li>
+            <li>[uint16] Slot of the credential</li>
+        </ul>
+    </td>
+    <td>This command prints the information of an existing credential.</td>
+</tr>
+<tr>
     <th>u3c_enter_credential</th>
     <td>
         <ul>
-            <li>[uint16] User UID of the user that the credential belongs to</li>
-            <li>[uint16] Slot of the credential</li>
             <li>[string] Type of the credential. Can be "pin" or "password"</li>
-            <li>[string] Credential. E.g. 1234</li>
+            <li>[string] Credential data</li>
         </ul>
     </td>
     <td>This command enters an existing credential and validates it.</td>
 </tr>
 <tr>
-    <th>u3c_set_learn_mode</th>
+    <th>u3c_credential_learn_start</th>
     <td>
         <ul>
             <li>[uint16] Learn target UUID</li>
-            <li>[uint16] Learn target slot</li>
             <li>[string] Type of the credential. Can be "pin" or "password"</li>
+            <li>[uint16] Learn target slot</li>
         </ul>
     </td>
-    <td>Initiates the Credential Learn process locally (see BTN2 in the Usage of Buttons section)</td>
+    <td>Initiates the Credential Learn process locally.</td>
+</tr>
+<tr>
+    <th>u3c_credential_learn</th>
+    <td>
+        <ul>
+            <li>[string] Credential data. E.g. 3494</li>
+        </ul>
+    </td>
+    <td>Enter credential data for User Credental Learn process</td>
 </tr>
 </table>

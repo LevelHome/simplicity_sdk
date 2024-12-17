@@ -227,12 +227,12 @@ void sli_zigbee_af_comms_hub_function_trust_center_join_callback(sl_802154_short
                                                                  sl_802154_short_addr_t parentOfNewNode)
 #endif // EZSP_HOST
 {
-  pluginDebugPrint("%p: TrustCenterJoin 0x%2x ", PLUGIN_NAME, newNodeId);
+  pluginDebugPrint("%s: TrustCenterJoin 0x%04X ", PLUGIN_NAME, newNodeId);
   pluginDebugExec(sl_zigbee_af_print_big_endian_eui64(newNodeEui64));
 #ifdef EZSP_HOST
-  pluginDebugPrintln(" 0x%2x 0x%x 0x%x", parentOfNewNode, status, decision);
+  pluginDebugPrintln(" 0x%04X 0x%02X 0x%02X", parentOfNewNode, status, decision);
 #else // !EZSP_HOST
-  pluginDebugPrintln(" 0x%2x 0x%x", parentOfNewNode, status);
+  pluginDebugPrintln(" 0x%04X 0x%02X", parentOfNewNode, status);
 #endif // EZSP_HOST
 
   // If a device is leaving or rejoining the trust center we may have knowledge of a
@@ -283,7 +283,7 @@ bool sl_zigbee_af_key_establishment_event_cb(sl_zigbee_af_key_establishment_noti
   sl_802154_long_addr_t partnerEui;
   sl_zigbee_af_g_b_c_s_device_log_info_t deviceInfo;
 
-  pluginDebugPrintln("%p: KeyEstablishmentEventCallback 0x%x, 0x%x, 0x%2x, 0x%x",
+  pluginDebugPrintln("%s: KeyEstablishmentEventCallback 0x%02X, 0x%02X, 0x%04X, 0x%02X",
                      PLUGIN_NAME,
                      status,
                      amInitiator,
@@ -338,7 +338,7 @@ bool sl_zigbee_af_key_establishment_event_cb(sl_zigbee_af_key_establishment_noti
  */
 static void tunnelDiscoveryCallback(const sl_zigbee_af_service_discovery_result_t *result)
 {
-  pluginDebugPrintln("%p: Discovery callback, cluster 0x%2X, status:0x%X",
+  pluginDebugPrintln("%s: Discovery callback, cluster 0x%04X, status:0x%02X",
                      PLUGIN_NAME,
                      result->zdoRequestClusterId,
                      result->status);
@@ -359,7 +359,7 @@ static void tunnelDiscoveryCallback(const sl_zigbee_af_service_discovery_result_
         sli_zigbee_af_comms_hub_function_tunnel_create(eui64, epList->list[0]);
       } else {
         // Failed to store endpoint.  Try with default endpoint.
-        sl_zigbee_af_comms_hub_function_println("Error: Failure to find address or endpoint, status=0x%x, nodeId=0x%2x, epCount=%d",
+        sl_zigbee_af_comms_hub_function_println("Error: Failure to find address or endpoint, status=0x%02X, nodeId=0x%04X, epCount=%d",
                                                 status,
                                                 result->matchAddress,
                                                 epList->count);
@@ -368,14 +368,14 @@ static void tunnelDiscoveryCallback(const sl_zigbee_af_service_discovery_result_
   } else if (result->zdoRequestClusterId == NETWORK_ADDRESS_REQUEST) {
     if (result->status == SL_ZIGBEE_AF_BROADCAST_SERVICE_DISCOVERY_COMPLETE_WITH_RESPONSE
         || result->status == SL_ZIGBEE_AF_BROADCAST_SERVICE_DISCOVERY_COMPLETE) {
-      pluginDebugPrintln("%p: Broadcast node ID discovery complete.", PLUGIN_NAME);
+      pluginDebugPrintln("%s: Broadcast node ID discovery complete.", PLUGIN_NAME);
     }
 
     if (result->status == SL_ZIGBEE_AF_BROADCAST_SERVICE_DISCOVERY_COMPLETE_WITH_RESPONSE) {
       sl_802154_long_addr_t deviceEui64;
       sl_zigbee_af_g_b_c_s_device_log_info_t deviceInfo;
       tunnelTargetNodeId = result->matchAddress;
-      pluginDebugPrintln("%p: Recorded node ID for 0x%2X", PLUGIN_NAME, tunnelTargetNodeId);
+      pluginDebugPrintln("%s: Recorded node ID for 0x%04X", PLUGIN_NAME, tunnelTargetNodeId);
       if (tunnelTargetNodeId != SL_ZIGBEE_NULL_NODE_ID
           && sl_zigbee_af_gbcs_device_log_retrieve_by_index(currentDeviceLogEntry,
                                                             deviceEui64,
@@ -595,7 +595,7 @@ sl_zigbee_af_plugin_comms_hub_function_status_t sli_zigbee_af_update_functional_
                                               (uint8_t *)&notificationFlags,
                                               4);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_comms_hub_function_println("Unable to read the functional notification flags attribute: 0x%x", status);
+    sl_zigbee_af_comms_hub_function_println("Unable to read the functional notification flags attribute: 0x%02X", status);
     return SL_ZIGBEE_AF_CHF_STATUS_FNF_ATTR_FAILURE;
   }
 
@@ -608,7 +608,7 @@ sl_zigbee_af_plugin_comms_hub_function_status_t sli_zigbee_af_update_functional_
                                                (uint8_t *)&notificationFlags,
                                                ZCL_BITMAP32_ATTRIBUTE_TYPE);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_comms_hub_function_println("Unable to write the functional notification flags attribute: 0x%x", status);
+    sl_zigbee_af_comms_hub_function_println("Unable to write the functional notification flags attribute: 0x%02X", status);
     return SL_ZIGBEE_AF_CHF_STATUS_FNF_ATTR_FAILURE;
   }
 
@@ -675,21 +675,21 @@ static void initiateDiscovery(sl_802154_short_addr_t nodeId, sl_802154_long_addr
   discoveryInProgress = true;
 
   if (nodeId == SL_ZIGBEE_NULL_NODE_ID) {
-    pluginDebugPrintln("%p: Initiating node ID discovery.", PLUGIN_NAME);
+    pluginDebugPrintln("%s: Initiating node ID discovery.", PLUGIN_NAME);
     status = sl_zigbee_af_find_node_id(deviceEui64, tunnelDiscoveryCallback);
     if (status != SL_STATUS_OK) {
-      sl_zigbee_af_core_println("%p: Failed to initiate node ID discovery for tunnel.",
+      sl_zigbee_af_core_println("%s: Failed to initiate node ID discovery for tunnel.",
                                 PLUGIN_NAME);
     }
   } else {
-    pluginDebugPrintln("%p: Initiating endpoint discovery.", PLUGIN_NAME);
+    pluginDebugPrintln("%s: Initiating endpoint discovery.", PLUGIN_NAME);
     status = sl_zigbee_af_find_devices_by_profile_and_cluster(nodeId,
                                                               SE_PROFILE_ID,
                                                               ZCL_TUNNELING_CLUSTER_ID,
                                                               SL_ZIGBEE_AF_SERVER_CLUSTER_DISCOVERY,
                                                               tunnelDiscoveryCallback);
     if (status != SL_STATUS_OK) {
-      sl_zigbee_af_core_println("%p: Failed to initiate tunnel service discovery to 0x%2X",
+      sl_zigbee_af_core_println("%s: Failed to initiate tunnel service discovery to 0x%04X",
                                 PLUGIN_NAME,
                                 nodeId);
     }
@@ -709,7 +709,7 @@ static bool checkForSpecificDeviceThatNeedsTunnelCreated(sl_802154_short_addr_t 
                                                          sl_802154_long_addr_t deviceEui64)
 {
   sl_zigbee_af_g_b_c_s_device_log_info_t deviceInfo;
-  pluginDebugPrint("%p: Checking whether device needs tunnel created ", PLUGIN_NAME);
+  pluginDebugPrint("%s: Checking whether device needs tunnel created ", PLUGIN_NAME);
   pluginDebugExec(sl_zigbee_af_print_big_endian_eui64(deviceEui64));
   if (sl_zigbee_af_gbcs_device_log_get(deviceEui64, &deviceInfo)
       && deviceTypeRequiresTunnelInitiated(deviceInfo)
@@ -750,7 +750,7 @@ static void checkForAnyDeviceThatNeedsTunnelCreated(void)
       if (tunnelTargetAttempts < MAX_TUNNEL_TARGET_ATTEMPTS
           && checkForSpecificDeviceThatNeedsTunnelCreated(tunnelTargetNodeId,
                                                           deviceEui64)) {
-        sl_zigbee_af_core_print("%p: Device needs tunnel created", PLUGIN_NAME);
+        sl_zigbee_af_core_print("%s: Device needs tunnel created", PLUGIN_NAME);
         sl_zigbee_af_print_big_endian_eui64(deviceEui64);
         sl_zigbee_af_core_println("");
         return;
@@ -778,7 +778,7 @@ void sl_zigbee_af_comms_hub_function_stack_status_cb(sl_status_t status)
   tunnelTargetAttempts = 0;
   discoveryInProgress = false;
 
-  sl_zigbee_af_core_println("%p: Setting up event for monitoring tunnels.", PLUGIN_NAME);
+  sl_zigbee_af_core_println("%s: Setting up event for monitoring tunnels.", PLUGIN_NAME);
   sl_zigbee_af_event_set_delay_ms(tunnelCheckEventControl,
                                   (SL_ZIGBEE_AF_PLUGIN_COMMS_HUB_FUNCTION_TUNNEL_CHECK_PERIOD_SECONDS
                                    * MILLISECOND_TICKS_PER_SECOND));

@@ -32,7 +32,7 @@
 #endif // SL_ZIGBEE_AF_PLUGIN_REPORTING
 #endif // SL_COMPONENT_CATALOG_PRESENT
 
-bool sl_zigbee_af_basic_cluster_reset_to_factory_defaults_cb(void)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_basic_cluster_reset_to_factory_defaults_cb(void)
 {
   sl_zigbee_af_basic_cluster_println("RX: ResetToFactoryDefaultsCallback");
   sl_zigbee_af_reset_attributes(sl_zigbee_af_current_endpoint());
@@ -40,21 +40,18 @@ bool sl_zigbee_af_basic_cluster_reset_to_factory_defaults_cb(void)
 #ifdef SL_CATALOG_ZIGBEE_REPORTING_PRESENT
   sli_zigbee_af_reporting_get_last_value_all();
 #endif // SL_CATALOG_ZIGBEE_REPORTING_PRESENT
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
 uint32_t sl_zigbee_af_basic_cluster_server_command_parse(sl_service_opcode_t opcode,
                                                          sl_service_function_context_t *context)
 {
   (void)opcode;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
   if (!cmd->mfgSpecific && cmd->commandId == ZCL_RESET_TO_FACTORY_DEFAULTS_COMMAND_ID) {
-    wasHandled = sl_zigbee_af_basic_cluster_reset_to_factory_defaults_cb();
+    status = sl_zigbee_af_basic_cluster_reset_to_factory_defaults_cb();
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

@@ -67,7 +67,7 @@
 /*******************************************************************************
  *********************************   DEFINES   *********************************
  ******************************************************************************/
-// Compatibility layer for peripheral and em lib
+// Compatibility layer for sl_peripheral and em lib
 #if (_SILICON_LABS_32B_SERIES < 3)
 #define GPIO_PIN_MODE_SET       GPIO_PinModeSet
 #define GPIO_MODE_PUSH_PULL     gpioModePushPull
@@ -90,9 +90,9 @@
 #define EUSART_HWFC_CTS_RTS     eusartHwFlowControlCtsAndRts
 #else
 #define GPIO_PIN_MODE_SET       sl_hal_gpio_set_pin_mode
-#define GPIO_MODE_PUSH_PULL     SL_HAL_GPIO_MODE_PUSH_PULL
-#define GPIO_MODE_INPUT_PULL    SL_HAL_GPIO_MODE_INPUT_PULL
-#define GPIO_MODE_DISABLED      SL_HAL_GPIO_MODE_DISABLED
+#define GPIO_MODE_PUSH_PULL     SL_GPIO_MODE_PUSH_PULL
+#define GPIO_MODE_INPUT_PULL    SL_GPIO_MODE_INPUT_PULL
+#define GPIO_MODE_DISABLED      SL_GPIO_MODE_DISABLED
 #define LDMA_PERIPH             LDMA0
 #define EUSART_UART_INIT_HF     sl_hal_eusart_init_uart_hf
 #define EUSART_UART_INIT_LF     sl_hal_eusart_init_uart_lf
@@ -142,15 +142,13 @@ sl_slist_node_t *eusart_stream_list = NULL;
 static sl_status_t eusart_tx(void *context,
                              char c);
 
-static void eusart_set_next_byte_detect(void *context);
-
 #if defined(SL_CATALOG_POWER_MANAGER_PRESENT) && !defined(SL_IOSTREAM_UART_FLUSH_TX_BUFFER)
 static void eusart_tx_completed(void *context, bool enable);
 #endif
 
 static sl_status_t eusart_deinit(void *context);
 
-#if (_SILICON_LABS_32B_SERIES >= 3)
+#if defined(_SILICON_LABS_32B_SERIES_3)
 static inline sl_hal_eusart_parity_t iostream_to_hal_parity(sl_iostream_eusart_uart_parity_t parity)
 {
   switch (parity) {
@@ -303,14 +301,13 @@ static inline void init_hf_clocks(sl_iostream_eusart_config_t *eusart_config)
   #if defined(_SILICON_LABS_32B_SERIES_2_CONFIG_2) \
   || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_7)  \
   || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_9)
-  CMU_ClockEnable(cmuClock_EM01GRPACLK, true);
-  #if defined(EUART_PRESENT)
+    #if defined(EUART_PRESENT)
   CMU_CLOCK_SELECT_SET(EUART0CLK, EM01GRPACLK);
-  #elif defined(EUSART_PRESENT)
+    #elif defined(EUSART_PRESENT)
   CMU_CLOCK_SELECT_SET(EUSART0CLK, EM01GRPACLK);
-  #else
-  #error Missing EU(S)ART peripheral
-  #endif
+    #else
+    #error Missing EU(S)ART peripheral
+    #endif
   #elif (_SILICON_LABS_32B_SERIES_2_CONFIG >= 3)
   CMU_CLOCK_SELECT_SET(EM01GRPCCLK, HFRCODPLL);
   if (eusart_clock == cmuClock_EUSART0) {
@@ -329,7 +326,6 @@ static inline void init_lf_clocks(sl_iostream_eusart_config_t *eusart_config)
   #if defined(_SILICON_LABS_32B_SERIES_2_CONFIG_2) \
   || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_7)  \
   || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_9)
-  CMU_ClockEnable(cmuClock_EM23GRPACLK, true);
   #if defined(EUART_PRESENT)
   CMU_CLOCK_SELECT_SET(EUART0CLK, EM23GRPACLK);
   #elif defined(EUSART_PRESENT)
@@ -366,7 +362,7 @@ sl_status_t sl_iostream_eusart_init(sl_iostream_uart_t *iostream_uart,
   EUSART_TypeDef* eusart_periph = sl_device_peripheral_eusart_get_base_addr(eusart_config->eusart);
 
   // Configure EUSART in UART
-  #if (_SILICON_LABS_32B_SERIES >= 3)
+#if defined(_SILICON_LABS_32B_SERIES_3)
   sl_hal_eusart_uart_config_t eusart_init = eusart_config->enable_high_frequency
                                             ? (sl_hal_eusart_uart_config_t)SL_HAL_EUSART_UART_INIT_DEFAULT_HF
                                             : (sl_hal_eusart_uart_config_t)SL_HAL_EUSART_UART_INIT_DEFAULT_LF;
@@ -430,7 +426,6 @@ sl_status_t sl_iostream_eusart_init(sl_iostream_uart_t *iostream_uart,
 #else
                                           NULL,
 #endif
-                                          eusart_set_next_byte_detect,
                                           eusart_deinit,
                                           em_req,
                                           em_req);
@@ -487,13 +482,13 @@ sl_status_t sl_iostream_eusart_init(sl_iostream_uart_t *iostream_uart,
   GPIO->EUARTROUTE->RXROUTE = (eusart_config->rx_port << _GPIO_EUART_RXROUTE_PORT_SHIFT)
                               | (eusart_config->rx_pin << _GPIO_EUART_RXROUTE_PIN_SHIFT);
 #else
-  GPIO->EUSARTROUTE[eusart_config->port_index].ROUTEEN = GPIO_EUSART_ROUTEEN_TXPEN;
-  GPIO->EUSARTROUTE[eusart_config->port_index].TXROUTE =
-    (eusart_config->tx_port << _GPIO_EUSART_TXROUTE_PORT_SHIFT)
-    | (eusart_config->tx_pin << _GPIO_EUSART_TXROUTE_PIN_SHIFT);
-  GPIO->EUSARTROUTE[eusart_config->port_index].RXROUTE =
-    (eusart_config->rx_port << _GPIO_EUSART_RXROUTE_PORT_SHIFT)
-    | (eusart_config->rx_pin << _GPIO_EUSART_RXROUTE_PIN_SHIFT);
+  GPIO->EUSARTROUTE[eusart_config->port_index].ROUTEEN = GPIO_EUSART_ROUTEEN_TXPEN | GPIO_EUSART_ROUTEEN_RXPEN;
+
+  GPIO->EUSARTROUTE[eusart_config->port_index].TXROUTE = (eusart_config->tx_port << _GPIO_EUSART_TXROUTE_PORT_SHIFT)
+                                                         | (eusart_config->tx_pin << _GPIO_EUSART_TXROUTE_PIN_SHIFT);
+
+  GPIO->EUSARTROUTE[eusart_config->port_index].RXROUTE = (eusart_config->rx_port << _GPIO_EUSART_RXROUTE_PORT_SHIFT)
+                                                         | (eusart_config->rx_pin << _GPIO_EUSART_RXROUTE_PIN_SHIFT);
 #endif
 
   // Setup CTS/RTS
@@ -549,10 +544,9 @@ sl_status_t sl_iostream_eusart_init(sl_iostream_uart_t *iostream_uart,
   }
 
   // Clear the Interrupt Flag Register
-  EUSART_INT_CLEAR(eusart_periph, EUSART_IF_RXFL);
+  EUSART_INT_CLEAR(eusart_periph, _EUSART_IF_MASK);
 
   // Finally, enable EUSART peripheral
-  EUSART_INT_ENABLE(eusart_periph, EUSART_IF_RXFL);
   EUSART_ENABLE(eusart_periph);
 
 #if defined(SL_CATALOG_POWER_MANAGER_PRESENT)
@@ -570,9 +564,10 @@ sl_status_t sl_iostream_eusart_init(sl_iostream_uart_t *iostream_uart,
  *****************************************************************************/
 void sl_iostream_eusart_irq_handler(sl_iostream_uart_t *iostream_uart)
 {
+  (void) iostream_uart;
+  #if defined(SL_CATALOG_POWER_MANAGER_PRESENT) && !defined(SL_IOSTREAM_UART_FLUSH_TX_BUFFER)
   sl_iostream_eusart_context_t *eusart_context = (sl_iostream_eusart_context_t *) iostream_uart->stream.context;
   EUSART_TypeDef* eusart_periph = sl_device_peripheral_eusart_get_base_addr(eusart_context->eusart);
-  #if defined(SL_CATALOG_POWER_MANAGER_PRESENT) && !defined(SL_IOSTREAM_UART_FLUSH_TX_BUFFER)
   // Handle Transmit Complete Events
   if (eusart_periph->IF & EUSART_IF_TXC) {
     EUSART_INT_CLEAR(eusart_periph, EUSART_IF_TXC);
@@ -581,68 +576,12 @@ void sl_iostream_eusart_irq_handler(sl_iostream_uart_t *iostream_uart)
     if ((EUSART_STATUS_GET(eusart_periph) & _EUSART_STATUS_TXC_MASK) != 0) {
       sli_uart_txc(&eusart_context->context);
     }
+    return;
   }
   #endif
 
-  // Handle RXFL events
-  if (eusart_periph->IF & EUSART_IF_RXFL) {
-  #if !defined(SL_CATALOG_KERNEL_PRESENT) && defined(SL_CATALOG_POWER_MANAGER_PRESENT)
-    // Always wakeup the core up from RX IRQ
-    eusart_context->context.sleep = SL_POWER_MANAGER_WAKEUP;
-  #endif
-
-    // Clear the IF
-    eusart_periph->IF_CLR = EUSART_IF_RXFL;
-    // Detected new byte, signal the core
-    if (eusart_context->context.rx_data_available == false) {
-      // Disable the IRQ until the RX Buffer is emptied, or becomes full
-      EUSART_INT_DISABLE(eusart_periph, EUSART_IF_RXFL);
-      sl_atomic_store(eusart_context->context.rx_data_available, true);
-      #if defined(SL_CATALOG_KERNEL_PRESENT)
-      // Unlock the read thread
-      if (eusart_context->context.block) {
-        if (osSemaphoreGetCount(eusart_context->context.read_signal) == 0) {
-          osStatus_t status = osSemaphoreRelease(eusart_context->context.read_signal);
-          EFM_ASSERT(status == osOK);
-        }
-      }
-      #endif // SL_CATALOG_KERNEL_PRESENT
-      return;
-    }
-
-    // Rx Buffer full, check if last byte is control character
-    if (eusart_context->context.rx_buffer_full == true) {
-      // Check if most recent byte is flow control (we will lose this data)
-      if (eusart_context->context.sw_flow_control == true) {
-        // Send XOFF to indicate RX buffer is full
-        sl_atomic_store(eusart_context->context.remote_xon, false);
-        EUSART_TX(eusart_periph, UARTXOFF);
-
-        // Make sure RXFL stays enabled to avoid deadlock if both sides are full
-        EUSART_INT_ENABLE(eusart_periph, EUSART_IF_RXFL);
-
-        // Check if received byte is control char
-        char dropped_byte;
-        dropped_byte = (char)eusart_periph->RXDATA;
-
-        if (dropped_byte == UARTXON) {
-          sl_atomic_store(eusart_context->context.xon, true);
-        } else if (dropped_byte == UARTXOFF) {
-          sl_atomic_store(eusart_context->context.xon, false);
-        }
-
-        // Found most recent control character, set the scan pointer to the end of the received data
-        if (dropped_byte == UARTXON || dropped_byte == UARTXOFF) {
-          eusart_context->context.ctrl_char_scan_ptr = (uint8_t*)LDMA_PERIPH->CH[eusart_context->context.dma.channel].DST - 1;
-        }
-        // The byte is now lost...
-        return;
-      }
-      // Can reach here if data was available and next byte detect was enabled (e.g. for sleep).
-      // Disable RXFL IRQ to avoid looping in IRQ forever.
-      EUSART_INT_DISABLE(eusart_periph, EUSART_IF_RXFL);
-    }
-  }
+  // Unhandled IRQ Flag. Please check what bit is set in IF and open a bug report.
+  EFM_ASSERT(false);
 }
 
 /*******************************************************************************
@@ -664,28 +603,6 @@ static sl_status_t eusart_tx(void *context,
 #endif
 
   return SL_STATUS_OK;
-}
-
-/***************************************************************************//**
- * Enable EUSART Rx Data Valid (RXFL) Interrupt and set the RXFL IF to reflect
- * the current status of the RX FIFO.
- * Make sure the DMA is not running when calling this function.
- ******************************************************************************/
-static void eusart_set_next_byte_detect(void *context)
-{
-  sl_iostream_eusart_context_t *eusart_context = (sl_iostream_eusart_context_t *)context;
-  EUSART_TypeDef* eusart_periph = sl_device_peripheral_eusart_get_base_addr(eusart_context->eusart);
-  CORE_DECLARE_IRQ_STATE;
-  CORE_ENTER_CRITICAL();
-  // Update the IF to reflect the STATUS register (IF is not updated automatically by hardware)
-  if (eusart_periph->STATUS & EUSART_STATUS_RXFL) {
-    EUSART_INT_SET(eusart_periph, EUSART_IF_RXFL);
-  } else {
-    EUSART_INT_CLEAR(eusart_periph, EUSART_IF_RXFL);
-  }
-  // Enable the IRQ handler
-  EUSART_INT_ENABLE(eusart_periph, EUSART_IF_RXFL);
-  CORE_EXIT_CRITICAL();
 }
 
 /***************************************************************************//**

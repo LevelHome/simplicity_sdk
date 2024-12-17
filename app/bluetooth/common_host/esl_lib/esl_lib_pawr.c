@@ -65,7 +65,7 @@ static sl_status_t send_pawr_response_event(esl_lib_pawr_t *pawr_ptr,
 static sl_status_t send_pawr_error(esl_lib_pawr_t       *pawr,
                                    esl_lib_status_t     lib_status,
                                    sl_status_t          status,
-                                   esl_lib_pawr_state_t data);
+                                   uint8_t              data);
 static sl_status_t run_command(esl_lib_command_list_cmd_t *cmd);
 static sl_status_t send_pawr_status(esl_lib_pawr_t *pawr_ptr, esl_lib_evt_type_t event_code);
 static sl_status_t validate_pawr_config(uint8_t pawr_handle, esl_lib_pawr_config_t new_config);
@@ -100,7 +100,7 @@ sl_status_t esl_lib_pawr_add(esl_lib_pawr_t **ptr_out)
       ptr->command                      = NULL;
       ptr->command_list                 = NULL;
       // Set states
-      ptr->enabled                      = ESL_LIB_FALSE;
+      ptr->advertise                    = ESL_LIB_FALSE;
       ptr->configured                   = ESL_LIB_TRUE;
       ptr->state                        = ESL_LIB_PAWR_STATE_IDLE;
       // Config default values
@@ -116,7 +116,7 @@ sl_status_t esl_lib_pawr_add(esl_lib_pawr_t **ptr_out)
       sc = SL_STATUS_OK;
       *ptr_out = ptr;
 
-      esl_lib_log_pawr_debug(PAWR_FMT "Added PAwR" APP_LOG_NL, ptr);
+      esl_lib_log_pawr_debug(PAWR_FMT "Added PAwR" APP_LOG_NL, ESL_LIB_LOG_PTR(ptr));
     }
   } else {
     esl_lib_log_pawr_error("Adding PAwR error, allocation failed" APP_LOG_NL);
@@ -159,7 +159,7 @@ sl_status_t esl_lib_pawr_remove_ptr(esl_lib_pawr_t *ptr)
 
   // Delete storage
   (void)esl_lib_storage_delete(&ptr->storage_handle);
-  esl_lib_log_pawr_debug(PAWR_FMT "Removed PAwR" APP_LOG_NL, ptr);
+  esl_lib_log_pawr_debug(PAWR_FMT "Removed PAwR" APP_LOG_NL, ESL_LIB_LOG_PTR(ptr));
   // Delete PAwR data
   esl_lib_memory_free(ptr);
 
@@ -229,11 +229,11 @@ sl_status_t esl_lib_pawr_add_command(esl_lib_pawr_t             *pawr,
   sc = esl_lib_command_list_put(&pawr->command_list, cmd);
   if (sc == SL_STATUS_OK) {
     esl_lib_log_pawr_debug(PAWR_FMT "Added command %d" APP_LOG_NL,
-                           pawr,
+                           ESL_LIB_LOG_PTR(pawr),
                            cmd->cmd_code);
   } else {
     esl_lib_log_pawr_error(PAWR_FMT "Add command %d failed, sc = 0x%04x" APP_LOG_NL,
-                           pawr,
+                           ESL_LIB_LOG_PTR(pawr),
                            cmd->cmd_code,
                            sc);
   }
@@ -252,14 +252,14 @@ void esl_lib_pawr_step(void)
       sl_status_t sc;
 
       esl_lib_log_pawr_debug(PAWR_FMT "Execute command burst, cmd = %d, cycles left %u" APP_LOG_NL,
-                             pawr,
+                             ESL_LIB_LOG_PTR(pawr),
                              pawr->command->cmd_code,
                              burst_count);
       sc = run_command(pawr->command);
 
       if (sc == SL_STATUS_TRANSMIT && pawr->command->cmd_code == ESL_LIB_CMD_PAWR_SET_DATA) {
         esl_lib_log_pawr_debug(PAWR_FMT "BREAK command burst due transmit failure, defer %u cycles" APP_LOG_NL,
-                               pawr,
+                               ESL_LIB_LOG_PTR(pawr),
                                burst_count);
         if (pawr->command->data.cmd_pawr_set_data.retry-- != 0) {
           sl_slist_push(&pawr->command_list, &pawr->command->node); // retry "one step" later, keep command order
@@ -268,7 +268,7 @@ void esl_lib_pawr_step(void)
           (void)send_pawr_error(pawr,
                                 ESL_LIB_STATUS_PAWR_SET_DATA_FAILED,
                                 sc,
-                                pawr->state);
+                                pawr->command->data.cmd_pawr_set_data.subevent);
           esl_lib_command_list_remove(&pawr->command_list, pawr->command);
           pawr->command = NULL;
         }
@@ -287,6 +287,7 @@ void esl_lib_pawr_on_bt_event(sl_bt_msg_t *evt)
   esl_lib_pawr_t   *pawr_ptr   = NULL;
   esl_lib_evt_t    *lib_evt    = NULL;
   esl_lib_status_t lib_status  = ESL_LIB_STATUS_NO_ERROR;
+  uint8_t          error_data  = ESL_LIB_PAWR_UNSPECIFIED_SUBEVENT;
   uint8_t          data_status = 0;
 
   switch (SL_BT_MSG_ID(evt->header)) {
@@ -295,13 +296,14 @@ void esl_lib_pawr_on_bt_event(sl_bt_msg_t *evt)
                              &pawr_ptr);
       if (sc == SL_STATUS_OK) {
         data_status = evt->data.evt_pawr_advertiser_response_report.data_status;
+        error_data = evt->data.evt_pawr_advertiser_response_report.subevent;
         esl_lib_log_pawr_debug(PAWR_FMT "PAwR response, data status = %u , PAwR handle = %u" APP_LOG_NL,
-                               pawr_ptr,
+                               ESL_LIB_LOG_PTR(pawr_ptr),
                                data_status,
                                pawr_ptr->pawr_handle);
         if (data_status != PAWR_RESPONSE_FAILED) {
           esl_lib_log_pawr_debug(PAWR_FMT "Appending to storage , PAwR handle = %u" APP_LOG_NL,
-                                 pawr_ptr,
+                                 ESL_LIB_LOG_PTR(pawr_ptr),
                                  pawr_ptr->pawr_handle);
           sc = esl_lib_storage_append(pawr_ptr->storage_handle,
                                       &evt->data.evt_pawr_advertiser_response_report.data);
@@ -309,7 +311,7 @@ void esl_lib_pawr_on_bt_event(sl_bt_msg_t *evt)
               && (data_status == PAWR_RESPONSE_COMPLETE
                   || data_status == PAWR_RESPONSE_TRUNCATED)) {
             esl_lib_log_pawr_debug(PAWR_FMT "Sending response, PAwR handle = %u" APP_LOG_NL,
-                                   pawr_ptr,
+                                   ESL_LIB_LOG_PTR(pawr_ptr),
                                    pawr_ptr->pawr_handle);
             sc = send_pawr_response_event(pawr_ptr,
                                           evt->data.evt_pawr_advertiser_response_report.subevent,
@@ -319,7 +321,7 @@ void esl_lib_pawr_on_bt_event(sl_bt_msg_t *evt)
               sc = esl_lib_storage_clean(pawr_ptr->storage_handle);
               if (sc == SL_STATUS_OK) {
                 esl_lib_log_pawr_debug(PAWR_FMT "PAwR storage cleaned, PAwR handle = %u" APP_LOG_NL,
-                                       pawr_ptr,
+                                       ESL_LIB_LOG_PTR(pawr_ptr),
                                        pawr_ptr->pawr_handle);
               }
             }
@@ -331,9 +333,9 @@ void esl_lib_pawr_on_bt_event(sl_bt_msg_t *evt)
       sc = esl_lib_pawr_find(evt->data.evt_pawr_advertiser_subevent_data_request.advertising_set,
                              &pawr_ptr);
       if (sc == SL_STATUS_OK) {
+        error_data = evt->data.evt_pawr_advertiser_subevent_data_request.subevent_start;
         sc = esl_lib_event_list_allocate(ESL_LIB_EVT_PAWR_DATA_REQUEST, 0, &lib_evt);
         if (sc == SL_STATUS_OK) {
-          lib_evt->evt_code = ESL_LIB_EVT_PAWR_DATA_REQUEST;
           lib_evt->data.evt_pawr_data_request.pawr_handle = (esl_lib_pawr_handle_t *) pawr_ptr;
           lib_evt->data.evt_pawr_data_request.subevent_data_count
             = evt->data.evt_pawr_advertiser_subevent_data_request.subevent_data_count;
@@ -341,7 +343,9 @@ void esl_lib_pawr_on_bt_event(sl_bt_msg_t *evt)
             = evt->data.evt_pawr_advertiser_subevent_data_request.subevent_start;
           sc = esl_lib_event_list_push_back(lib_evt);
           if (sc != SL_STATUS_OK) {
-            esl_lib_log_pawr_error(PAWR_FMT "Failed to add event %d", pawr_ptr, lib_evt->evt_code);
+            esl_lib_log_pawr_error(PAWR_FMT "Failed to add event %d",
+                                   ESL_LIB_LOG_PTR(pawr_ptr),
+                                   lib_evt->evt_code);
             esl_lib_memory_free(lib_evt);
           }
         }
@@ -352,7 +356,7 @@ void esl_lib_pawr_on_bt_event(sl_bt_msg_t *evt)
   }
   if (sc != SL_STATUS_OK && pawr_ptr != NULL) {
     esl_lib_log_pawr_error(PAWR_FMT "PAwR error, PAwR handle = %u, sc = 0x%04x" APP_LOG_NL,
-                           pawr_ptr,
+                           ESL_LIB_LOG_PTR(pawr_ptr),
                            pawr_ptr->pawr_handle,
                            sc);
 
@@ -360,7 +364,7 @@ void esl_lib_pawr_on_bt_event(sl_bt_msg_t *evt)
     (void)send_pawr_error(pawr_ptr,
                           lib_status,
                           sc,
-                          pawr_ptr->state);
+                          error_data);
   }
 }
 
@@ -381,7 +385,6 @@ static sl_status_t send_pawr_response_event(esl_lib_pawr_t *pawr_ptr,
                                      (uint32_t)data_size,
                                      &lib_evt);
     if (sc == SL_STATUS_OK) {
-      lib_evt->evt_code = ESL_LIB_EVT_PAWR_RESPONSE;
       lib_evt->data.evt_pawr_response.pawr_handle   = (esl_lib_pawr_handle_t *) pawr_ptr;
       lib_evt->data.evt_pawr_response.subevent      = subevent;
       lib_evt->data.evt_pawr_response.response_slot = response_slot;
@@ -390,7 +393,9 @@ static sl_status_t send_pawr_response_event(esl_lib_pawr_t *pawr_ptr,
       if (sc == SL_STATUS_OK) {
         sc = esl_lib_event_list_push_back(lib_evt);
         if (sc != SL_STATUS_OK) {
-          esl_lib_log_pawr_error(PAWR_FMT "Failed to add event %d", pawr_ptr, lib_evt->evt_code);
+          esl_lib_log_pawr_error(PAWR_FMT "Failed to add event %d",
+                                 ESL_LIB_LOG_PTR(pawr_ptr),
+                                 lib_evt->evt_code);
           esl_lib_memory_free(lib_evt);
         }
       }
@@ -406,16 +411,16 @@ static sl_status_t send_pawr_status(esl_lib_pawr_t *pawr_ptr, esl_lib_evt_type_t
   esl_lib_evt_t *lib_evt;
 
   esl_lib_log_pawr_debug(PAWR_FMT "PAwR status = %u, PAwR handle = %u" APP_LOG_NL,
-                         pawr_ptr,
-                         pawr_ptr->enabled,
+                         ESL_LIB_LOG_PTR(pawr_ptr),
+                         pawr_ptr->state,
                          pawr_ptr->pawr_handle);
 
   sc = esl_lib_event_list_allocate(ESL_LIB_EVT_PAWR_STATUS, 0, &lib_evt);
   if (sc == SL_STATUS_OK) {
-    lib_evt->evt_code = event_code;
+    lib_evt->evt_code = event_code; // event code may be ESL_LIB_EVT_PAWR_CONFIG but its format is the same as ESL_LIB_EVT_PAWR_STATUS!
     lib_evt->data.evt_pawr_status.pawr_handle  = (esl_lib_pawr_handle_t *)pawr_ptr;
     // Set state
-    lib_evt->data.evt_pawr_status.enabled      = pawr_ptr->enabled;
+    lib_evt->data.evt_pawr_status.status       = pawr_ptr->state;
     lib_evt->data.evt_pawr_status.configured   = pawr_ptr->configured;
     // Copy configuration data
     memcpy(&lib_evt->data.evt_pawr_status.config,
@@ -424,7 +429,9 @@ static sl_status_t send_pawr_status(esl_lib_pawr_t *pawr_ptr, esl_lib_evt_type_t
     // Emit the event
     sc = esl_lib_event_list_push_back(lib_evt);
     if (sc != SL_STATUS_OK) {
-      esl_lib_log_pawr_error(PAWR_FMT "Failed to add event %d", pawr_ptr, lib_evt->evt_code);
+      esl_lib_log_pawr_error(PAWR_FMT "Failed to add event %d",
+                             ESL_LIB_LOG_PTR(pawr_ptr),
+                             lib_evt->evt_code);
       esl_lib_memory_free(lib_evt);
     }
   }
@@ -497,16 +504,22 @@ static sl_status_t validate_pawr_config(uint8_t pawr_handle, esl_lib_pawr_config
 static sl_status_t send_pawr_error(esl_lib_pawr_t       *pawr,
                                    esl_lib_status_t     lib_status,
                                    sl_status_t          status,
-                                   esl_lib_pawr_state_t data)
+                                   uint8_t              data)
 {
-  sl_status_t sc;
+  sl_status_t sc = SL_STATUS_NULL_POINTER;
   esl_lib_node_id_t node_id;
-  node_id.type = ESL_LIB_NODE_ID_TYPE_PAWR;
-  node_id.id.pawr.handle = (esl_lib_pawr_handle_t)pawr;
-  sc = esl_lib_event_push_error(lib_status,
-                                &node_id,
-                                status,
-                                (esl_lib_status_data_t)data);
+  esl_lib_status_data_t error_data;
+
+  if (pawr != NULL) {
+    error_data.pawr_state = pawr->state;
+    node_id.type = ESL_LIB_NODE_ID_TYPE_PAWR;
+    node_id.id.pawr.handle = (esl_lib_pawr_handle_t)pawr;
+    node_id.id.pawr.subevent = (uint8_t)data;
+    sc = esl_lib_event_push_error(lib_status,
+                                  &node_id,
+                                  status,
+                                  error_data);
+  }
   return sc;
 }
 
@@ -515,13 +528,14 @@ static sl_status_t run_command(esl_lib_command_list_cmd_t *cmd)
   sl_status_t          sc                = SL_STATUS_OK;
   esl_lib_pawr_t       *pawr             = NULL;
   esl_lib_status_t     lib_status        = ESL_LIB_STATUS_NO_ERROR;
+  uint8_t              error_data        = ESL_LIB_PAWR_UNSPECIFIED_SUBEVENT;
 
   switch (cmd->cmd_code) {
     case ESL_LIB_CMD_PAWR_ENABLE:
       // Get PAwR from the command
       pawr = (esl_lib_pawr_t *)cmd->data.cmd_pawr_enable.pawr_handle;
       esl_lib_log_pawr_debug(PAWR_FMT "Enable command, PAwR handle = %u" APP_LOG_NL,
-                             pawr,
+                             ESL_LIB_LOG_PTR(pawr),
                              pawr->pawr_handle);
       // Enable or disable based on the request
       if (cmd->data.cmd_pawr_enable.enable == ESL_LIB_TRUE) {
@@ -534,20 +548,42 @@ static sl_status_t run_command(esl_lib_command_list_cmd_t *cmd)
 
         if (sc == SL_STATUS_OK) {
           if (pawr->configured == ESL_LIB_TRUE) {
-            // Start advertising with the stored configuration
-            sc = sl_bt_pawr_advertiser_start(pawr->pawr_handle,
-                                             pawr->config.adv_interval.min,
-                                             pawr->config.adv_interval.max,
-                                             PERIODIC_ADVERTISER_FLAG_NONE,
-                                             pawr->config.subevent.count,
-                                             pawr->config.subevent.interval,
-                                             pawr->config.response_slot.delay,
-                                             pawr->config.response_slot.spacing,
-                                             pawr->config.response_slot.count);
+            if ((pawr->config.advertise = cmd->data.cmd_pawr_enable.advertise) == ESL_LIB_TRUE) {
+              // Calculate a suitable interval for extended advertising of PAwR parameters based on its configuration
+              uint32_t exadv_interval_min = pawr->config.adv_interval.min / 4;
+              uint32_t exadv_interval_max = pawr->config.adv_interval.max / 4;
+              // Limit ranges
+              if (exadv_interval_min < ESL_LIB_PAWR_MIN_PA_INTERVAL) {
+                exadv_interval_min = ESL_LIB_PAWR_MIN_PA_INTERVAL;
+              }
+
+              if (exadv_interval_max < ESL_LIB_PAWR_MIN_PA_INTERVAL) {
+                exadv_interval_max = ESL_LIB_PAWR_MIN_PA_INTERVAL;
+              }
+              // Set required timing
+              sc = sl_bt_advertiser_set_timing(pawr->pawr_handle,
+                                               exadv_interval_min,
+                                               exadv_interval_max,
+                                               0,
+                                               0);
+            }
+
+            if (sc == SL_STATUS_OK) {
+              // Start advertising with the stored configuration
+              sc = sl_bt_pawr_advertiser_start(pawr->pawr_handle,
+                                               pawr->config.adv_interval.min,
+                                               pawr->config.adv_interval.max,
+                                               PERIODIC_ADVERTISER_FLAG_NONE,
+                                               pawr->config.subevent.count,
+                                               pawr->config.subevent.interval,
+                                               pawr->config.response_slot.delay,
+                                               pawr->config.response_slot.spacing,
+                                               pawr->config.response_slot.count);
+            }
+
             if (sc == SL_STATUS_OK) {
               lib_status = ESL_LIB_STATUS_NO_ERROR;
               pawr->state = ESL_LIB_PAWR_STATE_RUNNING;
-              pawr->enabled = ESL_LIB_TRUE;
               send_pawr_status(pawr, ESL_LIB_EVT_PAWR_STATUS);
             } else {
               lib_status = ESL_LIB_STATUS_PAWR_START_FAILED;
@@ -558,11 +594,11 @@ static sl_status_t run_command(esl_lib_command_list_cmd_t *cmd)
         }
       } else {
         lib_status = ESL_LIB_STATUS_PAWR_STOP_FAILED;
+        (void)sl_bt_advertiser_stop(pawr->pawr_handle);
         sc = sl_bt_periodic_advertiser_stop(pawr->pawr_handle);
         if (sc == SL_STATUS_OK) {
           lib_status = ESL_LIB_STATUS_NO_ERROR;
           pawr->state = ESL_LIB_PAWR_STATE_IDLE;
-          pawr->enabled = ESL_LIB_FALSE;
           (void)sl_bt_advertiser_delete_set(pawr->pawr_handle);
           pawr->pawr_handle = SL_BT_INVALID_ADVERTISING_SET_HANDLE;
           send_pawr_status(pawr, ESL_LIB_EVT_PAWR_STATUS);
@@ -571,6 +607,7 @@ static sl_status_t run_command(esl_lib_command_list_cmd_t *cmd)
       break;
     case ESL_LIB_CMD_PAWR_SET_DATA:
       lib_status = ESL_LIB_STATUS_PAWR_SET_DATA_FAILED;
+      error_data = cmd->data.cmd_pawr_set_data.subevent;
       pawr = (esl_lib_pawr_t *)cmd->data.cmd_pawr_set_data.pawr_handle;
       // is it a retry attempt?
       uint8_t retry_count = ESL_LIB_PAWR_SET_DATA_RETRY_COUNT_MAX - cmd->data.cmd_pawr_set_data.retry;
@@ -581,7 +618,7 @@ static sl_status_t run_command(esl_lib_command_list_cmd_t *cmd)
                                  ESL_LIB_PAWR_SET_DATA_RETRY_COUNT_MAX);
       } else {
         esl_lib_log_pawr_debug(PAWR_FMT "Set data command, PAwR handle = %u" APP_LOG_NL,
-                               pawr,
+                               ESL_LIB_LOG_PTR(pawr),
                                pawr->pawr_handle);
       }
 
@@ -594,7 +631,7 @@ static sl_status_t run_command(esl_lib_command_list_cmd_t *cmd)
 
       if (sc == SL_STATUS_OK) {
         esl_lib_log_pawr_debug(PAWR_FMT "Set data for subevent %u with %u expected responses, PAwR handle = %u" APP_LOG_NL,
-                               pawr,
+                               ESL_LIB_LOG_PTR(pawr),
                                cmd->data.cmd_pawr_set_data.subevent,
                                cmd->data.cmd_pawr_set_data.response_slot_max,
                                pawr->pawr_handle);
@@ -604,7 +641,7 @@ static sl_status_t run_command(esl_lib_command_list_cmd_t *cmd)
     case ESL_LIB_CMD_PAWR_CONFIGURE:
       pawr = (esl_lib_pawr_t *)cmd->data.cmd_pawr_config.pawr_handle;
       esl_lib_log_pawr_debug(PAWR_FMT "Configure command, PAwR handle = %u" APP_LOG_NL,
-                             pawr,
+                             ESL_LIB_LOG_PTR(pawr),
                              pawr->pawr_handle);
       sc = validate_pawr_config(pawr->pawr_handle, cmd->data.cmd_pawr_config.pawr_config);
       if (sc == SL_STATUS_OK) {
@@ -631,23 +668,25 @@ static sl_status_t run_command(esl_lib_command_list_cmd_t *cmd)
     default:
       break;
   }
+
   if (sc != SL_STATUS_OK && pawr != NULL) {
     if (!(pawr->command->cmd_code == ESL_LIB_CMD_PAWR_SET_DATA
           && (sc == SL_STATUS_BT_CTRL_COMMAND_DISALLOWED
               || sc == SL_STATUS_BT_CTRL_PAWR_TOO_LATE
               || sc == SL_STATUS_BT_CTRL_PAWR_TOO_EARLY))) {
       esl_lib_log_pawr_error(PAWR_FMT "Command error, PAwR handle = %u, sc = 0x%04x" APP_LOG_NL,
-                             pawr,
+                             ESL_LIB_LOG_PTR(pawr),
                              pawr->pawr_handle,
                              sc);
       // Send pawr error event immediately in almost all cases, but various set data issues
       (void)send_pawr_error(pawr,
                             lib_status,
                             sc,
-                            pawr->state);
+                            error_data);
     } else {
       sc = SL_STATUS_TRANSMIT; // Convert to common status code for those set of failures
     }
   }
+
   return sc;
 }

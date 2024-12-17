@@ -9,16 +9,6 @@ class calc_demodulator_leopard(CALC_Demodulator_lynx):
 
         super().buildVariables(model)
 
-        self._addModelVariable(model, 'adc_rate_mode', Enum, ModelVariableFormat.DECIMAL)
-        model.vars.adc_rate_mode.var_enum = CreateModelVariableEnum(
-            enum_name='AdcRateModeEnum',
-            enum_desc='ADC Clock Rate Mode',
-            member_data=[
-                ['FULLRATE', 0, 'Full rate mode'],
-                ['HALFRATE', 1, 'Half rate mode'],
-                ['EIGHTHRATE', 2, 'Eighth rate mode']
-            ])
-
         self._addModelVariable(model, 'adc_clock_mode', Enum, ModelVariableFormat.DECIMAL)
         model.vars.adc_clock_mode.var_enum = CreateModelVariableEnum(
             enum_name='AdcClockModeEnum',
@@ -30,9 +20,6 @@ class calc_demodulator_leopard(CALC_Demodulator_lynx):
 
         self._addModelActual(model, 'adc_clock_mode', Enum, ModelVariableFormat.DECIMAL)
         model.vars.adc_clock_mode_actual.var_enum = model.vars.adc_clock_mode.var_enum
-
-        self._addModelActual(model, 'adc_rate_mode', Enum, ModelVariableFormat.DECIMAL)
-        model.vars.adc_rate_mode_actual.var_enum = model.vars.adc_rate_mode.var_enum
 
     # Helper calculation for FW calulation of SRC2
     # These are phy specific calculations that is easier to do here

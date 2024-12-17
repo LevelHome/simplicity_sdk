@@ -1,5 +1,5 @@
 /***************************************************************************//**
- * @file
+ * @file sl_wisun_coap.h
  * @brief Wi-SUN CoAP handler
  *******************************************************************************
  * # License
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __SL_WISUN_COAP_H__
-#define __SL_WISUN_COAP_H__
+#ifndef SL_WISUN_COAP_H
+#define SL_WISUN_COAP_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,7 +38,6 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include "sn_config.h"
 #include "sn_coap_protocol.h"
 #include "sn_coap_header.h"
@@ -46,8 +45,7 @@ extern "C" {
 #include "sli_wisun_coap_mem.h"
 
 /**************************************************************************//**
- * @addtogroup SL_WISUN_COAP_API CoAP
- * @ingroup SL_WISUN_COAP
+ * @addtogroup SL_WISUN_COAP_API
  * @{
  *****************************************************************************/
 
@@ -65,8 +63,8 @@ extern "C" {
 #endif
 
 /**************************************************************************//**
- * @defgroup SL_WISUN_COAP_TYPES CoAP type definitions
- * @ingroup SL_WISUN_COAP
+ * @addtogroup SL_WISUN_COAP_TYPES Type definitions
+ * @ingroup SL_WISUN_COAP_API
  * @{
  *****************************************************************************/
 
@@ -259,7 +257,7 @@ char * sl_wisun_coap_get_uri_path_str(const sl_wisun_coap_packet_t * const packe
  * @details Call free on allocated pointer
  * @param[in] uri_str URI string ptr
  *****************************************************************************/
-__STATIC_INLINE void sl_wisun_coap_destroy_uri_path_str(char *uri_str)
+__STATIC_INLINE void sl_wisun_coap_destroy_uri_path_str(const char *uri_str)
 {
   sl_wisun_coap_free((void *) uri_str);
 }
@@ -396,4 +394,5 @@ sl_status_t sl_wisun_coap_destroy_clnt(sl_wisun_coap_clnt_t * const clnt);
 #ifdef __cplusplus
 }
 #endif
-#endif
+
+#endif // SL_WISUN_COAP_H

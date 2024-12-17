@@ -40,6 +40,7 @@
 #include "app_log.h"
 #include "ev_man.h"
 #include "events.h"
+#include "CC_BinarySwitch.h"
 
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
@@ -62,13 +63,25 @@
 // -----------------------------------------------------------------------------
 
 /******************************************************************************
- * CLI - toggle_led: Toggle the LED0 on the expansion header
+ * CLI - toggle_led: Toggle the LED1
  *****************************************************************************/
 void cli_toggle_led(sl_cli_command_arg_t *arguments)
 {
   (void) arguments;
-  app_log_info("Toggle the LED0 on the expansion header\r\n");
+  app_log_info("Toggle the LED1\r\n");
   zaf_event_distributor_enqueue_app_event(EVENT_APP_TOGGLE_LED);
+}
+
+/******************************************************************************
+ * CLI - get_led_state: Get the state of the LED1
+ *****************************************************************************/
+void cli_get_led_state(sl_cli_command_arg_t *arguments)
+{
+  (void) arguments;
+  app_log_info("Get the state of the LED1\r\n");
+  cc_binary_switch_t * p_switches = cc_binary_switch_get_config();
+  char* state = cc_binary_switch_get_current_value(&p_switches[0]) > 0 ? "on" : "off";
+  app_log_info("LED1 state: %s\r\n", state);
 }
 
 /******************************************************************************

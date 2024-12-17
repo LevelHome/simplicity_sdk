@@ -3,7 +3,7 @@
  * @brief
  *******************************************************************************
  * # License
- * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -94,7 +94,61 @@
 
 // </h>
 
+// <h> Lighting Server Metadata Settings
+
+// <o SL_BTMESH_METADATA_LIGHT_PURPOSE_1> Light Purpose metadata
+//   <0x0000=> Uplight
+//   <0x0001=> UplightLeft
+//   <0x0002=> UplightCenter
+//   <0x0003=> UplightRight
+//   <0x0004=> Downlight
+//   <0x0005=> DownlightLeft
+//   <0x0006=> DownlightCenter
+//   <0x0007=> DownlightRight
+//   <0x0008=> Inside
+//   <0x0009=> Outside
+//   <0x000A=> Backlight
+//   <0x000B=> Floodlight
+//   <0x000C=> Tasklight
+//   <0x000D=> TasklightLeft
+//   <0x000E=> TasklightCenter
+//   <0x000F=> TasklightRight
+//   <0x0010=> WarmingLight
+//   <0x0011=> EmergencyLight
+//   <0x0012=> NightLight
+//   <0x0013=> IndicatorLight
+//   <0x0014=> UndercabinetLight
+//   <0x0015=> AccentLight
+//   <0x0016=> StripLight
+//   <0x0017=> TrofferLight
+//   <0x0018=> HighBayLight
+//   <0x0019=> WallPackLight
+// <i> This metadata indicates the purpose of the current light source.
+// <i> It must be one of the Bluetooth assigned numbers for Light Purpose.
+// <i> Default: 0x0000
+
+#define SL_BTMESH_METADATA_LIGHT_PURPOSE_1   0x0000
+
+// <o SL_BTMESH_METADATA_LIGHT_LIGHTNESS_RANGE_1> Light Lightness Range metadata - Minimum Lightness value <0x0001-0xFFFF>
+// <i> Determines the minimum non-zero lightness the physical device is capable to emit.
+// <i> This metadata is based on the physical capabilities of the device and
+// <i> restricts the Light Lightness Setup Server Lightness Range minimum value.
+// <i> Default: 0x0001
+#define SL_BTMESH_METADATA_LIGHT_LIGHTNESS_RANGE_1   0x0001
+
+// <o SL_BTMESH_METADATA_LIGHT_LIGHTNESS_RANGE_2> Light Lightness Range metadata - Maximum Lightness value <0x0001-0xFFFF>
+// <i> Determines the maximum non-zero lightness the physical device is capable to emit.
+// <i> This metadata is based on the physical capabilities of the device and
+// <i> restricts the Light Lightness Setup Server Lightness Range maximum value.
+// <i> Default: 0xFFFF
+#define SL_BTMESH_METADATA_LIGHT_LIGHTNESS_RANGE_2   0xFFFF
+
+// </h>
 // <<< end of configuration section >>>
+
+// Models Metadata additional info
+#define SL_BTMESH_METADATA_LIGHT_PURPOSE_ID           0x0002
+#define SL_BTMESH_METADATA_LIGHT_LIGHTNESS_RANGE_ID   0x0003
 
 // The PWM update period shall not be greater than the UI update period
 #if (SL_BTMESH_LIGHTING_SERVER_UI_UPDATE_PERIOD_CFG_VAL) < (SL_BTMESH_LIGHTING_SERVER_PWM_UPDATE_PERIOD_CFG_VAL)

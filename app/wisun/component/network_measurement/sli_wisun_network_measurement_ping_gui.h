@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sli_wisun_network_measurement_ping_gui.h
+ * @brief Wi-SUN Network Measurement Ping GUI
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -27,8 +27,9 @@
  * 3. This notice may not be removed or altered from any source distribution.
  *
  ******************************************************************************/
-#ifndef __SL_WISUN_NETWORK_MEASUREMENT_PING_GUI__
-#define __SL_WISUN_NETWORK_MEASUREMENT_PING_GUI__
+
+#ifndef SLI_WISUN_NETWORK_MEASUREMENT_PING_GUI_H
+#define SLI_WISUN_NETWORK_MEASUREMENT_PING_GUI_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,9 +38,11 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
+
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
+
 // -----------------------------------------------------------------------------
 //                                Global Variables
 // -----------------------------------------------------------------------------
@@ -66,4 +69,4 @@ void sli_wisun_nwm_test_result_form(void *args);
 }
 #endif
 
-#endif
+#endif // SLI_WISUN_NETWORK_MEASUREMENT_PING_GUI_H

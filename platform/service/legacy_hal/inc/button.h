@@ -61,20 +61,6 @@ void halInternalInitButton(void);
  */
 uint8_t halButtonState(uint8_t button);
 
-/** @brief Returns the current state (pressed or released) of the
- * pin associated with a button.
- *
- * This reads the actual state of the pin and can be used on startup to
- * determine the initial position of the buttons.
- *
- * @param button  The button being queried, either BUTTON0 or BUTTON1 as
- * defined in the appropriate BOARD_HEADER.
- *
- * @return  ::BUTTON_PRESSED if the button is pressed or ::BUTTON_RELEASED
- * if the button is not pressed.
- */
-uint8_t halButtonPinState(uint8_t button);
-
 /** @brief A callback called in interrupt context whenever a button
  * changes its state.
  *

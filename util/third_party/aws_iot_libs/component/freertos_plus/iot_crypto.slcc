@@ -51,6 +51,8 @@ template_contribution:
   - name: mbedtls_config
     value: MBEDTLS_THREADING_ALT
   - name: mbedtls_config
+    value: THREADING_SetRecursive aws_mbedtls_mutex_set_recursive
+  - name: mbedtls_config
     value: THREADING_InitMutex aws_mbedtls_mutex_init
   - name: mbedtls_config
     value: THREADING_FreeMutex aws_mbedtls_mutex_free

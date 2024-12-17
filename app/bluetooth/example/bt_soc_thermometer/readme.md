@@ -11,7 +11,7 @@ To get started with Silicon Labs Bluetooth and Simplicity Studio, see [QSG169: B
 This example implements the predefined [Thermometer Service](https://www.bluetooth.com/xml-viewer/?src=https://www.bluetooth.com/wp-content/uploads/Sitecore-Media-Library/Gatt/Xml/Services/org.bluetooth.service.health_thermometer.xml). To run this example, you will need:
 
 - A mainboard with Bluetooth Low Energy-compatible [radio board](https://www.silabs.com/wireless/bluetooth).
-- An *[iOS](https://itunes.apple.com/us/app/silicon-labs-blue-gecko-wstk/id1030932759?mt=8)* or *[Android](https://play.google.com/store/apps/details?id=com.siliconlabs.bledemo)* smartphone with EFR Connect app installed.
+- An *[iOS](https://itunes.apple.com/us/app/silicon-labs-blue-gecko-wstk/id1030932759?mt=8)* or *[Android](https://play.google.com/store/apps/details?id=com.siliconlabs.bledemo)* smartphone with Simplicity Connect app installed.
 
 The following picture shows the system view of how it works.
 
@@ -23,9 +23,9 @@ Follow these steps to get the temperature value on your smartphone.
 
 ![step 1](image/readme_img2.png)
 
-2. Open the *EFR Connect* app on your smartphone and allow the permission requested the first time it is opened.
+2. Open the *Simplicity Connect* app on your smartphone and allow the permission requested the first time it is opened.
 
-3. Click [Develop] -> [Browser]. You will see a list of nearby devices that are sending Bluetooth advertisement. Find the one named "Thermometer Example" and click the `connect` button on the right side.
+3. Click [Scan]. You will see a list of nearby devices that are sending Bluetooth advertisement. Find the one named "Thermometer Example" and click the `connect` button on the right side.
 
 ![step 3](image/readme_img3.png)
 
@@ -36,12 +36,14 @@ Follow these steps to get the temperature value on your smartphone.
 5. Four characteristics will show up. Find the *Temperature Measurement* and press the `indicate` button. Then, you will see the temperature value getting updated periodically. You should also see the temperature displayed change as you press the top of the sensor with your finger, as shown below. If your board is not connected to a temperature sensor (e.g., because of a limited number of available pins), a generated value will be shown which changes 1 degree Celsius every second.
 
 ![step 5](image/readme_img5.png)
-![Finger on sensor](image/readme_img6.PNG)
+
+![Finger on sensor](image/readme_img6.png)
 
 Alternatively, you can follow the steps below instead of steps 3-5 to use the Health Thermometer feature in the app. This will automatically scan and list devices advertising the Health Thermometer service and, upon connection, will automatically enable notifications and display the temperature data.
 
-![Alternative 1](image/readme_img7.PNG)
-![Alternative 2](image/readme_img8.PNG)
+![Alternative 1](image/readme_img7.png)
+![Alternative 2](image/readme_img8.png)
+![Alternative 3](image/readme_img9.png)
 
 ## Troubleshooting
 

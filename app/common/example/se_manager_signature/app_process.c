@@ -92,7 +92,7 @@ static uint8_t ecc_weierstrass_prime_key_select;
 static const char *ecc_weierstrass_prime_key_string[] = {
   "ECC P192",
   "ECC P256",
-#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT)
+#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT) && !defined(_SILICON_LABS_32B_SERIES_3_CONFIG_301)
   "ECC P384",
   "ECC P521",
   "ECC Custom (secp256k1 in this example)"
@@ -102,7 +102,7 @@ static const char *ecc_weierstrass_prime_key_string[] = {
 static const sl_se_key_type_t ecc_weierstrass_prime_key[] = {
   SL_SE_KEY_TYPE_ECC_P192,
   SL_SE_KEY_TYPE_ECC_P256,
-#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT)
+#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT) && !defined(_SILICON_LABS_32B_SERIES_3_CONFIG_301)
   SL_SE_KEY_TYPE_ECC_P384,
   SL_SE_KEY_TYPE_ECC_P521,
   SL_SE_KEY_TYPE_ECC_WEIERSTRASS_PRIME_CUSTOM
@@ -159,7 +159,7 @@ void app_process_action(void)
   switch (app_state) {
     case SE_MANAGER_INIT:
       printf("\n%s - Core running at %" PRIu32 " kHz.\n", example_string,
-             CMU_ClockFreqGet(cmuClock_CORE) / 1000);
+             SystemHCLKGet() / 1000);
       printf("  . SE manager initialization... ");
       if (init_se_manager() == SL_STATUS_OK) {
         printf("  + Fill %d bytes plain message buffer with random number... ",
@@ -219,7 +219,7 @@ void app_process_action(void)
       if (space_press) {
         space_press = false;
         ecc_weierstrass_prime_key_select++;
-#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT)
+#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT) && !defined(_SILICON_LABS_32B_SERIES_3_CONFIG_301)
         if (ecc_weierstrass_prime_key_select == 5) {
 #else
         if (ecc_weierstrass_prime_key_select == 2) {
@@ -463,7 +463,7 @@ static void print_key_algo_option(void)
   if (asymmetric_key_algo_select == 0) {
     printf("\n  . Current ECC Weierstrass Prime key is %s.\n",
            ecc_weierstrass_prime_key_string[ecc_weierstrass_prime_key_select]);
-#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT)
+#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT) && !defined(_SILICON_LABS_32B_SERIES_3_CONFIG_301)
     printf("  + Press SPACE to select ECC Weierstrass Prime key (%s/%s/%s/%s/%s),"
            " press ENTER to next option.\n",
            ecc_weierstrass_prime_key_string[0],

@@ -4,6 +4,11 @@ description: IEEE802.15.4 Coexistence CLI
 package: platform
 category: Platform|Radio
 quality: production
+metadata:
+  sbom:
+    id: rail_util_coex_ieee802154_cli
+    name: RAIL Utility, IEEE802.15.4 Coexistence CLI
+    license: Zlib
 requires:
   - name: cli
   - name: rail_util_coex

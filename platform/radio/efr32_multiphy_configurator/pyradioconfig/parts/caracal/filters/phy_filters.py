@@ -9,7 +9,6 @@ class PhyFilters_Caracal(IPhyFilter):
                            'Phys_Internal_Base_ValOnly',
                            'Phys_Internal_Connect',
                            'Phys_Internal_MBus',
-                           'Phys_RAIL_Base_Standard_BLE',
                            'Phys_Internal_Base_Standard_IEEE802154',
                            'Phys_RAIL_Base_Standard_ZWave',
                            'Phys_Internal_Base_Customer_Signify',
@@ -17,7 +16,7 @@ class PhyFilters_Caracal(IPhyFilter):
                         ]
 
     # Studio white list (these PHYs show in Studio as proprietary starting points)
-    simplicity_studio_phy_groups = ['Phys_Studio_Base', 'Phys_Studio_Connect']
+    simplicity_studio_phy_groups = ['Phys_Studio_Base', 'Phys_Studio_Connect', 'Phys_Studio_IEEE802154', 'Phys_Studio_BLE']
 
     # Special designation for simulation PHYs
     sim_tests_phy_groups = []

@@ -29,11 +29,13 @@
  ******************************************************************************/
 
 #include "sl_cpc_weak_prototypes.h"
+#include "sli_cpc_assert.h"
 #include "sli_cpc_fwu.h"
 #include "sli_cpc_reboot_sequence.h"
 #include "sli_cpc_bootloader.h"
 #include "sli_cpc_instance.h"
 #include "sl_cpc_system_primary.h"
+#include "sl_cpc_instance_handles.h"
 #include "sli_cpc_system_primary.h"
 #include "sli_cpc.h"
 #include "sli_cpc_trace.h"
@@ -90,7 +92,7 @@ static enum {
   RESET_SEQUENCE_DONE,
   RESET_SEQUENCE_NOT_OK_TO_RUN
 }
-#if defined(SLI_CPC_DEVICE_UNDER_TEST)
+#if defined(SLI_CPC_DEVICE_UNDER_TEST) || defined(__unix__)
 // Skip reset sequence in Unit tests
 reset_sequence_state = RESET_SEQUENCE_DONE;
 #else
@@ -575,29 +577,28 @@ static void property_set_reset_mode_callback(sli_cpc_property_id_t property_id,
 
   switch (status) {
     case SL_STATUS_IN_PROGRESS:
-    case SL_STATUS_OK:
-
-      EFM_ASSERT(property_length == sizeof(sli_cpc_system_reboot_mode_t));
+    case SL_STATUS_OK: {
+      SLI_CPC_ASSERT(property_length == sizeof(sli_cpc_system_reboot_mode_t));
 
       sli_cpc_system_reboot_mode_t* mode = (sli_cpc_system_reboot_mode_t*) property_value;
 
       switch (*mode) {
         case REBOOT_APPLICATION:
           // Make sure the secondary confirms it will reboot into application
-          EFM_ASSERT(pending_reboot_mode == REBOOT_APPLICATION);
+          SLI_CPC_ASSERT(pending_reboot_mode == REBOOT_APPLICATION);
           break;
         case REBOOT_BOOTLOADER:
           // Make sure the secondary confirms it will reboot into bootloader
-          EFM_ASSERT(pending_reboot_mode == REBOOT_BOOTLOADER);
+          SLI_CPC_ASSERT(pending_reboot_mode == REBOOT_BOOTLOADER);
           break;
         default:
-          EFM_ASSERT(false);
+          SLI_CPC_ASSERT(0);
           break;
       }
 
       set_reset_mode_ack = true;
       break;
-
+    }
     case SL_STATUS_TIMEOUT:
     case SL_STATUS_ABORT:
       PRINT_INFO("Failed to connect, secondary seems unresponsive");
@@ -606,7 +607,7 @@ static void property_set_reset_mode_callback(sli_cpc_property_id_t property_id,
       break;
     default:
       // Un-handled property_set_reset_mode_callback status
-      EFM_ASSERT(false);
+      SLI_CPC_ASSERT(0);
       break;
   }
 }
@@ -641,7 +642,7 @@ void reset_callback(sl_status_t status,
       break;
     default:
       // Un-handled reset_callback status
-      EFM_ASSERT(false);
+      SLI_CPC_ASSERT(0);
       break;
   }
 }
@@ -684,14 +685,14 @@ static void property_get_rx_capability_callback(sli_cpc_property_id_t property_i
 {
   (void)on_reply_arg;
 
-  EFM_ASSERT(property_id == PROP_RX_CAPABILITY);
-  EFM_ASSERT(status == SL_STATUS_OK || status == SL_STATUS_IN_PROGRESS);
-  EFM_ASSERT(property_value != NULL && property_length == sizeof(uint16_t));
+  SLI_CPC_ASSERT(property_id == PROP_RX_CAPABILITY);
+  SLI_CPC_ASSERT(status == SL_STATUS_OK || status == SL_STATUS_IN_PROGRESS);
+  SLI_CPC_ASSERT(property_value != NULL && property_length == sizeof(uint16_t));
 
   rx_capability = *((uint16_t *)property_value);
   rx_capability_received = true;
 
-  sli_cpc_set_remote_tx_max_payload_length(rx_capability);
+  sli_cpc_set_remote_tx_max_payload_length(&g_instance, rx_capability);
 
   PRINT_INFO("RX capability is %u bytes", rx_capability);
 }
@@ -707,10 +708,10 @@ static void property_set_tx_capability_callback(sli_cpc_property_id_t property_i
 {
   (void)on_reply_arg;
 
-  EFM_ASSERT(property_id == PROP_TX_CAPABILITY);
-  EFM_ASSERT(status == SL_STATUS_OK || status == SL_STATUS_IN_PROGRESS);
-  EFM_ASSERT(property_value != NULL && property_length == sizeof(uint16_t));
-  EFM_ASSERT(*(uint16_t*)property_value == SL_CPC_RX_PAYLOAD_MAX_LENGTH);
+  SLI_CPC_ASSERT(property_id == PROP_TX_CAPABILITY);
+  SLI_CPC_ASSERT(status == SL_STATUS_OK || status == SL_STATUS_IN_PROGRESS);
+  SLI_CPC_ASSERT(property_value != NULL && property_length == sizeof(uint16_t));
+  SLI_CPC_ASSERT(*(uint16_t*)property_value == SL_CPC_RX_PAYLOAD_MAX_LENGTH);
 
   tx_capability_transmited = true;
 }
@@ -732,7 +733,7 @@ static void property_get_protocol_version_callback(sli_cpc_property_id_t propert
       || (status != SL_STATUS_OK && status != SL_STATUS_IN_PROGRESS)
       || (property_value == NULL || property_length != sizeof(uint8_t))) {
     // Cannot get Secondary Protocol version (obsolete RCP firmware?)
-    EFM_ASSERT(false);
+    SLI_CPC_ASSERT(0);
   }
 
   secondary_protocol_version = *version;
@@ -753,9 +754,9 @@ static void property_get_capabilities_callback(sli_cpc_property_id_t property_id
 {
   (void)on_reply_arg;
 
-  EFM_ASSERT(property_id == PROP_CAPABILITIES);
-  EFM_ASSERT(status == SL_STATUS_OK || status == SL_STATUS_IN_PROGRESS);
-  EFM_ASSERT(property_value != NULL && property_length == sizeof(uint32_t));
+  SLI_CPC_ASSERT(property_id == PROP_CAPABILITIES);
+  SLI_CPC_ASSERT(status == SL_STATUS_OK || status == SL_STATUS_IN_PROGRESS);
+  SLI_CPC_ASSERT(property_value != NULL && property_length == sizeof(uint32_t));
 
   capabilities = *((uint32_t *)property_value);
 
@@ -797,7 +798,7 @@ static void property_get_secondary_cpc_version_callback(sli_cpc_property_id_t pr
        || (status != SL_STATUS_OK && status != SL_STATUS_IN_PROGRESS)
        || (property_value == NULL || property_length != 3 * sizeof(uint32_t))) {
     // Cannot get Secondary CPC version (obsolete RCP firmware?)
-    EFM_ASSERT(false);
+    SLI_CPC_ASSERT(0);
   }
 
   PRINT_INFO("Secondary CPC v%lu.%lu.%lu", version[0], version[1], version[2]);
@@ -859,15 +860,15 @@ static void property_get_secondary_bootloader_info_callback(sli_cpc_property_id_
   (void) on_reply_arg;
 
   if ((status == SL_STATUS_OK || status == SL_STATUS_IN_PROGRESS) && property_id == PROP_BOOTLOADER_INFO) {
-    EFM_ASSERT(property_value != NULL);
-    EFM_ASSERT(property_length == 3 * sizeof(uint32_t));
+    SLI_CPC_ASSERT(property_value != NULL);
+    SLI_CPC_ASSERT(property_length == 3 * sizeof(uint32_t));
 
     // property_value:
     //  [0]: bootloader type
     //  [1]: version (unused for now)
     //  [2]: capability mask (unused for now)
     secondary_bootloader_type = (sl_cpc_bootloader_t) ((uint32_t *)property_value)[0];
-    EFM_ASSERT(secondary_bootloader_type < SL_CPC_BOOTLOADER_UNKNOWN);
+    SLI_CPC_ASSERT(secondary_bootloader_type < SL_CPC_BOOTLOADER_UNKNOWN);
 
     PRINT_INFO("Secondary bootloader: %s", sl_cpc_system_bootloader_type_to_str((sl_cpc_bootloader_t)secondary_bootloader_type));
   } else if ((status == SL_STATUS_OK || status == SL_STATUS_IN_PROGRESS) && property_id == PROP_LAST_STATUS) {
@@ -895,8 +896,8 @@ static void property_get_secondary_bus_max_bitrate_callback(sli_cpc_property_id_
   (void) on_reply_arg;
 
   if ((status == SL_STATUS_OK || status == SL_STATUS_IN_PROGRESS) && property_id == PROP_BUS_MAX_BITRATE_VALUE) {
-    EFM_ASSERT(property_value != NULL);
-    EFM_ASSERT(property_length == sizeof(uint32_t));
+    SLI_CPC_ASSERT(property_value != NULL);
+    SLI_CPC_ASSERT(property_length == sizeof(uint32_t));
 
     memcpy(&max_bus_bitrate, property_value, sizeof(uint32_t));
 
@@ -939,15 +940,15 @@ static void property_get_secondary_app_version_callback(sli_cpc_property_id_t pr
   (void) on_reply_arg;
 
   if ((status == SL_STATUS_OK || status == SL_STATUS_IN_PROGRESS) && property_id == PROP_SECONDARY_APP_VERSION) {
-    EFM_ASSERT(property_value != NULL);
-    EFM_ASSERT(property_length != 0);
+    SLI_CPC_ASSERT(property_value != NULL);
+    SLI_CPC_ASSERT(property_length != 0);
 
     const char *version = (const char *)property_value;
 
-    EFM_ASSERT(secondary_app_version == NULL);
+    SLI_CPC_ASSERT(secondary_app_version == NULL);
 
     secondary_app_version = malloc(property_length);
-    EFM_ASSERT(secondary_app_version != NULL);
+    SLI_CPC_ASSERT(secondary_app_version != NULL);
 
     strncpy(secondary_app_version, version, property_length - 1);
     secondary_app_version[property_length - 1] = '\0';

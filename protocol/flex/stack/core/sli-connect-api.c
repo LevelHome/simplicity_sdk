@@ -256,6 +256,16 @@ bool emberUsingLongMessages(void)
   return emApiUsingLongMessages();
 }
 
+EmberStatus emberSetRadioPriority(sl_connect_radio_priority_t *radio_priority)
+{
+  return emApiSetRadioPriority(radio_priority);
+}
+
+EmberStatus emberGetRadioPriority(sl_connect_radio_priority_t *radio_priority)
+{
+  return emApiGetRadioPriority(radio_priority);
+}
+
 uint32_t emberStackIdleTimeMs(uint16_t * currentStackTasks)
 {
   return emApiStackIdleTimeMs(currentStackTasks);

@@ -52,14 +52,6 @@
 #define HASH_FINISH_FCT     sli_se_transparent_hash_finish
 #define HASH_ABORT_FCT      sli_se_transparent_hash_abort
 #define HASH_ONESHOT_FCT    sli_se_transparent_hash_compute
-#elif defined(CRYPTO_PRESENT)
-#include "sli_crypto_transparent_functions.h"
-#define HASH_IMPLEMENTATION_PRESENT
-#define HASH_SETUP_FCT      sli_crypto_transparent_hash_setup
-#define HASH_UPDATE_FCT     sli_crypto_transparent_hash_update
-#define HASH_FINISH_FCT     sli_crypto_transparent_hash_finish
-#define HASH_ABORT_FCT      sli_crypto_transparent_hash_abort
-#define HASH_ONESHOT_FCT    sli_crypto_transparent_hash_compute
 #elif defined(CRYPTOACC_PRESENT)
 #include "sli_cryptoacc_transparent_functions.h"
 #define HASH_IMPLEMENTATION_PRESENT
@@ -72,27 +64,17 @@
 
 #include "mbedtls/error.h"
 #include "mbedtls/platform.h"
-#include "mbedtls/platform_util.h"
 
 #if defined(MBEDTLS_SHA1_ALT) && defined(MBEDTLS_SHA1_C)
 #include "mbedtls/sha1.h"
-#define SHA1_VALIDATE_RET(cond) \
-  MBEDTLS_INTERNAL_VALIDATE_RET(cond, MBEDTLS_ERR_SHA1_BAD_INPUT_DATA)
-#define SHA1_VALIDATE(cond)  MBEDTLS_INTERNAL_VALIDATE(cond)
 #endif /* SHA1 acceleration active */
 
 #if defined(MBEDTLS_SHA256_ALT) && defined(MBEDTLS_SHA256_C)
 #include "mbedtls/sha256.h"
-#define SHA256_VALIDATE_RET(cond) \
-  MBEDTLS_INTERNAL_VALIDATE_RET(cond, MBEDTLS_ERR_SHA256_BAD_INPUT_DATA)
-#define SHA256_VALIDATE(cond)  MBEDTLS_INTERNAL_VALIDATE(cond)
 #endif /* SHA256 acceleration active */
 
 #if defined(MBEDTLS_SHA512_ALT) && defined(MBEDTLS_SHA512_C)
 #include "mbedtls/sha512.h"
-#define SHA512_VALIDATE_RET(cond) \
-  MBEDTLS_INTERNAL_VALIDATE_RET(cond, MBEDTLS_ERR_SHA512_BAD_INPUT_DATA)
-#define SHA512_VALIDATE(cond)  MBEDTLS_INTERNAL_VALIDATE(cond)
 #endif /* SHA512 acceleration active */
 
 #if defined(HASH_IMPLEMENTATION_PRESENT)
@@ -131,8 +113,6 @@ static int psa_status_to_mbedtls(psa_status_t status, psa_algorithm_t alg)
 
 void mbedtls_sha512_init(mbedtls_sha512_context *ctx)
 {
-  SHA512_VALIDATE(ctx != NULL);
-
   HASH_ABORT_FCT(ctx);
 }
 
@@ -144,9 +124,6 @@ void mbedtls_sha512_free(mbedtls_sha512_context *ctx)
 void mbedtls_sha512_clone(mbedtls_sha512_context *dst,
                           const mbedtls_sha512_context *src)
 {
-  MBEDTLS_INTERNAL_VALIDATE(dst != NULL);
-  MBEDTLS_INTERNAL_VALIDATE(src != NULL);
-
   *dst = *src;
 }
 
@@ -180,8 +157,6 @@ int mbedtls_sha512_finish(mbedtls_sha512_context *ctx, unsigned char *output)
 #if defined(MBEDTLS_SHA256_ALT) && (defined(MBEDTLS_SHA256_C) || defined(MBEDTLS_SHA224_C))
 void mbedtls_sha256_init(mbedtls_sha256_context *ctx)
 {
-  SHA256_VALIDATE(ctx != NULL);
-
   HASH_ABORT_FCT((void *)ctx);
 }
 
@@ -193,17 +168,11 @@ void mbedtls_sha256_free(mbedtls_sha256_context *ctx)
 void mbedtls_sha256_clone(mbedtls_sha256_context *dst,
                           const mbedtls_sha256_context *src)
 {
-  MBEDTLS_INTERNAL_VALIDATE(dst != NULL);
-  MBEDTLS_INTERNAL_VALIDATE(src != NULL);
-
   *dst = *src;
 }
 
 int mbedtls_sha256_starts(mbedtls_sha256_context *ctx, int is224)
 {
-  SHA256_VALIDATE_RET(ctx != NULL);
-  SHA256_VALIDATE_RET(is224 == 0 || is224 == 1);
-
   if (is224 > 1) {
     return MBEDTLS_ERR_SHA256_BAD_INPUT_DATA;
   }
@@ -214,25 +183,16 @@ int mbedtls_sha256_starts(mbedtls_sha256_context *ctx, int is224)
 int mbedtls_sha256_update(mbedtls_sha256_context *ctx, const unsigned char *input,
                           size_t ilen)
 {
-  SHA256_VALIDATE_RET(ctx != NULL);
-  SHA256_VALIDATE_RET(ilen == 0 || input != NULL);
-
   return psa_status_to_mbedtls(HASH_UPDATE_FCT((void *)ctx, input, ilen), PSA_ALG_SHA_256);
 }
 
 int mbedtls_internal_sha256_process(mbedtls_sha256_context *ctx, const unsigned char data[64])
 {
-  SHA256_VALIDATE_RET(ctx != NULL);
-  SHA256_VALIDATE_RET((const unsigned char *)data != NULL);
-
   return psa_status_to_mbedtls(HASH_UPDATE_FCT((void *)ctx, data, 64), PSA_ALG_SHA_256);
 }
 
 int mbedtls_sha256_finish(mbedtls_sha256_context *ctx, unsigned char *output)
 {
-  SHA256_VALIDATE_RET(ctx != NULL);
-  SHA256_VALIDATE_RET((unsigned char *)output != NULL);
-
   size_t out_length = 0;
   return psa_status_to_mbedtls(HASH_FINISH_FCT((void *)ctx, output, 32, &out_length), PSA_ALG_SHA_256);
 }
@@ -242,8 +202,6 @@ int mbedtls_sha256_finish(mbedtls_sha256_context *ctx, unsigned char *output)
 
 void mbedtls_sha1_init(mbedtls_sha1_context *ctx)
 {
-  SHA1_VALIDATE(ctx != NULL);
-
   HASH_ABORT_FCT((void *)ctx);
 }
 
@@ -255,40 +213,26 @@ void mbedtls_sha1_free(mbedtls_sha1_context *ctx)
 void mbedtls_sha1_clone(mbedtls_sha1_context *dst,
                         const mbedtls_sha1_context *src)
 {
-  MBEDTLS_INTERNAL_VALIDATE(dst != NULL);
-  MBEDTLS_INTERNAL_VALIDATE(src != NULL);
-
   *dst = *src;
 }
 
 int mbedtls_sha1_starts(mbedtls_sha1_context *ctx)
 {
-  SHA1_VALIDATE_RET(ctx != NULL);
-
   return psa_status_to_mbedtls(HASH_SETUP_FCT((void *)ctx, PSA_ALG_SHA_1), PSA_ALG_SHA_1);
 }
 
 int mbedtls_sha1_update(mbedtls_sha1_context *ctx, const unsigned char *input, size_t ilen)
 {
-  SHA1_VALIDATE_RET(ctx != NULL);
-  SHA1_VALIDATE_RET(ilen == 0 || input != NULL);
-
   return psa_status_to_mbedtls(HASH_UPDATE_FCT((void *)ctx, input, ilen), PSA_ALG_SHA_1);
 }
 
 int mbedtls_internal_sha1_process(mbedtls_sha1_context *ctx, const unsigned char data[64])
 {
-  SHA1_VALIDATE_RET(ctx != NULL);
-  SHA1_VALIDATE_RET((const unsigned char *)data != NULL);
-
   return psa_status_to_mbedtls(HASH_UPDATE_FCT((void *)ctx, data, 64), PSA_ALG_SHA_1);
 }
 
 int mbedtls_sha1_finish(mbedtls_sha1_context *ctx, unsigned char output[20])
 {
-  SHA1_VALIDATE_RET(ctx != NULL);
-  SHA1_VALIDATE_RET((unsigned char *)output != NULL);
-
   size_t out_length = 0;
   return psa_status_to_mbedtls(HASH_FINISH_FCT((void *)ctx, output, 20, &out_length), PSA_ALG_SHA_1);
 }

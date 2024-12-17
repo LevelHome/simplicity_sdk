@@ -3,6 +3,9 @@ label: Legacy HAL Host
 package: platform
 category: Services|Ember Legacy
 quality: production
+metadata:
+  sbom:
+    license: MSLA
 ui_hints:
   visibility: never
 description: Legacy Ember HAL for Linux/Mac/Windows host machines.
@@ -26,7 +29,6 @@ include:
   - path: "platform/service/legacy_hal/inc/"
     file_list:
       - path: micro_host.h
-      - path: ember-printf-convert.h
       - path: crc.h
       - path: random.h
       - path: platform-header.h

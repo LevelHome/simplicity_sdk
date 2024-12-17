@@ -23,3 +23,7 @@ requires:
 
 provides:
   - name: se_manager_config
+
+metadata:
+  sbom:
+    license: Zlib

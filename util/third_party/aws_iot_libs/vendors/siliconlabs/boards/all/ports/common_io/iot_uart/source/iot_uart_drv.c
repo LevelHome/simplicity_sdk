@@ -36,8 +36,10 @@
 #include "sl_core.h"
 #include "em_device.h"
 #include "em_cmu.h"
-#include "em_gpio.h"
 #include "em_usart.h"
+
+/* SDK driver layer */
+#include "sl_gpio.h"
 
 /* SDK service layer */
 #include "sl_power_manager.h"
@@ -50,7 +52,6 @@
 /*******************************************************************************
  *                      iot_uart_drv_driver_init
  ******************************************************************************/
-
 sl_status_t iot_uart_drv_driver_init(void *pvHndl)
 {
   IotUARTDescriptor_t     *pvDesc = pvHndl;
@@ -83,7 +84,6 @@ sl_status_t iot_uart_drv_driver_init(void *pvHndl)
 /*******************************************************************************
  *                     iot_uart_drv_driver_deinit
  ******************************************************************************/
-
 sl_status_t iot_uart_drv_driver_deinit(void *pvHndl)
 {
   IotUARTDescriptor_t     *pvDesc = pvHndl;
@@ -99,13 +99,12 @@ sl_status_t iot_uart_drv_driver_deinit(void *pvHndl)
 /*******************************************************************************
  *                       iot_uart_drv_config_set
  ******************************************************************************/
-
 sl_status_t iot_uart_drv_config_set(void *pvHndl,
-                                       uint32_t ulBaudrate,
-                                       uint8_t ucParity,
-                                       uint8_t ucStopbits,
-                                       uint8_t ucWordlength,
-                                       uint8_t ucFlowControl)
+                                    uint32_t ulBaudrate,
+                                    uint8_t ucParity,
+                                    uint8_t ucStopbits,
+                                    uint8_t ucWordlength,
+                                    uint8_t ucFlowControl)
 {
   IotUARTDescriptor_t *pvDesc = pvHndl;
 
@@ -174,7 +173,7 @@ sl_status_t iot_uart_drv_config_set(void *pvHndl,
 
   /* process xUartinit flow control */
 #if (_SILICON_LABS_32B_SERIES != 0)
-  switch(ucFlowControl) {
+  switch (ucFlowControl) {
     case 0:
       pvDesc->xInit.hwFlowControl = usartHwFlowControlNone;
       break;
@@ -194,13 +193,12 @@ sl_status_t iot_uart_drv_config_set(void *pvHndl,
 /*******************************************************************************
  *                       iot_uart_drv_config_get
  ******************************************************************************/
-
 sl_status_t iot_uart_drv_config_get(void *pvHndl,
-                                       uint32_t *pulBaudrate,
-                                       uint8_t *pucParity,
-                                       uint8_t *pucStopbits,
-                                       uint8_t *pucWordlength,
-                                       uint8_t *pucFlowControl)
+                                    uint32_t *pulBaudrate,
+                                    uint8_t *pucParity,
+                                    uint8_t *pucStopbits,
+                                    uint8_t *pucWordlength,
+                                    uint8_t *pucFlowControl)
 {
   IotUARTDescriptor_t *pvDesc = pvHndl;
 
@@ -260,7 +258,7 @@ sl_status_t iot_uart_drv_config_get(void *pvHndl,
 
   /* process xUartinit flow control */
 #if (_SILICON_LABS_32B_SERIES != 0)
-  switch(pvDesc->xInit.hwFlowControl) {
+  switch (pvDesc->xInit.hwFlowControl) {
     case usartHwFlowControlNone:
       *pucFlowControl = 0;
       break;
@@ -282,7 +280,6 @@ sl_status_t iot_uart_drv_config_get(void *pvHndl,
 /*******************************************************************************
  *                        iot_uart_drv_hw_enable
  ******************************************************************************/
-
 sl_status_t iot_uart_drv_hw_enable(void *pvHndl)
 {
   IotUARTDescriptor_t *pvDesc = pvHndl;
@@ -303,103 +300,102 @@ sl_status_t iot_uart_drv_hw_enable(void *pvHndl)
 
   /* set pin modes for USART pins */
   if (pvDesc->ucTxEn == 1) {
-    GPIO_PinModeSet(pvDesc->xTxPort,  pvDesc->ucTxPin,  gpioModePushPull, 1);
+    sl_gpio_set_pin_mode(&(pvDesc->txGpio), SL_GPIO_MODE_PUSH_PULL, 1);
   }
   if (pvDesc->ucRxEn == 1) {
-    GPIO_PinModeSet(pvDesc->xRxPort,  pvDesc->ucRxPin,  gpioModeInput,    0);
+    sl_gpio_set_pin_mode(&(pvDesc->rxGpio), SL_GPIO_MODE_INPUT, 0);
   }
   if (pvDesc->ucClkEn == 1) {
-    GPIO_PinModeSet(pvDesc->xClkPort, pvDesc->ucClkPin, gpioModePushPull, 1);
+    sl_gpio_set_pin_mode(&(pvDesc->clkGpio), SL_GPIO_MODE_PUSH_PULL, 1);
   }
   if (pvDesc->ucCsEn == 1) {
-    GPIO_PinModeSet(pvDesc->xCsPort,  pvDesc->ucCsPin,  gpioModePushPull, 1);
+    sl_gpio_set_pin_mode(&(pvDesc->csGpio), SL_GPIO_MODE_PUSH_PULL, 1);
   }
   if (pvDesc->ucRtsEn == 1) {
-    GPIO_PinModeSet(pvDesc->xRtsPort, pvDesc->ucRtsPin, gpioModePushPull, 1);
+    sl_gpio_set_pin_mode(&(pvDesc->rtsGpio), SL_GPIO_MODE_PUSH_PULL, 1);
   }
   if (pvDesc->ucCtsEn == 1) {
-    GPIO_PinModeSet(pvDesc->xCtsPort, pvDesc->ucCtsPin, gpioModeInput,   0);
+    sl_gpio_set_pin_mode(&(pvDesc->ctsGpio), SL_GPIO_MODE_INPUT, 0);
   }
 
 #if (_SILICON_LABS_32B_SERIES == 0)
   /* setup routing (series 0): locations */
   pvDesc->pxPeripheral->ROUTE =
-    (pvDesc->ucTxLoc  << _USART_ROUTE_LOCATION_SHIFT) |
-    (pvDesc->ucRxLoc  << _USART_ROUTE_LOCATION_SHIFT) |
-    (pvDesc->ucClkLoc << _USART_ROUTE_LOCATION_SHIFT) |
-    (pvDesc->ucCsLoc  << _USART_ROUTE_LOCATION_SHIFT) |
-    (pvDesc->ucRtsLoc << _USART_ROUTE_LOCATION_SHIFT) |
-    (pvDesc->ucCtsLoc << _USART_ROUTE_LOCATION_SHIFT) ;
+    (pvDesc->ucTxLoc  << _USART_ROUTE_LOCATION_SHIFT)
+    | (pvDesc->ucRxLoc  << _USART_ROUTE_LOCATION_SHIFT)
+    | (pvDesc->ucClkLoc << _USART_ROUTE_LOCATION_SHIFT)
+    | (pvDesc->ucCsLoc  << _USART_ROUTE_LOCATION_SHIFT)
+    | (pvDesc->ucRtsLoc << _USART_ROUTE_LOCATION_SHIFT)
+    | (pvDesc->ucCtsLoc << _USART_ROUTE_LOCATION_SHIFT);
 
   /* setup routing (series 0): enable */
   pvDesc->pxPeripheral->ROUTE  |=
-    (pvDesc->ucTxEn  ? USART_ROUTE_TXPEN  : 0) |
-    (pvDesc->ucRxEn  ? USART_ROUTE_RXPEN  : 0) |
-    (pvDesc->ucClkEn ? USART_ROUTE_CLKPEN : 0) |
-    (pvDesc->ucCsEn  ? USART_ROUTE_CSPEN  : 0) |
-    (pvDesc->ucRtsEn ? USART_ROUTE_RTSPEN : 0) |
-    (pvDesc->ucCtsEn ? USART_ROUTE_CTSPEN : 0) ;
+    (pvDesc->ucTxEn  ? USART_ROUTE_TXPEN  : 0)
+    | (pvDesc->ucRxEn  ? USART_ROUTE_RXPEN  : 0)
+    | (pvDesc->ucClkEn ? USART_ROUTE_CLKPEN : 0)
+    | (pvDesc->ucCsEn  ? USART_ROUTE_CSPEN  : 0)
+    | (pvDesc->ucRtsEn ? USART_ROUTE_RTSPEN : 0)
+    | (pvDesc->ucCtsEn ? USART_ROUTE_CTSPEN : 0);
 #endif
 
 #if (_SILICON_LABS_32B_SERIES == 1)
   /* setup routing (series 1): locations */
   pvDesc->pxPeripheral->ROUTELOC0 =
-    (pvDesc->ucTxLoc  << _USART_ROUTELOC0_TXLOC_SHIFT ) |
-    (pvDesc->ucRxLoc  << _USART_ROUTELOC0_RXLOC_SHIFT ) |
-    (pvDesc->ucClkLoc << _USART_ROUTELOC0_CLKLOC_SHIFT) |
-    (pvDesc->ucCsLoc  << _USART_ROUTELOC0_CSLOC_SHIFT ) |
-    (pvDesc->ucRtsLoc << _USART_ROUTELOC0_RTSLOC_SHIFT) |
-    (pvDesc->ucCtsLoc << _USART_ROUTELOC0_CTSLOC_SHIFT) ;
+    (pvDesc->ucTxLoc  << _USART_ROUTELOC0_TXLOC_SHIFT)
+    | (pvDesc->ucRxLoc  << _USART_ROUTELOC0_RXLOC_SHIFT)
+    | (pvDesc->ucClkLoc << _USART_ROUTELOC0_CLKLOC_SHIFT)
+    | (pvDesc->ucCsLoc  << _USART_ROUTELOC0_CSLOC_SHIFT)
+    | (pvDesc->ucRtsLoc << _USART_ROUTELOC0_RTSLOC_SHIFT)
+    | (pvDesc->ucCtsLoc << _USART_ROUTELOC0_CTSLOC_SHIFT);
 
   /* setup routing (series 1): enable */
   pvDesc->pxPeripheral->ROUTEPEN =
-    (pvDesc->ucTxEn  ? USART_ROUTEPEN_TXPEN  : 0) |
-    (pvDesc->ucRxEn  ? USART_ROUTEPEN_RXPEN  : 0) |
-    (pvDesc->ucClkEn ? USART_ROUTEPEN_CLKPEN : 0) |
-    (pvDesc->ucCsEn  ? USART_ROUTEPEN_CSPEN  : 0) |
-    (pvDesc->ucRtsEn ? USART_ROUTEPEN_RTSPEN : 0) |
-    (pvDesc->ucCtsEn ? USART_ROUTEPEN_CTSPEN : 0) ;
+    (pvDesc->ucTxEn  ? USART_ROUTEPEN_TXPEN  : 0)
+    | (pvDesc->ucRxEn  ? USART_ROUTEPEN_RXPEN  : 0)
+    | (pvDesc->ucClkEn ? USART_ROUTEPEN_CLKPEN : 0)
+    | (pvDesc->ucCsEn  ? USART_ROUTEPEN_CSPEN  : 0)
+    | (pvDesc->ucRtsEn ? USART_ROUTEPEN_RTSPEN : 0)
+    | (pvDesc->ucCtsEn ? USART_ROUTEPEN_CTSPEN : 0);
 #endif
 
 #if (_SILICON_LABS_32B_SERIES == 2)
   /* setup routing (series 2): TX */
   GPIO->USARTROUTE[pvDesc->ucPeripheralNo].TXROUTE =
-    (pvDesc->xTxPort  << _GPIO_USART_TXROUTE_PORT_SHIFT ) |
-    (pvDesc->ucTxPin  << _GPIO_USART_TXROUTE_PIN_SHIFT  ) ;
+    (pvDesc->txGpio.port  << _GPIO_USART_TXROUTE_PORT_SHIFT)
+    | (pvDesc->txGpio.pin  << _GPIO_USART_TXROUTE_PIN_SHIFT);
 
   /* setup routing (series 2): RX */
   GPIO->USARTROUTE[pvDesc->ucPeripheralNo].RXROUTE =
-    (pvDesc->xRxPort  << _GPIO_USART_RXROUTE_PORT_SHIFT ) |
-    (pvDesc->ucRxPin  << _GPIO_USART_RXROUTE_PIN_SHIFT  ) ;
-
+    (pvDesc->rxGpio.port  << _GPIO_USART_RXROUTE_PORT_SHIFT)
+    | (pvDesc->rxGpio.pin  << _GPIO_USART_RXROUTE_PIN_SHIFT);
 
   /* setup routing (series 2): CLK */
   GPIO->USARTROUTE[pvDesc->ucPeripheralNo].CLKROUTE =
-    (pvDesc->xClkPort << _GPIO_USART_CLKROUTE_PORT_SHIFT) |
-    (pvDesc->ucClkPin << _GPIO_USART_CLKROUTE_PIN_SHIFT ) ;
+    (pvDesc->clkGpio.port << _GPIO_USART_CLKROUTE_PORT_SHIFT)
+    | (pvDesc->clkGpio.pin << _GPIO_USART_CLKROUTE_PIN_SHIFT);
 
   /* setup routing (series 2): CS */
   GPIO->USARTROUTE[pvDesc->ucPeripheralNo].CSROUTE =
-    (pvDesc->xCsPort  << _GPIO_USART_CSROUTE_PORT_SHIFT ) |
-    (pvDesc->ucCsPin  << _GPIO_USART_CSROUTE_PIN_SHIFT  ) ;
+    (pvDesc->csGpio.port  << _GPIO_USART_CSROUTE_PORT_SHIFT)
+    | (pvDesc->csGpio.pin  << _GPIO_USART_CSROUTE_PIN_SHIFT);
 
   /* setup routing (series 2): RTS */
   GPIO->USARTROUTE[pvDesc->ucPeripheralNo].RTSROUTE =
-    (pvDesc->xRtsPort << _GPIO_USART_RTSROUTE_PORT_SHIFT) |
-    (pvDesc->ucRtsPin << _GPIO_USART_RTSROUTE_PIN_SHIFT ) ;
+    (pvDesc->rtsGpio.port << _GPIO_USART_RTSROUTE_PORT_SHIFT)
+    | (pvDesc->rtsGpio.pin << _GPIO_USART_RTSROUTE_PIN_SHIFT);
 
   /* setup routing (series 2): CTS */
   GPIO->USARTROUTE[pvDesc->ucPeripheralNo].CTSROUTE =
-    (pvDesc->xCtsPort << _GPIO_USART_CTSROUTE_PORT_SHIFT) |
-    (pvDesc->ucCtsPin << _GPIO_USART_CTSROUTE_PIN_SHIFT ) ;
+    (pvDesc->ctsGpio.port << _GPIO_USART_CTSROUTE_PORT_SHIFT)
+    | (pvDesc->ctsGpio.pin << _GPIO_USART_CTSROUTE_PIN_SHIFT);
 
   /* setup routing (series 2): enable */
   GPIO->USARTROUTE[pvDesc->ucPeripheralNo].ROUTEEN =
-    (pvDesc->ucTxEn  ? GPIO_USART_ROUTEEN_TXPEN  : 0) |
-    (pvDesc->ucRxEn  ? GPIO_USART_ROUTEEN_RXPEN  : 0) |
-    (pvDesc->ucClkEn ? GPIO_USART_ROUTEEN_CLKPEN : 0) |
-    (pvDesc->ucCsEn  ? GPIO_USART_ROUTEEN_CSPEN  : 0) |
-    (pvDesc->ucRtsEn ? GPIO_USART_ROUTEEN_RTSPEN : 0) ;
+    (pvDesc->ucTxEn  ? GPIO_USART_ROUTEEN_TXPEN  : 0)
+    | (pvDesc->ucRxEn  ? GPIO_USART_ROUTEEN_RXPEN  : 0)
+    | (pvDesc->ucClkEn ? GPIO_USART_ROUTEEN_CLKPEN : 0)
+    | (pvDesc->ucCsEn  ? GPIO_USART_ROUTEEN_CSPEN  : 0)
+    | (pvDesc->ucRtsEn ? GPIO_USART_ROUTEEN_RTSPEN : 0);
 #endif
 
   /* done */
@@ -409,7 +405,6 @@ sl_status_t iot_uart_drv_hw_enable(void *pvHndl)
 /*******************************************************************************
  *                        iot_uart_drv_hw_disable
  ******************************************************************************/
-
 sl_status_t iot_uart_drv_hw_disable(void *pvHndl)
 {
   IotUARTDescriptor_t *pvDesc = pvHndl;
@@ -427,22 +422,22 @@ sl_status_t iot_uart_drv_hw_disable(void *pvHndl)
 
   /* unset pin modes for USART pins */
   if (pvDesc->ucTxEn == 1) {
-    GPIO_PinModeSet(pvDesc->xRxPort,  pvDesc->ucRxPin,  gpioModeDisabled, 0);
+    sl_gpio_set_pin_mode(&(pvDesc->txGpio), SL_GPIO_MODE_DISABLED, 0);
   }
   if (pvDesc->ucRxEn == 1) {
-    GPIO_PinModeSet(pvDesc->xTxPort,  pvDesc->ucTxPin,  gpioModeDisabled, 0);
+    sl_gpio_set_pin_mode(&(pvDesc->rxGpio), SL_GPIO_MODE_DISABLED, 0);
   }
   if (pvDesc->ucClkEn == 1) {
-    GPIO_PinModeSet(pvDesc->xClkPort, pvDesc->ucClkPin, gpioModeDisabled, 0);
+    sl_gpio_set_pin_mode(&(pvDesc->clkGpio), SL_GPIO_MODE_DISABLED, 0);
   }
   if (pvDesc->ucCsEn == 1) {
-    GPIO_PinModeSet(pvDesc->xCsPort,  pvDesc->ucCsPin,  gpioModeDisabled, 0);
+    sl_gpio_set_pin_mode(&(pvDesc->csGpio), SL_GPIO_MODE_DISABLED, 0);
   }
   if (pvDesc->ucRtsEn == 1) {
-    GPIO_PinModeSet(pvDesc->xRtsPort, pvDesc->ucRtsPin, gpioModeDisabled, 0);
+    sl_gpio_set_pin_mode(&(pvDesc->rtsGpio), SL_GPIO_MODE_DISABLED, 0);
   }
   if (pvDesc->ucCtsEn == 1) {
-    GPIO_PinModeSet(pvDesc->xCtsPort, pvDesc->ucCtsPin, gpioModeDisabled, 0);
+    sl_gpio_set_pin_mode(&(pvDesc->ctsGpio), SL_GPIO_MODE_DISABLED, 0);
   }
 
 #if (_SILICON_LABS_32B_SERIES == 0)
@@ -488,7 +483,6 @@ sl_status_t iot_uart_drv_hw_disable(void *pvHndl)
 /*******************************************************************************
  *                       iot_uart_drv_transfer_tx
  ******************************************************************************/
-
 sl_status_t iot_uart_drv_transfer_tx(void *pvHndl, uint8_t *pucData)
 {
   IotUARTDescriptor_t *pvDesc = pvHndl;
@@ -503,7 +497,6 @@ sl_status_t iot_uart_drv_transfer_tx(void *pvHndl, uint8_t *pucData)
 /*******************************************************************************
  *                       iot_uart_drv_transfer_rx
  ******************************************************************************/
-
 sl_status_t iot_uart_drv_transfer_rx(void *pvHndl, uint8_t *pucData)
 {
   IotUARTDescriptor_t *pvDesc = pvHndl;
@@ -518,7 +511,6 @@ sl_status_t iot_uart_drv_transfer_rx(void *pvHndl, uint8_t *pucData)
 /*******************************************************************************
  *                        iot_uart_drv_start_tx
  ******************************************************************************/
-
 sl_status_t iot_uart_drv_start_tx(void *pvHndl)
 {
   IotUARTDescriptor_t *pvDesc = pvHndl;
@@ -540,7 +532,6 @@ sl_status_t iot_uart_drv_start_tx(void *pvHndl)
 /*******************************************************************************
  *                        iot_uart_drv_start_rx
  ******************************************************************************/
-
 sl_status_t iot_uart_drv_start_rx(void *pvHndl)
 {
   IotUARTDescriptor_t *pvDesc = pvHndl;
@@ -562,7 +553,6 @@ sl_status_t iot_uart_drv_start_rx(void *pvHndl)
 /*******************************************************************************
  *                        iot_uart_drv_stop_tx
  ******************************************************************************/
-
 sl_status_t iot_uart_drv_stop_tx(void *pvHndl)
 {
   IotUARTDescriptor_t *pvDesc = pvHndl;
@@ -584,7 +574,6 @@ sl_status_t iot_uart_drv_stop_tx(void *pvHndl)
 /*******************************************************************************
  *                       iot_uart_drv_stop_rx
  ******************************************************************************/
-
 sl_status_t iot_uart_drv_stop_rx(void *pvHndl)
 {
   IotUARTDescriptor_t *pvDesc = pvHndl;
@@ -612,7 +601,7 @@ void USART0_TX_IRQHandler(void)
   int32_t lInstNum = -1;
 
   /* search for matched descriptor */
-  while (iot_uart_desc_get(++lInstNum)->pxPeripheral != USART0);
+  while (iot_uart_desc_get(++lInstNum)->pxPeripheral != USART0) ;
 
   /* call consolidated IRQ handler */
   IOT_UART_CB_TX(lInstNum);
@@ -631,7 +620,7 @@ void USART0_RX_IRQHandler(void)
   int32_t lInstNum = -1;
 
   /* search for matched descriptor */
-  while (iot_uart_desc_get(++lInstNum)->pxPeripheral != USART0);
+  while (iot_uart_desc_get(++lInstNum)->pxPeripheral != USART0) ;
 
   /* call consolidated IRQ handler */
   IOT_UART_CB_RX(lInstNum);
@@ -651,7 +640,7 @@ void USART1_TX_IRQHandler(void)
   int32_t lInstNum = -1;
 
   /* search for matched descriptor */
-  while (iot_uart_desc_get(++lInstNum)->pxPeripheral != USART1);
+  while (iot_uart_desc_get(++lInstNum)->pxPeripheral != USART1) ;
 
   /* call consolidated IRQ handler */
   IOT_UART_CB_TX(lInstNum);
@@ -671,7 +660,7 @@ void USART1_RX_IRQHandler(void)
   int32_t lInstNum = -1;
 
   /* search for matched descriptor */
-  while (iot_uart_desc_get(++lInstNum)->pxPeripheral != USART1);
+  while (iot_uart_desc_get(++lInstNum)->pxPeripheral != USART1) ;
 
   /* call consolidated IRQ handler */
   IOT_UART_CB_RX(lInstNum);
@@ -691,7 +680,7 @@ void USART2_TX_IRQHandler(void)
   int32_t lInstNum = -1;
 
   /* search for matched descriptor */
-  while (iot_uart_desc_get(++lInstNum)->pxPeripheral != USART2);
+  while (iot_uart_desc_get(++lInstNum)->pxPeripheral != USART2) ;
 
   /* call consolidated IRQ handler */
   IOT_UART_CB_TX(lInstNum);
@@ -711,7 +700,7 @@ void USART2_RX_IRQHandler(void)
   int32_t lInstNum = -1;
 
   /* search for matched descriptor */
-  while (iot_uart_desc_get(++lInstNum)->pxPeripheral != USART2);
+  while (iot_uart_desc_get(++lInstNum)->pxPeripheral != USART2) ;
 
   /* call consolidated IRQ handler */
   IOT_UART_CB_RX(lInstNum);
@@ -731,7 +720,7 @@ void USART3_TX_IRQHandler(void)
   int32_t lInstNum = -1;
 
   /* search for matched descriptor */
-  while (iot_uart_desc_get(++lInstNum)->pxPeripheral != USART3);
+  while (iot_uart_desc_get(++lInstNum)->pxPeripheral != USART3) ;
 
   /* call consolidated IRQ handler */
   IOT_UART_CB_TX(lInstNum);
@@ -751,7 +740,7 @@ void USART3_RX_IRQHandler(void)
   int32_t lInstNum = -1;
 
   /* search for matched descriptor */
-  while (iot_uart_desc_get(++lInstNum)->pxPeripheral != USART3);
+  while (iot_uart_desc_get(++lInstNum)->pxPeripheral != USART3) ;
 
   /* call consolidated IRQ handler */
   IOT_UART_CB_RX(lInstNum);
@@ -771,7 +760,7 @@ void USART4_TX_IRQHandler(void)
   int32_t lInstNum = -1;
 
   /* search for matched descriptor */
-  while (iot_uart_desc_get(++lInstNum)->pxPeripheral != USART4);
+  while (iot_uart_desc_get(++lInstNum)->pxPeripheral != USART4) ;
 
   /* call consolidated IRQ handler */
   IOT_UART_CB_TX(lInstNum);
@@ -791,7 +780,7 @@ void USART4_RX_IRQHandler(void)
   int32_t lInstNum = -1;
 
   /* search for matched descriptor */
-  while (iot_uart_desc_get(++lInstNum)->pxPeripheral != USART4);
+  while (iot_uart_desc_get(++lInstNum)->pxPeripheral != USART4) ;
 
   /* call consolidated IRQ handler */
   IOT_UART_CB_RX(lInstNum);
@@ -811,7 +800,7 @@ void USART5_TX_IRQHandler(void)
   int32_t lInstNum = -1;
 
   /* search for matched descriptor */
-  while (iot_uart_desc_get(++lInstNum)->pxPeripheral != USART5);
+  while (iot_uart_desc_get(++lInstNum)->pxPeripheral != USART5) ;
 
   /* call consolidated IRQ handler */
   IOT_UART_CB_TX(lInstNum);
@@ -831,7 +820,7 @@ void USART5_RX_IRQHandler(void)
   int32_t lInstNum = -1;
 
   /* search for matched descriptor */
-  while (iot_uart_desc_get(++lInstNum)->pxPeripheral != USART5);
+  while (iot_uart_desc_get(++lInstNum)->pxPeripheral != USART5) ;
 
   /* call consolidated IRQ handler */
   IOT_UART_CB_RX(lInstNum);

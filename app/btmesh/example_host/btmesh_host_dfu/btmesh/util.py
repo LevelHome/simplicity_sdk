@@ -243,14 +243,27 @@ class ConnectionParams(StateDictObject):
     security_mode: BleSecurityMode
     """Connection security mode"""
 
-    txsize: int
-    """Maximum Data Channel PDU Payload size that the controller can send in
-    an air packet"""
-
     def __post_init__(self):
         if not isinstance(self.security_mode, BleSecurityMode):
             self.security_mode = BleSecurityMode.from_int(self.security_mode)
 
+@dataclasses.dataclass
+class ConnectionDataLength(StateDictObject):
+    tx_data_len: int
+    """The maximum payload octets of a packet that the local Controller will
+    send"""
+
+    tx_time_us: int
+    """The maximum time in microseconds that the local Controller will take 
+    to send a data packet"""
+
+    rx_data_len: int
+    """The maximum payload octets of a packet that the local Controller
+    expects to receive"""
+
+    rx_time_us: int
+    """The maximum time in microseconds that the local Controller expects to
+    take to receive a data packet"""
 
 @dataclasses.dataclass
 class RawConnectionParamsRange:

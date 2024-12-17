@@ -3,7 +3,7 @@
  * @brief Bt Mesh Lighting Client module
  *******************************************************************************
  * # License
- * <b>Copyright 2023 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -32,7 +32,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "em_common.h"
 #include "sl_status.h"
 
 #include "sl_btmesh_api.h"
@@ -41,6 +40,7 @@
 
 #include "sl_btmesh_generic_model_capi_types.h"
 #include "sl_btmesh_lib.h"
+#include "app_btmesh_rta.h"
 
 #include "app_assert.h"
 #include "app_timer.h"
@@ -225,6 +225,11 @@ void sl_btmesh_set_lightness(uint8_t lightness_percent)
     return;
   }
 
+  sl_status_t sc = app_btmesh_rta_acquire();
+  if (sc != SL_STATUS_OK) {
+    return;
+  }
+
   lightness_level = lightness_percent * LIGHTNESS_VALUE_MAX / LIGHTNESS_PCT_MAX;
   if (lightness_level != 0) {
     lightness_level_switch_on = lightness_level;
@@ -245,6 +250,8 @@ void sl_btmesh_set_lightness(uint8_t lightness_percent)
                                      true);
     app_assert_status_f(sc, "Failed to start periodic timer");
   }
+
+  (void) app_btmesh_rta_release();
 }
 
 /*******************************************************************************
@@ -258,6 +265,11 @@ void sl_btmesh_set_lightness(uint8_t lightness_percent)
  ******************************************************************************/
 void sl_btmesh_change_switch_position(uint8_t position)
 {
+  sl_status_t sc = app_btmesh_rta_acquire();
+  if (sc != SL_STATUS_OK) {
+    return;
+  }
+
   if (position != SL_BTMESH_LIGHTING_CLIENT_TOGGLE) {
     switch_pos = position;
   } else {
@@ -287,6 +299,8 @@ void sl_btmesh_change_switch_position(uint8_t position)
                                      true);
     app_assert_status_f(sc, "Failed to start periodic timer");
   }
+
+  (void) app_btmesh_rta_release();
 }
 
 uint16_t sl_btmesh_get_lightness(void)
@@ -308,12 +322,19 @@ static void onoff_retransmission_timer_cb(app_timer_t *handle, void *data)
   (void)data;
   (void)handle;
 
+  sl_status_t sc = app_btmesh_rta_acquire();
+  if (sc != SL_STATUS_OK) {
+    return;
+  }
+
   send_onoff_request(1);   // param 1 indicates that this is a retransmission
   // stop retransmission timer if it was the last attempt
   if (onoff_request_count == 0) {
-    sl_status_t sc = app_timer_stop(&onoff_retransmission_timer);
+    sc = app_timer_stop(&onoff_retransmission_timer);
     app_assert_status_f(sc, "Failed to stop periodic timer");
   }
+
+  (void) app_btmesh_rta_release();
 }
 
 /***************************************************************************//**
@@ -326,12 +347,20 @@ static void light_retransmission_timer_cb(app_timer_t *handle, void *data)
   (void)data;
   (void)handle;
 
+  sl_status_t sc = app_btmesh_rta_acquire();
+  if (sc != SL_STATUS_OK) {
+    return;
+  }
+
   send_lightness_request(1);   // Retransmit lightness message
   // Stop retransmission timer if it was the last attempt
   if (lightness_request_count == 0) {
-    sl_status_t sc = app_timer_stop(&light_retransmission_timer);
+    sc = app_timer_stop(&light_retransmission_timer);
     app_assert_status_f(sc, "Failed to stop periodic timer");
   }
+
+  (void) app_btmesh_rta_release();
 }
+
 /** @} (end addtogroup btmesh_light_clnt_tim_cb) */
 /** @} (end addtogroup Lighting) */

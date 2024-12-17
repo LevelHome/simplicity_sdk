@@ -129,7 +129,7 @@ void app_process_action(void)
   switch (app_state) {
     case PSA_CRYPTO_INIT:
       printf("\n%s - Core running at %" PRIu32 " kHz.\n", example_string,
-             CMU_ClockFreqGet(cmuClock_CORE) / 1000);
+             SystemHCLKGet() / 1000);
       printf("  . PSA Crypto initialization... ");
       if (init_psa_crypto() == PSA_SUCCESS) {
         if (fill_buf_with_random_number() != PSA_SUCCESS) {
@@ -266,6 +266,12 @@ void app_process_action(void)
       break;
 
     case CHACHA20_POLY1305_TEST:
+#if defined(_SILICON_LABS_32B_SERIES_3_CONFIG_301)
+      if (symmetric_key_storage_select > KEY_STORAGE_PLAIN_MAX) {
+        print_key_storage();
+        break;
+      }
+#endif
       if (symmetric_key_size_select != KEY_SIZE_MAX) {
         printf("\n  . ChaCha20-Poly1305 algorithm can only use 256-bit key.\n");
       } else {

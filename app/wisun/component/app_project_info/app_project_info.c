@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file app_project_info.c
+ * @brief Application project information
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -29,10 +29,10 @@
  ******************************************************************************/
 
 // -----------------------------------------------------------------------------
-//                              Macros and Typedefs
+//                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <string.h>
+
 #include "app_project_info.h"
 #include "sl_component_catalog.h"
 
@@ -67,12 +67,11 @@
 #if APP_PROJECT_INFO_MBEDTLS_VERSION_ENABLED
 #include APP_PROJECT_INFO_MBEDTLS_VERSION_HEADER
 #endif
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
 
-/// Default Json indent
+/// Default JSON indent
 #define app_project_info_DEFAULT_JSON_INDENT_SIZE    2U
 
 /// Print with indent macro function
@@ -268,7 +267,7 @@ static app_project_info_version_t _versions[] = {
   },
 #endif
 
-// OS Versions
+// OS versions
 #if APP_PROJECT_INFO_RTOS_VERSION_ENABLED && defined(SL_CATALOG_KERNEL_PRESENT)
 
 // Micrium OS
@@ -314,7 +313,7 @@ static app_project_info_version_t _versions[] = {
 #endif
 #endif
 
-// Wi-SUN Version
+// Wi-SUN version
 #if APP_PROJECT_INFO_WISUN_VERSION_ENABLED
   {
     .id   = APP_PROJECT_INFO_VERSION_ID_WISUN,
@@ -408,13 +407,13 @@ void app_project_info_get(app_project_info_t * const dest)
 
 void app_project_info_print_pretty(const app_project_info_t * const info, app_project_info_printer_t printer)
 {
-  app_project_info_version_t * ver = NULL;
+  const app_project_info_version_t *ver = NULL;
 
   if (info == NULL || printer == NULL) {
     return;
   }
 
-  ver = (app_project_info_version_t * ) info->versions;
+  ver = info->versions;
   printer("%s\n", info->project_name);
 
   printer("Versions:\n");
@@ -427,13 +426,13 @@ void app_project_info_print_pretty(const app_project_info_t * const info, app_pr
 
 const app_project_info_version_t * app_project_info_get_version(app_project_info_version_id_t id, const app_project_info_t * const pinfo)
 {
-  app_project_info_version_t * ver = NULL;
+  const app_project_info_version_t *ver = NULL;
 
   if (pinfo == NULL) {
     return NULL;
   }
 
-  ver = (app_project_info_version_t *) pinfo->versions;
+  ver = pinfo->versions;
   while (ver != NULL) {
     if (ver->id == id) {
       return (const app_project_info_version_t *)ver;

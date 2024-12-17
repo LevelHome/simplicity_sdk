@@ -16,3 +16,9 @@ function(uc_generate) {
 function(uc_upgrade) {
   cmd=$(python) generateEmptyUpgradeResult.py -r ${results} 
 }
+
+# This property enables incremental generation feature on this APACK execution
+uc.incrementalVersion=1.0.0
+
+# Besides change in the input and output files, changes on the following files will reset incremental generation
+uc.incrementalDataFiles=efr32multiphyconfig/_version.py

@@ -88,11 +88,11 @@
 #define IOT_I2C_CFG_MIKROE_PERIPHERAL_NO         1
 
 // I2C1 SCL on PD02
-#define IOT_I2C_CFG_MIKROE_SCL_PORT              gpioPortD
+#define IOT_I2C_CFG_MIKROE_SCL_PORT              SL_GPIO_PORT_D
 #define IOT_I2C_CFG_MIKROE_SCL_PIN               2
 
 // I2C1 SDA on PD03
-#define IOT_I2C_CFG_MIKROE_SDA_PORT              gpioPortD
+#define IOT_I2C_CFG_MIKROE_SDA_PORT              SL_GPIO_PORT_D
 #define IOT_I2C_CFG_MIKROE_SDA_PIN               3
 
 // [I2C_IOT_I2C_CFG_MIKROE]$

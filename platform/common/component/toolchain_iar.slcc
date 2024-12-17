@@ -17,8 +17,7 @@ provides:
 requires:
   - name: toolchain_linker_type
   - name: toolchain_variant
-  - name: toolchain_variant_arm
-    condition: [device_cortexm]
+    condition: [device_arm]
   - name: sl_memory
     condition: [device_cortexm]
 recommends:

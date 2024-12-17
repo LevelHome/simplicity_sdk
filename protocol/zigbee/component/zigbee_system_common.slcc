@@ -46,12 +46,21 @@ requires:
   - name: rail_mux
     condition:
       - ot_stack
+  # UID 1327639 : To prevent difference in behavior in the rail mux
+  # scheduled rx operation with and without DMP, we will enable DMP by default
+  # this will reduce the complexity in deadling with this in the mux layer
+  - name: rail_lib_multiprotocol
+    condition:
+      - ot_stack
   # Free RTOS Heap 3 implementation matches Micrium's the closest
   # Generally, we default to Heap 4. Therefore, we explicitly set this
   # to heap 3.
   - name: freertos_heap_3
     condition:
       - freertos
+  - name: radio_priority_15_4
+    condition:
+      - device_cortexm
 
 recommends:
   - id: zigbee_phy_2_4
@@ -133,14 +142,6 @@ include:
   - path: protocol/zigbee/stack/internal/inc
     file_list:
       - path: security_internal_def.h
-define:
-  # TEMPORARY define that can be used in the C code to keep the code building
-  # for app builder while we make changes to make it work within UC.
-  # This cannot go away until all Jam targets port to UC or a make target
-  # If this gets removed, we also need to ensure make targets, like unit
-  # tests, are not broken by this removal
-  # EMZIGBEE-11236
-  - name: UC_BUILD
 
 # NOTE: Some cflags come in via platform/common/toolchain/toolchains.slct
 # Example: -Wall, -Wextra. So there is no need to explicitly add them
@@ -227,12 +228,6 @@ template_contribution:
       handler: sli_zigbee_stack_is_ok_to_sleep
     condition:
       - power_manager
-  - name: zigbee_stack_callback
-    value:
-      callback_type: rtos_stack_wakeup_isr
-      function_name: sl_zigbee_wakeup_common_task
-    condition:
-      - cmsis_rtos2
   - name: power_manager_handler
     value:
       event: sleep_on_isr_exit

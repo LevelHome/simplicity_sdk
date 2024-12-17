@@ -461,7 +461,6 @@ sl_status_t sl_usbd_vendor_is_enabled(uint8_t  class_nbr,
   sl_usbd_device_state_t  state;
   sl_status_t             status;
 
-  // TODO validate class_nbr
   // Get Vendor class instance ctrl struct.
   p_ctrl = &usbd_vendor.ctrl_table[class_nbr];
   // Get dev state.
@@ -543,7 +542,6 @@ sl_status_t sl_usbd_vendor_add_microsoft_ext_property(uint8_t        class_nbr,
   return SL_STATUS_OK;
 }
 #endif
-
 
 /****************************************************************************************************//**
  * Abort read bulk transfer.

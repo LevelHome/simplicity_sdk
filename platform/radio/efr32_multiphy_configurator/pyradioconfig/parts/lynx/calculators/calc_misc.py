@@ -25,7 +25,6 @@ class CALC_Misc_lynx(CALC_Misc_panther):
         #AGC default values are located in calc_agc.py and the calc_agc_misc() function
 
         self._reg_write(model.vars.FRC_DFLCTRL_DFLBOIOFFSET, 0)
-        self._reg_write(model.vars.FRC_CTRL_LPMODEDIS, 1)
         self._reg_write(model.vars.FRC_CTRL_WAITEOFEN, 0)
         self._reg_write(model.vars.FRC_TRAILTXDATACTRL_TRAILTXREPLEN, 0)
         self._reg_write(model.vars.FRC_TRAILTXDATACTRL_TXSUPPLENOVERIDE, 0)

@@ -18,6 +18,7 @@
 #include "hal.h"
 #include "cortexm3/diagnostic.h"
 #include "micro.h"
+#include "em_device.h"
 
 #ifdef SL_COMPONENT_CATALOG_PRESENT
 #include "sl_component_catalog.h"
@@ -29,11 +30,6 @@
 #define sl_hal_emu_clear_reset_cause RMU_ResetCauseClear
 #endif // SL_CATALOG_EMLIB_RMU_PRESENT
 
-#ifdef SL_CATALOG_GECKO_BOOTLOADER_INTERFACE_PRESENT
-#include "btl_interface.h"
-#include "btl_reset_info.h"
-#endif // SL_CATALOG_GECKO_BOOTLOADER_INTERFACE_PRESENT
-
 #ifdef SL_CATALOG_HAL_EMU_PRESENT
 #include "sl_hal_emu.h"
 #endif // SL_CATALOG_HAL_EMU_PRESENT
@@ -41,6 +37,9 @@
 #if defined(SL_CATALOG_IOSTREAM_UART_COMMON_PRESENT)
 #include "sl_iostream.h"
 #endif
+
+// Extended reset info live in noinit RAM segment that is not modified during startup.
+NO_INIT(HalResetCauseType halExtendedResetCause);
 
 // Crash info live in noinit RAM segment that is not modified during startup.
 NO_INIT(HalCrashInfoType halCrashInfo);
@@ -311,19 +310,6 @@ void halPrintCrashSummary(uint8_t port)
 
 #endif // SL_CATALOG_IOSTREAM_UART_COMMON_PRESENT
 
-void halStartPCDiagnostics(void)
-{
-}
-
-void halStopPCDiagnostics(void)
-{
-}
-
-uint16_t halGetPCDiagnostics(void)
-{
-  return 0;
-}
-
 //------------------------------------------------------------------------------
 
 void halInternalClassifyReset(void)
@@ -402,12 +388,10 @@ void halInternalClassifyReset(void)
     }
   }
 
-#ifdef SL_CATALOG_GECKO_BOOTLOADER_INTERFACE_PRESENT
-
-  BootloaderResetCause_t resetCause = bootloader_getResetReason();
+  HalResetCauseType resetCause = halExtendedResetCause;
 
   if (cause == RESET_SOFTWARE) {
-    if ((resetCause.signature == BOOTLOADER_RESET_SIGNATURE_VALID)
+    if ((resetCause.signature == RESET_VALID_SIGNATURE)
         && (RESET_BASE_TYPE(resetCause.reason) < NUM_RESET_BASE_TYPES)) {
       // The extended reset cause is recovered from RAM
       // This can be trusted because the hardware reset event was software
@@ -417,24 +401,17 @@ void halInternalClassifyReset(void)
       savedResetCause = RESET_SOFTWARE_UNKNOWN;
     }
     // mark the signature as invalid
-    ((BootloaderResetCause_t*)(RAM_MEM_BASE))->signature = BOOTLOADER_RESET_SIGNATURE_INVALID;
+    halExtendedResetCause.signature = RESET_INVALID_SIGNATURE;
   } else if ((cause == RESET_BOOTLOADER_DEEPSLEEP)
-             && (resetCause.signature == BOOTLOADER_RESET_SIGNATURE_VALID)
-             && (resetCause.reason == BOOTLOADER_RESET_REASON_DEEPSLEEP)) {
+             && (resetCause.signature == RESET_VALID_SIGNATURE)
+             && (resetCause.reason == RESET_BOOTLOADER_DEEPSLEEP)) {
     // Save the crash info for bootloader deep sleep (even though it's not used
     // yet) and invalidate the reset signature.
-    ((BootloaderResetCause_t*)(RAM_MEM_BASE))->signature = BOOTLOADER_RESET_SIGNATURE_INVALID;
+    halExtendedResetCause.signature = RESET_INVALID_SIGNATURE;
     savedResetCause = resetCause.reason;
   } else {
     savedResetCause = cause;
   }
-#else // SL_CATALOG_GECKO_BOOTLOADER_INTERFACE_PRESENT
-  if (cause == RESET_SOFTWARE) {
-    savedResetCause = RESET_SOFTWARE_UNKNOWN;
-  } else {
-    savedResetCause = cause;
-  }
-#endif // SL_CATALOG_GECKO_BOOTLOADER_INTERFACE_PRESENT
 
   // If the last reset was due to an assert, save the assert info.
   if (savedResetCause == RESET_CRASH_ASSERT) {
@@ -546,11 +523,8 @@ void halInternalSysReset(uint16_t extendedCause)
 {
   INTERRUPTS_OFF();
 
-#ifdef SL_CATALOG_GECKO_BOOTLOADER_INTERFACE_PRESENT
-  BootloaderResetCause_t *resetCause = (BootloaderResetCause_t*)(RAM_MEM_BASE);
-  resetCause->reason = extendedCause;
-  resetCause->signature = BOOTLOADER_RESET_SIGNATURE_VALID;
-#endif // SL_CATALOG_GECKO_BOOTLOADER_INTERFACE_PRESENT
+  halExtendedResetCause.reason = extendedCause;
+  halExtendedResetCause.signature = RESET_VALID_SIGNATURE;
 
   // force write to complete before reset
   asm ("DMB");
@@ -564,6 +538,7 @@ void halInternalSysReset(uint16_t extendedCause)
 // parameters from R0 and R1 and save the information for display after a reset
 #if defined (__ICCARM__)
 #pragma diag_suppress=Og014
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_LEGACY_HAL, SL_CODE_CLASS_TIME_CRITICAL)
 static void halInternalAssertFault(const char * filename, int linenumber)
 {
   asm ("DC16 0DE42h");
@@ -571,12 +546,14 @@ static void halInternalAssertFault(const char * filename, int linenumber)
 #pragma diag_default=Og014
 #elif defined (__GNUC__)
 __attribute__((noinline))
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_LEGACY_HAL, SL_CODE_CLASS_TIME_CRITICAL)
 static void halInternalAssertFault(const char * filename, int linenumber)
 {
   asm (".short 0xDE42\n" : : "r" (filename), "r" (linenumber));
 }
 #endif
 
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_LEGACY_HAL, SL_CODE_CLASS_TIME_CRITICAL)
 void halInternalAssertFailed(const char * filename, int linenumber)
 {
 #if !defined (_SILICON_LABS_32B_SERIES_2)

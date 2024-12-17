@@ -121,7 +121,7 @@ static uint32_t makeLeastWorstChannelMask(void);
 sl_status_t sl_zigbee_af_network_creator_start(bool centralizedNetwork)
 {
   if (waitingForScan() || (sl_zigbee_af_network_state() != SL_ZIGBEE_NO_NETWORK)) {
-    sl_zigbee_af_core_println("%p: %p: 0x%X",
+    sl_zigbee_af_core_println("%s: %s: 0x%02X",
                               SL_ZIGBEE_AF_PLUGIN_NETWORK_CREATOR_PLUGIN_NAME,
                               "Cannot start. State",
                               stateFlags);
@@ -158,7 +158,7 @@ sl_status_t sl_zigbee_af_network_creator_network_form(bool centralizedNetwork,
 
   if ((channel > SL_ZIGBEE_MAX_802_15_4_CHANNEL_NUMBER)
       || (channel < SL_ZIGBEE_MIN_802_15_4_CHANNEL_NUMBER)) {
-    sl_zigbee_af_core_println("%p: Error: Channel %d is out of range",
+    sl_zigbee_af_core_println("%s: Error: Channel %d is out of range",
                               SL_ZIGBEE_AF_PLUGIN_NETWORK_CREATOR_PLUGIN_NAME,
                               channel);
     return SL_STATUS_INVALID_PARAMETER;
@@ -169,7 +169,7 @@ sl_status_t sl_zigbee_af_network_creator_network_form(bool centralizedNetwork,
   status = sl_zigbee_af_network_creator_security_start(centralizedNetwork);
   if (status == SL_STATUS_OK) {
     status = sl_zigbee_af_form_network(&networkParameters);
-    sl_zigbee_af_core_println("%p: Form. Channel: %d. Status: 0x%X",
+    sl_zigbee_af_core_println("%s: Form. Channel: %d. Status: 0x%02X",
                               SL_ZIGBEE_AF_PLUGIN_NETWORK_CREATOR_PLUGIN_NAME,
                               channel,
                               status);
@@ -235,7 +235,7 @@ static sl_status_t tryToFormNetwork(void)
       // Try to form the network.
       networkParameters.radioChannel = channel;
       status = sl_zigbee_af_form_network(&networkParameters);
-      sl_zigbee_af_core_println("%p: Form. Channel: %d. Status: 0x%X",
+      sl_zigbee_af_core_println("%s: Form. Channel: %d. Status: 0x%02X",
                                 SL_ZIGBEE_AF_PLUGIN_NETWORK_CREATOR_PLUGIN_NAME,
                                 channel,
                                 status);
@@ -302,14 +302,14 @@ HIDDEN void scanHandler(sl_zigbee_af_plugin_scan_dispatch_scan_results_t *result
     cleanupAndStop(results->status);
   } else { // success
     if (sl_zigbee_af_scan_dispatch_scan_results_are_complete(results)) {
-      debugPrintln("Scan complete. Channel: %d. Status: 0x%X",
+      debugPrintln("Scan complete. Channel: %d. Status: 0x%02X",
                    results->channel,
                    results->status);
       handleScanComplete(results);
     } else { // results
       if (scanType == SL_ZIGBEE_ACTIVE_SCAN) {
         debugPrintln("Found network!");
-        debugPrintln("  PanId: 0x%2X, Channel: %d, PJoin: %p",
+        debugPrintln("  PanId: 0x%04X, Channel: %d, PJoin: %s",
                      results->network->panId,
                      results->network->channel,
                      (results->network->allowingJoin ? "YES" : "NO"));
@@ -321,7 +321,7 @@ HIDDEN void scanHandler(sl_zigbee_af_plugin_scan_dispatch_scan_results_t *result
                                 results->network->channel);
       } else if (scanType == SL_ZIGBEE_ENERGY_SCAN) {
         debugPrintln("Energy scan results.");
-        debugPrintln("%p: Channel: %d. Rssi: %d",
+        debugPrintln("%s: Channel: %d. Rssi: %d",
                      SL_ZIGBEE_AF_PLUGIN_NETWORK_CREATOR_PLUGIN_NAME,
                      results->channel,
                      results->rssi);
@@ -395,7 +395,7 @@ static void updateChannelComposites(int8_t rssi,
 
 static void cleanupAndStop(sl_status_t status)
 {
-  sl_zigbee_af_core_println("%p: Stop. Status: 0x%X. State: 0x%X",
+  sl_zigbee_af_core_println("%s: Stop. Status: 0x%02X. State: 0x%02X",
                             SL_ZIGBEE_AF_PLUGIN_NETWORK_CREATOR_PLUGIN_NAME,
                             status,
                             stateFlags);

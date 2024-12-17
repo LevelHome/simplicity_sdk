@@ -14,7 +14,6 @@ requires:
     condition:
       - zigbee_use_release_libraries
   - name: zigbee_debug_basic
-  - name: legacy_printf
 
 recommends:
   - id: zigbee_debug_extended_library_internal

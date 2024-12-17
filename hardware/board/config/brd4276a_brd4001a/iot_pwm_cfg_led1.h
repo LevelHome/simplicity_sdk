@@ -63,7 +63,7 @@
 #define IOT_PWM_CFG_LED1_PERIPHERAL_NO           1
 
 // TIMER1 CC0 on PA06
-#define IOT_PWM_CFG_LED1_CC0_PORT                gpioPortA
+#define IOT_PWM_CFG_LED1_CC0_PORT                SL_GPIO_PORT_A
 #define IOT_PWM_CFG_LED1_CC0_PIN                 6
 
 

@@ -1,5 +1,5 @@
 /***************************************************************************//**
- * @file
+ * @file sl_display.h
  * @brief Display
  *******************************************************************************
  * # License
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __SL_DISPLAY_H__
-#define __SL_DISPLAY_H__
+#ifndef SL_DISPLAY_H
+#define SL_DISPLAY_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,11 +38,9 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include "glib.h"
 #include "sl_status.h"
 #include "sl_component_catalog.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -74,6 +72,11 @@ typedef struct sl_display_renderer_queue {
   /// Delay after ms
   uint32_t delay_ms_after;
 } sl_display_renderer_queue_t;
+
+/// Thread loop definition
+#ifndef SL_DISPLAY_THREAD_LOOP
+  #define SL_DISPLAY_THREAD_LOOP  while (1)
+#endif
 
 // -----------------------------------------------------------------------------
 //                                Global Variables
@@ -418,4 +421,5 @@ sl_status_t sl_display_draw_pixel_color(int32_t x, int32_t y, uint32_t color);
 #ifdef __cplusplus
 }
 #endif
-#endif
+
+#endif // SL_DISPLAY_H

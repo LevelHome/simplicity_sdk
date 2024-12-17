@@ -169,7 +169,16 @@ void I2C1_IRQHandler(void) __attribute__ ((weak, alias("Default_Handler")));
 void I2C2_IRQHandler(void) __attribute__ ((weak, alias("Default_Handler")));
 void I2C3_IRQHandler(void) __attribute__ ((weak, alias("Default_Handler")));
 void EMUDG_IRQHandler(void) __attribute__ ((weak, alias("Default_Handler")));
+void AGC_IRQHandler(void) __attribute__ ((weak, alias("Default_Handler")));
+void BUFC_IRQHandler(void) __attribute__ ((weak, alias("Default_Handler")));
+void FRC_PRI_IRQHandler(void) __attribute__ ((weak, alias("Default_Handler")));
+void FRC_IRQHandler(void) __attribute__ ((weak, alias("Default_Handler")));
+void MODEM_IRQHandler(void) __attribute__ ((weak, alias("Default_Handler")));
+void PROTIMER_IRQHandler(void) __attribute__ ((weak, alias("Default_Handler")));
+void RAC_RSM_IRQHandler(void) __attribute__ ((weak, alias("Default_Handler")));
+void RAC_SEQ_IRQHandler(void) __attribute__ ((weak, alias("Default_Handler")));
 void HOSTMAILBOX_IRQHandler(void) __attribute__ ((weak, alias("Default_Handler")));
+void SYNTH_IRQHandler(void) __attribute__ ((weak, alias("Default_Handler")));
 void ACMP0_IRQHandler(void) __attribute__ ((weak, alias("Default_Handler")));
 void ACMP1_IRQHandler(void) __attribute__ ((weak, alias("Default_Handler")));
 void WDOG0_IRQHandler(void) __attribute__ ((weak, alias("Default_Handler")));
@@ -178,6 +187,7 @@ void HFXO0_IRQHandler(void) __attribute__ ((weak, alias("Default_Handler")));
 void HFRCO0_IRQHandler(void) __attribute__ ((weak, alias("Default_Handler")));
 void HFRCOEM23_IRQHandler(void) __attribute__ ((weak, alias("Default_Handler")));
 void CMU_IRQHandler(void) __attribute__ ((weak, alias("Default_Handler")));
+void AES_IRQHandler(void) __attribute__ ((weak, alias("Default_Handler")));
 void IADC_IRQHandler(void) __attribute__ ((weak, alias("Default_Handler")));
 void MSC_IRQHandler(void) __attribute__ ((weak, alias("Default_Handler")));
 void DPLL0_IRQHandler(void) __attribute__ ((weak, alias("Default_Handler")));
@@ -199,6 +209,8 @@ void SEMBTX_IRQHandler(void) __attribute__ ((weak, alias("Default_Handler")));
 void SYSRTC_APP_IRQHandler(void) __attribute__ ((weak, alias("Default_Handler")));
 void SYSRTC_SEQ_IRQHandler(void) __attribute__ ((weak, alias("Default_Handler")));
 void KEYSCAN_IRQHandler(void) __attribute__ ((weak, alias("Default_Handler")));
+void RFECA0_IRQHandler(void) __attribute__ ((weak, alias("Default_Handler")));
+void RFECA1_IRQHandler(void) __attribute__ ((weak, alias("Default_Handler")));
 void VDAC0_IRQHandler(void) __attribute__ ((weak, alias("Default_Handler")));
 void VDAC1_IRQHandler(void) __attribute__ ((weak, alias("Default_Handler")));
 void AHB2AHB0_IRQHandler(void) __attribute__ ((weak, alias("Default_Handler")));
@@ -298,16 +310,16 @@ const tVectorEntry __VECTOR_TABLE[TOTAL_INTERRUPTS] __VECTOR_TABLE_ATTRIBUTE = {
   { I2C2_IRQHandler },                             /* 43 = I2C2 */
   { I2C3_IRQHandler },                             /* 44 = I2C3 */
   { EMUDG_IRQHandler },                            /* 45 = EMUDG */
-  { Default_Handler },                             /* Reserved */
-  { Default_Handler },                             /* Reserved */
-  { Default_Handler },                             /* Reserved */
-  { Default_Handler },                             /* Reserved */
-  { Default_Handler },                             /* Reserved */
-  { Default_Handler },                             /* Reserved */
-  { Default_Handler },                             /* Reserved */
-  { Default_Handler },                             /* Reserved */
+  { AGC_IRQHandler },                              /* 46 = AGC */
+  { BUFC_IRQHandler },                             /* 47 = BUFC */
+  { FRC_PRI_IRQHandler },                          /* 48 = FRC_PRI */
+  { FRC_IRQHandler },                              /* 49 = FRC */
+  { MODEM_IRQHandler },                            /* 50 = MODEM */
+  { PROTIMER_IRQHandler },                         /* 51 = PROTIMER */
+  { RAC_RSM_IRQHandler },                          /* 52 = RAC_RSM */
+  { RAC_SEQ_IRQHandler },                          /* 53 = RAC_SEQ */
   { HOSTMAILBOX_IRQHandler },                      /* 54 = HOSTMAILBOX */
-  { Default_Handler },                             /* Reserved */
+  { SYNTH_IRQHandler },                            /* 55 = SYNTH */
   { ACMP0_IRQHandler },                            /* 56 = ACMP0 */
   { ACMP1_IRQHandler },                            /* 57 = ACMP1 */
   { WDOG0_IRQHandler },                            /* 58 = WDOG0 */
@@ -316,7 +328,7 @@ const tVectorEntry __VECTOR_TABLE[TOTAL_INTERRUPTS] __VECTOR_TABLE_ATTRIBUTE = {
   { HFRCO0_IRQHandler },                           /* 61 = HFRCO0 */
   { HFRCOEM23_IRQHandler },                        /* 62 = HFRCOEM23 */
   { CMU_IRQHandler },                              /* 63 = CMU */
-  { Default_Handler },                             /* Reserved */
+  { AES_IRQHandler },                              /* 64 = AES */
   { IADC_IRQHandler },                             /* 65 = IADC */
   { MSC_IRQHandler },                              /* 66 = MSC */
   { DPLL0_IRQHandler },                            /* 67 = DPLL0 */
@@ -338,8 +350,8 @@ const tVectorEntry __VECTOR_TABLE[TOTAL_INTERRUPTS] __VECTOR_TABLE_ATTRIBUTE = {
   { SYSRTC_APP_IRQHandler },                       /* 83 = SYSRTC_APP */
   { SYSRTC_SEQ_IRQHandler },                       /* 84 = SYSRTC_SEQ */
   { KEYSCAN_IRQHandler },                          /* 85 = KEYSCAN */
-  { Default_Handler },                             /* Reserved */
-  { Default_Handler },                             /* Reserved */
+  { RFECA0_IRQHandler },                           /* 86 = RFECA0 */
+  { RFECA1_IRQHandler },                           /* 87 = RFECA1 */
   { VDAC0_IRQHandler },                            /* 88 = VDAC0 */
   { VDAC1_IRQHandler },                            /* 89 = VDAC1 */
   { AHB2AHB0_IRQHandler },                         /* 90 = AHB2AHB0 */
@@ -379,16 +391,17 @@ void Zero_Table()
 }
 #endif // __START
 
-#if !defined(SL_LEGACY_LINKER) && !defined(SL_RAM_LINKER)
+#if !defined(SL_LEGACY_LINKER) \
+  && !defined(SL_RAM_LINKER)   \
+  && !defined(BOOTLOADER_ENABLE)
 #if defined (__GNUC__)
 __attribute__((optimize("no-tree-loop-distribute-patterns")))
 #endif
-void CopyBlock(const uint32_t *from, uint32_t *to, uint32_t size)
+// Instructions are 4 bytes long
+void CopyInstructions(const uint32_t *from, uint32_t *to, uint32_t num_instructions)
 {
-  if (size != 0) {
-    while (size--) {
-      *to++ = *from++;
-    }
+  while (num_instructions--) {
+    *to++ = *from++;
   }
 }
 #if defined (__GNUC__)
@@ -397,9 +410,9 @@ void CopyToRam()
   extern uint32_t __lma_ramfuncs_start__;
   extern uint32_t __lma_ramfuncs_end__;
   extern uint32_t __ramfuncs_start__;
-  uint32_t        size = &__lma_ramfuncs_end__ - &__lma_ramfuncs_start__;
+  uint32_t        num_instructions = &__lma_ramfuncs_end__ - &__lma_ramfuncs_start__;
 
-  CopyBlock(&__lma_ramfuncs_start__, &__ramfuncs_start__, size);
+  CopyInstructions(&__lma_ramfuncs_start__, &__ramfuncs_start__, num_instructions);
 }
 #elif defined (__ICCARM__)
 #pragma language=save
@@ -408,11 +421,11 @@ void CopyToRam()
 #pragma section="text_ram_init"
 void CopyToRam(void)
 {
-  uint32_t size   = __section_size("text_ram");
-  uint32_t * from = __section_begin("text_ram_init");
-  uint32_t * to   = __section_begin("text_ram");
+  uint32_t num_instructions = (__section_size("text_ram") + 3) / 4;
+  uint32_t * from           = __section_begin("text_ram_init");
+  uint32_t * to             = __section_begin("text_ram");
 
-  CopyBlock(from, to, size);
+  CopyInstructions(from, to, num_instructions);
 }
 #pragma language=restore
 #endif
@@ -435,12 +448,15 @@ __NO_RETURN void Reset_Handler(void)
   SystemInit();                    /* CMSIS System Initialization */
   #endif
 
+#if !defined(SL_LEGACY_LINKER) \
+  && !defined(SL_RAM_LINKER)   \
+  && !defined(BOOTLOADER_ENABLE)
+  CopyToRam();
+#endif
+
 #ifdef BOOTLOADER_ENABLE
   SystemInit2();
 #endif // BOOTLOADER_ENABLE
-#if !defined(SL_LEGACY_LINKER) && !defined(SL_RAM_LINKER)
-  CopyToRam();
-#endif
 #if defined (__GNUC__) && defined (__START)
   Copy_Table();
   Zero_Table();

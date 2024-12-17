@@ -75,7 +75,7 @@ template_contribution:
     value:
       group: counters
       name: clear
-      handler: sl_zigbee_af_counters_clear
+      handler: sl_zigbee_af_counters_clear_command
       help: Clears all counter values.
   - name: cli_command
     value:
@@ -98,7 +98,7 @@ template_contribution:
     value:
       group: counters
       name: reset-thresholds
-      handler: sl_zigbee_af_counters_reset_thresholds
+      handler: sl_zigbee_af_counters_reset_thresholds_command
       help: Resets all thresholds values to 0xFFFF.
   - name: cli_command
     value:

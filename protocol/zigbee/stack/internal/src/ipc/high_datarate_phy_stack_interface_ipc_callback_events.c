@@ -27,7 +27,7 @@ void sli_mac_stack_high_datarate_phy_rx_callback(uint8_t *packet,
   sl_zigbee_stack_cb_event_t *cb_event = (sl_zigbee_stack_cb_event_t *) malloc(sizeof(sl_zigbee_stack_cb_event_t));
 
   if (packet != NULL) {
-    memmove(cb_event->data.high_datarate_phy_rx_callback.packet, packet, sizeof(uint8_t) * (((packet[1] << 8) + packet[0] + 2)));
+    memmove(cb_event->data.high_datarate_phy_rx_callback.packet, packet, sizeof(uint8_t) * ((packet[1] << 8) + packet[0] + 2));
   }
 
   cb_event->data.high_datarate_phy_rx_callback.linkQuality = linkQuality;
@@ -50,7 +50,7 @@ void sli_mac_stack_high_datarate_phy_tx_callback(uint8_t mac_index,
   cb_event->data.high_datarate_phy_tx_callback.packet_length = packet_length;
 
   if (packet_contents != NULL) {
-    memmove(cb_event->data.high_datarate_phy_tx_callback.packet_contents, packet_contents, sizeof(uint8_t) * ((packet_length)));
+    memmove(cb_event->data.high_datarate_phy_tx_callback.packet_contents, packet_contents, sizeof(uint8_t) * (packet_length));
   }
 
   cb_event->data.high_datarate_phy_tx_callback.tag = tag;

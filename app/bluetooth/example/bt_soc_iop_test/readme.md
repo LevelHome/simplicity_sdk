@@ -37,13 +37,13 @@ The IOP example application is available beginning with Bluetooth SDK 3.3.0. Ins
 
 ### Mobile App Requirements
 
-To enable IOP testing framework on a smartphone, install the EFR Connect mobile app, version 2.4 or newer. The app is available for both [Android](https://play.google.com/store/apps/details?id=com.siliconlabs.bledemo&hl=en&gl=US) and [iOS](https://apps.apple.com/us/app/efr-connect/id1030932759) and the source is available on [GitHub](https://github.com/SiliconLabs?q=efrconnect&type=&language=&sort=).
+To enable IOP testing framework on a smartphone, install the Simplicity Connect mobile app (version 2.4 or newer) for [Android](https://play.google.com/store/apps/details?id=com.siliconlabs.bledemo&hl=en&gl=US) or [iOS](https://apps.apple.com/us/app/simplicity-connect/id1030932759). Source code for the mobile app is available on Github for [Android](https://github.com/SiliconLabs/SimplicityConnect-android) and [iOS](https://github.com/SiliconLabs/SimplicityConnect-ios).
 
 Ensure that there is **no existing bond** with the embedded device before initiating the IOP test sequence, which you can check from the phone Bluetooth settings. If the device is already bonded, the bond must be removed before proceeding with IOP testing.
 
 ### Minimum Mobile Operating System Versions
 
-The minimum OS versions supported by the EFR Connect mobile app are Android™ 9 and iOS®12.
+The minimum OS versions supported by the Simplicity Connect mobile app are Android™ 9 and iOS®12.
 
 ## Bringing up the Test Environment
 
@@ -53,47 +53,49 @@ To flash the embedded software into one of the supported boards, create the exam
 
 Then run the script *iop_create_bl_files.sh* (for MacOS/Linux) or *iop_create_bl_files.ps1* (for Windows powershell). The script generates two files into the *output_gbl* folder that is inside the project folder: *ota-dfu_ack.gbl* and *ota-dfu_non_ack.gbl*.
 
-These files must be provided to the IOP Test on EFR Connect mobile app when prompted to do so. Copy them to the mobile phone's local storage or a cloud drive that is accessible from the mobile phone. The file *ota-dfu_ack.gbl* is used for the first OTA test and *ota-dfu_non_ack.gbl* for the second OTA test.
+These files must be provided to the IOP Test on Simplicity Connect mobile app when prompted to do so. Copy them to the mobile phone's local storage or a cloud drive that is accessible from the mobile phone. The file *ota-dfu_ack.gbl* is used for the first OTA test and *ota-dfu_non_ack.gbl* for the second OTA test.
 
 Note that you must have a bootloader flashed to the board as well, otherwise the firmware will not run. See below under **Troubleshooting** for instructions on various ways to flash a bootloader. 
 
 Once the example and bootloader are flashed to the target you should see the information on the mainboard display shown below. If you are using a mainboard without display (e.g., Explorer Kit) then you will see information being sent out through the UART, which can be captured by a terminal on the PC (more information [here](#collecting-additional-data-from-the-embedded-device)).
 
-![](image/readme_img1.png)
+![Hardware](image/readme_img1.png)
 
-On your smartphone, launch the EFR Connect mobile app, which automatically opens in Develop view. Tap the Interoperability Test tile to bring up a list of all the nearby boards running the IOP Test firmware. Tap the board that you want to test against. The app automatically goes to the IOP view, where you can tap “Run Tests” to get started.
+On your smartphone, launch the Simplicity Connect mobile app and select [Test]. Tap the Select Device button to bring up a list of all the nearby boards running the IOP Test firmware. Tap the board that you want to test against. The app automatically goes to the IOP view, where you can tap “Run Tests” to get started.
 
-![](image/readme_img2.png)
+![Test view](image/readme_img2a.png)
+![Pop up](image/readme_img2b.png)
 
 ## Running the IOP Test
 
 After the IOP test sequence starts running, the mobile app scrolls through the test cases and indicates Pass/Fail when the test is completed, as shown below.
 
-![](image/readme_img3.png)
+![Start IOP test](image/readme_img3a.png)
+![During IOP test](image/readme_img3b.png)
 
 Most tests do not require user intervention, except for the OTA and security tests. 
 
 During OTA tests you are prompted to upload the gbl file. The file can be retrieved from local or cloud storage, using OS standard methods. For the first OTA test the *ota-dfu_ack.gbl* must be used, and for the second OTA test *ota-dfu_non_ack.gbl*. 
 
-![](image/readme_img11.png)
+![Chose a file for OTA test](image/readme_img11a.png)
+![OTA upload in progress](image/readme_img11b.png)
 
 During the security tests, you are prompted several times to bond with the device on the mobile app side. Some of those prompts require simple confirmation (Just Works pairing) while other prompts require entering a PIN (authenticated pairing), which can be read from the mainboard display or from the UART logs, if you are using a mainboard without display.
 
-![](image/readme_img4.png)
-
-![](image/readme_img5.png)
+![Pairing](image/readme_img4.png)
+![Pairing with PIN](image/readme_img5.png)
 
 ## Logging and Sharing data
 
 After the test is finalized on the mobile app, you can rerun the test or share the results.
 
-![](image/readme_img6.png)
+![IOP test finished](image/readme_img6.png)
 
 To rerun the tests, first reset the embedded device by pressing the reset button on the lower right side of the mainboard. Additionally, remove the bond from the phone’s Bluetooth settings.
 
 The *Share* option allows sharing the test log through OS-standard mediums, such as cloud storage (e.g., Dropbox, Google Drive, iCloud, and so on) or email, or saving it locally. The log is in xml format and contains information about the phone model, OS version, Bluetooth connection parameters, and the result of each test. Below is an example of a test log from running IOP test on a Pixel 2 with Android 11.
 
-![](image/readme_img7.png)
+![Log](image/readme_img7.png)
 
 ### Collecting Additional Data from the Embedded Device
 
@@ -103,15 +105,15 @@ For a more comprehensive data set around an individual IOP test sequence, captur
 
 To start the radio capture, right-click the debug adapter and select "Connect". Then, right-click the debug adapter once again and select "Start Capture".
 
-![](image/readme_img8.png)
+![Start capture](image/readme_img8.png)
 
 This automatically opens the Network Analyzer perspective, where the traffic is logged and every packet can be decoded for further analysis if required. At the end of the IOP test, the trace can be saved through File -> Save as, as shown below.
 
-![](image/readme_img9.png)
+![Network Analyzer](image/readme_img9.png)
 
 While UART logs have multiple COMPort emulators such as tera term, you can also capture in Simplicity Studio’s terminal. Right-click the debug adapter and select "Launch Console". In the console view, click the "Serial 1" tab. Enter any character at the prompt at the bottom of the screen. The connection symbol should change, indicating that the connection is successful. Then logging should start, depending at which phase of the IOP test this is initialized. Otherwise, reset the board to ensure that the log is being received.
 
-![](image/readme_img10.png)
+![Serial log](image/readme_img10.png)
 
 ## Troubleshooting
 

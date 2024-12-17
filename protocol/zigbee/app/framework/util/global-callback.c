@@ -671,7 +671,7 @@ WEAK(int16u sl_zigbee_af_get_short_poll_interval_qs_cb(void))
  */
 WEAK(int8u sl_zigbee_af_get_source_route_overhead_cb(sl_802154_short_addr_t destination))
 {
-  return 0;
+  return SL_ZIGBEE_SOURCE_ROUTE_OVERHEAD_UNKNOWN;
 }
 
 /** @brief Get Wake Timeout Bitmask
@@ -1047,9 +1047,9 @@ WEAK(bool sl_zigbee_af_ota_client_download_complete_cb(sl_zigbee_af_ota_download
  * @param message A pointer to the structure containing the message buffer and
  * other information about it.  Ver.: always
  */
-WEAK(bool sl_zigbee_af_ota_client_incoming_message_raw_cb(sl_zigbee_af_cluster_command_t *message))
+WEAK(sl_zigbee_af_zcl_request_status_t sl_zigbee_af_ota_client_incoming_message_raw_cb(sl_zigbee_af_cluster_command_t *message))
 {
-  return false;
+  return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 }
 
 /** @brief Ota Client Start
@@ -1172,9 +1172,9 @@ WEAK(int8u sl_zigbee_af_ota_server_block_size_cb(sl_802154_short_addr_t clientNo
  * @param message A pointer to the structure containing the message buffer and
  * other information about it.  Ver.: always
  */
-WEAK(bool sl_zigbee_af_ota_server_incoming_message_raw_cb(sl_zigbee_af_cluster_command_t *message))
+WEAK(sl_zigbee_af_zcl_request_status_t sl_zigbee_af_ota_server_incoming_message_raw_cb(sl_zigbee_af_cluster_command_t *message))
 {
-  return false;
+  return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 }
 
 /** @brief Ota Server Query

@@ -29,10 +29,16 @@
  ******************************************************************************/
 
 #include "sl_clock_manager.h"
-#include "em_eusart.h"
-#include "em_gpio.h"
+#include "sl_gpio.h"
 #include "sl_udelay.h"
 #include "sl_mx25_flash_shutdown.h"
+
+#if defined(_SILICON_LABS_32B_SERIES_2)
+#include "em_eusart.h"
+#else
+#include "sl_hal_eusart.h"
+#endif
+
 #include "stddef.h"
 
 // Fallback to baudrate of 8 MHz if not defined for backwards compatibility
@@ -50,12 +56,20 @@
 #ifdef SL_MX25_FLASH_SHUTDOWN_PERIPHERAL
 static void cs_low(void)
 {
-  GPIO_PinOutClear(SL_MX25_FLASH_SHUTDOWN_CS_PORT, SL_MX25_FLASH_SHUTDOWN_CS_PIN);
+  sl_gpio_t mx25_flash_shutdown_cs_gpio = {
+    .port = SL_MX25_FLASH_SHUTDOWN_CS_PORT,
+    .pin = SL_MX25_FLASH_SHUTDOWN_CS_PIN,
+  };
+  sl_gpio_clear_pin(&mx25_flash_shutdown_cs_gpio);
 }
 
 static void cs_high(void)
 {
-  GPIO_PinOutSet(SL_MX25_FLASH_SHUTDOWN_CS_PORT, SL_MX25_FLASH_SHUTDOWN_CS_PIN);
+  sl_gpio_t mx25_flash_shutdown_cs_gpio = {
+    .port = SL_MX25_FLASH_SHUTDOWN_CS_PORT,
+    .pin = SL_MX25_FLASH_SHUTDOWN_CS_PIN,
+  };
+  sl_gpio_set_pin(&mx25_flash_shutdown_cs_gpio);
 }
 #endif
 
@@ -65,6 +79,8 @@ static void cs_high(void)
 void sl_mx25_flash_shutdown(void)
 {
 #ifdef SL_MX25_FLASH_SHUTDOWN_PERIPHERAL
+
+#if defined(_SILICON_LABS_32B_SERIES_2)
   // Init flash
   EUSART_SpiInit_TypeDef init = EUSART_SPI_MASTER_INIT_DEFAULT_HF;
   EUSART_SpiAdvancedInit_TypeDef advancedInit = EUSART_SPI_ADVANCED_INIT_DEFAULT;
@@ -80,11 +96,30 @@ void sl_mx25_flash_shutdown(void)
 
   EUSART_SpiInit(SL_MX25_FLASH_SHUTDOWN_PERIPHERAL, &init);
 
+#else
+  // Init flash
+  sl_hal_eusart_spi_config_t init = SL_HAL_EUSART_SPI_MASTER_INIT_DEFAULT_HF;
+  sl_hal_eusart_spi_advanced_config_t advancedInit = SL_HAL_EUSART_SPI_ADVANCED_INIT_DEFAULT;
+
+  sl_clock_manager_enable_bus_clock(SL_BUS_CLOCK_GPIO);
+  sl_clock_manager_enable_bus_clock(SL_MX25_FLASH_SHUTDOWN_SCLK);
+
+  advancedInit.msb_first     = true;
+  advancedInit.auto_cs_enable = false;
+
+  init.advanced_config = &advancedInit;
+
+  sl_hal_eusart_init_spi(SL_MX25_FLASH_SHUTDOWN_PERIPHERAL, &init);
+  sl_hal_eusart_enable(SL_MX25_FLASH_SHUTDOWN_PERIPHERAL);
+  sl_hal_eusart_enable_tx(SL_MX25_FLASH_SHUTDOWN_PERIPHERAL);
+  sl_hal_eusart_enable_rx(SL_MX25_FLASH_SHUTDOWN_PERIPHERAL);
+#endif
+
   // IO config
-  GPIO_PinModeSet(SL_MX25_FLASH_SHUTDOWN_TX_PORT, SL_MX25_FLASH_SHUTDOWN_TX_PIN, gpioModePushPull, 1);
-  GPIO_PinModeSet(SL_MX25_FLASH_SHUTDOWN_RX_PORT, SL_MX25_FLASH_SHUTDOWN_RX_PIN, gpioModeInput, 0);
-  GPIO_PinModeSet(SL_MX25_FLASH_SHUTDOWN_SCLK_PORT, SL_MX25_FLASH_SHUTDOWN_SCLK_PIN, gpioModePushPull, 1);
-  GPIO_PinModeSet(SL_MX25_FLASH_SHUTDOWN_CS_PORT, SL_MX25_FLASH_SHUTDOWN_CS_PIN, gpioModePushPull, 1);
+  sl_gpio_set_pin_mode(&(sl_gpio_t) {SL_MX25_FLASH_SHUTDOWN_TX_PORT, SL_MX25_FLASH_SHUTDOWN_TX_PIN }, SL_GPIO_MODE_PUSH_PULL, 1);
+  sl_gpio_set_pin_mode(&(sl_gpio_t) {SL_MX25_FLASH_SHUTDOWN_RX_PORT, SL_MX25_FLASH_SHUTDOWN_RX_PIN }, SL_GPIO_MODE_INPUT, 0);
+  sl_gpio_set_pin_mode(&(sl_gpio_t) {SL_MX25_FLASH_SHUTDOWN_SCLK_PORT, SL_MX25_FLASH_SHUTDOWN_SCLK_PIN }, SL_GPIO_MODE_PUSH_PULL, 1);
+  sl_gpio_set_pin_mode(&(sl_gpio_t) {SL_MX25_FLASH_SHUTDOWN_CS_PORT, SL_MX25_FLASH_SHUTDOWN_CS_PIN }, SL_GPIO_MODE_PUSH_PULL, 1);
 
   GPIO->EUSARTROUTE[SL_MX25_FLASH_SHUTDOWN_PERIPHERAL_NO].SCLKROUTE  = ((SL_MX25_FLASH_SHUTDOWN_SCLK_PORT << _GPIO_EUSART_SCLKROUTE_PORT_SHIFT)
                                                                         | (SL_MX25_FLASH_SHUTDOWN_SCLK_PIN  << _GPIO_EUSART_SCLKROUTE_PIN_SHIFT));
@@ -109,23 +144,31 @@ void sl_mx25_flash_shutdown(void)
   cs_low();
 
   // Deep Power Down Mode command (0xB9)
+#if defined(_SILICON_LABS_32B_SERIES_2)
   EUSART_Spi_TxRx(SL_MX25_FLASH_SHUTDOWN_PERIPHERAL, 0xB9);
+#else
+  sl_hal_eusart_spi_tx_rx(SL_MX25_FLASH_SHUTDOWN_PERIPHERAL, 0xB9);
+#endif
 
   // Chip select go high to end a flash command
   cs_high();
 
   // Deinit flash
-  GPIO_PinModeSet(SL_MX25_FLASH_SHUTDOWN_TX_PORT, SL_MX25_FLASH_SHUTDOWN_TX_PIN, gpioModeDisabled, 0);
-  GPIO_PinModeSet(SL_MX25_FLASH_SHUTDOWN_RX_PORT, SL_MX25_FLASH_SHUTDOWN_RX_PIN, gpioModeDisabled, 0);
-  GPIO_PinModeSet(SL_MX25_FLASH_SHUTDOWN_SCLK_PORT, SL_MX25_FLASH_SHUTDOWN_SCLK_PIN, gpioModeDisabled, 1);
-  GPIO_PinModeSet(SL_MX25_FLASH_SHUTDOWN_CS_PORT, SL_MX25_FLASH_SHUTDOWN_CS_PIN, gpioModeDisabled, 1);
+  sl_gpio_set_pin_mode(&(sl_gpio_t) {SL_MX25_FLASH_SHUTDOWN_TX_PORT, SL_MX25_FLASH_SHUTDOWN_TX_PIN }, SL_GPIO_MODE_DISABLED, 0);
+  sl_gpio_set_pin_mode(&(sl_gpio_t) {SL_MX25_FLASH_SHUTDOWN_RX_PORT, SL_MX25_FLASH_SHUTDOWN_RX_PIN }, SL_GPIO_MODE_DISABLED, 0);
+  sl_gpio_set_pin_mode(&(sl_gpio_t) {SL_MX25_FLASH_SHUTDOWN_SCLK_PORT, SL_MX25_FLASH_SHUTDOWN_SCLK_PIN }, SL_GPIO_MODE_DISABLED, 1);
+  sl_gpio_set_pin_mode(&(sl_gpio_t) {SL_MX25_FLASH_SHUTDOWN_CS_PORT, SL_MX25_FLASH_SHUTDOWN_CS_PIN }, SL_GPIO_MODE_DISABLED, 1);
 
+#if defined(_SILICON_LABS_32B_SERIES_2)
   EUSART_Reset(SL_MX25_FLASH_SHUTDOWN_PERIPHERAL);
+#else
+  sl_hal_eusart_reset(SL_MX25_FLASH_SHUTDOWN_PERIPHERAL);
+#endif
 
+  GPIO->EUSARTROUTE[SL_MX25_FLASH_SHUTDOWN_PERIPHERAL_NO].ROUTEEN  = _GPIO_EUSART_ROUTEEN_RESETVALUE;
   GPIO->EUSARTROUTE[SL_MX25_FLASH_SHUTDOWN_PERIPHERAL_NO].SCLKROUTE = _GPIO_EUSART_SCLKROUTE_RESETVALUE;
   GPIO->EUSARTROUTE[SL_MX25_FLASH_SHUTDOWN_PERIPHERAL_NO].RXROUTE  = _GPIO_EUSART_RXROUTE_RESETVALUE;
   GPIO->EUSARTROUTE[SL_MX25_FLASH_SHUTDOWN_PERIPHERAL_NO].TXROUTE  = _GPIO_EUSART_TXROUTE_RESETVALUE;
-  GPIO->EUSARTROUTE[SL_MX25_FLASH_SHUTDOWN_PERIPHERAL_NO].ROUTEEN  = _GPIO_EUSART_ROUTEEN_RESETVALUE;
 
   sl_clock_manager_disable_bus_clock(SL_MX25_FLASH_SHUTDOWN_SCLK);
 #endif

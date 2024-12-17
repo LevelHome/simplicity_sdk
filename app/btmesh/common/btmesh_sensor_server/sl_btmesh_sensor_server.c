@@ -3,7 +3,7 @@
  * @brief BT Mesh Sensor Server Instances
  *******************************************************************************
  * # License
- * <b>Copyright 2023 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -37,10 +37,11 @@
 #include "sl_btmesh_api.h"
 #include "sl_btmesh_sensor.h"
 #include "sl_btmesh_dcd.h"
+#include "app_btmesh_rta.h"
 #include "app_timer.h"
 
 #include "app_assert.h"
-#include "em_common.h"
+#include "sl_common.h"
 
 #include "sl_board_control_config.h"
 
@@ -71,7 +72,7 @@
 
 #include "sl_btmesh_sensor_server.h"
 #include "sl_btmesh_sensor_server_config.h"
-#include "sl_btmesh_sensor_server_cadence.h"
+#include "sli_btmesh_sensor_server_cadence.h"
 
 // Warning! The app_btmesh_util shall be included after the component configuration
 // header file in order to provide the component specific logging macro.
@@ -247,21 +248,21 @@ void sl_btmesh_sensor_server_node_init(void)
 
 #if SENSOR_PEOPLE_COUNT_CADENCE && SENSOR_THERMOMETER_CADENCE
   uint32_t update_interval;
-  sl_btmesh_sensor_people_count_cadence_init(0);
+  sli_btmesh_sensor_people_count_cadence_init(0);
   if (rht_initialized == true) {
-    sl_btmesh_sensor_thermometer_cadence_init(get_temperature());
+    sli_btmesh_sensor_thermometer_cadence_init(get_temperature());
     update_interval = MIN(SENSOR_THERMOMETER_UPDATE_INTERVAL, SL_BTMESH_SENSOR_PEOPLE_COUNT_UPDATE_INTERVAL_CFG_VAL);
   } else {
     update_interval = SL_BTMESH_SENSOR_PEOPLE_COUNT_UPDATE_INTERVAL_CFG_VAL;
   }
 #elif SENSOR_PEOPLE_COUNT_CADENCE
   uint32_t update_interval;
-  sl_btmesh_sensor_people_count_cadence_init(0);
+  sli_btmesh_sensor_people_count_cadence_init(0);
   update_interval = SL_BTMESH_SENSOR_PEOPLE_COUNT_UPDATE_INTERVAL_CFG_VAL;
 #elif SENSOR_THERMOMETER_CADENCE
   uint32_t update_interval;
   if (rht_initialized == true) {
-    sl_btmesh_sensor_thermometer_cadence_init(get_temperature());
+    sli_btmesh_sensor_thermometer_cadence_init(get_temperature());
     update_interval = SENSOR_THERMOMETER_UPDATE_INTERVAL;
   } else {
     update_interval = 0;
@@ -460,8 +461,13 @@ static void handle_sensor_server_publish_event(
   sl_btmesh_evt_sensor_server_publish_t *evt)
 {
 #if SENSOR_THERMOMETER_CADENCE || SENSOR_PEOPLE_COUNT_CADENCE
+  sl_status_t sc;
+  sc = app_btmesh_rta_acquire();
+  if (sc != SL_STATUS_OK) {
+    return;
+  }
   publish_period = *evt;
-
+  (void) app_btmesh_rta_release();
 #else
   (void)evt;
   sensor_server_publish();
@@ -486,17 +492,23 @@ static void handle_sensor_setup_server_get_cadence_request(
 
 #if SENSOR_THERMOMETER_CADENCE
   if (evt->property_id == PRESENT_AMBIENT_TEMPERATURE) {
-    buff_len = sl_btmesh_sensor_thermometer_get_cadence(SENSOR_CADENCE_BUF_LEN, cadence_status_buf);
+    sc = sli_btmesh_sensor_thermometer_get_cadence(SENSOR_CADENCE_BUF_LEN, cadence_status_buf, &buff_len);
+    if (sc != SL_STATUS_OK) {
+      return;
+    }
     buff_addr = cadence_status_buf;
   }
 #endif // SENSOR_THERMOMETER_CADENCE
 
 #if SENSOR_PEOPLE_COUNT_CADENCE
   if (evt->property_id == PEOPLE_COUNT) {
-    buff_len = sl_btmesh_sensor_people_count_get_cadence(SENSOR_CADENCE_BUF_LEN, cadence_status_buf);
+    sc = sli_btmesh_sensor_people_count_get_cadence(SENSOR_CADENCE_BUF_LEN, cadence_status_buf, &buff_len);
+    if (sc != SL_STATUS_OK) {
+      return;
+    }
     buff_addr = cadence_status_buf;
   }
-#endif // SENSOR_THERMOMETER_CADENCE
+#endif // SENSOR_PEOPLE_COUNT_CADENCE
 
   sc = sl_btmesh_sensor_setup_server_send_cadence_status(evt->client_address,
                                                          BTMESH_SENSOR_SERVER_MAIN,
@@ -521,6 +533,7 @@ static void handle_sensor_setup_server_set_cadence_request(
   bool param_validity = true;
   uint16_t buff_len = 0;
   uint8_t* buff_addr = NULL;
+  sl_status_t sc;
 
 #if SENSOR_THERMOMETER_CADENCE || SENSOR_PEOPLE_COUNT_CADENCE
   uint8_t cadence_status_buf[SENSOR_CADENCE_BUF_LEN];
@@ -529,11 +542,14 @@ static void handle_sensor_setup_server_set_cadence_request(
 #if SENSOR_THERMOMETER_CADENCE
   if (evt->property_id == PRESENT_AMBIENT_TEMPERATURE) {
     // store incoming cadence parameters
-    param_validity = sl_btmesh_sensor_thermometer_set_cadence(evt);
+    sc = sli_btmesh_sensor_thermometer_set_cadence(evt);
     if (((evt->flags & SET_CADENCE_ACK_FLAG) == SET_CADENCE_ACK_FLAG)
-        && (param_validity == true)) {
+        && (sc == SL_STATUS_OK)) {
       // prepare buffer for cadence status response
-      buff_len = sl_btmesh_sensor_thermometer_get_cadence(SENSOR_CADENCE_BUF_LEN, cadence_status_buf);
+      sc = sli_btmesh_sensor_thermometer_get_cadence(SENSOR_CADENCE_BUF_LEN, cadence_status_buf, &buff_len);
+      if (sc != SL_STATUS_OK) {
+        return;
+      }
       buff_addr = cadence_status_buf;
     }
   }
@@ -542,24 +558,27 @@ static void handle_sensor_setup_server_set_cadence_request(
 #if SENSOR_PEOPLE_COUNT_CADENCE
   if (evt->property_id == PEOPLE_COUNT) {
     // store incoming cadence parameters
-    param_validity = sl_btmesh_sensor_people_count_set_cadence(evt);
+    sc = sli_btmesh_sensor_people_count_set_cadence(evt);
     if (((evt->flags & SET_CADENCE_ACK_FLAG) == SET_CADENCE_ACK_FLAG)
-        && (param_validity == true)) {
+        && (sc == SL_STATUS_OK)) {
       // prepare buffer for cadence status response
-      buff_len = sl_btmesh_sensor_people_count_get_cadence(SENSOR_CADENCE_BUF_LEN, cadence_status_buf);
+      sc = sli_btmesh_sensor_people_count_get_cadence(SENSOR_CADENCE_BUF_LEN, cadence_status_buf, &buff_len);
+      if (sc != SL_STATUS_OK) {
+        return;
+      }
       buff_addr = cadence_status_buf;
     }
   }
 #endif // SENSOR_PEOPLE_COUNT_CADENCE
   if (((evt->flags & SET_CADENCE_ACK_FLAG) == SET_CADENCE_ACK_FLAG)
       && (param_validity == true)) {
-    sl_status_t sc = sl_btmesh_sensor_setup_server_send_cadence_status(evt->client_address,
-                                                                       BTMESH_SENSOR_SERVER_MAIN,
-                                                                       evt->appkey_index,
-                                                                       NO_FLAGS,
-                                                                       evt->property_id,
-                                                                       buff_len,
-                                                                       buff_addr);
+    sc = sl_btmesh_sensor_setup_server_send_cadence_status(evt->client_address,
+                                                           BTMESH_SENSOR_SERVER_MAIN,
+                                                           evt->appkey_index,
+                                                           NO_FLAGS,
+                                                           evt->property_id,
+                                                           buff_len,
+                                                           buff_addr);
     log_status_error_f(sc,
                        SENSOR_SETUP_SERVER_SEND_FAILED_TEXT,
                        "cadence status");
@@ -792,19 +811,31 @@ static void sensor_server_data_timer_cb(app_timer_t *handle, void *data)
 {
   (void)data;
   (void)handle;
-  uint32_t publ_timer_thermometer = publish_period.period_ms;
-  uint32_t publ_timer_people_count = publish_period.period_ms;
-  uint32_t publ_timeout;
   sl_status_t sc;
 
 #if SENSOR_THERMOMETER_CADENCE
+  temperature_8_t temperature;
   if (rht_initialized == true) {
-    publ_timer_thermometer = sl_btmesh_sensor_thermometer_handle_cadence(get_temperature(), publish_period);
+    temperature = get_temperature();
+  }
+#endif // SENSOR_THERMOMETER_CADENCE
+
+  sc = app_btmesh_rta_acquire();
+  if (sc != SL_STATUS_OK) {
+    return;
+  }
+  uint32_t publ_timer_thermometer = publish_period.period_ms;
+  uint32_t publ_timer_people_count = publish_period.period_ms;
+  uint32_t publ_timeout;
+
+#if SENSOR_THERMOMETER_CADENCE
+  if (rht_initialized == true) {
+    publ_timer_thermometer = sli_btmesh_sensor_thermometer_handle_cadence(temperature, publish_period);
   }
 #endif // SENSOR_THERMOMETER_CADENCE
 
 #if SENSOR_PEOPLE_COUNT_CADENCE
-  publ_timer_people_count = sl_btmesh_sensor_people_count_handle_cadence(sl_btmesh_get_people_count(), publish_period);
+  publ_timer_people_count = sli_btmesh_sensor_people_count_handle_cadence(sl_btmesh_get_people_count(), publish_period);
 #endif // SENSOR_PEOPLE_COUNT_CADENCE
 
   if (publ_timer_thermometer > publ_timer_people_count) {
@@ -829,6 +860,7 @@ static void sensor_server_data_timer_cb(app_timer_t *handle, void *data)
     app_assert_status_f(sc, "Failed to start periodic sensor_server_publish_timer");
   }
   prev_publish_timeout = publ_timeout;
+  (void) app_btmesh_rta_release();
 }
 
 /***************************************************************************//**

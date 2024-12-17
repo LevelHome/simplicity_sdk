@@ -15,9 +15,8 @@ provides:
   - name: iot_gpio
     allow_multiple: true
 requires:
-  - name: gpiointerrupt
+  - name: gpio
   - name: emlib_cmu
-  - name: emlib_gpio
   - name: freertos
   - name: device_init
   - name: status

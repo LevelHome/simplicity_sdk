@@ -21,7 +21,7 @@
 // <<< sl:start pin_tool >>>
 // <gpio> SL_USBD_DRIVER_VBUS_SENSE
 // $[GPIO_SL_USBD_DRIVER_VBUS_SENSE]
-#define SL_USBD_DRIVER_VBUS_SENSE_PORT           gpioPortD
+#define SL_USBD_DRIVER_VBUS_SENSE_PORT           SL_GPIO_PORT_D
 #define SL_USBD_DRIVER_VBUS_SENSE_PIN            2
 
 // [GPIO_SL_USBD_DRIVER_VBUS_SENSE]$

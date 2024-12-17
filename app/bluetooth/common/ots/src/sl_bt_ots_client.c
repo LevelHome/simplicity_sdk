@@ -33,7 +33,7 @@
 #include "sli_bt_ots_datatypes.h"
 #include "sl_status.h"
 #include "app_queue.h"
-#include "em_core.h"
+#include "sl_core.h"
 #include "app_timer.h"
 
 // -----------------------------------------------------------------------------

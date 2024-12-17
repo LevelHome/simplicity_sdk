@@ -76,6 +76,7 @@ extern otError OT_API_REAL_NAME(otCoapMessageAppendProxyUriOption)(otMessage *aM
 extern otError OT_API_REAL_NAME(otCoapMessageAppendUintOption)(otMessage *aMessage, uint16_t aNumber, uint32_t aValue);
 extern otError OT_API_REAL_NAME(otCoapMessageAppendUriPathOptions)(otMessage *aMessage, const char *aUriPath);
 extern otError OT_API_REAL_NAME(otCoapMessageAppendUriQueryOption)(otMessage *aMessage, const char *aUriQuery);
+extern otError OT_API_REAL_NAME(otCoapMessageAppendUriQueryOptions)(otMessage *aMessage, const char *aUriQuery);
 extern otError OT_API_REAL_NAME(otCoapMessageInitResponse)(otMessage       *aResponse,
                                                            const otMessage *aRequest,
                                                            otCoapType       aType,
@@ -281,6 +282,14 @@ otError OT_API_WRAPPER_NAME(otCoapMessageAppendUriQueryOption)(otMessage *aMessa
 {
     sl_ot_rtos_acquire_stack_mutex();
     otError ret = OT_API_REAL_NAME(otCoapMessageAppendUriQueryOption)(aMessage, aUriQuery);
+    sl_ot_rtos_release_stack_mutex();
+    return ret;
+}
+
+otError OT_API_WRAPPER_NAME(otCoapMessageAppendUriQueryOptions)(otMessage *aMessage, const char *aUriQuery)
+{
+    sl_ot_rtos_acquire_stack_mutex();
+    otError ret = OT_API_REAL_NAME(otCoapMessageAppendUriQueryOptions)(aMessage, aUriQuery);
     sl_ot_rtos_release_stack_mutex();
     return ret;
 }

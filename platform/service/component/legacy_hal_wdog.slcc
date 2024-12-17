@@ -3,6 +3,9 @@ label: Legacy HAL Watchdog
 package: platform
 category: Services|Ember Legacy
 quality: production
+metadata:
+  sbom:
+    license: MSLA
 description: >
   Legacy HAL Watchdog.
 

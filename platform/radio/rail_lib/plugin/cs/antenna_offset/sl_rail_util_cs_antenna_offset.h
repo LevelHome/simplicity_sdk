@@ -35,6 +35,11 @@
 extern "C" {
 #endif
 
+/** Wireless antenna configuration type. */
+#define SL_RAIL_UTIL_CS_ANTENNA_OFFSET_CONFIG_TYPE_WIRELESS  0
+/** Wired antenna configuration type. */
+#define SL_RAIL_UTIL_CS_ANTENNA_OFFSET_CONFIG_TYPE_WIRED     1
+
 /**
  * Initialize the CS (Channel Sounding) Antenna Offset Utility.
  *

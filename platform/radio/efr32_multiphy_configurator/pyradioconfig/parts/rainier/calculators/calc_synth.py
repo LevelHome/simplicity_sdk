@@ -12,9 +12,7 @@ class CalcSynthRainier(Calc_Synth_Bobcat):
             model (ModelRoot) : Builds the variables specific to this calculator
         """
 
-        # Build variables from Bobcat
-        calc_synth_Bobcat_obj = Calc_Synth_Bobcat()
-        calc_synth_Bobcat_obj.buildVariables(model)
+        super().buildVariables(model)
 
         self._addModelVariable(model, 'adc_constrain_xomult', bool, ModelVariableFormat.DECIMAL,
                                desc='Flag used internally to constrain ADC clock to multiple of HFXO')
@@ -24,13 +22,14 @@ class CalcSynthRainier(Calc_Synth_Bobcat):
             enum_name='SynthTxModeEnum',
             enum_desc='Defined Synth TX Mode',
             member_data=[
-                ['MODE1', 0, 'TX Mode 1'],           # IQMOD, 750KHz one side
-                ['MODE2', 1, 'TX Mode 2'],           # 1MHZ, BLE1M, one side
-                ['MODE3', 2, 'TX Mode 3'],           # 1.5MHZ, one side, BLE2M and Zigbee
+                ['MODE1', 0, 'TX Mode 1'],           # 750KHz one side
+                ['MODE2', 1, 'TX Mode 2'],           # 1MHZ, one side
+                ['MODE3', 2, 'TX Mode 3'],           # 1.5MHZ, one side
                 ['MODE4', 3, 'TX Mode 4'],           # 2.5MHz, one side
-                ['MODE_BLE', 1, 'TX BLE Mode'],
-                ['MODE_BLE_FULLRATE', 2, 'TX BLE Fullrate Mode'],
-                ['MODE_IEEE802154', 2, 'TX IEEE802154 Mode'],
+                ['MODE_IQMOD', 0, 'TX IQMOD Mode'],   # IQMOD
+                ['MODE_BLE', 0, 'TX BLE Mode'],      # BLE1M
+                ['MODE_BLE_FULLRATE', 4, 'TX BLE Fullrate Mode'], # BLE2M
+                ['MODE_IEEE802154', 2, 'TX IEEE802154 Mode'], # Zigbee
             ])
         model.vars.synth_tx_mode_actual.var_enum = model.vars.synth_tx_mode.var_enum
 
@@ -149,12 +148,12 @@ class CalcSynthRainier(Calc_Synth_Bobcat):
 
         if dac_clock_mode_actual == model.vars.dac_clock_mode.var_enum.DISABLED:
             self._reg_write(model.vars.RAC_CLKMULTEN2_CLKMULTENBYPASS40MHZTX, 0)
-            self._reg_write(model.vars.RAC_CLKMULTEN2_CLKMULTDIVNTX, 0)
+            self._reg_write(model.vars.RAC_CLKMULTEN2_CLKMULTDIVNTX, 64)
             self._reg_write(model.vars.RAC_CLKMULTEN2_CLKMULTDIVRTX, 0)
             self._reg_write(model.vars.RAC_CLKMULTEN2_CLKMULTDIVXTX, 0)
         elif dac_clock_mode_actual == model.vars.dac_clock_mode.var_enum.HFXOBYP:
             self._reg_write(model.vars.RAC_CLKMULTEN2_CLKMULTENBYPASS40MHZTX, 1)
-            self._reg_write(model.vars.RAC_CLKMULTEN2_CLKMULTDIVNTX, 1)
+            self._reg_write(model.vars.RAC_CLKMULTEN2_CLKMULTDIVNTX, 64)
             self._reg_write(model.vars.RAC_CLKMULTEN2_CLKMULTDIVRTX, 1)
             self._reg_write(model.vars.RAC_CLKMULTEN2_CLKMULTDIVXTX, 0)
         elif dac_clock_mode_actual == model.vars.dac_clock_mode.var_enum.HFXOMULT:
@@ -189,8 +188,6 @@ class CalcSynthRainier(Calc_Synth_Bobcat):
             self._reg_write(model.vars.RAC_CLKMULTEN0_CLKMULTLDMNIB, 0)
             self._reg_write(model.vars.RAC_CLKMULTEN0_CLKMULTRDNIBBLE, 3)
             self._reg_write(model.vars.RAC_CLKMULTEN0_CLKMULTLDCNIB, 0)
-            # updated to set&forget value https://confluence.silabs.com/pages/viewpage.action?spaceKey=PGRAINIER&title=Chip+Config
-            self._reg_write(model.vars.RAC_CLKMULTEN1_CLKMULTDRVAMPSEL, 3)
 
             self._reg_write(model.vars.RAC_CLKMULTCTRL_CLKMULTENRESYNC, 0)
             self._reg_write(model.vars.RAC_CLKMULTCTRL_CLKMULTVALID, 0)
@@ -214,7 +211,6 @@ class CalcSynthRainier(Calc_Synth_Bobcat):
             self._reg_write_default(model.vars.RAC_CLKMULTEN0_CLKMULTLDMNIB)
             self._reg_write_default(model.vars.RAC_CLKMULTEN0_CLKMULTRDNIBBLE)
             self._reg_write_default(model.vars.RAC_CLKMULTEN0_CLKMULTLDCNIB)
-            self._reg_write_default(model.vars.RAC_CLKMULTEN1_CLKMULTDRVAMPSEL)
 
             self._reg_write_default(model.vars.RAC_CLKMULTCTRL_CLKMULTENRESYNC)
             self._reg_write_default(model.vars.RAC_CLKMULTCTRL_CLKMULTVALID)
@@ -242,6 +238,7 @@ class CalcSynthRainier(Calc_Synth_Bobcat):
             'SYNTH.DSMCTRLRX.LSBFORCERX': [1, 1, 1],
             'SYNTH.DSMCTRLRX.DEMMODERX': [1, 1, 1],
             'SYNTH.DSMCTRLRX.QNCMODERX': [0, 0, 1],
+            'SYNTH.DSMCTRLRX.GLMSOVERRIDEVALRX': [840, 840, 840],
 
            # 'RAC.SYMMDCTRL.SYMMDMODERX': [4, 4],
            #'RAC.SYTRIM1.SYLODIVLDOTRIMNDIORX': [1, 1],
@@ -264,6 +261,8 @@ class CalcSynthRainier(Calc_Synth_Bobcat):
                         rx_mode_settings['SYNTH.DLFCTRLRX.RXLOCKLPFBWGEAR9'][ind])
         self._reg_write(model.vars.SYNTH_DSMCTRLRX_QNCMODERX,
                         rx_mode_settings['SYNTH.DSMCTRLRX.QNCMODERX'][ind])
+        self._reg_write(model.vars.SYNTH_DSMCTRLRX_GLMSOVERRIDEVALRX,
+                        rx_mode_settings['SYNTH.DSMCTRLRX.GLMSOVERRIDEVALRX'][ind])
 
         # : Following registers are PTE Set & Forget but needs to be set by RC since they are different from reset value
         # : See https://jira.silabs.com/browse/MCUW_RADIO_CFG-1610
@@ -273,13 +272,16 @@ class CalcSynthRainier(Calc_Synth_Bobcat):
     def calc_tx_mode(self, model):
         modulator_select = model.vars.modulator_select.value
         baudrate = model.vars.baudrate.value
-        modulation_type = model.vars.modulation_type.value
+        modulation_index = model.vars.modulation_index.value
 
         if modulator_select == model.vars.modulator_select.var_enum.IQ_MOD:
             model.vars.synth_tx_mode.value = model.vars.synth_tx_mode.var_enum.MODE1      #750KHz,one side
         # Set FSK and OQPSK settings based on baudrate
         else:
-            if baudrate > 1000e3:
+            if baudrate > 1500e3 and modulation_index > 0.5:
+                # to fix eye diagram for 2mbps1Mhz datasheet PHY - https://jira.silabs.com/browse/MCUW_RADIO_CFG-2548
+                model.vars.synth_tx_mode.value = model.vars.synth_tx_mode.var_enum.MODE4  # 2.5MHz, one side
+            elif baudrate > 1000e3:
                 model.vars.synth_tx_mode.value = model.vars.synth_tx_mode.var_enum.MODE3  # 1.5MHz, one side
             elif baudrate > 500e3:
                 model.vars.synth_tx_mode.value = model.vars.synth_tx_mode.var_enum.MODE2  # 1 MHz, one side
@@ -289,28 +291,28 @@ class CalcSynthRainier(Calc_Synth_Bobcat):
     def calc_tx_mode_reg(self, model):
         ind = model.vars.synth_tx_mode.value
 
-        # Synth settings https://jira.silabs.com/browse/MCUW_RADIO_CFG-1529
-        # Settings copied over from Lynx Assert
-        # {workspace}\shared_files\lynx\radio_validation\ASSERTS
-        # 750KHz one side (MODE 1)
+        # Synth settings coming from
+        # file://silabs.com/design/projects/ip_em_22nm/tsmc22ull/modules/blesy_all/docs/specs/blesy_all.pdf
+        # 750KHz one side (MODE 1), to be used for IQMOD and BLE1M PHY inband requirements
         # 1MHz one side (MODE 2)
         # 1.5MHz one side (MODE 3)
         # 2.5MHz one side (MODE 4)
+        # 2 MHz one side (MODE 5), to be used for BLE2M PHY due to inband requirements
 
         tx_mode_settings = {
-            'SYNTH.DLFCTRLTX.TXLOCKLPFBWGEAR2': [15, 15, 15, 15],
-            'SYNTH.DLFCTRLTX.TXLOCKLPFBWGEAR3': [12, 12, 14, 14],
-            'SYNTH.DLFCTRLTX.TXLOCKLPFBWGEAR4': [12, 12, 14, 14],
-            'SYNTH.DLFCTRLTX.TXLOCKLPFBWGEAR5': [12, 12, 14, 14],
-            'SYNTH.DLFCTRLTX.TXLOCKLPFBWGEAR6': [10, 10, 13, 13],
-            'SYNTH.DLFCTRLTX.TXLOCKLPFBWGEAR7': [10, 10, 13, 13],
-            'SYNTH.DLFCTRLTX.TXLOCKLPFBWGEAR8': [10, 10, 13, 13],
-            'SYNTH.DLFCTRLTX.TXLOCKLPFBWGEAR9': [9, 10, 11, 13],
-            'SYNTH.DLFCTRL.LOCKLPFBWGEARSLOT': [1, 1, 1, 1],
-            'SYNTH.DLFCTRL.LPFBWLOADDEL': [1, 1, 1, 1],
+            'SYNTH.DLFCTRLTX.TXLOCKLPFBWGEAR2': [15, 15, 15, 15, 15],
+            'SYNTH.DLFCTRLTX.TXLOCKLPFBWGEAR3': [12, 12, 14, 14, 14],
+            'SYNTH.DLFCTRLTX.TXLOCKLPFBWGEAR4': [12, 12, 14, 14, 14],
+            'SYNTH.DLFCTRLTX.TXLOCKLPFBWGEAR5': [12, 12, 14, 14, 14],
+            'SYNTH.DLFCTRLTX.TXLOCKLPFBWGEAR6': [10, 10, 13, 13, 13],
+            'SYNTH.DLFCTRLTX.TXLOCKLPFBWGEAR7': [10, 10, 13, 13, 13],
+            'SYNTH.DLFCTRLTX.TXLOCKLPFBWGEAR8': [10, 10, 13, 13, 13],
+            'SYNTH.DLFCTRLTX.TXLOCKLPFBWGEAR9': [9, 10, 11, 13, 12],
+            'SYNTH.DLFCTRL.LOCKLPFBWGEARSLOT': [1, 1, 1, 1, 1],
+            'SYNTH.DLFCTRL.LPFBWLOADDEL': [1, 1, 1, 1, 1],
 
-            'SYNTH.DSMCTRLTX.LSBFORCETX': [1, 1, 1, 1],
-            'SYNTH.DSMCTRLTX.DEMMODETX': [1, 1, 1, 1],
+            'SYNTH.DSMCTRLTX.LSBFORCETX': [1, 1, 1, 1, 1],
+            'SYNTH.DSMCTRLTX.DEMMODETX': [1, 1, 1, 1, 1],
 
          #   'RAC_SYCTRL1_SYLODIVSELFP4G82G4TX': [1, 0, 0, 0],   #fp select, depend on TX power, move to rail code
          #   'RAC_SYMMDCTRL_SYMMDSEL56STGTX': [1, 0, 0, 0],   #TX IQMOD select 6 stage
@@ -354,14 +356,14 @@ class CalcSynthRainier(Calc_Synth_Bobcat):
         self._reg_write(model.vars.SYNTH_LOCNTCTRL_NUMCYCLE, 5)
         self._reg_write(model.vars.SYNTH_LOCNTCTRL_NUMCYCLE1, 5)
         self._reg_write(model.vars.SYNTH_LOCNTCTRL_NUMCYCLE2, 5)
-        self._reg_write(model.vars.SYNTH_LOCNTCTRL_NUMCYCLE3, 5)
-        self._reg_write(model.vars.SYNTH_LOCNTCTRL_NUMCYCLE4, 5)
-        self._reg_write(model.vars.SYNTH_LOCNTCTRL_NUMCYCLE5, 5)
-        self._reg_write(model.vars.SYNTH_FCALCTRL_NUMCYCLE6, 5)
-        self._reg_write(model.vars.SYNTH_FCALCTRL_NUMCYCLE7, 5)
-        self._reg_write(model.vars.SYNTH_FCALCTRL_NUMCYCLE8, 5)
-        self._reg_write(model.vars.SYNTH_FCALCTRL_NUMCYCLE9, 5)
-        self._reg_write(model.vars.SYNTH_FCALCTRL_NUMCYCLE10, 5)
+        self._reg_write(model.vars.SYNTH_LOCNTCTRL_NUMCYCLE3, 4)
+        self._reg_write(model.vars.SYNTH_LOCNTCTRL_NUMCYCLE4, 4)
+        self._reg_write(model.vars.SYNTH_LOCNTCTRL_NUMCYCLE5, 4)
+        self._reg_write(model.vars.SYNTH_FCALCTRL_NUMCYCLE6, 4)
+        self._reg_write(model.vars.SYNTH_FCALCTRL_NUMCYCLE7, 4)
+        self._reg_write(model.vars.SYNTH_FCALCTRL_NUMCYCLE8, 3)
+        self._reg_write(model.vars.SYNTH_FCALCTRL_NUMCYCLE9, 3)
+        self._reg_write(model.vars.SYNTH_FCALCTRL_NUMCYCLE10, 2)
         ## COMPANION
         self._reg_write(model.vars.SYNTH_COMPANION_COMPANION0, 1)
         self._reg_write(model.vars.SYNTH_COMPANION_COMPANION1, 1)
@@ -372,15 +374,15 @@ class CalcSynthRainier(Calc_Synth_Bobcat):
         self._reg_write(model.vars.SYNTH_COMPANION_COMPANION6, 4)
         self._reg_write(model.vars.SYNTH_COMPANION_COMPANION7, 5)
         ## STEPWAIT
-        self._reg_write(model.vars.SYNTH_FCALCTRL_STEPWAIT, 4)
-        self._reg_write(model.vars.SYNTH_FCALSTEPWAIT_STEPWAIT1, 4)
-        self._reg_write(model.vars.SYNTH_FCALSTEPWAIT_STEPWAIT2, 4)
-        self._reg_write(model.vars.SYNTH_FCALSTEPWAIT_STEPWAIT3, 4)
-        self._reg_write(model.vars.SYNTH_FCALSTEPWAIT_STEPWAIT4, 4)
-        self._reg_write(model.vars.SYNTH_FCALSTEPWAIT_STEPWAIT5, 4)
-        self._reg_write(model.vars.SYNTH_FCALSTEPWAIT_STEPWAIT6, 4)
-        self._reg_write(model.vars.SYNTH_FCALSTEPWAIT_STEPWAIT7, 4)
-        self._reg_write(model.vars.SYNTH_FCALSTEPWAIT_STEPWAIT8, 4)
+        self._reg_write(model.vars.SYNTH_FCALCTRL_STEPWAIT, 0)
+        self._reg_write(model.vars.SYNTH_FCALSTEPWAIT_STEPWAIT1, 0)
+        self._reg_write(model.vars.SYNTH_FCALSTEPWAIT_STEPWAIT2, 0)
+        self._reg_write(model.vars.SYNTH_FCALSTEPWAIT_STEPWAIT3, 1)
+        self._reg_write(model.vars.SYNTH_FCALSTEPWAIT_STEPWAIT4, 1)
+        self._reg_write(model.vars.SYNTH_FCALSTEPWAIT_STEPWAIT5, 2)
+        self._reg_write(model.vars.SYNTH_FCALSTEPWAIT_STEPWAIT6, 2)
+        self._reg_write(model.vars.SYNTH_FCALSTEPWAIT_STEPWAIT7, 3)
+        self._reg_write(model.vars.SYNTH_FCALSTEPWAIT_STEPWAIT8, 3)
         self._reg_write(model.vars.SYNTH_FCALSTEPWAIT_STEPWAIT9, 4)
         self._reg_write(model.vars.SYNTH_FCALSTEPWAIT_STEPWAIT10, 4)
 
@@ -401,9 +403,23 @@ class CalcSynthRainier(Calc_Synth_Bobcat):
         self._reg_write(model.vars.SYNTH_PLMS_PLMSGEARSLOT, 0)
 
     def calc_s3_reg(self, model):
-        self._reg_write(model.vars.SYNTH_MMDDENOMINIT_DENOMINIT0, 63)
-        self._reg_write(model.vars.SYNTH_MMDDENOMINIT_DENOMINIT1, 64)
+        denominit0 = 63
+        denominit1 = 64
+        self._reg_write(model.vars.SYNTH_MMDDENOMINIT_DENOMINIT0, denominit0)
+        self._reg_write(model.vars.SYNTH_MMDDENOMINIT_DENOMINIT1, denominit1)
         self._reg_write(model.vars.SYNTH_QNCCTRL_ENABLEDQNCTIME, 5)
+
+    def calc_s3_synth_virtual_reg(self, model):
+        denominit0 = model.vars.SYNTH_MMDDENOMINIT_DENOMINIT0.value
+        denominit1 = model.vars.SYNTH_MMDDENOMINIT_DENOMINIT1.value
+        self._reg_write(model.vars.SEQ_MMDDENOMINIT_CALC_DENOMINIT0, denominit0)
+        self._reg_write(model.vars.SEQ_MMDDENOMINIT_CALC_DENOMINIT1, denominit1)
+        if model.target.upper() == 'IC':
+            self._reg_write(model.vars.SEQ_MMDDENOMINIT_CALC_DOUBLED_DENOMINIT0, int(denominit0 * 2))
+            self._reg_write(model.vars.SEQ_MMDDENOMINIT_CALC_DOUBLED_DENOMINIT1, int(denominit1 * 2))
+        else:
+            self._reg_write(model.vars.SEQ_MMDDENOMINIT_CALC_DOUBLED_DENOMINIT0, int(denominit0))
+            self._reg_write(model.vars.SEQ_MMDDENOMINIT_CALC_DOUBLED_DENOMINIT1, int(denominit1))
 
     def calc_synth_misc(self, model):
        # self._reg_write(model.vars.RAC_SYCTRL1_SYLODIVSELFP4G82G4, 0)  #RX always 2.4G, default REG value, remove from calculator
@@ -411,6 +427,7 @@ class CalcSynthRainier(Calc_Synth_Bobcat):
 
         self._reg_write(model.vars.RAC_SYLOCTRL0_SYLODIVDSMDACCLKDIVRATIO, 0)     #RX 150MHz
         self._reg_write(model.vars.RAC_SYLOCTRLTX0_SYLODIVDSMDACCLKDIVRATIOTX, 1) #TX 300MHz
+        self._reg_write(model.vars.RAC_SYLOCTRL0_SYLODIVREGTRIMVREG, 1) # MCUW_RADIO_CFG-2622
 
     def calc_pga_lna_bw_reg(self, model):
         # PGA BW is controlled by capfb registers
@@ -471,5 +488,38 @@ class CalcSynthRainier(Calc_Synth_Bobcat):
         pass
 
     def calc_ifadctrim1_reg(self, model):
-        negres = 1
-        self._reg_write(model.vars.RAC_ADCEN0_ADCENNEGRES, negres)
+        self._reg_write(model.vars.RAC_ADCEN0_ADCENNEGRES, 0)
+
+    def calc_syctrl_reg(self, model):
+        modulator = model.vars.modulator_select.value
+
+        if modulator == model.vars.modulator_select.var_enum.IQ_MOD:
+            syvcotrimbiastx_val = 5
+        else:
+            syvcotrimbiastx_val = 4
+
+        self._reg_write(model.vars.RAC_SYCTRL0_SYVCOTRIMIPTAT, 13)
+        self._reg_write(model.vars.RAC_SYCTRL0_SYVCOTRIMIBIAS, 4)
+        self._reg_write(model.vars.RAC_SYCTRL0_SYDSMDACTRIMLOADBALDLF, 4)
+        self._reg_write(model.vars.RAC_SYCTRL0_SYDSMDACTRIMLOADBALDSM, 2)
+        self._reg_write(model.vars.RAC_SYCTRL0_SYENMMDREGREPLICA, 0)
+
+        self._reg_write(model.vars.RAC_SYCTRLTX0_SYVCOTRIMIPTATTX, 13)
+        self._reg_write(model.vars.RAC_SYCTRLTX0_SYVCOTRIMIBIASTX,  syvcotrimbiastx_val)
+        self._reg_write(model.vars.RAC_SYCTRLTX0_SYDSMDACTRIMLOADBALDLFTX, 4)
+        self._reg_write(model.vars.RAC_SYCTRLTX0_SYENMMDREGREPLICATX, 1)
+
+    def calc_physeltx_physelrx_reg(self, model):
+
+        # https://jira.silabs.com/browse/MCUW_RADIO_CFG-2608
+        modulator_select = model.vars.modulator_select.value
+        adc_clock_mode = model.vars.adc_clock_mode.value
+
+        if (modulator_select == model.vars.modulator_select.var_enum.IQ_MOD
+                and adc_clock_mode == model.vars.adc_clock_mode.var_enum.HFXOMULT):
+            # it's HADM PHY
+            self._reg_write(model.vars.SYNTH_DSMCTRLTX_PHISELTX, 1)
+            self._reg_write(model.vars.SYNTH_DSMCTRLRX_PHISELRX, 1)
+        else:
+            self._reg_write(model.vars.SYNTH_DSMCTRLTX_PHISELTX, 0)
+            self._reg_write(model.vars.SYNTH_DSMCTRLRX_PHISELRX, 0)

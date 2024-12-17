@@ -38,7 +38,9 @@ const sl_zigbee_library_status_t sli_zigbee_security_link_keys_library_status =
   SL_ZIGBEE_LIBRARY_PRESENT_MASK;
 
 //------------------------------------------------------------------------------
-// Forward Declarations
+
+extern void sli_zigbee_stack_fetch_key_table_entry_at_index(uint8_t index, tokTypeStackKeyTable *tok);
+extern void sli_zigbee_stack_set_key_table_entry_at_index(uint8_t index, tokTypeStackKeyTable* tok);
 
 //------------------------------------------------------------------------------
 // The link key table.
@@ -62,7 +64,7 @@ sl_status_t sli_zigbee_get_key_table_entry(uint8_t index, sl_zigbee_key_struct_t
     return SL_STATUS_INVALID_INDEX;
   }
 
-  halCommonGetIndexedToken(&tok, TOKEN_STACK_KEY_TABLE, index);
+  sli_zigbee_stack_fetch_key_table_entry_at_index(index, &tok);
 
   if ( !sli_zigbee_is_token_data_initialized(&(tok[KEY_ENTRY_IEEE_OFFSET]),
                                              EUI64_SIZE + SL_ZIGBEE_ENCRYPTION_KEY_SIZE) ) {
@@ -128,7 +130,7 @@ uint8_t sli_zigbee_find_key_table_entry(sl_802154_long_addr_t address, bool link
     memset(&tok, 0xFF, sizeof (tok));
 
     uint8_t tokenBitmask;
-    halCommonGetIndexedToken(&tok, TOKEN_STACK_KEY_TABLE, i);
+    sli_zigbee_stack_fetch_key_table_entry_at_index(i, &tok);
     tokenBitmask = tok[KEY_ENTRY_INFO_OFFSET];
 
     //Check if token read was unsuccessful and assert
@@ -250,7 +252,7 @@ sl_status_t sli_zigbee_af_set_key_table_entry(bool erase,
                                      ? KEY_TABLE_SYMMETRIC_PASSPHRASE : 0));
   }
   sli_zigbee_incoming_aps_frame_counters[index] = 0;
-  halCommonSetIndexedToken(TOKEN_STACK_KEY_TABLE, index, (void*)&tok);
+  sli_zigbee_stack_set_key_table_entry_at_index(index, &tok);
 
   return SL_STATUS_OK;
 }
@@ -263,7 +265,7 @@ sl_status_t sli_zigbee_update_key_state(uint8_t index,
     return SL_STATUS_INVALID_INDEX;
   } else {
     tokTypeStackKeyTable tok;
-    halCommonGetIndexedToken(&tok, TOKEN_STACK_KEY_TABLE, index);
+    sli_zigbee_stack_fetch_key_table_entry_at_index(index, &tok);
 
     if (!sli_zigbee_is_token_data_initialized((uint8_t*)&tok, sizeof(tokTypeStackKeyTable))) {
       return SL_STATUS_INVALID_KEY;
@@ -271,7 +273,7 @@ sl_status_t sli_zigbee_update_key_state(uint8_t index,
     tok[KEY_ENTRY_INFO_OFFSET] &= (uint8_t) (~clearFlags);
     tok[KEY_ENTRY_INFO_OFFSET] |= setFlags;
 
-    halCommonSetIndexedToken(TOKEN_STACK_KEY_TABLE, index, (void*)&tok);
+    sli_zigbee_stack_set_key_table_entry_at_index(index, &tok);
   }
   return SL_STATUS_OK;
 }
@@ -330,7 +332,7 @@ sl_status_t sli_zigbee_stack_clear_key_table(void)
     memset(&tok, 0xFF, sizeof (tok));
 
     uint8_t tokenBitmask;
-    halCommonGetIndexedToken(&tok, TOKEN_STACK_KEY_TABLE, i);
+    sli_zigbee_stack_fetch_key_table_entry_at_index(i, &tok);
 
     tokenBitmask = tok[KEY_ENTRY_INFO_OFFSET];
 

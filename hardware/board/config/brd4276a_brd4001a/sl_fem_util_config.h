@@ -31,7 +31,7 @@
 #ifndef SL_FEM_UTIL_CONFIG_H
 #define SL_FEM_UTIL_CONFIG_H
 
-#include "em_gpio.h"
+#include "sl_gpio.h"
 
 // <<< Use Configuration Wizard in Context Menu >>>
 // <h> FEM Configuration
@@ -40,35 +40,33 @@
 #define SL_FEM_UTIL_RX_ENABLE              1
 // <q SL_FEM_UTIL_TX_ENABLE> Enable TX Mode
 // <i> Default: 0
-#define SL_FEM_UTIL_TX_ENABLE              0
-// <q SL_FEM_UTIL_BYPASS_ENABLE> Enable Bypass Mode
-// <i> Default: 0
-#define SL_FEM_UTIL_BYPASS_ENABLE          0
+#define SL_FEM_UTIL_TX_ENABLE              1
 // <q SL_FEM_UTIL_TX_HIGH_POWER_ENABLE> Enable TX High Power Mode
 // <i> Default: 0
 #define SL_FEM_UTIL_TX_HIGH_POWER_ENABLE   0
-// </h>
-
-// <h> Automatic external FEM LNA bypass Configuration
-// <e SL_FEM_UTIL_AUTO_LNA_BYPASS_ENABLE> Enable automatic LNA bypass
+// <e SL_FEM_UTIL_BYPASS_ENABLE> Enable Bypass Mode
 // <i> Default: 0
-#define SL_FEM_UTIL_AUTO_LNA_BYPASS_ENABLE              0
-// <o SL_FEM_UTIL_AUTO_LNA_BYPASS_THRESHOLD> LNA bypass threshold
+#define SL_FEM_UTIL_BYPASS_ENABLE          0
+// <e SL_FEM_UTIL_AUTO_PRS_LNA_BYPASS_ENABLE> Enable Automatic PRS LNA Bypass Mode
+// <i> Default: 0
+#define SL_FEM_UTIL_AUTO_PRS_LNA_BYPASS_ENABLE              0
+// <o SL_FEM_UTIL_AUTO_PRS_LNA_BYPASS_THRESHOLD> Automatic PRS LNA Bypass Threshold
 // <1-31:1>
 // <i> Default: 12
-#define SL_FEM_UTIL_AUTO_LNA_BYPASS_THRESHOLD           12
-// <o SL_FEM_UTIL_AUTO_LNA_BYPASS_DELTA_RSSI_DBM> LNA bypass delta RSSI (dBm)
+#define SL_FEM_UTIL_AUTO_PRS_LNA_BYPASS_THRESHOLD           12
+// <o SL_FEM_UTIL_AUTO_PRS_LNA_BYPASS_DELTA_RSSI_DBM> Automatic PRS LNA Bypass Delta RSSI (dBm)
 // <1-255:1>
 // <i> Default: 15
-#define SL_FEM_UTIL_AUTO_LNA_BYPASS_DELTA_RSSI_DBM      15
-// <o SL_FEM_UTIL_AUTO_LNA_BYPASS_POLARITY> LNA bypass GPIO polarity
+#define SL_FEM_UTIL_AUTO_PRS_LNA_BYPASS_DELTA_RSSI_DBM      15
+// <o SL_FEM_UTIL_AUTO_PRS_LNA_BYPASS_POLARITY> Automatic PRS LNA Bypass Polarity
 // <0-1:1>
 // <i> Default: 1
-#define SL_FEM_UTIL_AUTO_LNA_BYPASS_POLARITY            1
-// <o SL_FEM_UTIL_AUTO_LNA_BYPASS_TIMEOUT_US> LNA bypass timeout (Us)
+#define SL_FEM_UTIL_AUTO_PRS_LNA_BYPASS_POLARITY            1
+// <o SL_FEM_UTIL_AUTO_PRS_LNA_BYPASS_TIMEOUT_US> Automatic PRS LNA Bypass timeout (Us)
 // <1-65535:1>
 // <i> Default: 4000
-#define SL_FEM_UTIL_AUTO_LNA_BYPASS_TIMEOUT_US          4000
+#define SL_FEM_UTIL_AUTO_PRS_LNA_BYPASS_TIMEOUT_US          4000
+// </e>
 // </e>
 // </h>
 // <<< end of configuration section >>>
@@ -76,31 +74,30 @@
 // <<< sl:start pin_tool >>>
 // <prs gpio=true readonly=true> SL_FEM_UTIL_RX
 // $[PRS_SL_FEM_UTIL_RX]
-#define SL_FEM_UTIL_RX_CHANNEL                   6
+#define SL_FEM_UTIL_RX_CHANNEL                   8
 
-// PRS ASYNCH6 on PC08
-#define SL_FEM_UTIL_RX_PORT                      gpioPortC
-#define SL_FEM_UTIL_RX_PIN                       8
+// PRS ASYNCH8 on PC07
+#define SL_FEM_UTIL_RX_PORT                      SL_GPIO_PORT_C
+#define SL_FEM_UTIL_RX_PIN                       7
 
 // [PRS_SL_FEM_UTIL_RX]$
 
 // <prs gpio=true optional=true readonly=true> SL_FEM_UTIL_TX
 // $[PRS_SL_FEM_UTIL_TX]
+#define SL_FEM_UTIL_TX_CHANNEL                   10
 
-#define SL_FEM_UTIL_TX_CHANNEL                   8
-
-// PRS ASYNCH8 on PC05
-#define SL_FEM_UTIL_TX_PORT                      gpioPortC
+// PRS ASYNCH10 on PC05
+#define SL_FEM_UTIL_TX_PORT                      SL_GPIO_PORT_C
 #define SL_FEM_UTIL_TX_PIN                       5
 
 // [PRS_SL_FEM_UTIL_TX]$
 
 // <prs gpio=true readonly=true> SL_FEM_UTIL_SLEEP
 // $[PRS_SL_FEM_UTIL_SLEEP]
-#define SL_FEM_UTIL_SLEEP_CHANNEL                7
+#define SL_FEM_UTIL_SLEEP_CHANNEL                9
 
-// PRS ASYNCH7 on PC04
-#define SL_FEM_UTIL_SLEEP_PORT                   gpioPortC
+// PRS ASYNCH9 on PC04
+#define SL_FEM_UTIL_SLEEP_PORT                   SL_GPIO_PORT_C
 #define SL_FEM_UTIL_SLEEP_PIN                    4
 
 // [PRS_SL_FEM_UTIL_SLEEP]$
@@ -108,14 +105,17 @@
 // <gpio optional=true> SL_FEM_UTIL_BYPASS
 // $[GPIO_SL_FEM_UTIL_BYPASS]
 
-
 // [GPIO_SL_FEM_UTIL_BYPASS]$
 
 // <gpio optional=true> SL_FEM_UTIL_TX_HIGH_POWER
 // $[GPIO_SL_FEM_UTIL_TX_HIGH_POWER]
 
-
 // [GPIO_SL_FEM_UTIL_TX_HIGH_POWER]$
+
+// <prs optional=true> SL_FEM_UTIL_AUTO_PRS_LNA_BYPASS
+// $[PRS_SL_FEM_UTIL_AUTO_PRS_LNA_BYPASS]
+
+// [PRS_SL_FEM_UTIL_AUTO_PRS_LNA_BYPASS]$
 // <<< sl:end pin_tool >>>
 
 #define SL_FEM_UTIL_OPTIMIZED_PHY_ENABLE   0

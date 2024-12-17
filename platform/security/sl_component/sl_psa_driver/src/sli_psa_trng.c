@@ -41,8 +41,6 @@
   #include "sl_se_manager_entropy.h"
 #elif defined(SLI_MBEDTLS_DEVICE_VSE)
   #include "sli_cryptoacc_driver_trng.h"
-#elif defined(SLI_MBEDTLS_DEVICE_S1) && defined(SLI_PSA_DRIVER_FEATURE_TRNG)
-  #include "sli_crypto_trng_driver.h"
 #elif defined(SLI_TRNG_DEVICE_SI91X)
   #include "sl_si91x_psa_trng.h"
 #endif
@@ -128,11 +126,7 @@ psa_status_t mbedtls_psa_external_get_random(
     size_t offset = *output_length;
 
     // Read random bytes
-    #if defined(SLI_MBEDTLS_DEVICE_S1)
-    entropy_status = sli_crypto_trng_get_random(&output[offset],
-                                                output_size - offset,
-                                                output_length);
-    #elif defined(SLI_TRNG_DEVICE_SI91X)
+    #if defined(SLI_TRNG_DEVICE_SI91X)
     entropy_status = sl_si91x_psa_get_random(&output[offset],
                                              output_size - offset,
                                              output_length);

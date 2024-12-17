@@ -28,7 +28,7 @@
  *
  ******************************************************************************/
 #include <stdbool.h>
-#include "em_common.h"
+#include "sl_common.h"
 #include "app_log.h"
 #include "app_assert.h"
 #include "sl_bluetooth.h"

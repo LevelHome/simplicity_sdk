@@ -630,7 +630,7 @@ static void setNotificationFlag(uint8_t endpoint, uint16_t attrId, uint32_t flag
                                               (uint8_t *)&notificationFlags,
                                               4);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_gas_proxy_function_println("Unable to read notification flags attribute 0x%2x: status 0x%x", attrId, status);
+    sl_zigbee_af_gas_proxy_function_println("Unable to read notification flags attribute 0x%04X: status 0x%02X", attrId, status);
     return;
   }
 
@@ -641,7 +641,7 @@ static void setNotificationFlag(uint8_t endpoint, uint16_t attrId, uint32_t flag
                                                (uint8_t *)&notificationFlags,
                                                ZCL_BITMAP32_ATTRIBUTE_TYPE);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_gas_proxy_function_println("Unable to write notification flags attribute 0x%2x: status 0x%x", attrId, status);
+    sl_zigbee_af_gas_proxy_function_println("Unable to write notification flags attribute 0x%04X: status 0x%02X", attrId, status);
     return;
   }
 }
@@ -657,7 +657,7 @@ static void clearNotificationFlag(uint8_t endpoint, uint16_t attrId, uint32_t fl
                                               (uint8_t *)&notificationFlags,
                                               4);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_gas_proxy_function_println("Unable to read notification flags attribute 0x%2x: status 0x%x", attrId, status);
+    sl_zigbee_af_gas_proxy_function_println("Unable to read notification flags attribute 0x%04X: status 0x%02X", attrId, status);
     return;
   }
 
@@ -668,7 +668,7 @@ static void clearNotificationFlag(uint8_t endpoint, uint16_t attrId, uint32_t fl
                                                (uint8_t *)&notificationFlags,
                                                ZCL_BITMAP32_ATTRIBUTE_TYPE);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_gas_proxy_function_println("Unable to write notification flags attribute 0x%2x: status 0x%x", attrId, status);
+    sl_zigbee_af_gas_proxy_function_println("Unable to write notification flags attribute 0x%04X: status 0x%02X", attrId, status);
     return;
   }
 }
@@ -1030,7 +1030,7 @@ static void receiveSnapshot(uint32_t snapshotId,
   uint16_t snapshotPayloadLength = fieldLength(snapshotPayload);
 
   if (snapshotPayloadLength > GPF_MAX_SNAPSHOT_PAYLOAD_SIZE) {
-    sl_zigbee_af_gas_proxy_function_println("GPF: WARN: received a PublishSnapshot command that is longer than the max length expected, truncating entry stored in log: received len=0x%2x, max expected len=0x%2x",
+    sl_zigbee_af_gas_proxy_function_println("GPF: WARN: received a PublishSnapshot command that is longer than the max length expected, truncating entry stored in log: received len=0x%04X, max expected len=0x%04X",
                                             snapshotPayloadLength, GPF_MAX_SNAPSHOT_PAYLOAD_SIZE);
     snapshotPayloadLength = GPF_MAX_SNAPSHOT_PAYLOAD_SIZE;
   }
@@ -1057,7 +1057,7 @@ static void receivePrepaySnapshot(uint32_t snapshotId,
   uint16_t snapshotPayloadLength = fieldLength(snapshotPayload);
 
   if (snapshotPayloadLength > GPF_MAX_PREPAY_SNAPSHOT_PAYLOAD_SIZE) {
-    sl_zigbee_af_gas_proxy_function_println("GPF: WARN: received a PublishPrepaySnapshot command that is longer than the max length expected, truncating entry stored in log: received len=0x%2x, max expected len=0x%2x",
+    sl_zigbee_af_gas_proxy_function_println("GPF: WARN: received a PublishPrepaySnapshot command that is longer than the max length expected, truncating entry stored in log: received len=0x%04X, max expected len=0x%04X",
                                             snapshotPayloadLength, GPF_MAX_PREPAY_SNAPSHOT_PAYLOAD_SIZE);
     snapshotPayloadLength = GPF_MAX_PREPAY_SNAPSHOT_PAYLOAD_SIZE;
   }
@@ -1274,7 +1274,7 @@ static void resetAlternativeHistoricalConsumption(uint8_t endpoint,
                                                  consumption,
                                                  ZCL_INT24U_ATTRIBUTE_TYPE);
     if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-      sl_zigbee_af_gas_proxy_function_println("GPF: ERR: writing metering server attribute 0x%2x - status 0x%x",
+      sl_zigbee_af_gas_proxy_function_println("GPF: ERR: writing metering server attribute 0x%04X - status 0x%02X",
                                               altConsumptionDayAttrIds[i], status);
     }
   }
@@ -1286,7 +1286,7 @@ static void resetAlternativeHistoricalConsumption(uint8_t endpoint,
                                                  consumption,
                                                  ZCL_INT24U_ATTRIBUTE_TYPE);
     if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-      sl_zigbee_af_gas_proxy_function_println("GPF: ERR: writing metering server attribute 0x%2x - status 0x%x",
+      sl_zigbee_af_gas_proxy_function_println("GPF: ERR: writing metering server attribute 0x%04X - status 0x%02X",
                                               altConsumptionWeekAttrIds[i], status);
     }
   }
@@ -1298,7 +1298,7 @@ static void resetAlternativeHistoricalConsumption(uint8_t endpoint,
                                                  consumption,
                                                  ZCL_INT32U_ATTRIBUTE_TYPE);
     if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-      sl_zigbee_af_gas_proxy_function_println("GPF: ERR: writing metering server attribute 0x%2x - status 0x%x",
+      sl_zigbee_af_gas_proxy_function_println("GPF: ERR: writing metering server attribute 0x%04X - status 0x%02X",
                                               altConsumptionMonthAttrIds[i], status);
     }
   }
@@ -1482,7 +1482,7 @@ static void resetHistoricalCostConsumptionInformation(uint8_t endpoint,
                                                  cost,
                                                  ZCL_INT48U_ATTRIBUTE_TYPE);
     if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-      sl_zigbee_af_gas_proxy_function_println("GPF: ERR: writing prepayment server attribute 0x%2x - status 0x%x",
+      sl_zigbee_af_gas_proxy_function_println("GPF: ERR: writing prepayment server attribute 0x%04X - status 0x%02X",
                                               costConsumptionDayAttrIds[i], status);
     }
   }
@@ -1494,7 +1494,7 @@ static void resetHistoricalCostConsumptionInformation(uint8_t endpoint,
                                                  cost,
                                                  ZCL_INT48U_ATTRIBUTE_TYPE);
     if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-      sl_zigbee_af_gas_proxy_function_println("GPF: ERR: writing prepayment server attribute 0x%2x - status 0x%x",
+      sl_zigbee_af_gas_proxy_function_println("GPF: ERR: writing prepayment server attribute 0x%04X - status 0x%02X",
                                               costConsumptionWeekAttrIds[i], status);
     }
   }
@@ -1506,7 +1506,7 @@ static void resetHistoricalCostConsumptionInformation(uint8_t endpoint,
                                                  cost,
                                                  ZCL_INT48U_ATTRIBUTE_TYPE);
     if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-      sl_zigbee_af_gas_proxy_function_println("GPF: ERR: writing prepayment server attribute 0x%2x - status 0x%x",
+      sl_zigbee_af_gas_proxy_function_println("GPF: ERR: writing prepayment server attribute 0x%04X - status 0x%02X",
                                               costConsumptionMonthAttrIds[i], status);
     }
   }
@@ -1856,7 +1856,7 @@ static void setDailyConsumptionLogPrevSummation(sli_zigbee_gpf_sample_log_t *pro
 static uint8_t getInt48u(uint8_t* message, uint16_t currentIndex, uint16_t msgLen, uint8_t *destination)
 {
   if ((currentIndex + 6) > msgLen) {
-    sl_zigbee_af_gas_proxy_function_println("GetInt48u, %x bytes short", 6);
+    sl_zigbee_af_gas_proxy_function_println("GetInt48u, %02X bytes short", 6);
     return 0;
   }
 #if (BIGENDIAN_CPU)
@@ -2140,7 +2140,7 @@ void sl_zigbee_af_meter_mirror_mirror_added_cb(const sl_802154_long_addr_t reque
   // this endpoint;
   i = findStructuredData(GPF_UNUSED_ENDPOINT_ID);
   if (i == GPF_INVALID_LOG_INDEX) {
-    sl_zigbee_af_gas_proxy_function_println("GPF: ERR: Mirror Added - Structured data not available on endpoint 0x%x", endpoint);
+    sl_zigbee_af_gas_proxy_function_println("GPF: ERR: Mirror Added - Structured data not available on endpoint 0x%02X", endpoint);
     return;
   }
 
@@ -2167,7 +2167,7 @@ void sl_zigbee_af_meter_mirror_mirror_added_cb(const sl_802154_long_addr_t reque
   structuredData[i].notificationFlags4 = 0;
   structuredData[i].lastAttributeReportTime = 0;
 
-  sl_zigbee_af_gas_proxy_function_println("GPF: Structured Data initialized on endpoint 0x%x", endpoint);
+  sl_zigbee_af_gas_proxy_function_println("GPF: Structured Data initialized on endpoint 0x%02X", endpoint);
 
   // Set an event to make sure we keep our logs up to date with
   // our new GSME buddy at least every half hour (see 10.4.2.8 in v0.8.1).
@@ -2192,14 +2192,14 @@ void sl_zigbee_af_meter_mirror_mirror_removed_cb(const sl_802154_long_addr_t req
   // Find the structured data for the given endpoint
   i = findStructuredData(endpoint);
   if (i == GPF_INVALID_LOG_INDEX) {
-    sl_zigbee_af_gas_proxy_function_println("GPF: ERR: Mirror Removed - Structured data not available on endpoint 0x%x", endpoint);
+    sl_zigbee_af_gas_proxy_function_println("GPF: ERR: Mirror Removed - Structured data not available on endpoint 0x%02X", endpoint);
     return;
   }
 
   // mark the structured data log unused
   structuredData[i].endpoint = GPF_UNUSED_ENDPOINT_ID;
   memset(structuredData[i].deviceIeeeAddress, 0, EUI64_SIZE);
-  sl_zigbee_af_gas_proxy_function_println("GPF: Structured Data removed on endpoint 0x%x", endpoint);
+  sl_zigbee_af_gas_proxy_function_println("GPF: Structured Data removed on endpoint 0x%02X", endpoint);
 
   // We don't care about this GSME checking in anymore.
   sl_zigbee_af_endpoint_event_set_inactive(endpointEvent,
@@ -2237,7 +2237,7 @@ void sl_zigbee_af_meter_mirror_reporting_complete_cb(uint8_t endpoint)
   // Find the structured data for the given endpoint
   i = findStructuredData(endpoint);
   if (i == GPF_INVALID_LOG_INDEX) {
-    sl_zigbee_af_gas_proxy_function_println("GPF: ERR: Attribute Reporting Complete - Structured data not available on endpoint 0x%x", endpoint);
+    sl_zigbee_af_gas_proxy_function_println("GPF: ERR: Attribute Reporting Complete - Structured data not available on endpoint 0x%02X", endpoint);
     return;
   }
 
@@ -2247,7 +2247,7 @@ void sl_zigbee_af_meter_mirror_reporting_complete_cb(uint8_t endpoint)
                                               currentSummationDelivered,
                                               6);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_gas_proxy_function_println("GPF: ERR: can't read CurrentSummationDelivered attribute: status 0x%x", status);
+    sl_zigbee_af_gas_proxy_function_println("GPF: ERR: can't read CurrentSummationDelivered attribute: status 0x%02X", status);
   }
 
   status = sl_zigbee_af_read_server_attribute(endpoint,
@@ -2256,7 +2256,7 @@ void sl_zigbee_af_meter_mirror_reporting_complete_cb(uint8_t endpoint)
                                               currentDayAlternativeConsumptionDelivered,
                                               3);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_gas_proxy_function_println("GPF: ERR: can't read CurrentDayAlternativeConsumptionDelivered attribute: status 0x%x", status);
+    sl_zigbee_af_gas_proxy_function_println("GPF: ERR: can't read CurrentDayAlternativeConsumptionDelivered attribute: status 0x%02X", status);
   }
 
   status = sl_zigbee_af_read_server_attribute(endpoint,
@@ -2265,7 +2265,7 @@ void sl_zigbee_af_meter_mirror_reporting_complete_cb(uint8_t endpoint)
                                               currentDayCostConsumptionDelivered,
                                               6);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_gas_proxy_function_println("GPF: ERR: can't read CurrentDayCostConsumptionDelivered attribute: status 0x%x", status);
+    sl_zigbee_af_gas_proxy_function_println("GPF: ERR: can't read CurrentDayCostConsumptionDelivered attribute: status 0x%02X", status);
   }
 
   // We only care about the least significant 32 bits as the the various delivered
@@ -2338,13 +2338,13 @@ void sl_zigbee_af_meter_mirror_reporting_complete_cb(uint8_t endpoint)
  * @param numberOfSamples   Ver.: always
  * @param samples   Ver.: always
  */
-bool sl_zigbee_af_simple_metering_cluster_get_sampled_data_response_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_simple_metering_cluster_get_sampled_data_response_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_simple_metering_cluster_get_sampled_data_response_command_t cmd_data;
 
   if (zcl_decode_simple_metering_cluster_get_sampled_data_response_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   uint16_t sampleId = cmd_data.sampleId;
@@ -2365,7 +2365,7 @@ bool sl_zigbee_af_simple_metering_cluster_get_sampled_data_response_cb(sl_zigbee
   uint8_t currentSummationDelivered[] = { 0, 0, 0, 0, 0, 0 };
   uint32_t currentSummation;
 
-  sl_zigbee_af_gas_proxy_function_println("GPF: GetSampledDataResponse 0x%2x 0x%4x 0x%x 0x%2x 0x%2x 0x%2x",
+  sl_zigbee_af_gas_proxy_function_println("GPF: GetSampledDataResponse 0x%04X 0x%08X 0x%02X 0x%04X 0x%04X 0x%04X",
                                           sampleId,
                                           sampleStartTime,
                                           sampleType,
@@ -2374,13 +2374,12 @@ bool sl_zigbee_af_simple_metering_cluster_get_sampled_data_response_cb(sl_zigbee
                                           samplesLength);
 
   if (i == GPF_INVALID_LOG_INDEX) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   if (sampleType != SL_ZIGBEE_ZCL_SAMPLE_TYPE_CONSUMPTION_DELIVERED) {
-    sl_zigbee_af_gas_proxy_function_println("GPF: WARN: GetSampledDataResponse command received with invalid sampleType: 0x%x", sampleType);
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_INVALID_FIELD);
-    return true;
+    sl_zigbee_af_gas_proxy_function_println("GPF: WARN: GetSampledDataResponse command received with invalid sampleType: 0x%02X", sampleType);
+    return SL_ZIGBEE_ZCL_STATUS_INVALID_FIELD;
   }
 
   if (sampleId == GPF_DAILY_CONSUMPTION_LOG_SAMPLE_ID) {
@@ -2392,9 +2391,8 @@ bool sl_zigbee_af_simple_metering_cluster_get_sampled_data_response_cb(sl_zigbee
     sampleLog = &structuredData[i].profileDataLog;
     otherSampleLog = &structuredData[i].dailyConsumptionLog;
   } else {
-    sl_zigbee_af_gas_proxy_function_println("GPF: WARN: GetSampledDataResponse command received with invalid sampleId: 0x%2x", sampleId);
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_INVALID_FIELD);
-    return true;
+    sl_zigbee_af_gas_proxy_function_println("GPF: WARN: GetSampledDataResponse command received with invalid sampleId: 0x%04X", sampleId);
+    return SL_ZIGBEE_ZCL_STATUS_INVALID_FIELD;
   }
 
   // The only times we should receive a GetSampledDataResponse are
@@ -2407,8 +2405,7 @@ bool sl_zigbee_af_simple_metering_cluster_get_sampled_data_response_cb(sl_zigbee
   // As such we will ignore any commands that we were not expecting.
   if (!sampleLog->catchup || sl_zigbee_af_current_command()->seqNum != sampleLog->catchupSequenceNumber) {
     sl_zigbee_af_gas_proxy_function_println("GPF: WARN: ignoring unexpected GetSampledDataResponse command");
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
   }
 
   // Don't overwrite our start time if we have already been receiving samples
@@ -2439,7 +2436,7 @@ bool sl_zigbee_af_simple_metering_cluster_get_sampled_data_response_cb(sl_zigbee
                                               currentSummationDelivered,
                                               6);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_gas_proxy_function_println("GPF: ERR: can't read CurrentSummationDelivered attribute: status 0x%x", status);
+    sl_zigbee_af_gas_proxy_function_println("GPF: ERR: can't read CurrentSummationDelivered attribute: status 0x%02X", status);
   }
   // We only care about the least significant 32 bits as the the summation delivered
   // should not change by more than a 32 bit value between attribute reports.
@@ -2461,8 +2458,7 @@ bool sl_zigbee_af_simple_metering_cluster_get_sampled_data_response_cb(sl_zigbee
 
   stopSampleLogCatchup(endpoint, sampleLog, otherSampleLog);
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
 /** @brief Simple Metering Cluster Get Sampled Data
@@ -2472,39 +2468,37 @@ bool sl_zigbee_af_simple_metering_cluster_get_sampled_data_response_cb(sl_zigbee
  * @param sampleType   Ver.: always
  * @param numberOfSamples   Ver.: always
  */
-bool sl_zigbee_af_simple_metering_cluster_get_sampled_data_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_simple_metering_cluster_get_sampled_data_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_simple_metering_cluster_get_sampled_data_command_t cmd_data;
 
   if (zcl_decode_simple_metering_cluster_get_sampled_data_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   uint8_t endpoint = sl_zigbee_af_current_endpoint();
   uint8_t i = findStructuredData(endpoint);
   sli_zigbee_gpf_sample_log_t *sampleLog;
 
-  sl_zigbee_af_gas_proxy_function_println("GPF: GetSampledData 0x%2x 0x%4x 0x%x 0x%2x",
+  sl_zigbee_af_gas_proxy_function_println("GPF: GetSampledData 0x%04X 0x%08X 0x%02X 0x%04X",
                                           cmd_data.sampleId,
                                           cmd_data.earliestSampleTime,
                                           cmd_data.sampleType,
                                           cmd_data.numberOfSamples);
 
   if (i == GPF_INVALID_LOG_INDEX) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   if (cmd_data.sampleType != SL_ZIGBEE_ZCL_SAMPLE_TYPE_CONSUMPTION_DELIVERED) {
-    sl_zigbee_af_gas_proxy_function_println("GPF: WARN: GetSampledData command received with invalid sampleType: 0x%x", cmd_data.sampleType);
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_NOT_FOUND);
-    return true;
+    sl_zigbee_af_gas_proxy_function_println("GPF: WARN: GetSampledData command received with invalid sampleType: 0x%02X", cmd_data.sampleType);
+    return SL_ZIGBEE_ZCL_STATUS_NOT_FOUND;
   }
 
   if (!sl_zigbee_af_gas_proxy_function_data_log_access_request_cb(sl_zigbee_af_gas_proxy_function_get_current_message(),
                                                                   sl_zigbee_af_current_command())) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_NOT_AUTHORIZED);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_NOT_AUTHORIZED;
   }
 
   if (cmd_data.sampleId == GPF_DAILY_CONSUMPTION_LOG_SAMPLE_ID) {
@@ -2514,13 +2508,12 @@ bool sl_zigbee_af_simple_metering_cluster_get_sampled_data_cb(sl_zigbee_af_clust
     sl_zigbee_af_gas_proxy_function_println("GPF: Publish Profile Data Log");
     sampleLog = &structuredData[i].profileDataLog;
   } else {
-    sl_zigbee_af_gas_proxy_function_println("GPF: WARN: GetSampledData command received with invalid sampleId: 0x%2x", cmd_data.sampleId);
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_NOT_FOUND);
-    return true;
+    sl_zigbee_af_gas_proxy_function_println("GPF: WARN: GetSampledData command received with invalid sampleId: 0x%04X", cmd_data.sampleId);
+    return SL_ZIGBEE_ZCL_STATUS_NOT_FOUND;
   }
 
   sendSampleData(cmd_data.earliestSampleTime, cmd_data.numberOfSamples, sampleLog);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
 /** @brief Simple Metering Cluster Publish Snapshot
@@ -2534,13 +2527,13 @@ bool sl_zigbee_af_simple_metering_cluster_get_sampled_data_cb(sl_zigbee_af_clust
  * @param snapshotPayloadType   Ver.: always
  * @param snapshotPayload   Ver.: always
  */
-bool sl_zigbee_af_simple_metering_cluster_publish_snapshot_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_simple_metering_cluster_publish_snapshot_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_simple_metering_cluster_publish_snapshot_command_t cmd_data;
 
   if (zcl_decode_simple_metering_cluster_publish_snapshot_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   uint8_t endpoint = sl_zigbee_af_current_endpoint();
@@ -2549,7 +2542,7 @@ bool sl_zigbee_af_simple_metering_cluster_publish_snapshot_cb(sl_zigbee_af_clust
   sli_zigbee_gpf_snapshot_log_t *otherSnapshotLog;
   uint32_t now = sl_zigbee_af_get_current_time();
 
-  sl_zigbee_af_gas_proxy_function_println("GPF: PublishSnapshot 0x%4x 0x%4x 0x%x 0x%x 0x%x 0x%4x 0x%x",
+  sl_zigbee_af_gas_proxy_function_println("GPF: PublishSnapshot 0x%08X 0x%08X 0x%02X 0x%02X 0x%02X 0x%08X 0x%02X",
                                           cmd_data.snapshotId,
                                           cmd_data.snapshotTime,
                                           cmd_data.totalSnapshotsFound,
@@ -2559,7 +2552,7 @@ bool sl_zigbee_af_simple_metering_cluster_publish_snapshot_cb(sl_zigbee_af_clust
                                           cmd_data.snapshotPayloadType);
 
   if (i == GPF_INVALID_LOG_INDEX) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   // Both the Daily Read Log and Billing Data Log PublishSnapshot commands use
@@ -2575,9 +2568,8 @@ bool sl_zigbee_af_simple_metering_cluster_publish_snapshot_cb(sl_zigbee_af_clust
       && cmd_data.snapshotPayloadType != SL_ZIGBEE_ZCL_SNAPSHOT_PAYLOAD_TYPE_BLOCK_TIER_INFORMATION_SET_DELIVERED
       && cmd_data.snapshotPayloadType != SL_ZIGBEE_ZCL_SNAPSHOT_PAYLOAD_TYPE_TOU_INFORMATION_SET_DELIVERED_REGISTERS_NO_BILLING
       && cmd_data.snapshotPayloadType != SL_ZIGBEE_ZCL_SNAPSHOT_PAYLOAD_TYPE_BLOCK_TIER_INFORMATION_SET_DELIVERED_NO_BILLING) {
-    sl_zigbee_af_gas_proxy_function_println("GPF: WARN: PublishSnapshot command received with unsupported payloadType: 0x%x", cmd_data.snapshotPayloadType);
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_INVALID_FIELD);
-    return true;
+    sl_zigbee_af_gas_proxy_function_println("GPF: WARN: PublishSnapshot command received with unsupported payloadType: 0x%02X", cmd_data.snapshotPayloadType);
+    return SL_ZIGBEE_ZCL_STATUS_INVALID_FIELD;
   }
 
   if (cmd_data.snapshotCause == GPF_SNAPSHOT_CAUSE_GENERAL) {
@@ -2593,16 +2585,14 @@ bool sl_zigbee_af_simple_metering_cluster_publish_snapshot_cb(sl_zigbee_af_clust
     snapshotLog = &structuredData[i].billingDataLog.snapshot;
     otherSnapshotLog = &structuredData[i].dailyReadLog;
   } else {
-    sl_zigbee_af_gas_proxy_function_println("GPF: WARN: PublishSnapshot command received with unsupported cause: 0x%4x", cmd_data.snapshotCause);
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_INVALID_FIELD);
-    return true;
+    sl_zigbee_af_gas_proxy_function_println("GPF: WARN: PublishSnapshot command received with unsupported cause: 0x%08X", cmd_data.snapshotCause);
+    return SL_ZIGBEE_ZCL_STATUS_INVALID_FIELD;
   }
 
   // Ignore any commands that we were not expecting.
   if (snapshotLog->catchup && sl_zigbee_af_current_command()->seqNum != snapshotLog->catchupSequenceNumber) {
     sl_zigbee_af_gas_proxy_function_println("GPF: WARN: ignoring unexpected PublishSnapshot command");
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
   }
 
   receiveSnapshot(cmd_data.snapshotId, cmd_data.snapshotTime, cmd_data.snapshotCause, cmd_data.snapshotPayloadType, cmd_data.snapshotPayload, snapshotLog);
@@ -2645,8 +2635,7 @@ bool sl_zigbee_af_simple_metering_cluster_publish_snapshot_cb(sl_zigbee_af_clust
     }
   }
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
 /** @brief Simple Metering Cluster Get Snapshot
@@ -2656,27 +2645,27 @@ bool sl_zigbee_af_simple_metering_cluster_publish_snapshot_cb(sl_zigbee_af_clust
  * @param snapshotOffset   Ver.: always
  * @param snapshotCause   Ver.: always
  */
-bool sl_zigbee_af_simple_metering_cluster_get_snapshot_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_simple_metering_cluster_get_snapshot_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_simple_metering_cluster_get_snapshot_command_t cmd_data;
 
   if (zcl_decode_simple_metering_cluster_get_snapshot_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   uint8_t endpoint = sl_zigbee_af_current_endpoint();
   uint8_t i = findStructuredData(endpoint);
   sli_zigbee_gpf_snapshot_log_t *snapshotLog;
 
-  sl_zigbee_af_gas_proxy_function_println("GPF: GetSnapshot 0x%4x 0x%4x 0x%x 0x%4x",
+  sl_zigbee_af_gas_proxy_function_println("GPF: GetSnapshot 0x%08X 0x%08X 0x%02X 0x%08X",
                                           cmd_data.earliestStartTime,
                                           cmd_data.latestEndTime,
                                           cmd_data.snapshotOffset,
                                           cmd_data.snapshotCause);
 
   if (i == GPF_INVALID_LOG_INDEX) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   if (cmd_data.snapshotCause == GPF_SNAPSHOT_CAUSE_GENERAL) {
@@ -2684,8 +2673,7 @@ bool sl_zigbee_af_simple_metering_cluster_get_snapshot_cb(sl_zigbee_af_cluster_c
     snapshotLog = &structuredData[i].dailyReadLog;
     if (!sl_zigbee_af_gas_proxy_function_data_log_access_request_cb(sl_zigbee_af_gas_proxy_function_get_current_message(),
                                                                     sl_zigbee_af_current_command())) {
-      sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_NOT_AUTHORIZED);
-      goto kickout;
+      return SL_ZIGBEE_ZCL_STATUS_NOT_AUTHORIZED;
     }
   } else if (cmd_data.snapshotCause
              & (GPF_SNAPSHOT_CAUSE_END_OF_BILLING_PERIOD
@@ -2694,21 +2682,18 @@ bool sl_zigbee_af_simple_metering_cluster_get_snapshot_cb(sl_zigbee_af_cluster_c
                 | GPF_SNAPSHOT_CAUSE_CHANGE_OF_PAYMENT_MODE)) {
     if (!sl_zigbee_af_gas_proxy_function_data_log_access_request_cb(sl_zigbee_af_gas_proxy_function_get_current_message(),
                                                                     sl_zigbee_af_current_command())) {
-      sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_NOT_AUTHORIZED);
-      goto kickout;
+      return SL_ZIGBEE_ZCL_STATUS_NOT_AUTHORIZED;
     }
 
     sl_zigbee_af_gas_proxy_function_println("GPF: Publish Billing Data Log - Tariff TOU Register Matrix, the Consumption Register and Tariff Block Counter Matrix");
     snapshotLog = &structuredData[i].billingDataLog.snapshot;
   } else {
-    sl_zigbee_af_gas_proxy_function_println("GPF: WARN: GetSnapshot command received with unsupported cause: 0x%4x", cmd_data.snapshotCause);
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_NOT_FOUND);
-    return true;
+    sl_zigbee_af_gas_proxy_function_println("GPF: WARN: GetSnapshot command received with unsupported cause: 0x%08X", cmd_data.snapshotCause);
+    return SL_ZIGBEE_ZCL_STATUS_NOT_FOUND;
   }
 
   sendSnapshot(cmd_data.earliestStartTime, cmd_data.latestEndTime, cmd_data.snapshotOffset, cmd_data.snapshotCause, snapshotLog);
-  kickout:
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
 /** @brief Prepayment Cluster Publish Prepay Snapshot
@@ -2722,13 +2707,13 @@ bool sl_zigbee_af_simple_metering_cluster_get_snapshot_cb(sl_zigbee_af_cluster_c
  * @param snapshotPayloadType   Ver.: always
  * @param snapshotPayload   Ver.: always
  */
-bool sl_zigbee_af_prepayment_cluster_publish_prepay_snapshot_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_prepayment_cluster_publish_prepay_snapshot_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_prepayment_cluster_publish_prepay_snapshot_command_t cmd_data;
 
   if (zcl_decode_prepayment_cluster_publish_prepay_snapshot_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   uint32_t snapshotId = cmd_data.snapshotId;
@@ -2745,7 +2730,7 @@ bool sl_zigbee_af_prepayment_cluster_publish_prepay_snapshot_cb(sl_zigbee_af_clu
   sli_zigbee_gpf_prepay_snapshot_log_t *otherPrepaySnapshotLog;
   uint32_t now = sl_zigbee_af_get_current_time();
 
-  sl_zigbee_af_gas_proxy_function_println("GPF: RX: PublishPrepaySnapshot, 0x%4x, 0x%4x, 0x%x, 0x%x, 0x%x, 0x%4x, 0x%x",
+  sl_zigbee_af_gas_proxy_function_println("GPF: RX: PublishPrepaySnapshot, 0x%08X, 0x%08X, 0x%02X, 0x%02X, 0x%02X, 0x%08X, 0x%02X",
                                           snapshotId,
                                           snapshotTime,
                                           totalSnapshotsFound,
@@ -2755,21 +2740,19 @@ bool sl_zigbee_af_prepayment_cluster_publish_prepay_snapshot_cb(sl_zigbee_af_clu
                                           snapshotPayloadType);
 
   if (i == GPF_INVALID_LOG_INDEX) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   if (snapshotPayloadType != SL_ZIGBEE_ZCL_PREPAY_SNAPSHOT_PAYLOAD_TYPE_DEBT_CREDIT_STATUS) {
-    sl_zigbee_af_gas_proxy_function_println("GPF: WARN: PublishPrepaySnapshot command received with unsupported payloadType: 0x%x", snapshotPayloadType);
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_INVALID_FIELD);
-    return true;
+    sl_zigbee_af_gas_proxy_function_println("GPF: WARN: PublishPrepaySnapshot command received with unsupported payloadType: 0x%02X", snapshotPayloadType);
+    return SL_ZIGBEE_ZCL_STATUS_INVALID_FIELD;
   }
 
   if (snapshotCause == GPF_SNAPSHOT_CAUSE_GENERAL) {
     sl_zigbee_af_gas_proxy_function_println("GPF: Receive Prepay Daily Read Log");
     if (!sl_zigbee_af_gas_proxy_function_data_log_access_request_cb(sl_zigbee_af_gas_proxy_function_get_current_message(),
                                                                     sl_zigbee_af_current_command())) {
-      sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_NOT_AUTHORIZED);
-      goto kickout;
+      return SL_ZIGBEE_ZCL_STATUS_NOT_AUTHORIZED;
     }
 
     prepaySnapshotLog = &structuredData[i].prepayDailyReadLog;
@@ -2783,16 +2766,14 @@ bool sl_zigbee_af_prepayment_cluster_publish_prepay_snapshot_cb(sl_zigbee_af_clu
     prepaySnapshotLog = &structuredData[i].billingDataLog.prepaySnapshot;
     otherPrepaySnapshotLog = &structuredData[i].prepayDailyReadLog;
   } else {
-    sl_zigbee_af_gas_proxy_function_println("GPF: WARN: PublishPrepaySnapshot command received with unsupported cause: 0x%4x", snapshotCause);
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_INVALID_FIELD);
-    return true;
+    sl_zigbee_af_gas_proxy_function_println("GPF: WARN: PublishPrepaySnapshot command received with unsupported cause: 0x%08X", snapshotCause);
+    return SL_ZIGBEE_ZCL_STATUS_INVALID_FIELD;
   }
 
   // Ignore any commands that we were not expecting.
   if (prepaySnapshotLog->catchup && sl_zigbee_af_current_command()->seqNum != prepaySnapshotLog->catchupSequenceNumber) {
     sl_zigbee_af_gas_proxy_function_println("GPF: WARN: ignoring unexpected PublishPrepaySnapshot command");
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
   }
 
   receivePrepaySnapshot(snapshotId, snapshotTime, snapshotCause, snapshotPayloadType, snapshotPayload, prepaySnapshotLog);
@@ -2831,9 +2812,7 @@ bool sl_zigbee_af_prepayment_cluster_publish_prepay_snapshot_cb(sl_zigbee_af_clu
     }
   }
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  kickout:
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
 /** @brief Prepayment Cluster Get Prepay Snapshot
@@ -2843,20 +2822,20 @@ bool sl_zigbee_af_prepayment_cluster_publish_prepay_snapshot_cb(sl_zigbee_af_clu
  * @param snapshotOffset   Ver.: always
  * @param snapshotCause   Ver.: always
  */
-bool sl_zigbee_af_prepayment_cluster_get_prepay_snapshot_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_prepayment_cluster_get_prepay_snapshot_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_prepayment_cluster_get_prepay_snapshot_command_t cmd_data;
 
   if (zcl_decode_prepayment_cluster_get_prepay_snapshot_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   uint8_t endpoint = sl_zigbee_af_current_endpoint();
   uint8_t i = findStructuredData(endpoint);
   sli_zigbee_gpf_prepay_snapshot_log_t *prepaySnapshotLog;
 
-  sl_zigbee_af_gas_proxy_function_println("GPF: RX: GetPrepaySnapshot 0x%4x 0x%4x 0x%x 0x%4x",
+  sl_zigbee_af_gas_proxy_function_println("GPF: RX: GetPrepaySnapshot 0x%08X 0x%08X 0x%02X 0x%08X",
                                           cmd_data.earliestStartTime,
                                           cmd_data.latestEndTime,
                                           cmd_data.snapshotOffset,
@@ -2877,13 +2856,12 @@ bool sl_zigbee_af_prepayment_cluster_get_prepay_snapshot_cb(sl_zigbee_af_cluster
     sl_zigbee_af_gas_proxy_function_println("GPF: Publish Billing Data Log - Meter Balance, Emergency Credit Balance, Accumulated Debt Register, Payment Debt Register and Time Debt Registers");
     prepaySnapshotLog = &structuredData[i].billingDataLog.prepaySnapshot;
   } else {
-    sl_zigbee_af_gas_proxy_function_println("GPF: WARN: GetPrepaySnapshot command received with unsupported cause: 0x%4x", cmd_data.snapshotCause);
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_NOT_FOUND);
-    return true;
+    sl_zigbee_af_gas_proxy_function_println("GPF: WARN: GetPrepaySnapshot command received with unsupported cause: 0x%08X", cmd_data.snapshotCause);
+    return SL_ZIGBEE_ZCL_STATUS_NOT_FOUND;
   }
 
   sendPrepaySnapshot(cmd_data.earliestStartTime, cmd_data.latestEndTime, cmd_data.snapshotOffset, cmd_data.snapshotCause, prepaySnapshotLog);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
 /** @brief Prepayment Cluster Publish Top Up Log
@@ -2892,13 +2870,13 @@ bool sl_zigbee_af_prepayment_cluster_get_prepay_snapshot_cb(sl_zigbee_af_cluster
  * @param totalNumberOfCommands   Ver.: always
  * @param topUpPayload   Ver.: always
  */
-bool sl_zigbee_af_prepayment_cluster_publish_top_up_log_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_prepayment_cluster_publish_top_up_log_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_prepayment_cluster_publish_top_up_log_command_t cmd_data;
 
   if (zcl_decode_prepayment_cluster_publish_top_up_log_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   uint8_t endpoint = sl_zigbee_af_current_endpoint();
@@ -2910,13 +2888,13 @@ bool sl_zigbee_af_prepayment_cluster_publish_top_up_log_cb(sl_zigbee_af_cluster_
   uint32_t topUpPayloadAmount;
   uint32_t topUpPayloadTime;
 
-  sl_zigbee_af_gas_proxy_function_println("GPF: PublishTopUpLog 0x%x 0x%x 0x%2x",
+  sl_zigbee_af_gas_proxy_function_println("GPF: PublishTopUpLog 0x%02X 0x%02X 0x%04X",
                                           cmd_data.commandIndex,
                                           cmd_data.totalNumberOfCommands,
                                           topUpPayloadLength);
 
   if (i == GPF_INVALID_LOG_INDEX) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   sl_zigbee_af_gas_proxy_function_println("GPF: Receive Billing Data Log - value of prepayment credits");
@@ -2925,8 +2903,7 @@ bool sl_zigbee_af_prepayment_cluster_publish_top_up_log_cb(sl_zigbee_af_cluster_
   // Ignore any commands that we were not expecting.
   if (topUpLog->catchup && sl_zigbee_af_current_command()->seqNum != topUpLog->catchupSequenceNumber) {
     sl_zigbee_af_gas_proxy_function_println("GPF: WARN: ignoring unexpected PublishTopUpLog command");
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
   }
 
   while (topUpPayloadIndex < topUpPayloadLength) {
@@ -2943,8 +2920,7 @@ bool sl_zigbee_af_prepayment_cluster_publish_top_up_log_cb(sl_zigbee_af_cluster_
     stopTopUpLogCatchup(endpoint, topUpLog);
   }
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
 /** @brief Prepayment Cluster Get Top Up Log
@@ -2952,13 +2928,13 @@ bool sl_zigbee_af_prepayment_cluster_publish_top_up_log_cb(sl_zigbee_af_cluster_
  * @param latestEndTime   Ver.: always
  * @param numberOfRecords   Ver.: always
  */
-bool sl_zigbee_af_prepayment_cluster_get_top_up_log_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_prepayment_cluster_get_top_up_log_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_prepayment_cluster_get_top_up_log_command_t cmd_data;
 
   if (zcl_decode_prepayment_cluster_get_top_up_log_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   uint8_t endpoint = sl_zigbee_af_current_endpoint();
@@ -2966,12 +2942,12 @@ bool sl_zigbee_af_prepayment_cluster_get_top_up_log_cb(sl_zigbee_af_cluster_comm
   sli_zigbee_gpf_top_up_log_t *topUpLog;
   uint32_t earliestStartTime;
 
-  sl_zigbee_af_gas_proxy_function_println("GPF: GetTopUpLog 0x%4x 0x%x",
+  sl_zigbee_af_gas_proxy_function_println("GPF: GetTopUpLog 0x%08X 0x%02X",
                                           cmd_data.latestEndTime,
                                           cmd_data.numberOfRecords);
 
   if (i == GPF_INVALID_LOG_INDEX) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   sl_zigbee_af_gas_proxy_function_println("GPF: Publish Billing Data Log - value of prepayment credits");
@@ -2983,7 +2959,7 @@ bool sl_zigbee_af_prepayment_cluster_get_top_up_log_cb(sl_zigbee_af_cluster_comm
   earliestStartTime = (sl_zigbee_af_current_command()->source == sl_zigbee_af_get_node_id())
                       ? sli_zigbee_af_gas_proxy_function_get_gbz_start_time() : 0;
   sendTopUp(earliestStartTime, cmd_data.latestEndTime, cmd_data.numberOfRecords, topUpLog);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
 /** @brief Prepayment Cluster Publish Debt Log
@@ -2992,13 +2968,13 @@ bool sl_zigbee_af_prepayment_cluster_get_top_up_log_cb(sl_zigbee_af_cluster_comm
  * @param totalNumberOfCommands   Ver.: always
  * @param debtPayload   Ver.: always
  */
-bool sl_zigbee_af_prepayment_cluster_publish_debt_log_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_prepayment_cluster_publish_debt_log_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_prepayment_cluster_publish_debt_log_command_t cmd_data;
 
   if (zcl_decode_prepayment_cluster_publish_debt_log_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   uint8_t endpoint = sl_zigbee_af_current_endpoint();
@@ -3011,13 +2987,13 @@ bool sl_zigbee_af_prepayment_cluster_publish_debt_log_cb(sl_zigbee_af_cluster_co
   uint32_t outstandingDebt;
   uint8_t  debtType;
 
-  sl_zigbee_af_gas_proxy_function_println("GPF: PublishDebtLog 0x%x 0x%x 0x%2x",
+  sl_zigbee_af_gas_proxy_function_println("GPF: PublishDebtLog 0x%02X 0x%02X 0x%04X",
                                           cmd_data.commandIndex,
                                           cmd_data.totalNumberOfCommands,
                                           debtPayloadLength);
 
   if (i == GPF_INVALID_LOG_INDEX) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   sl_zigbee_af_gas_proxy_function_println("GPF: Receive Billing Data Log - payment-based debt payments");
@@ -3026,8 +3002,7 @@ bool sl_zigbee_af_prepayment_cluster_publish_debt_log_cb(sl_zigbee_af_cluster_co
   // Ignore any commands that we were not expecting.
   if (debtLog->catchup && sl_zigbee_af_current_command()->seqNum != debtLog->catchupSequenceNumber) {
     sl_zigbee_af_gas_proxy_function_println("GPF: WARN: ignoring unexpected PublishDebtLog command");
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
   }
 
   while (debtPayloadIndex < debtPayloadLength) {
@@ -3046,8 +3021,7 @@ bool sl_zigbee_af_prepayment_cluster_publish_debt_log_cb(sl_zigbee_af_cluster_co
     stopDebtLogCatchup(endpoint, debtLog);
   }
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
 /** @brief Prepayment Cluster Get Debt Repayment Log
@@ -3056,13 +3030,13 @@ bool sl_zigbee_af_prepayment_cluster_publish_debt_log_cb(sl_zigbee_af_cluster_co
  * @param numberOfDebts   Ver.: always
  * @param debtType   Ver.: always
  */
-bool sl_zigbee_af_prepayment_cluster_get_debt_repayment_log_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_prepayment_cluster_get_debt_repayment_log_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_prepayment_cluster_get_debt_repayment_log_command_t cmd_data;
 
   if (zcl_decode_prepayment_cluster_get_debt_repayment_log_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   uint8_t endpoint = sl_zigbee_af_current_endpoint();
@@ -3070,13 +3044,13 @@ bool sl_zigbee_af_prepayment_cluster_get_debt_repayment_log_cb(sl_zigbee_af_clus
   sli_zigbee_gpf_debt_log_t *debtLog;
   uint32_t earliestStartTime;
 
-  sl_zigbee_af_gas_proxy_function_println("GPF: GetDebtRepaymentLog 0x%4x 0x%x 0x%x",
+  sl_zigbee_af_gas_proxy_function_println("GPF: GetDebtRepaymentLog 0x%08X 0x%02X 0x%02X",
                                           cmd_data.latestEndTime,
                                           cmd_data.numberOfDebts,
                                           cmd_data.debtType);
 
   if (i == GPF_INVALID_LOG_INDEX) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   sl_zigbee_af_gas_proxy_function_println("GPF: Publish Billing Data Log - payment-based debt payments");
@@ -3088,7 +3062,7 @@ bool sl_zigbee_af_prepayment_cluster_get_debt_repayment_log_cb(sl_zigbee_af_clus
   earliestStartTime = (sl_zigbee_af_current_command()->source == sl_zigbee_af_get_node_id())
                       ? sli_zigbee_af_gas_proxy_function_get_gbz_start_time() : 0;
   sendDebt(earliestStartTime, cmd_data.latestEndTime, cmd_data.numberOfDebts, cmd_data.debtType, debtLog);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
 // Catchup event handler used to retry previously attempted Get requests on
@@ -3258,13 +3232,13 @@ void sl_zigbee_af_gas_proxy_function_gsme_sync_endpoint_event_handler(uint8_t en
  * @param notificationFlagAttributeId   Ver.: always
  * @param notificationFlagsN   Ver.: always
  */
-bool sl_zigbee_af_simple_metering_cluster_get_notified_message_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_simple_metering_cluster_get_notified_message_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_simple_metering_cluster_get_notified_message_command_t cmd_data;
 
   if (zcl_decode_simple_metering_cluster_get_notified_message_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   uint8_t notificationScheme = cmd_data.notificationScheme;
@@ -3313,7 +3287,7 @@ bool sl_zigbee_af_simple_metering_cluster_get_notified_message_cb(sl_zigbee_af_c
   if (i == GPF_INVALID_LOG_INDEX || notificationScheme != 0x02
       || (notificationFlagAttributeId != ZCL_FUNCTIONAL_NOTIFICATION_FLAGS_ATTRIBUTE_ID
           && notificationFlagAttributeId != ZCL_NOTIFICATION_FLAGS_4_ATTRIBUTE_ID)) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   // Since this request could result in many commands being sent back to the
@@ -3327,8 +3301,7 @@ bool sl_zigbee_af_simple_metering_cluster_get_notified_message_cb(sl_zigbee_af_c
     (notificationFlagAttributeId == ZCL_NOTIFICATION_FLAGS_4_ATTRIBUTE_ID) ? notificationFlagsN : 0;
   sl_zigbee_af_event_set_active(gasProxyFunctionCatchupEventControl);
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
 /** @brief Simple Metering Cluster Client Default Response

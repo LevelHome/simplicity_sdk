@@ -35,6 +35,7 @@
 #include "sl_se_cpc_secondary.h"
 #include "sl_se_manager.h"
 #include "sli_se_manager_internal.h"
+#include "sli_se_manager_mailbox.h"
 
 // -----------------------------------------------------------------------------
 // Macros
@@ -230,7 +231,7 @@ static void parse_execute_request(const uint8_t      *command_request,
   }
 
   // Prepare input linked list
-  SE_DataTransfer_t *se_command_input = (SE_DataTransfer_t *)malloc(num_inputs * sizeof(SE_DataTransfer_t));
+  sli_se_datatransfer_t *se_command_input = (sli_se_datatransfer_t *)malloc(num_inputs * sizeof(sli_se_datatransfer_t));
   if (se_command_input == NULL) {
     request_metadata->se_command_response = SL_STATUS_ALLOCATION_FAILED;
     return;
@@ -245,7 +246,7 @@ static void parse_execute_request(const uint8_t      *command_request,
   }
 
   // Prepare output linked list
-  SE_DataTransfer_t *se_command_output = (SE_DataTransfer_t *)malloc(request_metadata->num_outputs * sizeof(SE_DataTransfer_t));
+  sli_se_datatransfer_t *se_command_output = (sli_se_datatransfer_t *)malloc(request_metadata->num_outputs * sizeof(sli_se_datatransfer_t));
   if (se_command_output == NULL) {
     free(se_command_input);
     request_metadata->se_command_response = SL_STATUS_ALLOCATION_FAILED;

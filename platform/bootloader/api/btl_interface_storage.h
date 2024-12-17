@@ -41,34 +41,34 @@
  *
  * @brief Snippet for the OTA use case:
  * @verbatim
- * ///OTA Example
- * /// Assuming the user has an upgrade image downloaded which will be used to upgrade the application
+ * OTA Example
+ * Assuming the user has an upgrade image downloaded which will be used to upgrade the application
  *
- * //Initialize the bootloader interface
+ * Initialize the bootloader interface
  * bootloader_init();
  *
- * //Erase the storage slot in internal/SPI flash memory
+ * Erase the storage slot in internal/SPI flash memory
  * bootloader_eraseStorageSlot(0);
  *
- * //Write the upgrade image (GBL file data) to the slot. blinkGbl  uint8 array holding the GBL data in memory
+ * Write the upgrade image (GBL file data) to the slot. blinkGbl  uint8 array holding the GBL data in memory
  * bootloader_writeStorage(0, 0, blinkGbl, sizeof(blinkGbl));
  *
- * //Reboot into the bootloader to install the new image
+ * Reboot into the bootloader to install the new image
  * bootloader_rebootAndInstall();
  *
  * The general flow for bootloader interface APIs from the application is:
  *
- * ///General flow
+ * General flow
  *
- * //Initialize the bootloader interface
+ * Initialize the bootloader interface
  * bootloader_init();
  *
- * //Interface API accesses
+ * Interface API accesses
  * ……………
  * ……………
  * ……………
  *
- * //De-initialize the bootloader interface
+ * De-initialize the bootloader interface
  * bootloader_deinit();
  * @endverbatim
  * @{

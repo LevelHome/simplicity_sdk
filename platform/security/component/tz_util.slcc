@@ -15,3 +15,7 @@ include:
   - path: sl_component/sl_trustzone/inc/common
     file_list:
       - path: sli_tz_util.h
+
+metadata:
+  sbom:
+    license: Zlib

@@ -72,7 +72,7 @@
 
 // <s.50 SL_RAIL_UTIL_PA_CURVE_HEADER> Header file containing custom PA curves
 // <i> Default: "pa_curves_efr32.h"
-#define SL_RAIL_UTIL_PA_CURVE_HEADER        "efr32xg25/pa_curves_brd4276a.h"
+#define SL_RAIL_UTIL_PA_CURVE_HEADER        "efr32xg25/sl_rail_util_pa_curves_brd4276a.h"
 
 // <s.50 SL_RAIL_UTIL_PA_CURVE_TYPES> Header file containing PA curve types
 // <i> Default: "pa_curve_types_efr32.h"

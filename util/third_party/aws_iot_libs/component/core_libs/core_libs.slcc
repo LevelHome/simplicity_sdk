@@ -6,7 +6,9 @@ description: Lightweight embedded systems libraries used by AWS IoT modules.
 
 package: amazon_platform
 quality: production
-
+metadata:
+  sbom:
+    license: MIT
 provides:
   - name: core_libs
 

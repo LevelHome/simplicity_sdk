@@ -1,6 +1,6 @@
 # SE Manager Attestation
 
-This example uses the SE Manager API to fetch attestation tokens on the supported Series 2 device.
+This example uses the SE Manager API to fetch attestation tokens on the supported device.
 
 The example also contains code that demonstrates how the tokens can be parsed and printed in a human-readable format.
 Parsing and printing of tokens on the actual device might not be a strictly typical use case, but it is nevertheless included in order to showcase the structure and capabilities of the supported attestation tokens.

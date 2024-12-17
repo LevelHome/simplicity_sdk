@@ -673,3 +673,35 @@ EmberStatus emApiStopTxStream(void)
 }
 
 #endif // SL_CATALOG_CONNECT_RADIO_STREAM_PRESENT
+
+#ifndef SL_CATALOG_CONNECT_LEGACY_ENCRYPTION_PRESENT
+
+EmberStatus legacyEncryptAndSignPacket(uint8_t *packet)
+{
+  (void)packet;
+  return EMBER_LIBRARY_IS_STUB;
+}
+
+EmberStatus legacyDecryptAndAuthenticatePacket(uint8_t *packet)
+{
+  (void)packet;
+  return EMBER_LIBRARY_IS_STUB;
+}
+
+#endif // SL_CATALOG_CONNECT_LEGACY_ENCRYPTION_PRESENT
+
+#ifndef SL_CATALOG_CONNECT_PSA_ENCRYPTION_PRESENT
+
+EmberStatus emCcmEncryptAndSignPacket(uint8_t *packet)
+{
+  (void)packet;
+  return EMBER_LIBRARY_IS_STUB;
+}
+
+EmberStatus emCcmDecryptAndAuthenticatePacket(uint8_t *packet)
+{
+  (void)packet;
+  return EMBER_LIBRARY_IS_STUB;
+}
+
+#endif // SL_CATALOG_CONNECT_PSA_ENCRYPTION_PRESENT

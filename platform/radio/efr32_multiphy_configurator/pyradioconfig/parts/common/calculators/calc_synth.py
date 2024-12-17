@@ -39,18 +39,7 @@ class CALC_Synth(ICalculator):
         self._addModelVariable(model,  'channel_spacing_hz',   int,     ModelVariableFormat.DECIMAL, units='Hz', desc='Channel raster used for relative frequency configuration')
         self._addModelActual  (model,  'channel_spacing',      int,     ModelVariableFormat.DECIMAL)
         
-        self._addModelRegister(model, 'SYNTH.CALOFFSET.CALOFFSET'      , int, ModelVariableFormat.HEX )
-        self._addModelRegister(model, 'SYNTH.CHCTRL.CHNO'              , int, ModelVariableFormat.HEX )
-        self._addModelRegister(model, 'SYNTH.CHSP.CHSP'                , int, ModelVariableFormat.HEX )
-        self._addModelRegister(model, 'SYNTH.DIVCTRL.LODIVFREQCTRL'    , int, ModelVariableFormat.HEX )
-        self._addModelRegister(model, 'SYNTH.FREQ.FREQ'                ,long, ModelVariableFormat.HEX )
-        self._addModelRegister(model, 'SYNTH.IFFREQ.IFFREQ'            , int, ModelVariableFormat.HEX )
-        self._addModelRegister(model, 'SYNTH.IFFREQ.LOSIDE'            , int, ModelVariableFormat.HEX )
-                                              
-        # These aren't really synth registers, but they must follow the synth register values,
-        # so we set them here.
-        self._addModelRegister(model, 'MODEM.MIXCTRL.MODE'             , int, ModelVariableFormat.HEX )
-        self._addModelRegister(model, 'MODEM.MIXCTRL.DIGIQSWAPEN'      , int, ModelVariableFormat.HEX )
+        self._build_synth_regs(model)
 
         # Tuning limits for the given LODIV setting
         self._addModelVariable(model, 'tuning_limit_min', long, ModelVariableFormat.DECIMAL, units='Hz', desc='Minimum center frequency allowed for the current configuration.')
@@ -69,6 +58,20 @@ class CALC_Synth(ICalculator):
             'LoInjectionSideEnum',
             'List of supported LO injection side configurations',
             member_data)
+
+    def _build_synth_regs(self, model):
+        self._addModelRegister(model, 'SYNTH.CALOFFSET.CALOFFSET', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'SYNTH.CHCTRL.CHNO', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'SYNTH.CHSP.CHSP', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'SYNTH.DIVCTRL.LODIVFREQCTRL', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'SYNTH.FREQ.FREQ', long, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'SYNTH.IFFREQ.IFFREQ', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'SYNTH.IFFREQ.LOSIDE', int, ModelVariableFormat.HEX)
+
+        # These aren't really synth registers, but they must follow the synth register values,
+        # so we set them here.
+        self._addModelRegister(model, 'MODEM.MIXCTRL.MODE', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'MODEM.MIXCTRL.DIGIQSWAPEN', int, ModelVariableFormat.HEX)
 
     #TODO: add AFC adjustment term to rx_synth_freq once AFC is implemented
     def calc_rx_synth_freq_actual(self, model):

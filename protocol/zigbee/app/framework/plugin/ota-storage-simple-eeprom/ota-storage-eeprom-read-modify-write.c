@@ -63,7 +63,7 @@ void sli_zigbee_af_storage_eeprom_update_download_offset(uint32_t offset, bool f
     // The data we are writing (first param) also happens to be an offset but
     // is not a location for the write operation in this context.
     debugFlush();
-    debugPrint("Recording download offset: 0x%4X", offset);
+    debugPrint("Recording download offset: 0x%08X", offset);
     debugFlush();
 
     sli_zigbee_af_ota_storage_write_int32u_to_eeprom(offset,

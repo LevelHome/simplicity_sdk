@@ -26,6 +26,10 @@ extern void sli_zigbee_af_reset_attributes(uint8_t endpointId);
 #undef ZCL_FIXED_ENDPOINT_COUNT
 #define ZCL_FIXED_ENDPOINT_COUNT (10)
 #endif
+
+#if defined(GENERATED_MULTI_PROTOCOL_ATTRIBUTE_MAPPING) && defined(SL_CATALOG_MULTIPROTOCOL_ZIGBEE_MATTER_COMMON_PRESENT)
+#include "sl-matter-attribute-storage.h"
+#endif // defined(GENERATED_MULTI_PROTOCOL_ATTRIBUTE_MAPPING) && defined(SL_CATALOG_MULTIPROTOCOL_ZIGBEE_MATTER_COMMOON_PRESENT)
 //------------------------------------------------------------------------------
 // Globals
 // This is not declared CONST in order to handle dynamic endpoint information
@@ -95,6 +99,10 @@ const uint16_t commandManufacturerCodeCount = ZCL_GENERATED_COMMAND_MANUFACTURER
 #endif // SL_ZIGBEE_AF_SUPPORT_COMMAND_DISCOVERY
 
 const sl_zigbee_af_attribute_metadata_t generatedAttributes[] = ZCL_GENERATED_ATTRIBUTES;
+// Attribute map between zigbee and matter.
+#if defined(GENERATED_MULTI_PROTOCOL_ATTRIBUTE_MAPPING) && defined(SL_CATALOG_MULTIPROTOCOL_ZIGBEE_MATTER_COMMON_PRESENT)
+const sl_zigbee_matter_af_multi_protocol_attribute_metadata_t multiProtocolAttributeMap[] = GENERATED_MULTI_PROTOCOL_ATTRIBUTE_MAPPING;
+#endif // defined(GENERATED_MULTI_PROTOCOL_ATTRIBUTE_MAPPING) && defined(SL_CATALOG_MULTIPROTOCOL_ZIGBEE_MATTER_COMMON_PRESENT)
 const sl_zigbee_af_cluster_t generatedClusters[]          = ZCL_GENERATED_CLUSTERS;
 const sl_zigbee_af_endpoint_type_t generatedEmberAfEndpointTypes[]   = ZCL_GENERATED_ENDPOINT_TYPES;
 
@@ -660,7 +668,24 @@ sl_zigbee_af_status_t sli_zigbee_af_read_or_write_attribute(sl_zigbee_af_attribu
                     return SL_ZIGBEE_ZCL_STATUS_NOT_AUTHORIZED;
                   }
                 }
-
+#if defined(GENERATED_MULTI_PROTOCOL_ATTRIBUTE_MAPPING) && defined(SL_CATALOG_MULTIPROTOCOL_ZIGBEE_MATTER_COMMON_PRESENT)
+                if (write) {
+                  for (uint8_t j = 0; j < multiProtocolAttributeMap.length; j++) {
+                    uint16_t attributeMfgId = sli_zigbee_af_get_manufacturer_code_for_attribute(cluster, am);
+                    if (multiProtocolAttributeMap[j].zigbeeClusterId == attRecord->clusterId
+                        && multiProtocolAttributeMap[j].zigbeeMfgClusterId == attributeMfgId
+                        && multiProtocolAttributeMap[j].zigbeeAttributeId == attRecord->attributeId
+                        && multiProtocolAttributeMap[j].zigbeeMfgAttributeId == attributeMfgId) {
+                      sli_matter_af_write_attribute(
+                        attRecord->endpoint,
+                        (((uint32_t)multiProtocolAttributeMap[j].matterMfgClusterId << 16) | (uint32_t)multiProtocolAttributeMap[j].matterClusterId),
+                        (((uint32_t)multiProtocolAttributeMap[j].matterMfgAttributeId << 16) | (uint32_t)multiProtocolAttributeMap[j].matterAttributeId),
+                        buffer,
+                        multiProtocolAttributeMap[j].matterAttributeType);
+                    }
+                  }
+                }
+#endif //defined(GENERATED_MULTI_PROTOCOL_ATTRIBUTE_MAPPING) && defined(SL_CATALOG_MULTIPROTOCOL_ZIGBEE_MATTER_COMMON_PRESENT)
                 return (am->mask & ATTRIBUTE_MASK_EXTERNAL_STORAGE
                         ? (write)
                         ? sl_zigbee_af_external_attribute_write_cb(attRecord->endpoint,
@@ -1058,7 +1083,7 @@ bool sl_zigbee_af_endpoint_enable_disable(uint8_t endpoint, bool enable)
       uint8_t i;
       for (i = 0; i < sli_zigbee_af_endpoints[index].endpointType->clusterCount; i++) {
         sl_zigbee_af_cluster_t* cluster = &((sli_zigbee_af_endpoints[index].endpointType->cluster)[i]);
-//        sl_zigbee_af_core_println("Disabling cluster tick for ep:%d, cluster:0x%2X, %p",
+//        sl_zigbee_af_core_println("Disabling cluster tick for ep:%d, cluster:0x%04X, %s",
 //                           endpoint,
 //                           cluster->clusterId,
 //                           ((cluster->mask & CLUSTER_MASK_CLIENT)
@@ -1304,7 +1329,7 @@ sl_zigbee_af_cluster_t *sl_zigbee_af_get_nth_cluster(uint8_t endpoint, uint8_t n
         // Apply cluster suppression for match descriptor response.
         if ((server && sl_zigbee_af_get_suppress_cluster(cluster->clusterId, false))
             || (!server && sl_zigbee_af_get_suppress_cluster(cluster->clusterId, true))) {
-          sl_zigbee_af_debug_println("sl_zigbee_af_get_nth_cluster - skipping: server = %d, cluster = %2X", server, cluster->clusterId);
+          sl_zigbee_af_debug_println("sl_zigbee_af_get_nth_cluster - skipping: server = %d, cluster = %04X", server, cluster->clusterId);
           return NULL;
         }
 #endif

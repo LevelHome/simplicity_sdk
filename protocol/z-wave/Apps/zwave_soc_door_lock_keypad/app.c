@@ -32,12 +32,21 @@
 #include "zpal_misc.h"
 #include "zaf_protocol_config.h"
 
+#ifdef SL_CATALOG_ZW_CLI_SLEEPING_PRESENT
+#include "zw_cli_sleeping.h"
+#include "zw_cli_sleeping_config.h"
+#endif
+
 #ifdef SL_CATALOG_ZW_CLI_COMMON_PRESENT
-#include "app_cli.h"
+#include "zw_cli_common.h"
 #endif
 
 #ifdef DEBUGPRINT
 #include "ZAF_PrintAppInfo.h"
+#endif
+
+#if (!defined(SL_CATALOG_SILICON_LABS_ZWAVE_APPLICATION_PRESENT) && !defined(UNIT_TEST))
+#include "app_hw.h"
 #endif
 
 #ifdef DEBUGPRINT
@@ -113,23 +122,30 @@ ZW_APPLICATION_STATUS ApplicationInit(__attribute__((unused)) zpal_reset_reason_
 void
 ApplicationTask(SApplicationHandles* pAppHandles)
 {
+  uint32_t unhandledEvents = 0;
   ZAF_Init(xTaskGetCurrentTaskHandle(), pAppHandles);
 
 #ifdef DEBUGPRINT
   ZAF_PrintAppInfo();
 #endif
 
+#if (!defined(SL_CATALOG_SILICON_LABS_ZWAVE_APPLICATION_PRESENT) && !defined(UNIT_TEST))
+  /* This preprocessor statement can be deleted from the source code */
   app_hw_init();
+#endif
 
   /* Timer for periodic battery level checking */
   AppTimerRegister(&BatteryCheckTimer, true, ZCB_BatteryCheckTimerCallback);
   TimerStart(&BatteryCheckTimer, PERIODIC_BATTERY_CHECKING_INTERVAL_MINUTES * 60 * 1000);
-  
+
   // User Credential Command Class related functions
   credentials_init();
 
-#ifdef SL_CATALOG_ZW_CLI_COMMON_PRESENT
-  cli_util_prevent_sleeping(true);
+#ifdef SL_CATALOG_ZW_CLI_SLEEPING_PRESENT
+  // Stay awake to allow user to send the prevent sleeping command through the CLI
+  if (GetResetReason() == ZPAL_RESET_REASON_PIN) {
+    zw_cli_sleeping_util_prevent_sleeping_timeout(ZW_CLI_SLEEPING_WAKEUP_TIME_AFTER_RESET);
+  }
 #endif
 
   /* Enter SmartStart*/
@@ -138,9 +154,13 @@ ApplicationTask(SApplicationHandles* pAppHandles)
 
   // Wait for and process events
   DPRINT("DoorLockKeyPad Event processor Started\r\n");
-  for (;; ) {
-    if (false == zaf_event_distributor_distribute()) {
+  for(;;) {
+    unhandledEvents = zaf_event_distributor_distribute();
+    if (0 != unhandledEvents) {
+      DPRINTF("Unhandled Events: 0x%08lx\n", unhandledEvents);
+#ifdef UNIT_TEST
       return;
+#endif
     }
   }
 }

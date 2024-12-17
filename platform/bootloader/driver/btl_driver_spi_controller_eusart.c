@@ -129,10 +129,6 @@ static void eusart_sync(EUSART_TypeDef *eusart, uint32_t mask)
 
 static void clk_enable(void)
 {
-#if defined(CMU_CTRL_HFPERCLKEN)
-  CMU_ClockEnable(cmuClock_GPIO, true);
-  CMU_ClockEnable(BTL_DRIVER_SPI_EUSART_CLOCK, true);
-#endif
 #if defined(_CMU_CLKEN0_MASK)
   CMU->CLKEN0_SET = CMU_CLKEN0_GPIO;
 #if SL_EUSART_EXTFLASH_PERIPHERAL_NO == 0

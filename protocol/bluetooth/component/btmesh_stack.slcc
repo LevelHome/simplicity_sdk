@@ -102,6 +102,8 @@ template_contribution:
   - name: bluetooth_on_event
     value:
       function: sl_btmesh_bgapi_listener
+    unless:
+      - kernel
   - name: btmesh_advertisers
     value:
       name: nonconnectable

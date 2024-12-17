@@ -34,21 +34,21 @@ SENSOR_INFO_LENGTH_SHORT = 3
 SENSOR_INFO_LENGTH_LONG = 5
 
 # Supported sensor IDs
-S_ID_PRESENT_INPUT_VOLTAGE                              = 0x0059    #Mesh type: Voltage
-S_ID_PRESENT_DEVICE_OPERATING_TEMPERATURE               = 0x0054    #Mesh type: Temperature
-S_ID_DEVICE_FIRMWARE_REVISION                           = 0x000E    #Mesh type: Fixed string 8
-S_ID_DEVICE_DATE_OF_MANUFACTURE                         = 0x000C    #Mesh type: Date UTC
-S_ID_DEVICE_OPERATING_TEMPERATURE_RANGE_SPECIFICATION   = 0x0013    #Mesh type: Temperature range
-S_ID_PRESENT_AMBIENT_TEMPERATURE                        = 0x004F    #Mesh type: Temperature 8
-S_ID_SILABS_SENSOR_1                                    = 0xCAFE02FF
-S_ID_SILABS_SENSOR_BUTTON                               = 0xC0DE02FF
+S_ID_PRESENT_INPUT_VOLTAGE                            = 0x0059    # Mesh type: Voltage
+S_ID_PRESENT_DEVICE_OPERATING_TEMPERATURE             = 0x0054    # Mesh type: Temperature
+S_ID_DEVICE_FIRMWARE_REVISION                         = 0x000E    # Mesh type: Fixed string 8
+S_ID_DEVICE_DATE_OF_MANUFACTURE                       = 0x000C    # Mesh type: Date UTC
+S_ID_DEVICE_OPERATING_TEMPERATURE_RANGE_SPECIFICATION = 0x0013    # Mesh type: Temperature range
+S_ID_PRESENT_AMBIENT_TEMPERATURE                      = 0x004F    # Mesh type: Temperature 8
+S_ID_SILABS_SENSOR_1                                  = 0xCAFE02FF
+S_ID_SILABS_SENSOR_BUTTON                             = 0xC0DE02FF
 
-class SensorResponseParser():
+class SensorResponseParser:
     def __init__(self, data: bytes, sensor_info):
-        """ Process and display ESL sensor data
-            input:
-                - data: Event data contains sensor information
-                - sensor_info: ESL tag sensor information
+        """Process and display ESL sensor data
+        input:
+            - data: Event data contains sensor information
+            - sensor_info: ESL tag sensor information
         """
         resp_code = data[0] & 0x0F
         resp_length = data[0] & 0xF0
@@ -76,13 +76,14 @@ class SensorResponseParser():
     def log(self):
         return getLogger("SEN")
 
+
 def sensor_type_voltage(data):
-    """ Interpret sensor value based on GATT Specification Supplement:
-        Type: Voltage   |   Chapter: 3.236
-        Input type: uint16
-        Resolution: 1/64 V
-        Range: 0, 1022.0
-        0xFFFF: Unknown
+    """Interpret sensor value based on GATT Specification Supplement:
+    Type: Voltage   |   Chapter: 3.236
+    Input type: uint16
+    Resolution: 1/64 V
+    Range: 0, 1022.0
+    0xFFFF: Unknown
     """
     voltage = None
     if len(data) == 2:
@@ -90,80 +91,85 @@ def sensor_type_voltage(data):
         if temp == 0xFFFF:
             voltage = "unknown"
         else:
-            voltage = temp/64
+            voltage = temp / 64
     return voltage
 
+
 def sensor_type_temperature(data):
-    """ Interpret sensor value based on GATT Specification Supplement:
-        Type: Temperature   |   Chapter: 3.204
-        Input type: sint16
-        Resolution: 0.01 °C
-        Range: -273.15, 327.67
-        0x8000: Unknown
+    """Interpret sensor value based on GATT Specification Supplement:
+    Type: Temperature   |   Chapter: 3.204
+    Input type: sint16
+    Resolution: 0.01 °C
+    Range: -273.15, 327.67
+    0x8000: Unknown
     """
     temperature = None
     if len(data) == 2:
         temp = int.from_bytes(data, "little", signed=True)
-        if temp == -32768:              # check for special value
+        if temp == -32768:  # check for special value
             temperature = "unknown"
         else:
             temperature = temp * 0.01
-            if temperature < -273.15:   # boundary check
+            if temperature < -273.15:  # boundary check
                 temperature = -273.15
     return temperature
 
+
 def sensor_type_temperature_range(data):
-    """ Interpret sensor value based on GATT Specification Supplement:
-        Type: Temperature Range |   Chapter: 3.209
-        Input type: [min: sint16, max: sint16]
-        Resolution: 0.01 °C
-        Range: -273.15, 327.67
-        0x8000: Unknown
+    """Interpret sensor value based on GATT Specification Supplement:
+    Type: Temperature Range |   Chapter: 3.209
+    Input type: [min: sint16, max: sint16]
+    Resolution: 0.01 °C
+    Range: -273.15, 327.67
+    0x8000: Unknown
     """
     temperature_min = sensor_type_temperature(data[0:2])
     temperature_max = sensor_type_temperature(data[2:])
     return [temperature_min, temperature_max]
 
+
 def sensor_type_fixed_string_8(data):
-    """ Interpret sensor value based on GATT Specification Supplement:
-        Type: Fixed string 8    |   Chapter: 3.89
-        Input type: uint8[8]
-        Coding: UTF-8
+    """Interpret sensor value based on GATT Specification Supplement:
+    Type: Fixed string 8    |   Chapter: 3.89
+    Input type: uint8[8]
+    Coding: UTF-8
     """
     fixed_str = None
     if len(data) == 8:
         fixed_str = data.decode("utf-8")
     return fixed_str
 
+
 def sensor_type_date_utc(data):
-    """ Interpret sensor value based on GATT Specification Supplement:
-        Type: Date UTC  |   Chapter: 3.67
-        Input type: uint24
-        Resolution: 1 day, Epoch: 01.01.1970
-        0x000000: Unknown
+    """Interpret sensor value based on GATT Specification Supplement:
+    Type: Date UTC  |   Chapter: 3.67
+    Input type: uint24
+    Resolution: 1 day, Epoch: 01.01.1970
+    0x000000: Unknown
     """
     utc_date = None
     if len(data) == 3:
         temp = int.from_bytes(data, "little")
-        if temp > 0:    # check for special value
-            utc_date = dt(1970,1,1) + timedelta(days = temp)
+        if temp > 0:  # check for special value
+            utc_date = dt(1970, 1, 1) + timedelta(days=temp)
             utc_date = utc_date.strftime("%d %B, %Y")
         else:
             utc_date = "unknown"
     return utc_date
 
+
 def sensor_type_temperature_8(data):
-    """ Interpret sensor value based on GATT Specification Supplement:
-        Type: Temperature 8 |   Chapter: 3.205
-        Input type: sint8
-        Resolution: 0.5 °C
-        Range: -64.0, 63.0
-        0x7F: Unknown
+    """Interpret sensor value based on GATT Specification Supplement:
+    Type: Temperature 8 |   Chapter: 3.205
+    Input type: sint8
+    Resolution: 0.5 °C
+    Range: -64.0, 63.0
+    0x7F: Unknown
     """
     temperature_8 = None
     if len(data) == 1:
-        temp = int.from_bytes(data, "little", signed = True)
-        if temp == -127:              # check for special value
+        temp = int.from_bytes(data, "little", signed=True)
+        if temp == -127:  # check for special value
             temperature_8 = "unknown"
         else:
             temperature_8 = temp * 0.5
@@ -171,30 +177,37 @@ def sensor_type_temperature_8(data):
 
 
 def sensor_type_silabs_1(data):
-    """ Interpret sensor value of silabs vendor specific sensor 1"""
+    """Interpret sensor value of silabs vendor specific sensor 1"""
     return str(data)
 
+
 def sensor_type_silabs_button(data):
-    """ Interpret sensor value of silabs button"""
+    """Interpret sensor value of silabs button"""
     return data
 
-SensorType = namedtuple("SensorType", ['from_bytes', 'desc'])
+
+SensorType = namedtuple("SensorType", ["from_bytes", "desc"])
 
 SENSOR_TYPES = {
-    S_ID_PRESENT_INPUT_VOLTAGE: SensorType(sensor_type_voltage,
-                                           "Present input voltage"),
-    S_ID_PRESENT_DEVICE_OPERATING_TEMPERATURE: SensorType(sensor_type_temperature,
-                                                          "Present device operating temperature"),
-    S_ID_DEVICE_FIRMWARE_REVISION: SensorType(sensor_type_fixed_string_8,
-                                              "Device firmware version"),
-    S_ID_DEVICE_DATE_OF_MANUFACTURE: SensorType(sensor_type_date_utc,
-                                                "Date of manufacture"),
-    S_ID_DEVICE_OPERATING_TEMPERATURE_RANGE_SPECIFICATION: SensorType(sensor_type_temperature_range,
-                                                                      "Device operating temperature range specification"),
-    S_ID_PRESENT_AMBIENT_TEMPERATURE: SensorType(sensor_type_temperature_8,
-                                                 "Present ambient temperature"),
-    S_ID_SILABS_SENSOR_1: SensorType(sensor_type_silabs_1,
-                                     "Silabs readout counter"),
-    S_ID_SILABS_SENSOR_BUTTON: SensorType(sensor_type_silabs_button,
-                                          "Silabs button")
+    S_ID_PRESENT_INPUT_VOLTAGE: SensorType(
+        sensor_type_voltage, "Present input voltage"
+    ),
+    S_ID_PRESENT_DEVICE_OPERATING_TEMPERATURE: SensorType(
+        sensor_type_temperature, "Present device operating temperature"
+    ),
+    S_ID_DEVICE_FIRMWARE_REVISION: SensorType(
+        sensor_type_fixed_string_8, "Device firmware version"
+    ),
+    S_ID_DEVICE_DATE_OF_MANUFACTURE: SensorType(
+        sensor_type_date_utc, "Date of manufacture"
+    ),
+    S_ID_DEVICE_OPERATING_TEMPERATURE_RANGE_SPECIFICATION: SensorType(
+        sensor_type_temperature_range,
+        "Device operating temperature range specification",
+    ),
+    S_ID_PRESENT_AMBIENT_TEMPERATURE: SensorType(
+        sensor_type_temperature_8, "Present ambient temperature"
+    ),
+    S_ID_SILABS_SENSOR_1: SensorType(sensor_type_silabs_1, "Silabs readout counter"),
+    S_ID_SILABS_SENSOR_BUTTON: SensorType(sensor_type_silabs_button, "Silabs button"),
 }

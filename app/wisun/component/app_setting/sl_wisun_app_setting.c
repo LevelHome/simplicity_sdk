@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_wisun_app_setting.c
+ * @brief Wi-SUN Application settings
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -31,10 +31,10 @@
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <stddef.h>
 #include <string.h>
 #include <assert.h>
+
 #include "sl_status.h"
 #include "sl_string.h"
 #include "cmsis_os2.h"
@@ -43,7 +43,6 @@
 #include "sl_wisun_cli_settings.h"
 #include "sl_wisun_app_setting.h"
 #include "sl_wisun_trace_util.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -152,7 +151,7 @@ static const app_setting_wisun_t wisun_app_settings_default = {
 #if defined(WISUN_CONFIG_TX_POWER)
   .tx_power = WISUN_CONFIG_TX_POWER,
 #else
-  .tx_power = 20U,
+  .tx_power = 200,
 #endif
   .is_default_phy = true,
 #if defined(WISUN_CONFIG_DEVICE_TYPE)
@@ -275,7 +274,7 @@ sl_status_t app_wisun_setting_set_network_name(const char *const name)
   // check the network name, and return checked name.
   network_name = _app_check_nw_name(name, &name_len);
 
-  if (name_len < MAX_SIZE_OF_NETWORK_NAME) {
+  if (name_len < APP_SETTING_NETWORK_NAME_MAX_SIZE) {
     memcpy(_wisun_app_settings.network_name, network_name, name_len);
     _wisun_app_settings.network_name[name_len] = 0U;
   } else {
@@ -306,7 +305,7 @@ sl_status_t app_wisun_setting_set_network_size(const uint8_t *const size)
 }
 
 /* Setting Wi-SUN TX power */
-sl_status_t app_wisun_setting_set_tx_power(const int8_t *const tx_power)
+sl_status_t app_wisun_setting_set_tx_power(const int16_t * const tx_power)
 {
   sl_status_t stat = SL_STATUS_FAIL;
 
@@ -351,7 +350,7 @@ sl_status_t app_wisun_setting_get_network_name(char *const name, uint8_t size)
 {
   uint8_t name_len = 0U;
 
-  if ((name == NULL) || (size < MAX_SIZE_OF_NETWORK_NAME)) {
+  if ((name == NULL) || (size < APP_SETTING_NETWORK_NAME_MAX_SIZE)) {
     return SL_STATUS_INVALID_PARAMETER;
   }
 
@@ -359,8 +358,8 @@ sl_status_t app_wisun_setting_get_network_name(char *const name, uint8_t size)
 
   name_len = (uint8_t)sl_strlen(_wisun_app_settings.network_name);
 
-  if (name_len < MAX_SIZE_OF_NETWORK_NAME) {
-    memset(name, 0U, MAX_SIZE_OF_NETWORK_NAME);
+  if (name_len < APP_SETTING_NETWORK_NAME_MAX_SIZE) {
+    memset(name, 0U, APP_SETTING_NETWORK_NAME_MAX_SIZE);
     memcpy(name, _wisun_app_settings.network_name, name_len);
   } else {
     return SL_STATUS_FAIL;
@@ -385,7 +384,7 @@ sl_status_t app_wisun_setting_get_network_size(uint8_t *const size)
 }
 
 /* Getting TX power */
-sl_status_t app_wisun_setting_get_tx_power(int8_t *const tx_power)
+sl_status_t app_wisun_setting_get_tx_power(int16_t * const tx_power)
 {
   if (tx_power == NULL) {
     return SL_STATUS_INVALID_PARAMETER;
@@ -422,7 +421,7 @@ sl_status_t app_wisun_setting_init_phy_cfg(void)
   }
 
   // Set notifiications
-  stat  = _setting_notify(APP_SETTING_NOTIFICATION_SET_PHY_CFG);
+  stat = _setting_notify(APP_SETTING_NOTIFICATION_SET_PHY_CFG);
 
   return stat;
 }
@@ -536,8 +535,7 @@ static const char* _app_check_nw_name(const char *name, size_t *const name_len)
 
   *name_len = sl_strnlen((char*)name, SL_WISUN_NETWORK_NAME_SIZE);
   if (!(*name_len < SL_WISUN_NETWORK_NAME_SIZE) || (*name_len == 0) ) {
-    // sets the default name and its size
-    ret_name = APP_SETTINGS_DEFAULT_NETWORK_NAME;
+    // set the default name size
     *name_len = sl_strnlen(APP_SETTINGS_DEFAULT_NETWORK_NAME, SL_WISUN_NETWORK_NAME_SIZE);
     printf("\r\n[Warning: The name of Wi-SUN network is incorrect, default name used, \"%s\" ]\r\n", ret_name);
   } else {

@@ -19,8 +19,6 @@
 #include "app/framework/plugin/ota-common/ota.h"
 #include "ota-storage-linux-config.h"
 
-#include "app/util/serial/sl_zigbee_command_interpreter.h"
-
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>

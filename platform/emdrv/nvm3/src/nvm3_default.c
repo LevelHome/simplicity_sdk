@@ -30,6 +30,9 @@
 
 #include "nvm3.h"
 #include "nvm3_hal_flash.h"
+#if defined(NVM3_SECURITY)
+#include "nvm3_hal_crypto_handle.h"
+#endif
 
 #ifndef NVM3_DEFAULT_CACHE_SIZE
 #define NVM3_DEFAULT_CACHE_SIZE  100
@@ -43,6 +46,11 @@
 #ifndef NVM3_DEFAULT_REPACK_HEADROOM
 #define NVM3_DEFAULT_REPACK_HEADROOM  0
 #endif
+#if defined(NVM3_SECURITY)
+#ifndef NVM3_DEFAULT_SECURITY_TYPE
+#define NVM3_DEFAULT_SECURITY_TYPE  NVM3_SECURITY_AEAD
+#endif
+#endif
 
 #ifndef NVM3_BASE
 
@@ -52,7 +60,7 @@
 #define __NVM3__ "SIMEE"
 #endif
 
-__root uint8_t nvm3Storage[NVM3_DEFAULT_NVM_SIZE] @ __NVM3__;
+__root __no_init uint8_t nvm3Storage[NVM3_DEFAULT_NVM_SIZE] @ __NVM3__;
 #define NVM3_BASE (nvm3Storage)
 
 #elif defined (__GNUC__)
@@ -94,16 +102,20 @@ nvm3_Init_t    nvm3_defaultInitData =
   NVM3_DEFAULT_MAX_OBJECT_SIZE,
   NVM3_DEFAULT_REPACK_HEADROOM,
   &nvm3_halFlashHandle,
+#if defined(NVM3_SECURITY)
+  &nvm3_halCryptoHandle,
+  NVM3_DEFAULT_SECURITY_TYPE,
+#endif
 };
 
 nvm3_Init_t   *nvm3_defaultInit = &nvm3_defaultInitData;
 
-Ecode_t nvm3_initDefault(void)
+sl_status_t nvm3_initDefault(void)
 {
   return nvm3_open(nvm3_defaultHandle, nvm3_defaultInit);
 }
 
-Ecode_t nvm3_deinitDefault(void)
+sl_status_t nvm3_deinitDefault(void)
 {
   return nvm3_close(nvm3_defaultHandle);
 }

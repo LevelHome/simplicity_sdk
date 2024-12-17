@@ -3,16 +3,15 @@ package: Bluetooth
 label: Bluetooth - SoC CS Reflector
 description: >
   Channel Sounding (CS) Reflector for Bluetooth LE. This example sends
-  measurement results back to the CS Initiator device via GATT notifications.
-  It is scheduled by the CS Ranging Service. CS Reflector should have to
-  connect to at least one CS Initiator device to send measurement data to
-  and it is also capable to connect to multiple CS Initiators. Check the
-  CS Reflector component for more on the available connections. The application
-  starts advertising after boot and keeps advertising until not every
-  connection slots are occupied. It will stop advertising when it is full.
-  Once at least one slot becomes free again the device start to advertise.
+  measurement results back to the CS Initiator device via GATT notifications
+  using a custom CS Ranging Service. The CS Reflector has to connect to at
+  least one CS Initiator device to start the measurement. It can connect to
+  a maximum of four CS Initiators at a time. The application starts
+  advertising after boot and keeps advertising until every connection
+  slots are occupied. If a connection slot becomes free, the device will 
+  start advertising again.
 category: Bluetooth Examples
-quality: evaluation
+quality: production
 
 filter:
   - name: "Wireless Technology"
@@ -36,19 +35,16 @@ component:
   - id: bluetooth_feature_system
   - id: app_assert
   - id: app_log
-  - id: iostream_usart
-    instance:
-      - vcom
   - id: cs_reflector
   - id: cs_antenna
   - id: mpu
   - id: in_place_ota_dfu
-  - id: bt_post_build
   - id: sl_system
   - id: clock_manager
   - id: device_init
   - id: ble_peer_manager_common
   - id: ble_peer_manager_peripheral
+  - id: sl_common
 
 source:
   - path: main.c
@@ -80,20 +76,36 @@ configuration:
     value: "0"
     condition:
       - psa_crypto
-  - name: SL_DEVICE_INIT_HFXO_FREQ
+  - name: SL_CLOCK_MANAGER_HFXO_FREQ
     value: 40000000
+    unless:
+      - hardware_board
   - name: SL_IOSTREAM_USART_VCOM_RESTRICT_ENERGY_MODE_TO_ALLOW_RECEPTION
     value: 0
+    unless:
+      - cli
+  - name: SL_IOSTREAM_EUSART_VCOM_RESTRICT_ENERGY_MODE_TO_ALLOW_RECEPTION
+    value: 0
+    unless:
+      - cli
   - name: SL_BOARD_ENABLE_VCOM
     value: 1
   - name: CS_REFLECTOR_ANTENNA_OFFSET
     value: 0
+  - name: BLE_PEER_MANAGER_PERIPHERAL_CONFIG_ADV_PHY
+    value: sl_bt_gap_phy_2m
+  - name: APP_LOG_LEVEL_FILTER_THRESHOLD
+    value: APP_LOG_LEVEL_INFO
 
 template_contribution:
   - name: ble_peer_manager_event_handler
     value:
       include: app.h
       handler: ble_peer_manager_on_event_reflector
+
+post_build:
+  - profile: bt_common
+    condition: [device_series_2, bootloader_app_properties]
 
 tag:
   - hardware:rf:band:2400

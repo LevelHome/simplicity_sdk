@@ -22,6 +22,8 @@ void sl_zigbee_af_counters_simple_print_command(sl_cli_command_arg_t *args);
 void sl_zigbee_af_counters_print_thresholds_command(sl_cli_command_arg_t *args);
 void sl_zigbee_af_counters_set_threshold_command(sl_cli_command_arg_t *args);
 void sl_zigbee_af_counters_send_request_command(sl_cli_command_arg_t *args);
+void sl_zigbee_af_counters_clear_command(sl_cli_command_arg_t *args);
+void sl_zigbee_af_counters_reset_thresholds_command(sl_cli_command_arg_t *args);
 
 /** Args: destination id, clearCounters (bool) */
 void sendCountersRequestCommand(void);

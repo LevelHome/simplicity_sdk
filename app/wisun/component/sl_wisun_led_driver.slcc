@@ -1,8 +1,8 @@
 id: "sl_wisun_led_driver"
-label: "LED driver"
+label: "Wi-SUN LED driver"
 package: "wisun"
 description: "Provides thread-safe message queue based LED driver with periodical signals."
-category: "Wi-SUN"
+category: "Wi-SUN|Wi-SUN Services"
 quality: "production"
 metadata:
   sbom:
@@ -27,6 +27,7 @@ requires:
 
 ui_hints:
   visibility: never
+
 #-------------- Template Contribution ----------------
 template_contribution:
   - name: "event_handler"

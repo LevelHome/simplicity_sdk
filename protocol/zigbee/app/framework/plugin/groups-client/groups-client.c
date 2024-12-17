@@ -27,7 +27,7 @@
 
 #include "zap-cluster-command-parser.h"
 
-bool sl_zigbee_af_groups_cluster_add_group_response_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_groups_cluster_add_group_response_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   (void)cmd;
 
@@ -36,19 +36,18 @@ bool sl_zigbee_af_groups_cluster_add_group_response_cb(sl_zigbee_af_cluster_comm
 
   if (zcl_decode_groups_cluster_add_group_response_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS ) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_groups_cluster_println("RX: AddGroupResponse 0x%x, 0x%2x",
+  sl_zigbee_af_groups_cluster_println("RX: AddGroupResponse 0x%02X, 0x%04X",
                                       cmd_data.status,
                                       cmd_data.groupId);
 #endif // SL_CATALOG_ZIGBEE_DEBUG_PRINT_PRESENT
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
-bool sl_zigbee_af_groups_cluster_view_group_response_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_groups_cluster_view_group_response_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   (void)cmd;
 
@@ -56,21 +55,20 @@ bool sl_zigbee_af_groups_cluster_view_group_response_cb(sl_zigbee_af_cluster_com
   sl_zcl_groups_cluster_view_group_response_command_t cmd_data;
 
   if (zcl_decode_groups_cluster_view_group_response_command(cmd, &cmd_data) != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_groups_cluster_print("RX: ViewGroupResponse 0x%x, 0x%2x, \"",
+  sl_zigbee_af_groups_cluster_print("RX: ViewGroupResponse 0x%02X, 0x%04X, \"",
                                     cmd_data.status,
                                     cmd_data.groupId);
   sl_zigbee_af_groups_cluster_print_string(cmd_data.groupName);
   sl_zigbee_af_groups_cluster_println("\"");
 #endif // SL_CATALOG_ZIGBEE_DEBUG_PRINT_PRESENT
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
-bool sl_zigbee_af_groups_cluster_get_group_membership_response_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_groups_cluster_get_group_membership_response_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   (void)cmd;
 
@@ -80,24 +78,23 @@ bool sl_zigbee_af_groups_cluster_get_group_membership_response_cb(sl_zigbee_af_c
 
   if (zcl_decode_groups_cluster_get_group_membership_response_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_groups_cluster_print("RX: GetGroupMembershipResponse 0x%x, 0x%x,",
+  sl_zigbee_af_groups_cluster_print("RX: GetGroupMembershipResponse 0x%02X, 0x%02X,",
                                     cmd_data.capacity,
                                     cmd_data.groupCount);
   for (i = 0; i < cmd_data.groupCount; i++) {
-    sl_zigbee_af_groups_cluster_print(" [0x%2x]",
+    sl_zigbee_af_groups_cluster_print(" [0x%04X]",
                                       sl_zigbee_af_get_int16u(cmd_data.groupList + (i << 1), 0, 2));
   }
   sl_zigbee_af_groups_cluster_println("");
 #endif // SL_CATALOG_ZIGBEE_DEBUG_PRINT_PRESENT
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
-bool sl_zigbee_af_groups_cluster_remove_group_response_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_groups_cluster_remove_group_response_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   (void)cmd;
 
@@ -106,16 +103,15 @@ bool sl_zigbee_af_groups_cluster_remove_group_response_cb(sl_zigbee_af_cluster_c
 
   if (zcl_decode_groups_cluster_remove_group_response_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_groups_cluster_println("RX: RemoveGroupResponse 0x%x, 0x%2x",
+  sl_zigbee_af_groups_cluster_println("RX: RemoveGroupResponse 0x%02X, 0x%04X",
                                       cmd_data.status,
                                       cmd_data.groupId);
 #endif // SL_CATALOG_ZIGBEE_DEBUG_PRINT_PRESENT
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
 uint32_t sl_zigbee_af_groups_cluster_client_command_parse(sl_service_opcode_t opcode,
@@ -124,34 +120,32 @@ uint32_t sl_zigbee_af_groups_cluster_client_command_parse(sl_service_opcode_t op
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_ADD_GROUP_RESPONSE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_groups_cluster_add_group_response_cb(cmd);
+        status = sl_zigbee_af_groups_cluster_add_group_response_cb(cmd);
         break;
       }
       case ZCL_GET_GROUP_MEMBERSHIP_RESPONSE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_groups_cluster_get_group_membership_response_cb(cmd);
+        status = sl_zigbee_af_groups_cluster_get_group_membership_response_cb(cmd);
         break;
       }
       case ZCL_REMOVE_GROUP_RESPONSE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_groups_cluster_remove_group_response_cb(cmd);
+        status = sl_zigbee_af_groups_cluster_remove_group_response_cb(cmd);
         break;
       }
       case ZCL_VIEW_GROUP_RESPONSE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_groups_cluster_view_group_response_cb(cmd);
+        status = sl_zigbee_af_groups_cluster_view_group_response_cb(cmd);
         break;
       }
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

@@ -4,6 +4,11 @@ description: Utility to aid with RAIL RF Path Support (e.g., device-internal RF 
 package: platform
 category: Platform|Radio
 quality: production
+metadata:
+  sbom:
+    id: rail_util_rf_path
+    name: RAIL Utility, RF Path
+    license: Zlib
 requires:
   - name: device
   - name: rail_lib

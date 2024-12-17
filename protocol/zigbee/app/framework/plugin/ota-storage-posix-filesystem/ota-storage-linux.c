@@ -506,7 +506,7 @@ sl_zigbee_af_ota_storage_status_t sli_zigbee_af_ota_storage_create_image(sl_zigb
   while (fieldIndex < FIELD_INDEX_MAX) {
     const EmberAfOtaHeaderFieldDefinition *definition = get_ota_header_field_definition(header->headerVersion, fieldIndex);
     debug(config.memoryDebug,
-          "Writing Header Field: %s, bufferPtr: %p\n",
+          "Writing Header Field: %s, bufferPtr: %s\n",
           definition->name, bufferPtr);
 
     bufferPtr = writeHeaderDataToBuffer(fieldIndex,

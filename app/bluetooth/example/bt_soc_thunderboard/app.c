@@ -3,7 +3,7 @@
  * @brief Thunderboard demo application
  *******************************************************************************
  * # License
- * <b>Copyright 2023 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -29,7 +29,7 @@
  ******************************************************************************/
 
 #include <stdbool.h>
-#include "em_common.h"
+#include "sl_common.h"
 #include "em_emu.h"
 #include "em_gpio.h"
 #include "sl_status.h"
@@ -51,10 +51,8 @@
 #endif // SL_CATALOG_GATT_SERVICE_BATTERY_PRESENT
 #ifdef SL_CATALOG_GATT_SERVICE_HALL_PRESENT
 #include "sl_gatt_service_hall.h"
+#include "sensor_hall.h"
 #endif // SL_CATALOG_GATT_SERVICE_HALL_PRESENT
-#ifdef SL_CATALOG_SENSOR_HALL_PRESENT
-#include "sl_sensor_hall.h"
-#endif // SL_CATALOG_SENSOR_HALL_PRESENT
 #ifdef SL_CATALOG_GATT_SERVICE_LIGHT_PRESENT
 #include "sl_gatt_service_light.h"
 #endif // SL_CATALOG_GATT_SERVICE_LIGHT_PRESENT
@@ -75,39 +73,31 @@
 #endif // SL_CATALOG_SENSOR_RHT_PRESENT
 #ifdef SL_CATALOG_GATT_SERVICE_IMU_PRESENT
 #include "sl_gatt_service_imu.h"
+#include "sensor_imu.h"
 #endif // SL_CATALOG_GATT_SERVICE_IMU_PRESENT
-#ifdef SL_CATALOG_SENSOR_IMU_PRESENT
-#include "sl_sensor_imu.h"
-#endif // SL_CATALOG_SENSOR_IMU_PRESENT
 #ifdef SL_CATALOG_GATT_SERVICE_RGB_PRESENT
 #include "sl_gatt_service_rgb.h"
 #endif // SL_CATALOG_GATT_SERVICE_RGB_PRESENT
 #ifdef SL_CATALOG_GATT_SERVICE_PRESSURE_PRESENT
 #include "sl_gatt_service_pressure.h"
+#include "sensor_pressure.h"
 #endif // SL_CATALOG_GATT_SERVICE_PRESSURE_PRESENT
-#ifdef SL_CATALOG_SENSOR_PRESSURE_PRESENT
-#include "sl_sensor_pressure.h"
-#endif // SL_CATALOG_SENSOR_PRESSURE_PRESENT
 #ifdef SL_CATALOG_GATT_SERVICE_SOUND_PRESENT
 #include "sl_gatt_service_sound.h"
+#include "sensor_sound.h"
 #endif // SL_CATALOG_GATT_SERVICE_SOUND_PRESENT
-#ifdef SL_CATALOG_SENSOR_SOUND_PRESENT
-#include "sl_sensor_sound.h"
-#endif // SL_CATALOG_SENSOR_SOUND_PRESENT
 
 // -----------------------------------------------------------------------------
 // Configuration
-
 #define SHUTDOWN_TIMEOUT_MS             60000
+
 // -----------------------------------------------------------------------------
 // Private variables
-
 // Timer
 static app_timer_t shutdown_timer;
 
 // -----------------------------------------------------------------------------
 // Private function declarations
-
 static void shutdown_start_timer(void);
 static void shutdown_stop_timer(void);
 static void shutdown(app_timer_t *timer, void *data);
@@ -116,7 +106,6 @@ static void sensor_deinit(void);
 
 // -----------------------------------------------------------------------------
 // Public function definitions
-
 void app_init(void)
 {
   app_log_info("Silicon Labs Thunderboard / DevKit demo" APP_LOG_NL);
@@ -126,6 +115,10 @@ void app_init(void)
 
 SL_WEAK void app_process_action(void)
 {
+  #ifdef SL_CATALOG_GATT_SERVICE_SOUND_PRESENT
+  sensor_sound_step();
+  #endif // SL_CATALOG_GATT_SERVICE_SOUND_PRESENT
+
   /////////////////////////////////////////////////////////////////////////////
   // Put your additional application code here!                              //
   // This is called infinitely.                                              //
@@ -135,7 +128,6 @@ SL_WEAK void app_process_action(void)
 
 // -----------------------------------------------------------------------------
 // Bluetooth event handler
-
 void sl_bt_on_event(sl_bt_msg_t *evt)
 {
   sl_status_t sc;
@@ -152,7 +144,7 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
                    evt->data.evt_system_boot.minor,
                    evt->data.evt_system_boot.patch,
                    evt->data.evt_system_boot.build);
-      sc = sl_bt_system_get_identity_address(&address, &address_type);
+      sc = sl_bt_gap_get_identity_address(&address, &address_type);
       app_assert_status(sc);
       app_log_info("Bluetooth %s address: %02X:%02X:%02X:%02X:%02X:%02X" APP_LOG_NL,
                    address_type ? "static random" : "public device",
@@ -190,7 +182,6 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
 
 // -----------------------------------------------------------------------------
 // Push button event handler
-
 void sl_button_on_change(const sl_button_t *handle)
 {
   (void)handle;
@@ -201,22 +192,12 @@ void sl_button_on_change(const sl_button_t *handle)
 
 // -----------------------------------------------------------------------------
 // Shutdown feature function definitions
-
 static void shutdown(app_timer_t *timer, void *data)
 {
   (void)timer;
   (void)data;
-  EMU_EM4Init_TypeDef em4_init = EMU_EM4INIT_DEFAULT;
-  em4_init.pinRetentionMode = emuPinRetentionEm4Exit;
-  EMU_EM4Init(&em4_init);
-
-  // Set up EM4 wake-up for the chosen button. Need to enable glitch filter.
-  sl_simple_button_context_t *button = BOARD_EM4WUEN_BTN.context;
-  GPIO_PinModeSet(button->port, button->pin, gpioModeInputPullFilter, 1);
-  GPIO_EM4EnablePinWakeup(GPIO_IEN_EM4WUIEN4, 0);
 
   advertise_stop();
-
   EMU_EnterEM4();
 }
 
@@ -238,56 +219,55 @@ static void shutdown_stop_timer(void)
 
 // -----------------------------------------------------------------------------
 // Sensor batch init/deinit
-
 static void sensor_init(void)
 {
   sl_status_t sc;
-#ifdef SL_CATALOG_SENSOR_HALL_PRESENT
-  sc = sl_sensor_hall_init();
+#ifdef SL_CATALOG_GATT_SERVICE_HALL_PRESENT
+  sc = sensor_hall_init();
   if (sc != SL_STATUS_OK) {
-    app_log_warning("Hall sensor initialization failed." APP_LOG_NL);
+    app_log_warning("Hall sensor initialization failed" APP_LOG_NL);
   }
-#endif // SL_CATALOG_SENSOR_HALL_PRESENT
+#endif // SL_CATALOG_GATT_SERVICE_HALL_PRESENT
 #ifdef SL_CATALOG_SENSOR_LIGHT_PRESENT
   sc = sl_sensor_light_init();
   if (sc != SL_STATUS_OK) {
-    app_log_warning("Ambient light and UV index sensor initialization failed." APP_LOG_NL);
+    app_log_warning("Ambient light and UV index sensor initialization failed" APP_LOG_NL);
   }
 #endif // SL_CATALOG_SENSOR_LIGHT_PRESENT
 #ifdef SL_CATALOG_SENSOR_LUX_PRESENT
   sc = sl_sensor_lux_init();
   if (sc != SL_STATUS_OK) {
-    app_log_warning("Ambient light sensor initialization failed." APP_LOG_NL);
+    app_log_warning("Ambient light sensor initialization failed" APP_LOG_NL);
   }
 #endif // SL_CATALOG_SENSOR_LUX_PRESENT
 #ifdef SL_CATALOG_SENSOR_RHT_PRESENT
   sc = sl_sensor_rht_init();
   if (sc != SL_STATUS_OK) {
-    app_log_warning("Relative Humidity and Temperature sensor initialization failed." APP_LOG_NL);
+    app_log_warning("Relative Humidity and Temperature sensor initialization failed" APP_LOG_NL);
   }
 #endif // SL_CATALOG_SENSOR_RHT_PRESENT
-#ifdef SL_CATALOG_SENSOR_IMU_PRESENT
-  sl_sensor_imu_init();
-#endif // SL_CATALOG_SENSOR_IMU_PRESENT
-#ifdef SL_CATALOG_SENSOR_PRESSURE_PRESENT
-  sc = sl_sensor_pressure_init();
+#ifdef SL_CATALOG_GATT_SERVICE_IMU_PRESENT
+  sensor_imu_init();
+#endif // SL_CATALOG_GATT_SERVICE_IMU_PRESENT
+#ifdef SL_CATALOG_GATT_SERVICE_PRESSURE_PRESENT
+  sc = sensor_pressure_init();
   if (sc != SL_STATUS_OK) {
-    app_log_warning("Air Pressure sensor initialization failed." APP_LOG_NL);
+    app_log_warning("Air Pressure sensor initialization failed" APP_LOG_NL);
   }
-#endif // SL_CATALOG_SENSOR_PRESSURE_PRESENT
-#ifdef SL_CATALOG_SENSOR_SOUND_PRESENT
-  sc = sl_sensor_sound_init();
+#endif // SL_CATALOG_GATT_SERVICE_PRESSURE_PRESENT
+#ifdef SL_CATALOG_GATT_SERVICE_SOUND_PRESENT
+  sc = sensor_sound_init();
   if (sc != SL_STATUS_OK) {
-    app_log_warning("Sound level sensor initialization failed." APP_LOG_NL);
+    app_log_warning("Sound level sensor initialization failed" APP_LOG_NL);
   }
-#endif // SL_CATALOG_SENSOR_SOUND_PRESENT
+#endif // SL_CATALOG_GATT_SERVICE_SOUND_PRESENT
 }
 
 static void sensor_deinit(void)
 {
-#ifdef SL_CATALOG_SENSOR_HALL_PRESENT
-  sl_sensor_hall_deinit();
-#endif // SL_CATALOG_SENSOR_HALL_PRESENT
+#ifdef SL_CATALOG_GATT_SERVICE_HALL_PRESENT
+  sensor_hall_deinit();
+#endif // SL_CATALOG_GATT_SERVICE_HALL_PRESENT
 #ifdef SL_CATALOG_SENSOR_LIGHT_PRESENT
   sl_sensor_light_deinit();
 #endif // SL_CATALOG_SENSOR_LIGHT_PRESENT
@@ -297,19 +277,19 @@ static void sensor_deinit(void)
 #ifdef SL_CATALOG_SENSOR_RHT_PRESENT
   sl_sensor_rht_deinit();
 #endif // SL_CATALOG_SENSOR_RHT_PRESENT
-#ifdef SL_CATALOG_SENSOR_IMU_PRESENT
-  sl_sensor_imu_deinit();
-#endif // SL_CATALOG_SENSOR_IMU_PRESENT
+#ifdef SL_CATALOG_GATT_SERVICE_IMU_PRESENT
+  sensor_imu_deinit();
+#endif // SL_CATALOG_GATT_SERVICE_IMU_PRESENT
 #if defined(BOARD_RGBLED_COUNT) && (BOARD_RGBLED_COUNT > 0)
   // Turn off RGBLED
   rgb_led_set(0u, 0u, 0u, 0u);
 #endif // BOARD_RGBLED_COUNT
-#ifdef SL_CATALOG_SENSOR_PRESSURE_PRESENT
-  sl_sensor_pressure_deinit();
-#endif // SL_CATALOG_SENSOR_PRESSURE_PRESENT
-#ifdef SL_CATALOG_SENSOR_SOUND_PRESENT
-  sl_sensor_sound_deinit();
-#endif // SL_CATALOG_SENSOR_SOUND_PRESENT
+#ifdef SL_CATALOG_GATT_SERVICE_PRESSURE_PRESENT
+  sensor_pressure_deinit();
+#endif // SL_CATALOG_GATT_SERVICE_PRESSURE_PRESENT
+#ifdef SL_CATALOG_GATT_SERVICE_SOUND_PRESENT
+  sensor_sound_deinit();
+#endif // SL_CATALOG_GATT_SERVICE_SOUND_PRESENT
 }
 
 // -----------------------------------------------------------------------------
@@ -330,15 +310,15 @@ uint8_t sl_gatt_service_battery_get_type(void)
 }
 #endif // SL_CATALOG_GATT_SERVICE_BATTERY_PRESENT
 
-#if defined(SL_CATALOG_GATT_SERVICE_HALL_PRESENT) && defined(SL_CATALOG_SENSOR_HALL_PRESENT)
+#if defined(SL_CATALOG_GATT_SERVICE_HALL_PRESENT)
 sl_status_t sl_gatt_service_hall_get(float *field_strength, bool *alert, bool *tamper)
 {
   sl_status_t sc;
-  sc = sl_sensor_hall_get(field_strength, alert, tamper);
+  sc = sensor_hall_get(field_strength, alert, tamper);
   if (SL_STATUS_OK == sc) {
     app_log_info("Magnetic flux = %4.3f mT" APP_LOG_NL, *field_strength);
   } else if (SL_STATUS_NOT_INITIALIZED == sc) {
-    app_log_info("Hall sensor is not initialized." APP_LOG_NL);
+    app_log_info("Hall sensor is not initialized" APP_LOG_NL);
   } else {
     app_log_status_error_f(sc, "Hall sensor measurement failed" APP_LOG_NL);
   }
@@ -355,7 +335,7 @@ sl_status_t sl_gatt_service_light_get(float *lux, float *uvi)
     app_log_info("Ambient light = %f lux" APP_LOG_NL, *lux);
     app_log_info("UV Index = %u" APP_LOG_NL, (unsigned int)*uvi);
   } else if (SL_STATUS_NOT_INITIALIZED == sc) {
-    app_log_info("Ambient light and UV index sensor is not initialized." APP_LOG_NL);
+    app_log_info("Ambient light and UV index sensor is not initialized" APP_LOG_NL);
   } else {
     app_log_status_error_f(sc, "Light sensor measurement failed" APP_LOG_NL);
   }
@@ -371,7 +351,7 @@ sl_status_t sl_gatt_service_lux_get(float *lux)
   if (SL_STATUS_OK == sc) {
     app_log_info("Ambient light = %f lux" APP_LOG_NL, *lux);
   } else if (SL_STATUS_NOT_INITIALIZED == sc) {
-    app_log_info("Ambient light sensor is not initialized." APP_LOG_NL);
+    app_log_info("Ambient light sensor is not initialized" APP_LOG_NL);
   } else {
     app_log_status_error_f(sc, "Light sensor measurement failed" APP_LOG_NL);
   }
@@ -388,7 +368,7 @@ sl_status_t sl_gatt_service_rht_get(uint32_t *rh, int32_t *t)
     app_log_info("Humidity = %3.2f %%RH" APP_LOG_NL, (float)*rh / 1000.0f);
     app_log_info("Temperature = %3.2f C" APP_LOG_NL, (float)*t / 1000.0f);
   } else if (SL_STATUS_NOT_INITIALIZED == sc) {
-    app_log_info("Relative Humidity and Temperature sensor is not initialized." APP_LOG_NL);
+    app_log_info("Relative Humidity and Temperature sensor is not initialized" APP_LOG_NL);
   } else {
     app_log_status_error_f(sc, "RHT sensor measurement failed" APP_LOG_NL);
   }
@@ -396,16 +376,16 @@ sl_status_t sl_gatt_service_rht_get(uint32_t *rh, int32_t *t)
 }
 #endif
 
-#if defined(SL_CATALOG_GATT_SERVICE_IMU_PRESENT) && defined(SL_CATALOG_SENSOR_IMU_PRESENT)
+#if defined(SL_CATALOG_GATT_SERVICE_IMU_PRESENT)
 sl_status_t sl_gatt_service_imu_get(int16_t ovec[3], int16_t avec[3])
 {
   sl_status_t sc;
-  sc = sl_sensor_imu_get(ovec, avec);
+  sc = sensor_imu_get(ovec, avec);
   if (SL_STATUS_OK == sc) {
     app_log_info("IMU: ORI : %04d,%04d,%04d" APP_LOG_NL, ovec[0], ovec[1], ovec[2]);
     app_log_info("IMU: ACC : %04d,%04d,%04d" APP_LOG_NL, avec[0], avec[1], avec[2]);
   } else if (SL_STATUS_NOT_INITIALIZED == sc) {
-    app_log_info("Inertial Measurement Unit sensor is not initialized." APP_LOG_NL);
+    app_log_info("Inertial Measurement Unit is not initialized" APP_LOG_NL);
   }
   return sc;
 }
@@ -413,9 +393,9 @@ sl_status_t sl_gatt_service_imu_get(int16_t ovec[3], int16_t avec[3])
 sl_status_t sl_gatt_service_imu_calibrate(void)
 {
   sl_status_t sc;
-  sc = sl_sensor_imu_calibrate();
+  sc = sensor_imu_calibrate();
   if (SL_STATUS_NOT_INITIALIZED == sc) {
-    app_log_info("Inertial Measurement Unit sensor is not initialized." APP_LOG_NL);
+    app_log_info("Inertial Measurement Unit is not initialized" APP_LOG_NL);
   } else {
     app_log_info("IMU calibration status: %ld" APP_LOG_NL, sc);
   }
@@ -426,9 +406,9 @@ void sl_gatt_service_imu_enable(bool enable)
 {
   sl_status_t sc;
   app_log_info("IMU %sable" APP_LOG_NL, enable ? "en" : "dis");
-  sc = sl_sensor_imu_enable(enable);
+  sc = sensor_imu_enable(enable);
   if (enable && SL_STATUS_OK != sc) {
-    app_log_warning("Inertial Measurement Unit sensor sensor initialization failed." APP_LOG_NL);
+    app_log_warning("Inertial Measurement Unit initialization failed" APP_LOG_NL);
   }
 }
 #endif
@@ -448,11 +428,11 @@ uint8_t sl_gatt_service_rgb_get_led_mask(void)
 }
 #endif // BOARD_RGBLED_COUNT
 
-#if defined(SL_CATALOG_GATT_SERVICE_PRESSURE_PRESENT) && defined(SL_CATALOG_SENSOR_PRESSURE_PRESENT)
+#if defined(SL_CATALOG_GATT_SERVICE_PRESSURE_PRESENT)
 sl_status_t sl_gatt_service_pressure_get(float *pressure)
 {
   sl_status_t sc;
-  sc = sl_sensor_pressure_get(pressure);
+  sc = sensor_pressure_get(pressure);
   if (SL_STATUS_OK == sc) {
     app_log_info("Pressure = %0.3f mbar" APP_LOG_NL, *pressure);
   } else if (SL_STATUS_NOT_INITIALIZED == sc) {
@@ -464,15 +444,15 @@ sl_status_t sl_gatt_service_pressure_get(float *pressure)
 }
 #endif
 
-#if defined(SL_CATALOG_GATT_SERVICE_SOUND_PRESENT) && defined(SL_CATALOG_SENSOR_SOUND_PRESENT)
+#if defined(SL_CATALOG_GATT_SERVICE_SOUND_PRESENT)
 sl_status_t sl_gatt_service_sound_get(float *sound_level)
 {
   sl_status_t sc;
-  sc = sl_sensor_sound_get(sound_level);
+  sc = sensor_sound_get(sound_level);
   if (SL_STATUS_OK == sc) {
     app_log_info("Sound level = %3.2f dBA" APP_LOG_NL, *sound_level);
   } else if (SL_STATUS_NOT_INITIALIZED == sc) {
-    app_log_info("Sound level sensor is not initialized." APP_LOG_NL);
+    app_log_info("Sound level sensor is not initialized" APP_LOG_NL);
   } else {
     app_log_status_error_f(sc, "Sound level measurement failed" APP_LOG_NL);
   }

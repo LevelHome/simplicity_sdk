@@ -92,7 +92,7 @@ static uint32_t tagSize;
 
 void sli_zigbee_af_standalone_bootloader_server_print_status(void)
 {
-  bootloadPrintln("Server State: %p", serverStateStrings[serverBootloadState]);
+  bootloadPrintln("Server State: %s", serverStateStrings[serverBootloadState]);
   bootloadPrint("Key Data: ");
   sl_zigbee_af_print_zigbee_key(sl_zigbee_key_contents(&bootloadKey));
 }
@@ -201,7 +201,7 @@ static void decodeAndPrintServerMessageType(uint8_t command)
       break;
   }
   if (printAcks || command != XMODEM_ACK) {
-    bootloadPrintln("Received Standalone Bootloader message (%d): %p",
+    bootloadPrintln("Received Standalone Bootloader message (%d): %s",
                     command,
                     (id == 0xFF
                      ? "??"
@@ -211,20 +211,20 @@ static void decodeAndPrintServerMessageType(uint8_t command)
 
 static void printTargetClientInfo(const char * prefixString)
 {
-  bootloadPrint("%p", prefixString);
+  bootloadPrint("%s", prefixString);
   if (isTargetClientDataValid()) {
     sl_zigbee_af_print_big_endian_eui64(targetClient.eui64);
-    bootloadPrintln("\n  Bootloader Active: %p",
+    bootloadPrintln("\n  Bootloader Active: %s",
                     (targetClient.bootloaderActive
                      ? "yes"
                      : "no"));
-    bootloadPrintln("  MFG ID:       0x%2X", targetClient.mfgId);
+    bootloadPrintln("  MFG ID:       0x%04X", targetClient.mfgId);
     bootloadPrint("  Hardware Tag: ");
     sli_zigbee_af_standalone_bootloader_common_print_hardware_tag(targetClient.hardwareTag);
-    bootloadPrintln("  Capabilities: 0x%X", targetClient.capabilities);
-    bootloadPrintln("  Platform:     0x%X", targetClient.platform);
-    bootloadPrintln("  Micro:        0x%X", targetClient.micro);
-    bootloadPrintln("  Phy:          0x%X", targetClient.phy);
+    bootloadPrintln("  Capabilities: 0x%02X", targetClient.capabilities);
+    bootloadPrintln("  Platform:     0x%02X", targetClient.platform);
+    bootloadPrintln("  Micro:        0x%02X", targetClient.micro);
+    bootloadPrintln("  Phy:          0x%02X", targetClient.phy);
   } else {
     bootloadPrintln("-");
   }
@@ -316,7 +316,7 @@ static sl_status_t getNextBootloaderBlock(uint32_t address, // relative to 0
 
 static void xmodemComplete(bool success)
 {
-  bootloadPrintln("Xmodem transfer complete, status: %p", (success ? "Success" : "FAILED"));
+  bootloadPrintln("Xmodem transfer complete, status: %s", (success ? "Success" : "FAILED"));
   resetServerState(success);
 }
 
@@ -447,7 +447,7 @@ sl_status_t sl_zigbee_af_standalone_bootloader_server_start_client_bootload(sl_8
                                                                                             tag,
                                                                                             &tagOffset,
                                                                                             &tagSize)) {
-    bootloadPrintln("Error: Cannot find tag 0x%2X within passed image ID", tag);
+    bootloadPrintln("Error: Cannot find tag 0x%04X within passed image ID", tag);
     return SL_STATUS_INVALID_STATE;
   }
 

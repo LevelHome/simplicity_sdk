@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_wisun_ping.h
+ * @brief Wi-SUN Ping
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __SL_WISUN_PING_H__
-#define __SL_WISUN_PING_H__
+#ifndef SL_WISUN_PING_H
+#define SL_WISUN_PING_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,11 +40,12 @@ extern "C" {
 // -----------------------------------------------------------------------------
 
 /**************************************************************************//**
- * @addtogroup SL_WISUN_PING_API Ping
+ * @addtogroup SL_WISUN_PING_API
  * @{
  *****************************************************************************/
 
 #include <stdint.h>
+
 #include "socket/socket.h"
 #include "sl_wisun_ping_config.h"
 
@@ -52,11 +53,6 @@ extern "C" {
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
 
-/**************************************************************************//**
- * @addtogroup SL_WISUN_PING_API_TYPES Ping API type definitions
- * @ingroup SL_WISUN_PING_API
- * @{
- *****************************************************************************/
 
 /// Maximum count of ping request/response for message queues
 #define SL_WISUN_PING_MAX_REQUEST_RESPONSE   (128U)
@@ -81,6 +77,12 @@ extern "C" {
 
 /// Dedicated port for ICMPv6 echo messages
 #define SL_WISUN_PING_ICMP_PORT                     (0U)
+
+/**************************************************************************//**
+ * @addtogroup SL_WISUN_PING_API_TYPES Type definitions
+ * @ingroup SL_WISUN_PING_API
+ * @{
+ *****************************************************************************/
 
 SL_PACK_START(1)
 /// Ping echo request packed structure type definitions
@@ -208,4 +210,4 @@ void sl_wisun_ping_stop(void);
 }
 #endif
 
-#endif // __SL_WISUN_PING_H__
+#endif // SL_WISUN_PING_H

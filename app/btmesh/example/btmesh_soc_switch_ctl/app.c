@@ -3,7 +3,7 @@
  * @brief Application code
  *******************************************************************************
  * # License
- * <b>Copyright 2022 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -30,9 +30,9 @@
 
 #include <stdbool.h>
 #include <stdio.h>
-#include "em_common.h"
+#include "sl_common.h"
 #include "sl_status.h"
-#include "sl_sleeptimer.h"
+#include "sl_udelay.h"
 
 #include "sl_btmesh.h"
 #include "sl_bluetooth.h"
@@ -103,24 +103,11 @@
 /// Used button index
 #define BUTTON_PRESS_BUTTON_0          0
 
-#ifndef SL_CATALOG_APP_LOG_PRESENT
-#define app_log(...)
-#define app_log_status_error_f(...)
-#endif // SL_CATALOG_APP_LOG_PRESENT
-
-#ifdef SL_CATALOG_BTMESH_WSTK_LCD_PRESENT
-#define lcd_print(...) sl_btmesh_LCD_write(__VA_ARGS__)
-#else
-#define lcd_print(...)
-#endif // SL_CATALOG_BTMESH_WSTK_LCD_PRESENT
-
 /// periodic timer handle
 static app_timer_t app_led_blinking_timer;
 
 /// periodic timer callback
 static void app_led_blinking_timer_cb(app_timer_t *handle, void *data);
-// Handles button press and does a factory reset
-static bool handle_reset_conditions(void);
 // Set device name in the GATT database
 static void set_device_name(uuid_128 *uuid);
 // Clamp the sum of `a` and `b` to the given max value
@@ -144,7 +131,7 @@ static uint8_t temperature_percent = 0;
  * Change buttons to LEDs in case of shared pin
  *
  ******************************************************************************/
-void change_buttons_to_leds(void)
+void app_change_buttons_to_leds(void)
 {
   app_button_press_disable();
   // Disable button and enable led
@@ -163,7 +150,7 @@ void change_buttons_to_leds(void)
  * Change LEDs to buttons in case of shared pin
  *
  ******************************************************************************/
-void change_leds_to_buttons(void)
+void app_change_leds_to_buttons(void)
 {
   // Enable buttons
   sl_simple_button_enable(&sl_button_btn0);
@@ -171,7 +158,7 @@ void change_leds_to_buttons(void)
   sl_simple_button_enable(&sl_button_btn1);
 #endif
   // Wait
-  sl_sleeptimer_delay_millisecond(1);
+  sl_udelay_wait(1000);
   // Enable button presses
   app_button_press_enable();
 }
@@ -185,12 +172,14 @@ SL_WEAK void app_init(void)
   // Put your additional application init code here!                         //
   // This is called once during start-up.                                    //
   /////////////////////////////////////////////////////////////////////////////
+  #if !defined(SL_CATALOG_KERNEL_PRESENT)
   app_log("BT mesh Switch CTL initialized" APP_LOG_NL);
   // Ensure right init order in case of shared pin for enabling buttons
-  change_buttons_to_leds();
+  app_change_buttons_to_leds();
   // Change LEDs to buttons in case of shared pin
-  change_leds_to_buttons();
-  handle_reset_conditions();
+  app_change_leds_to_buttons();
+  app_handle_reset_conditions();
+  #endif // SL_CATALOG_KERNEL_PRESENT
 }
 
 /***************************************************************************//**
@@ -198,11 +187,13 @@ SL_WEAK void app_init(void)
  ******************************************************************************/
 SL_WEAK void app_process_action(void)
 {
-  /////////////////////////////////////////////////////////////////////////////
-  // Put your additional application code here!                              //
-  // This is called infinitely.                                              //
-  // Do not call blocking functions from here!                               //
-  /////////////////////////////////////////////////////////////////////////////
+  if (app_is_process_required()) {
+    /////////////////////////////////////////////////////////////////////////////
+    // Put your additional application code here!                              //
+    // This will run each time app_proceed() is called.                        //
+    // Do not call blocking functions from here!                               //
+    /////////////////////////////////////////////////////////////////////////////
+  }
 }
 
 /***************************************************************************//**
@@ -283,7 +274,7 @@ static uint8_t wrap_add(int8_t a, int8_t b, uint8_t max)
  *
  * @return true if there is no button press
  ******************************************************************************/
-static bool handle_reset_conditions(void)
+bool app_handle_reset_conditions(void)
 {
 #ifdef SL_CATALOG_BTMESH_FACTORY_RESET_PRESENT
   // If PB0 is held down then do full factory reset
@@ -440,7 +431,7 @@ void app_button_press_cb(uint8_t button, uint8_t duration)
 void sl_btmesh_on_node_provisioning_started(uint16_t result)
 {
   // Change buttons to LEDs in case of shared pin
-  change_buttons_to_leds();
+  app_change_buttons_to_leds();
 
   sl_status_t sc = app_timer_start(&app_led_blinking_timer,
                                    APP_LED_BLINKING_TIMEOUT,
@@ -467,7 +458,7 @@ void sl_btmesh_on_node_provisioning_failed(uint16_t result)
 #endif // defined(SL_CATALOG_BTMESH_WSTK_LCD_PRESENT) || defined(SL_CATALOG_APP_LOG_PRESENT)
 
   // Small delay before reboot
-  sl_sleeptimer_delay_millisecond(2000);
+  sl_udelay_wait(2000000);
   sl_bt_system_reboot();
 }
 
@@ -483,7 +474,7 @@ void sl_btmesh_on_node_provisioned(uint16_t address,
 #if SL_SIMPLE_LED_COUNT >= 2
   sl_simple_led_turn_off(sl_led_led1.context);
 #endif
-  change_leds_to_buttons();
+  app_change_leds_to_buttons();
 
 #if defined(SL_CATALOG_BTMESH_WSTK_LCD_PRESENT) || defined(SL_CATALOG_APP_LOG_PRESENT)
   app_show_btmesh_node_provisioned(address, iv_index);

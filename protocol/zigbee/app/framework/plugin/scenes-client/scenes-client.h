@@ -44,13 +44,13 @@
  * @param groupId Ver.: always
  * @param sceneId Ver.: always
  *
- * @return bool true is success
+ * @return sl_zigbee_af_zcl_request_status_t SL_ZIGBEE_ZCL_STATUS_SUCCESS is success
  *
  */
-bool sl_zigbee_af_scenes_client_parse_add_scene_response(const sl_zigbee_af_cluster_command_t *cmd,
-                                                         uint8_t status,
-                                                         uint16_t groupId,
-                                                         uint8_t sceneId);
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_scenes_client_parse_add_scene_response(const sl_zigbee_af_cluster_command_t *cmd,
+                                                                                      uint8_t status,
+                                                                                      uint16_t groupId,
+                                                                                      uint8_t sceneId);
 
 /** @brief View scenes response.
  *
@@ -62,16 +62,16 @@ bool sl_zigbee_af_scenes_client_parse_add_scene_response(const sl_zigbee_af_clus
  * @param sceneName Ver.: always
  * @param extentionFieldSets Ver.: always
  *
- * @param bool true is success
+ * @param sl_zigbee_af_zcl_request_status_t SL_ZIGBEE_ZCL_STATUS_SUCCESS is success
  *
  */
-bool sl_zigbee_af_scenes_client_parse_view_scene_response(const sl_zigbee_af_cluster_command_t *cmd,
-                                                          uint8_t status,
-                                                          uint16_t groupId,
-                                                          uint8_t sceneId,
-                                                          uint16_t transitionTime,
-                                                          const uint8_t *sceneName,
-                                                          const uint8_t *extensionFieldSets);
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_scenes_client_parse_view_scene_response(const sl_zigbee_af_cluster_command_t *cmd,
+                                                                                       uint8_t status,
+                                                                                       uint16_t groupId,
+                                                                                       uint8_t sceneId,
+                                                                                       uint16_t transitionTime,
+                                                                                       const uint8_t *sceneName,
+                                                                                       const uint8_t *extensionFieldSets);
 
 /** @} */ // end of name API
 /** @} */ // end of scenes-client

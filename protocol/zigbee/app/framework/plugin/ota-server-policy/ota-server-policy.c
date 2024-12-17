@@ -151,13 +151,13 @@ void sli_zigbee_af_ota_server_policy_print(void)
 {
 #ifdef DESCRIPTION_FIELD
   otaPrintln("OTA Server Policies");
-  otaPrintln("Query Policy: %p (%d)",
+  otaPrintln("Query Policy: %s (%d)",
              nextVersionPolicyStrings[nextVersionPolicy],
              nextVersionPolicy);
 #endif // DESCRIPTION_FIELD
 
 #if defined EM_AF_TEST_HARNESS_CODE
-  otaPrintln("Image Block Request Policy: %p (%d)",
+  otaPrintln("Image Block Request Policy: %s (%d)",
              imageBlockRequestPolicyStrings[imageBlockRequestPolicy],
              imageBlockRequestPolicy);
   if (imageBlockRequestPolicy == DELAY_DOWNLOAD_ONCE) {
@@ -172,13 +172,13 @@ void sli_zigbee_af_ota_server_policy_print(void)
              otaMinimumBlockPeriodMs);
   sl_zigbee_af_core_flush();
 
-  otaPrintln("Page Request Code Compiled in: %p",
+  otaPrintln("Page Request Code Compiled in: %s",
              PAGE_REQUEST_COMPILE_TIME_SUPPORT);
-  otaPrintln("Page Request Runtime Status Code: 0x%X",
+  otaPrintln("Page Request Runtime Status Code: 0x%02X",
              pageRequestStatus);
   sl_zigbee_af_core_flush();
 
-  otaPrintln("Upgrade Request Policy: %p (%d)",
+  otaPrintln("Upgrade Request Policy: %s (%d)",
              upgradePolicyStrings[upgradePolicy],
              upgradePolicy);
   if (upgradePolicy == UPGRADE_SOON) {
@@ -237,7 +237,7 @@ uint8_t sl_zigbee_af_ota_server_query_cb(const sl_zigbee_af_ota_image_id_t* curr
   uint8_t status = SL_ZIGBEE_ZCL_STATUS_NO_IMAGE_AVAILABLE;
   bool hardwareVersionMismatch = false;
 
-  otaPrintln("QueryNextImageRequest mfgId:0x%2x imageTypeId:0x%2x, fw:0x%4x",
+  otaPrintln("QueryNextImageRequest mfgId:0x%04X imageTypeId:0x%04X, fw:0x%08X",
              currentImageId->manufacturerId,
              currentImageId->imageTypeId,
              currentImageId->firmwareVersion);
@@ -275,7 +275,7 @@ uint8_t sl_zigbee_af_ota_server_query_cb(const sl_zigbee_af_ota_image_id_t* curr
                 ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
                 : SL_ZIGBEE_ZCL_STATUS_NO_IMAGE_AVAILABLE);
       if (status == SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-        otaPrintln("Next fw version is: 0x%4X",
+        otaPrintln("Next fw version is: 0x%08X",
                    nextUpgradeImageId->firmwareVersion);
       }
     }
@@ -389,7 +389,7 @@ bool sl_zigbee_af_ota_server_upgrade_end_request_cb(sl_802154_short_addr_t sourc
                                                     uint32_t* returnValue,
                                                     const sl_zigbee_af_ota_image_id_t* imageId)
 {
-  otaPrintln("Client 0x%2X indicated upgrade status: 0x%X",
+  otaPrintln("Client 0x%04X indicated upgrade status: 0x%02X",
              source,
              status);
 
@@ -401,7 +401,7 @@ bool sl_zigbee_af_ota_server_upgrade_end_request_cb(sl_802154_short_addr_t sourc
     return false;
   }
 
-  otaPrintln("Upgrade End Response: %p", upgradePolicyStrings[upgradePolicy]);
+  otaPrintln("Upgrade End Response: %s", upgradePolicyStrings[upgradePolicy]);
 
   if (upgradePolicy == UPGRADE_ABORT) {
     return false;

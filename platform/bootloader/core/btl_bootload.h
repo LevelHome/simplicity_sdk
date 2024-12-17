@@ -231,7 +231,7 @@ uint32_t* bootload_getApplicationVersionStoragePtr(uint32_t index);
  *
  * @return True if application contains a certificate.
  ******************************************************************************/
-bool bootload_gotCertificate(void *appProp);
+bool bootload_gotCertificate(const void *appProp);
 
 /***************************************************************************//**
  * Verify a certificate with a bootloader certificate.
@@ -240,7 +240,7 @@ bool bootload_gotCertificate(void *appProp);
  *
  * @return True if certificate is verified.
  ******************************************************************************/
-bool bootload_verifyCertificate(void *cert);
+bool bootload_verifyCertificate(const void *cert);
 
 /***************************************************************************//**
  * Verify the application certificate.
@@ -255,7 +255,7 @@ bool bootload_verifyCertificate(void *cert);
  *
  * @return True if application certificate is verified.
  ******************************************************************************/
-bool bootload_verifyApplicationCertificate(void *appProp, void *gotCert);
+bool bootload_verifyApplicationCertificate(const void *appProp, const void *gotCert);
 
 #if defined(_MSC_PAGELOCK0_MASK)
 /***************************************************************************//**

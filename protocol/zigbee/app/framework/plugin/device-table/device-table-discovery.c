@@ -27,7 +27,6 @@
 #endif
 
 #include "hal/hal.h"
-#include "app/util/serial/sl_zigbee_command_interpreter.h"
 #include "app/framework/include/af.h"
 
 #include <stdlib.h>
@@ -208,7 +207,7 @@ void printQueue(void)
 
   sl_zigbee_af_core_println("index    node  ep  state  delay  wait");
   for (i = 0; i < queueSize; i++) {
-    sl_zigbee_af_core_println("  %d   0x%2X  %d    %d     %d    %d",
+    sl_zigbee_af_core_println("  %d   0x%04X  %d    %d     %d    %d",
                               i,
                               taskQueue[i].nodeId,
                               taskQueue[i].endpoint,
@@ -453,7 +452,7 @@ void sl_zigbee_af_device_table_new_device_join_handler(sl_802154_short_addr_t ne
   } else {
     // Is this a new node ID?
     if (newNodeId != deviceTable[deviceTableIndex].nodeId) {
-      sl_zigbee_af_core_println("Node ID Change:  was %2x, is %2x",
+      sl_zigbee_af_core_println("Node ID Change:  was %04X, is %04X",
                                 deviceTable[deviceTableIndex].nodeId,
                                 newNodeId);
 
@@ -529,12 +528,12 @@ void sli_zigbee_af_device_table_trust_center_join_callback(sl_802154_short_addr_
 {
   uint8_t i;
 
-  sl_zigbee_af_core_println("TC Join Callback %2x , status: %d",
+  sl_zigbee_af_core_println("TC Join Callback %04X , status: %d",
                             newNodeId,
                             status);
 
   for (i = 0; i < 8; i++) {
-    sl_zigbee_af_core_print("%x",
+    sl_zigbee_af_core_print("%02X",
                             newNodeEui64[7 - i]);
   }
   if (status < STATUS_STRINGS_ARRAY_LENGTH) {
@@ -592,7 +591,7 @@ bool sli_zigbee_af_device_table_pre_zdo_message_received(sl_802154_short_addr_t 
 {
   sl_802154_short_addr_t ieeeSourceNode, remoteDeviceNwkId;
 
-  sl_zigbee_af_core_println("%2x:  ", sl_zigbee_node_id);
+  sl_zigbee_af_core_println("%04X:  ", sl_zigbee_node_id);
   switch (apsFrame->clusterId) {
     case ACTIVE_ENDPOINTS_RESPONSE:
       sl_zigbee_af_core_println("Active Endpoints Response");
@@ -633,17 +632,17 @@ bool sli_zigbee_af_device_table_pre_zdo_message_received(sl_802154_short_addr_t 
       sl_zigbee_af_core_println("new device line %d", __LINE__);
       ieeeSourceNode =
         sl_util_fetch_low_high_int16u(message + IEEE_ADDRESS_RESPONSE_NODE_ID_OFFSET);
-      sl_zigbee_af_core_println("Ieee source node %2x", ieeeSourceNode);
+      sl_zigbee_af_core_println("Ieee source node %04X", ieeeSourceNode);
 
       sl_zigbee_af_device_table_new_device_join_handler(ieeeSourceNode,
                                                         message + IEEE_ADDRESS_RESPONSE_IEEE_OFFSET);
       break;
     default:
-      sl_zigbee_af_core_println("Untracked ZDO %2x", apsFrame->clusterId);
+      sl_zigbee_af_core_println("Untracked ZDO %04X", apsFrame->clusterId);
       break;
   }
 
-  sl_zigbee_af_core_print("%2x ", sl_zigbee_node_id);
+  sl_zigbee_af_core_print("%04X ", sl_zigbee_node_id);
   sli_zigbee_af_device_table_print_buffer(message, length);
 
   return false;

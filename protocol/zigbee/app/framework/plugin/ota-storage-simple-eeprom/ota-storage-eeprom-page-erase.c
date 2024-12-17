@@ -114,7 +114,7 @@ static bool eraseOperation(bool startNewErase,
     newEraseOperation = true;
     currentEraseOffset = beginOffset;
     endEraseOffset = endOffset;
-    otaPrintln("Starting erase from offset 0x%4X to 0x%4X",
+    otaPrintln("Starting erase from offset 0x%08X to 0x%08X",
                beginOffset,
                endEraseOffset);
     storedSleepControl = sl_zigbee_af_get_default_sleep_control_cb();
@@ -141,7 +141,7 @@ static bool eraseOperation(bool startNewErase,
       checkDelay(true); // must set timer?
       return true;
     }
-    otaPrintln("Could not start ERASE! (0x%X)", status);
+    otaPrintln("Could not start ERASE! (0x%02X)", status);
   }
 
   sl_zigbee_af_set_default_sleep_control(storedSleepControl);
@@ -209,7 +209,7 @@ static int32_t getByteMaskIndexFromEeprom(void)
     uint8_t status = sl_zigbee_af_eeprom_read(readOffset,
                                               byteMask,
                                               BYTE_MASK_READ_SIZE);
-    debugPrint("Bytemask read status: 0x%X", status);
+    debugPrint("Bytemask read status: 0x%02X", status);
     SL_ZIGBEE_TEST_ASSERT(status == 0);
 #if !defined(DEBUG_PRINT) && !defined(SL_ZIGBEE_TEST)
     UNUSED_VAR(status);
@@ -251,7 +251,7 @@ static uint32_t getOffsetFromByteMaskIndex(int32_t byteMaskIndex)
   int32_t writtenPages = byteMaskIndex + 1;
   uint32_t otaOffset = (((uint32_t)(writtenPages)) << determinePageSizeLog());
 
-  debugPrint("Unadjusted offset:    0x%4X", otaOffset);
+  debugPrint("Unadjusted offset:    0x%08X", otaOffset);
 
   if (otaOffset != 0) {
 #if defined(SOC_BOOTLOADING_SUPPORT)
@@ -262,7 +262,7 @@ static uint32_t getOffsetFromByteMaskIndex(int32_t byteMaskIndex)
   }
 
   debugFlush();
-  debugPrint("Last OTA Download offset: 0x%4X", otaOffset);
+  debugPrint("Last OTA Download offset: 0x%08X", otaOffset);
   debugFlush();
 
   return otaOffset;
@@ -278,7 +278,7 @@ static int32_t getByteMaskIndexFromOtaOffset(uint32_t otaOffset)
   adjustment = 0 - OTA_HEADER_INDEX;
 #endif
 
-  // debugPrint("Offset: 0x%4X, Adjustment: 0x%4X, EBL Start Offset: 0x%4X, Page Log: %d, Page Size: %d",
+  // debugPrint("Offset: 0x%08X, Adjustment: 0x%08X, EBL Start Offset: 0x%08X, Page Log: %d, Page Size: %d",
   //            otaOffset,
   //            adjustment,
   //            sli_zigbee_af_get_ebl_start_offset(),
@@ -296,7 +296,7 @@ void sli_zigbee_af_storage_eeprom_update_download_offset(uint32_t otaOffsetNew, 
 {
   int32_t byteMaskIndexNew = getByteMaskIndexFromOtaOffset(otaOffsetNew);
 
-  // debugPrint("Checking whether to update bytemask, New Offset: 0x%4X, new bytemask index: %d, old bytemask index: %d, final update: %c",
+  // debugPrint("Checking whether to update bytemask, New Offset: 0x%08X, new bytemask index: %d, old bytemask index: %d, final update: %c",
   //            otaOffsetNew,
   //            byteMaskIndexNew,
   //            lastRecordedByteMaskIndex,
@@ -316,7 +316,7 @@ void sli_zigbee_af_storage_eeprom_update_download_offset(uint32_t otaOffsetNew, 
                byteMaskIndexNew,
                lastRecordedByteMaskIndex);
     debugFlush();
-    debugPrint("OTA Offsets, new (old): 0x%4X (0x%4X)",
+    debugPrint("OTA Offsets, new (old): 0x%08X (0x%08X)",
                otaOffsetNew,
                getOffsetFromByteMaskIndex(lastRecordedByteMaskIndex));
     debugFlush();
@@ -331,7 +331,7 @@ void sli_zigbee_af_storage_eeprom_update_download_offset(uint32_t otaOffsetNew, 
 #if !defined(DEBUG_PRINT) && !defined(SL_ZIGBEE_TEST)
     UNUSED_VAR(status);
 #endif
-    debugPrint("EEPROM Write status: 0x%X", status);
+    debugPrint("EEPROM Write status: 0x%02X", status);
     SL_ZIGBEE_TEST_ASSERT(status == 0);
 
     lastRecordedByteMaskIndex = getByteMaskIndexFromEeprom();

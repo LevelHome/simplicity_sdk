@@ -148,7 +148,7 @@ void UART_IRQHandler(void)
     sRxDataReady = true;
     CLEAR_RX_IRQ();
 #ifdef SL_CATALOG_KERNEL_PRESENT
-    sl_ot_rtos_set_pending_event(SL_OT_RTOS_EVENT_UART);
+    sl_ot_rtos_set_pending_event(SL_OT_RTOS_EVENT_SERIAL);
 #endif
 }
 
@@ -167,7 +167,7 @@ static void receiveDone(UARTDRV_Handle_t aHandle, Ecode_t aStatus, uint8_t *aDat
     UARTDRV_Receive(aHandle, aData, aCount, receiveDone);
 
 #ifdef SL_CATALOG_KERNEL_PRESENT
-    sl_ot_rtos_set_pending_event(SL_OT_RTOS_EVENT_UART); // Receive Done event
+    sl_ot_rtos_set_pending_event(SL_OT_RTOS_EVENT_SERIAL); // Receive Done event
 #endif
 }
 
@@ -181,7 +181,7 @@ static void transmitDone(UARTDRV_Handle_t aHandle, Ecode_t aStatus, uint8_t *aDa
     // This value will be used later in processTransmit() to call otPlatUartSendDone()
     sTxComplete = true;
 #ifdef SL_CATALOG_KERNEL_PRESENT
-    sl_ot_rtos_set_pending_event(SL_OT_RTOS_EVENT_UART);
+    sl_ot_rtos_set_pending_event(SL_OT_RTOS_EVENT_SERIAL);
 #endif
 }
 

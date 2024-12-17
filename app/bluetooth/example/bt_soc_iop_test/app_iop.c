@@ -30,10 +30,12 @@
 #include <stdio.h>
 #include "sl_bt_api.h"
 #include "gatt_db.h"
+#include "sl_component_catalog.h"
 #include "app_timer.h"
 #include "app_log.h"
-#include "app_iop.h"
 #include "app_memlcd.h"
+#include "app_iop.h"
+#include "app.h"
 
 // Size of the arrays for sending and receiving data
 #define DATA_SIZE_MAX     255
@@ -139,6 +141,7 @@ void app_throughput_step(void)
                                       pdu_size - 4 - 3,
                                       iop_test_notification_250_arr);
     (void)sc;
+    app_proceed();
   }
 }
 
@@ -396,6 +399,7 @@ sl_status_t handle_user_write(sl_bt_evt_gatt_server_user_write_request_t *user_w
       break;
     }
 
+#ifdef SL_CATALOG_IN_PLACE_OTA_DFU_PRESENT
     //--------------------------------
     case gattdb_ota_control: {
       // The value of OTA Control characteristic was changed. This indicates
@@ -406,6 +410,7 @@ sl_status_t handle_user_write(sl_bt_evt_gatt_server_user_write_request_t *user_w
       app_log_info("Start OTA-DFU." APP_LOG_NL);
       break;
     }
+#endif // SL_CATALOG_IN_PLACE_OTA_DFU_PRESENT
 
     //--------------------------------
     case gattdb_iop_test_phase3_control: {
@@ -533,8 +538,6 @@ sl_status_t handle_timer_start(sl_bt_evt_gatt_server_characteristic_status_t *ch
     case gattdb_iop_test_throughput: {
       if (char_stat->client_config_flags == sl_bt_gatt_notification) {
         // Test 7.1 (Throughput) takes place now.
-        throughput_in_progress = true;
-
         uint8_t interval_whole = (connection_interval * 1.25f);
         uint8_t interval_partial = (100 * (connection_interval * 1.25f)) - 100 * interval_whole;
 
@@ -545,6 +548,9 @@ sl_status_t handle_timer_start(sl_bt_evt_gatt_server_characteristic_status_t *ch
                      interval_whole,
                      interval_partial,
                      phy);
+
+        throughput_in_progress = true;
+        app_proceed();
 
         // Start timer for timeout checking
         sc = app_timer_start(&timer,

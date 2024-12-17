@@ -29,10 +29,10 @@
 #include "stack/include/gp-sink-table.h"
 #endif //!EZSP_HOST
 
-bool sli_zigbee_af_green_power_server_gp_sink_commissioning_mode_command_handler(uint8_t options,
-                                                                                 uint16_t gpmAddrForSecurity,
-                                                                                 uint16_t gpmAddrForPairing,
-                                                                                 uint8_t sinkEndpoint);
+sl_zigbee_af_zcl_request_status_t sli_zigbee_af_green_power_server_gp_sink_commissioning_mode_command_handler(uint8_t options,
+                                                                                                              uint16_t gpmAddrForSecurity,
+                                                                                                              uint16_t gpmAddrForPairing,
+                                                                                                              uint8_t sinkEndpoint);
 
 // Sink Commissioning Mode Enter
 void sl_zigbee_af_green_power_server_commissioning_mode(SL_CLI_COMMAND_ARG)
@@ -66,7 +66,7 @@ void sl_zigbee_af_green_power_server_cli_sink_table_print(SL_CLI_COMMAND_ARG)
 #ifdef EZSP_HOST
   sl_status_t status = sl_zigbee_ezsp_get_configuration_value(SL_ZIGBEE_EZSP_CONFIG_GP_SINK_TABLE_SIZE, (uint16_t*)&sinkTableSize);
   if (status != SL_ZIGBEE_EZSP_SUCCESS) {
-    sl_zigbee_af_green_power_cluster_println("ERR: Cannot get the sink table size from GP stack, error code: %x", status);
+    sl_zigbee_af_green_power_cluster_println("ERR: Cannot get the sink table size from GP stack, error code: %02X", status);
     return;
   }
 #else
@@ -80,7 +80,7 @@ void sl_zigbee_af_green_power_server_cli_sink_table_print(SL_CLI_COMMAND_ARG)
     if (status == SL_STATUS_OK
         && entry.status == SL_ZIGBEE_GP_SINK_TABLE_ENTRY_STATUS_ACTIVE) {
       tableEmpty = false;
-      sl_zigbee_af_core_println("%x %2x %x %4x %x %x %2x %x %x %4x",
+      sl_zigbee_af_core_println("%02X %04X %02X %08X %02X %02X %04X %02X %02X %08X",
                                 entry.status,
                                 entry.options,
                                 entry.gpd.applicationId,

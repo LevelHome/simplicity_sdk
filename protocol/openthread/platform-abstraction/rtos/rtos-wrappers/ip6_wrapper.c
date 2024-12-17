@@ -51,7 +51,6 @@ extern bool        OT_API_REAL_NAME(otIp6HasUnicastAddress)(otInstance *aInstanc
 extern bool        OT_API_REAL_NAME(otIp6IsAddressEqual)(const otIp6Address *aFirst, const otIp6Address *aSecond);
 extern bool        OT_API_REAL_NAME(otIp6IsAddressUnspecified)(const otIp6Address *aAddress);
 extern bool        OT_API_REAL_NAME(otIp6IsEnabled)(otInstance *aInstance);
-extern bool        OT_API_REAL_NAME(otIp6IsMulticastPromiscuousEnabled)(otInstance *aInstance);
 extern bool        OT_API_REAL_NAME(otIp6IsReceiveFilterEnabled)(otInstance *aInstance);
 extern bool        OT_API_REAL_NAME(otIp6IsSlaacEnabled)(otInstance *aInstance);
 extern const char *OT_API_REAL_NAME(otIp6ProtoToString)(uint8_t aIpProto);
@@ -91,7 +90,6 @@ extern void       OT_API_REAL_NAME(otIp6ResetBorderRoutingCounters)(otInstance *
 extern void       OT_API_REAL_NAME(otIp6SetAddressCallback)(otInstance          *aInstance,
                                                       otIp6AddressCallback aCallback,
                                                       void                *aCallbackContext);
-extern void       OT_API_REAL_NAME(otIp6SetMulticastPromiscuousEnabled)(otInstance *aInstance, bool aEnabled);
 extern void       OT_API_REAL_NAME(otIp6SetReceiveCallback)(otInstance          *aInstance,
                                                       otIp6ReceiveCallback aCallback,
                                                       void                *aCallbackContext);
@@ -136,14 +134,6 @@ bool OT_API_WRAPPER_NAME(otIp6IsEnabled)(otInstance *aInstance)
 {
     sl_ot_rtos_acquire_stack_mutex();
     bool ret = OT_API_REAL_NAME(otIp6IsEnabled)(aInstance);
-    sl_ot_rtos_release_stack_mutex();
-    return ret;
-}
-
-bool OT_API_WRAPPER_NAME(otIp6IsMulticastPromiscuousEnabled)(otInstance *aInstance)
-{
-    sl_ot_rtos_acquire_stack_mutex();
-    bool ret = OT_API_REAL_NAME(otIp6IsMulticastPromiscuousEnabled)(aInstance);
     sl_ot_rtos_release_stack_mutex();
     return ret;
 }
@@ -382,13 +372,6 @@ void OT_API_WRAPPER_NAME(otIp6SetAddressCallback)(otInstance          *aInstance
 {
     sl_ot_rtos_acquire_stack_mutex();
     OT_API_REAL_NAME(otIp6SetAddressCallback)(aInstance, aCallback, aCallbackContext);
-    sl_ot_rtos_release_stack_mutex();
-}
-
-void OT_API_WRAPPER_NAME(otIp6SetMulticastPromiscuousEnabled)(otInstance *aInstance, bool aEnabled)
-{
-    sl_ot_rtos_acquire_stack_mutex();
-    OT_API_REAL_NAME(otIp6SetMulticastPromiscuousEnabled)(aInstance, aEnabled);
     sl_ot_rtos_release_stack_mutex();
 }
 

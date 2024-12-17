@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_wisun_ip6string.h
+ * @brief Wi-SUN IPv6 string conversion functions
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __SL_WISUN_IP6STRING_H__
-#define __SL_WISUN_IP6STRING_H__
+#ifndef SL_WISUN_IP6STRING_H
+#define SL_WISUN_IP6STRING_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,7 +40,6 @@ extern "C" {
 // -----------------------------------------------------------------------------
 #include "sl_common.h"
 #include "ip6string.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -140,4 +139,4 @@ __STATIC_INLINE int sl_wisun_stoip6_prefix(const char *ip6addr,
 }
 #endif
 
-#endif /* __SL_WISUN_IP6STRING_H__ */
+#endif // SL_WISUN_IP6STRING_H

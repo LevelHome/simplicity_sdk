@@ -43,6 +43,9 @@ extern void sli_zigbee_stack_token_primitive(bool tokenRead,
                                              uint16_t tokenAddress,
                                              uint8_t length);
 
+extern void sli_zigbee_stack_fetch_key_table_entry_at_index(uint8_t index, tokTypeStackKeyTable *tok);
+extern void sli_zigbee_stack_set_key_table_entry_at_index(uint8_t index, tokTypeStackKeyTable* tok);
+
 //number of keys per type that passed/failed upgrade
 uint8_t keys_passed[NUMBER_OF_KEY_TYPES] = { 0 };
 uint8_t keys_failed[NUMBER_OF_KEY_TYPES] = { 0 };
@@ -73,7 +76,7 @@ sl_status_t zb_sec_man_upgrade_link_key_table(void)
     }
 
     tokTypeStackKeyTable tok;
-    halCommonGetIndexedToken(&tok, TOKEN_STACK_KEY_TABLE, i);
+    sli_zigbee_stack_fetch_key_table_entry_at_index(i, &tok);
     memmove(&(plaintext_key.key),
             &(tok[KEY_ENTRY_KEY_DATA_OFFSET]),
             SL_ZIGBEE_ENCRYPTION_KEY_SIZE);
@@ -102,7 +105,7 @@ sl_status_t zb_sec_man_upgrade_link_key_table(void)
            0xFF,
            SL_ZIGBEE_ENCRYPTION_KEY_SIZE);
 
-    halCommonSetIndexedToken(TOKEN_STACK_KEY_TABLE, i, &tok);
+    sli_zigbee_stack_set_key_table_entry_at_index(i, &tok);
     keys_passed[KEYS_STATUS_LINK]++;
   }
   return SL_STATUS_OK;

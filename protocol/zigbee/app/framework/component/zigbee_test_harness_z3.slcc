@@ -494,53 +494,53 @@ template_contribution:
   - name: cli_group
     value:
       group: nwk
-      name: nwk-leave-supression
-      help: nwk-leave-supression related commands.
+      name: nwk-leave-suppression
+      help: nwk-leave-suppression related commands.
   - name: cli_command
     value:
-      group: nwk-leave-supression
+      group: nwk-leave-suppression
       name: "on"
       handler: sli_zigbee_af_test_harness_z3_nwk_leave_suppression
       help: Suppresses network leave commands.
   - name: cli_command
     value:
-      group: nwk-leave-supression
+      group: nwk-leave-suppression
       name: "off"
       handler: sli_zigbee_af_test_harness_z3_nwk_leave_suppression
       help: Do not suppress network leave commands.
   - name: cli_group
     value:
       group: nwk
-      name: nwk-rejoin-supression
-      help: nwk-rejoin-supression related commands.
+      name: nwk-rejoin-suppression
+      help: nwk-rejoin-suppression related commands.
   - name: cli_command
     value:
-      group: nwk-rejoin-supression
+      group: nwk-rejoin-suppression
       name: "on"
       handler: sli_zigbee_af_test_harness_z3_nwk_rejoin_suppression
       help: Suppresses network rejoin commands.
   - name: cli_command
     value:
-      group: nwk-rejoin-supression
+      group: nwk-rejoin-suppression
       name: "off"
       handler: sli_zigbee_af_test_harness_z3_nwk_rejoin_suppression
       help: Do not suppress network rejoin commands.
   - name: cli_group
     value:
       group: nwk
-      name: nwk-key-supression
-      help: nwk-key-supression related commands.
+      name: nwk-key-suppression
+      help: nwk-key-suppression related commands.
   - name: cli_command
     value:
-      group: nwk-key-supression
+      group: nwk-key-suppression
       name: "on"
-      handler: sli_zigbee_af_test_harness_z3_nwk_nwk_key_supression
+      handler: sli_zigbee_af_test_harness_z3_nwk_nwk_key_suppression
       help: Suppresses network leave commands.
   - name: cli_command
     value:
-      group: nwk-key-supression
+      group: nwk-key-suppression
       name: "off"
-      handler: sli_zigbee_af_test_harness_z3_nwk_nwk_key_supression
+      handler: sli_zigbee_af_test_harness_z3_nwk_nwk_key_suppression
       help: Do not suppress network leave commands.
   - name: cli_command
     value:

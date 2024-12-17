@@ -307,7 +307,7 @@ void sl_zigbee_af_events_cluster_server_tick_cb(uint8_t endpoint)
                                                  partner.eventsToPublish,
                                                  &logPayloadControl);
   if (numberOfEvents > 0) {
-    sl_zigbee_af_events_cluster_println("TX PublishEventLog at command index 0x%x of 0x%x, number of events 0x%x",
+    sl_zigbee_af_events_cluster_println("TX PublishEventLog at command index 0x%02X of 0x%02X, number of events 0x%02X",
                                         partner.commandIndex,
                                         partner.totalCommands,
                                         numberOfEvents);
@@ -363,18 +363,18 @@ void sl_zigbee_af_events_cluster_server_tick_cb(uint8_t endpoint)
 // event logs. One or more PublishEventLog commands are returned on receipt
 // of this command. A ZCL Default Response with status NOT_FOUND shall be
 // returned if no events match the given search criteria.
-bool sl_zigbee_af_events_cluster_get_event_log_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_events_cluster_get_event_log_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_events_cluster_get_event_log_command_t cmd_data;
 
   if (zcl_decode_events_cluster_get_event_log_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   uint8_t endpoint = sl_zigbee_af_current_endpoint();
 
-  sl_zigbee_af_events_cluster_println("RX: GetEventLog 0x%x, 0x%2x, 0x%4x, 0x%4x, 0x%x, 0x%2x",
+  sl_zigbee_af_events_cluster_println("RX: GetEventLog 0x%02X, 0x%04X, 0x%08X, 0x%08X, 0x%02X, 0x%04X",
                                       cmd_data.eventControlLogId,
                                       cmd_data.eventId,
                                       cmd_data.startTime,
@@ -387,12 +387,11 @@ bool sl_zigbee_af_events_cluster_get_event_log_cb(sl_zigbee_af_cluster_command_t
 
   // Only one GetEventLog can be processed at a time.
   if (partner.commandIndex != ZCL_EVENTS_INVALID_INDEX) {
-    sl_zigbee_af_events_cluster_println("%p%p%p",
+    sl_zigbee_af_events_cluster_println("%s%s%s",
                                         "Error: ",
                                         "Cannot get event log: ",
                                         "only one GetEventLog command can be processed at a time");
-    sl_zigbee_af_send_default_response(cmd, SL_ZIGBEE_ZCL_STATUS_FAILURE);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_FAILURE;
   }
 
   partner.totalMatchingEvents = findMatchingEvents(endpoint,
@@ -406,34 +405,33 @@ bool sl_zigbee_af_events_cluster_get_event_log_cb(sl_zigbee_af_cluster_command_t
                                                    partner.eventsToPublish);
   if (partner.totalMatchingEvents == 0 || partner.totalMatchingEvents <= cmd_data.eventOffset) {
     sl_zigbee_af_events_cluster_println("No matching events to return!");
-    sl_zigbee_af_send_default_response(cmd, SL_ZIGBEE_ZCL_STATUS_NOT_FOUND);
-  } else {
-    partner.isIntraPan = (cmd->interPanHeader == NULL);
-    if (partner.isIntraPan) {
-      partner.pan.intra.nodeId = cmd->source;
-      partner.pan.intra.clientEndpoint = cmd->apsFrame->sourceEndpoint;
-      partner.pan.intra.serverEndpoint = cmd->apsFrame->destinationEndpoint;
-    } else {
-      partner.pan.inter.panId = cmd->interPanHeader->panId;
-      memcpy(partner.pan.inter.eui64, cmd->interPanHeader->longAddress, EUI64_SIZE);
-    }
-    partner.sequence = cmd->seqNum;
-    partner.maxPayloadLength = SL_ZIGBEE_AF_MAXIMUM_SEND_PAYLOAD_LENGTH;
-    partner.publishFullInformation = retrieveFullInformation(cmd_data.eventControlLogId);
-    partner.totalCommands = getPublishEventLogTotalCommands(endpoint,
-                                                            partner.maxPayloadLength,
-                                                            partner.publishFullInformation,
-                                                            partner.eventsToPublishCount,
-                                                            partner.eventsToPublish);
-    partner.commandIndex = 0;
-    partner.state.eventsToPublishIndex = 0;
-    partner.state.remainingEventData = NULL;
-    partner.state.remainingEventDataLen = 0;
-    sl_zigbee_zcl_schedule_server_tick(endpoint,
-                                       ZCL_EVENTS_CLUSTER_ID,
-                                       MILLISECOND_TICKS_PER_QUARTERSECOND);
+    return SL_ZIGBEE_ZCL_STATUS_NOT_FOUND;
   }
-  return true;
+  partner.isIntraPan = (cmd->interPanHeader == NULL);
+  if (partner.isIntraPan) {
+    partner.pan.intra.nodeId = cmd->source;
+    partner.pan.intra.clientEndpoint = cmd->apsFrame->sourceEndpoint;
+    partner.pan.intra.serverEndpoint = cmd->apsFrame->destinationEndpoint;
+  } else {
+    partner.pan.inter.panId = cmd->interPanHeader->panId;
+    memcpy(partner.pan.inter.eui64, cmd->interPanHeader->longAddress, EUI64_SIZE);
+  }
+  partner.sequence = cmd->seqNum;
+  partner.maxPayloadLength = SL_ZIGBEE_AF_MAXIMUM_SEND_PAYLOAD_LENGTH;
+  partner.publishFullInformation = retrieveFullInformation(cmd_data.eventControlLogId);
+  partner.totalCommands = getPublishEventLogTotalCommands(endpoint,
+                                                          partner.maxPayloadLength,
+                                                          partner.publishFullInformation,
+                                                          partner.eventsToPublishCount,
+                                                          partner.eventsToPublish);
+  partner.commandIndex = 0;
+  partner.state.eventsToPublishIndex = 0;
+  partner.state.remainingEventData = NULL;
+  partner.state.remainingEventDataLen = 0;
+  sl_zigbee_zcl_schedule_server_tick(endpoint,
+                                     ZCL_EVENTS_CLUSTER_ID,
+                                     MILLISECOND_TICKS_PER_QUARTERSECOND);
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
 // The ClearEventLog command requests that an Events server device clear the
@@ -449,7 +447,7 @@ bool sl_zigbee_af_events_cluster_get_event_log_cb(sl_zigbee_af_cluster_command_t
 // ClearEventLogResponse we take advantage of the fact that the logId value
 // currently indicates the the bit number in the bitmap to be set.  If this ever
 // changes we'll need to modify the way we set the clearedEventLogs.
-bool sl_zigbee_af_events_cluster_clear_event_log_request_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_events_cluster_clear_event_log_request_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_events_cluster_clear_event_log_request_command_t cmd_data;
   uint8_t i, clearedEventLogs = 0;
@@ -457,10 +455,10 @@ bool sl_zigbee_af_events_cluster_clear_event_log_request_cb(sl_zigbee_af_cluster
 
   if (zcl_decode_events_cluster_clear_event_log_request_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_events_cluster_println("RX: ClearEventLogRequest 0x%X", cmd_data.logId);
+  sl_zigbee_af_events_cluster_println("RX: ClearEventLogRequest 0x%02X", cmd_data.logId);
 
   mangleCommandForGBCSNonTOMCmd(&endpoint,
                                 &cmd_data.logId);
@@ -469,31 +467,28 @@ bool sl_zigbee_af_events_cluster_clear_event_log_request_cb(sl_zigbee_af_cluster
   if ((endpoint == SL_ZIGBEE_AF_PLUGIN_GAS_PROXY_FUNCTION_ESI_ENDPOINT)
       && (cmd_data.logId == SL_ZIGBEE_ZCL_EVENT_LOG_ID_SECURITY_EVENT_LOG)) {
     sl_zigbee_af_events_cluster_println("ERR: Modifying or deleting entries from the GPF Security Log is not allowed.");
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_FAILURE);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_FAILURE;
   }
 #endif
 
   if (sl_zigbee_af_events_server_ok_to_clear_log_cb((sl_zigbee_af_event_log_id_t)cmd_data.logId)) {
     if (!sl_zigbee_af_events_server_clear_event_log(endpoint, (sl_zigbee_af_event_log_id_t)cmd_data.logId)) {
-      sl_zigbee_af_events_cluster_println("%p%p%p",
+      sl_zigbee_af_events_cluster_println("%s%s%s",
                                           "Error: ",
                                           "Cannot clear event log: ",
                                           "invalid endpoint and/or logId");
-      sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_FAILURE);
-      return true;
+      return SL_ZIGBEE_ZCL_STATUS_FAILURE;
     }
     clearedEventLogs |= BIT(cmd_data.logId);
   } else if (SL_ZIGBEE_ZCL_EVENT_LOG_ID_ALL_LOGS == cmd_data.logId) {
     for (i = 0; i < NUM_EVENT_LOGS; i++) {
       if (sl_zigbee_af_events_server_ok_to_clear_log_cb(allLogIds[i])) {
         if (!sl_zigbee_af_events_server_clear_event_log(endpoint, allLogIds[i])) {
-          sl_zigbee_af_events_cluster_println("%p%p%p",
+          sl_zigbee_af_events_cluster_println("%s%s%s",
                                               "Error: ",
                                               "Cannot clear event log: ",
                                               "invalid endpoint");
-          sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_FAILURE);
-          return true;
+          return SL_ZIGBEE_ZCL_STATUS_FAILURE;
         }
         clearedEventLogs |= BIT(allLogIds[i]);
       }
@@ -502,7 +497,7 @@ bool sl_zigbee_af_events_cluster_clear_event_log_request_cb(sl_zigbee_af_cluster
 
   sl_zigbee_af_fill_command_events_cluster_clear_event_log_response(clearedEventLogs);
   sl_zigbee_af_send_response();
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
 //------------------------------------------------------------------------------
@@ -561,10 +556,10 @@ bool sl_zigbee_af_events_server_clear_event_log(uint8_t endpoint, sl_zigbee_af_e
                                                  SL_ZIGBEE_ZCL_EVENT_LOG_ID_SECURITY_EVENT_LOG,
                                                  &event);
     if (index == ZCL_EVENTS_INVALID_INDEX) {
-      sl_zigbee_af_events_cluster_println("ERR: Failed to log event (Event Log Cleared) to Security Event Log on ep(0x%X)",
+      sl_zigbee_af_events_cluster_println("ERR: Failed to log event (Event Log Cleared) to Security Event Log on ep(0x%02X)",
                                           endpoint);
     } else {
-      sl_zigbee_af_events_cluster_println("INFO: Clear Event Log event added to Security Event Log on ep(0x%X) at index(0x%x)",
+      sl_zigbee_af_events_cluster_println("INFO: Clear Event Log event added to Security Event Log on ep(0x%02X) at index(0x%02X)",
                                           endpoint,
                                           index);
     }
@@ -591,9 +586,9 @@ void sl_zigbee_af_events_server_print_event_log(uint8_t endpoint, sl_zigbee_af_e
 // Print an event
 void sl_zigbee_af_events_server_print_event(const sl_zigbee_af_zcl_event_t *event)
 {
-  sl_zigbee_af_events_cluster_println("       eventId: 0x%2x", event->eventId);
-  sl_zigbee_af_events_cluster_println("     eventTime: 0x%4x", event->eventTime);
-  sl_zigbee_af_events_cluster_println("  eventDataLen: 0x%x", sl_zigbee_af_string_length(event->eventData));
+  sl_zigbee_af_events_cluster_println("       eventId: 0x%04X", event->eventId);
+  sl_zigbee_af_events_cluster_println("     eventTime: 0x%08X", event->eventTime);
+  sl_zigbee_af_events_cluster_println("  eventDataLen: 0x%02X", sl_zigbee_af_string_length(event->eventData));
   sl_zigbee_af_events_cluster_print("     eventData: ");
   sl_zigbee_af_events_cluster_print_string(event->eventData);
   sl_zigbee_af_events_cluster_println("");
@@ -667,9 +662,9 @@ uint8_t sl_zigbee_af_events_server_add_event(uint8_t endpoint,
   kickout:
 
   if (index == ZCL_EVENTS_INVALID_INDEX) {
-    sl_zigbee_af_events_cluster_println("Cannot add Event to log 0x%x", logId);
+    sl_zigbee_af_events_cluster_println("Cannot add Event to log 0x%02X", logId);
   } else {
-    sl_zigbee_af_events_cluster_println("Event added to log 0x%x at index 0x%x", logId, index);
+    sl_zigbee_af_events_cluster_println("Event added to log 0x%02X at index 0x%02X", logId, index);
     sl_zigbee_af_events_server_log_data_updated_cb(sl_zigbee_af_current_command());
   }
 
@@ -688,7 +683,7 @@ void sl_zigbee_af_events_server_publish_event_message(sl_802154_short_addr_t nod
   sl_zigbee_af_zcl_event_t event;
 
   if (!sl_zigbee_af_events_server_get_event(srcEndpoint, logId, index, &event)) {
-    sl_zigbee_af_events_cluster_println("%p%p%p",
+    sl_zigbee_af_events_cluster_println("%s%s%s",
                                         "Error: ",
                                         "Cannot publish event: ",
                                         "invalid logId and/or index");
@@ -704,7 +699,7 @@ void sl_zigbee_af_events_server_publish_event_message(sl_802154_short_addr_t nod
   sl_zigbee_af_get_command_aps_frame()->options |= SL_ZIGBEE_APS_OPTION_SOURCE_EUI64;
   status = sl_zigbee_af_send_command_unicast(SL_ZIGBEE_OUTGOING_DIRECT, nodeId);
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_events_cluster_println("%p%p0x%x",
+    sl_zigbee_af_events_cluster_println("%s%s0x%02X",
                                         "Error: ",
                                         "Cannot publish event: ",
                                         status);
@@ -729,7 +724,7 @@ static EmberAfEventLog *getEventLog(uint8_t endpoint, sl_zigbee_af_event_log_id_
 #ifdef SL_ZIGBEE_AF_PLUGIN_EVENTS_SERVER_TAMPER_LOG_ENABLE
       eventLog = &tamperLog[ep];
 #else
-      sl_zigbee_af_events_cluster_println("%p%p",
+      sl_zigbee_af_events_cluster_println("%s%s",
                                           "Error: ",
                                           "Tamper log disabled");
 #endif
@@ -739,7 +734,7 @@ static EmberAfEventLog *getEventLog(uint8_t endpoint, sl_zigbee_af_event_log_id_
 #ifdef SL_ZIGBEE_AF_PLUGIN_EVENTS_SERVER_FAULT_LOG_ENABLE
       eventLog = &faultLog[ep];
 #else
-      sl_zigbee_af_events_cluster_println("%p%p",
+      sl_zigbee_af_events_cluster_println("%s%s",
                                           "Error: ",
                                           "Fault log disabled");
 #endif
@@ -752,7 +747,7 @@ static EmberAfEventLog *getEventLog(uint8_t endpoint, sl_zigbee_af_event_log_id_
 #ifdef SL_ZIGBEE_AF_PLUGIN_EVENTS_SERVER_GENERAL_LOG_ENABLE
       eventLog = &generalLog[ep];
 #else
-      sl_zigbee_af_events_cluster_println("%p%p",
+      sl_zigbee_af_events_cluster_println("%s%s",
                                           "Error: ",
                                           "General log disabled");
 #endif
@@ -765,7 +760,7 @@ static EmberAfEventLog *getEventLog(uint8_t endpoint, sl_zigbee_af_event_log_id_
 #ifdef SL_ZIGBEE_AF_PLUGIN_EVENTS_SERVER_SECURITY_LOG_ENABLE
       eventLog = &securityLog[ep];
 #else
-      sl_zigbee_af_events_cluster_println("%p%p",
+      sl_zigbee_af_events_cluster_println("%s%s",
                                           "Error: ",
                                           "Security log disabled");
 #endif
@@ -775,14 +770,14 @@ static EmberAfEventLog *getEventLog(uint8_t endpoint, sl_zigbee_af_event_log_id_
 #ifdef SL_ZIGBEE_AF_PLUGIN_EVENTS_SERVER_NETWORK_LOG_ENABLE
       eventLog = &networkLog[ep];
 #else
-      sl_zigbee_af_events_cluster_println("%p%p",
+      sl_zigbee_af_events_cluster_println("%s%s",
                                           "Error: ",
                                           "Network log disabled");
 #endif
       break;
 
     default:
-      sl_zigbee_af_events_cluster_println("%p%p0x%x",
+      sl_zigbee_af_events_cluster_println("%s%s0x%02X",
                                           "Error: ",
                                           "Unknown log: ",
                                           logId);
@@ -825,14 +820,14 @@ static void printEventLog(uint8_t endpoint, sl_zigbee_af_event_log_id_t logId)
     }
   }
 
-  sl_zigbee_af_events_cluster_println("Log: 0x%x Total 0x%x", logId, count);
+  sl_zigbee_af_events_cluster_println("Log: 0x%02X Total 0x%02X", logId, count);
   sl_zigbee_af_events_cluster_println("");
   if (count > 0) {
     for (i = 0; i < eventLog->maxEntries; i++) {
       if (!eventIsValid(&eventLog->entries[i])) {
         continue;
       }
-      sl_zigbee_af_events_cluster_println("Index: 0x%x", i);
+      sl_zigbee_af_events_cluster_println("Index: 0x%02X", i);
       sl_zigbee_af_events_server_print_event(&eventLog->entries[i].event);
     }
   }
@@ -1186,10 +1181,10 @@ static void mangleCommandForGBCSNonTOMCmd(uint8_t * endpoint,
     if (newLogId == GBCS_EVENT_LOG_ID_GSME_EVENT_LOG
         || newLogId == GBCS_EVENT_LOG_ID_GSME_SECURITY_EVENT_LOG) {
       *endpoint = SL_ZIGBEE_AF_PLUGIN_GAS_PROXY_FUNCTION_MIRROR_ENDPOINT;
-      sl_zigbee_af_events_cluster_println("Redirecting to GPF meter mirror endpoint(0x%X) with logId(0x%X)",
+      sl_zigbee_af_events_cluster_println("Redirecting to GPF meter mirror endpoint(0x%02X) with logId(0x%02X)",
                                           *endpoint, newLogId);
     } else {
-      sl_zigbee_af_events_cluster_println("Redirecting to GPF esi endpoint(0x%X) with logId(0x%X)",
+      sl_zigbee_af_events_cluster_println("Redirecting to GPF esi endpoint(0x%02X) with logId(0x%02X)",
                                           *endpoint, newLogId);
     }
   }
@@ -1204,24 +1199,22 @@ uint32_t sl_zigbee_af_events_cluster_server_command_parse(sl_service_opcode_t op
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_GET_EVENT_LOG_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_events_cluster_get_event_log_cb(cmd);
+        status = sl_zigbee_af_events_cluster_get_event_log_cb(cmd);
         break;
       }
       case ZCL_CLEAR_EVENT_LOG_REQUEST_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_events_cluster_clear_event_log_request_cb(cmd);
+        status = sl_zigbee_af_events_cluster_clear_event_log_request_cb(cmd);
         break;
       }
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

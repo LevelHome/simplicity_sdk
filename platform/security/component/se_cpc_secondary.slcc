@@ -21,3 +21,6 @@ requires:
 template_contribution:
   - name: component_catalog
     value: se_cpc
+metadata:
+ sbom:
+    license: Zlib

@@ -39,8 +39,9 @@
 
 #if defined(_SILICON_LABS_32B_SERIES_2)
 #include "sl_usbd_driver_config.h"
-#include "em_gpio.h"
 #endif
+
+#include "sl_gpio.h"
 
 #if defined(SL_COMPONENT_CATALOG_PRESENT)
 #include "sl_component_catalog.h"
@@ -527,7 +528,11 @@ sl_status_t sli_usbd_driver_init(void)
 
   // IO settings.
   // VBUS_SENSE allows to detect device connect/disconnect events
-  GPIO_PinModeSet(SL_USBD_DRIVER_VBUS_SENSE_PORT, SL_USBD_DRIVER_VBUS_SENSE_PIN, gpioModeInput, 0);
+  sl_gpio_t gpio_usbd_driver = {
+      .port = (sl_gpio_port_t)SL_USBD_DRIVER_VBUS_SENSE_PORT,
+      .pin = SL_USBD_DRIVER_VBUS_SENSE_PIN
+  };
+  sl_gpio_set_pin_mode(&gpio_usbd_driver, SL_GPIO_MODE_INPUT, 0);
   GPIO->USBROUTE.USBVBUSSENSEROUTE = (SL_USBD_DRIVER_VBUS_SENSE_PORT << _GPIO_USB_USBVBUSSENSEROUTE_PORT_SHIFT)
                                      | (SL_USBD_DRIVER_VBUS_SENSE_PIN << _GPIO_USB_USBVBUSSENSEROUTE_PIN_SHIFT);
 

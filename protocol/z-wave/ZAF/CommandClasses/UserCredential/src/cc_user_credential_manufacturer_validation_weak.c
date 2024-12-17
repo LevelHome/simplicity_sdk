@@ -13,6 +13,14 @@
 
 /**
  * @brief Validate the PIN Code credential
+ * This function implements the manufactorer specific recommendations for PIN Code validation.
+ * If the SDK supports User Code Command Class, these requirements shouldn't be followed, because
+ * the User Code Command Class is less strict than the User Credential Command Class, and this can lead
+ * to incompatibility between the two Command Classes and result in a failed certification.
+ * Every SDK provider can decide to use these recommendations or not as a default implementation.
+ * To switch between the two implementations, the USE_U3C_PIN_CODE_RECOMMENDATIONS macro should be used.
+ *  - 0: The User Credential Command Class recommendations are not used
+ *  - 1: The User Credential Command Class recommendations are used
  *
  * @param[in] p_credential Pointer to the credential to validate
  *
@@ -23,6 +31,7 @@ static bool CC_UserCredential_manufacturer_validate_pin_code(u3c_credential * p_
   // The following requirements are marked as SHOULD in the specification.
   // Manufacturers can change freely.
 
+#if USE_U3C_PIN_CODE_RECOMMENDATIONS
   // Check if the PIN Code only contains the same digit
   // CC:0083.01.00.42.015
   bool is_same_digit = true;
@@ -54,6 +63,27 @@ static bool CC_UserCredential_manufacturer_validate_pin_code(u3c_credential * p_
     return false;
   }
 
+#else
+  /**
+   * If the User Credential Command Class feature is shipped with the User Code Command Class
+   * then the backwards compatibility must be maintained. So the:
+   * CC:0083.01.00.42.015
+   * CC:0083.01.00.42.014
+   * requirements are not used. Only the all zeros (0000) Pin Code is not allowed.
+   */
+  bool is_zeros = true;
+  for (uint8_t i = 0; i < p_credential->metadata.length; ++i) {
+    if (p_credential->data[i] != 0) {
+      is_zeros = false;
+      break;
+    }
+  }
+
+  if (is_zeros) {
+    return false;
+  }
+#endif
+
   return true;
 }
 
@@ -72,9 +102,20 @@ ZW_WEAK bool CC_UserCredential_manufacturer_validate_credential(
 }
 
 ZW_WEAK bool CC_UserCredential_manufacturer_validate_admin_pin_code(
-  __attribute__((unused))u3c_admin_code_metadata_t * code
+  u3c_admin_code_metadata_t * code
   )
 {
-  code->result = ADMIN_CODE_OPERATION_RESULT_INTERNAL_NONE; 
-  return true; 
+  u3c_credential credential = {
+    .data = code->code_data,
+    .metadata = {
+      .length = code->code_length,
+      .type = CREDENTIAL_TYPE_PIN_CODE,
+    }
+  };
+  bool is_valid =
+    CC_UserCredential_manufacturer_validate_credential(&credential);
+  code->result = is_valid
+                 ? ADMIN_CODE_OPERATION_RESULT_INTERNAL_NONE
+                 : ADMIN_CODE_OPERATION_RESULT_FAIL_MANUF_RULE;
+  return is_valid;
 }

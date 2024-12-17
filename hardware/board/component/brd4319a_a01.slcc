@@ -18,6 +18,7 @@
   - name: hardware_board
   - name: hardware_board_rb
   - name: hardware_board_has_vcom
+  - name: hardware_board_has_uart
   - name: hardware_board_supports_rf_band_2400
   - name: hardware_board_supports_1_rf_band
   - name: hardware_board_default_rf_band

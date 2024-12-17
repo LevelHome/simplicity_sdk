@@ -30,11 +30,25 @@
 
 #include "sl_memlcd_spi.h"
 #include "sl_clock_manager.h"
-#include "em_gpio.h"
+#include "sl_device_clock.h"
+#include "sl_device_peripheral.h"
+#include "sl_common.h"
+#include "sl_memlcd_eusart_config.h"
+#if defined(_SILICON_LABS_32B_SERIES_3)
+#include "sl_hal_bus.h"
+#else
+#include "em_bus.h"
+#endif
+
+#include "sl_gpio.h"
+
 #include "stddef.h"
 
-sl_status_t sli_memlcd_spi_init(sli_memlcd_spi_handle_t *handle, int bitrate, EUSART_ClockMode_TypeDef mode)
+#define SPI_PERIPHERAL(periph_no)           SL_CONCAT_PASTER_2(SL_PERIPHERAL_EUSART, periph_no)
+
+sl_status_t sli_memlcd_spi_init(sli_memlcd_spi_handle_t *handle, int bitrate, eusart_ClockMode mode)
 {
+#if defined(_SILICON_LABS_32B_SERIES_2)
   EUSART_SpiInit_TypeDef init = EUSART_SPI_MASTER_INIT_DEFAULT_HF;
   EUSART_SpiAdvancedInit_TypeDef advancedInit = EUSART_SPI_ADVANCED_INIT_DEFAULT;
   EUSART_TypeDef *eusart = handle->eusart;
@@ -42,16 +56,47 @@ sl_status_t sli_memlcd_spi_init(sli_memlcd_spi_handle_t *handle, int bitrate, EU
   advancedInit.msbFirst = true;
   init.advancedSettings = &advancedInit;
 
+#else
+  sl_hal_eusart_spi_config_t init = SL_HAL_EUSART_SPI_MASTER_INIT_DEFAULT_HF;
+  sl_hal_eusart_spi_advanced_config_t advancedInit = SL_HAL_EUSART_SPI_ADVANCED_INIT_DEFAULT;
+  EUSART_TypeDef *eusart = handle->eusart;
+
+  advancedInit.msb_first = true;
+  init.advanced_config = &advancedInit;
+#endif
+
+  sl_gpio_t sclk_gpio = {
+    .port = (sl_gpio_port_t)handle->sclk_port,
+    .pin = handle->sclk_pin,
+  };
+  sl_gpio_t mosi_gpio = {
+    .port = (sl_gpio_port_t)handle->mosi_port,
+    .pin = handle->mosi_pin,
+  };
+
   sl_clock_manager_enable_bus_clock(SL_BUS_CLOCK_GPIO);
   sl_clock_manager_enable_bus_clock(handle->clock);
 
-  GPIO_PinModeSet((GPIO_Port_TypeDef)handle->sclk_port, handle->sclk_pin, gpioModePushPull, 0);
-  GPIO_PinModeSet((GPIO_Port_TypeDef)handle->mosi_port, handle->mosi_pin, gpioModePushPull, 0);
+  sl_gpio_set_pin_mode(&sclk_gpio, SL_GPIO_MODE_PUSH_PULL, 0);
+  sl_gpio_set_pin_mode(&mosi_gpio, SL_GPIO_MODE_PUSH_PULL, 0);
 
+#if defined(_SILICON_LABS_32B_SERIES_2)
   init.bitRate = bitrate;
   init.clockMode = mode;
 
   EUSART_SpiInit(eusart, &init);
+#else
+  static uint32_t ref_freq;
+  sl_clock_branch_t eusart_clock_branch = sl_device_peripheral_get_clock_branch(SPI_PERIPHERAL(SL_MEMLCD_SPI_PERIPHERAL_NO));
+  sl_clock_manager_get_clock_branch_frequency(eusart_clock_branch, &ref_freq);
+  init.clock_div = sl_hal_eusart_spi_calculate_clock_div(ref_freq, bitrate);
+  init.clock_mode = mode;
+
+  sl_hal_eusart_init_spi(eusart, &init);
+  sl_hal_eusart_enable(handle->eusart);
+  sl_hal_eusart_enable_tx(handle->eusart);
+  sl_hal_eusart_enable_rx(handle->eusart);
+#endif
 
 #if EUSART_COUNT > 1
   int eusart_index = EUSART_NUM(eusart);
@@ -71,7 +116,11 @@ sl_status_t sli_memlcd_spi_init(sli_memlcd_spi_handle_t *handle, int bitrate, EU
 
 sl_status_t sli_memlcd_spi_shutdown(sli_memlcd_spi_handle_t *handle)
 {
+#if defined(_SILICON_LABS_32B_SERIES_2)
   EUSART_Enable(handle->eusart, eusartDisable);
+#else
+  sl_hal_eusart_disable(handle->eusart);
+#endif
   sl_clock_manager_disable_bus_clock(handle->clock);
   return SL_STATUS_OK;
 }
@@ -83,9 +132,17 @@ sl_status_t sli_memlcd_spi_tx(sli_memlcd_spi_handle_t *handle, const void *data,
 
   for (unsigned i = 0; i < len; i++) {
 #if defined(SL_MEMLCD_LPM013M126A)
+#if defined(_SILICON_LABS_32B_SERIES_2)
     EUSART_Tx(eusart, buffer[i]);
 #else
+    sl_hal_eusart_tx(eusart, buffer[i]);
+#endif
+#else
+#if defined(_SILICON_LABS_32B_SERIES_2)
     EUSART_Tx(eusart, SL_RBIT8(buffer[i]));
+#else
+    sl_hal_eusart_tx(eusart, SL_RBIT16((uint16_t) buffer[i]));
+#endif
 #endif
   }
 
@@ -109,7 +166,11 @@ void sli_memlcd_spi_rx_flush(sli_memlcd_spi_handle_t *handle)
 
   /* Read data until RXFIFO empty */
   while (eusart->STATUS & EUSART_STATUS_RXFL) {
+#if defined(_SILICON_LABS_32B_SERIES_2)
     EUSART_Rx(eusart);
+#else
+    sl_hal_eusart_rx(eusart);
+#endif
   }
 }
 
@@ -117,10 +178,19 @@ sl_status_t sli_memlcd_spi_exit_em23(sli_memlcd_spi_handle_t *handle)
 {
   EUSART_TypeDef *eusart = handle->eusart;
 
+#if defined(_SILICON_LABS_32B_SERIES_2)
   EUSART_Enable(eusart, eusartEnable);
   BUS_RegMaskedWrite(&GPIO->EUSARTROUTE[EUSART_NUM(eusart)].ROUTEEN,
                      _GPIO_EUSART_ROUTEEN_TXPEN_MASK | _GPIO_EUSART_ROUTEEN_SCLKPEN_MASK,
                      GPIO_EUSART_ROUTEEN_TXPEN | GPIO_EUSART_ROUTEEN_SCLKPEN);
+#else
+  sl_hal_eusart_enable(eusart);
+  sl_hal_eusart_enable_tx(eusart);
+  sl_hal_eusart_enable_rx(eusart);
+  sl_hal_bus_reg_write_mask(&GPIO->EUSARTROUTE[EUSART_NUM(eusart)].ROUTEEN,
+                            _GPIO_EUSART_ROUTEEN_TXPEN_MASK | _GPIO_EUSART_ROUTEEN_SCLKPEN_MASK,
+                            GPIO_EUSART_ROUTEEN_TXPEN | GPIO_EUSART_ROUTEEN_SCLKPEN);
+#endif
 
   return SL_STATUS_OK;
 }
@@ -129,9 +199,15 @@ sl_status_t sli_memlcd_spi_enter_em23(sli_memlcd_spi_handle_t *handle)
 {
   EUSART_TypeDef *eusart = handle->eusart;
 
+#if defined(_SILICON_LABS_32B_SERIES_2)
   BUS_RegMaskedWrite(&GPIO->EUSARTROUTE[EUSART_NUM(eusart)].ROUTEEN,
                      _GPIO_EUSART_ROUTEEN_TXPEN_MASK | _GPIO_EUSART_ROUTEEN_SCLKPEN_MASK,
                      0);
+#else
+  sl_hal_bus_reg_write_mask(&GPIO->EUSARTROUTE[EUSART_NUM(eusart)].ROUTEEN,
+                            _GPIO_EUSART_ROUTEEN_TXPEN_MASK | _GPIO_EUSART_ROUTEEN_SCLKPEN_MASK,
+                            0);
+#endif
 
   return SL_STATUS_OK;
 }

@@ -1,6 +1,6 @@
 # SoC - Throughput
 
-This example allows measuring data throughput between EFR32 devices as well as between an EFR32 and a smartphone running the EFR Connect mobile app.
+This example allows measuring data throughput between EFR32 devices as well as between an EFR32 and a smartphone running the Simplicity Connect mobile app.
 
 > Note: this example expects a specific Gecko Bootloader to be present on your device. For details see the Troubleshooting section.
 
@@ -12,19 +12,19 @@ This example implements a GATT service that can be used to measure application d
 
 This throughput measurement setup has three use cases:
 
-1. EFR32 (SoC) <-> Mobile phone + EFR Connect
+1. EFR32 (SoC) <-> Mobile phone + Simplicity Connect
 2. EFR32 (SoC) <-> EFR32 (SoC)
 3. EFR32 (SoC) <-> EFR32 (NCP) + Host (typically PC)
 
 The two last use cases require two Silicon Labs kits, such as [SLWSTK6021A](https://www.silabs.com/development-tools/wireless/efr32xg22-wireless-starter-kit), [SLTB010A](https://www.silabs.com/development-tools/thunderboard/thunderboard-bg22-kit) or [BGM220-EK4314A](https://www.silabs.com/development-tools/wireless/bluetooth/bgm220-explorer-kit).
 
-To test throughput against a smartphone, install EFR Connect for [Android](https://play.google.com/store/apps/details?id=com.siliconlabs.bledemo&hl=en&gl=US) or [iOS](https://apps.apple.com/us/app/efr-connect/id1030932759). Source code for the mobile app is available on [Github](https://github.com/SiliconLabs?q=efrconnect&type=&language=&sort=).
+To test throughput against a smartphone, install Simplicity Connect for [Android](https://play.google.com/store/apps/details?id=com.siliconlabs.bledemo&hl=en&gl=US) or [iOS](https://apps.apple.com/us/app/simplicity-connect/id1030932759). Source code for the mobile app is available on Github for [Android](https://github.com/SiliconLabs/SimplicityConnect-android) and [iOS](https://github.com/SiliconLabs/SimplicityConnect-ios).
 
-### EFR32 (SoC) <-> Mobile phone + EFR Connect
+### EFR32 (SoC) <-> Mobile phone + Simplicity Connect
 
 For this use case only one kit is required. After flashing the example the firmware will boot as a peripheral by default, and the mobile phone acts as a central device.
 
-Open EFR Connect, go to the demo view and select the Throughput demo. A pop-up shows all the devices that are running the **Bluetooth - SoC Throughput** firmware. Tap on the device to go into the Throughput demo view.
+Open Simplicity Connect, go to the demo view and select the Throughput demo. A pop-up shows all the devices that are running the **Bluetooth - SoC Throughput** firmware. Tap on the device to go into the Throughput demo view.
 
 ![Demo view](image/readme_img1.jpg) ![Pop up](image/readme_img2.jpg)
 
@@ -32,7 +32,7 @@ Data can be pushed to the smartphone by pressing PB0 (notifications) or PB1 (ind
 
 ![Throughput demo](image/readme_img3.jpg)
 
-The animation below showcases the demo running on a BGM220 Explorer Kit (BGM220-EK4314A) with the mobile app running on an Android device.
+The animation below showcases the demo running on an EFR32xG21 Wireless Starter Kit with the mobile app running on an Android device.
 
 ![Throughput demo animation](image/readme_img4.gif)
 

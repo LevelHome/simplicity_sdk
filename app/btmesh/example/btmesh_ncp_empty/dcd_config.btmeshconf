@@ -2,7 +2,7 @@
   "composition_data": {
     "cid": "0x02ff",
     "pid": "0x0000",
-    "vid": "0x0701",
+    "vid": "0x0700",
     "elements": [
       {
         "name": "Primary Element",
@@ -14,8 +14,12 @@
           { "mid": "0x0003", "name": "Health Client" },
           { "mid": "0x0004", "name": "Remote Provisioning Server" },
           { "mid": "0x0005", "name": "Remote Provisioning Client" },
+          { "mid": "0x000C", "name": "On-Demand Private Proxy Server" },
+          { "mid": "0x000D", "name": "On-Demand Private Proxy Client" },
           { "mid": "0x000e", "name": "SAR Configuration Server" },
           { "mid": "0x000f", "name": "SAR Configuration Client" },
+          { "mid": "0x0014", "name": "Solicitation PDU RPL Configuration Server" },
+          { "mid": "0x0015", "name": "Solicitation PDU RPL Configuration Client" },
           { "mid": "0x1000", "name": "Generic OnOff Server" },
           { "mid": "0x1001", "name": "Generic OnOff Client" },
           { "mid": "0x1002", "name": "Generic Level Server" },

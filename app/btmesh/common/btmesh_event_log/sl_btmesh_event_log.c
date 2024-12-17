@@ -3,7 +3,7 @@
  * @brief Bt Mesh Event Logging module
  *******************************************************************************
  * # License
- * <b>Copyright 2023 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -2848,6 +2848,18 @@ void sl_btmesh_log_bt_connection_events(sl_bt_msg_t *evt)
 
   // Handle events
   switch (evt_id) {
+    case sl_bt_evt_system_boot_id: {
+      app_log("sdk build information:" NL);
+      sl_bt_evt_system_boot_t data = evt->data.evt_system_boot;
+      app_log_append(" major="); log_append_uint16_t(data.major);
+      app_log_append(" minor="); log_append_uint16_t(data.minor);
+      app_log_append(" patch="); log_append_uint16_t(data.patch);
+      app_log_append(" build="); log_append_uint16_t(data.build);
+      app_log_append(" bootloader="); log_append_uint32_t(data.bootloader);
+      app_log_append(" hw="); log_append_uint16_t(data.hw);
+      app_log_append(" hash="); log_append_uint32_t(data.hash);
+      break;
+    }
     case sl_bt_evt_connection_opened_id: {
       app_log(PREFIX "connection_opened()" NL);
     } break;

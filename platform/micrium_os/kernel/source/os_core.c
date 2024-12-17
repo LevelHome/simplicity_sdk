@@ -1732,6 +1732,10 @@ void OS_RdyListInsert(OS_TCB *p_tcb)
     OS_RdyListInsertHead(p_tcb);                                // No, insert readied task at the beginning of the list
   }
 
+#if defined(MICRIUMOS_SLEEP_ON_EXIT_SUPPORT)
+  OsTaskReadyHook(p_tcb);
+#endif
+
   OS_TRACE_TASK_READY(p_tcb);
 }
 

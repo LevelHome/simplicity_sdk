@@ -31,7 +31,6 @@ ui_hints:
 tag:
   - hardware:device:ram:10
 component:
-   - id: emlib_chip
    - id: mbedtls_random
    - id: mbedtls_ecdsa
    - id: mbedtls_ccm

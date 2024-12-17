@@ -140,3 +140,6 @@ requires:
   - name: micriumos_kernel
     condition: [device_series_2]
 
+metadata:
+  sbom:
+    license: Zlib

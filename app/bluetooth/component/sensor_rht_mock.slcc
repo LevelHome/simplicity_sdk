@@ -3,6 +3,9 @@ label: Relative Humidity and Temperature sensor (Mock)
 package: Bluetooth
 description: Relative Humidity and Temperature sensor (Mock) driver abstraction.
 category: Bluetooth|Application|Miscellaneous
+metadata:
+  sbom:
+    license: Zlib
 quality: production
 root_path: app/bluetooth/common/sensor_rht
 tag:

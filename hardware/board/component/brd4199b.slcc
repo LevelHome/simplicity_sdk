@@ -21,6 +21,7 @@
   - name: hardware_board_has_vcom
   - name: hardware_board_has_spiflash
   - name: hardware_board_has_rfswitch
+  - name: board_config_clock_manager
   - name: hardware_board_has_hfxo_freq_40mhz
   - name: hardware_board_has_hfxo
   - name: hardware_board_has_lfxo

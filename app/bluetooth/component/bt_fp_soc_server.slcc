@@ -4,6 +4,9 @@ package: Bluetooth
 description: >
   Includes selection of Bluetooth stack server features.
 category: Bluetooth|Application|Miscellaneous
+metadata:
+  sbom:
+    license: Zlib
 quality: production
 root_path: app/bluetooth
 requires:

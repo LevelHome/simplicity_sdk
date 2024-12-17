@@ -67,7 +67,7 @@ void sl_zigbee_af_update_tc_link_key_zigbee_key_establishment_cb(sl_802154_long_
                                                                  sl_zigbee_key_status_t status)
 {
   if (inRequest) {
-    sl_zigbee_af_core_print("%p:", SL_ZIGBEE_AF_PLUGIN_UPDATE_TC_LINK_KEY_PLUGIN_NAME);
+    sl_zigbee_af_core_print("%s:", SL_ZIGBEE_AF_PLUGIN_UPDATE_TC_LINK_KEY_PLUGIN_NAME);
 
     if ((status == SL_ZIGBEE_TRUST_CENTER_LINK_KEY_ESTABLISHED)
         || (status == SL_ZIGBEE_VERIFY_LINK_KEY_SUCCESS)) {
@@ -75,7 +75,7 @@ void sl_zigbee_af_update_tc_link_key_zigbee_key_establishment_cb(sl_802154_long_
     } else if (status != SL_ZIGBEE_APP_LINK_KEY_ESTABLISHED) {
       sl_zigbee_af_core_print(" Error:");
     }
-    sl_zigbee_af_core_println(" 0x%X", status);
+    sl_zigbee_af_core_println(" 0x%02X", status);
     sl_zigbee_af_core_print("Partner: ");
     sl_zigbee_af_core_print_buffer(partner, EUI64_SIZE, true); // withSpace?
     sl_zigbee_af_core_println("");
@@ -107,7 +107,7 @@ static void beginTcLinkKeyUpdateEventHandler(sl_zigbee_af_event_t * event)
     sl_zigbee_af_event_set_inactive(beginTcLinkKeyUpdateEvents);
 
     sl_status_t status = sl_zigbee_af_update_tc_link_key_start();
-    sl_zigbee_af_core_println("%p: %p: 0x%X",
+    sl_zigbee_af_core_println("%s: %s: 0x%02X",
                               SL_ZIGBEE_AF_PLUGIN_UPDATE_TC_LINK_KEY_PLUGIN_NAME,
                               "Starting update trust center link key process",
                               status);

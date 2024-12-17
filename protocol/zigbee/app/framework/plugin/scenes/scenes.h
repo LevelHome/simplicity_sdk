@@ -100,15 +100,15 @@ extern sl_zigbee_af_scene_table_entry_t sl_zigbee_af_scenes_server_scene_table[]
   (--sl_zigbee_af_scenes_server_entries_in_use)
 #endif // (SL_ZIGBEE_AF_PLUGIN_SCENES_USE_TOKENS == 1) && !defined(EZSP_HOST)
 
-bool sl_zigbee_af_scenes_server_parse_add_scene(const sl_zigbee_af_cluster_command_t *cmd,
-                                                uint16_t groupId,
-                                                uint8_t sceneId,
-                                                uint16_t transitionTime,
-                                                uint8_t *sceneName,
-                                                uint8_t *extensionFieldSets);
-bool sl_zigbee_af_scenes_server_parse_view_scene(const sl_zigbee_af_cluster_command_t *cmd,
-                                                 uint16_t groupId,
-                                                 uint8_t sceneId);
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_scenes_server_parse_add_scene(const sl_zigbee_af_cluster_command_t *cmd,
+                                                                             uint16_t groupId,
+                                                                             uint8_t sceneId,
+                                                                             uint16_t transitionTime,
+                                                                             uint8_t *sceneName,
+                                                                             uint8_t *extensionFieldSets);
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_scenes_server_parse_view_scene(const sl_zigbee_af_cluster_command_t *cmd,
+                                                                              uint16_t groupId,
+                                                                              uint8_t sceneId);
 
 /** @brief Scenes Server Custom Recall Scene
  *

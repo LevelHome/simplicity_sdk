@@ -24,12 +24,17 @@ requires:
   - name: cmsis_os2_ext_task_register
     condition:
       - kernel
+      - device_cortexm
+  - name: cmsis_os2_ext_task_register
+    condition:
+      - kernel
+      - device_host
   - name: hal_generic_common
     condition: [device_efx]
   - name: sl_core
   - name: sl_assert
   - name: enum
-  - name: iostream_transport_core
+  - name: iostream_transport
   - name: status
 include:
   - path: inc
@@ -57,7 +62,12 @@ template_contribution:
       include: sl_iostream_init_instances.h
       handler: sl_iostream_init_instances
     priority: 4
-
+  - name: event_handler
+    value:
+      event: iostream_instance_init
+      include: sl_iostream_handles.h
+      handler: sl_iostream_set_console_instance
+    priority: 9999
 documentation:
-    docset: gecko-platform
-    document: platform-service/iostream
+  docset: gecko-platform
+  document: platform-service/iostream

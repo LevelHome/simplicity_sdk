@@ -12,12 +12,7 @@ provides:
   - name: zigbee_host_unix_printf
 requires:
   - name: device_host
-include:
-  - path: platform/service/legacy_printf/inc
-    file_list:
-      - path: sl_legacy_printf.h
 source:
-  - path: platform/service/legacy_hal/src/ember-printf-convert.c
   - path: protocol/zigbee/app/util/serial/linux-serial.c
 template_contribution:
   - name: component_catalog

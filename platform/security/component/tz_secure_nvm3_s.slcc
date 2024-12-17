@@ -24,3 +24,7 @@ include:
 source:
   - path: src/sli_tz_service_nvm3_s.c
 
+
+metadata:
+  sbom:
+    license: Zlib

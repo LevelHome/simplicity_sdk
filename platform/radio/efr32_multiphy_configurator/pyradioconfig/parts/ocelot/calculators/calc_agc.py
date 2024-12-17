@@ -12,8 +12,7 @@ class CALC_AGC_ocelot(CALC_AGC_panther):
 
     def buildVariables(self, model):
         # Build variables from Panther
-        calc_agc_panther_obj = CALC_AGC_panther()
-        calc_agc_panther_obj.buildVariables(model)
+        super().buildVariables(model)
         self._addModelActual(model, 'rssi_access_time_us', float, ModelVariableFormat.DECIMAL,
                              desc='Actual RSSI access time [us] after demod enable')
 

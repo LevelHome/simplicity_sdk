@@ -66,8 +66,8 @@ extern "C" {
   || (defined(SL_INTERRUPT_MANAGER_S2_INTERRUPTS_IN_RAM) \
   && (SL_INTERRUPT_MANAGER_S2_INTERRUPTS_IN_RAM == 1))
 
-static sl_interrupt_manager_irq_handler_t *sli_interrupt_manager_set_irq_table(sl_interrupt_manager_irq_handler_t *table,
-                                                                               uint32_t handler_count);
+sl_interrupt_manager_irq_handler_t *sli_interrupt_manager_set_irq_table(sl_interrupt_manager_irq_handler_t *table,
+                                                                        uint32_t handler_count);
 
 #endif
 

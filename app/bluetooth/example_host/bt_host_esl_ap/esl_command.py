@@ -27,8 +27,10 @@ from ap_constants import *
 from ap_logger import getLogger
 from datetime import datetime as dt
 
-class ESLCommand():
-    """ Class that encapsulates synchronization packet commands """
+
+class ESLCommand:
+    """Class that encapsulates synchronization packet commands"""
+
     def __init__(self, params, group_id, slot_num):
         self.opcode = params[0]
         self.esl_id = params[1]
@@ -45,7 +47,7 @@ class ESLCommand():
         return getLogger("CMD")
 
     def calculate_expected_response(self):
-        """ Calculate possible response opcodes """
+        """Calculate possible response opcodes"""
         if self.opcode == TLV_OPCODE_PING:
             self.response_opcode = [TLV_RESPONSE_BASIC_STATE]
         elif self.opcode == TLV_OPCODE_UNASSOCIATE:
@@ -53,9 +55,13 @@ class ESLCommand():
         elif self.opcode == TLV_OPCODE_SERVICE_RST:
             self.response_opcode = [TLV_RESPONSE_BASIC_STATE, TLV_RESPONSE_ERROR]
         elif self.opcode == TLV_OPCODE_FACTORY_RST:
-            self.response_opcode = [TLV_RESPONSE_ERROR] # No expected response but can be INVALID_STATE error in Synchronized state
+            self.response_opcode = [
+                TLV_RESPONSE_ERROR
+            ]  # No expected response but can be INVALID_STATE error in Synchronized state
         elif self.opcode == TLV_OPCODE_UPDATE_COMPLETE:
-            self.response_opcode = [TLV_RESPONSE_ERROR] # No expected response - but old ESLs may response 'Invalid Opcode error', or can be INVALID_STATE error in Synchronized state
+            self.response_opcode = [
+                TLV_RESPONSE_ERROR
+            ]  # No expected response - but old ESLs may response 'Invalid Opcode error', or can be INVALID_STATE error in Synchronized state
         elif self.opcode == TLV_OPCODE_READ_SENSOR:
             # For sensor response opcode, only the lower 4 bit is used (0x_E)
             self.response_opcode = [TLV_RESPONSE_READ_SENSOR, TLV_RESPONSE_ERROR]
@@ -77,7 +83,7 @@ class ESLCommand():
             self.response_opcode = [TLV_RESPONSE_VENDOR_SPECIFIC, TLV_RESPONSE_ERROR]
 
     def opcode_valid(self, opcode):
-        """ Check if response opcode is valid """
+        """Check if response opcode is valid"""
         valid = False
         if (opcode & 0x0F) == TLV_RESPONSE_READ_SENSOR:
             valid = True
@@ -87,11 +93,15 @@ class ESLCommand():
             self.log.debug("Expected response received: 0x%02x", opcode)
             valid = True
         if not valid:
-            self.log.warning("Unexpected response received: %d - expected: %s!", opcode, self.response_opcode)
+            self.log.warning(
+                "Unexpected response received: %d - expected: %s!",
+                opcode,
+                self.response_opcode,
+            )
         return valid
 
     def __str__(self):
-        """ Command information """
+        """Command information"""
         ret = "ESL command:\n"
         ret += f"opcode:      {self.opcode:#x}\n"
         ret += f"esl_id:      {self.esl_id}\n"

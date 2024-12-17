@@ -88,7 +88,7 @@ const sl_zigbee_af_device_info_t* sl_zigbee_af_device_database_find_device_by_eu
 const sl_zigbee_af_device_info_t* sl_zigbee_af_device_database_add_device_with_all_info(const sl_zigbee_af_device_info_t* newDevice)
 {
   if (NULL != findDeviceByEui64(newDevice->eui64)) {
-    sl_zigbee_af_core_print("Error: %p cannot add device that already exists: ", PLUGIN_NAME);
+    sl_zigbee_af_core_print("Error: %s cannot add device that already exists: ", PLUGIN_NAME);
     sl_zigbee_af_print_big_endian_eui64(newDevice->eui64);
     sl_zigbee_af_core_println("");
     return NULL;
@@ -137,7 +137,7 @@ bool sl_zigbee_af_device_database_set_endpoints(const sl_802154_long_addr_t eui6
 {
   sl_zigbee_af_device_info_t* device = findDeviceByEui64(eui64);
   if (device == NULL) {
-    sl_zigbee_af_core_print("Error: %p cannot add endpoints.  No such device in database: ");
+    sl_zigbee_af_core_print("Error: %s cannot add endpoints.  No such device in database: ");
     sl_zigbee_af_print_big_endian_eui64(eui64);
     sl_zigbee_af_core_println("");
     return false;
@@ -199,7 +199,7 @@ bool sl_zigbee_af_device_database_set_clusters_for_endpoint(const sl_802154_long
   sl_zigbee_af_device_info_t* device = findDeviceByEui64(eui64);
   uint8_t index =  sl_zigbee_af_device_database_get_index_from_endpoint(clusterList->endpoint, eui64);
   if (index == 0xFF) {
-    sl_zigbee_af_core_println("Error: %p endpoint %d does not exist for device.", PLUGIN_NAME, clusterList->endpoint);
+    sl_zigbee_af_core_println("Error: %s endpoint %d does not exist for device.", PLUGIN_NAME, clusterList->endpoint);
     return false;
   }
 
@@ -208,7 +208,7 @@ bool sl_zigbee_af_device_database_set_clusters_for_endpoint(const sl_802154_long
   device->endpoints[index].deviceId = clusterList->deviceId;
   device->endpoints[index].clusterCount = clusterList->inClusterCount + clusterList->outClusterCount;
   if (device->endpoints[index].clusterCount > SL_ZIGBEE_AF_MAX_CLUSTERS_PER_ENDPOINT) {
-    sl_zigbee_af_core_println("%p too many clusters (%d) for endpoint.  Limiting to %d",
+    sl_zigbee_af_core_println("%s too many clusters (%d) for endpoint.  Limiting to %d",
                               PLUGIN_NAME,
                               device->endpoints[index].clusterCount,
                               SL_ZIGBEE_AF_MAX_CLUSTERS_PER_ENDPOINT);

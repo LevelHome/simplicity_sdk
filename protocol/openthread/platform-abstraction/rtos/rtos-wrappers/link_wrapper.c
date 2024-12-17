@@ -54,6 +54,7 @@ extern bool                 OT_API_REAL_NAME(otLinkIsEnergyScanInProgress)(otIns
 extern bool                 OT_API_REAL_NAME(otLinkIsInTransmitState)(otInstance *aInstance);
 extern bool                 OT_API_REAL_NAME(otLinkIsPromiscuous)(otInstance *aInstance);
 extern bool                 OT_API_REAL_NAME(otLinkIsRadioFilterEnabled)(otInstance *aInstance);
+extern bool                 OT_API_REAL_NAME(otLinkIsWakeupListenEnabled)(otInstance *aInstance);
 extern const otExtAddress  *OT_API_REAL_NAME(otLinkGetExtendedAddress)(otInstance *aInstance);
 extern const otMacCounters *OT_API_REAL_NAME(otLinkGetCounters)(otInstance *aInstance);
 extern const uint32_t      *OT_API_REAL_NAME(otLinkGetTxDirectRetrySuccessHistogram)(otInstance *aInstance,
@@ -94,13 +95,21 @@ extern otError OT_API_REAL_NAME(otLinkSetPanId)(otInstance *aInstance, otPanId a
 extern otError OT_API_REAL_NAME(otLinkSetPollPeriod)(otInstance *aInstance, uint32_t aPollPeriod);
 extern otError OT_API_REAL_NAME(otLinkSetPromiscuous)(otInstance *aInstance, bool aPromiscuous);
 extern otError OT_API_REAL_NAME(otLinkSetRegion)(otInstance *aInstance, uint16_t aRegionCode);
+extern otError OT_API_REAL_NAME(otLinkSetRxOnWhenIdle)(otInstance *aInstance, bool aRxOnWhenIdle);
 extern otError OT_API_REAL_NAME(otLinkSetSupportedChannelMask)(otInstance *aInstance, uint32_t aChannelMask);
+extern otError OT_API_REAL_NAME(otLinkSetWakeUpListenEnabled)(otInstance *aInstance, bool aEnable);
+extern otError OT_API_REAL_NAME(otLinkSetWakeupChannel)(otInstance *aInstance, uint8_t aChannel);
+extern otError OT_API_REAL_NAME(otLinkSetWakeupListenParameters)(otInstance *aInstance,
+                                                                 uint32_t    aInterval,
+                                                                 uint32_t    aDuration);
 extern otMacFilterAddressMode OT_API_REAL_NAME(otLinkFilterGetAddressMode)(otInstance *aInstance);
 extern otPanId                OT_API_REAL_NAME(otLinkGetPanId)(otInstance *aInstance);
+extern otShortAddress         OT_API_REAL_NAME(otLinkGetAlternateShortAddress)(otInstance *aInstance);
 extern otShortAddress         OT_API_REAL_NAME(otLinkGetShortAddress)(otInstance *aInstance);
 extern uint16_t               OT_API_REAL_NAME(otLinkGetCcaFailureRate)(otInstance *aInstance);
 extern uint32_t               OT_API_REAL_NAME(otLinkGetCslPeriod)(otInstance *aInstance);
 extern uint32_t               OT_API_REAL_NAME(otLinkGetCslTimeout)(otInstance *aInstance);
+extern uint32_t               OT_API_REAL_NAME(otLinkGetFrameCounter)(otInstance *aInstance);
 extern uint32_t               OT_API_REAL_NAME(otLinkGetPollPeriod)(otInstance *aInstance);
 extern uint32_t               OT_API_REAL_NAME(otLinkGetSupportedChannelMask)(otInstance *aInstance);
 extern uint8_t                OT_API_REAL_NAME(otLinkConvertRssToLinkQuality)(otInstance *aInstance, int8_t aRss);
@@ -108,6 +117,7 @@ extern uint8_t                OT_API_REAL_NAME(otLinkGetChannel)(otInstance *aIn
 extern uint8_t                OT_API_REAL_NAME(otLinkGetCslChannel)(otInstance *aInstance);
 extern uint8_t                OT_API_REAL_NAME(otLinkGetMaxFrameRetriesDirect)(otInstance *aInstance);
 extern uint8_t                OT_API_REAL_NAME(otLinkGetMaxFrameRetriesIndirect)(otInstance *aInstance);
+extern uint8_t                OT_API_REAL_NAME(otLinkGetWakeupChannel)(otInstance *aInstance);
 extern void                   OT_API_REAL_NAME(otLinkFilterClearAddresses)(otInstance *aInstance);
 extern void                   OT_API_REAL_NAME(otLinkFilterClearAllRssIn)(otInstance *aInstance);
 extern void                   OT_API_REAL_NAME(otLinkFilterClearDefaultRssIn)(otInstance *aInstance);
@@ -116,6 +126,9 @@ extern void OT_API_REAL_NAME(otLinkFilterRemoveRssIn)(otInstance *aInstance, con
 extern void OT_API_REAL_NAME(otLinkFilterSetAddressMode)(otInstance *aInstance, otMacFilterAddressMode aMode);
 extern void OT_API_REAL_NAME(otLinkFilterSetDefaultRssIn)(otInstance *aInstance, int8_t aRss);
 extern void OT_API_REAL_NAME(otLinkGetFactoryAssignedIeeeEui64)(otInstance *aInstance, otExtAddress *aEui64);
+extern void OT_API_REAL_NAME(otLinkGetWakeupListenParameters)(otInstance *aInstance,
+                                                              uint32_t   *aInterval,
+                                                              uint32_t   *aDuration);
 extern void OT_API_REAL_NAME(otLinkResetCounters)(otInstance *aInstance);
 extern void OT_API_REAL_NAME(otLinkResetTxRetrySuccessHistogram)(otInstance *aInstance);
 extern void OT_API_REAL_NAME(otLinkSetMaxFrameRetriesDirect)(otInstance *aInstance, uint8_t aMaxFrameRetriesDirect);
@@ -185,6 +198,14 @@ bool OT_API_WRAPPER_NAME(otLinkIsRadioFilterEnabled)(otInstance *aInstance)
 {
     sl_ot_rtos_acquire_stack_mutex();
     bool ret = OT_API_REAL_NAME(otLinkIsRadioFilterEnabled)(aInstance);
+    sl_ot_rtos_release_stack_mutex();
+    return ret;
+}
+
+bool OT_API_WRAPPER_NAME(otLinkIsWakeupListenEnabled)(otInstance *aInstance)
+{
+    sl_ot_rtos_acquire_stack_mutex();
+    bool ret = OT_API_REAL_NAME(otLinkIsWakeupListenEnabled)(aInstance);
     sl_ot_rtos_release_stack_mutex();
     return ret;
 }
@@ -397,10 +418,44 @@ otError OT_API_WRAPPER_NAME(otLinkSetRegion)(otInstance *aInstance, uint16_t aRe
     return ret;
 }
 
+otError OT_API_WRAPPER_NAME(otLinkSetRxOnWhenIdle)(otInstance *aInstance, bool aRxOnWhenIdle)
+{
+    sl_ot_rtos_acquire_stack_mutex();
+    otError ret = OT_API_REAL_NAME(otLinkSetRxOnWhenIdle)(aInstance, aRxOnWhenIdle);
+    sl_ot_rtos_release_stack_mutex();
+    return ret;
+}
+
 otError OT_API_WRAPPER_NAME(otLinkSetSupportedChannelMask)(otInstance *aInstance, uint32_t aChannelMask)
 {
     sl_ot_rtos_acquire_stack_mutex();
     otError ret = OT_API_REAL_NAME(otLinkSetSupportedChannelMask)(aInstance, aChannelMask);
+    sl_ot_rtos_release_stack_mutex();
+    return ret;
+}
+
+otError OT_API_WRAPPER_NAME(otLinkSetWakeUpListenEnabled)(otInstance *aInstance, bool aEnable)
+{
+    sl_ot_rtos_acquire_stack_mutex();
+    otError ret = OT_API_REAL_NAME(otLinkSetWakeUpListenEnabled)(aInstance, aEnable);
+    sl_ot_rtos_release_stack_mutex();
+    return ret;
+}
+
+otError OT_API_WRAPPER_NAME(otLinkSetWakeupChannel)(otInstance *aInstance, uint8_t aChannel)
+{
+    sl_ot_rtos_acquire_stack_mutex();
+    otError ret = OT_API_REAL_NAME(otLinkSetWakeupChannel)(aInstance, aChannel);
+    sl_ot_rtos_release_stack_mutex();
+    return ret;
+}
+
+otError OT_API_WRAPPER_NAME(otLinkSetWakeupListenParameters)(otInstance *aInstance,
+                                                             uint32_t    aInterval,
+                                                             uint32_t    aDuration)
+{
+    sl_ot_rtos_acquire_stack_mutex();
+    otError ret = OT_API_REAL_NAME(otLinkSetWakeupListenParameters)(aInstance, aInterval, aDuration);
     sl_ot_rtos_release_stack_mutex();
     return ret;
 }
@@ -417,6 +472,14 @@ otPanId OT_API_WRAPPER_NAME(otLinkGetPanId)(otInstance *aInstance)
 {
     sl_ot_rtos_acquire_stack_mutex();
     otPanId ret = OT_API_REAL_NAME(otLinkGetPanId)(aInstance);
+    sl_ot_rtos_release_stack_mutex();
+    return ret;
+}
+
+otShortAddress OT_API_WRAPPER_NAME(otLinkGetAlternateShortAddress)(otInstance *aInstance)
+{
+    sl_ot_rtos_acquire_stack_mutex();
+    otShortAddress ret = OT_API_REAL_NAME(otLinkGetAlternateShortAddress)(aInstance);
     sl_ot_rtos_release_stack_mutex();
     return ret;
 }
@@ -449,6 +512,14 @@ uint32_t OT_API_WRAPPER_NAME(otLinkGetCslTimeout)(otInstance *aInstance)
 {
     sl_ot_rtos_acquire_stack_mutex();
     uint32_t ret = OT_API_REAL_NAME(otLinkGetCslTimeout)(aInstance);
+    sl_ot_rtos_release_stack_mutex();
+    return ret;
+}
+
+uint32_t OT_API_WRAPPER_NAME(otLinkGetFrameCounter)(otInstance *aInstance)
+{
+    sl_ot_rtos_acquire_stack_mutex();
+    uint32_t ret = OT_API_REAL_NAME(otLinkGetFrameCounter)(aInstance);
     sl_ot_rtos_release_stack_mutex();
     return ret;
 }
@@ -509,6 +580,14 @@ uint8_t OT_API_WRAPPER_NAME(otLinkGetMaxFrameRetriesIndirect)(otInstance *aInsta
     return ret;
 }
 
+uint8_t OT_API_WRAPPER_NAME(otLinkGetWakeupChannel)(otInstance *aInstance)
+{
+    sl_ot_rtos_acquire_stack_mutex();
+    uint8_t ret = OT_API_REAL_NAME(otLinkGetWakeupChannel)(aInstance);
+    sl_ot_rtos_release_stack_mutex();
+    return ret;
+}
+
 void OT_API_WRAPPER_NAME(otLinkFilterClearAddresses)(otInstance *aInstance)
 {
     sl_ot_rtos_acquire_stack_mutex();
@@ -562,6 +641,15 @@ void OT_API_WRAPPER_NAME(otLinkGetFactoryAssignedIeeeEui64)(otInstance *aInstanc
 {
     sl_ot_rtos_acquire_stack_mutex();
     OT_API_REAL_NAME(otLinkGetFactoryAssignedIeeeEui64)(aInstance, aEui64);
+    sl_ot_rtos_release_stack_mutex();
+}
+
+void OT_API_WRAPPER_NAME(otLinkGetWakeupListenParameters)(otInstance *aInstance,
+                                                          uint32_t   *aInterval,
+                                                          uint32_t   *aDuration)
+{
+    sl_ot_rtos_acquire_stack_mutex();
+    OT_API_REAL_NAME(otLinkGetWakeupListenParameters)(aInstance, aInterval, aDuration);
     sl_ot_rtos_release_stack_mutex();
 }
 

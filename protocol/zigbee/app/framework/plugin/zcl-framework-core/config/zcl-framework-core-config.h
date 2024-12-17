@@ -27,6 +27,13 @@
 // <i> Default: FALSE
 // <i> Enable the feature that allows to enable/disable clusters at runtime.
 #define SL_ZIGBEE_AF_PLUGIN_ZCL_CLUSTER_ENABLE_DISABLE_RUN_TIME   0
+
+// <q SL_ZIGBEE_AF_PLUGIN_ZCL_CLUSTER_DEFER_ATTRIBUTE_WRITES_TO_NVM_MS> Time in milliseconds to defer updating NVM when an attribute changes value
+// <i> Default: 0
+// <0-10000>
+// <i> For attributes that are stored in NVM, this is the amount of time to defer updating NVM3. The RAM value of the attribute is always updated immediately upon change. A value of 0 for this configuration item means that NVM should be updated immediately without delay. For a nonzero delay, if the attribute changes again within this delay period, the update to the non-volatile storage will be pushed out until a full delay period has elapsed without change, upon which the value in RAM is written to NVM. Deferring of updating NVM is useful in scenarios where writing to flash is slow, such as with external flash, or when trying to reduce the amount of writes to flash.
+#define SL_ZIGBEE_AF_PLUGIN_ZCL_CLUSTER_DEFER_ATTRIBUTE_WRITES_TO_NVM_MS  0
+
 // </h>
 
 // <<< end of configuration section >>>

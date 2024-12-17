@@ -32,12 +32,12 @@
 #define SL_I2CSPM_H
 
 #include "em_device.h"
-#if defined(_SILICON_LABS_32B_SERIES_3)
-#include "sl_gpio.h"
-#else
-#include "em_gpio.h"
+
+#if defined(_SILICON_LABS_32B_SERIES_2)
 #include "em_i2c.h"
-#endif //_SILICON_LABS_32B_SERIES_3
+#endif
+
+#include "sl_gpio.h"
 
 /***************************************************************************//**
  * @addtogroup i2cspm I2C Simple Polled Master
@@ -174,14 +174,9 @@ typedef enum {
 /// @ref I2CSPM_Init() when initializing a I2CSPM instance.
 typedef struct {
   I2C_TypeDef           *port;          ///< Peripheral port.
-#if defined(_SILICON_LABS_32B_SERIES_3)
   sl_gpio_port_t        sclPort;        ///< SCL pin port number.
-  sl_gpio_port_t        sdaPort;        ///< SDA pin port number.
-#else
-  GPIO_Port_TypeDef     sclPort;        ///< SCL pin port number.
-  GPIO_Port_TypeDef     sdaPort;        ///< SDA pin port number.
-#endif // _SILICON_LABS_32B_SERIES_3
   uint8_t               sclPin;         ///< SCL pin number.
+  sl_gpio_port_t        sdaPort;        ///< SDA pin port number.
   uint8_t               sdaPin;         ///< SDA pin number.
   uint32_t              i2cRefFreq;     ///< I2C reference clock.
   uint32_t              i2cMaxFreq;     ///< I2C max bus frequency to use.

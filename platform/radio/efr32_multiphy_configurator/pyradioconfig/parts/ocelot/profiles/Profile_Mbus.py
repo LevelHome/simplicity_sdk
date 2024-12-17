@@ -323,6 +323,7 @@ class Profile_Mbus_Ocelot(IProfile):
             raise Exception("Unexpected value found for mbus_symbol_encoding")
 
     def profile_calculate(self, model):
+        model.vars.protocol_id.value_forced = model.vars.protocol_id.var_enum.Mbus
         self.mbus_profile_frame_format_common(model)
         self.mbus_profile_frame_format_calc(model)
         self.mbus_profile_radio_common(model)

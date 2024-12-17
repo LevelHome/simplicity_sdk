@@ -15,3 +15,6 @@ include:
 provides:
   - name: bootloader_spi_peripheral_driver
   - name: bootloader_spi_peripheral_driver_nonsecure
+metadata:
+  sbom:
+    license: MSLA

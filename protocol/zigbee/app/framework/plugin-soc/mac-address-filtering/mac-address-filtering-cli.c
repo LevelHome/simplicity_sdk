@@ -48,7 +48,7 @@ void sl_zigbee_af_mac_address_filtering_print_config_command(sl_cli_command_arg_
   #if (defined(EMBER_AF_PRINT_ENABLE) && defined(EMBER_AF_PRINT_DIAGNOSTICS_CLUSTER)) || (SL_ZIGBEE_DEBUG_CORE_GROUP_ENABLED == 1)
   uint8_t i;
   sl_zigbee_af_core_println("Total MAC Packets received: %lu", macAddressFilterData.totalPackets);
-  sl_zigbee_af_core_println("Options bitmask: 0x%X", macAddressFilterData.options);
+  sl_zigbee_af_core_println("Options bitmask: 0x%02X", macAddressFilterData.options);
   for ( i = 0; i < MAC_FILTER_OPTIONS_COUNT; i++ ) {
     const char* enabledDisabledTextPointer = ( (macAddressFilterData.options & optionsDescription[i].bit)
                                                ? optionsDescription[i].enabledDescription
@@ -68,7 +68,7 @@ void sl_zigbee_af_mac_address_filtering_print_config_command(sl_cli_command_arg_
         == SL_ZIGBEE_NULL_NODE_ID) {
       sl_zigbee_af_core_println("---");
     } else {
-      sl_zigbee_af_core_println("0x%2X  Match Count: %lu",
+      sl_zigbee_af_core_println("0x%04X  Match Count: %lu",
                                 macAddressFilterData.macShortAddressList[i].shortAddress,
                                 macAddressFilterData.macShortAddressList[i].matchCount);
     }
@@ -89,6 +89,14 @@ void sl_zigbee_af_mac_address_filtering_print_config_command(sl_cli_command_arg_
     }
   }
   #endif
+}
+
+// Command: plugin mac-address-filtering clear-stats
+// Description: Clears all packet counts for all modes.
+void sl_zigbee_af_mac_address_filtering_clear_stats_command(sl_cli_command_arg_t * arguments)
+{
+  UNUSED_VAR(arguments);
+  sl_zigbee_af_mac_address_filtering_clear_stats();
 }
 
 // Plugin CLI Description: Commands to manipulate the MAC address filtering tables.

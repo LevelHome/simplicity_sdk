@@ -33,6 +33,7 @@
 #include "sl_event_system.h"
 #include "sl_memory_manager.h"
 #include "zigbee_rtos_adaptation.h"
+#include "sl_code_classification.h"
 //------------------------------------------------------------------------------
 // Zigbee Stack task definitions
 
@@ -82,6 +83,7 @@ static void event_data_free_cb_irq(void *event)
 }
 #endif //SL_CATALOG_ZIGBEE_REAL_IPC_PRESENT
 
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_ZIGBEE_STACK, SL_CODE_CLASS_TIME_CRITICAL)
 void sl_zigbee_wakeup_stack_task(void)
 {
   // NOTE: This semaphore is not really used to protect any resources
@@ -249,6 +251,7 @@ static void zigbee_stack_task_yield(void)
   }
 }
 
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_ZIGBEE_STACK, SL_CODE_CLASS_TIME_CRITICAL)
 bool sli_zigbee_is_stack_task_or_isr_current_context(void)
 {
   return ( (zigbee_stack_task_id == osThreadGetId())
@@ -256,6 +259,8 @@ bool sli_zigbee_is_stack_task_or_isr_current_context(void)
 }
 
 #if !defined(SL_CATALOG_ZIGBEE_SYSTEM_COMMON_APP_FRAMEWORK_PRESENT)
+#include "sl_code_classification.h"
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_ZIGBEE_STACK, SL_CODE_CLASS_TIME_CRITICAL)
 void sl_zigbee_wakeup_common_task(void)
 {
   sl_zigbee_wakeup_stack_task();

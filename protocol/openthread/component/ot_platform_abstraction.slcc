@@ -28,14 +28,17 @@ requires:
   - name: gatt_configuration
     condition:
     - bluetooth_stack
+
 config_file:
   - path: protocol/openthread/config/sl_openthread_rtos_config.h
     condition:
       - kernel
-    unless: ["matter_integration"]
   - path: protocol/openthread/config/sl_openthread_subghz_config.h
     condition:
       - hardware_board_supports_ot_subghz
+  - path: protocol/openthread/config/sl_openthread_radio_config.h
+    condition: 
+      - ot_platform_abstraction_source
 toolchain_settings:
   - option: gcc_compiler_option
     value: "-Werror=unused-function"
@@ -47,7 +50,6 @@ toolchain_settings:
     value: sl_openthread_rtos_config.h
     condition:
       - kernel
-    unless: ["matter_integration"]
   - option: preinclude
     value: sl_openthread_subghz_config.h
     condition:
@@ -56,19 +58,16 @@ include:
   - path: protocol/openthread/platform-abstraction/rtos
     condition:
       - kernel
-    unless: ["matter_integration"]
     file_list:
       - path: sl_ot_rtos_adaptation.h
 source:
   - path: protocol/openthread/platform-abstraction/rtos/sl_ot_rtos_adaptation.c
     condition:
       - kernel
-    unless: ["matter_integration"]
 library:
-  - path: "protocol/openthread/libs/libsl_openthread_efr32mg2x_gcc.a"
+  - path: "protocol/openthread/libs/libsl_openthread_cm33_gcc.a"
     condition:
       - toolchain_gcc
-      - device_series_2
 define:
   - name: RADIO_CONFIG_DMP_SUPPORT
     value: 1
@@ -91,7 +90,6 @@ template_contribution:
       priority: 9
     condition:
       - kernel
-    unless: ["matter_integration"]
   - name: event_handler
     value:
       event: internal_app_init
@@ -100,12 +98,11 @@ template_contribution:
       priority: 10
     condition:
       - kernel
-    unless: ["matter_integration"]
   - name: ot_init
     value: sl_ot_create_instance
     priority: 0
 metadata:
   sbom:
     # Zlib covers the files from protocol/openthread/config.
-    # MSLA covers libsl_openthread_efr32mg2x_gcc.a
+    # MSLA covers libsl_openthread_cm33_gcc.a
     license: Zlib AND MSLA

@@ -28,6 +28,6 @@
 #define CORE_ATOMIC_SECTION(some_code)  some_code
 #define CORE_YIELD_ATOMIC()
 #else
-#include "em_core.h"
+#include "sl_core.h"
 #endif // EMBER_TEST
 #endif // __SLI_CONNECT_INTERRUPT_MANIPULATION_H__

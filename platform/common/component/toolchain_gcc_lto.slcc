@@ -12,3 +12,6 @@ provides:
 toolchain_settings:
   - option: link_time_optimization
     value: "enabled"
+template_contribution:
+  - name: component_catalog
+    value: toolchain_gcc_lto

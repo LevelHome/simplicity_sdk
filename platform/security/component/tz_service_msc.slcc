@@ -77,3 +77,7 @@ template_contribution:
   - name: simple_func_mapping_with_args
     value: sli_tz_msc_set_misclockword
     condition: [trustzone_nonsecure]
+
+metadata:
+  sbom:
+    license: Zlib

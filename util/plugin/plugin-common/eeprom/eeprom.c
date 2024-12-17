@@ -18,29 +18,14 @@
  *
  ******************************************************************************/
 
-#ifdef UC_BUILD
 #include "af.h"
+#ifndef SL_ZIGBEE_SCRIPTED_TEST
 #include "eeprom-config.h"
+#endif
 #ifndef SL_ZIGBEE_TEST
 #include "api/btl_interface.h"
+#include "em_device.h"
 #endif // !SL_ZIGBEE_TEST
-#else // !UC_BUILD
-#ifdef SL_ZIGBEE_AF_API_AF_HEADER // AFV2
-  #include SL_ZIGBEE_AF_API_AF_HEADER
-#else                         // AFV6
-  #include PLATFORM_HEADER
-  #include CONFIGURATION_HEADER
-  #include SL_ZIGBEE_AF_API_HAL
-  #ifdef SL_ZIGBEE_AF_API_DEBUG_PRINT
-    #include SL_ZIGBEE_AF_API_DEBUG_PRINT
-  #endif
-  #ifdef SL_ZIGBEE_TEST
-    #define SL_ZIGBEE_TEST_ASSERT(x) assert((x))
-  #else
-    #define SL_ZIGBEE_TEST_ASSERT(x)
-  #endif
-#endif
-#endif // UC_BUILD
 
 #include "eeprom.h"
 
@@ -161,7 +146,6 @@ void sli_util_af_plugin_eeprom_state_update(HalEepromState newState)
   }
 }
 
-#ifdef UC_BUILD
 #ifndef SL_ZIGBEE_TEST
 uint8_t halAppBootloaderInit(void)
 {
@@ -211,9 +195,10 @@ void halAppBootloaderShutdown(void)
 HalEepromInformationType fixedEepromInfo;
 const HalEepromInformationType *halAppBootloaderInfo(void)
 {
-  BootloaderStorageInformation_t info;
+  BootloaderStorageInformation_t info = { 0 };
   bootloader_getStorageInfo(&info);
 
+#if defined(_SILICON_LABS_32B_SERIES_2)
   if (info.info == NULL) {
     return NULL;
   }
@@ -238,11 +223,26 @@ const HalEepromInformationType *halAppBootloaderInfo(void)
          (void*)&info.info->partDescription,
          sizeof(fixedEepromInfo.partDescription));
   fixedEepromInfo.wordSizeBytes     = info.info->wordSizeBytes;
+#elif defined(_SILICON_LABS_32B_SERIES_3)
+  fixedEepromInfo.partEraseTime    = 9; // seconds, see capabiltiesMask below
+  fixedEepromInfo.capabilitiesMask = (EEPROM_CAPABILITIES_PAGE_ERASE_REQD
+                                      | EEPROM_CAPABILITIES_ERASE_SUPPORTED
+                                      | EEPROM_CAPABILITIES_PART_ERASE_SECONDS);
+  fixedEepromInfo.version          = info.version;
+  fixedEepromInfo.pageEraseMs      = 30;
+  fixedEepromInfo.pageSize         = FLASH_PAGE_SIZE;
+  fixedEepromInfo.partSize         = FLASH_SIZE;
+  static char* s3PartDesc = "S3 Extflash";
+  memcpy((void*)&fixedEepromInfo.partDescription,
+         (void*)&s3PartDesc,
+         sizeof(fixedEepromInfo.partDescription));
+  // EMZIGBEE-13497: Assume all S3 extflash has a word size of 4 bytes
+  fixedEepromInfo.wordSizeBytes     = 4;
+#endif // _SILICON_LABS_32B_SERIES_2 || _SILICON_LABS_32B_SERIES_3
 
   return &fixedEepromInfo;
 }
 #endif // !SL_ZIGBEE_TEST
-#endif // UC_BUILD
 
 uint8_t sl_util_af_eeprom_get_word_size(void)
 {
@@ -415,7 +415,7 @@ void sli_eeprom_fake_eeprom_callback(void)
 }
 #endif
 
-#ifdef _SILICON_LABS_32B_SERIES_2
+#if defined(_SILICON_LABS_32B_SERIES_2) || defined(_SILICON_LABS_32B_SERIES_3)
 #define ALIGNMENT4 __ALIGNED(4)
 #else
 #define ALIGNMENT4
@@ -484,7 +484,7 @@ static uint8_t postcedingPartialWrite(uint32_t address,
 
   if (totalLength > 0u) {
     sli_util_af_plugin_eeprom_state_update(HAL_EEPROM_WRITING);
-   #ifdef _SILICON_LABS_32B_SERIES_2
+#if defined(_SILICON_LABS_32B_SERIES_2) || defined(_SILICON_LABS_32B_SERIES_3)
     // we need 32 bits alignment for some boards e.g. 4181
     if (totalLength <= sizeof(ota_buff)) {
       memcpy(ota_buff,
@@ -494,9 +494,9 @@ static uint8_t postcedingPartialWrite(uint32_t address,
     } else {
       status = EEPROM_ERR;
     }
-   #else
+#else // _SILICON_LABS_32B_SERIES_2 || _SILICON_LABS_32B_SERIES_3
     status = eepromWrite(address, data, totalLength);
-   #endif
+#endif // _SILICON_LABS_32B_SERIES_2 || _SILICON_LABS_32B_SERIES_3
 
     sli_util_af_plugin_eeprom_state_update(HAL_EEPROM_INITIALIZED);
   }
@@ -583,7 +583,7 @@ uint8_t sl_zigbee_af_eeprom_write(uint32_t address,
   if (totalLength > 0u) {
     sli_util_af_plugin_eeprom_state_update(HAL_EEPROM_WRITING);
 
-#ifdef _SILICON_LABS_32B_SERIES_2
+#if defined(_SILICON_LABS_32B_SERIES_2) || defined(_SILICON_LABS_32B_SERIES_3)
     // we need 32 bits alignment for some boards e.g. 4181
     if (totalLength <= sizeof(ota_buff)) {
       memcpy(ota_buff,
@@ -593,9 +593,9 @@ uint8_t sl_zigbee_af_eeprom_write(uint32_t address,
     } else {
       status = EEPROM_ERR;
     }
-#else
+#else // _SILICON_LABS_32B_SERIES_2 || _SILICON_LABS_32B_SERIES_3
     status = eepromWrite(address, data, totalLength);
-#endif
+#endif // _SILICON_LABS_32B_SERIES_2 || _SILICON_LABS_32B_SERIES_3
     sli_util_af_plugin_eeprom_state_update(HAL_EEPROM_INITIALIZED);
   }
 

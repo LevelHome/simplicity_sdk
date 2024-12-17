@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2022 Silicon Laboratories Inc. www.silabs.com
+# Copyright 2024 Silicon Laboratories Inc. www.silabs.com
 #
 # SPDX-License-Identifier: Zlib
 #
@@ -24,40 +24,46 @@
 
 '''Certificate Authority
 
-Handles signing Certificate Signing Requests and retrieving the Static 
-Authentication Data from connected embedded devices.
+Handles signing Certificate Signing Requests for connected embedded devices.
 
 Prerequisites:
-A connected device with the prepared Certificate Signing Request.
+Python 3.
+Python packages contained in `requirements.txt`.
+  Run `pip install -r requirements.txt` to install all requirements for the application.
 Simplicity Commander added to path.
-Cryptography module installed.
-Certificate Authority created using the create_authority_certificate.py script.
+Certificate Authority created using the `create_authority_certificate.py` script.
+A connected device with the prepared certificate signing request with the
+  `SoC - Certificate Signing Request Generator` example.
 '''
 # Metadata
 __author__ = 'Silicon Laboratories, Inc'
-__copyright__ = 'Copyright 2022, Silicon Laboratories, Inc.'
+__copyright__ = 'Copyright 2024, Silicon Laboratories, Inc.'
 
-import os, sys, pathlib
+import os
+import sys
+import pathlib
 import datetime
 import re
 import binascii, struct
 import argparse
 import subprocess
+import yaml
 from cryptography import x509
 from cryptography.hazmat import primitives
-from cryptography.hazmat.primitives import serialization
 
-RAM_DATA_LEN_MAX        = 1024
-STATIC_AUTH_DATA_LEN    = 32
+RAM_DATA_START            = 0x20007C00
+RAM_DATA_LEN_MAX          = 1024
+STATIC_AUTH_DATA_LEN      = 32
 
-NVM3_CONTROL_BLOCK_KEY = { 'ble': 0x40400, 'btmesh': 0x60400 }
-NVM3_CONTROL_BLOCK_SIZE = 17
-CHAIN_LINK_DATA_LEN     = 192
+NVM3_CONTROL_BLOCK_KEY    = { 'ble': 0x40400, 'btmesh': 0x60400 }
+NVM3_CONTROL_BLOCK_SIZE   = 17
 
-# Control Block bitmap
-CERTIFICATE_ON_DEVICE_BIT       = 0
-DEVICE_EC_KEY_BIT               = 1
-STATIC_AUTH_DATA_BIT            = 2
+# Control Block bit fields
+CERTIFICATE_ON_DEVICE_BIT = 0
+DEVICE_EC_KEY_BIT         = 1
+STATIC_AUTH_DATA_BIT      = 2
+
+MAX_ITERATIONS            = 10
 
 def main(level, validity, serial, ip, protocol):
     # Check the presence of Simplicity Commander.
@@ -75,76 +81,66 @@ def main(level, validity, serial, ip, protocol):
         raise Exception('At most one of [J-Link serial number] or [IP address] shall be defined.')
     if protocol not in NVM3_CONTROL_BLOCK_KEY:
         raise Exception('Invalid protocol: ' + protocol + ' (choose from: ' + str(NVM3_CONTROL_BLOCK_KEY.keys()) + ')')
-    
-    # Check connected device.
-    cmd = ('commander adapter probe ' + device_argument()).split()
-    adapter_probe = str(subprocess_call(cmd).stdout)
 
-    # Check chip family.
-    substr_start = adapter_probe.lower().find('efr')
-    substr_end = adapter_probe.find(' ', substr_start)
-    family = adapter_probe[substr_start:substr_end]
-    print(family, 'detected.\n\n')
-
-    if 'xg22' in family.lower():
-        ram_start = 0x20000000 # The CSR allocation is different for xG22 devices.
-    else:
-        ram_start = 0x2000FC00
-    
-    # Paths
+    # Set paths and check certificate authority.
     if level == 0:
         path_auth_dir = os.path.join(os.path.abspath(os.path.join((__file__), '..')), 'central_authority')
     else:
         path_auth_dir = os.path.join(os.path.abspath(os.path.join((__file__), '..')), 'intermediate_' + str(level) + '_authority')
-    
-    if not os.path.exists(path_auth_dir):
+    path_auth_key = os.path.join(path_auth_dir, 'private_key.pem')
+    path_auth_cert = os.path.join(path_auth_dir, 'certificate.pem')
+    path_auth_database = os.path.join(path_auth_dir, 'issued_certificates.yaml')
+
+    if not os.path.exists(path_auth_dir) or not os.path.exists(path_auth_key) or not os.path.exists(path_auth_cert):
         raise FileNotFoundError(path_auth_dir + ' authority is incomplete.')
-    
+
     # Retrieve RAM data.
-    ram_data = read_ram(ram_start, RAM_DATA_LEN_MAX)
+    ram_data = read_ram(RAM_DATA_START, RAM_DATA_LEN_MAX)
+    print(f'RAM data retrieved from the device ({hex(RAM_DATA_START)} - {hex(RAM_DATA_START + RAM_DATA_LEN_MAX)}).')
+
+    # Get Certificate Signing Request from RAM data.
+    csr = get_csr(ram_data)
+    print('Certificate Signing Request retrieved from RAM data.', os.linesep)
 
     # Retrieve Control Block from NVM3.
     path_nvm3_dump = dump_nvm3(path_auth_dir)
     control_block  = ControlBlock(path_nvm3_dump)
 
     if control_block.static_auth_present == True:
-        # Get Static Authentication Data from RAM data.
-        static_auth = get_static_auth(ram_data) # static_auth is ready for further processing.
+        # Get Static Authentication Data from RAM dump.
+        static_auth = ram_data[1:STATIC_AUTH_DATA_LEN]
+        print("Static Authentication Data is ready for further processing.")
 
     if control_block.device_ec_key_present == False:
         print('EC key pair is missing from the device. It is needed to generate a CSR. Exiting.')
         os.remove(path_nvm3_dump)
-        sys.exit(0)
+        sys.exit(1)
 
-    # Get Certificate Signing Request from RAM data.
-    path_csr = get_csr(ram_data, path_auth_dir)
+    # Load private key and certificate of the authority.
+    with open(path_auth_key, 'rb') as f:
+        auth_key = primitives.serialization.load_pem_private_key(f.read(), password=None)
+    with open(path_auth_cert, 'rb') as f:
+        auth_cert = x509.load_pem_x509_certificate(f.read())
 
-    # Sign it and create the Device Certificate.
-    path_cert_pem = sign_csr(path_auth_dir, path_csr, validity)
-    os.remove(path_csr) # Remove CSR file since it is not needed anymore.
+    # Sign the request and create the Device Certificate.
+    cert = sign_csr(auth_key, auth_cert, path_auth_database, csr, validity)
 
     # Exit if the device is not configured to hold the certificate.
     if control_block.certificate_on_device == False:
-        print('The device is not configured to hold the certificate.')
-        print(path_cert_pem, ' is ready for further processing.')
+        print('The device is not configured to hold the certificate. The certificate file is ready for further processing. Exiting.')
         os.remove(path_nvm3_dump)
         sys.exit(0)
 
-    # Change the format of a certificate from PEM to DER.
-    path_cert_der = convert_crt(path_cert_pem)
-
     # Add the signed certificate to the NVM3 image according to the Control Block.
     patch_nvm3(path_nvm3_dump,
-               path_cert_der,
+               cert.public_bytes(primitives.serialization.Encoding.DER), # Export in binary (DER) format
                control_block.nvm3_key[CERTIFICATE_ON_DEVICE_BIT],
                control_block.max_link_data_len)
 
     # Flash back the modified NVM3 content onto the device.
-    flash_nvm3(path_nvm3_dump)
-
-    # Clean up.
-    os.remove(path_cert_der)
-    os.remove(path_nvm3_dump)
+    subprocess_call(('commander flash ' + path_nvm3_dump + ' ' + device_argument()).split())
+    print('Certificate flashed onto the device.')
+    os.remove(path_nvm3_dump) # Clean up
 
 def read_ram(start_address, memory_size):
     '''Get data from the RAM in the given range.
@@ -171,28 +167,13 @@ def read_ram(start_address, memory_size):
 
     return binascii.unhexlify(s)
 
-def get_static_auth(ram_data):
-    '''Static Authentication Data.
-
-    Keyword arguments:
-    ram_data -- Data retrieved from the RAM using read_ram
-    Return values:
-    static_auth -- Static Authentication Data.
-    '''
-    # Select static authentication data.
-    static_auth = ram_data[1:STATIC_AUTH_DATA_LEN]
-
-    print('Static Authentication Data has been successfully retrieved from the device.\n\n')
-    return static_auth
-
-def get_csr(ram_data, path_dir):
+def get_csr(ram_data):
     '''Get Certificate Signing Request.
 
     Keyword arguments:
     ram_data -- Data retrieved from the RAM using read_ram
-    path_dir -- Path to working directory where the CSR file shall be created.
     Return values:
-    path_csr -- Path to the Certificate Signing Request file.
+    The Certificate Signing Request
     '''
     # Select the certificate signing request.
     is_complete = ram_data[0] == 1 # Completion bit
@@ -203,80 +184,50 @@ def get_csr(ram_data, path_dir):
         raise Exception('Certificate signing request generation is incomplete!')
 
     csr_bytes = ram_data[STATIC_AUTH_DATA_LEN + 3 : STATIC_AUTH_DATA_LEN + 3 + csr_len]
-    csr = x509.load_der_x509_csr(csr_bytes)
+    return x509.load_der_x509_csr(csr_bytes)
 
-    # Write CSR to file.
-    common_name = csr.subject.get_attributes_for_oid(x509.oid.NameOID.COMMON_NAME)[0].value
-    # Trim filename to UUID in case extended BT Mesh CN
-    path_csr = os.path.join(path_dir, common_name[0:36] + '.csr')
-    with open(path_csr, 'wb') as f:
-        f.write(csr.public_bytes(serialization.Encoding.PEM))
+def sign_csr(authority_key, authority_cert, path_auth_database, csr, validity):
+    '''Create a device certificate by signing a Certificate Signing Request and modifying the necessary fields.
+    Update the list of the issued certificates.
 
-    print('Certificate Signing Request has been successfully retrieved from the device.\n\n')
-    return path_csr
-
-def sign_csr(path_auth_dir, path_device_csr, validity):
-    '''Create a device certificate by signing a Certificate Signing Request.
-    
     Keyword arguments:
-    path_auth_dir -- Path to the certificate authority that shall sign the request.
-    path_device_csr -- The location of the certificate signing request file in 
-                       PEM format.
+    authority_key -- The private key of the certificate authority that shall sign the request.
+    authority_cert -- The certificate authority that shall sign the request.
+    path_auth_database -- Path to a file containing the database of the issued certificates.
+    csr -- The device certificate signing request.
     validity -- The valid period of the certificate in days starting
                 from the moment of signing. (Default: 365)
     Return values:
-    path_device_cert -- The location of the certificate file in PEM format.
+    The signed device certificate.
     '''
-
-    # Set paths and check prerequisites.
-    path_auth_key = os.path.join(path_auth_dir, 'private_key.pem')
-    path_auth_cert = os.path.join(path_auth_dir, 'certificate.pem')
-
-    if not os.path.exists(path_auth_key) or not os.path.exists(path_auth_cert):
-        raise FileNotFoundError(path_auth_dir + ' authority is incomplete.')
-
-    path_device_csr = pathlib.Path(path_device_csr)
-
-    if not os.path.exists(path_device_csr):
-        raise FileNotFoundError('Certificate signing request cannot be found at ' + path_device_csr)
-
-    path_device_cert = pathlib.Path(os.path.splitext(path_device_csr)[0] + '.crt')
-
-    # Load certificate signing request
-    with open(path_device_csr, 'rb') as f:
-        csr = x509.load_pem_x509_csr(f.read())
-
-    # Load private key and certificate of the authority.
-    with open(path_auth_key, 'rb') as f:
-        authority_key = primitives.serialization.load_pem_private_key(f.read(), password=None)
-    
-    with open(path_auth_cert, 'rb') as f:
-        authority_cert = x509.load_pem_x509_certificate(f.read())
 
     # Check the validity of the higher authority.
     # Note: if there is a revocation list, it should be also checked if the certificate is revoked or not.
-    if datetime.datetime.utcnow() < authority_cert.not_valid_before or authority_cert.not_valid_after < datetime.datetime.utcnow():
-        raise Exception('The validity period of ' + path_auth_cert + ' has expired.')
-    
+    now = datetime.datetime.now(datetime.UTC)
+    if now < authority_cert.not_valid_before_utc or authority_cert.not_valid_after_utc < now:
+        raise Exception('The validity period of the CA has expired.')
+
     # Check if the CSR signature is valid
     if not csr.is_signature_valid:
         raise Exception('Invalid CSR signature!')
-    
-    # Create a new certificate from the CSR.
-    cert = (
-        x509.CertificateBuilder()
-            .subject_name(csr.subject)
-            .issuer_name(authority_cert.issuer)
-            .public_key(csr.public_key())
-            .serial_number(x509.random_serial_number())
-            .not_valid_before(datetime.datetime.utcnow())
-            .not_valid_after(datetime.datetime.utcnow() + datetime.timedelta(validity))
-    )
 
-    # Add requested extensions
+    # Create a new certificate from the CSR.
+    cert = (x509.CertificateBuilder()
+        .subject_name(csr.subject)
+        .issuer_name(authority_cert.subject)
+        .public_key(csr.public_key())
+        .serial_number(generate_serial_number(path_auth_database))
+        .not_valid_before(now)
+        .not_valid_after(now + datetime.timedelta(days=validity)))
+
+    # Device certificates should not act as intermediate certificates (authorities)
+    cert = cert.add_extension(x509.BasicConstraints(ca=False, path_length=None), True)
+
+    # Add other extensions from the CSR
     for ext in csr.extensions:
-        cert = cert.add_extension(ext.value, ext.critical)
-    
+        if ext.value.oid != x509.BasicConstraints.oid:
+            cert = cert.add_extension(ext.value, ext.critical)
+
     # Sign certificate with the private key of the authority.
     cert = cert.sign(authority_key, csr.signature_hash_algorithm)
 
@@ -284,38 +235,70 @@ def sign_csr(path_auth_dir, path_device_csr, validity):
     authority_cert.public_key().verify(cert.signature,
                                        cert.tbs_certificate_bytes,
                                        primitives.asymmetric.ec.ECDSA(csr.signature_hash_algorithm))
-    
-    # Write the signed certificate to file in PEM format.
-    with open(path_device_cert, 'wb') as f:
-        f.write(cert.public_bytes(primitives.serialization.Encoding.PEM))
-    
-    print('Signing completed.\n' + str(path_device_cert) + ' created.\n\n')
-    return path_device_cert
 
-def convert_crt(path_pem):
-    '''Make a copy of a PEM certificate file in DER format.
+    # Check if the public key can be used for key agreement (needed for secure pairing).
+    if cert.extensions.get_extension_for_class(x509.KeyUsage).value.key_agreement != True:
+        raise Exception("KeyUsage key_agreement should be set to True!")
 
-    Keyword arguments:
-    path_pem -- Path to the certificate file in PEM format.
+    add_certificate_to_database(cert, path_auth_database)
+    return cert
+
+def generate_serial_number(path_database):
+    ''' Generate a unique serial number which is not present in the database.
+
+    Keyword arguments
+    path_database -- Path to the database file.
     Return values:
-    path_der -- Path to the formatted certificate file.
+    The serial number.
     '''
-    # Check input
-    if not os.path.exists(path_pem):
-        raise FileNotFoundError('Cannot find certificate file.')
+    try:
+        # Load file if present.
+        with open(path_database, mode="r", encoding="utf-8") as stream:
+            issued = yaml.safe_load(stream)
+    except:
+        # No database, return random.
+        return x509.random_serial_number()
 
-    # Load certificate
-    with open(path_pem, 'rb') as f:
-        crt = x509.load_pem_x509_certificate(f.read())
-    
-    # Write the certificate to file in DER format.
-    path_der = pathlib.Path(os.path.splitext(path_pem)[0] + '.der')
+    for _ in range(MAX_ITERATIONS):
+        serial = x509.random_serial_number()
+        if serial not in issued:
+            return serial
 
-    with open(path_der, 'wb') as f:
-        f.write(crt.public_bytes(primitives.serialization.Encoding.DER))
-    
-    print('Certificate converted from PEM to DER successfully. ' + str(path_der) + ' created.')
-    return path_der
+    raise RuntimeError("Failed to generate serial number. Max iteration reached:", MAX_ITERATIONS)
+
+def add_certificate_to_database(certificate, path_database):
+    ''' Update the list of the issued certificates.
+
+    Keyword arguments
+    certificate -- The certificate to add.
+    path_database -- Path to the database file.
+    '''
+    try:
+        # Load file if present.
+        with open(path_database, mode="r", encoding="utf-8") as stream:
+            issued = yaml.safe_load(stream)
+    except:
+        issued = {}
+
+    # Check if entry with the same serial exists.
+    if certificate.serial_number in issued:
+        raise ValueError("Database already contains a certificate with the same serial number:", certificate.serial_number)
+
+    # Create new entry.
+    issued[certificate.serial_number] = \
+        [{"common_name": certificate.subject.get_attributes_for_oid(x509.oid.NameOID.COMMON_NAME)[0].value},
+         {"public_key": certificate.public_key().public_bytes(primitives.serialization.Encoding.DER, primitives.serialization.PublicFormat.SubjectPublicKeyInfo)},
+         {"CA": certificate.extensions.get_extension_for_class(x509.BasicConstraints).value.ca}]
+
+    with open(path_database, mode = "w", encoding="utf8") as stream:
+        # Write back the updated database to file.
+        yaml.dump(issued, stream, default_flow_style=False, allow_unicode=True)
+
+    # Save the signed certificate to file in PEM format.
+    path_cert_pem = os.path.abspath(os.path.join(os.path.join(path_database, '..'), str(certificate.serial_number) + '.crt'))
+    with open(path_cert_pem, 'wb') as f:
+        f.write(certificate.public_bytes(primitives.serialization.Encoding.PEM))
+    print('Signing completed. Certificate is stored in:', path_cert_pem)
 
 def dump_nvm3(path_dir):
     '''Retrieve NVM3 content in s37 format.
@@ -323,75 +306,63 @@ def dump_nvm3(path_dir):
     Keyword arguments:
     path_dir -- Path to working directory where the NVM3 image file shall be created.
     Return values:
-    path_nvm3_dump -- Path to the NVM3 image file.
+    Path to the NVM3 image file.
     '''
     path_nvm3_dump = os.path.join(path_dir, 'nvm3_dump.s37')
 
     # Remove temp file if exist
     if os.path.exists(path_nvm3_dump):
-        print(path_nvm3_dump + ' already exists. Removing.\n')
+        print(path_nvm3_dump, 'already exists. Removing.')
         os.remove(path_nvm3_dump)
-    
+
     # Search for the NVM3 area in the device's flash and dump the content to file.
     subprocess_call(('commander nvm3 read ' + device_argument() + ' -o ' + path_nvm3_dump).split())
-    print('NVM3 dumped to ' + str(path_nvm3_dump))
     return path_nvm3_dump
 
-def patch_nvm3(path_nvm3_dump, path_data, nvm3_start_key, nvm3_object_size):
+def patch_nvm3(path_nvm3_dump, data, nvm3_start_key, nvm3_object_size):
     '''Create an NVM3 patch file containing the given data and apply on the NVM3 image.
 
     Keyword arguments:
     path_nvm3_dump -- Path to the NVM3 image.
-    path_data -- A binary file. The data of this file will be added to the NVM3 image.
+    data -- The data to add to the NVM3 image.
     nvm3_start_key -- NVM3 objects will be created or overwritten starting from this key.
     nvm3_object_size -- The size of each NVM3 object data.
     '''
 
+    # Temporary file to help patching the NVM3 dump file.
     path_nvm3_patch = str(pathlib.Path(os.path.splitext(path_nvm3_dump)[0] + '.patch'))
-    nvm3_key = nvm3_start_key
-
-    with open(path_data, 'rb') as f:
-        crt = f.read()
 
     # Create patch file
     with open(path_nvm3_patch, 'w') as f:
+        nvm3_key = nvm3_start_key
+
         while nvm3_key != 0:
             # Select next chunk.
-            if len(crt) >= nvm3_object_size:
+            if len(data) >= nvm3_object_size:
                 length = nvm3_object_size
             else:
-                length = len(crt)
+                length = len(data)
 
-            chunk = crt[:length]
-            crt = crt[length:]
+            chunk = data[:length]
+            data = data[length:]
 
-            if len(crt) > 0:
+            if len(data) > 0:
                 next_nvm3_key = nvm3_key + 1
                 header = 0x0001 | 2 | next_nvm3_key << 2
             else: # The last chunk is being processed.
                 next_nvm3_key = 0
                 header = 0x0001
-            
+
             # Construct next line and write to file.
             key = NVM3_CONTROL_BLOCK_KEY[args.protocol] | nvm3_key # Add key prefix.
-            data = struct.pack(f'<HHH', header, 0x0001, length) + chunk # Pack data chunk.
-            f.write(hex(key) + ' : OBJ : ' + binascii.hexlify(data).decode('utf-8') + '\n') # <key>:<type>:<data>
+            data_chunk = struct.pack(f'<HHH', header, 0x0001, length) + chunk # Pack data chunk.
+            f.write(hex(key) + ' : OBJ : ' + binascii.hexlify(data_chunk).decode('utf-8') + '\n') # <key>:<type>:<data>
 
             nvm3_key = next_nvm3_key
 
     # Apply patch
     subprocess_call(['commander', 'nvm3', 'set', path_nvm3_dump, '--nvm3file', path_nvm3_patch, '--outfile', path_nvm3_dump])
-    print(str(path_nvm3_dump) + ' patched successfully.')
     os.remove(path_nvm3_patch)
-
-def flash_nvm3(path_nvm3_dump):
-    '''Flash NVM3 content.
-
-    Keyword arguments:
-    path_nvm3_dump -- Path to the NVM3 image.
-    '''
-    subprocess_call(('commander flash ' + path_nvm3_dump + ' ' + device_argument()).split())
-    print('The device is updated with the new Flash image.')
 
 class ControlBlock():
     def __init__(self, path_nvm3_dump):
@@ -405,7 +376,7 @@ class ControlBlock():
         nvm3_object = self.get_nvm3_object(path_nvm3_dump)
         self.parse_data(nvm3_object)
         self.validate()
-    
+
     def get_nvm3_object(self, path_nvm3_dump):
         # Read NVM3 object from the NVM3 image that belongs to the control block key.
         cmd = ('commander nvm3 parse ' + path_nvm3_dump + ' --key ' + str(NVM3_CONTROL_BLOCK_KEY[args.protocol])).split()
@@ -418,9 +389,8 @@ class ControlBlock():
             raise Exception('NVM3 range cannot be found.')
 
         self.key = key[0]
-        print('Control Block found at ' + self.key)
         return nvm3_object
-    
+
     def parse_data(self, nvm3_object):
         # Get raw bytes of the Control Block.
         data = ''
@@ -443,48 +413,35 @@ class ControlBlock():
         self.version = self.header & 0xf000 # Upper 4 bits of the header contain version number. Other bits are reserved for future use.
         self.next_control_block |= NVM3_CONTROL_BLOCK_KEY[args.protocol] & 0xF0000 # Only stored on two bytes. Adding prefix.
 
+        print(f'Control Block retrieved from device NVM3 ({self.key}).')
+        print('\tVersion:', self.version)
+        print('\tHeader:', hex(self.header))
+        print('\tMaximum link data length:', self.max_link_data_len)
+        print('\tNext Control Block:', hex(self.next_control_block))
+
         # Inspect bitmap.
-        print('Bitmap: ', bin(bitmap))
+        print(f'\tConfiguration: {format(bitmap, "#06b")}')
 
-        if bitmap & (1 << CERTIFICATE_ON_DEVICE_BIT):
-            self.certificate_on_device = True
-            print('\tCertificate on device is required. NVM3 key: '
-                  + hex(self.nvm3_key[CERTIFICATE_ON_DEVICE_BIT]))
-        else:
-            self.certificate_on_device = False
-            print('\tCertificate on device is not required.')
-        
-        if bitmap & (1 << DEVICE_EC_KEY_BIT):
-            self.device_ec_key_present = True
-            print('\tEC key pair is present.')
-        else:
-            self.device_ec_key_present = False
-            print('\tEC key pair is missing.')
+        self.certificate_on_device = bool(bitmap & (1 << CERTIFICATE_ON_DEVICE_BIT))
+        print('\t\tCertificate on device required:', self.certificate_on_device)
 
-        if bitmap & (1 << STATIC_AUTH_DATA_BIT):
-            self.static_auth_present = True
-            print('\tStatic Authentication data is present.')
-        else:
-            self.static_auth_present = False
-            print('\tStatic Authentication data is not present.')
-        
-        print('Maximum link data length: ', self.max_link_data_len)
+        self.device_ec_key_present = bool(bitmap & (1 << DEVICE_EC_KEY_BIT))
+        print('\t\tEC key pair present:', self.device_ec_key_present)
+
+        self.static_auth_present = bool(bitmap & (1 << STATIC_AUTH_DATA_BIT))
+        print('\t\tStatic Authentication data present:', self.static_auth_present, os.linesep)
 
     def validate(self):
         # Expecting zero as the version number.
         if self.version != 0:
-            raise Exception('Invalid Control Block! Version: ', self.version, '. Zero is expected.')
-        else:
-            print('Header: ', hex(self.header), '. Version: ', self.version)
-        
+            raise Exception('Invalid Control Block! Version: ', self.version, '. "0" is expected.')
+
         # Expecting only one control block. Therefore it should point onto itself.
         if self.next_control_block != NVM3_CONTROL_BLOCK_KEY[args.protocol]:
             raise Exception('Invalid Control Block! Next Control Block NVM3 key: ',
                             hex(self.next_control_block), '. ',
                             hex(NVM3_CONTROL_BLOCK_KEY[args.protocol]), ' is expected.')
-        else:
-            print('Next Control Block: ', hex(self.next_control_block), '\n\n')
-        
+
         # Check the security of NVM3 ITS data.
         if self.device_ec_key_present and self.nvm3_key[DEVICE_EC_KEY_BIT] != 0:
             raise Exception('EC key pair is exposed. Any data stored in ITS should not be accessible!')
@@ -531,11 +488,10 @@ def load_args():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=CustomFormatter)
 
-    parser.epilog = (
-        'examples:\n'
-        '  %(prog)s                     Try to autodetect device.\n'
-        '  %(prog)s --serial 440192051  Connect to device with the given J-Link serial.\n'
-        '  %(prog)s --ip 192.168.0.143  Connect to device with the given IP address.')
+    parser.epilog = (f'examples:{os.linesep}'
+                     f'\t%(prog)s                     Try to autodetect device.{os.linesep}'
+                     f'\t%(prog)s --serial 440192051  Connect to device with the given J-Link serial.{os.linesep}'
+                     f'\t%(prog)s --ip 192.168.0.143  Connect to device with the given IP address.')
 
     parser.add_argument('-l', '--level',
                         default='0',

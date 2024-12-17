@@ -30,6 +30,7 @@
 
 #include "sl_atomic.h"
 #include "sli_cpc.h"
+#include "sli_cpc_assert.h"
 #include "sli_cpc_instance.h"
 
 /***************************************************************************//**
@@ -38,7 +39,7 @@
 void sli_cpc_dispatcher_init_handle(sl_cpc_dispatcher_handle_t *handle,
                                     sli_cpc_instance_t *inst)
 {
-  EFM_ASSERT(handle != NULL);
+  SLI_CPC_ASSERT(handle != NULL);
 
   handle->submitted = false;
   handle->fnct = NULL;
@@ -66,7 +67,7 @@ sl_status_t sli_cpc_dispatcher_push(sl_cpc_dispatcher_handle_t *handle,
   handle->data = data;
   sl_slist_push_back(&handle->instance->process_queue, &handle->node);
 
-  EFM_ASSERT(handle->instance->event_counter < 255);
+  SLI_CPC_ASSERT(handle->instance->event_counter < 255);
   ++handle->instance->event_counter;
 
   handle->submitted = true;
@@ -89,7 +90,7 @@ void sli_cpc_dispatcher_cancel(sl_cpc_dispatcher_handle_t *handle)
   if (handle->submitted) {
     sl_slist_remove(&handle->instance->process_queue, &handle->node);
 
-    EFM_ASSERT(handle->instance->event_counter > 0);
+    SLI_CPC_ASSERT(handle->instance->event_counter > 0);
     --handle->instance->event_counter;
 
     handle->submitted = false;
@@ -116,7 +117,7 @@ void sli_cpc_dispatcher_process(sli_cpc_instance_t *inst)
     MCU_ATOMIC_SECTION(node = sl_slist_pop(&inst->process_queue); );
     if (node != NULL) {
       handle = SL_SLIST_ENTRY(node, sl_cpc_dispatcher_handle_t, node);
-      EFM_ASSERT(handle->instance == inst);
+      SLI_CPC_ASSERT(handle->instance == inst);
 
       handle->submitted = false;
       handle->fnct(handle->data);

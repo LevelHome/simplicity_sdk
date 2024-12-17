@@ -20,10 +20,10 @@ requires:
   - name: app_timer
   - name: app_scheduler_memory
   - name: slist
+  - name: sl_core
 
 recommends:
   - id: app_scheduler_memory_static
-  - id: app_timer
 
 root_path: app/common/util/app_scheduler
 

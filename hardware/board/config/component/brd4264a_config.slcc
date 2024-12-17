@@ -173,17 +173,101 @@
   - condition:
     - brd4001a
     override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_3
+    path: brd4264a_brd4001a/sl_emlib_gpio_init_exp_3_config.h
+  - condition:
+    - brd4001a
+    override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_4
+    path: brd4264a_brd4001a/sl_emlib_gpio_init_exp_4_config.h
+  - condition:
+    - brd4001a
+    override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_5
+    path: brd4264a_brd4001a/sl_emlib_gpio_init_exp_5_config.h
+  - condition:
+    - brd4001a
+    override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_6
+    path: brd4264a_brd4001a/sl_emlib_gpio_init_exp_6_config.h
+  - condition:
+    - brd4001a
+    override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_7
+    path: brd4264a_brd4001a/sl_emlib_gpio_init_exp_7_config.h
+  - condition:
+    - brd4001a
+    override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_8
+    path: brd4264a_brd4001a/sl_emlib_gpio_init_exp_8_config.h
+  - condition:
+    - brd4001a
+    override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_9
+    path: brd4264a_brd4001a/sl_emlib_gpio_init_exp_9_config.h
+  - condition:
+    - brd4001a
+    override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_10
+    path: brd4264a_brd4001a/sl_emlib_gpio_init_exp_10_config.h
+  - condition:
+    - brd4001a
+    override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_11
+    path: brd4264a_brd4001a/sl_emlib_gpio_init_exp_11_config.h
+  - condition:
+    - brd4001a
+    override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_12
+    path: brd4264a_brd4001a/sl_emlib_gpio_init_exp_12_config.h
+  - condition:
+    - brd4001a
+    override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_14
+    path: brd4264a_brd4001a/sl_emlib_gpio_init_exp_14_config.h
+  - condition:
+    - brd4001a
+    override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_15
+    path: brd4264a_brd4001a/sl_emlib_gpio_init_exp_15_config.h
+  - condition:
+    - brd4001a
+    override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_16
+    path: brd4264a_brd4001a/sl_emlib_gpio_init_exp_16_config.h
+  - condition:
+    - brd4001a
+    override:
       component: i2cspm
       file_id: i2cspm_config
       instance: sensor
     path: brd4264a_brd4001a/sl_i2cspm_sensor_config.h
-  - condition:
-    - brd4001a
-    override:
-      component: iostream_eusart
-      file_id: iostream_eusart_config
-      instance: vcom
-    path: brd4264a_brd4001a/sl_iostream_eusart_vcom_config.h
   - condition:
     - brd4001a
     override:
@@ -194,10 +278,10 @@
   - condition:
     - brd4001a
     override:
-      component: iostream_usart
-      file_id: iostream_usart_config
+      component: iostream_eusart
+      file_id: iostream_eusart_config
       instance: vcom
-    path: brd4264a_brd4001a/sl_iostream_usart_vcom_config.h
+    path: brd4264a_brd4001a/sl_iostream_eusart_vcom_config.h
   - condition:
     - brd4001a
     override:
@@ -205,6 +289,13 @@
       file_id: iostream_usart_config
       instance: exp
     path: brd4264a_brd4001a/sl_iostream_usart_exp_config.h
+  - condition:
+    - brd4001a
+    override:
+      component: iostream_usart
+      file_id: iostream_usart_config
+      instance: vcom
+    path: brd4264a_brd4001a/sl_iostream_usart_vcom_config.h
   - condition:
     - brd4001a
     override:
@@ -419,22 +510,15 @@
     override:
       component: uartdrv_eusart
       file_id: uartdrv_eusart_config
-      instance: vcom
-    path: brd4264a_brd4001a/sl_uartdrv_eusart_vcom_config.h
-  - condition:
-    - brd4001a
-    override:
-      component: uartdrv_eusart
-      file_id: uartdrv_eusart_config
       instance: exp
     path: brd4264a_brd4001a/sl_uartdrv_eusart_exp_config.h
   - condition:
     - brd4001a
     override:
-      component: uartdrv_usart
-      file_id: uartdrv_usart_config
+      component: uartdrv_eusart
+      file_id: uartdrv_eusart_config
       instance: vcom
-    path: brd4264a_brd4001a/sl_uartdrv_usart_vcom_config.h
+    path: brd4264a_brd4001a/sl_uartdrv_eusart_vcom_config.h
   - condition:
     - brd4001a
     override:
@@ -442,6 +526,13 @@
       file_id: uartdrv_usart_config
       instance: exp
     path: brd4264a_brd4001a/sl_uartdrv_usart_exp_config.h
+  - condition:
+    - brd4001a
+    override:
+      component: uartdrv_usart
+      file_id: uartdrv_usart_config
+      instance: vcom
+    path: brd4264a_brd4001a/sl_uartdrv_usart_vcom_config.h
   - condition:
     - brd4002a
     override:
@@ -587,17 +678,101 @@
   - condition:
     - brd4002a
     override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_3
+    path: brd4264a_brd4002a/sl_emlib_gpio_init_exp_3_config.h
+  - condition:
+    - brd4002a
+    override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_4
+    path: brd4264a_brd4002a/sl_emlib_gpio_init_exp_4_config.h
+  - condition:
+    - brd4002a
+    override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_5
+    path: brd4264a_brd4002a/sl_emlib_gpio_init_exp_5_config.h
+  - condition:
+    - brd4002a
+    override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_6
+    path: brd4264a_brd4002a/sl_emlib_gpio_init_exp_6_config.h
+  - condition:
+    - brd4002a
+    override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_7
+    path: brd4264a_brd4002a/sl_emlib_gpio_init_exp_7_config.h
+  - condition:
+    - brd4002a
+    override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_8
+    path: brd4264a_brd4002a/sl_emlib_gpio_init_exp_8_config.h
+  - condition:
+    - brd4002a
+    override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_9
+    path: brd4264a_brd4002a/sl_emlib_gpio_init_exp_9_config.h
+  - condition:
+    - brd4002a
+    override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_10
+    path: brd4264a_brd4002a/sl_emlib_gpio_init_exp_10_config.h
+  - condition:
+    - brd4002a
+    override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_11
+    path: brd4264a_brd4002a/sl_emlib_gpio_init_exp_11_config.h
+  - condition:
+    - brd4002a
+    override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_12
+    path: brd4264a_brd4002a/sl_emlib_gpio_init_exp_12_config.h
+  - condition:
+    - brd4002a
+    override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_14
+    path: brd4264a_brd4002a/sl_emlib_gpio_init_exp_14_config.h
+  - condition:
+    - brd4002a
+    override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_15
+    path: brd4264a_brd4002a/sl_emlib_gpio_init_exp_15_config.h
+  - condition:
+    - brd4002a
+    override:
+      component: emlib_gpio_simple_init
+      file_id: emlib_gpio_simple_init_config_file_id
+      instance: exp_16
+    path: brd4264a_brd4002a/sl_emlib_gpio_init_exp_16_config.h
+  - condition:
+    - brd4002a
+    override:
       component: i2cspm
       file_id: i2cspm_config
       instance: sensor
     path: brd4264a_brd4002a/sl_i2cspm_sensor_config.h
-  - condition:
-    - brd4002a
-    override:
-      component: iostream_eusart
-      file_id: iostream_eusart_config
-      instance: vcom
-    path: brd4264a_brd4002a/sl_iostream_eusart_vcom_config.h
   - condition:
     - brd4002a
     override:
@@ -608,10 +783,10 @@
   - condition:
     - brd4002a
     override:
-      component: iostream_usart
-      file_id: iostream_usart_config
+      component: iostream_eusart
+      file_id: iostream_eusart_config
       instance: vcom
-    path: brd4264a_brd4002a/sl_iostream_usart_vcom_config.h
+    path: brd4264a_brd4002a/sl_iostream_eusart_vcom_config.h
   - condition:
     - brd4002a
     override:
@@ -619,6 +794,13 @@
       file_id: iostream_usart_config
       instance: exp
     path: brd4264a_brd4002a/sl_iostream_usart_exp_config.h
+  - condition:
+    - brd4002a
+    override:
+      component: iostream_usart
+      file_id: iostream_usart_config
+      instance: vcom
+    path: brd4264a_brd4002a/sl_iostream_usart_vcom_config.h
   - condition:
     - brd4002a
     override:
@@ -833,22 +1015,15 @@
     override:
       component: uartdrv_eusart
       file_id: uartdrv_eusart_config
-      instance: vcom
-    path: brd4264a_brd4002a/sl_uartdrv_eusart_vcom_config.h
-  - condition:
-    - brd4002a
-    override:
-      component: uartdrv_eusart
-      file_id: uartdrv_eusart_config
       instance: exp
     path: brd4264a_brd4002a/sl_uartdrv_eusart_exp_config.h
   - condition:
     - brd4002a
     override:
-      component: uartdrv_usart
-      file_id: uartdrv_usart_config
+      component: uartdrv_eusart
+      file_id: uartdrv_eusart_config
       instance: vcom
-    path: brd4264a_brd4002a/sl_uartdrv_usart_vcom_config.h
+    path: brd4264a_brd4002a/sl_uartdrv_eusart_vcom_config.h
   - condition:
     - brd4002a
     override:
@@ -856,3 +1031,10 @@
       file_id: uartdrv_usart_config
       instance: exp
     path: brd4264a_brd4002a/sl_uartdrv_usart_exp_config.h
+  - condition:
+    - brd4002a
+    override:
+      component: uartdrv_usart
+      file_id: uartdrv_usart_config
+      instance: vcom
+    path: brd4264a_brd4002a/sl_uartdrv_usart_vcom_config.h

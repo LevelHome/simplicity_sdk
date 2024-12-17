@@ -11,7 +11,7 @@ from enum import IntEnum
 import itertools
 
 # Update kRAILVersion to be used in phyInfoData.
-kRAILVersion = 17
+kRAILVersion = 18
 
 class ConcPhyEnum(IntEnum):
   CONC_PHY_NONE = 0
@@ -71,7 +71,8 @@ class RAILAdapter_MultiPhy(RAILAdapter):
       self.rail_version= int(re_match.group(1))
     else:
       raise Exception("Unknown RAIL Adapter name: {}".format(adapter_name))
-    with open(os.path.join(RAILAdapter.current_dir,"rail_model_multi_phy.yml")) as f:
+    rail_model_file = "rail_model_multi_phy_{}x.yml".format(self.rail_version)
+    with open(os.path.join(RAILAdapter.current_dir, rail_model_file)) as f:
       self.yamlobject = None
       if hasattr(yaml, 'FullLoader'):
         self.yamlobject = yaml.load(f.read(), Loader=yaml.FullLoader)
@@ -81,22 +82,7 @@ class RAILAdapter_MultiPhy(RAILAdapter):
     self._railModelPopulated = False
 
     # Store the register bases in self._regBases
-    family = kwargs['mphyConfig'].get_part_family().lower()
-    if family in ["panther", "lynx", "ocelot", "bobcat", "leopard", "margay","caracal"]:
-      regBases = self._REG_BASES_EFR32XG2x
-    elif family in ["sol"]:
-      regBases = self._REG_BASES_EFR32XG25
-    elif family in ["rainier"]:
-      regBases = self._REG_BASES_SIXG301
-    else:
-      regBases = self._REG_BASES
-
-    maxNumRegBases = self._MAX_NUM_REG_BASES_SOL if family in ["sol"] else self._MAX_NUM_REG_BASES
-    if len(regBases) > maxNumRegBases:
-      raise Exception(("Number of register bases ({}) exceeds maximum allowed "
-                       "value ({}) for {}").format(len(regBases), maxNumRegBases, family))
-
-    self._regBases = {key:val for val,key in enumerate(regBases)}
+    self._getRegBasesFromFamily(kwargs['mphyConfig'].get_part_family().lower())
 
   def _encodeAction(self, modemConfig, address, length, values=[], names=[], debug_print=False):
     # Get address for protected field regs on the current chip
@@ -143,6 +129,10 @@ class RAILAdapter_MultiPhy(RAILAdapter):
         except:
           print("Unable to encode {} at address 0x{:8X}.  Check mapping!".format(currentNames[0], currentAddress))
           exit(1)
+
+        if self.rail_version >= 3:
+          newModemConfigEntry.length.value = 1 + len(currentValues)
+
         firstValue = currentValues[0]
         firstName = currentNames[0]
         newModemConfigEntry.encodedAction.value = encodedAddress
@@ -172,6 +162,8 @@ class RAILAdapter_MultiPhy(RAILAdapter):
             newModemConfigEntry.encodedAction.value = encodedAddress
             newModemConfigEntry.encodedValues.value = [protectionMask]
             newModemConfigEntry.encodedRegNames.value = ["AND: " + names[currentLength]]
+            if self.rail_version >= 3:
+              newModemConfigEntry.length.value = 2
             if debug_print:
               print("AND with %08x" % newModemConfigEntry.encodedValues.value[0])
 
@@ -182,6 +174,8 @@ class RAILAdapter_MultiPhy(RAILAdapter):
             newModemConfigEntry.encodedAction.value = encodedAddress
             newModemConfigEntry.encodedValues.value = [values[currentLength] & ~protectionMask]
             newModemConfigEntry.encodedRegNames.value = ["OR: " + names[currentLength]]
+            if self.rail_version >= 3:
+              newModemConfigEntry.length.value = 2
             if debug_print:
               print("OR with %08x" % newModemConfigEntry.encodedValues.value[0])
 
@@ -406,15 +400,24 @@ class RAILAdapter_MultiPhy(RAILAdapter):
       # Create a new modemConfig element, and grab appropriate references based on
       # whether this is a regular or subtract node.
       if base == True:
-        newModemConfig = self.railModel.multiPhyConfig.commonStructures.modemConfigEntriesBase.newElement(configName + "_modemConfigBase")
+        if self.rail_version >= 3:
+          newModemConfig = self.railModel.multiPhyConfig.commonStructures.modemConfigEntriesBase.newElement(configName + "_modem_config_base")
+        else:
+          newModemConfig = self.railModel.multiPhyConfig.commonStructures.modemConfigEntriesBase.newElement(configName + "_modemConfigBase")
         currentModemConfigs = self.railModel.multiPhyConfig.commonStructures.modemConfigEntriesBase
         currentPhyConfigEntryModemConfigEntry = phyConfigEntry.modemConfigEntryBase
       elif subtract == True:
-        newModemConfig = self.railModel.multiPhyConfig.commonStructures.modemConfigEntriesSubtract.newElement(configName + "_modemConfigSubtract")
+        if self.rail_version >= 3:
+          newModemConfig = self.railModel.multiPhyConfig.commonStructures.modemConfigEntriesSubtract.newElement(configName + "_modem_config_subtract")
+        else:
+          newModemConfig = self.railModel.multiPhyConfig.commonStructures.modemConfigEntriesSubtract.newElement(configName + "_modemConfigSubtract")
         currentModemConfigs = self.railModel.multiPhyConfig.commonStructures.modemConfigEntriesSubtract
         currentPhyConfigEntryModemConfigEntry = phyConfigEntry.modemConfigEntrySubtract
       else:
-        newModemConfig = self.railModel.multiPhyConfig.commonStructures.modemConfigEntries.newElement(phyConfigEntry.name + "_modemConfig")
+        if self.rail_version >= 3:
+          newModemConfig = self.railModel.multiPhyConfig.commonStructures.modemConfigEntries.newElement(phyConfigEntry.name + "_modem_config")
+        else:
+          newModemConfig = self.railModel.multiPhyConfig.commonStructures.modemConfigEntries.newElement(phyConfigEntry.name + "_modemConfig")
         currentModemConfigs = self.railModel.multiPhyConfig.commonStructures.modemConfigEntries
         currentPhyConfigEntryModemConfigEntry = phyConfigEntry.modemConfigEntry
 
@@ -431,7 +434,7 @@ class RAILAdapter_MultiPhy(RAILAdapter):
             length = 1
             values = [registerValue]
             names = [registerName]
-        else: 
+        else:
           # for PTE output
           # All address will be printed out after removing duplication
           if registerAddress == currentAddress:
@@ -519,7 +522,8 @@ class RAILAdapter_MultiPhy(RAILAdapter):
           chBchArray = None
           if getattr(radioConfigModel.profile.outputs, 'bch_lut_data', None):
             chBchArray = radioConfigModel.profile.outputs.get_output('bch_lut_data').var_value
-          if getattr(radioConfigModel.profile.outputs, 'frame_coding_array_packed', None):
+          chFrameCodingArray = getattr(radioConfigModel.profile.outputs, 'frame_coding_array_packed', None)
+          if chFrameCodingArray is not None:
             chFrameCodingArray = radioConfigModel.profile.outputs.get_output('frame_coding_array_packed').var_value
 
           # Check if FEC is enabled on any channel config entry related to refConfigName
@@ -615,13 +619,24 @@ class RAILAdapter_MultiPhy(RAILAdapter):
     antDivConfiguration |= (antDivMode << self.rm.MODEM.CTRL3.ANTDIVMODE.bitOffset)
     antDivConfiguration |= (antDivRepeatDisable << self.rm.MODEM.CTRL3.ANTDIVREPEATDIS.bitOffset)
 
+    # FSW Rx antenna diversity config is stored on the 16 LSB
+    # OFDM Rx antenna diversity config is stored on the 16 MSB
+    if hasattr(model.vars, 'softmodem_antdivmode'):
+      assert self.rm.MODEM.CTRL3.ANTDIVREPEATDIS.bitOffset < 16, ('ANTDIVREPEATDIS shift is too big to store ofdm ant div'
+                                                                  ' in the same word')
+      # Store ofdm antdiv mode in the 16 upper bits in the phyInfo and keeping virtual register mapping
+      antDivConfiguration |= model.vars.softmodem_antdivmode.value << (self.rm.SUNOFDM.ANT.ANTSEL.bitOffset + 16)
+
     # Create a new phyInfo element
-    newPhyInfoEntry = self.railModel.multiPhyConfig.commonStructures.phyInfoEntries.newElement("phyInfo")
+    if self.rail_version >= 3:
+      newPhyInfoEntry = self.railModel.multiPhyConfig.commonStructures.phyInfoEntries.newElement("phy_info")
+    else:
+      newPhyInfoEntry = self.railModel.multiPhyConfig.commonStructures.phyInfoEntries.newElement("phyInfo")
     data = newPhyInfoEntry.phyInfoData
 
     data.version.value = 0 if self.rail_version == 1 else kRAILVersion
     data.freqOffsetFactor.value = outputs.get_output('frequency_offset_factor').var_value
-    data.freqOffsetFactor_fxp.value = int(outputs.get_output('frequency_offset_factor_fxp').var_value or 0)
+    data.freqOffsetFactor_fxp.value = (outputs.get_output('frequency_offset_factor_fxp').var_value or 0)
     data.frameTypeConfig.value = phyConfigEntry.frameTypeEntry.value
     data.irCalConfig.value = phyConfigEntry.irCalConfigEntry.value
     data.timingConfig.value = phyConfigEntry.timingConfigEntry.value
@@ -636,7 +651,7 @@ class RAILAdapter_MultiPhy(RAILAdapter):
     if phyConfigEntry.modemTxCompensation.value is not None:
       data.modemTxCompensation.value = phyConfigEntry.modemTxCompensation.value
     if getattr(outputs, 'rssi_adjust_db', None) != None:
-      rssiAdjustDb = int(outputs.get_output('rssi_adjust_db').var_value)
+      rssiAdjustDb = round(outputs.get_output('rssi_adjust_db').var_value)
     else:
       rssiAdjustDb = 0
 
@@ -644,41 +659,48 @@ class RAILAdapter_MultiPhy(RAILAdapter):
     if self.partFamily.lower() in [ "ocelot", "margay" ]:
       # The ADCDIV will take the place of the deprecated SRC1 field for Ocelot and Margay to resolve
       # the bug causing RAIL_LIB-9898.
-      adcDiv = model.vars.adc_vco_div_actual.value
-      data.src1Denominator.value = int(adcDiv)
+      data.src1Denominator.value = model.vars.adc_vco_div_actual.value
     else:
-      data.src1Denominator.value = int(outputs.get_output('src1_calcDenominator').var_value or 0)
-    data.src2Denominator.value = int(outputs.get_output('src2_calcDenominator').var_value or 0)
+      data.src1Denominator.value = (outputs.get_output('src1_calcDenominator').var_value or 0)
+    data.src2Denominator.value = (outputs.get_output('src2_calcDenominator').var_value or 0)
 
     modType = model.vars.modulation_type.value
     if hasattr(model.vars.modulation_type.var_enum, 'OFDM') and modType == model.vars.modulation_type.var_enum.OFDM:
       # In OFDM txBaudRate contains the symbol rate
-      data.txBaudRate.value = outputs.get_output('ofdm_symbol_rate').var_value
+      data.txBaudRate.value = round(outputs.get_output('ofdm_symbol_rate').var_value)
     else:
-      data.txBaudRate.value = outputs.get_output('tx_baud_rate_actual').var_value
+      data.txBaudRate.value = round(outputs.get_output('tx_baud_rate_actual').var_value)
 
-    data.rxBaudRate.value = model.vars.rx_baud_rate_actual.value #outputs.get_output('rx_baud_rate_actual').var_value
+    data.rxBaudRate.value = round(model.vars.rx_baud_rate_actual.value)
     data.baudPerSymbol.value = outputs.get_output('baud_per_symbol_actual').var_value
     data.bitsPerSymbol.value = outputs.get_output('bits_per_symbol_actual').var_value
-    data.synthCache.value = int(model.vars.SYNTH_IFFREQ_IFFREQ.value or 0) \
+    data.synthCache.value = (model.vars.SYNTH_IFFREQ_IFFREQ.value or 0) \
                             | (model.vars.lodiv_actual.value << 25)
-    data.zWaveChannelHopTiming.value = int(outputs.get_output('rx_ch_hopping_delay_usec').var_value or 0)
+    data.zWaveChannelHopTiming.value = (outputs.get_output('rx_ch_hopping_delay_usec').var_value or 0)
     data.rateInfo.value = (rssiAdjustDb & 0xFF) << 16 | data.baudPerSymbol.value << 8 | data.bitsPerSymbol.value
 
     if self.partFamily.lower() not in ["dumbo","jumbo","nerio","nixi"]:
       # Cap DEC0 at 3, since the decimation value for all values above 3 is 8.
       # Also don't use value 2, in case that's useful in the future
       DEC0_MAP = [0, 1, 1, 3, 3, 3, 3, 3]
-      cache40 = (model.vars.SYNTH_IFFREQ_LOSIDE.value << 20)            \
-                | (DEC0_MAP[int(model.vars.MODEM_CF_DEC0.value or 0)] << 22)
-      if ("MODEM_SRCCHF_BWSEL" in model.vars) and (model.vars.MODEM_SRCCHF_BWSEL.value is not None):
-        cache40 |= (int(model.vars.MODEM_SRCCHF_BWSEL.value >= 2) << 21)
-      if self.partFamily.lower() in ["rainier"]:
-        if "RAC_ADCCTRL1_ADCENHALFMODE" in model.vars:
-          cache40 |= model.vars.RAC_ADCCTRL1_ADCENHALFMODE.value << 24
+      cache40 = (model.vars.SYNTH_IFFREQ_LOSIDE.value << 20)
+
+      if hasattr(model.vars, "MODEM_CF_DEC0") and (model.vars.MODEM_CF_DEC0.value is not None):
+        cache40 |= (DEC0_MAP[int(model.vars.MODEM_CF_DEC0.value or 0)] << 22)
+      elif hasattr(model.vars, "FEFILT_CF_DEC0") and (model.vars.FEFILT_CF_DEC0.value is not None):
+        cache40 |= (DEC0_MAP[int(model.vars.FEFILT_CF_DEC0.value or 0)] << 22)
       else:
-        if "RAC_IFADCTRIM0_IFADCENHALFMODE" in model.vars:
-          cache40 |= model.vars.RAC_IFADCTRIM0_IFADCENHALFMODE.value << 24
+        pass
+
+      if hasattr(model.vars, "MODEM_SRCCHF_BWSEL") and (model.vars.MODEM_SRCCHF_BWSEL.value is not None):
+        cache40 |= (int(model.vars.MODEM_SRCCHF_BWSEL.value >= 2) << 21)
+
+      if hasattr(model.vars, "RAC_ADCCTRL1_ADCENHALFMODE") and (model.vars.RAC_ADCCTRL1_ADCENHALFMODE.value is not None):
+        cache40 |= model.vars.RAC_ADCCTRL1_ADCENHALFMODE.value << 24
+      elif hasattr(model.vars, "RAC_IFADCTRIM0_IFADCENHALFMODE") and (model.vars.RAC_IFADCTRIM0_IFADCENHALFMODE.value is not None):
+        cache40 |= model.vars.RAC_IFADCTRIM0_IFADCENHALFMODE.value << 24
+      else:
+        pass
       data.synthCache.value |= cache40
 
     am_low_ramplev = getattr(outputs, 'am_low_ramplev', None)
@@ -778,13 +800,19 @@ class RAILAdapter_MultiPhy(RAILAdapter):
           break
       if not entryFound:
         # Create a new frameLength entry in common structures
-        newFrameLengthEntry = commonStructures.frameLengthEntries.addNewElement("frameLengthList")
+        if self.rail_version >= 3:
+          newFrameLengthEntry = commonStructures.frameLengthEntries.addNewElement("frame_length_list")
+        else:
+          newFrameLengthEntry = commonStructures.frameLengthEntries.addNewElement("frameLengthList")
         newFrameLengthEntry.values = newFrameLength
         # Register the new entries with the current phyConfigEntry
         phyConfigEntry.frameLengthEntry.value = newFrameLengthEntry
 
       # Create new frameTypeConfig entry
-      newFrameTypeEntry = commonStructures.frameTypeEntries.newElement("frameTypeConfig")
+      if self.rail_version >= 3:
+        newFrameTypeEntry = commonStructures.frameTypeEntries.newElement("frame_type_config")
+      else:
+        newFrameTypeEntry = commonStructures.frameTypeEntries.newElement("frameTypeConfig")
       newFrameTypeEntry.offset.value = model.vars.frame_type_loc.value
       newFrameTypeEntry.mask.value = model.vars.frame_type_mask.value
       newFrameTypeEntry.frameLen.value = phyConfigEntry.frameLengthEntry
@@ -900,7 +928,10 @@ class RAILAdapter_MultiPhy(RAILAdapter):
       if (isBaseConfig):
         # for non-2.4Ghz, Create a new RAIL_ChannelConfigEntryAttr_t entry in
         # common structures, so each PHY has its own ircal coefficient
-        newRailChannelConfigEntryAttr = commonStructures.railChannelConfigEntryAttrEntries.addNewElement("channelConfigEntryAttr")
+        if self.rail_version >= 3:
+          newRailChannelConfigEntryAttr = commonStructures.railChannelConfigEntryAttrEntries.addNewElement("channel_config_entry_attr")
+        else:
+          newRailChannelConfigEntryAttr = commonStructures.railChannelConfigEntryAttrEntries.addNewElement("channelConfigEntryAttr")
         newRailChannelConfigEntryAttr.calValues.value = 2
         phyConfigEntry.channelConfigEntryAttr.value = newRailChannelConfigEntryAttr
       else:
@@ -918,12 +949,18 @@ class RAILAdapter_MultiPhy(RAILAdapter):
 
     if not entryFound:
       # Create a new irCalConfig entry in common structures
-      newIrCalConfigEntry = commonStructures.irCalConfigEntries.addNewElement("irCalConfig")
+      if self.rail_version >= 3:
+        newIrCalConfigEntry = commonStructures.irCalConfigEntries.addNewElement("ir_cal_config")
+      else:
+        newIrCalConfigEntry = commonStructures.irCalConfigEntries.addNewElement("irCalConfig")
       newIrCalConfigEntry.values = newIrCalConfig
       if legacyIrConfig is True:
         # Create a new RAIL_ChannelConfigEntryAttr_t entry in common structures
-        newRailChannelConfigEntryAttr = commonStructures.railChannelConfigEntryAttrEntries.addNewElement("channelConfigEntryAttr")
-        if (self.partFamily.lower() in ["dumbo","jumbo","nerio","nixi", "lynx", "leopard"]):
+        if self.rail_version >= 3:
+          newRailChannelConfigEntryAttr = commonStructures.railChannelConfigEntryAttrEntries.addNewElement("channel_config_entry_attr")
+        else:
+          newRailChannelConfigEntryAttr = commonStructures.railChannelConfigEntryAttrEntries.addNewElement("channelConfigEntryAttr")
+        if (self.partFamily.lower() in ["dumbo","jumbo","nerio","nixi", "lynx", "leopard", "lion"]):
           newRailChannelConfigEntryAttr.calValues.value = 1
         else:
           newRailChannelConfigEntryAttr.calValues.value = 2 #panther has 2 RF paths
@@ -960,7 +997,10 @@ class RAILAdapter_MultiPhy(RAILAdapter):
     if newtxIrCalConfig is not None:
       # If there is no txIRCAL config yet, then create one
       if phyConfigEntry.txIrCalConfigEntry.value == None or newTxIrCalBand:
-        newTxIrCalConfigEntry = commonStructures.txIrCalConfigEntries.addNewElement("txIrCalConfig")
+        if self.rail_version >= 3:
+          newTxIrCalConfigEntry = commonStructures.txIrCalConfigEntries.addNewElement("tx_ir_cal_config")
+        else:
+          newTxIrCalConfigEntry = commonStructures.txIrCalConfigEntries.addNewElement("txIrCalConfig")
         newTxIrCalConfigEntry.values = newtxIrCalConfig
         phyConfigEntry.txIrCalConfigEntry.value = newTxIrCalConfigEntry
 
@@ -983,7 +1023,10 @@ class RAILAdapter_MultiPhy(RAILAdapter):
 
         # If there is no compensation recorded yet, then create one
         if newCompensationArray:
-          newCompensationEntry = commonStructures.modemTxCompensationEntries.addNewElement("modemTxCompensation")
+          if self.rail_version >= 3:
+            newCompensationEntry = commonStructures.modemTxCompensationEntries.addNewElement("modem_tx_compensation")
+          else:
+            newCompensationEntry = commonStructures.modemTxCompensationEntries.addNewElement("modemTxCompensation")
           newCompensationEntry.values = newTxCompensation
           phyConfigEntry.modemTxCompensation.value = newCompensationEntry
 
@@ -993,7 +1036,7 @@ class RAILAdapter_MultiPhy(RAILAdapter):
     if (hasattr(outputs, 'stack_info')):
       stack_info = outputs.get_output('stack_info').var_value
       # Only reference non default values
-      if stack_info != [0, 0]:
+      if stack_info != [0, 0] or model.profile.name.upper() == "BASE":
         newStackInfo = stack_info
       else:
         newStackInfo = None
@@ -1021,7 +1064,10 @@ class RAILAdapter_MultiPhy(RAILAdapter):
             length = len(commonStructures.stackInfoEntries._elements)
 
           # Create a new config in commonStructures
-          newStackInfoConfigEntry = commonStructures.stackInfoEntries.addNewElement("stackInfo_%s" % length)
+          if self.rail_version >= 3:
+            newStackInfoConfigEntry = commonStructures.stackInfoEntries.addNewElement("stack_info_%s" % length)
+          else:
+            newStackInfoConfigEntry = commonStructures.stackInfoEntries.addNewElement("stackInfo_%s" % length)
           newStackInfoConfigEntry.values = newStackInfo
           # Store that config in the linked phyConfigEntry
           phyConfigEntry.stackInfo.value = newStackInfoConfigEntry
@@ -1033,7 +1079,10 @@ class RAILAdapter_MultiPhy(RAILAdapter):
           # If new structs were to be added, the field "enable" must be present in each one of it.
           if newStackInfo[0] == model.vars.protocol_id.var_enum.WiSUN:
             # Enable WiSUN protocol struct printing in header
-            commonStructures.stackInfoProtocolTableEntries.RAIL_StackInfoWisun.enable.value = True
+            if self.rail_version >=3 :
+              commonStructures.stackInfoProtocolTableEntries.sl_rail_stack_info_wisun.enable.value = True
+            else:
+              commonStructures.stackInfoProtocolTableEntries.RAIL_StackInfoWisun.enable.value = True
 
   def _generateAlternatePhy(self, phyConfigEntry, model, channelConfigEntry):
     base_frequency = channelConfigEntry.alternate_phy.base_frequency
@@ -1093,7 +1142,10 @@ class RAILAdapter_MultiPhy(RAILAdapter):
         if commonStructures.railAlternatePhyEntries.lastElement is not None:
           length = len(commonStructures.railAlternatePhyEntries._elements)
 
-        newAlternatePhyEntry = commonStructures.railAlternatePhyEntries.addNewElement("alternatePhy_%s" % length)
+        if self.rail_version >= 3:
+          newAlternatePhyEntry = commonStructures.railAlternatePhyEntries.addNewElement("alternate_phy_%s" % length)
+        else:
+          newAlternatePhyEntry = commonStructures.railAlternatePhyEntries.addNewElement("alternatePhy_%s" % length)
         newAlternatePhyEntry.baseFrequency.value = base_frequency
         newAlternatePhyEntry.channelSpacing.value = channel_spacing
         newAlternatePhyEntry.numberOfChannels.value = number_of_channels
@@ -1135,7 +1187,10 @@ class RAILAdapter_MultiPhy(RAILAdapter):
 
         if not entryFound:
           # Create a new dcdcRetimingConfig entry in common structures
-          newDcdcRetimingConfigEntry = commonStructures.dcdcRetimingConfigEntries.addNewElement("dcdcRetimingConfig")
+          if self.rail_version >= 3:
+            newDcdcRetimingConfigEntry = commonStructures.dcdcRetimingConfigEntries.addNewElement("dcdc_retiming_config")
+          else:
+            newDcdcRetimingConfigEntry = commonStructures.dcdcRetimingConfigEntries.addNewElement("dcdcRetimingConfig")
           newDcdcRetimingConfigEntry.values = newDcdcRetimingConfig
           # Register the new entries with the current phyConfigEntry
           phyConfigEntry.dcdcRetimingConfigEntry.value = newDcdcRetimingConfigEntry
@@ -1172,7 +1227,10 @@ class RAILAdapter_MultiPhy(RAILAdapter):
 
       if not entryFound:
         # Create a new timingConfig entry in common structures
-        newTimingConfigEntry = commonStructures.timingConfigEntries.addNewElement("timingConfig")
+        if self.rail_version >= 3:
+          newTimingConfigEntry = commonStructures.timingConfigEntries.addNewElement("timing_config")
+        else:
+          newTimingConfigEntry = commonStructures.timingConfigEntries.addNewElement("timingConfig")
         newTimingConfigEntry.values = newTimingConfig
         # Register the new entries with the current phyConfigEntry
         phyConfigEntry.timingConfigEntry.value = newTimingConfigEntry
@@ -1180,7 +1238,10 @@ class RAILAdapter_MultiPhy(RAILAdapter):
   def _generateHfxoRetimingStructure(self, phyConfigEntry, model):
     if self.partFamily.lower() not in ["dumbo", "jumbo", "nerio", "nixi", "panther"]:
       commonStructures = self.railModel.multiPhyConfig.commonStructures
-      newHfxoRetimingConfigEntry = commonStructures.hfxoRetimingTableEntries.newElement("hfxoRetimingConfigEntries")
+      if self.rail_version >= 3:
+        newHfxoRetimingConfigEntry = commonStructures.hfxoRetimingTableEntries.newElement("hfxo_retiming_config_entries")
+      else:
+        newHfxoRetimingConfigEntry = commonStructures.hfxoRetimingTableEntries.newElement("hfxoRetimingConfigEntries")
 
       # Get the arrays
       hfxoRetimingFreqValues = model.vars.lut_freq.value
@@ -1197,7 +1258,10 @@ class RAILAdapter_MultiPhy(RAILAdapter):
       # Populate the rest of the table
       for tbl_idx in range(len(hfxoRetimingTblIdxValues)):
         # insert lowest range
-        newHfxoRetimingConfigStruct = newHfxoRetimingConfigEntry.hfxoRetimingBandConfigEntries.addNewElement("hfxoRetimingBandConfigStruct")
+        if self.rail_version >= 3:
+          newHfxoRetimingConfigStruct = newHfxoRetimingConfigEntry.hfxoRetimingBandConfigEntries.addNewElement("hfxo_retiming_band_config_struct")
+        else:
+          newHfxoRetimingConfigStruct = newHfxoRetimingConfigEntry.hfxoRetimingBandConfigEntries.addNewElement("hfxoRetimingBandConfigStruct")
         newHfxoRetimingConfigStruct.loFreqUpperRange.value = hfxoRetimingFreqValues[hfxoRetimingIdxStart]
         newHfxoRetimingConfigStruct.valid.value = 0
         newHfxoRetimingConfigStruct.sMuxDiv.value = 0
@@ -1205,7 +1269,10 @@ class RAILAdapter_MultiPhy(RAILAdapter):
         newHfxoRetimingConfigStruct.hfxoLimitH.value = 0
 
         for i in range(hfxoRetimingTblIdxValues[tbl_idx]):
-          newHfxoRetimingConfigStruct = newHfxoRetimingConfigEntry.hfxoRetimingBandConfigEntries.addNewElement("hfxoRetimingBandConfigStruct")
+          if self.rail_version >= 3:
+            newHfxoRetimingConfigStruct = newHfxoRetimingConfigEntry.hfxoRetimingBandConfigEntries.addNewElement("hfxo_retiming_band_config_struct")
+          else:
+            newHfxoRetimingConfigStruct = newHfxoRetimingConfigEntry.hfxoRetimingBandConfigEntries.addNewElement("hfxoRetimingBandConfigStruct")
           newHfxoRetimingConfigStruct.loFreqUpperRange.value = hfxoRetimingFreqUpperValues[hfxoRetimingIdxStart + i]
           newHfxoRetimingConfigStruct.valid.value = hfxoRetimingValidValues[hfxoRetimingIdxStart + i]
           if (hfxoRetimingSmuxDivValues[hfxoRetimingIdxStart + i] > 0):
@@ -1226,7 +1293,10 @@ class RAILAdapter_MultiPhy(RAILAdapter):
             newHfxoRetimingConfigStruct.valid.value = 0
 
         hfxoRetimingIdxStart = hfxoRetimingIdxStart + hfxoRetimingTblIdxValues[tbl_idx]
-        newHfxoRetimingBandConfigStruct = newHfxoRetimingConfigEntry.hfxoRetimingInfoConfigEntries.addNewElement("hfxoRetimingBandConfigStruct")
+        if self.rail_version >= 3:
+          newHfxoRetimingBandConfigStruct = newHfxoRetimingConfigEntry.hfxoRetimingInfoConfigEntries.addNewElement("hfxo_retiming_band_config_struct")
+        else:
+          newHfxoRetimingBandConfigStruct = newHfxoRetimingConfigEntry.hfxoRetimingInfoConfigEntries.addNewElement("hfxoRetimingBandConfigStruct")
         newHfxoRetimingBandConfigStruct.numBand.value = hfxoRetimingTblIdxValues[tbl_idx] + 1
         newHfxoRetimingBandConfigStruct.dpllClock.value = hfxoRetimingDpllValues[tbl_idx]
         newHfxoRetimingBandConfigStruct.offset.value = byteOffset
@@ -1280,18 +1350,23 @@ class RAILAdapter_MultiPhy(RAILAdapter):
           print("Warning: The configuration contains multiple RFFPLL settings. "
                 "Only PHYs which match the system RFFPLL configuration will load.")
         # Create a new rffpllConfig entry in common structures
-        newRffpllConfigEntry = commonStructures.rffpllConfigEntries.addNewElement("rffpllConfig")
+        if self.rail_version >= 3:
+          newRffpllConfigEntry = commonStructures.rffpllConfigEntries.addNewElement("rffpll_config")
+        else:
+          newRffpllConfigEntry = commonStructures.rffpllConfigEntries.addNewElement("rffpllConfig")
         newRffpllConfigEntry.values = newRffpllConfig
         phyConfigEntry.rffpllConfigEntry.value = newRffpllConfigEntry
 
   def _generateFrameCodingTable(self, phyConfigEntry, model):
-    codingArray = model.profile.outputs.get_output('frame_coding_array_packed').var_value
-    if codingArray:
+
+    codingArray = getattr(model.profile.outputs, 'frame_coding_array_packed', None)
+
+    if codingArray is not None and codingArray.var_value:
       # Traverse existing frameCodingTableEntries and check for duplicates
       entryFound = False
       commonStructures = self.railModel.multiPhyConfig.commonStructures
       for i, frameCodingTableEntry in enumerate(commonStructures.frameCodingTableEntries._elements):
-        if frameCodingTableEntry.values == codingArray:
+        if frameCodingTableEntry.values == codingArray.var_value:
           # Register the entry with the current phyConfigEntry
           phyConfigEntry.frameCodingTableEntry.value = frameCodingTableEntry
           entryFound = True
@@ -1299,8 +1374,11 @@ class RAILAdapter_MultiPhy(RAILAdapter):
 
       if not entryFound:
         # Create a new frameCodingTable entry in common structures
-        newframeCodingTableEntry = commonStructures.frameCodingTableEntries.addNewElement("frameCodingTable")
-        newframeCodingTableEntry.values = codingArray
+        if self.rail_version >= 3:
+          newframeCodingTableEntry = commonStructures.frameCodingTableEntries.addNewElement("frame_coding_table")
+        else:
+          newframeCodingTableEntry = commonStructures.frameCodingTableEntries.addNewElement("frameCodingTable")
+        newframeCodingTableEntry.values = codingArray.var_value
         # Register the new entry with the current phyConfigEntry
         phyConfigEntry.frameCodingTableEntry.value = newframeCodingTableEntry
 
@@ -1341,6 +1419,13 @@ class RAILAdapter_MultiPhy(RAILAdapter):
     newChannelConfigEntry.entryType.value = phyConfigEntry.entryType.value
     newChannelConfigEntry.stackInfo.value = phyConfigEntry.stackInfo.value #Not serialized in multiphy XML
     newChannelConfigEntry.alternatePhy.value = phyConfigEntry.alternatePhy.value
+    if self.rail_version >= 3:
+      newChannelConfigEntry.phyInfoEntry.value = phyConfigEntry.phyInfoEntry.value
+      modemConfigDeltaAddLength = 0
+      if newChannelConfigEntry.modemConfigDeltaAdd.value is not None:
+        for element in phyConfigEntry.modemConfigEntry.value._elements:
+          modemConfigDeltaAddLength = modemConfigDeltaAddLength + element.length.value
+      newChannelConfigEntry.modemConfigDeltaAddLength.value = modemConfigDeltaAddLength
 
     # Traverse existing channelConfigEntries and check for duplicates
     entryFound = False
@@ -1365,32 +1450,68 @@ class RAILAdapter_MultiPhy(RAILAdapter):
       channelConfig.signature.value = 0
       channelConfig.xtalFrequency.value = multiPhyConfigEntry.phyConfigEntries._elements[0].xtalFrequency.value
 
+      if self.rail_version >= 3:
+        modemConfigBaseLength = 0
+        modemConfigDeltaSubtractLength = 0
+
+        if channelConfig.modemConfigBase.value is not None:
+          for element in multiPhyConfigEntry.phyConfigEntries._elements[0].modemConfigEntryBase.value._elements:
+            modemConfigBaseLength = modemConfigBaseLength + element.length.value
+        channelConfig.modemConfigBaseLength.value = modemConfigBaseLength
+
+        if channelConfig.modemConfigDeltaSubtract.value is not None:
+          for element in multiPhyConfigEntry.phyConfigEntries._elements[0].modemConfigEntrySubtract.value._elements:
+            modemConfigDeltaSubtractLength = modemConfigDeltaSubtractLength + element.length.value
+        channelConfig.modemConfigDeltaSubtractLength.value = modemConfigDeltaSubtractLength
+
   def _orderChannelConfigEntries(self, railModel):
 
     # The algorithm to order the channels is as follows:
-
-    # Sort all channel entries using the channelNumberStart first, by maxPower
-    # second, and by channelNumberEnd last.
-
-    # First step, sort the channelConfigEntries, define a custom compare function
-    def compareChannelConfigEntries(a, b):
-      if a.channelNumberStart.value < b.channelNumberStart.value:
-        return -1
-      elif a.channelNumberStart.value > b.channelNumberStart.value:
-        return 1
-      else:
-        # Now look at maxPower
-        if parsePower(a.maxPower.value) < parsePower(b.maxPower.value):
+    if (self.rail_version >= 3):
+      # Sort all channel entries using the channelNumberStart first and then by
+      # channelNumberEnd.
+      # First step, sort the channelConfigEntries, define a custom compare function
+      def compareChannelConfigEntries(a, b):
+        if a.channelNumberStart.value < b.channelNumberStart.value:
           return -1
-        elif parsePower(a.maxPower.value) > parsePower(b.maxPower.value):
+        elif a.channelNumberStart.value > b.channelNumberStart.value:
           return 1
         else:
-          if a.channelNumberEnd.value < b.channelNumberEnd.value:
-              return -1
-          elif a.channelNumberEnd.value > b.channelNumberEnd.value:
-              return 1
+          return 0
+      # This function is used to find overlapping and duplicate entries.
+      def findOverlappingAndDuplicateChannelConfigEntries(entries):
+        for i in range(len(entries) - 1):
+          if entries[i].channelNumberEnd.value >= entries[i+1].channelNumberStart.value:
+            raise Exception("Channel config entries with duplicate or overlapping channel_number_start and channel_number_end found!")
+
+      # This function is used to validate channel_number_end >= channel_number_start
+      def validateChannelStartAndEnd(entries):
+        for i in range(len(entries)):
+          if (entries[i].channelNumberEnd.value < entries[i].channelNumberStart.value):
+            raise Exception("channel_number_end < channel_number_start!")
+    else:
+      # Sort all channel entries using the channelNumberStart first, by maxPower
+      # second, and by channelNumberEnd last.
+
+      # First step, sort the channelConfigEntries, define a custom compare function
+      def compareChannelConfigEntries(a, b):
+        if a.channelNumberStart.value < b.channelNumberStart.value:
+          return -1
+        elif a.channelNumberStart.value > b.channelNumberStart.value:
+          return 1
+        else:
+          # Now look at maxPower
+          if parsePower(a.maxPower.value) < parsePower(b.maxPower.value):
+            return -1
+          elif parsePower(a.maxPower.value) > parsePower(b.maxPower.value):
+            return 1
           else:
-            return 0
+            if a.channelNumberEnd.value < b.channelNumberEnd.value:
+                return -1
+            elif a.channelNumberEnd.value > b.channelNumberEnd.value:
+                return 1
+            else:
+              return 0
 
     for multiPhyConfigEntry in railModel.multiPhyConfig.multiPhyConfigEntries._elements:
 
@@ -1398,37 +1519,43 @@ class RAILAdapter_MultiPhy(RAILAdapter):
       channelConfigEntries = multiPhyConfigEntry.channelConfigEntries._elements
       channelConfigEntriesSorted = sorted(channelConfigEntries, key=cmp_to_key(compareChannelConfigEntries))
 
-      # Next, set the reference entry to the first element of the newly sorted
-      # array, and call this the reference channel config entry. Iterate through
-      # the remaining channel entries and check those that have maxPower <= than
-      # the current reference; if the channelNumberEnd is <= to the one in the
-      # reference, AND the the channelNumberStart is > the one in the reference
-      # entry, move the current channel entry to the position currently occupied
-      # by the reference config entry. When an item is moved, start over the loop
-      # with the moved item now becoming the reference channel config entry.
-      # If we traverse all the remaining items, and no changes in position occur,
-      # we need to move the reference to the next channel config entry.
+      if (self.rail_version >= 3):
+        # Raise an exception if channelNumberEnd < channelNumberStart
+        validateChannelStartAndEnd(channelConfigEntriesSorted)
+        # Raise an exception if we find duplicate or overlapping entries.
+        findOverlappingAndDuplicateChannelConfigEntries(channelConfigEntriesSorted)
+      else:
+        # Next, set the reference entry to the first element of the newly sorted
+        # array, and call this the reference channel config entry. Iterate through
+        # the remaining channel entries and check those that have maxPower <= than
+        # the current reference; if the channelNumberEnd is <= to the one in the
+        # reference, AND the the channelNumberStart is > the one in the reference
+        # entry, move the current channel entry to the position currently occupied
+        # by the reference config entry. When an item is moved, start over the loop
+        # with the moved item now becoming the reference channel config entry.
+        # If we traverse all the remaining items, and no changes in position occur,
+        # we need to move the reference to the next channel config entry.
 
-      # We need a variable to kick us out of this loop
-      changed = False
-      reference = 0
-      while reference < len(channelConfigEntriesSorted):
+        # We need a variable to kick us out of this loop
+        changed = False
+        reference = 0
+        while reference < len(channelConfigEntriesSorted):
 
-        # Grab the maxPower for the current reference entry
-        referenceChannelEntry = channelConfigEntriesSorted[reference]
+          # Grab the maxPower for the current reference entry
+          referenceChannelEntry = channelConfigEntriesSorted[reference]
 
-        for idx, channelConfigEntry in enumerate(channelConfigEntriesSorted[reference+1:]):
-          # Set this variable to False to kick us out in case nothing gets updated
-          changed = False
-          if parsePower(channelConfigEntry.maxPower.value) <= parsePower(referenceChannelEntry.maxPower.value):
-            if channelConfigEntry.channelNumberEnd.value <= referenceChannelEntry.channelNumberEnd.value and \
-              channelConfigEntry.channelNumberStart.value > referenceChannelEntry.channelNumberStart.value:
-              itemToMove = channelConfigEntriesSorted.pop(idx + reference+1)
-              channelConfigEntriesSorted.insert(reference, itemToMove)
-              changed = True
-              break
-        if not changed:
-          reference += 1
+          for idx, channelConfigEntry in enumerate(channelConfigEntriesSorted[reference+1:]):
+            # Set this variable to False to kick us out in case nothing gets updated
+            changed = False
+            if parsePower(channelConfigEntry.maxPower.value) <= parsePower(referenceChannelEntry.maxPower.value):
+              if channelConfigEntry.channelNumberEnd.value <= referenceChannelEntry.channelNumberEnd.value and \
+                channelConfigEntry.channelNumberStart.value > referenceChannelEntry.channelNumberStart.value:
+                itemToMove = channelConfigEntriesSorted.pop(idx + reference+1)
+                channelConfigEntriesSorted.insert(reference, itemToMove)
+                changed = True
+                break
+          if not changed:
+            reference += 1
 
       # Now that all the entries are correctly sorted, replace the elements in the
       # multiPhyConfigEntry.channelConfigEntries._elements list
@@ -1536,7 +1663,10 @@ class RAILAdapter_MultiPhy(RAILAdapter):
     self.partFamily = self.mphyConfig.part_family
 
     # Create a proper rm object depending on partFamily
-    rm_factory = RM_Factory(self.partFamily.upper())
+    if self.mphyConfig.part_revision == 'ANY' or self.partFamily.upper() in RM_S1_PART_FAMILY_NAMES or self.partFamily.upper() in RM_S2_PART_FAMILY_NAMES:
+      rm_factory = RM_Factory(self.partFamily.upper())
+    else:
+      rm_factory = RM_Factory(self.partFamily.upper(), self.mphyConfig.part_revision)
     self.rm = rm_factory()
 
     # Create a structure that will be added to on a per-base channel reference basis.
@@ -1658,7 +1788,7 @@ class RAILAdapter_MultiPhy(RAILAdapter):
           # Check fecEnabled flag and convDecodeBufferSize are correctly configured
           if phyConfigEntry.fecEnabled.value:
             assert phyConfigEntry.convDecodeBufferSize.value > 0, "Incorrect configuration for FEC Enabled"
-        
+
           regs_channel = self._convertRmToRegisterList(self.registers_channel)
           regs_base = self._convertRmToRegisterList(self.registers_base)
           regs_subtract = self._convertRmToRegisterList(self.registers_subtract)

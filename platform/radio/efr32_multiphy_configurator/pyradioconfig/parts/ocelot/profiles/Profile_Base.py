@@ -110,6 +110,7 @@ class Profile_Base_Ocelot(Profile_Base):
                                      readable_name="DSSS Chipping Code Length", value_limit_min=0, value_limit_max=32)
         IProfile.make_required_input(profile, model.vars.dsss_spreading_factor, "symbol_coding",
                                      readable_name="DSSS Spreading Factor", value_limit_min=0, value_limit_max=100)
+        pass
 
     def build_optional_profile_inputs(self, model, profile):
         IProfile.make_optional_input(profile, model.vars.syncword_tx_skip, "syncword",

@@ -32,7 +32,6 @@
 
 #include "sl_enum.h"
 #include "sl_status.h"
-#include "em_common.h"
 
 #ifdef __cplusplus
 extern "C" {

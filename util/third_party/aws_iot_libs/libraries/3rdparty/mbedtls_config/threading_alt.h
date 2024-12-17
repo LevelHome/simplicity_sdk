@@ -30,6 +30,8 @@
 #include "FreeRTOS.h"
 #include "semphr.h"
 
+#define MUTEX_INIT  = { 0 }
+
 /**
  * @brief Mutex struct used to synchronize mbed TLS operations.
  *

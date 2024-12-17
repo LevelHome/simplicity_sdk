@@ -8,10 +8,6 @@
 /*                           STATIC PARAMETER CHECK                         */
 /****************************************************************************/
 
-// Ensure that User Name fits into the designated buffer
-_Static_assert(CC_USER_CREDENTIAL_MAX_LENGTH_USER_NAME <= U3C_BUFFER_SIZE_USER_NAME,
-               "STATIC_ASSERT_FAILED_Maximum_length_User_Name_does_not_fit_in_buffer");
-
 // Ensure that the Credential Data fits into the designated buffer
 _Static_assert(CC_USER_CREDENTIAL_MAX_DATA_LENGTH_PIN_CODE <= U3C_BUFFER_SIZE_CREDENTIAL_DATA,
                "STATIC_ASSERT_FAILED_Maximum_length_PIN_Code_data_does_not_fit_in_buffer");

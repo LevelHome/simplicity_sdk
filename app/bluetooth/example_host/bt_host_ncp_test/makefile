@@ -3,7 +3,8 @@
 ################################################################################
 
 PROJECTNAME = bt_host_ncp_test
-SDK_DIR = ../../../..
+PROJ_DIR := $(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
+SDK_DIR := $(realpath $(PROJ_DIR)/../../../..)
 
 
 ################################################################################
@@ -26,7 +27,7 @@ include $(SDK_DIR)/app/bluetooth/component_host/ncp_version.mk
 # Include paths                                                                #
 ################################################################################
 
-override INCLUDEPATHS += . \
+override INCLUDEPATHS += $(PROJ_DIR) \
 $(SDK_DIR)/app/bluetooth/common_host/system \
 $(SDK_DIR)/app/bluetooth/common/ncp_user_cmd \
 $(SDK_DIR)/platform/common/inc \
@@ -39,9 +40,9 @@ $(SDK_DIR)/protocol/bluetooth/inc
 
 override C_SRC += \
 $(SDK_DIR)/app/bluetooth/common_host/system/system.c \
-app.c \
-main.c \
-test.c
+$(PROJ_DIR)/app.c \
+$(PROJ_DIR)/main.c \
+$(PROJ_DIR)/test.c
 
 
 ################################################################################

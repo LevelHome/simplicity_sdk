@@ -39,6 +39,8 @@
 #if defined(SL_COMPONENT_CATALOG_PRESENT)
 #include "sl_component_catalog.h"
 #endif
+#include "sl_gpio.h"
+
 #if defined(SL_CATALOG_CLOCK_MANAGER_PRESENT)
 #include "sl_clock_manager.h"
 #else
@@ -47,12 +49,10 @@
 
 #ifdef _SILICON_LABS_32B_SERIES_2
 #include "em_system.h"
-#include "em_gpio.h"
 #include "em_prs.h"
 #include "em_emu.h"
 #include "em_ldma.h"
 #else
-#include "sl_gpio.h"
 #include "sl_hal_prs.h"
 #include "sl_hal_emu.h"
 #include "sl_hal_ldma.h"
@@ -79,7 +79,10 @@
 #if defined(SL_CATALOG_IOSTREAM_EUSART_PRESENT)
   #include "sl_iostream_eusart_vcom_config.h"
 #endif
-
+#if defined(SL_CATALOG_KERNEL_PRESENT)
+ #include "railtest_response_print_mapping.h"
+ #include "app_task_init.h"
+#endif
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -87,12 +90,23 @@ extern "C" {
 /******************************************************************************
  * Macros
  *****************************************************************************/
-#define RAILTEST_PRINTF(...) \
-  do {                       \
-    if (printingEnabled) {   \
-      printf(__VA_ARGS__);   \
-    }                        \
+#if defined(SL_CATALOG_KERNEL_PRESENT)
+  #define RAILTEST_PRINTF(...) \
+  do {                         \
+    railapp_mutex_acquire();   \
+    if (printingEnabled) {     \
+      printf(__VA_ARGS__);     \
+    }                          \
+    railapp_mutex_release();   \
   } while (false)
+#else
+  #define RAILTEST_PRINTF(...) \
+  do {                         \
+    if (printingEnabled) {     \
+      printf(__VA_ARGS__);     \
+    }                          \
+  } while (false)
+#endif
 
 #ifdef RAIL_MULTIPROTOCOL
 #define CHECK_RAIL_HANDLE(command)   \
@@ -216,7 +230,7 @@ extern uint32_t channelHoppingBufferSpace[CHANNEL_HOPPING_BUFFER_SIZE];
 
 typedef struct PhySwitchToRx{
   uint8_t extraDelayUs;
-  bool enable;
+  uint8_t iterations;
   bool disableWhitening;
   RAIL_BLE_Phy_t phy;
   uint16_t physicalChannel;
@@ -489,6 +503,11 @@ extern bool reproFifoAlmostFullBug;
 extern bool txAckDirect;
 extern RAIL_Time_t txStartTime;
 extern RAIL_Time_t txScheduledTime;
+#if defined(SL_CATALOG_KERNEL_PRESENT)
+// Mutex params for FreeRTOS
+extern osMutexId_t railapp_mtx;
+extern osMutexAttr_t railapp_mtx_attr;
+#endif
 
 void setTxRandomHelper(void); // Extern payload randomizer
 
@@ -580,6 +599,9 @@ extern RAIL_FrequencyOffset_t rxFreqOffset;
 
 // Variables tracking the compensation mode
 extern bool isHFXOCompensationSystematic;
+
+// Variable for enabling setting up the TX packet in the host side on RX to TX autotransitions
+extern bool fillTxPacketOnRx;
 
 /**
  * @enum AppMode
@@ -682,7 +704,7 @@ void printRailEvents(RailEvent_t *railEvent);
 void printRailAppEvents(void);
 RAIL_Status_t chooseTxType(void);
 const char *getRfStateName(RAIL_RadioState_t state);
-char *getRfStateDetailName(RAIL_RadioState_t state, char *buffer);
+char *getRfStateDetailName(RAIL_RadioStateDetail_t state, char *buffer);
 const char *getStatusMessage(RAIL_Status_t status);
 RAIL_Status_t disableIncompatibleProtocols(RAIL_PtiProtocol_t newProtocol);
 bool checkRailHandle(char *command);

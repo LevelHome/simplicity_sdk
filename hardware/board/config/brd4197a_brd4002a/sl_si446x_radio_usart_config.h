@@ -38,36 +38,36 @@
 #define SL_SI446X_RADIO_PERIPHERAL_NO            0
 
 // USART0 TX on PC01
-#define SL_SI446X_RADIO_TX_PORT                  gpioPortC
+#define SL_SI446X_RADIO_TX_PORT                  SL_GPIO_PORT_C
 #define SL_SI446X_RADIO_TX_PIN                   1
 
 // USART0 RX on PC02
-#define SL_SI446X_RADIO_RX_PORT                  gpioPortC
+#define SL_SI446X_RADIO_RX_PORT                  SL_GPIO_PORT_C
 #define SL_SI446X_RADIO_RX_PIN                   2
 
 // USART0 CLK on PC03
-#define SL_SI446X_RADIO_CLK_PORT                 gpioPortC
+#define SL_SI446X_RADIO_CLK_PORT                 SL_GPIO_PORT_C
 #define SL_SI446X_RADIO_CLK_PIN                  3
 
 // [USART_SL_SI446X_RADIO]$
 
 // <gpio> SL_SI446X_RADIO_CS
 // $[GPIO_SL_SI446X_RADIO_CS]
-#define SL_SI446X_RADIO_CS_PORT                  gpioPortA
+#define SL_SI446X_RADIO_CS_PORT                  SL_GPIO_PORT_A
 #define SL_SI446X_RADIO_CS_PIN                   5
 
 // [GPIO_SL_SI446X_RADIO_CS]$
 
 // <gpio> SL_SI446X_RADIO_INT
 // $[GPIO_SL_SI446X_RADIO_INT]
-#define SL_SI446X_RADIO_INT_PORT                 gpioPortA
+#define SL_SI446X_RADIO_INT_PORT                 SL_GPIO_PORT_A
 #define SL_SI446X_RADIO_INT_PIN                  6
 
 // [GPIO_SL_SI446X_RADIO_INT]$
 
 // <gpio> SL_SI446X_RADIO_SDN
 // $[GPIO_SL_SI446X_RADIO_SDN]
-#define SL_SI446X_RADIO_SDN_PORT                 gpioPortA
+#define SL_SI446X_RADIO_SDN_PORT                 SL_GPIO_PORT_A
 #define SL_SI446X_RADIO_SDN_PIN                  7
 
 // [GPIO_SL_SI446X_RADIO_SDN]$

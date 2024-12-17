@@ -18,9 +18,7 @@ requires:
   # Require actual hardware sources as long as we have them
   - name: mbedtls_entropy_hardware
     condition: [device_series_2]
-
-  # TODO: Substitute with a real entropy source.
-  - name: mbedtls_entropy_dummy_nvseed
+  - name: mbedtls_entropy_hardware
     condition: [device_series_3]
 recommends:
   # recommend NV seed for resolution instead of ADC, since ADC
@@ -29,3 +27,12 @@ recommends:
 documentation:
   docset: mbed-tls
   document: group-rng-module
+metadata:
+  sbom:
+    license: Zlib AND Apache-2.0
+    upstream:
+      name: Mbed TLS
+      version: v3.6.2
+      supplier: Trusted Firmware
+      url: https://github.com/Mbed-TLS/mbedtls.git
+      comment: Mbed TLS is a C library implementing the PSA Cryptography API, cryptographic primitives, X.509 certificate manipulation and the SSL/TLS and DTLS protocols

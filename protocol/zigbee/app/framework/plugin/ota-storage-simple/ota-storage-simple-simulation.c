@@ -18,7 +18,9 @@
 #include "app/framework/include/af.h"
 #include "app/framework/plugin/ota-common/ota.h"
 
+#ifdef SL_CATALOG_ZIGBEE_CLI_PRESENT
 #include "app/util/serial/sl_zigbee_command_interpreter.h"
+#endif // SL_CATALOG_ZIGBEE_CLI_PRESENT
 
 #if defined(SL_ZIGBEE_TEST)
 
@@ -49,14 +51,14 @@ static bool loadFileIntoOtaStorage(char* file)
   sl_zigbee_af_ota_bootload_cluster_flush();
 
   if (fh == NULL) {
-    otaPrintln("Failed to open file: %p",
+    otaPrintln("Failed to open file: %s",
                strerror(errno));
     return false;
   }
 
   struct stat buffer;
   if (0 != stat(file, &buffer)) {
-    otaPrintln("Failed to stat() file: %p",
+    otaPrintln("Failed to stat() file: %s",
                strerror(errno));
     return false;
   }
@@ -75,7 +77,7 @@ static bool loadFileIntoOtaStorage(char* file)
                       : buffer.st_size - offset);
     size_t readAmount = fread(data, 1, readSize, fh);
     if (readAmount != (size_t) readSize) {
-      otaPrintln("Failed to read %d bytes from file at offset 0x%4X",
+      otaPrintln("Failed to read %d bytes from file at offset 0x%08X",
                  readSize,
                  offset);
       status = SL_ZIGBEE_AF_OTA_STORAGE_ERROR;

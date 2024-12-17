@@ -1,4 +1,6 @@
 import copy
+from pyradioconfig.protected_fields.rainier_protected_fields import ProtectedFieldsRainier
+
 
 # These are registers that should not be touched by radio configs, as they are handled by the RAIL API
 PROTECTED_REGS = ['SYNTH.FREQ', 'SYNTH.CHCTRL',
@@ -191,6 +193,32 @@ PROTECTED_FIELDS_SOL = {
         'ANARAMPLUTODEV'],
 }
 
+PROTECTED_FIELDS_LEOPARD = {
+    'RAC.LNAMIXTRIM0':[
+        'LNAMIXRFPKDCALCM',
+        'LNAMIXLOWCUR'
+    ],
+    'SYNTH.LPFCTRL2RX': [
+        'LPFINCAPRX'
+    ],
+    'SYNTH.LPFCTRL2TX': [
+        'LPFINCAPTX'
+    ],
+}
+
+PROTECTED_FIELDS_LION = {
+    'RAC.LNAMIXTRIM0':[
+        'LNAMIXRFPKDCALCM',
+        'LNAMIXLOWCUR'
+    ],
+    'SYNTH.LPFCTRL2RX': [
+        'LPFINCAPRX'
+    ],
+    'SYNTH.LPFCTRL2TX': [
+        'LPFINCAPTX'
+    ],
+}
+
 # TODO_S3: Fix protected fields on Rainier
 PROTECTED_FIELDS_RAINIER = {
     'RAC.CLKMULTEN0':[
@@ -240,10 +268,11 @@ PROTECTED_FIELDS = {
     'ocelot': mergeDictionaries(PROTECTED_FIELDS_BASE, PROTECTED_FIELDS_OCELOT),
     'bobcat': mergeDictionaries(PROTECTED_FIELDS_BASE, PROTECTED_FIELDS_BOBCAT),
     'sol': mergeDictionaries(PROTECTED_FIELDS_BASE, PROTECTED_FIELDS_SOL),
-    'leopard': mergeDictionaries(PROTECTED_FIELDS_BASE, None),
+    'leopard': mergeDictionaries(PROTECTED_FIELDS_BASE, PROTECTED_FIELDS_LEOPARD),
     'margay': mergeDictionaries(PROTECTED_FIELDS_BASE, PROTECTED_FIELDS_OCELOT),
     'caracal': mergeDictionaries(PROTECTED_FIELDS_BASE, PROTECTED_FIELDS_CARACAL),
-    'rainier': mergeDictionaries(PROTECTED_FIELDS_BASE, PROTECTED_FIELDS_RAINIER),
+    'lion': mergeDictionaries(PROTECTED_FIELDS_BASE, PROTECTED_FIELDS_LION),
+    'rainier': ProtectedFieldsRainier().get_rail_protected_field_dict(),
 }
 
 # Radio config action "enum"

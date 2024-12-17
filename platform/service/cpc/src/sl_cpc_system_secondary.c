@@ -31,12 +31,13 @@
 #include <stdbool.h>
 #include <string.h>
 
+#if defined(SL_COMPONENT_CATALOG_PRESENT)
 #include "sl_component_catalog.h"
+#endif
 
-#include "em_chip.h"
-#include "em_rmu.h"
 #include "sl_status.h"
 #include "sli_cpc.h"
+#include "sli_cpc_assert.h"
 #include "sli_cpc_bootloader.h"
 #include "sli_cpc_drv.h"
 #include "sli_cpc_hdlc.h"
@@ -48,15 +49,6 @@
 #include "sl_cpc.h"
 #include "sl_cpc_config.h"
 #include "sl_common.h"
-
-#if (defined(SL_CATALOG_EMLIB_CORE_PRESENT))
-#include "em_core.h"
-#include "em_chip.h"
-#include "em_rmu.h"
-#if defined(EMU_PRESENT)
-#include "em_emu.h"
-#endif
-#endif
 
 #if (defined(SL_CATALOG_CPC_SECURITY_PRESENT))
 #include "sli_cpc_security.h"
@@ -131,7 +123,11 @@ static sl_status_t open_endpoint(sli_cpc_system_endpoint_t *system_ep)
 {
   sl_status_t status;
 
-  status = sli_cpc_open_service_endpoint(&system_ep->handle, SL_CPC_ENDPOINT_SYSTEM, SL_CPC_ENDPOINT_FLAG_UFRAME_ENABLE, 1);
+  status = sli_cpc_open_service_endpoint_in_instance(&system_ep->handle,
+                                                     sli_cpc_instance_from_system_ep(system_ep),
+                                                     SL_CPC_ENDPOINT_SYSTEM,
+                                                     SL_CPC_ENDPOINT_FLAG_UFRAME_ENABLE,
+                                                     1);
   if (status == SL_STATUS_ALREADY_EXISTS) {
     return SL_STATUS_ALREADY_INITIALIZED;
   } else if (status != SL_STATUS_OK) {
@@ -207,7 +203,7 @@ void sli_cpc_system_process(sli_cpc_system_endpoint_t *system_ep)
       if (open_endpoint(system_ep) == SL_STATUS_OK) {
         system_ep->restart_flag = false;
       } else {
-        EFM_ASSERT(false);
+        SLI_CPC_ASSERT(0);
         system_ep->restart_flag = true;
       }
     } else {
@@ -244,7 +240,7 @@ sl_status_t sli_cpc_system_start(sli_cpc_system_endpoint_t *system_ep)
   sl_status_t status;
   status = open_endpoint(system_ep);
   if (status != SL_STATUS_OK) {
-    EFM_ASSERT(false);
+    SLI_CPC_ASSERT(0);
     return status;
   }
 #if (!defined(SLI_CPC_DEVICE_UNDER_TEST))
@@ -288,51 +284,10 @@ static void on_system_ep_error(uint8_t endpoint_id, void *arg)
 {
   sli_cpc_system_endpoint_t *system_ep = (sli_cpc_system_endpoint_t*)arg;
 
-  EFM_ASSERT(endpoint_id == SL_CPC_ENDPOINT_SYSTEM);
-  EFM_ASSERT(system_ep != NULL);
+  SLI_CPC_ASSERT(endpoint_id == SL_CPC_ENDPOINT_SYSTEM);
+  SLI_CPC_ASSERT(system_ep != NULL);
 
   system_ep->restart_flag = true;
-}
-
-/***************************************************************************//**
- * Reset system; Should not return
- ******************************************************************************/
-SL_WEAK void cpc_system_reset(sli_cpc_system_reboot_mode_t reboot_mode)
-{
-  (void)reboot_mode;
-#if (defined(SL_CATALOG_EMLIB_CORE_PRESENT))
-#if (defined(SL_CATALOG_GECKO_BOOTLOADER_INTERFACE_PRESENT))
-  // The reset command asked to perform a reset.
-  BootloaderResetCause_t* resetCause = (BootloaderResetCause_t*) (RAM_MEM_BASE);
-
-  // Set reset reason to bootloader entry
-  switch (reboot_mode) {
-    case REBOOT_APPLICATION:
-      resetCause->reason = BOOTLOADER_RESET_REASON_GO;
-      break;
-    case REBOOT_BOOTLOADER:
-      resetCause->reason = BOOTLOADER_RESET_REASON_BOOTLOAD;
-      break;
-    default:
-      EFM_ASSERT(false);
-      break;
-  }
-
-  resetCause->signature = BOOTLOADER_RESET_SIGNATURE_VALID;
-#endif  // SL_CATALOG_GECKO_BOOTLOADER_INTERFACE_PRESENT
-
-#if defined(RMU_PRESENT)
-// Clear resetcause
-  RMU->CMD = RMU_CMD_RCCLR;
-// Trigger a software system reset
-  RMU->CTRL = (RMU->CTRL & ~_RMU_CTRL_SYSRMODE_MASK) | RMU_CTRL_SYSRMODE_EXTENDED;
-#endif  // RMU_PRESENT
-
-  CHIP_Reset();
-#else
-  EFM_ASSERT(false);
-#endif  // SL_CATALOG_EMLIB_CORE_PRESENT
-  exit(1);
 }
 
 /***************************************************************************//**
@@ -345,20 +300,20 @@ static void on_write_completed(sl_cpc_user_endpoint_id_t endpoint_id,
 {
   sli_cpc_system_cmd_context_t *context = (sli_cpc_system_cmd_context_t*)arg;
   uint8_t cmd_ep_id;
-  uint32_t magic;
+  uintptr_t magic;
 
   (void) endpoint_id;
 
   // make sure both are set or both are NULL
-  EFM_ASSERT((buffer == NULL && arg == NULL)
-             || (buffer != NULL && arg != NULL));
+  SLI_CPC_ASSERT((buffer == NULL && arg == NULL)
+                 || (buffer != NULL && arg != NULL));
 
   // Unnumbered ACK has no payload
   if (buffer == NULL) {
     return;
   }
 
-  magic = (uint32_t)context->on_complete_arg;
+  magic = (uintptr_t)context->on_complete_arg;
 
   if (magic == ON_WRITE_COMPLETE_RESET) {
     // status is irrelevant, the MCU will reset in cpc_system_reset.
@@ -448,92 +403,6 @@ sl_status_t sli_cpc_system_send_shutdown_request(sli_cpc_system_endpoint_t *syst
 }
 
 /***************************************************************************//**
- * Get system reset reason.
- ******************************************************************************/
-SL_WEAK sl_cpc_system_status_t cpc_get_reset_reason(void)
-{
-  sl_cpc_system_status_t last_status = STATUS_RESET_UNKNOWN;
-  uint32_t reset_cause = RMU_ResetCauseGet();
-
-  RMU_ResetCauseClear();
-
-#if defined(RMU_PRESENT)
-
- #if defined(_RMU_RSTCAUSE_MASK)
-  if (reset_cause & RMU_RSTCAUSE_PORST) {
-    last_status = STATUS_RESET_POWER_ON;
-  } else if (reset_cause & RMU_RSTCAUSE_AVDDBOD) {
-    last_status = STATUS_RESET_FAULT;
-  } else if (reset_cause & RMU_RSTCAUSE_DVDDBOD) {
-    last_status = STATUS_RESET_FAULT;
-  } else if (reset_cause & RMU_RSTCAUSE_DECBOD) {
-    last_status = STATUS_RESET_FAULT;
-  } else if (reset_cause & RMU_RSTCAUSE_EXTRST) {
-    last_status = STATUS_RESET_EXTERNAL;
-  } else if (reset_cause & RMU_RSTCAUSE_WDOGRST) {
-    last_status = STATUS_RESET_WATCHDOG;
-  } else if (reset_cause & RMU_RSTCAUSE_LOCKUPRST) {
-    last_status = STATUS_RESET_CRASH;
-  } else if (reset_cause & RMU_RSTCAUSE_SYSREQRST) {
-    last_status = STATUS_RESET_SOFTWARE;
-  } else if (reset_cause & RMU_RSTCAUSE_EM4RST) {
-    last_status = STATUS_RESET_OTHER;
-  }
-  #endif
-
-#elif defined(EMU_PRESENT)
-
- #if defined(_EMU_RSTCTRL_AVDDBODRMODE_MASK)
-  if (reset_cause & rmuResetAVDD) {
-    last_status = STATUS_RESET_FAULT;
-  }
- #endif
- #if defined(_EMU_RSTCTRL_IOVDD0BODRMODE_MASK)
-  if (reset_cause & rmuResetIOVDD0) {
-    last_status = STATUS_RESET_FAULT;
-  }
- #endif
- #if defined(_EMU_RSTCTRL_DECBODRMODE_MASK)
-  if (reset_cause & rmuResetDecouple) {
-    last_status = STATUS_RESET_FAULT;
-  }
- #endif
- #if defined(_EMU_RSTCTRL_WDOG0RMODE_MASK)
-  if (reset_cause & rmuResetWdog0) {
-    last_status = STATUS_RESET_WATCHDOG;
-  }
- #endif
- #if defined(_EMU_RSTCTRL_WDOG1RMODE_MASK)
-  if (reset_cause & rmuResetWdog1) {
-    last_status = STATUS_RESET_WATCHDOG;
-  }
- #endif
- #if defined(_EMU_RSTCTRL_LOCKUPRMODE_MASK)
-  if (reset_cause & rmuResetCoreLockup) {
-    last_status = STATUS_RESET_CRASH;
-  }
- #endif
- #if defined(_EMU_RSTCTRL_SELOCKUPRMODE_MASK)
-  if (reset_cause & rmuResetSELockup) {
-    last_status = STATUS_RESET_CRASH;
-  }
- #endif
- #if defined(_EMU_RSTCTRL_SYSRMODE_MASK)
-  if (reset_cause & rmuResetSys) {
-    last_status = STATUS_RESET_SOFTWARE;
-  }
- #endif
- #if defined(_EMU_RSTCTRL_SESYSRMODE_MASK)
-  if (reset_cause & rmuResetSESys) {
-    last_status = STATUS_RESET_SOFTWARE;
-  }
- #endif
-#endif
-
-  return last_status;
-}
-
-/***************************************************************************//**
  * Send reset reason
  ******************************************************************************/
 #if (!defined(SLI_CPC_DEVICE_UNDER_TEST))
@@ -546,7 +415,7 @@ static void send_reset_reason(sli_cpc_system_endpoint_t *system_ep)
   sl_status_t status;
 
   status = sli_cpc_get_system_command_context(sli_cpc_instance_from_system_ep(system_ep), &context);
-  EFM_ASSERT(status == SL_STATUS_OK);
+  SLI_CPC_ASSERT(status == SL_STATUS_OK);
 
   context->ep = system_ep;
 
@@ -570,7 +439,7 @@ static void send_reset_reason(sli_cpc_system_endpoint_t *system_ep)
                         SL_CPC_FLAG_NO_BLOCK | SL_CPC_FLAG_UNNUMBERED_INFORMATION,
                         context);
 
-  EFM_ASSERT(status == SL_STATUS_OK); //Ignore error
+  SLI_CPC_ASSERT(status == SL_STATUS_OK); //Ignore error
   SL_CPC_JOURNAL_RECORD_INFO("Sent reset reason", 0);
 }
 #endif
@@ -673,7 +542,7 @@ static void on_property_get_capabilities(sli_cpc_system_endpoint_t *system_ep,
   sli_cpc_instance_t *inst;
   uint32_t *capabilities;
 
-  EFM_ASSERT(system_ep != NULL);
+  SLI_CPC_ASSERT(system_ep != NULL);
   inst = sli_cpc_instance_from_system_ep(system_ep);
 
   prop_cmd_buff = (sli_cpc_system_property_cmd_t*) tx_command->payload;
@@ -693,7 +562,8 @@ static void on_property_get_capabilities(sli_cpc_system_endpoint_t *system_ep,
  * Property ID: PROP_RX_CAPABILITY
  *   Send the rx buffer capability of the secondary to the primary
  ******************************************************************************/
-static void on_property_get_rx_capabilities(sli_cpc_system_cmd_t *tx_command)
+static void on_property_get_rx_capabilities(sli_cpc_system_endpoint_t *system_ep,
+                                            sli_cpc_system_cmd_t *tx_command)
 {
   sli_cpc_system_property_cmd_t *prop_cmd_buff;
   uint16_t *rx_capability;
@@ -701,7 +571,7 @@ static void on_property_get_rx_capabilities(sli_cpc_system_cmd_t *tx_command)
   prop_cmd_buff = (sli_cpc_system_property_cmd_t*) tx_command->payload;
   prop_cmd_buff->property_id = PROP_RX_CAPABILITY;
   rx_capability = (uint16_t *)(prop_cmd_buff->payload);
-  *rx_capability = SL_CPC_RX_PAYLOAD_MAX_LENGTH;
+  *rx_capability = sli_cpc_instance_from_system_ep(system_ep)->rx_user_payload_max_length;
 
   tx_command->length = sizeof(sli_cpc_property_id_t) + sizeof(uint16_t);
 }
@@ -737,7 +607,7 @@ static void on_property_get_bus_bitrate_value(sli_cpc_system_endpoint_t *system_
   uint32_t *bus_bitrate_value;
   sli_cpc_instance_t *inst;
 
-  EFM_ASSERT(system_ep != NULL);
+  SLI_CPC_ASSERT(system_ep != NULL);
   inst = sli_cpc_instance_from_system_ep(system_ep);
 
   prop_cmd_buff = (sli_cpc_system_property_cmd_t*) tx_command->payload;
@@ -760,7 +630,7 @@ static void on_property_get_bus_max_bitrate_value(sli_cpc_system_endpoint_t *sys
   uint32_t *bus_max_bitrate_value;
   sli_cpc_instance_t *inst;
 
-  EFM_ASSERT(system_ep != NULL);
+  SLI_CPC_ASSERT(system_ep != NULL);
   inst = sli_cpc_instance_from_system_ep(system_ep);
 
   prop_cmd_buff = (sli_cpc_system_property_cmd_t*) tx_command->payload;
@@ -779,52 +649,13 @@ static void on_property_get_bus_max_bitrate_value(sli_cpc_system_endpoint_t *sys
 static void on_property_get_bootloader_info(sli_cpc_system_cmd_t *tx_command)
 {
   sli_cpc_system_property_cmd_t *tx_property;
-  uint32_t* infos;
+  sli_cpc_system_bootloader_info_t *infos;
 
   tx_property = (sli_cpc_system_property_cmd_t*) tx_command->payload;
   tx_property->property_id = PROP_BOOTLOADER_INFO;
-  infos = (uint32_t*)(tx_property->payload);
+  infos = (sli_cpc_system_bootloader_info_t*)(tx_property->payload);
 
-#if defined(SL_CPC_HAS_BOOTLOADER_SUPPORT)
-  BootloaderInformation_t bootloader_infos;
-
-  bootloader_getInfo(&bootloader_infos);
-
-  // set version, version might be overriden
-  // below in case the bootloader is none
-  infos[1] = (uint32_t)bootloader_infos.version;
-  // capabilitiesMask only exist for EMBER_APPLICATION, default to 0
-  infos[2] = 0;
-
-#if (defined(SL_CATALOG_EMBER_BOOTLOADER_PRESENT))
-#if (SL_EMBER_BOOTLOADER_TYPE == SL_EMBER_BOOTLOADER_TYPE_STANDALONE)
-  infos[0] = (uint32_t)SL_CPC_BOOTLOADER_EMBER_STANDALONE;
-#elif (SL_EMBER_BOOTLOADER_TYPE == SL_CPC_BOOTLOADER_EMBER_APPLICATION)
-  infos[0] = (uint32_t)SL_CPC_BOOTLOADER_EMBER_APPLICATION;
-  infos[2] = (uint32_t)bootloader_infos.capabilitiesMask;
-#else
-  // should never end up here, but just in case
-  // make sure the returned value is sound
-  infos[0] = (uint32_t)SL_CPC_BOOTLOADER_UNKNOWN;
-#endif // SL_EMBER_BOOTLOADER_TYPE == SL_EMBER_BOOTLOADER_TYPE_STANDALONE
-#else
-  if (bootloader_infos.type == SL_BOOTLOADER) {
-    infos[0] = (uint32_t)SL_CPC_BOOTLOADER_GECKO;
-  } else if (bootloader_infos.type == NO_BOOTLOADER) {
-    infos[0] = (uint32_t)SL_CPC_BOOTLOADER_NONE;
-    infos[1] = 0xFFFFFFFF;
-  } else {
-    // this should never happen, just make the code ready in
-    // case BootloaderType_t get extended with new values
-    infos[0] = (uint32_t)SL_CPC_BOOTLOADER_UNKNOWN;
-  }
-#endif // SL_CATALOG_EMBER_BOOTLOADER_PRESENT
-
-#else
-  infos[0] = (uint32_t)SL_CPC_BOOTLOADER_NONE;
-  infos[1] = 0xFFFFFFFF;
-  infos[2] = 0xFFFFFFFF;
-#endif // SL_CPC_HAS_BOOTLOADER_SUPPORT
+  cpc_get_bootloader_info(infos);
 
   tx_command->length = sizeof(sli_cpc_property_id_t) + 3 * sizeof(uint32_t);
 }
@@ -966,7 +797,7 @@ static void on_property_get_core_debug_counters(sli_cpc_system_endpoint_t *syste
   sli_cpc_system_property_cmd_t *reply_prop_cmd_buff;
   sli_cpc_instance_t *inst;
 
-  EFM_ASSERT(system_ep != NULL);
+  SLI_CPC_ASSERT(system_ep != NULL);
   inst = sli_cpc_instance_from_system_ep(system_ep);
 
   reply_prop_cmd_buff = (sli_cpc_system_property_cmd_t*) tx_command->payload;
@@ -1008,7 +839,7 @@ static void on_property_set_endpoint_state(sli_cpc_system_endpoint_t *system_ep,
   sli_cpc_system_property_cmd_t *tx_prop_command = (sli_cpc_system_property_cmd_t*)(tx_command->payload);
   sli_cpc_system_property_cmd_t *rx_prop_command = (sli_cpc_system_property_cmd_t*)(rx_command->payload);
   sl_cpc_endpoint_state_t *ep_state = (sl_cpc_endpoint_state_t *)rx_prop_command->payload;
-  uint32_t magic;
+  uintptr_t magic;
   sl_status_t status;
 
   tx_command->length = sizeof(sli_cpc_system_property_cmd_t) + sizeof(sl_cpc_endpoint_state_t);
@@ -1042,7 +873,7 @@ static void on_property_set_endpoint_state(sli_cpc_system_endpoint_t *system_ep,
     }
   } else {
     // Unsupported endpoint state
-    EFM_ASSERT(false);
+    SLI_CPC_ASSERT(0);
     tx_command->length = sizeof(sli_cpc_property_id_t);
     tx_prop_command->property_id = PROP_LAST_STATUS;
     *((sl_cpc_system_status_t*)(tx_prop_command->payload)) = STATUS_INVALID_ARGUMENT;
@@ -1229,7 +1060,8 @@ static void on_property_set_endpoint_encryption(uint8_t endpoint_id,
 #endif
 }
 
-static void on_property_set_tx_capability(sli_cpc_system_cmd_t *tx_command,
+static void on_property_set_tx_capability(sli_cpc_system_endpoint_t *system_ep,
+                                          sli_cpc_system_cmd_t *tx_command,
                                           sli_cpc_system_cmd_t *rx_command)
 {
   sli_cpc_system_property_cmd_t *tx_property_command;
@@ -1247,7 +1079,8 @@ static void on_property_set_tx_capability(sli_cpc_system_cmd_t *tx_command,
 
   tx_command->length = sizeof(sli_cpc_property_id_t) + sizeof(uint16_t);
 
-  sli_cpc_set_remote_tx_max_payload_length(*rx_capability);
+  sli_cpc_set_remote_tx_max_payload_length(sli_cpc_instance_from_system_ep(system_ep),
+                                           *rx_capability);
 }
 
 /***************************************************************************//**
@@ -1305,7 +1138,7 @@ SL_WEAK sl_cpc_system_status_t cpc_secondary_on_reset_request(sli_cpc_system_reb
     }
   #endif
     default:
-      EFM_ASSERT(false);
+      SLI_CPC_ASSERT(0);
       break;
   }
 
@@ -1387,7 +1220,7 @@ static void on_property_get(sli_cpc_system_endpoint_t *system_ep,
       break;
 
     case PROP_RX_CAPABILITY:
-      on_property_get_rx_capabilities(reply);
+      on_property_get_rx_capabilities(system_ep, reply);
       break;
 
     case PROP_FC_VALIDATION_VALUE:
@@ -1498,7 +1331,7 @@ static void on_property_set(sli_cpc_system_endpoint_t *system_ep,
         break;
 
       case PROP_TX_CAPABILITY:
-        on_property_set_tx_capability(reply, rx_command);
+        on_property_set_tx_capability(system_ep, reply, rx_command);
         break;
 
       case PROP_UFRAME_PROCESSING:
@@ -1539,7 +1372,7 @@ sl_status_t sli_cpc_system_secondary_on_poll(sli_cpc_system_endpoint_t *system_e
   *reply_data_length = 0;
 
   if (frame_type != SYSTEM_EP_UFRAME && frame_type != SYSTEM_EP_IFRAME) {
-    EFM_ASSERT(false);
+    SLI_CPC_ASSERT(0);
     return SL_STATUS_INVALID_PARAMETER; // Drop packet
   }
 
@@ -1553,7 +1386,7 @@ sl_status_t sli_cpc_system_secondary_on_poll(sli_cpc_system_endpoint_t *system_e
 
   // Make sure the length of the payload from the command matches the returned length.
   if (SIZEOF_SYSTEM_COMMAND(rx_command) != poll_data_length) {
-    EFM_ASSERT(false);
+    SLI_CPC_ASSERT(0);
     return SL_STATUS_INVALID_PARAMETER; // Drop packet
   }
 
@@ -1619,7 +1452,7 @@ sl_status_t sli_cpc_system_secondary_on_poll(sli_cpc_system_endpoint_t *system_e
         break;
 
       default:
-        EFM_ASSERT(false);
+        SLI_CPC_ASSERT(0);
         return SL_STATUS_INVALID_PARAMETER; // Drop packet
     }
   } else if (frame_type == SYSTEM_EP_IFRAME) {
@@ -1642,11 +1475,11 @@ sl_status_t sli_cpc_system_secondary_on_poll(sli_cpc_system_endpoint_t *system_e
 
       default:
         // Command not supported
-        EFM_ASSERT(false);
+        SLI_CPC_ASSERT(0);
         return SL_STATUS_INVALID_PARAMETER; // Drop packet
     }
   } else {
-    EFM_ASSERT(false);
+    SLI_CPC_ASSERT(0);
     return SL_STATUS_INVALID_PARAMETER; // Drop packet
   }
 

@@ -50,6 +50,8 @@ component:
   - id: rail_util_pti
   - id: simple_button_recommended_instance
   - id: sl_system
+  - id: udelay
+
 source:
   - path: app.c
   - path: app_led.c
@@ -108,8 +110,6 @@ configuration:
     value: '"socbtmhsl_v1"'
   - name: SL_GLIB_FONTNORMAL_8X8
     value: 0
-  - name: SL_HEAP_SIZE
-    value: "0x5C00"
   - name: SL_PSA_KEY_USER_SLOT_COUNT
     value: "0"
     condition:

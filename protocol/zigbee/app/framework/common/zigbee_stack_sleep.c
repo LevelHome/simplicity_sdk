@@ -17,6 +17,8 @@
 #define CURRENT_MODULE_NAME "zigbee_stack_sleep"
 #include PLATFORM_HEADER
 
+#include "sl_code_classification.h"
+
 #ifdef SL_COMPONENT_CATALOG_PRESENT
 #include "sl_component_catalog.h"
 #endif //SL_COMPONENT_CATALOG_PRESENT
@@ -46,6 +48,8 @@ bool ncp_ok_to_sleep (void);
 #ifdef SL_CATALOG_ZIGBEE_FORCE_SLEEP_AND_WAKEUP_PRESENT
 #include "force-sleep-wakeup.h"
 #endif // SL_CATALOG_ZIGBEE_FORCE_SLEEP_AND_WAKEUP_PRESENT
+
+extern uint32_t sli_zigbee_stack_ms_to_next_stack_event(void);
 
 //------------------------------------------------------------------------------
 // Static and externs
@@ -80,18 +84,6 @@ static void stack_energy_mode_transition_callback(sl_power_manager_em_t from,
                                                   sl_power_manager_em_t to)
 {
   (void)to;
-  static bool wdog_enabled = true;
-
-  if (to == SL_POWER_MANAGER_EM1) { //Entering EM1 - check and disable watchdog
-    wdog_enabled = halInternalWatchDogEnabled();
-    if (wdog_enabled) {
-      halInternalDisableWatchDog(0);
-    }
-  } else if (to == SL_POWER_MANAGER_EM0) { //Entering EM0 - check and reenable watchdog
-    if (wdog_enabled) {
-      halInternalEnableWatchDog();
-    }
-  }
 }
 
 #ifdef SL_CATALOG_ZIGBEE_FORCE_SLEEP_AND_WAKEUP_PRESENT
@@ -156,6 +148,7 @@ static void zigbee_stack_wakeup_timer_callback(sl_sleeptimer_timer_handle_t* tim
   (void)timer_id;
   (void)user;
 }
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_ZIGBEE_STACK, SL_CODE_CLASS_TIME_CRITICAL)
 bool sli_zigbee_is_stack_task_or_isr_current_context(void)
 {
   return true;
@@ -184,7 +177,7 @@ uint32_t sli_zigbee_stack_get_ms_to_next_wakeup(void)
   // Note that for about 5 seconds after initialization and before radio is on,
   // this function returns that it is okay to sleep
   // to keep CLI functional, we have added a check for device type as well
-  bool stack_is_ok_to_nap = sl_zigbee_ok_to_nap() && (sli_zigbee_node_type >= SL_ZIGBEE_SLEEPY_END_DEVICE);
+  bool stack_is_ok_to_nap = sli_zigbee_stack_ok_to_nap() && (sli_zigbee_node_type >= SL_ZIGBEE_SLEEPY_END_DEVICE);
 
 #ifdef SL_ZIGBEE_AF_NCP
   stack_is_ok_to_nap = stack_is_ok_to_nap && ncp_ok_to_sleep();
@@ -195,9 +188,9 @@ uint32_t sli_zigbee_stack_get_ms_to_next_wakeup(void)
     // want.  Otherwise, we cannot sleep longer than the duration to its next
     // event.  In either case, we will never sleep longer than the duration
     // to our next event.
-    duration_ms = (sl_zigbee_ok_to_hibernate() && (sli_zigbee_node_type >= SL_ZIGBEE_SLEEPY_END_DEVICE)
+    duration_ms = (sli_zigbee_stack_ok_to_hibernate() && (sli_zigbee_node_type >= SL_ZIGBEE_SLEEPY_END_DEVICE)
                    ? MAX_INT32U_VALUE
-                   : sl_zigbee_ms_to_next_stack_event());
+                   : sli_zigbee_stack_ms_to_next_stack_event());
   }
 
   // If durations_ms is 0 it means we could not enter em2, so we see how long we
@@ -207,7 +200,7 @@ uint32_t sli_zigbee_stack_get_ms_to_next_wakeup(void)
       zigbee_stack_em1_requirement_set = true;
       sl_power_manager_add_em_requirement(SL_POWER_MANAGER_EM1);
     }
-    duration_ms = sl_zigbee_ms_to_next_stack_event();
+    duration_ms = sli_zigbee_stack_ms_to_next_stack_event();
   } else {
     if (zigbee_stack_em1_requirement_set) {
       zigbee_stack_em1_requirement_set = false;
@@ -268,7 +261,7 @@ static void sleep_tick(uint32_t *ms_to_next_event, bool *enter_em2)
   }
 
   // Sleep or idle until it is time for the next event.
-  *ms_to_next_event = sl_zigbee_ms_to_next_stack_event();
+  *ms_to_next_event = sli_zigbee_stack_ms_to_next_stack_event();
 
   if (sleepMode == EZSP_FRAME_CONTROL_POWER_DOWN \
       && serialOkToSleep()
@@ -354,6 +347,7 @@ bool sli_zigbee_stack_is_ok_to_sleep(void)
   return false;
 }
 
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_ZIGBEE_STACK, SL_CODE_CLASS_TIME_CRITICAL)
 bool sli_zigbee_is_stack_task_or_isr_current_context(void)
 {
   return true;

@@ -39,8 +39,10 @@
 #include "sl_core.h"
 #include "em_device.h"
 #include "em_cmu.h"
-#include "em_gpio.h"
 #include "em_i2c.h"
+
+/* SDK driver layer */
+#include "sl_gpio.h"
 
 /* SDK service layer */
 #include "sl_sleeptimer.h"
@@ -202,14 +204,22 @@ sl_status_t iot_i2c_drv_hw_enable(void *pvHndl)
   I2C_Init(pvDesc->pxPeripheral, &xInit);
 
   /* setup SCL and SDA GPIO pins as output pull up */
-  GPIO_PinModeSet(pvDesc->xSclPort, pvDesc->ucSclPin, gpioModeWiredAndPullUp, 1);
-  GPIO_PinModeSet(pvDesc->xSdaPort, pvDesc->ucSdaPin, gpioModeWiredAndPullUp, 1);
+  sl_gpio_set_pin_mode(&pvDesc->SclGpio,
+                       SL_GPIO_MODE_WIRED_AND_PULLUP,
+                       1);
+  sl_gpio_set_pin_mode(&pvDesc->SdaGpio,
+                       SL_GPIO_MODE_WIRED_AND_PULLUP,
+                       1);
 
   /* set enable signal */
   if (pvDesc->ucEnMode == 1) {
-    GPIO_PinModeSet(pvDesc->xEnPort, pvDesc->ucEnPin, gpioModePushPull, 1);
+    sl_gpio_set_pin_mode(&pvDesc->EnGpio,
+                         SL_GPIO_MODE_PUSH_PULL,
+                         1);
   } else if (pvDesc->ucEnMode == 2) {
-    GPIO_PinModeSet(pvDesc->xEnPort, pvDesc->ucEnPin, gpioModePushPull, 0);
+    sl_gpio_set_pin_mode(&pvDesc->EnGpio,
+                         SL_GPIO_MODE_PUSH_PULL,
+                         0);
   }
 
 #if defined (_I2C_ROUTEPEN_MASK)
@@ -227,13 +237,13 @@ sl_status_t iot_i2c_drv_hw_enable(void *pvHndl)
 
   /* setup SCL routing */
   GPIO->I2CROUTE[pvDesc->ucPeripheralNo].SCLROUTE =
-    (pvDesc->ucSclPin << _GPIO_I2C_SCLROUTE_PIN_SHIFT)
-    | (pvDesc->xSclPort << _GPIO_I2C_SCLROUTE_PORT_SHIFT);
+    (pvDesc->SclGpio.pin << _GPIO_I2C_SCLROUTE_PIN_SHIFT)
+    | (pvDesc->SclGpio.port << _GPIO_I2C_SCLROUTE_PORT_SHIFT);
 
   /* setup SDA routing */
   GPIO->I2CROUTE[pvDesc->ucPeripheralNo].SDAROUTE =
-    (pvDesc->ucSdaPin << _GPIO_I2C_SDAROUTE_PIN_SHIFT)
-    | (pvDesc->xSdaPort << _GPIO_I2C_SDAROUTE_PORT_SHIFT);
+    (pvDesc->SdaGpio.pin << _GPIO_I2C_SDAROUTE_PIN_SHIFT)
+    | (pvDesc->SdaGpio.port << _GPIO_I2C_SDAROUTE_PORT_SHIFT);
 #endif
 
   /* done */
@@ -249,9 +259,9 @@ sl_status_t iot_i2c_drv_hw_disable(void *pvHndl)
 
   /* reset enable signal */
   if (pvDesc->ucEnMode == 1) {
-    GPIO_PinModeSet(pvDesc->xEnPort, pvDesc->ucEnPin, gpioModePushPull, 0);
+    sl_gpio_set_pin_mode(&pvDesc->EnGpio, SL_GPIO_MODE_PUSH_PULL, 0);
   } else if (pvDesc->ucEnMode == 2) {
-    GPIO_PinModeSet(pvDesc->xEnPort, pvDesc->ucEnPin, gpioModePushPull, 1);
+    sl_gpio_set_pin_mode(&pvDesc->EnGpio, SL_GPIO_MODE_PUSH_PULL, 1);
   }
 
   /* disable I2C hardware to save energy */

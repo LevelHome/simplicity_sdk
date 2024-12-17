@@ -139,7 +139,7 @@ static const char *tamper_source[SL_SE_TAMPER_SIGNAL_NUM_SIGNALS] = {
   "Temperature sensor    ",
   "DPLL lock fail low    ",
   "DPLL lock fail high   ",
-#if defined(_SILICON_LABS_32B_SERIES_2_CONFIG_5)
+#if defined(_SILICON_LABS_32B_SERIES_2_CONFIG_5) || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_9)
   "ETAMPDET              ",
 #endif
   "PRS0                  ",
@@ -148,7 +148,7 @@ static const char *tamper_source[SL_SE_TAMPER_SIGNAL_NUM_SIGNALS] = {
   "PRS3                  ",
   "PRS4                  ",
   "PRS5                  "
-#if !defined(_SILICON_LABS_32B_SERIES_2_CONFIG_5)
+#if !defined(_SILICON_LABS_32B_SERIES_2_CONFIG_5) && !defined(_SILICON_LABS_32B_SERIES_2_CONFIG_9)
   "PRS6                  "
 #endif
 #endif
@@ -172,7 +172,7 @@ void app_process_action(void)
   switch (app_state) {
     case SE_MANAGER_INIT:
       printf("\n%s - Core running at %" PRIu32 " kHz.\n", example_string,
-             CMU_ClockFreqGet(cmuClock_CORE) / 1000);
+             SystemHCLKGet() / 1000);
       printf("  . SE manager initialization... ");
       if (init_se_manager() == SL_STATUS_OK) {
         app_state = READ_RST_CAUSE;
@@ -315,7 +315,7 @@ void app_process_action(void)
         if (get_se_status() == SL_STATUS_OK) {
 #if (_SILICON_LABS_32B_SERIES_2_CONFIG > 2)
           // SE manager disables the SE mailbox clock for SETAMPERHOST interrupt
-          CMU_ClockEnable(cmuClock_SEMAILBOX, true);
+          sl_clock_manager_enable_bus_clock(SL_BUS_CLOCK_SEMAILBOX);
 #endif
           printf("  + Recorded tamper status (MSB..LSB): ");
           printf("%08lX\n", get_se_status_buf_ptr()->tamper_status);
@@ -328,7 +328,11 @@ void app_process_action(void)
                    "through PRS\n");
             printf("  ");
             // Issue a tamper reset through PRS
+#if defined(_SILICON_LABS_32B_SERIES_2)
             PRS_PulseTrigger(0x01 << SW_RST_TAMPER_PRS_CH);
+#else
+            sl_hal_prs_async_set_channel_swpulse(SW_RST_TAMPER_PRS_CH);
+#endif
           }
         } else {
           app_state = SE_MANAGER_EXIT;

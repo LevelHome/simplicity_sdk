@@ -65,7 +65,7 @@ cc_multilevel_sensor_check_scale(const sensor_interface_t* i_interface, uint8_t 
  * @return CC_MULTILEVEL_SENSOR_RETURN_VALUE_OK if interface is registered for a sensor, else CC_MULTILEVEL_SENSOR_RETURN_VALUE_NOT_FOUND.
  */
 cc_multilevel_sensor_return_value
-cc_multilevel_sensor_check_sensor_type_registered(uint8_t sensor_type_value);
+cc_multilevel_sensor_check_sensor_type_registered(uint8_t endpoint, uint8_t sensor_type_value);
 
 /**
  * Registers an interface to a specific sensor type. The number of registered sensor
@@ -101,7 +101,7 @@ cc_multilevel_sensor_get_supported_scale(uint8_t sensor_type_value , uint8_t* o_
  * @return CC_MULTILEVEL_SENSOR_RETURN_VALUE_OK if interface is registered for a sensor, else CC_MULTILEVEL_SENSOR_RETURN_VALUE_NOT_FOUND.
  */
 cc_multilevel_sensor_return_value
-cc_multilevel_sensor_get_interface(uint8_t sensor_type_value, sensor_interface_t** o_interface);
+cc_multilevel_sensor_get_interface(uint8_t endpoint, uint8_t sensor_type_value, sensor_interface_t** o_interface);
 
 /**
  * Gets the default sensor type value. Basically the first registered sensor interface' type is the default one.

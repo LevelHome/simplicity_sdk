@@ -1,0 +1,32 @@
+id: ot_posix_reuse
+label: OpenThread Posix Reuse
+package: OpenThread
+category: OpenThread Posix
+quality: experimental
+description: This component provides the OpenThread Posix reusable files for MCU host.
+provides:
+  - name: ot_posix_reuse
+ui_hints:
+  visibility: never
+root_path: openthread
+include:
+  - path: include
+  - path: src
+  - path: src/core
+  - path: src/posix/platform/include
+  - path: src/posix/platform
+    file_list:
+      - path: hdlc_interface.hpp
+      - path: udp.hpp
+  - path: src/posix/platform/include/openthread
+    file_list:
+      - path: openthread-system.h
+source:
+  # - path: src/posix/platform/system.cpp
+  - path: src/posix/platform/radio_url.cpp
+  - path: src/posix/platform/spinel_manager.cpp
+  - path: src/posix/platform/mainloop.cpp
+  - path: src/posix/platform/radio.cpp
+metadata:
+  sbom:
+    license: ot_sbom_openthread

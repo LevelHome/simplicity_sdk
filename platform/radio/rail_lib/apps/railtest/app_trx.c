@@ -140,7 +140,7 @@ static void packetMode_RxPacketAborted(RAIL_Handle_t railHandle)
 
 static void packetMode_RxPacketReceived(RAIL_Handle_t railHandle)
 {
-  if ((rxSuccessTransition == RAIL_RF_STATE_TX)
+  if (((rxSuccessTransition == RAIL_RF_STATE_TX) && fillTxPacketOnRx)
       || (RAIL_IsAutoAckEnabled(railHandle) && afterRxUseTxBufferForAck)) {
     // Load packet for either the non-AutoACK RXSUCCESS => TX transition,
     // or for the ACK transition when we intend to use the TX buffer
@@ -241,7 +241,7 @@ RAIL_RxPacketHandle_t processRxPacket(RAIL_Handle_t railHandle,
       pendPacketTx();
     }
 
-    if (phySwitchToRx.enable) {
+    if (phySwitchToRx.iterations > 0) {
       // Be careful when setting timeDelta, because it's the delta from
       // whatever timestamp position is currently configured
       uint32_t timestamp = rxPacket->rxPacket.appendedInfo.timeReceived.packetTime;
@@ -256,7 +256,7 @@ RAIL_RxPacketHandle_t processRxPacket(RAIL_Handle_t railHandle,
                                     phySwitchToRx.accessAddress,
                                     phySwitchToRx.logicalChannel,
                                     phySwitchToRx.disableWhitening);
-      phySwitchToRx.enable = false;
+      phySwitchToRx.iterations--;
     }
 
     if (logLevel & ASYNC_RESPONSE) {

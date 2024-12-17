@@ -49,7 +49,7 @@
 /// Mask to disable tamper signals
 #if defined(_SILICON_LABS_32B_SERIES_2_CONFIG_1)
 #define TAMPER_DISABLE_MASK     (0x00fa0000)
-#elif defined(_SILICON_LABS_32B_SERIES_2_CONFIG_5)
+#elif defined(_SILICON_LABS_32B_SERIES_2_CONFIG_5) || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_9)
 #define TAMPER_DISABLE_MASK     (0xE4000000)
 #else
 #define TAMPER_DISABLE_MASK     (0xf2000000)

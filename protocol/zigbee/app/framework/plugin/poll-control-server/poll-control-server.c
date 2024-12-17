@@ -100,7 +100,7 @@ static sl_zigbee_af_status_t readServerAttribute(uint8_t endpoint,
                                                                     data,
                                                                     size);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_poll_control_cluster_println("ERR: %ping %p 0x%x", "read", name, status);
+    sl_zigbee_af_poll_control_cluster_println("ERR: %sing %s 0x%02X", "read", name, status);
   }
   return status;
 }
@@ -117,7 +117,7 @@ static sl_zigbee_af_status_t writeServerAttribute(uint8_t endpoint,
                                                                      data,
                                                                      type);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_poll_control_cluster_println("ERR: %ping %p 0x%x", "writ", name, status);
+    sl_zigbee_af_poll_control_cluster_println("ERR: %sing %s 0x%02X", "writ", name, status);
   }
   return status;
 }
@@ -674,7 +674,7 @@ void sl_zigbee_af_poll_control_cluster_server_attribute_changed_cb(uint8_t endpo
 //-----------------------
 // ZCL commands callbacks
 
-bool sl_zigbee_af_poll_control_cluster_fast_poll_stop_cb(void)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_poll_control_cluster_fast_poll_stop_cb(void)
 {
   sl_zigbee_af_status_t status = SL_ZIGBEE_ZCL_STATUS_FAILURE;
   uint8_t clientIndex = findClientIndex();
@@ -697,11 +697,10 @@ bool sl_zigbee_af_poll_control_cluster_fast_poll_stop_cb(void)
     }
   }
 
-  sl_zigbee_af_send_immediate_default_response(status);
-  return true;
+  return status;
 }
 
-bool sl_zigbee_af_poll_control_cluster_check_in_response_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_poll_control_cluster_check_in_response_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_poll_control_cluster_check_in_response_command_t cmd_data;
   sl_zigbee_af_status_t status = SL_ZIGBEE_ZCL_STATUS_FAILURE;
@@ -709,10 +708,10 @@ bool sl_zigbee_af_poll_control_cluster_check_in_response_cb(sl_zigbee_af_cluster
 
   if (zcl_decode_poll_control_cluster_check_in_response_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_poll_control_cluster_println("RX: CheckInResponse 0x%x, 0x%2x",
+  sl_zigbee_af_poll_control_cluster_println("RX: CheckInResponse 0x%02X, 0x%04X",
                                             cmd_data.startFastPolling,
                                             cmd_data.fastPollTimeout);
 
@@ -764,11 +763,10 @@ bool sl_zigbee_af_poll_control_cluster_check_in_response_cb(sl_zigbee_af_cluster
     }
   }
 
-  sl_zigbee_af_send_immediate_default_response(status);
-  return true;
+  return status;
 }
 
-bool sl_zigbee_af_poll_control_cluster_set_long_poll_interval_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_poll_control_cluster_set_long_poll_interval_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
 #ifdef ACCEPT_SET_LONG_POLL_INTERVAL_COMMAND
   sl_zcl_poll_control_cluster_set_long_poll_interval_command_t cmd_data;
@@ -777,10 +775,10 @@ bool sl_zigbee_af_poll_control_cluster_set_long_poll_interval_cb(sl_zigbee_af_cl
 
   if (zcl_decode_poll_control_cluster_set_long_poll_interval_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_poll_control_cluster_println("RX: SetLongPollInterval 0x%4x",
+  sl_zigbee_af_poll_control_cluster_println("RX: SetLongPollInterval 0x%08X",
                                             cmd_data.newLongPollInterval);
 
   // Trying to write the attribute will trigger the PreAttributeChanged
@@ -793,14 +791,13 @@ bool sl_zigbee_af_poll_control_cluster_set_long_poll_interval_cb(sl_zigbee_af_cl
                                 (uint8_t *)&cmd_data.newLongPollInterval,
                                 ZCL_INT32U_ATTRIBUTE_TYPE);
 
-  sl_zigbee_af_send_immediate_default_response(status);
-  return true;
+  return status;
 #else // !ACCEPT_SET_LONG_POLL_INTERVAL_COMMAND
-  return false;
+  return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 #endif // ACCEPT_SET_LONG_POLL_INTERVAL_COMMAND
 }
 
-bool sl_zigbee_af_poll_control_cluster_set_short_poll_interval_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_poll_control_cluster_set_short_poll_interval_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
 #ifdef ACCEPT_SET_SHORT_POLL_INTERVAL_COMMAND
   sl_zcl_poll_control_cluster_set_short_poll_interval_command_t cmd_data;
@@ -809,10 +806,10 @@ bool sl_zigbee_af_poll_control_cluster_set_short_poll_interval_cb(sl_zigbee_af_c
 
   if (zcl_decode_poll_control_cluster_set_short_poll_interval_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_poll_control_cluster_println("RX: SetShortPollInterval 0x%2x",
+  sl_zigbee_af_poll_control_cluster_println("RX: SetShortPollInterval 0x%04X",
                                             cmd_data.newShortPollInterval);
 
   // Trying to write the attribute will trigger the PreAttributeChanged
@@ -825,10 +822,9 @@ bool sl_zigbee_af_poll_control_cluster_set_short_poll_interval_cb(sl_zigbee_af_c
                                 (uint8_t *)&cmd_data.newShortPollInterval,
                                 ZCL_INT16U_ATTRIBUTE_TYPE);
 
-  sl_zigbee_af_send_immediate_default_response(status);
-  return true;
+  return status;
 #else // !ACCEPT_SET_SHORT_POLL_INTERVAL_COMMAND
-  return false;
+  return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 #endif // ACCEPT_SET_SHORT_POLL_INTERVAL_COMMAND
 }
 
@@ -867,34 +863,32 @@ uint32_t sl_zigbee_af_poll_control_cluster_server_command_parse(sl_service_opcod
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_CHECK_IN_RESPONSE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_poll_control_cluster_check_in_response_cb(cmd);
+        status = sl_zigbee_af_poll_control_cluster_check_in_response_cb(cmd);
         break;
       }
       case ZCL_FAST_POLL_STOP_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_poll_control_cluster_fast_poll_stop_cb();
+        status = sl_zigbee_af_poll_control_cluster_fast_poll_stop_cb();
         break;
       }
       case ZCL_SET_LONG_POLL_INTERVAL_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_poll_control_cluster_set_long_poll_interval_cb(cmd);
+        status = sl_zigbee_af_poll_control_cluster_set_long_poll_interval_cb(cmd);
         break;
       }
       case ZCL_SET_SHORT_POLL_INTERVAL_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_poll_control_cluster_set_short_poll_interval_cb(cmd);
+        status = sl_zigbee_af_poll_control_cluster_set_short_poll_interval_cb(cmd);
         break;
       }
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

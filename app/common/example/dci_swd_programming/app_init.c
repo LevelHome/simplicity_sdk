@@ -51,14 +51,29 @@ void app_init(void)
   DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 
   // High drive for SWCLK and SWD, both must on the same GPIO port
-  GPIO_SlewrateSet((GPIO_Port_TypeDef)SWCLK_PORT, 6, 6);
+  sl_hal_gpio_set_slew_rate((sl_gpio_port_t)SWCLK_PORT, 6);
+  sl_hal_gpio_set_slew_rate_alternate((sl_gpio_port_t)SWCLK_PORT, 6);
 
   // Initialize GPIO for SWCLK and SWDIO pin
-  GPIO_PinModeSet((GPIO_Port_TypeDef)SWCLK_PORT, SWCLK_PIN, gpioModePushPull, 0);
-  GPIO_PinModeSet((GPIO_Port_TypeDef)SWDIO_PORT, SWDIO_PIN, gpioModePushPull, 1);
+  sl_gpio_t swclk_gpio = {
+    .port = (sl_gpio_port_t)SWCLK_PORT,
+    .pin = SWCLK_PIN,
+  };
+  sl_gpio_t swdio_gpio = {
+    .port = (sl_gpio_port_t)SWDIO_PORT,
+    .pin = SWDIO_PIN,
+  };
+
+  sl_gpio_set_pin_mode(&swclk_gpio, SL_GPIO_MODE_PUSH_PULL, 0);
+  sl_gpio_set_pin_mode(&swdio_gpio, SL_GPIO_MODE_PUSH_PULL, 1);
 
   // Initialize GPIO for RESET pin
-  GPIO_PinModeSet((GPIO_Port_TypeDef)RESET_PORT, RESET_PIN, gpioModeWiredAnd, 1);
+  sl_gpio_t reset_gpio = {
+    .port = (sl_gpio_port_t)RESET_PORT,
+    .pin = RESET_PIN,
+  };
+
+  sl_gpio_set_pin_mode(&reset_gpio, SL_GPIO_MODE_WIRED_AND, 1);
 }
 
 // -----------------------------------------------------------------------------

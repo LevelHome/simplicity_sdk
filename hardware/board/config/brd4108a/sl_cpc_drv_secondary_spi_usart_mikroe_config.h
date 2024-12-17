@@ -28,6 +28,8 @@
  *
  ******************************************************************************/
 
+#include "sl_cpc_config.h"
+
 #ifndef SL_CPC_DRV_SPI_USART_MIKROE_SECONDARY_CONFIG_H
 #define SL_CPC_DRV_SPI_USART_MIKROE_SECONDARY_CONFIG_H
 
@@ -36,6 +38,22 @@
 // <h> CPC-Secondary SPI Driver Configuration
 
 // <h> Queues size configuration
+
+// <o SL_CPC_DRV_SPI_MIKROE_RX_PAYLOAD_MAX_LENGTH>Max Rx Payload Length<1-4087>
+// <i> Default: SL_CPC_RX_PAYLOAD_MAX_LENGTH
+// <i> Maximum size of the payload in bytes of each RX buffer
+#define SL_CPC_DRV_SPI_MIKROE_RX_PAYLOAD_MAX_LENGTH      SL_CPC_RX_PAYLOAD_MAX_LENGTH
+
+// <o SL_CPC_DRV_SPI_MIKROE_TX_QUEUE_ITEM_MAX_COUNT> Tx Queue Size
+// <i> Default: SL_CPC_TX_QUEUE_ITEM_MAX_COUNT
+// <i> The maximum number of outgoing messages capable of being queued for transmission.
+#define SL_CPC_DRV_SPI_MIKROE_TX_QUEUE_ITEM_MAX_COUNT    SL_CPC_TX_QUEUE_ITEM_MAX_COUNT
+
+// <o SL_CPC_DRV_SPI_MIKROE_RX_BUFFER_MAX_COUNT> Total Number of Rx Buffers
+// <i> Default: SL_CPC_RX_BUFFER_MAX_COUNT
+// <i> Total number of CPC RX buffers available across all endpoints
+// <i> Multiple RX buffers can be associated with a single endpoint
+#define SL_CPC_DRV_SPI_MIKROE_RX_BUFFER_MAX_COUNT        SL_CPC_RX_BUFFER_MAX_COUNT
 
 // <o SL_CPC_DRV_SPI_MIKROE_RX_QUEUE_SIZE> Number of frame that can be queued in the driver receive queue
 // <i> A greater number decreases the chances of retransmission due to dropped frames at the cost of memory footprint.
@@ -78,7 +96,7 @@
 // <<< sl:start pin_tool >>>
 // <gpio> SL_CPC_DRV_SPI_MIKROE_IRQ
 // $[GPIO_SL_CPC_DRV_SPI_MIKROE_IRQ]
-#define SL_CPC_DRV_SPI_MIKROE_IRQ_PORT           gpioPortB
+#define SL_CPC_DRV_SPI_MIKROE_IRQ_PORT           SL_GPIO_PORT_B
 #define SL_CPC_DRV_SPI_MIKROE_IRQ_PIN            3
 
 // [GPIO_SL_CPC_DRV_SPI_MIKROE_IRQ]$
@@ -89,19 +107,19 @@
 #define SL_CPC_DRV_SPI_MIKROE_PERIPHERAL_NO      0
 
 // USART0 TX on PC00
-#define SL_CPC_DRV_SPI_MIKROE_COPI_PORT          gpioPortC
+#define SL_CPC_DRV_SPI_MIKROE_COPI_PORT          SL_GPIO_PORT_C
 #define SL_CPC_DRV_SPI_MIKROE_COPI_PIN           0
 
 // USART0 RX on PC01
-#define SL_CPC_DRV_SPI_MIKROE_CIPO_PORT          gpioPortC
+#define SL_CPC_DRV_SPI_MIKROE_CIPO_PORT          SL_GPIO_PORT_C
 #define SL_CPC_DRV_SPI_MIKROE_CIPO_PIN           1
 
 // USART0 CLK on PC02
-#define SL_CPC_DRV_SPI_MIKROE_CLK_PORT           gpioPortC
+#define SL_CPC_DRV_SPI_MIKROE_CLK_PORT           SL_GPIO_PORT_C
 #define SL_CPC_DRV_SPI_MIKROE_CLK_PIN            2
 
 // USART0 CS on PC03
-#define SL_CPC_DRV_SPI_MIKROE_CS_PORT            gpioPortC
+#define SL_CPC_DRV_SPI_MIKROE_CS_PORT            SL_GPIO_PORT_C
 #define SL_CPC_DRV_SPI_MIKROE_CS_PIN             3
 
 // [USART_SL_CPC_DRV_SPI_MIKROE]$

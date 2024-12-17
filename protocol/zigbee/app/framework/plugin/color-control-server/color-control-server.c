@@ -345,7 +345,7 @@ void sli_zigbee_af_color_control_server_init_callback(uint8_t init_level)
 
 #ifdef SUPPORT_HUE_SATURATION
 
-bool sl_zigbee_af_color_control_cluster_move_to_hue_and_saturation_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_color_control_cluster_move_to_hue_and_saturation_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   uint8_t endpoint = sl_zigbee_af_current_endpoint();
   uint8_t currentHue = readHue(endpoint);
@@ -360,8 +360,7 @@ bool sl_zigbee_af_color_control_cluster_move_to_hue_and_saturation_cb(sl_zigbee_
 
   if (zcl_decode_color_control_cluster_move_to_hue_and_saturation_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND;
   }
 
   hue = cmd_data.hue;
@@ -377,13 +376,11 @@ bool sl_zigbee_af_color_control_cluster_move_to_hue_and_saturation_cb(sl_zigbee_
   // limit checking:  hue and saturation are 0..254.  Spec dictates we ignore
   // this and report a malformed packet.
   if (hue > MAX_HUE_VALUE || saturation > MAX_SATURATION_VALUE) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND;
   }
 
   if (!shouldExecuteIfOff(endpoint, optionsMask, optionsOverride)) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
   }
 
   // compute shortest direction
@@ -425,11 +422,10 @@ bool sl_zigbee_af_color_control_cluster_move_to_hue_and_saturation_cb(sl_zigbee_
   // kick off the state machine:
   sl_zigbee_af_event_set_delay_ms(COLOR_HSV_CONTROL, UPDATE_TIME_MS);
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
-bool sl_zigbee_af_color_control_cluster_move_hue_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_color_control_cluster_move_hue_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   uint8_t endpoint = sl_zigbee_af_current_endpoint();
   sl_zcl_color_control_cluster_move_hue_command_t cmd_data;
@@ -440,8 +436,7 @@ bool sl_zigbee_af_color_control_cluster_move_hue_cb(sl_zigbee_af_cluster_command
 
   if (zcl_decode_color_control_cluster_move_hue_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND;
   }
 
   moveMode = cmd_data.moveMode;
@@ -450,22 +445,20 @@ bool sl_zigbee_af_color_control_cluster_move_hue_cb(sl_zigbee_af_cluster_command
   optionsOverride = cmd_data.optionsOverride;
 
 #ifdef SL_ZIGBEE_TEST
-  sl_zigbee_af_color_control_cluster_println("ColorControl: MoveHue (%x, %x)",
+  sl_zigbee_af_color_control_cluster_println("ColorControl: MoveHue (%02X, %02X)",
                                              moveMode,
                                              rate);
 #endif
 
   if (!shouldExecuteIfOff(endpoint, optionsMask, optionsOverride)) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
   }
 
   // New command.  Need to stop any active transitions.
   stopAllColorTransitions();
 
   if (moveMode == SL_ZIGBEE_ZCL_HUE_MOVE_MODE_STOP) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
   }
 
   // Handle color mode transition, if necessary.
@@ -485,8 +478,7 @@ bool sl_zigbee_af_color_control_cluster_move_hue_cb(sl_zigbee_af_cluster_command
                                                    rate);
     colorHueTransitionState.up = false;
   } else {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND;
   }
   colorHueTransitionState.stepsRemaining = TRANSITION_TIME_1S;
   colorHueTransitionState.stepsTotal     = TRANSITION_TIME_1S;
@@ -501,11 +493,10 @@ bool sl_zigbee_af_color_control_cluster_move_hue_cb(sl_zigbee_af_cluster_command
   // kick off the state machine:
   sl_zigbee_af_event_set_delay_ms(COLOR_HSV_CONTROL, UPDATE_TIME_MS);
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
-bool sl_zigbee_af_color_control_cluster_move_saturation_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_color_control_cluster_move_saturation_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   uint8_t endpoint = sl_zigbee_af_current_endpoint();
   sl_zcl_color_control_cluster_move_saturation_command_t cmd_data;
@@ -516,8 +507,7 @@ bool sl_zigbee_af_color_control_cluster_move_saturation_cb(sl_zigbee_af_cluster_
 
   if (zcl_decode_color_control_cluster_move_saturation_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND;
   }
 
   moveMode = cmd_data.moveMode;
@@ -526,8 +516,7 @@ bool sl_zigbee_af_color_control_cluster_move_saturation_cb(sl_zigbee_af_cluster_
   optionsOverride = cmd_data.optionsOverride;
 
   if (!shouldExecuteIfOff(endpoint, optionsMask, optionsOverride)) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
   }
 
   uint16_t transitionTime;
@@ -537,8 +526,7 @@ bool sl_zigbee_af_color_control_cluster_move_saturation_cb(sl_zigbee_af_cluster_
 
   if (moveMode == SL_ZIGBEE_ZCL_SATURATION_MOVE_MODE_STOP
       || rate == 0) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
   }
 
   // Handle color mode transition, if necessary.
@@ -572,11 +560,10 @@ bool sl_zigbee_af_color_control_cluster_move_saturation_cb(sl_zigbee_af_cluster_
   // kick off the state machine:
   sl_zigbee_af_event_set_delay_ms(COLOR_HSV_CONTROL, UPDATE_TIME_MS);
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
-bool sl_zigbee_af_color_control_cluster_move_to_hue_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_color_control_cluster_move_to_hue_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   uint8_t endpoint = sl_zigbee_af_current_endpoint();
   sl_zcl_color_control_cluster_move_to_hue_command_t cmd_data;
@@ -588,8 +575,7 @@ bool sl_zigbee_af_color_control_cluster_move_to_hue_cb(sl_zigbee_af_cluster_comm
 
   if (zcl_decode_color_control_cluster_move_to_hue_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND;
   }
 
   hue = cmd_data.hue;
@@ -599,8 +585,7 @@ bool sl_zigbee_af_color_control_cluster_move_to_hue_cb(sl_zigbee_af_cluster_comm
   optionsOverride = cmd_data.optionsOverride;
 
   if (!shouldExecuteIfOff(endpoint, optionsMask, optionsOverride)) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
   }
 
   uint8_t currentHue = readHue(endpoint);
@@ -613,8 +598,7 @@ bool sl_zigbee_af_color_control_cluster_move_to_hue_cb(sl_zigbee_af_cluster_comm
   // limit checking:  hue and saturation are 0..254.  Spec dictates we ignore
   // this and report a malformed packet.
   if (hue > MAX_HUE_VALUE) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND;
   }
 
   // For move to hue, the move modes are different from the other move commands.
@@ -635,7 +619,6 @@ bool sl_zigbee_af_color_control_cluster_move_to_hue_cb(sl_zigbee_af_cluster_comm
         direction = MOVE_MODE_UP;
       }
       break;
-      break;
     case SL_ZIGBEE_ZCL_HUE_DIRECTION_UP:
       direction = MOVE_MODE_UP;
       break;
@@ -643,8 +626,7 @@ bool sl_zigbee_af_color_control_cluster_move_to_hue_cb(sl_zigbee_af_cluster_comm
       direction = MOVE_MODE_DOWN;
       break;
     default:
-      sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND);
-      return true;
+      return SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND;
   }
 
   // New command.  Need to stop any active transitions.
@@ -672,11 +654,10 @@ bool sl_zigbee_af_color_control_cluster_move_to_hue_cb(sl_zigbee_af_cluster_comm
   // kick off the state machine:
   sl_zigbee_af_event_set_delay_ms(COLOR_HSV_CONTROL, UPDATE_TIME_MS);
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
-bool sl_zigbee_af_color_control_cluster_move_to_saturation_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_color_control_cluster_move_to_saturation_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   uint8_t endpoint = sl_zigbee_af_current_endpoint();
   sl_zcl_color_control_cluster_move_to_saturation_command_t cmd_data;
@@ -687,8 +668,7 @@ bool sl_zigbee_af_color_control_cluster_move_to_saturation_cb(sl_zigbee_af_clust
 
   if (zcl_decode_color_control_cluster_move_to_saturation_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND;
   }
 
   saturation = cmd_data.saturation;
@@ -697,8 +677,7 @@ bool sl_zigbee_af_color_control_cluster_move_to_saturation_cb(sl_zigbee_af_clust
   optionsOverride = cmd_data.optionsOverride;
 
   if (!shouldExecuteIfOff(endpoint, optionsMask, optionsOverride)) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
   }
 
   if (transitionTime == 0) {
@@ -708,8 +687,7 @@ bool sl_zigbee_af_color_control_cluster_move_to_saturation_cb(sl_zigbee_af_clust
   // limit checking:  hue and saturation are 0..254.  Spec dictates we ignore
   // this and report a malformed packet.
   if (saturation > MAX_SATURATION_VALUE) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND;
   }
 
   // New command.  Need to stop any active transitions.
@@ -737,11 +715,10 @@ bool sl_zigbee_af_color_control_cluster_move_to_saturation_cb(sl_zigbee_af_clust
   // kick off the state machine:
   sl_zigbee_af_event_set_delay_ms(COLOR_HSV_CONTROL, UPDATE_TIME_MS);
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
-bool sl_zigbee_af_color_control_cluster_step_hue_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_color_control_cluster_step_hue_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   uint8_t endpoint = sl_zigbee_af_current_endpoint();
   sl_zcl_color_control_cluster_step_hue_command_t cmd_data;
@@ -753,8 +730,7 @@ bool sl_zigbee_af_color_control_cluster_step_hue_cb(sl_zigbee_af_cluster_command
 
   if (zcl_decode_color_control_cluster_step_hue_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   stepMode = cmd_data.stepMode;
@@ -764,8 +740,7 @@ bool sl_zigbee_af_color_control_cluster_step_hue_cb(sl_zigbee_af_cluster_command
   optionsOverride = cmd_data.optionsOverride;
 
   if (!shouldExecuteIfOff(endpoint, optionsMask, optionsOverride)) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
   }
 
   uint8_t currentHue = readHue(endpoint);
@@ -778,8 +753,7 @@ bool sl_zigbee_af_color_control_cluster_step_hue_cb(sl_zigbee_af_cluster_command
   stopAllColorTransitions();
 
   if (stepMode == MOVE_MODE_STOP) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
   }
 
   // Handle color mode transition, if necessary.
@@ -810,11 +784,10 @@ bool sl_zigbee_af_color_control_cluster_step_hue_cb(sl_zigbee_af_cluster_command
   // kick off the state machine:
   sl_zigbee_af_event_set_delay_ms(COLOR_HSV_CONTROL, UPDATE_TIME_MS);
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
-bool sl_zigbee_af_color_control_cluster_step_saturation_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_color_control_cluster_step_saturation_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   uint8_t endpoint = sl_zigbee_af_current_endpoint();
   sl_zcl_color_control_cluster_step_saturation_command_t cmd_data;
@@ -826,8 +799,7 @@ bool sl_zigbee_af_color_control_cluster_step_saturation_cb(sl_zigbee_af_cluster_
 
   if (zcl_decode_color_control_cluster_step_saturation_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND;
   }
 
   stepMode = cmd_data.stepMode;
@@ -837,8 +809,7 @@ bool sl_zigbee_af_color_control_cluster_step_saturation_cb(sl_zigbee_af_cluster_
   optionsOverride = cmd_data.optionsOverride;
 
   if (!shouldExecuteIfOff(endpoint, optionsMask, optionsOverride)) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
   }
 
   uint8_t currentSaturation = readSaturation(endpoint);
@@ -851,8 +822,7 @@ bool sl_zigbee_af_color_control_cluster_step_saturation_cb(sl_zigbee_af_cluster_
   stopAllColorTransitions();
 
   if (stepMode == MOVE_MODE_STOP) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
   }
 
   // Handle color mode transition, if necessary.
@@ -885,8 +855,7 @@ bool sl_zigbee_af_color_control_cluster_step_saturation_cb(sl_zigbee_af_cluster_
   // kick off the state machine:
   sl_zigbee_af_event_set_delay_ms(COLOR_HSV_CONTROL, UPDATE_TIME_MS);
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
 static uint8_t addSaturation(uint8_t saturation1, uint8_t saturation2)
@@ -958,7 +927,7 @@ static uint8_t readSaturation(uint8_t endpoint)
 
 #ifdef SUPPORT_CIE_1931
 
-bool sl_zigbee_af_color_control_cluster_move_to_color_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_color_control_cluster_move_to_color_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   uint8_t endpoint = sl_zigbee_af_current_endpoint();
   sl_zcl_color_control_cluster_move_to_color_command_t cmd_data;
@@ -970,8 +939,7 @@ bool sl_zigbee_af_color_control_cluster_move_to_color_cb(sl_zigbee_af_cluster_co
 
   if (zcl_decode_color_control_cluster_move_to_color_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND;
   }
 
   colorX = cmd_data.colorX;
@@ -981,8 +949,7 @@ bool sl_zigbee_af_color_control_cluster_move_to_color_cb(sl_zigbee_af_cluster_co
   optionsOverride = cmd_data.optionsOverride;
 
   if (!shouldExecuteIfOff(endpoint, optionsMask, optionsOverride)) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
   }
 
   if (transitionTime == 0) {
@@ -1019,11 +986,10 @@ bool sl_zigbee_af_color_control_cluster_move_to_color_cb(sl_zigbee_af_cluster_co
   // kick off the state machine:
   sl_zigbee_af_event_set_delay_ms(COLOR_XY_CONTROL, UPDATE_TIME_MS);
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
-bool sl_zigbee_af_color_control_cluster_move_color_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_color_control_cluster_move_color_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   uint8_t endpoint = sl_zigbee_af_current_endpoint();
   sl_zcl_color_control_cluster_move_color_command_t cmd_data;
@@ -1034,8 +1000,7 @@ bool sl_zigbee_af_color_control_cluster_move_color_cb(sl_zigbee_af_cluster_comma
 
   if (zcl_decode_color_control_cluster_move_color_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND;
   }
 
   rateX = cmd_data.rateX;
@@ -1044,8 +1009,7 @@ bool sl_zigbee_af_color_control_cluster_move_color_cb(sl_zigbee_af_cluster_comma
   optionsOverride = cmd_data.optionsOverride;
 
   if (!shouldExecuteIfOff(endpoint, optionsMask, optionsOverride)) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
   }
 
   uint16_t transitionTimeX, transitionTimeY;
@@ -1055,8 +1019,7 @@ bool sl_zigbee_af_color_control_cluster_move_color_cb(sl_zigbee_af_cluster_comma
   stopAllColorTransitions();
 
   if (rateX == 0 && rateY == 0) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
   }
 
   // Handle color mode transition, if necessary.
@@ -1108,11 +1071,10 @@ bool sl_zigbee_af_color_control_cluster_move_color_cb(sl_zigbee_af_cluster_comma
   // kick off the state machine:
   sl_zigbee_af_event_set_delay_ms(COLOR_XY_CONTROL, UPDATE_TIME_MS);
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
-bool sl_zigbee_af_color_control_cluster_step_color_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_color_control_cluster_step_color_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   uint8_t endpoint = sl_zigbee_af_current_endpoint();
   sl_zcl_color_control_cluster_step_color_command_t cmd_data;
@@ -1124,8 +1086,7 @@ bool sl_zigbee_af_color_control_cluster_step_color_cb(sl_zigbee_af_cluster_comma
 
   if (zcl_decode_color_control_cluster_step_color_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND;
   }
 
   stepX = cmd_data.stepX;
@@ -1135,8 +1096,7 @@ bool sl_zigbee_af_color_control_cluster_step_color_cb(sl_zigbee_af_cluster_comma
   optionsOverride = cmd_data.optionsOverride;
 
   if (!shouldExecuteIfOff(endpoint, optionsMask, optionsOverride)) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
   }
 
   uint16_t colorX =
@@ -1178,8 +1138,7 @@ bool sl_zigbee_af_color_control_cluster_step_color_cb(sl_zigbee_af_cluster_comma
   // kick off the state machine:
   sl_zigbee_af_event_set_delay_ms(COLOR_XY_CONTROL, UPDATE_TIME_MS);
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
 static uint16_t findNewColorValueFromStep(uint16_t oldValue, int16_t step)
@@ -1271,7 +1230,7 @@ static void moveToColorTemp(uint8_t endpoint,
   sl_zigbee_af_event_set_delay_ms(COLOR_TEMP_CONTROL, UPDATE_TIME_MS);
 }
 
-bool sl_zigbee_af_color_control_cluster_move_to_color_temperature_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_color_control_cluster_move_to_color_temperature_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   uint8_t endpoint = sl_zigbee_af_current_endpoint();
   sl_zcl_color_control_cluster_move_to_color_temperature_command_t cmd_data;
@@ -1282,8 +1241,7 @@ bool sl_zigbee_af_color_control_cluster_move_to_color_temperature_cb(sl_zigbee_a
 
   if (zcl_decode_color_control_cluster_move_to_color_temperature_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND;
   }
 
   colorTemperature = cmd_data.colorTemperature;
@@ -1292,17 +1250,15 @@ bool sl_zigbee_af_color_control_cluster_move_to_color_temperature_cb(sl_zigbee_a
   optionsOverride = cmd_data.optionsOverride;
 
   if (!shouldExecuteIfOff(endpoint, optionsMask, optionsOverride)) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
   }
 
   moveToColorTemp(endpoint, colorTemperature, transitionTime);
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
-bool sl_zigbee_af_color_control_cluster_move_color_temperature_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_color_control_cluster_move_color_temperature_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   uint8_t endpoint = sl_zigbee_af_current_endpoint();
   sl_zcl_color_control_cluster_move_color_temperature_command_t cmd_data;
@@ -1315,8 +1271,7 @@ bool sl_zigbee_af_color_control_cluster_move_color_temperature_cb(sl_zigbee_af_c
 
   if (zcl_decode_color_control_cluster_move_color_temperature_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND;
   }
 
   moveMode = cmd_data.moveMode;
@@ -1327,8 +1282,7 @@ bool sl_zigbee_af_color_control_cluster_move_color_temperature_cb(sl_zigbee_af_c
   optionsOverride = cmd_data.optionsOverride;
 
   if (!shouldExecuteIfOff(endpoint, optionsMask, optionsOverride)) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
   }
 
   uint16_t tempPhysicalMin = readColorTemperatureMin(endpoint);
@@ -1339,13 +1293,11 @@ bool sl_zigbee_af_color_control_cluster_move_color_temperature_cb(sl_zigbee_af_c
   stopAllColorTransitions();
 
   if (moveMode == MOVE_MODE_STOP) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
   }
 
   if (rate == 0) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_INVALID_FIELD);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_INVALID_FIELD;
   }
 
   if (colorTemperatureMinimum < tempPhysicalMin) {
@@ -1388,11 +1340,10 @@ bool sl_zigbee_af_color_control_cluster_move_color_temperature_cb(sl_zigbee_af_c
   // kick off the state machine:
   sl_zigbee_af_event_set_delay_ms(COLOR_TEMP_CONTROL, UPDATE_TIME_MS);
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
-bool sl_zigbee_af_color_control_cluster_step_color_temperature_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_color_control_cluster_step_color_temperature_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   uint8_t endpoint = sl_zigbee_af_current_endpoint();
   sl_zcl_color_control_cluster_step_color_temperature_command_t cmd_data;
@@ -1406,8 +1357,7 @@ bool sl_zigbee_af_color_control_cluster_step_color_temperature_cb(sl_zigbee_af_c
 
   if (zcl_decode_color_control_cluster_step_color_temperature_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_MALFORMED_COMMAND;
   }
 
   stepMode = cmd_data.stepMode;
@@ -1419,8 +1369,7 @@ bool sl_zigbee_af_color_control_cluster_step_color_temperature_cb(sl_zigbee_af_c
   optionsOverride = cmd_data.optionsOverride;
 
   if (!shouldExecuteIfOff(endpoint, optionsMask, optionsOverride)) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
   }
 
   uint16_t tempPhysicalMin = readColorTemperatureMin(endpoint);
@@ -1434,8 +1383,7 @@ bool sl_zigbee_af_color_control_cluster_step_color_temperature_cb(sl_zigbee_af_c
   stopAllColorTransitions();
 
   if (stepMode == MOVE_MODE_STOP) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
   }
 
   if (colorTemperatureMinimum < tempPhysicalMin) {
@@ -1469,8 +1417,7 @@ bool sl_zigbee_af_color_control_cluster_step_color_temperature_cb(sl_zigbee_af_c
   // kick off the state machine:
   sl_zigbee_af_event_set_delay_ms(COLOR_TEMP_CONTROL, UPDATE_TIME_MS);
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
 void sl_zigbee_af_level_control_coupled_color_temp_change_cb(uint8_t endpoint)
@@ -1864,7 +1811,7 @@ static bool shouldExecuteIfOff(uint8_t endpoint,
                                                                     &options,
                                                                     sizeof(options));
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_color_control_cluster_println("Unable to read Options attribute: 0x%X",
+    sl_zigbee_af_color_control_cluster_println("Unable to read Options attribute: 0x%02X",
                                                status);
     // If we can't read the attribute, then we should just assume that it has
     // its default value.
@@ -1878,7 +1825,7 @@ static bool shouldExecuteIfOff(uint8_t endpoint,
                                               (uint8_t *)&on,
                                               sizeof(on));
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_color_control_cluster_println("Unable to read OnOff attribute: 0x%X",
+    sl_zigbee_af_color_control_cluster_println("Unable to read OnOff attribute: 0x%02X",
                                                status);
     return true;
   }
@@ -1994,85 +1941,83 @@ uint32_t sl_zigbee_af_color_control_cluster_server_command_parse(sl_service_opco
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
   #ifdef SUPPORT_HUE_SATURATION
       case ZCL_STEP_HUE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_color_control_cluster_step_hue_cb(cmd);
+        status = sl_zigbee_af_color_control_cluster_step_hue_cb(cmd);
         break;
       }
       case ZCL_MOVE_TO_HUE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_color_control_cluster_move_to_hue_cb(cmd);
+        status = sl_zigbee_af_color_control_cluster_move_to_hue_cb(cmd);
         break;
       }
       case ZCL_MOVE_SATURATION_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_color_control_cluster_move_saturation_cb(cmd);
+        status = sl_zigbee_af_color_control_cluster_move_saturation_cb(cmd);
         break;
       }
       case ZCL_STEP_SATURATION_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_color_control_cluster_step_saturation_cb(cmd);
+        status = sl_zigbee_af_color_control_cluster_step_saturation_cb(cmd);
         break;
       }
       case ZCL_MOVE_HUE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_color_control_cluster_move_hue_cb(cmd);
+        status = sl_zigbee_af_color_control_cluster_move_hue_cb(cmd);
         break;
       }
       case ZCL_MOVE_TO_HUE_AND_SATURATION_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_color_control_cluster_move_to_hue_and_saturation_cb(cmd);
+        status = sl_zigbee_af_color_control_cluster_move_to_hue_and_saturation_cb(cmd);
         break;
       }
       case ZCL_MOVE_TO_SATURATION_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_color_control_cluster_move_to_saturation_cb(cmd);
+        status = sl_zigbee_af_color_control_cluster_move_to_saturation_cb(cmd);
         break;
       }
   #endif // SUPPORT_HUE_SATURATION
   #ifdef SUPPORT_CIE_1931
       case ZCL_MOVE_TO_COLOR_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_color_control_cluster_move_to_color_cb(cmd);
+        status = sl_zigbee_af_color_control_cluster_move_to_color_cb(cmd);
         break;
       }
       case ZCL_MOVE_COLOR_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_color_control_cluster_move_color_cb(cmd);
+        status = sl_zigbee_af_color_control_cluster_move_color_cb(cmd);
         break;
       }
       case ZCL_STEP_COLOR_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_color_control_cluster_step_color_cb(cmd);
+        status = sl_zigbee_af_color_control_cluster_step_color_cb(cmd);
         break;
       }
   #endif // SUPPORT_CIE_1931
   #ifdef SUPPORT_COLOR_TEMPERATURE
       case ZCL_MOVE_TO_COLOR_TEMPERATURE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_color_control_cluster_move_to_color_temperature_cb(cmd);
+        status = sl_zigbee_af_color_control_cluster_move_to_color_temperature_cb(cmd);
         break;
       }
       case ZCL_MOVE_COLOR_TEMPERATURE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_color_control_cluster_move_color_temperature_cb(cmd);
+        status = sl_zigbee_af_color_control_cluster_move_color_temperature_cb(cmd);
         break;
       }
       case ZCL_STEP_COLOR_TEMPERATURE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_color_control_cluster_step_color_temperature_cb(cmd);
+        status = sl_zigbee_af_color_control_cluster_step_color_temperature_cb(cmd);
         break;
       }
   #endif // SUPPORT_COLOR_TEMPERATURE
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

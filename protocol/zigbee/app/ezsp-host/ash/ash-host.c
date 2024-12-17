@@ -403,7 +403,7 @@ static sl_zigbee_ezsp_status_t ashReceiveFrame(void)
         ashRandomizeBuffer(rxDataBuffer->data, rxDataBuffer->len);
         sl_zigbee_ezsp_add_queue_tail(&rxQueue, rxDataBuffer);// add frame to receive queue
         sl_zigbee_ezsp_trace_ezsp_frame_id("add to queue", rxDataBuffer->data);
-        sl_zigbee_ezsp_trace_ezsp_verbose("ashReceiveFrame(): ID=0x%x Seq=0x%x Buffer=%u",
+        sl_zigbee_ezsp_trace_ezsp_verbose("ashReceiveFrame(): ID=0x%02X Seq=0x%02X Buffer=%u",
                                           rxDataBuffer->data[EZSP_FRAME_ID_INDEX],
                                           rxDataBuffer->data[EZSP_SEQUENCE_INDEX],
                                           rxDataBuffer);

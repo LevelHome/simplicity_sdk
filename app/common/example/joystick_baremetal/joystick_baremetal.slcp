@@ -33,8 +33,7 @@ component:
   - id: clock_manager
   - id: joystick
   - id: iostream_retarget_stdio
-  - id: iostream_usart
-    instance: [vcom]
+  - id: iostream_recommended_stream
   - id: sleeptimer
 configuration:
   - name: SL_BOARD_ENABLE_VCOM

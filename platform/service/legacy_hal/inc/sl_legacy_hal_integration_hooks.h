@@ -29,5 +29,4 @@
  *
  ******************************************************************************/
 
-bool sl_legacy_hal_is_ok_to_sleep(void);
 sl_power_manager_on_isr_exit_t sl_legacy_hal_sleep_on_isr_exit(void);

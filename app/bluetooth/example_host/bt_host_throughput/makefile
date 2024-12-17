@@ -3,7 +3,8 @@
 ################################################################################
 
 PROJECTNAME = bt_host_throughput
-SDK_DIR = ../../../..
+PROJ_DIR := $(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
+SDK_DIR := $(realpath $(PROJ_DIR)/../../../..)
 
 
 ################################################################################
@@ -14,6 +15,7 @@ SDK_DIR = ../../../..
 ################################################################################
 
 include $(SDK_DIR)/app/bluetooth/component_host/toolchain.mk
+include $(SDK_DIR)/app/bluetooth/component_host/sl_core_mock.mk
 include $(SDK_DIR)/app/bluetooth/component_host/app_log.mk
 include $(SDK_DIR)/app/bluetooth/component_host/app_assert.mk
 include $(SDK_DIR)/app/bluetooth/component_host/app_signal.mk
@@ -29,7 +31,7 @@ include $(SDK_DIR)/app/bluetooth/component_host/ncp_version.mk
 # Include paths                                                                #
 ################################################################################
 
-override INCLUDEPATHS += . \
+override INCLUDEPATHS += $(PROJ_DIR) \
 $(SDK_DIR)/app/bluetooth/common_host/system \
 $(SDK_DIR)/platform/common/inc \
 $(SDK_DIR)/protocol/bluetooth/inc
@@ -41,10 +43,10 @@ $(SDK_DIR)/protocol/bluetooth/inc
 
 override C_SRC += \
 $(SDK_DIR)/app/bluetooth/common_host/system/system.c \
-app.c \
-main.c \
-cf_parse.c \
-host_platform.c
+$(PROJ_DIR)/app.c \
+$(PROJ_DIR)/main.c \
+$(PROJ_DIR)/cf_parse.c \
+$(PROJ_DIR)/host_platform.c
 
 
 ################################################################################

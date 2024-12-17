@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sli_wisun_network_measurement_iperf_gui.c
+ * @brief Wi-SUN Network Measurement iPerf GUI
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -31,7 +31,6 @@
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
@@ -56,7 +55,6 @@
 #include "sl_wisun_ping.h"
 #include "silabs_wisun_logo.h"
 #include "sl_wisun_network_measurement_stat.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -204,7 +202,7 @@ static void _set_interval(void *args);
 static void _iperf_server_client_main_form(void *args);
 
 /**************************************************************************//**
- * @brief Iperf start measurement helper
+ * @brief iPerf start measurement helper
  * @details Helper function
  * @param[in] args Arguments
  *****************************************************************************/
@@ -326,7 +324,6 @@ static void _iperf_server_client_main_form(void *args)
            _options.port,
            _options.remote_addr,
            _options.bandwidth,
-           //_options.bw_format,
            _options.buf_len,
            _options.duration_ms / 100U,
            _options.interval_ms / 100U);
@@ -396,8 +393,7 @@ static void _iperf_setting_main_form(void *args)
   sl_gui_title_update();
   sl_gui_optionlist_add_item("Back", sli_wisun_nwm_iperf_form, NULL);
   sl_gui_optionlist_add_item("Port (ro)", _iperf_info_port_form, NULL);
-  sl_gui_optionlist_add_item("Remote Address", sli_wisun_neighbors_select_form,
-                             (sl_widget_event_args_t)_iperf_setting_remote_addr);
+  sl_gui_optionlist_add_item("Remote Address", sli_wisun_neighbors_select_form, (sl_widget_event_args_t)&_iperf_setting_remote_addr);
   sl_gui_optionlist_add_item("Bandwidth", _iperf_setting_bandwidth_form, NULL);
   sl_gui_optionlist_add_item("Bandwidth Format (ro)", _iperf_info_bw_format_form, NULL);
   sl_gui_optionlist_add_item("Buffer Length (ro)", _iperf_setting_buff_len_form, NULL);
@@ -609,7 +605,6 @@ static void _iperf_start(void *args)
            _options.port,
            _options.remote_addr,
            _options.bandwidth,
-           //_options.bw_format,
            _options.buf_len,
            _options.duration_ms / 100U,
            _options.interval_ms / 100U);

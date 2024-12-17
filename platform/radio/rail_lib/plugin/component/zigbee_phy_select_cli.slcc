@@ -6,6 +6,8 @@ category: Platform|Radio
 quality: production
 metadata:
   sbom:
+    id: zigbee_phy_select_cli
+    name: Zigbee Utility, PHY Select CLI
     license: Zlib
 requires:
   - name: rail_util_ieee802154_phy_select

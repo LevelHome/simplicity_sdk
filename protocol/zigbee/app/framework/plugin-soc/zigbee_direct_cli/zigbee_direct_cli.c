@@ -53,8 +53,6 @@ void sli_zigbee_direct_print_keys(void)
 void sl_zigbee_direct_reset_outgoing_counter(void)
 {
   outgoing_counter = 0;
-  sl_zigbee_direct_anonymous_join_timeout_sec = 0;
-  halCommonSetToken(TOKEN_PLUGIN_ZDD_JOIN_TIMEOUT, &sl_zigbee_direct_anonymous_join_timeout_sec);
   sl_zigbee_core_debug_println("Outgoing frame counter was reset.");
 }
 
@@ -67,5 +65,7 @@ void sl_zigbee_direct_set_anonymous_join_timeout(sl_cli_command_arg_t *arguments
   }
 
   sl_zigbee_direct_anonymous_join_timeout_sec = timeout;
+  halCommonSetToken(TOKEN_PLUGIN_ZDD_JOIN_TIMEOUT, &sl_zigbee_direct_anonymous_join_timeout_sec);
+  sl_zigbee_af_event_set_delay_ms(&sli_zigbee_direct_anonymous_join_event, sl_zigbee_direct_anonymous_join_timeout_sec * 1000);
   sl_zigbee_core_debug_println("sl_zigbee_direct_anonymous_join_timeout_sec was set to %d sec.", timeout);
 }

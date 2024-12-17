@@ -1,10 +1,10 @@
 id: "sl_wisun_udp_client"
-label: "UDP Client"
+label: "Wi-SUN UDP Client"
 package: "wisun"
 description: >
   This component contains functions of Wi-SUN UDP Client apps.
   The functions are used as CLI callbacks for UDP socket creation, close, read and write.
-category: "Wi-SUN|Application"
+category: "Wi-SUN|Wi-SUN Services"
 quality: "production"
 metadata:
   sbom:

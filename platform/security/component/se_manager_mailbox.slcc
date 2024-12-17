@@ -22,3 +22,7 @@ requires:
 
 provides:
   - name: se_manager_mailbox
+
+metadata:
+  sbom:
+    license: Zlib

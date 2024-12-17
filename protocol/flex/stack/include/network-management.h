@@ -593,7 +593,7 @@ EmberStatus emberMacAddShortToLongAddressMapping(EmberNodeId shortId,
 EmberStatus emberMacClearShortToLongAddressMappings(void);
 
 /**
- * @brief Set the MCS in case of an OFDM PHY. MCS can range from 0 to 6.
+ * @brief Set the MCS in case of an OFDM PHY. MCS can range from 0 to 7.
  *
  * @param[in] mcs The MCS value to set.
  *
@@ -716,6 +716,26 @@ EmberStatus emberFrequencyHoppingStartClient(EmberNodeId serverNodeId,
  *   ::EMBER_INVALID_CALL if the node is not currently frequency hopping.
  */
 EmberStatus emberFrequencyHoppingStop(void);
+
+/**
+ * @brief Sets the radio priority levels.
+ *
+ * This function sets the priority levels for the radio operations.
+ *
+ * @param[in] priorities The priority levels to be set.
+ * @return An ::EmberStatus value indicating the success or failure of the operation.
+ */
+EmberStatus emberSetRadioPriority(sl_connect_radio_priority_t *priorities);
+
+/**
+ * @brief Gets the current radio priority levels.
+ *
+ * This function retrieves the current priority levels for the radio operations.
+ *
+ * @param[out] priorities A pointer to a variable where the current priority levels will be stored.
+ * @return An ::EmberStatus value indicating the success or failure of the operation.
+ */
+EmberStatus emberGetRadioPriority(sl_connect_radio_priority_t *priorities);
 
 /** @{
  * @name Callbacks

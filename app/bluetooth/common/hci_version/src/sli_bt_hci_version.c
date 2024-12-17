@@ -37,7 +37,7 @@ static const struct sli_bt_hci_version_response sli_bt_hci_version = SL_BT_HCI_V
 #define BT_OK             0 //Command was succesful
 #define BT_ERR_INVALID 0x12 //Used as a generic error
 
-sl_btctrl_command_handler_t sli_bt_hci_command_handler;
+static sl_btctrl_command_handler_t sli_bt_hci_command_handler;
 bool sli_bt_hci_handle_version_command(struct sl_btctrl_hci_message * hcimsg);
 
 void sli_bt_hci_init_version(void)

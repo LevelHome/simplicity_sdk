@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <em_device.h>
-#include <em_gpio.h>
-#include <em_core.h>
+#include <sl_gpio.h>
+#include <sl_core.h>
 #include "sl_hci_common_transport.h"
 #include "sl_hci_cpc.h"
 #include "sl_btctrl_hci_packet.h"

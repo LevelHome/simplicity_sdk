@@ -31,6 +31,7 @@
 #include PLATFORM_HEADER
 #include "hal/hal.h"
 #include "event-queue.h"
+#include "sl_code_classification.h"
 
 #if defined SL_ZIGBEE_TEST || defined EZSP_HOST
 #define IN_INTERRUPT_CONTEXT() 0
@@ -119,6 +120,7 @@ static UNUSED void printEventQueue(sli_zigbee_event_queue_t *queue)
 }
 #endif // ifdef SL_ZIGBEE_TEST
 
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_EVENT_QUEUE, SL_CODE_CLASS_TIME_CRITICAL)
 bool sli_zigbee_event_is_scheduled(sli_zigbee_event_t *event)
 {
   return event->next != NULL;
@@ -146,6 +148,7 @@ uint32_t sli_zigbee_event_get_remaining_ms(sli_zigbee_event_t *event)
   }
 }
 
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_EVENT_QUEUE, SL_CODE_CLASS_TIME_CRITICAL)
 static void adjustListLocation(sli_zigbee_event_queue_t *queue, sli_zigbee_event_t *event, bool keep, uint32_t now)
 {
   sli_zigbee_event_t *previous = (sli_zigbee_event_t *) queue;
@@ -264,6 +267,7 @@ void sli_zigbee_mark_event_queue(sli_zigbee_event_queue_t *queue)
 // then just leave the event where it is.  This is done to avoid shuffling
 // events when setActive() is called multiple times on the same event.
 
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_EVENT_QUEUE, SL_CODE_CLASS_TIME_CRITICAL)
 void sli_zigbee_event_set_delay_ms(sli_zigbee_event_t *event, uint32_t delay)
 {
   sli_zigbee_event_queue_t *queue = event->actions.queue;

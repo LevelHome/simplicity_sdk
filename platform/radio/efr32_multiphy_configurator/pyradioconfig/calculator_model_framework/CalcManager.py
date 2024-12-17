@@ -769,7 +769,8 @@ class CalcManager(object):
                     variable.value_forced = output.override
 
         # Call any target specific calculate functions last (these overwrite all other settings)
-        self._call_target_calculate(modem_model)
+        if not profile.skip_target_calculation:
+            self._call_target_calculate(modem_model)
 
     def create_modem_model_instance(self, phy_name=None, profile_name=None):
         """Creates an empty model instance for a PHY or Profile
@@ -1173,7 +1174,7 @@ class CalcManager(object):
         else:
             comment = phy_name + " instance"
 
-        if model_instance.result_code != CalcStatus.Failure.value:
+        if model_instance.result_code != CalcStatus.Failure.value and output_path is not None:
             # print the results to a .cfg file
             self.processed_model_to_cfg(model_instance, output_path, model_instance.phy.name, show_do_not_care=show_do_not_care)
 
@@ -1518,14 +1519,9 @@ class CalcManager(object):
 
     @staticmethod
     def get_list_of_parts_supported(incl_unit_test_part=False):
-        parts_list = []
-        exclude_list = ['common']
-        if not incl_unit_test_part:
-            exclude_list.append('unit_test_part')
-        parts_location = os.path.dirname(parts.__file__)
-        for dirname in os.listdir(parts_location):
-            if not dirname.startswith('_') and dirname not in exclude_list:
-                parts_list.append(dirname)
+        parts_list = ['bobcat', 'caracal', 'dumbo', 'jumbo', 'leopard', 'lion', 'lynx', 'margay', 'nerio', 'nixi', 'ocelot', 'panther', 'rainier', 'sol']
+        if incl_unit_test_part:
+            parts_list.append('unit_test_part')
         return parts_list
 
     def _call_target_calculate(self, model_instance):

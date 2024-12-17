@@ -7,7 +7,37 @@
     <properties key="projectFilePaths" value="example/btmesh_ncp_empty/btmesh_ncp_empty.slcp"/>
     <properties key="readmeFiles" value="documentation/example/btmesh_ncp_empty/readme.md"/>
     <properties key="boardCompatibility" value="brd2601b brd2602a brd2703a brd4110b brd4111b brd4115a brd4176a brd4179b brd4180a brd4180b brd4181a brd4181b brd4181c brd4186c brd4187c brd4188b brd4194a brd4195a brd4195b brd4196a brd4196b brd4198a brd4308a brd4308b brd4308c brd4308d brd4309a brd4309b brd4316a brd4317a brd4318a brd4329a brd4332a brd4335a com.silabs.board.none"/>
-    <properties key="partCompatibility" value=".*bgm21.* .*bgm24.* .*efr32bg21.* .*efr32bg24.* .*efr32bg27.* .*efr32mg21.* .*efr32mg24.* .*efr32mg27.* .*mgm21.* .*mgm24.*"/>
+    <properties key="partCompatibility" value=".*bgm21.* .*mgm21.* .*efr32bg21.* .*efr32mg21.* .*bgm24.* .*mgm24.* .*efr32bg24.* .*efr32mg24.* .*efr32bg27.* .*efr32mg27.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|NCP Project\ Difficulty|Beginner Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
+  <descriptors name="btmesh_ncp_empty_freertos" label="Bluetooth Mesh - NCP Empty FreeRTOS" description="An NCP Target C application that makes it possible for the NCP Host Controller to access the Bluetooth Mesh stack via UART. It provides access to the host layer via BGAPI and not to the link layer via HCI. This example runs on top of FreeRTOS.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_ncp_empty.btmesh_ncp_empty_freertos.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_ncp_empty/btmesh_ncp_empty_freertos.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_ncp_empty/readme.md"/>
+    <properties key="boardCompatibility" value="brd2601b brd2602a brd2703a brd4110b brd4111b brd4115a brd4176a brd4179b brd4180a brd4180b brd4181a brd4181b brd4181c brd4186c brd4187c brd4188b brd4194a brd4195a brd4195b brd4196a brd4196b brd4198a brd4308a brd4308b brd4308c brd4308d brd4309a brd4309b brd4316a brd4317a brd4318a brd4329a brd4332a brd4335a com.silabs.board.none"/>
+    <properties key="partCompatibility" value=".*bgm21.* .*mgm21.* .*efr32bg21.* .*efr32mg21.* .*bgm24.* .*mgm24.* .*efr32bg24.* .*efr32mg24.* .*efr32bg27.* .*efr32mg27.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|NCP Project\ Difficulty|Beginner Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
+  <descriptors name="btmesh_ncp_empty_micriumos" label="Bluetooth Mesh - NCP Empty Micrium OS" description="An NCP Target C application that makes it possible for the NCP Host Controller to access the Bluetooth Mesh stack via UART. It provides access to the host layer via BGAPI and not to the link layer via HCI. This example runs on top of Micrium OS.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_ncp_empty.btmesh_ncp_empty_micriumos.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_ncp_empty/btmesh_ncp_empty_micriumos.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_ncp_empty/readme.md"/>
+    <properties key="boardCompatibility" value="brd2601b brd2602a brd2703a brd4110b brd4111b brd4115a brd4176a brd4179b brd4180a brd4180b brd4181a brd4181b brd4181c brd4186c brd4187c brd4188b brd4194a brd4195a brd4195b brd4196a brd4196b brd4198a brd4308a brd4308b brd4308c brd4308d brd4309a brd4309b brd4316a brd4317a brd4318a brd4329a brd4332a brd4335a com.silabs.board.none"/>
+    <properties key="partCompatibility" value=".*bgm21.* .*mgm21.* .*efr32bg21.* .*efr32mg21.* .*bgm24.* .*mgm24.* .*efr32bg24.* .*efr32mg24.* .*efr32bg27.* .*efr32mg27.*"/>
     <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
     <properties key="toolchainCompatibility" value="gcc iar"/>
     <properties key="category" value="Bluetooth Mesh Examples"/>
@@ -83,6 +113,36 @@
     <properties key="readmeFiles" value="documentation/example/btmesh_soc_empty/readme.md"/>
     <properties key="boardCompatibility" value="brd2601b brd2602a brd2703a brd4108a brd4110b brd4111b brd4115a brd4176a brd4179b brd4180a brd4180b brd4181a brd4181b brd4181c brd4182a brd4183a brd4183c brd4184a brd4184b brd4186c brd4187c brd4188b brd4194a brd4195a brd4195b brd4196a brd4196b brd4198a brd4308a brd4308b brd4308c brd4308d brd4309a brd4309b brd4311a brd4311b brd4312a brd4314a brd4316a brd4317a brd4318a brd4329a brd4332a brd4335a brd4402a brd4403a com.silabs.board.none"/>
     <properties key="partCompatibility" value=".*bgm21.* .*bgm22.*hna.* .*bgm24.* .*efr32bg21.* .*efr32bg22.*f512.* .*efr32bg24.* .*efr32bg27.* .*efr32mg21.* .*efr32mg22.* .*efr32mg24.* .*efr32mg27.* .*mgm21.* .*mgm22.* .*mgm24.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Beginner Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
+  <descriptors name="btmesh_soc_empty_freertos" label="Bluetooth Mesh - SoC Empty FreeRTOS" description="Demonstrates the bare minimum needed for a Bluetooth Mesh C application. The application starts Unprovisioned Device Beaconing after booting, and then waits to be provisioned. This example runs on top of FreeRTOS.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_empty.btmesh_soc_empty_freertos.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_empty/btmesh_soc_empty_freertos.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_empty/readme_rtos.md"/>
+    <properties key="boardCompatibility" value="brd2601b brd2602a brd2703a brd4110b brd4111b brd4115a brd4176a brd4179b brd4180a brd4180b brd4181a brd4181b brd4181c brd4186c brd4187c brd4188b brd4194a brd4195a brd4195b brd4196a brd4196b brd4198a brd4308a brd4308b brd4308c brd4308d brd4309a brd4309b brd4316a brd4317a brd4318a brd4329a brd4332a brd4335a com.silabs.board.none"/>
+    <properties key="partCompatibility" value=".*bgm21.* .*mgm21.* .*efr32bg21.* .*efr32mg21.* .*bgm24.* .*mgm24.* .*efr32bg24.* .*efr32mg24.* .*efr32bg27.* .*efr32mg27.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Beginner Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
+  <descriptors name="btmesh_soc_empty_micriumos" label="Bluetooth Mesh - SoC Empty MicriumOS" description="Demonstrates the bare minimum needed for a Bluetooth Mesh C application. The application starts Unprovisioned Device Beaconing after booting, and then waits to be provisioned. This example runs on top of Micrium OS.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_empty.btmesh_soc_empty_micriumos.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_empty/btmesh_soc_empty_micriumos.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_empty/readme_rtos.md"/>
+    <properties key="boardCompatibility" value="brd2601b brd2602a brd2703a brd4110b brd4111b brd4115a brd4176a brd4179b brd4180a brd4180b brd4181a brd4181b brd4181c brd4186c brd4187c brd4188b brd4194a brd4195a brd4195b brd4196a brd4196b brd4198a brd4308a brd4308b brd4308c brd4308d brd4309a brd4309b brd4316a brd4317a brd4318a brd4329a brd4332a brd4335a com.silabs.board.none"/>
+    <properties key="partCompatibility" value=".*bgm21.* .*mgm21.* .*efr32bg21.* .*efr32mg21.* .*bgm24.* .*mgm24.* .*efr32bg24.* .*efr32mg24.* .*efr32bg27.* .*efr32mg27.*"/>
     <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
     <properties key="toolchainCompatibility" value="gcc iar"/>
     <properties key="category" value="Bluetooth Mesh Examples"/>
@@ -300,6 +360,36 @@
     <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
     <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
   </descriptors>
+  <descriptors name="btmesh_soc_nlc_basic_scene_selector_freertos" label="Bluetooth Mesh - NLC Basic Scene Selector FreeRTOS" description="An out-of-the-box Software Demo where the device acts as a Basic Scene Selector in a Networked Lighting Control (NLC) system. Push Button presses control Basic Lightness Controllers in the network by scene recall requests. This example runs on top of FreeRTOS.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_nlc_basic_scene_selector.btmesh_soc_nlc_basic_scene_selector_display_freertos.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_nlc_basic_scene_selector/btmesh_soc_nlc_basic_scene_selector_display_freertos.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_nlc_basic_scene_selector/readme_rtos.md"/>
+    <properties key="boardCompatibility" value="brd4176a brd4180a brd4180b brd4181a brd4181b brd4181c brd4186c brd4187c brd4188b brd4194a brd4195a brd4195b brd4196a brd4196b brd4198a brd4308a brd4308b brd4308c brd4308d brd4316a brd4317a brd4318a brd4335a"/>
+    <properties key="partCompatibility" value=".*bgm21.* .*mgm21.* .*efr32bg21.* .*efr32mg21.* .*bgm24.* .*mgm24.* .*efr32bg24.* .*efr32mg24.* .*efr32bg27.* .*efr32mg27.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
+  <descriptors name="btmesh_soc_nlc_basic_scene_selector_micriumos" label="Bluetooth Mesh - NLC Basic Scene Selector Micrium OS" description="An out-of-the-box Software Demo where the device acts as a Basic Scene Selector in a Networked Lighting Control (NLC) system. Push Button presses control Basic Lightness Controllers in the network by scene recall requests. This example runs on top of Micrium OS.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_nlc_basic_scene_selector.btmesh_soc_nlc_basic_scene_selector_display_micriumos.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_nlc_basic_scene_selector/btmesh_soc_nlc_basic_scene_selector_display_micriumos.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_nlc_basic_scene_selector/readme_rtos.md"/>
+    <properties key="boardCompatibility" value="brd4176a brd4180a brd4180b brd4181a brd4181b brd4181c brd4186c brd4187c brd4188b brd4194a brd4195a brd4195b brd4196a brd4196b brd4198a brd4308a brd4308b brd4308c brd4308d brd4316a brd4317a brd4318a brd4335a"/>
+    <properties key="partCompatibility" value=".*bgm21.* .*mgm21.* .*efr32bg21.* .*efr32mg21.* .*bgm24.* .*mgm24.* .*efr32bg24.* .*efr32mg24.* .*efr32bg27.* .*efr32mg27.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
   <descriptors name="btmesh_soc_nlc_basic_scene_selector" label="Bluetooth Mesh - NLC Basic Scene Selector" description="An out-of-the-box Software Demo where the device acts as a Basic Scene Selector in a Networked Lighting Control (NLC) system. Push Button presses control Basic Lightness Controllers in the network by scene recall requests.&#xA;">
     <properties key="namespace" value="template.uc"/>
     <properties key="keywords" value="universal\ configurator"/>
@@ -308,6 +398,36 @@
     <properties key="readmeFiles" value="documentation/example/btmesh_soc_nlc_basic_scene_selector/readme.md"/>
     <properties key="boardCompatibility" value="brd2601b brd2602a brd2703a brd4110b brd4111b brd4115a brd4179b brd4309a brd4309b brd4329a brd4332a"/>
     <properties key="partCompatibility" value=".*bgm21.* .*bgm22.*hna.* .*bgm24.* .*efr32bg21.* .*efr32bg22.*f512.* .*efr32bg24.* .*efr32bg27.* .*efr32mg21.* .*efr32mg22.* .*efr32mg24.* .*efr32mg27.* .*mgm21.* .*mgm22.* .*mgm24.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
+  <descriptors name="btmesh_soc_nlc_basic_scene_selector_freertos" label="Bluetooth Mesh - NLC Basic Scene Selector FreeRTOS" description="An out-of-the-box Software Demo where the device acts as a Basic Scene Selector in a Networked Lighting Control (NLC) system. Push Button presses control Basic Lightness Controllers in the network by scene recall requests. This example runs on top of FreeRTOS.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_nlc_basic_scene_selector.btmesh_soc_nlc_basic_scene_selector_log_freertos.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_nlc_basic_scene_selector/btmesh_soc_nlc_basic_scene_selector_log_freertos.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_nlc_basic_scene_selector/readme_rtos.md"/>
+    <properties key="boardCompatibility" value="brd2601b brd2602a brd2703a brd4110b brd4111b brd4115a brd4179b brd4309a brd4309b brd4329a brd4332a"/>
+    <properties key="partCompatibility" value=".*bgm21.* .*mgm21.* .*efr32bg21.* .*efr32mg21.* .*bgm24.* .*mgm24.* .*efr32bg24.* .*efr32mg24.* .*efr32bg27.* .*efr32mg27.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
+  <descriptors name="btmesh_soc_nlc_basic_scene_selector_micriumos" label="Bluetooth Mesh - NLC Basic Scene Selector Micrium OS" description="An out-of-the-box Software Demo where the device acts as a Basic Scene Selector in a Networked Lighting Control (NLC) system. Push Button presses control Basic Lightness Controllers in the network by scene recall requests. This example runs on top of Micrium OS.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_nlc_basic_scene_selector.btmesh_soc_nlc_basic_scene_selector_log_micriumos.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_nlc_basic_scene_selector/btmesh_soc_nlc_basic_scene_selector_log_micriumos.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_nlc_basic_scene_selector/readme_rtos.md"/>
+    <properties key="boardCompatibility" value="brd2601b brd2602a brd2703a brd4110b brd4111b brd4115a brd4179b brd4309a brd4309b brd4329a brd4332a"/>
+    <properties key="partCompatibility" value=".*bgm21.* .*mgm21.* .*efr32bg21.* .*efr32mg21.* .*bgm24.* .*mgm24.* .*efr32bg24.* .*efr32mg24.* .*efr32bg27.* .*efr32mg27.*"/>
     <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
     <properties key="toolchainCompatibility" value="gcc iar"/>
     <properties key="category" value="Bluetooth Mesh Examples"/>
@@ -345,6 +465,36 @@
     <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
     <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
   </descriptors>
+  <descriptors name="btmesh_soc_nlc_basic_scene_selector_low_power_freertos" label="Bluetooth Mesh - NLC Basic Scene Selector Low Power FreeRTOS" description="An out-of-the-box Software Demo where the device acts as a Basic Scene Selector in a Networked Lighting Control (NLC) system. It is optimized for low current consumption with disabled CLI, logging, and LCD. Push Button presses control Basic Lightness Controllers in the network by scene recall requests.This example runs on top of FreeRTOS.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_nlc_basic_scene_selector.btmesh_soc_nlc_basic_scene_selector_low_power_freertos.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_nlc_basic_scene_selector/btmesh_soc_nlc_basic_scene_selector_low_power_freertos.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_nlc_basic_scene_selector/readme_low_power_rtos.md"/>
+    <properties key="boardCompatibility" value="brd2601b brd2602a brd2703a brd4110b brd4111b brd4115a brd4176a brd4179b brd4180a brd4180b brd4181a brd4181b brd4181c brd4186c brd4187c brd4188b brd4194a brd4195a brd4195b brd4196a brd4196b brd4198a brd4308a brd4308b brd4308c brd4308d brd4309a brd4309b brd4316a brd4317a brd4318a brd4329a brd4332a brd4335a"/>
+    <properties key="partCompatibility" value=".*bgm21.* .*mgm21.* .*efr32bg21.* .*efr32mg21.* .*bgm24.* .*mgm24.* .*efr32bg24.* .*efr32mg24.* .*efr32bg27.* .*efr32mg27.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
+  <descriptors name="btmesh_soc_nlc_basic_scene_selector_low_power_micriumos" label="Bluetooth Mesh - NLC Basic Scene Selector Low Power Micrium OS" description="An out-of-the-box Software Demo where the device acts as a Basic Scene Selector in a Networked Lighting Control (NLC) system. It is optimized for low current consumption with disabled CLI, logging, and LCD. Push Button presses control Basic Lightness Controllers in the network by scene recall requests. This example runs on top of Micrium OS.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_nlc_basic_scene_selector.btmesh_soc_nlc_basic_scene_selector_low_power_micriumos.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_nlc_basic_scene_selector/btmesh_soc_nlc_basic_scene_selector_low_power_micriumos.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_nlc_basic_scene_selector/readme_low_power_rtos.md"/>
+    <properties key="boardCompatibility" value="brd2601b brd2602a brd2703a brd4110b brd4111b brd4115a brd4176a brd4179b brd4180a brd4180b brd4181a brd4181b brd4181c brd4186c brd4187c brd4188b brd4194a brd4195a brd4195b brd4196a brd4196b brd4198a brd4308a brd4308b brd4308c brd4308d brd4309a brd4309b brd4316a brd4317a brd4318a brd4329a brd4332a brd4335a"/>
+    <properties key="partCompatibility" value=".*bgm21.* .*mgm21.* .*efr32bg21.* .*efr32mg21.* .*bgm24.* .*mgm24.* .*efr32bg24.* .*efr32mg24.* .*efr32bg27.* .*efr32mg27.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
   <descriptors name="btmesh_soc_nlc_dimming_control" label="Bluetooth Mesh - NLC Dimming Control" description="An out-of-the-box Software Demo where the device acts as a Dimming Control in a Networked Lighting Control (NLC) system. Push Button presses control Basic Lightness Controllers in the network by Generic Level Delta or Generic On/Off messages.&#xA;">
     <properties key="namespace" value="template.uc"/>
     <properties key="keywords" value="universal\ configurator"/>
@@ -360,6 +510,36 @@
     <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
     <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
   </descriptors>
+  <descriptors name="btmesh_soc_nlc_dimming_control_freertos" label="Bluetooth Mesh - NLC Dimming Control FreeRTOS" description="An out-of-the-box Software Demo where the device acts as a Dimming Control in a Networked Lighting Control (NLC) system. Push Button presses control Basic Lightness Controllers in the network by Generic Level Delta or Generic On/Off messages. This example runs on top  of FreeRTOS.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_nlc_dimming_control.btmesh_soc_nlc_dimming_control_display_freertos.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_nlc_dimming_control/btmesh_soc_nlc_dimming_control_display_freertos.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_nlc_dimming_control/readme_rtos.md"/>
+    <properties key="boardCompatibility" value="brd4176a brd4180a brd4180b brd4181a brd4181b brd4181c brd4186c brd4187c brd4188b brd4194a brd4195a brd4195b brd4196a brd4196b brd4198a brd4308a brd4308b brd4308c brd4308d brd4316a brd4317a brd4318a brd4335a"/>
+    <properties key="partCompatibility" value=".*bgm21.* .*mgm21.* .*efr32bg21.* .*efr32mg21.* .*bgm24.* .*mgm24.* .*efr32bg24.* .*efr32mg24.* .*efr32bg27.* .*efr32mg27.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
+  <descriptors name="btmesh_soc_nlc_dimming_control_micriumos" label="Bluetooth Mesh - NLC Dimming Control Micrium OS" description="An out-of-the-box Software Demo where the device acts as a Dimming Control in a Networked Lighting Control (NLC) system. Push Button presses control Basic Lightness Controllers in the network by Generic Level Delta or Generic On/Off messages. This example runs on top  of Micrium OS.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_nlc_dimming_control.btmesh_soc_nlc_dimming_control_display_micriumos.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_nlc_dimming_control/btmesh_soc_nlc_dimming_control_display_micriumos.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_nlc_dimming_control/readme_rtos.md"/>
+    <properties key="boardCompatibility" value="brd4176a brd4180a brd4180b brd4181a brd4181b brd4181c brd4186c brd4187c brd4188b brd4194a brd4195a brd4195b brd4196a brd4196b brd4198a brd4308a brd4308b brd4308c brd4308d brd4316a brd4317a brd4318a brd4335a"/>
+    <properties key="partCompatibility" value=".*bgm21.* .*mgm21.* .*efr32bg21.* .*efr32mg21.* .*bgm24.* .*mgm24.* .*efr32bg24.* .*efr32mg24.* .*efr32bg27.* .*efr32mg27.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
   <descriptors name="btmesh_soc_nlc_dimming_control" label="Bluetooth Mesh - NLC Dimming Control" description="An out-of-the-box Software Demo where the device acts as a Dimming Control in a Networked Lighting Control (NLC) system. Push Button presses control Basic Lightness Controllers in the network by Generic Level Delta or Generic On/Off messages.&#xA;">
     <properties key="namespace" value="template.uc"/>
     <properties key="keywords" value="universal\ configurator"/>
@@ -368,6 +548,36 @@
     <properties key="readmeFiles" value="documentation/example/btmesh_soc_nlc_dimming_control/readme.md"/>
     <properties key="boardCompatibility" value="brd2601b brd2602a brd2703a brd4110b brd4111b brd4115a brd4179b brd4309a brd4309b brd4329a brd4332a"/>
     <properties key="partCompatibility" value=".*bgm21.* .*bgm22.*hna.* .*bgm24.* .*efr32bg21.* .*efr32bg22.*f512.* .*efr32bg24.* .*efr32bg27.* .*efr32mg21.* .*efr32mg22.* .*efr32mg24.* .*efr32mg27.* .*mgm21.* .*mgm22.* .*mgm24.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
+  <descriptors name="btmesh_soc_nlc_dimming_control_freertos" label="Bluetooth Mesh - NLC Dimming Control FreeRTOS" description="An out-of-the-box Software Demo where the device acts as a Dimming Control in a Networked Lighting Control (NLC) system. Push Button presses control Basic Lightness Controllers in the network by Generic Level Delta or Generic On/Off messages. This example runs on top  of FreeRTOS.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_nlc_dimming_control.btmesh_soc_nlc_dimming_control_log_freertos.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_nlc_dimming_control/btmesh_soc_nlc_dimming_control_log_freertos.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_nlc_dimming_control/readme_rtos.md"/>
+    <properties key="boardCompatibility" value="brd2601b brd2602a brd2703a brd4110b brd4111b brd4115a brd4179b brd4309a brd4309b brd4329a brd4332a"/>
+    <properties key="partCompatibility" value=".*bgm21.* .*mgm21.* .*efr32bg21.* .*efr32mg21.* .*bgm24.* .*mgm24.* .*efr32bg24.* .*efr32mg24.* .*efr32bg27.* .*efr32mg27.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
+  <descriptors name="btmesh_soc_nlc_dimming_control_micriumos" label="Bluetooth Mesh - NLC Dimming Control MicriumOS" description="An out-of-the-box Software Demo where the device acts as a Dimming Control in a Networked Lighting Control (NLC) system. Push Button presses control Basic Lightness Controllers in the network by Generic Level Delta or Generic On/Off messages. This example runs on  top of Micrium OS.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_nlc_dimming_control.btmesh_soc_nlc_dimming_control_log_micriumos.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_nlc_dimming_control/btmesh_soc_nlc_dimming_control_log_micriumos.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_nlc_dimming_control/readme_rtos.md"/>
+    <properties key="boardCompatibility" value="brd2601b brd2602a brd2703a brd4110b brd4111b brd4115a brd4179b brd4309a brd4309b brd4329a brd4332a"/>
+    <properties key="partCompatibility" value=".*bgm21.* .*mgm21.* .*efr32bg21.* .*efr32mg21.* .*bgm24.* .*mgm24.* .*efr32bg24.* .*efr32mg24.* .*efr32bg27.* .*efr32mg27.*"/>
     <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
     <properties key="toolchainCompatibility" value="gcc iar"/>
     <properties key="category" value="Bluetooth Mesh Examples"/>
@@ -405,6 +615,36 @@
     <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
     <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
   </descriptors>
+  <descriptors name="btmesh_soc_nlc_dimming_control_low_power_freertos" label="Bluetooth Mesh - NLC Dimming Control Low Power FreeRTOS" description="An out-of-the-box Software Demo where the device acts as a Dimming Control in a Networked Lighting Control (NLC) system. It is optimized for low current consumption with disabled CLI, logging, and LCD. Push Button presses control Basic Lightness Controllers in the network by Generic Level Delta or Generic On/Off messages. This example runs on top  of FreeRTOS.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_nlc_dimming_control.btmesh_soc_nlc_dimming_control_low_power_freertos.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_nlc_dimming_control/btmesh_soc_nlc_dimming_control_low_power_freertos.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_nlc_dimming_control/readme_low_power_rtos.md"/>
+    <properties key="boardCompatibility" value="brd2601b brd2602a brd2703a brd4110b brd4111b brd4115a brd4176a brd4179b brd4180a brd4180b brd4181a brd4181b brd4181c brd4186c brd4187c brd4188b brd4194a brd4195a brd4195b brd4196a brd4196b brd4198a brd4308a brd4308b brd4308c brd4308d brd4309a brd4309b brd4316a brd4317a brd4318a brd4329a brd4332a brd4335a"/>
+    <properties key="partCompatibility" value=".*bgm21.* .*mgm21.* .*efr32bg21.* .*efr32mg21.* .*bgm24.* .*mgm24.* .*efr32bg24.* .*efr32mg24.* .*efr32bg27.* .*efr32mg27.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
+  <descriptors name="btmesh_soc_nlc_dimming_control_low_power_micriumos" label="Bluetooth Mesh - NLC Dimming Control Low Power Micrium OS" description="An out-of-the-box Software Demo where the device acts as a Dimming Control in a Networked Lighting Control (NLC) system. It is optimized for low current consumption with disabled CLI, logging, and LCD. Push Button presses control Basic Lightness Controllers in the network by Generic Level Delta or Generic On/Off messages. This example runs on  top of Micrium OS.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_nlc_dimming_control.btmesh_soc_nlc_dimming_control_low_power_micriumos.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_nlc_dimming_control/btmesh_soc_nlc_dimming_control_low_power_micriumos.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_nlc_dimming_control/readme_low_power_rtos.md"/>
+    <properties key="boardCompatibility" value="brd2601b brd2602a brd2703a brd4110b brd4111b brd4115a brd4176a brd4179b brd4180a brd4180b brd4181a brd4181b brd4181c brd4186c brd4187c brd4188b brd4194a brd4195a brd4195b brd4196a brd4196b brd4198a brd4308a brd4308b brd4308c brd4308d brd4309a brd4309b brd4316a brd4317a brd4318a brd4329a brd4332a brd4335a"/>
+    <properties key="partCompatibility" value=".*bgm21.* .*mgm21.* .*efr32bg21.* .*efr32mg21.* .*bgm24.* .*mgm24.* .*efr32bg24.* .*efr32mg24.* .*efr32bg27.* .*efr32mg27.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
   <descriptors name="btmesh_soc_nlc_sensor_ambient_light" label="Bluetooth Mesh - NLC Ambient Light Sensor" description="An out-of-the-box Software Demo where the device acts as an Ambient Light Sensor in a Networked Lighting Control (NLC) system. The device measures ambient light and sends these measurements to the network. Properly configured NLC Basic Lightness Controllers then can act on the received data.&#xA;">
     <properties key="namespace" value="template.uc"/>
     <properties key="keywords" value="universal\ configurator"/>
@@ -435,6 +675,36 @@
     <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
     <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
   </descriptors>
+  <descriptors name="btmesh_soc_nlc_sensor_ambient_light_freertos" label="Bluetooth Mesh - NLC Ambient Light Sensor FreeRTOS" description="An out-of-the-box Software Demo where the device acts as an Ambient Light Sensor in a Networked Lighting Control (NLC) system. The device measures ambient light and sends these measurements to the network. Properly configured NLC Basic Lightness Controllers then can act on the received data. This example runs on top of FreeRTOS.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_nlc_sensor_ambient_light.btmesh_soc_nlc_sensor_ambient_light_freertos_brd2601b.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_nlc_sensor_ambient_light/btmesh_soc_nlc_sensor_ambient_light_freertos_brd2601b.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_nlc_sensor_ambient_light/readme_freertos.md"/>
+    <properties key="boardCompatibility" value="brd2601b"/>
+    <properties key="partCompatibility" value=".*efr32mg24.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
+  <descriptors name="btmesh_soc_nlc_sensor_ambient_light_freertos" label="Bluetooth Mesh - NLC Ambient Light Sensor FreeRTOS" description="An out-of-the-box Software Demo where the device acts as an Ambient Light Sensor in a Networked Lighting Control (NLC) system. The device measures ambient light and sends these measurements to the network. Properly configured NLC Basic Lightness Controllers then can act on the received data. This example runs on top of FreeRTOS.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_nlc_sensor_ambient_light.btmesh_soc_nlc_sensor_ambient_light_freertos_brd2602a.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_nlc_sensor_ambient_light/btmesh_soc_nlc_sensor_ambient_light_freertos_brd2602a.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_nlc_sensor_ambient_light/readme_freertos.md"/>
+    <properties key="boardCompatibility" value="brd2602a"/>
+    <properties key="partCompatibility" value=".*efr32bg27.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
   <descriptors name="btmesh_soc_nlc_sensor_ambient_light" label="Bluetooth Mesh - NLC Ambient Light Sensor (Mock)" description="An out-of-the-box Software Demo where the device acts as an ambient light sensor in a Networked Lighting Control (NLC) system. The device simulates ambient light measurements and sends these to the network. Properly configured NLC Basic Lightness Controllers then can act on the received data.&#xA;">
     <properties key="namespace" value="template.uc"/>
     <properties key="keywords" value="universal\ configurator"/>
@@ -450,6 +720,21 @@
     <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
     <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
   </descriptors>
+  <descriptors name="btmesh_soc_nlc_sensor_ambient_light_freertos" label="Bluetooth Mesh - NLC Ambient Light Sensor (Mock) FreeRTOS" description="An out-of-the-box Software Demo where the device acts as an ambient light sensor in a Networked Lighting Control (NLC) system. The device simulates ambient light measurements and sends these to the network. Properly configured NLC Basic Lightness Controllers then can act on the received data. This example runs on top of FreeRTOS.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_nlc_sensor_ambient_light.btmesh_soc_nlc_sensor_ambient_light_mock_display_freertos.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_nlc_sensor_ambient_light/btmesh_soc_nlc_sensor_ambient_light_mock_display_freertos.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_nlc_sensor_ambient_light/readme_freertos.md"/>
+    <properties key="boardCompatibility" value="brd4176a brd4180a brd4180b brd4181a brd4181b brd4181c brd4186c brd4187c brd4188b brd4194a brd4195a brd4195b brd4196a brd4196b brd4198a brd4308a brd4308b brd4308c brd4308d brd4316a brd4317a brd4318a brd4335a"/>
+    <properties key="partCompatibility" value=".*bgm21.* .*mgm21.* .*efr32bg21.* .*efr32mg21.* .*bgm24.* .*mgm24.* .*efr32bg24.* .*efr32mg24.* .*efr32bg27.* .*efr32mg27.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
   <descriptors name="btmesh_soc_nlc_sensor_ambient_light" label="Bluetooth Mesh - NLC Ambient Light Sensor (Mock)" description="An out-of-the-box Software Demo where the device acts as an ambient light sensor in a Networked Lighting Control (NLC) system. The device simulates ambient light measurements and sends these to the network. Properly configured NLC Basic Lightness Controllers then can act on the received data.&#xA;">
     <properties key="namespace" value="template.uc"/>
     <properties key="keywords" value="universal\ configurator"/>
@@ -458,6 +743,21 @@
     <properties key="readmeFiles" value="documentation/example/btmesh_soc_nlc_sensor_ambient_light/readme.md"/>
     <properties key="boardCompatibility" value="brd2703a brd4110b brd4111b brd4115a brd4179b brd4309a brd4309b brd4329a brd4332a"/>
     <properties key="partCompatibility" value=".*bgm21.* .*bgm22.*hna.* .*bgm24.* .*efr32bg21.* .*efr32bg22.*f512.* .*efr32bg24.* .*efr32bg27.* .*efr32mg21.* .*efr32mg22.* .*efr32mg24.* .*efr32mg27.* .*mgm21.* .*mgm22.* .*mgm24.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
+  <descriptors name="btmesh_soc_nlc_sensor_ambient_light_freertos" label="Bluetooth Mesh - NLC Ambient Light Sensor (Mock) FreeRTOS" description="An out-of-the-box Software Demo where the device acts as an ambient light sensor in a Networked Lighting Control (NLC) system. The device simulates ambient light measurements and sends these to the network. Properly configured NLC Basic Lightness Controllers then can act on the received data. This example runs on top of FreeRTOS.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_nlc_sensor_ambient_light.btmesh_soc_nlc_sensor_ambient_light_mock_log_freertos.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_nlc_sensor_ambient_light/btmesh_soc_nlc_sensor_ambient_light_mock_log_freertos.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_nlc_sensor_ambient_light/readme_freertos.md"/>
+    <properties key="boardCompatibility" value="brd2703a brd4110b brd4111b brd4115a brd4179b brd4309a brd4309b brd4329a brd4332a"/>
+    <properties key="partCompatibility" value=".*bgm21.* .*mgm21.* .*efr32bg21.* .*efr32mg21.* .*bgm24.* .*mgm24.* .*efr32bg24.* .*efr32mg24.* .*efr32bg27.* .*efr32mg27.*"/>
     <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
     <properties key="toolchainCompatibility" value="gcc iar"/>
     <properties key="category" value="Bluetooth Mesh Examples"/>
@@ -555,6 +855,51 @@
     <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
     <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
   </descriptors>
+  <descriptors name="btmesh_soc_nlc_sensor_occupancy_freertos" label="Bluetooth Mesh - NLC Occupancy Sensor FreeRTOS" description="An out-of-the-box Software Demo where the device acts as an Occupancy Sensor in a Networked Lighting Control (NLC) system. Push Button presses imitate people count changes which can control a properly configured NLC Basic Lightness Controller. This example runs on top of FreeRTOS.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_nlc_sensor_occupancy.btmesh_soc_nlc_sensor_occupancy_display_freertos.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_nlc_sensor_occupancy/btmesh_soc_nlc_sensor_occupancy_display_freertos.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_nlc_sensor_occupancy/readme_freertos.md"/>
+    <properties key="boardCompatibility" value="brd4186c brd4187c brd4188b brd4194a brd4198a brd4316a brd4317a brd4318a brd4335a"/>
+    <properties key="partCompatibility" value=".*bgm21.* .*bgm22.*hna.* .*bgm24.* .*efr32bg21.* .*efr32bg22.*f512.* .*efr32bg24.* .*efr32bg27.* .*efr32mg21.* .*efr32mg22.* .*efr32mg24.* .*efr32mg27.* .*mgm21.* .*mgm22.* .*mgm24.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
+  <descriptors name="btmesh_soc_nlc_sensor_occupancy_freertos" label="Bluetooth Mesh - NLC Occupancy Sensor FreeRTOS" description="An out-of-the-box Software Demo where the device acts as an Occupancy Sensor in a Networked Lighting Control (NLC) system. Push Button presses imitate people count changes which can control a properly configured NLC Basic Lightness Controller. This example runs on top of FreeRTOS.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_nlc_sensor_occupancy.btmesh_soc_nlc_sensor_occupancy_freertos_brd2601b.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_nlc_sensor_occupancy/btmesh_soc_nlc_sensor_occupancy_freertos_brd2601b.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_nlc_sensor_occupancy/readme_freertos.md"/>
+    <properties key="boardCompatibility" value="brd2601b"/>
+    <properties key="partCompatibility" value=".*efr32mg24.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
+  <descriptors name="btmesh_soc_nlc_sensor_occupancy_freertos" label="Bluetooth Mesh - NLC Occupancy Sensor FreeRTOS" description="An out-of-the-box Software Demo where the device acts as an Occupancy Sensor in a Networked Lighting Control (NLC) system. Push Button presses imitate people count changes which can control a properly configured NLC Basic Lightness Controller. This example runs on top of FreeRTOS.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_nlc_sensor_occupancy.btmesh_soc_nlc_sensor_occupancy_freertos_brd2602a.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_nlc_sensor_occupancy/btmesh_soc_nlc_sensor_occupancy_freertos_brd2602a.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_nlc_sensor_occupancy/readme_freertos.md"/>
+    <properties key="boardCompatibility" value="brd2602a"/>
+    <properties key="partCompatibility" value=".*efr32bg27.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
   <descriptors name="btmesh_soc_nlc_sensor_occupancy" label="Bluetooth Mesh - NLC Occupancy Sensor" description="An out-of-the-box Software Demo where the device acts as an Occupancy Sensor in a Networked Lighting Control (NLC) system. Push Button presses imitate people count changes which can control a properly configured NLC Basic Lightness Controller.&#xA;">
     <properties key="namespace" value="template.uc"/>
     <properties key="keywords" value="universal\ configurator"/>
@@ -585,6 +930,21 @@
     <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
     <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
   </descriptors>
+  <descriptors name="btmesh_soc_nlc_sensor_occupancy_freertos" label="Bluetooth Mesh - NLC Occupancy Sensor FreeRTOS" description="An out-of-the-box Software Demo where the device acts as an Occupancy Sensor in a Networked Lighting Control (NLC) system. Push Button presses imitate people count changes which can control a properly configured NLC Basic Lightness Controller. This example runs on top of FreeRTOS.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_nlc_sensor_occupancy.btmesh_soc_nlc_sensor_occupancy_mock_display_freertos.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_nlc_sensor_occupancy/btmesh_soc_nlc_sensor_occupancy_mock_display_freertos.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_nlc_sensor_occupancy/readme_freertos.md"/>
+    <properties key="boardCompatibility" value="brd4176a brd4180a brd4180b brd4181a brd4181b brd4181c brd4195a brd4195b brd4196a brd4196b brd4308a brd4308b brd4308c brd4308d"/>
+    <properties key="partCompatibility" value=".*bgm21.* .*efr32bg21.* .*efr32bg27.* .*efr32mg21.* .*efr32mg27.* .*mgm21.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
   <descriptors name="btmesh_soc_nlc_sensor_occupancy" label="Bluetooth Mesh - NLC Occupancy Sensor" description="An out-of-the-box Software Demo where the device acts as an Occupancy Sensor in a Networked Lighting Control (NLC) system. Push Button presses imitate people count changes which can control a properly configured NLC Basic Lightness Controller.&#xA;">
     <properties key="namespace" value="template.uc"/>
     <properties key="keywords" value="universal\ configurator"/>
@@ -593,6 +953,21 @@
     <properties key="readmeFiles" value="documentation/example/btmesh_soc_nlc_sensor_occupancy/readme.md"/>
     <properties key="boardCompatibility" value="brd2703a brd4108a brd4110b brd4111b brd4115a brd4179b brd4183a brd4183c brd4309a brd4309b brd4314a brd4329a brd4332a brd4403a"/>
     <properties key="partCompatibility" value=".*bgm21.* .*bgm22.*hna.* .*bgm24.* .*efr32bg21.* .*efr32bg22.*f512.* .*efr32bg24.* .*efr32bg27.* .*efr32mg21.* .*efr32mg22.* .*efr32mg24.* .*efr32mg27.* .*mgm21.* .*mgm22.* .*mgm24.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
+  <descriptors name="btmesh_soc_nlc_sensor_occupancy_freertos" label="Bluetooth Mesh - NLC Occupancy Sensor FreeRTOS" description="An out-of-the-box Software Demo where the device acts as an Occupancy Sensor in a Networked Lighting Control (NLC) system. Push Button presses imitate people count changes which can control a properly configured NLC Basic Lightness Controller. This example runs on top of FreeRTOS.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_nlc_sensor_occupancy.btmesh_soc_nlc_sensor_occupancy_mock_log_freertos.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_nlc_sensor_occupancy/btmesh_soc_nlc_sensor_occupancy_mock_log_freertos.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_nlc_sensor_occupancy/readme_freertos.md"/>
+    <properties key="boardCompatibility" value="brd2703a brd4110b brd4111b brd4115a brd4179b brd4309a brd4309b brd4329a brd4332a"/>
+    <properties key="partCompatibility" value=".*bgm21.* .*mgm21.* .*efr32bg21.* .*efr32mg21.* .*bgm24.* .*mgm24.* .*efr32bg24.* .*efr32mg24.* .*efr32bg27.* .*efr32mg27.*"/>
     <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
     <properties key="toolchainCompatibility" value="gcc iar"/>
     <properties key="category" value="Bluetooth Mesh Examples"/>
@@ -645,6 +1020,21 @@
     <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
     <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
   </descriptors>
+  <descriptors name="btmesh_soc_sensor_client_freertos" label="Bluetooth Mesh - SoC Sensor Client FreeRTOS" description="This example demonstrates the Bluetooth Mesh Sensor Client Model. It collects and displays sensor measurement data from remote device(s) (e.g., btmesh_soc_sensor_server). This example runs on top of FreeRTOS.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_sensor_client.btmesh_soc_sensor_client_display_freertos.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_sensor_client/btmesh_soc_sensor_client_display_freertos.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_sensor_client/readme_freertos.md"/>
+    <properties key="boardCompatibility" value="brd4176a brd4180a brd4180b brd4181a brd4181b brd4181c brd4186c brd4187c brd4188b brd4194a brd4195a brd4195b brd4196a brd4196b brd4198a brd4308a brd4308b brd4308c brd4308d brd4316a brd4317a brd4318a brd4335a"/>
+    <properties key="partCompatibility" value=".*bgm21.* .*mgm21.* .*efr32bg21.* .*efr32mg21.* .*bgm24.* .*mgm24.* .*efr32bg24.* .*efr32mg24.* .*efr32bg27.* .*efr32mg27.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
   <descriptors name="btmesh_soc_sensor_client" label="Bluetooth Mesh - SoC Sensor Client" description="This example demonstrates the Bluetooth Mesh Sensor Client Model. It collects and displays sensor measurement data from remote device(s) (e.g., btmesh_soc_sensor_server).&#xA;">
     <properties key="namespace" value="template.uc"/>
     <properties key="keywords" value="universal\ configurator"/>
@@ -653,6 +1043,21 @@
     <properties key="readmeFiles" value="documentation/example/btmesh_soc_sensor_client/readme.md"/>
     <properties key="boardCompatibility" value="brd2601b brd2602a brd2703a brd4110b brd4111b brd4115a brd4179b brd4309a brd4309b brd4329a brd4332a"/>
     <properties key="partCompatibility" value=".*bgm21.* .*bgm22.*hna.* .*bgm24.* .*efr32bg21.* .*efr32bg22.*f512.* .*efr32bg24.* .*efr32bg27.* .*efr32mg21.* .*efr32mg22.* .*efr32mg24.* .*efr32mg27.* .*mgm21.* .*mgm22.* .*mgm24.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
+  <descriptors name="btmesh_soc_sensor_client_freertos" label="Bluetooth Mesh - SoC Sensor Client FreeRTOS" description="This example demonstrates the Bluetooth Mesh Sensor Client Model. It collects and displays sensor measurement data from remote device(s) (e.g., btmesh_soc_sensor_server). This example runs on top of FreeRTOS.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_sensor_client.btmesh_soc_sensor_client_log_freertos.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_sensor_client/btmesh_soc_sensor_client_log_freertos.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_sensor_client/readme_freertos.md"/>
+    <properties key="boardCompatibility" value="brd2601b brd2602a brd2703a brd4110b brd4111b brd4115a brd4179b brd4309a brd4309b brd4329a brd4332a"/>
+    <properties key="partCompatibility" value=".*bgm21.* .*mgm21.* .*efr32bg21.* .*efr32mg21.* .*bgm24.* .*mgm24.* .*efr32bg24.* .*efr32mg24.* .*efr32bg27.* .*efr32mg27.*"/>
     <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
     <properties key="toolchainCompatibility" value="gcc iar"/>
     <properties key="category" value="Bluetooth Mesh Examples"/>
@@ -680,7 +1085,7 @@
     <properties key="keywords" value="universal\ configurator"/>
     <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_sensor_thermometer.btmesh_soc_sensor_thermometer_brd2601b.slcp"/>
     <properties key="projectFilePaths" value="example/btmesh_soc_sensor_thermometer/btmesh_soc_sensor_thermometer_brd2601b.slcp"/>
-    <properties key="readmeFiles" value="documentation/example/btmesh_soc_sensor_server/readme.md"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_sensor_thermometer/readme.md"/>
     <properties key="boardCompatibility" value="brd2601b"/>
     <properties key="partCompatibility" value=".*efr32mg24.*"/>
     <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
@@ -695,7 +1100,7 @@
     <properties key="keywords" value="universal\ configurator"/>
     <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_sensor_thermometer.btmesh_soc_sensor_thermometer_brd2602a.slcp"/>
     <properties key="projectFilePaths" value="example/btmesh_soc_sensor_thermometer/btmesh_soc_sensor_thermometer_brd2602a.slcp"/>
-    <properties key="readmeFiles" value="documentation/example/btmesh_soc_sensor_server/readme.md"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_sensor_thermometer/readme.md"/>
     <properties key="boardCompatibility" value="brd2602a"/>
     <properties key="partCompatibility" value=".*efr32bg27.*"/>
     <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
@@ -710,9 +1115,54 @@
     <properties key="keywords" value="universal\ configurator"/>
     <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_sensor_thermometer.btmesh_soc_sensor_thermometer_display.slcp"/>
     <properties key="projectFilePaths" value="example/btmesh_soc_sensor_thermometer/btmesh_soc_sensor_thermometer_display.slcp"/>
-    <properties key="readmeFiles" value="documentation/example/btmesh_soc_sensor_server/readme.md"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_sensor_thermometer/readme.md"/>
     <properties key="boardCompatibility" value="brd4186c brd4187c brd4188b brd4194a brd4198a brd4316a brd4317a brd4318a brd4335a"/>
     <properties key="partCompatibility" value=".*bgm21.* .*bgm22.*hna.* .*bgm24.* .*efr32bg21.* .*efr32bg22.*f512.* .*efr32bg24.* .*efr32bg27.* .*efr32mg21.* .*efr32mg22.* .*efr32mg24.* .*efr32mg27.* .*mgm21.* .*mgm22.* .*mgm24.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
+  <descriptors name="btmesh_soc_sensor_thermometer_freertos" label="Bluetooth Mesh - SoC Sensor Thermometer FreeRTOS" description="This example demonstrates the Bluetooth Mesh Sensor Server Model and Sensor Setup Server Model. It measures temperature and sends the measurement data to a remote device (e.g., btmesh_soc_sensor_client). This example runs on top  of FreeRTOS.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_sensor_thermometer.btmesh_soc_sensor_thermometer_display_freertos.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_sensor_thermometer/btmesh_soc_sensor_thermometer_display_freertos.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_sensor_thermometer/readme_freertos.md"/>
+    <properties key="boardCompatibility" value="brd4186c brd4187c brd4188b brd4194a brd4198a brd4316a brd4317a brd4318a brd4335a"/>
+    <properties key="partCompatibility" value=".*bgm21.* .*mgm21.* .*efr32bg21.* .*efr32mg21.* .*bgm24.* .*mgm24.* .*efr32bg24.* .*efr32mg24.* .*efr32bg27.* .*efr32mg27.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
+  <descriptors name="btmesh_soc_sensor_thermometer_freertos" label="Bluetooth Mesh - SoC Sensor Thermometer FreeRTOS" description="This example demonstrates the Bluetooth Mesh Sensor Server Model and Sensor Setup Server Model. It measures temperature and sends the measurement data to a remote device (e.g., btmesh_soc_sensor_client). This example runs on top  of FreeRTOS.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_sensor_thermometer.btmesh_soc_sensor_thermometer_freertos_brd2601b.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_sensor_thermometer/btmesh_soc_sensor_thermometer_freertos_brd2601b.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_sensor_thermometer/readme_freertos.md"/>
+    <properties key="boardCompatibility" value="brd2601b"/>
+    <properties key="partCompatibility" value=".*efr32mg24.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
+  <descriptors name="btmesh_soc_sensor_thermometer_freertos" label="Bluetooth Mesh - SoC Sensor Thermometer FreeRTOS" description="This example demonstrates the Bluetooth Mesh Sensor Server Model and Sensor Setup Server Model. It measures temperature and sends the measurement data to a remote device (e.g., btmesh_soc_sensor_client). This example runs on top  of FreeRTOS.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_sensor_thermometer.btmesh_soc_sensor_thermometer_freertos_brd2602a.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_sensor_thermometer/btmesh_soc_sensor_thermometer_freertos_brd2602a.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_sensor_thermometer/readme_freertos.md"/>
+    <properties key="boardCompatibility" value="brd2602a"/>
+    <properties key="partCompatibility" value=".*efr32bg27.*"/>
     <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
     <properties key="toolchainCompatibility" value="gcc iar"/>
     <properties key="category" value="Bluetooth Mesh Examples"/>
@@ -725,7 +1175,7 @@
     <properties key="keywords" value="universal\ configurator"/>
     <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_sensor_thermometer.btmesh_soc_sensor_thermometer_log_xg22.slcp"/>
     <properties key="projectFilePaths" value="example/btmesh_soc_sensor_thermometer/btmesh_soc_sensor_thermometer_log_xg22.slcp"/>
-    <properties key="readmeFiles" value="documentation/example/btmesh_soc_sensor_server/readme.md"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_sensor_thermometer/readme.md"/>
     <properties key="boardCompatibility" value="brd4182a brd4311a brd4311b brd4312a brd4402a"/>
     <properties key="partCompatibility" value=".*bgm22.*hna.* .*efr32bg22.*f512.* .*efr32mg22.* .*mgm22.*"/>
     <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
@@ -740,9 +1190,24 @@
     <properties key="keywords" value="universal\ configurator"/>
     <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_sensor_thermometer.btmesh_soc_sensor_thermometer_mock_display.slcp"/>
     <properties key="projectFilePaths" value="example/btmesh_soc_sensor_thermometer/btmesh_soc_sensor_thermometer_mock_display.slcp"/>
-    <properties key="readmeFiles" value="documentation/example/btmesh_soc_sensor_server/readme.md"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_sensor_thermometer/readme.md"/>
     <properties key="boardCompatibility" value="brd4176a brd4180a brd4180b brd4181a brd4181b brd4181c brd4195a brd4195b brd4196a brd4196b brd4308a brd4308b brd4308c brd4308d"/>
     <properties key="partCompatibility" value=".*bgm21.* .*bgm22.*hna.* .*bgm24.* .*efr32bg21.* .*efr32bg22.*f512.* .*efr32bg27.* .*efr32mg21.* .*efr32mg22.* .*efr32mg27.* .*mgm21.* .*mgm22.* .*mgm24.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
+  <descriptors name="btmesh_soc_sensor_thermometer_freertos" label="Bluetooth Mesh - SoC Sensor Thermometer FreeRTOS" description="This example demonstrates the Bluetooth Mesh Sensor Server Model and Sensor Setup Server Model. If available, it measures CPU temperature and uses that data as temperature reading, otherwise it sends mocked temperature data to a remote device (e.g., btmesh_soc_sensor_client). This example runs on top  of FreeRTOS.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_sensor_thermometer.btmesh_soc_sensor_thermometer_mock_display_freertos.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_sensor_thermometer/btmesh_soc_sensor_thermometer_mock_display_freertos.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_sensor_thermometer/readme_freertos.md"/>
+    <properties key="boardCompatibility" value="brd4176a brd4180a brd4180b brd4181a brd4181b brd4181c brd4195a brd4195b brd4196a brd4196b brd4308a brd4308b brd4308c brd4308d"/>
+    <properties key="partCompatibility" value=".*bgm21.* .*efr32bg21.* .*efr32bg27.* .*efr32mg21.* .*efr32mg27.* .*mgm21.*"/>
     <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
     <properties key="toolchainCompatibility" value="gcc iar"/>
     <properties key="category" value="Bluetooth Mesh Examples"/>
@@ -755,9 +1220,24 @@
     <properties key="keywords" value="universal\ configurator"/>
     <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_sensor_thermometer.btmesh_soc_sensor_thermometer_mock_log.slcp"/>
     <properties key="projectFilePaths" value="example/btmesh_soc_sensor_thermometer/btmesh_soc_sensor_thermometer_mock_log.slcp"/>
-    <properties key="readmeFiles" value="documentation/example/btmesh_soc_sensor_server/readme.md"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_sensor_thermometer/readme.md"/>
     <properties key="boardCompatibility" value="brd2703a brd4108a brd4110b brd4111b brd4115a brd4179b brd4183a brd4183c brd4309a brd4309b brd4314a brd4329a brd4332a brd4403a"/>
     <properties key="partCompatibility" value=".*bgm21.* .*bgm22.*hna.* .*bgm24.* .*efr32bg21.* .*efr32bg22.*f512.* .*efr32bg24.* .*efr32bg27.* .*efr32mg21.* .*efr32mg22.* .*efr32mg24.* .*efr32mg27.* .*mgm21.* .*mgm22.* .*mgm24.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
+  <descriptors name="btmesh_soc_sensor_thermometer_freertos" label="Bluetooth Mesh - SoC Sensor Thermometer FreeRTOS" description="This example demonstrates the Bluetooth Mesh Sensor Server Model and Sensor Setup Server Model. If available, it measures CPU temperature and uses that data as temperature reading, otherwise it sends mocked temperature data to a remote device (e.g., btmesh_soc_sensor_client). This example runs on top  of FreeRTOS.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_sensor_thermometer.btmesh_soc_sensor_thermometer_mock_log_freertos.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_sensor_thermometer/btmesh_soc_sensor_thermometer_mock_log_freertos.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_sensor_thermometer/readme_freertos.md"/>
+    <properties key="boardCompatibility" value="brd2703a brd4110b brd4111b brd4115a brd4179b brd4309a brd4309b brd4329a brd4332a"/>
+    <properties key="partCompatibility" value=".*bgm21.* .*mgm21.* .*efr32bg21.* .*efr32mg21.* .*bgm24.* .*mgm24.* .*efr32bg24.* .*efr32mg24.* .*efr32bg27.* .*efr32mg27.*"/>
     <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
     <properties key="toolchainCompatibility" value="gcc iar"/>
     <properties key="category" value="Bluetooth Mesh Examples"/>
@@ -770,7 +1250,7 @@
     <properties key="keywords" value="universal\ configurator"/>
     <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_sensor_thermometer.btmesh_soc_sensor_thermometer_tbbg22a.slcp"/>
     <properties key="projectFilePaths" value="example/btmesh_soc_sensor_thermometer/btmesh_soc_sensor_thermometer_tbbg22a.slcp"/>
-    <properties key="readmeFiles" value="documentation/example/btmesh_soc_sensor_server/readme.md"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_sensor_thermometer/readme.md"/>
     <properties key="boardCompatibility" value="brd4184a"/>
     <properties key="partCompatibility" value=".*efr32bg22.*"/>
     <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
@@ -785,7 +1265,7 @@
     <properties key="keywords" value="universal\ configurator"/>
     <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_sensor_thermometer.btmesh_soc_sensor_thermometer_tbbg22b.slcp"/>
     <properties key="projectFilePaths" value="example/btmesh_soc_sensor_thermometer/btmesh_soc_sensor_thermometer_tbbg22b.slcp"/>
-    <properties key="readmeFiles" value="documentation/example/btmesh_soc_sensor_server/readme.md"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_sensor_thermometer/readme.md"/>
     <properties key="boardCompatibility" value="brd4184b"/>
     <properties key="partCompatibility" value=".*efr32bg22.*"/>
     <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
@@ -810,6 +1290,36 @@
     <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
     <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
   </descriptors>
+  <descriptors name="btmesh_soc_switch_ctl_freertos" label="Bluetooth Mesh - SoC Switch CTL FreeRTOS" description="An out-of-the-box Software Demo where the device acts as a switch using the Light CTL Client Model. Push Button presses or CLI commands can control the lightness and color temperature of the LEDs on a remote device. This example  runs on top of FreeRTOS.&#xA;&#xA;Note - this example is not compatible with the Dimming Control NLC Profile.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_switch_ctl.btmesh_soc_switch_ctl_display_freertos.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_switch_ctl/btmesh_soc_switch_ctl_display_freertos.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_switch/readme_rtos.md"/>
+    <properties key="boardCompatibility" value="brd4176a brd4180a brd4180b brd4181a brd4181b brd4181c brd4186c brd4187c brd4188b brd4194a brd4195a brd4195b brd4196a brd4196b brd4198a brd4308a brd4308b brd4308c brd4308d brd4316a brd4317a brd4318a brd4335a"/>
+    <properties key="partCompatibility" value=".*bgm21.* .*mgm21.* .*efr32bg21.* .*efr32mg21.* .*bgm24.* .*mgm24.* .*efr32bg24.* .*efr32mg24.* .*efr32bg27.* .*efr32mg27.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
+  <descriptors name="btmesh_soc_switch_ctl_micriumos" label="Bluetooth Mesh - SoC Switch CTL Micrium OS" description="An out-of-the-box Software Demo where the device acts as a switch using the Light CTL Client Model. Push Button presses or CLI commands can control the lightness and color temperature of the LEDs on a remote device. This example  runs on top of Micrium OS.&#xA;Note - this example is not compatible with the Dimming Control NLC Profile.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_switch_ctl.btmesh_soc_switch_ctl_display_micriumos.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_switch_ctl/btmesh_soc_switch_ctl_display_micriumos.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_switch/readme_rtos.md"/>
+    <properties key="boardCompatibility" value="brd4176a brd4180a brd4180b brd4181a brd4181b brd4181c brd4186c brd4187c brd4188b brd4194a brd4195a brd4195b brd4196a brd4196b brd4198a brd4308a brd4308b brd4308c brd4308d brd4316a brd4317a brd4318a brd4335a"/>
+    <properties key="partCompatibility" value=".*bgm21.* .*mgm21.* .*efr32bg21.* .*efr32mg21.* .*bgm24.* .*mgm24.* .*efr32bg24.* .*efr32mg24.* .*efr32bg27.* .*efr32mg27.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
   <descriptors name="btmesh_soc_switch_ctl" label="Bluetooth Mesh - SoC Switch CTL" description="An out-of-the-box Software Demo where the device acts as a switch using the Light CTL Client Model. Push Button presses or CLI commands can control the lightness and color temperature of the LEDs on a remote device.&#xA;Note - this example is not compatible with the Dimming Control NLC Profile.&#xA;">
     <properties key="namespace" value="template.uc"/>
     <properties key="keywords" value="universal\ configurator"/>
@@ -818,6 +1328,36 @@
     <properties key="readmeFiles" value="documentation/example/btmesh_soc_switch/readme.md"/>
     <properties key="boardCompatibility" value="brd2601b brd2602a brd2703a brd4110b brd4111b brd4115a brd4179b brd4309a brd4309b brd4329a brd4332a"/>
     <properties key="partCompatibility" value=".*bgm21.* .*bgm22.*hna.* .*bgm24.* .*efr32bg21.* .*efr32bg22.*f512.* .*efr32bg24.* .*efr32bg27.* .*efr32mg21.* .*efr32mg22.* .*efr32mg24.* .*efr32mg27.* .*mgm21.* .*mgm22.* .*mgm24.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
+  <descriptors name="btmesh_soc_switch_ctl_freertos" label="Bluetooth Mesh - SoC Switch CTL FreeRTOS" description="An out-of-the-box Software Demo where the device acts as a switch using the Light CTL Client Model. Push Button presses or CLI commands can control the lightness and color temperature of the LEDs on a remote device.This example&#xA; runs on top of FreeRTOS.&#xA;&#xA;Note - this example is not compatible with the Dimming Control NLC Profile.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_switch_ctl.btmesh_soc_switch_ctl_log_freertos.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_switch_ctl/btmesh_soc_switch_ctl_log_freertos.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_switch/readme_rtos.md"/>
+    <properties key="boardCompatibility" value="brd2601b brd2602a brd2703a brd4110b brd4111b brd4115a brd4179b brd4309a brd4309b brd4329a brd4332a"/>
+    <properties key="partCompatibility" value=".*bgm21.* .*mgm21.* .*efr32bg21.* .*efr32mg21.* .*bgm24.* .*mgm24.* .*efr32bg24.* .*efr32mg24.* .*efr32bg27.* .*efr32mg27.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
+  <descriptors name="btmesh_soc_switch_ctl_micriumos" label="Bluetooth Mesh - SoC Switch CTL Micrium OS" description="An out-of-the-box Software Demo where the device acts as a switch using the Light CTL Client Model. Push Button presses or CLI commands can control the lightness and color temperature of the LEDs on a remote device. This example  runs on top of Micrium OS.&#xA;Note - this example is not compatible with the Dimming Control NLC Profile.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_switch_ctl.btmesh_soc_switch_ctl_log_micriumos.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_switch_ctl/btmesh_soc_switch_ctl_log_micriumos.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_switch/readme_rtos.md"/>
+    <properties key="boardCompatibility" value="brd2601b brd2602a brd2703a brd4110b brd4111b brd4115a brd4179b brd4309a brd4309b brd4329a brd4332a"/>
+    <properties key="partCompatibility" value=".*bgm21.* .*mgm21.* .*efr32bg21.* .*efr32mg21.* .*bgm24.* .*mgm24.* .*efr32bg24.* .*efr32mg24.* .*efr32bg27.* .*efr32mg27.*"/>
     <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
     <properties key="toolchainCompatibility" value="gcc iar"/>
     <properties key="category" value="Bluetooth Mesh Examples"/>
@@ -848,6 +1388,36 @@
     <properties key="readmeFiles" value="documentation/example/btmesh_soc_switch/readme_low_power.md"/>
     <properties key="boardCompatibility" value="brd2601b brd2602a brd2703a brd4108a brd4110b brd4111b brd4115a brd4176a brd4179b brd4180a brd4180b brd4181a brd4181b brd4181c brd4182a brd4183a brd4183c brd4184a brd4184b brd4186c brd4187c brd4188b brd4194a brd4195a brd4195b brd4196a brd4196b brd4198a brd4308a brd4308b brd4308c brd4308d brd4309a brd4309b brd4311a brd4311b brd4312a brd4314a brd4316a brd4317a brd4318a brd4329a brd4332a brd4335a brd4402a brd4403a"/>
     <properties key="partCompatibility" value=".*bgm21.* .*bgm22.*hna.* .*bgm24.* .*efr32bg21.* .*efr32bg22.*f512.* .*efr32bg24.* .*efr32bg27.* .*efr32mg21.* .*efr32mg22.* .*efr32mg24.* .*efr32mg27.* .*mgm21.* .*mgm22.* .*mgm24.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
+  <descriptors name="btmesh_soc_switch_ctl_low_power_freertos" label="Bluetooth Mesh - SoC Switch CTL Low Power FreeRTOS" description="An out-of-the-box Software Demo where the device acts as a switch using the Light CTL Client Model. It is optimized for low current consumption with disabled CLI, logging, and LCD. Push Button presses or CLI commands can control the lightness and color temperature of the LEDs on a remote device.  This example runs on top of FreeRTOS.&#xA;Note - this example is not compatible with the Dimming Control NLC Profile.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_switch_ctl.btmesh_soc_switch_ctl_low_power_freertos.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_switch_ctl/btmesh_soc_switch_ctl_low_power_freertos.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_switch/readme_low_power_rtos.md"/>
+    <properties key="boardCompatibility" value="brd2601b brd2602a brd2703a brd4110b brd4111b brd4115a brd4176a brd4179b brd4180a brd4180b brd4181a brd4181b brd4181c brd4186c brd4187c brd4188b brd4194a brd4195a brd4195b brd4196a brd4196b brd4198a brd4308a brd4308b brd4308c brd4308d brd4309a brd4309b brd4316a brd4317a brd4318a brd4329a brd4332a brd4335a"/>
+    <properties key="partCompatibility" value=".*bgm21.* .*mgm21.* .*efr32bg21.* .*efr32mg21.* .*bgm24.* .*mgm24.* .*efr32bg24.* .*efr32mg24.* .*efr32bg27.* .*efr32mg27.*"/>
+    <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
+    <properties key="toolchainCompatibility" value="gcc iar"/>
+    <properties key="category" value="Bluetooth Mesh Examples"/>
+    <properties key="quality" value="PRODUCTION"/>
+    <properties key="stockConfigCompatibility" value="com.silabs.ss.framework.project.toolchain.core.default"/>
+    <properties key="filters" value="Device\ Type|SoC Project\ Difficulty|Advanced Wireless\ Technology|Bluetooth\ Mesh"/>
+  </descriptors>
+  <descriptors name="btmesh_soc_switch_ctl_low_power_micriumos" label="Bluetooth Mesh - SoC Switch CTL Low Power Micrium OS" description="An out-of-the-box Software Demo where the device acts as a switch using the Light CTL Client Model. It is optimized for low current consumption with disabled CLI, logging, and LCD. Push Button presses or CLI commands can control the lightness and color temperature of the LEDs on a remote device.  This example runs on top of Micrium OS.&#xA;Note - this example is not compatible with the Dimming Control NLC Profile.&#xA;">
+    <properties key="namespace" value="template.uc"/>
+    <properties key="keywords" value="universal\ configurator"/>
+    <properties key="solutionReferenceId" value="app.btmesh.example.btmesh_soc_switch_ctl.btmesh_soc_switch_ctl_low_power_micriumos.slcp"/>
+    <properties key="projectFilePaths" value="example/btmesh_soc_switch_ctl/btmesh_soc_switch_ctl_low_power_micriumos.slcp"/>
+    <properties key="readmeFiles" value="documentation/example/btmesh_soc_switch/readme_low_power_rtos.md"/>
+    <properties key="boardCompatibility" value="brd2601b brd2602a brd2703a brd4110b brd4111b brd4115a brd4176a brd4179b brd4180a brd4180b brd4181a brd4181b brd4181c brd4186c brd4187c brd4188b brd4194a brd4195a brd4195b brd4196a brd4196b brd4198a brd4308a brd4308b brd4308c brd4308d brd4309a brd4309b brd4316a brd4317a brd4318a brd4329a brd4332a brd4335a"/>
+    <properties key="partCompatibility" value=".*bgm21.* .*mgm21.* .*efr32bg21.* .*efr32mg21.* .*bgm24.* .*mgm24.* .*efr32bg24.* .*efr32mg24.* .*efr32bg27.* .*efr32mg27.*"/>
     <properties key="ideCompatibility" value="generic-template iar-embedded-workbench makefile-ide simplicity-ide visual-studio-code"/>
     <properties key="toolchainCompatibility" value="gcc iar"/>
     <properties key="category" value="Bluetooth Mesh Examples"/>

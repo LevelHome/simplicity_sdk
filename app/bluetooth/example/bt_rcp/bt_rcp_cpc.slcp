@@ -37,10 +37,12 @@ component:
   - id: sl_system
   - id: clock_manager
   - id: device_init
+  - id: sl_common
 
 source:
-  - path: app.c
   - path: main.c
+  - path: app.c
+  - path: app_bm.c
 
 include:
   - path: .

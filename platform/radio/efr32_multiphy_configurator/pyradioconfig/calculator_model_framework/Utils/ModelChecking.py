@@ -11,7 +11,7 @@ Checks done:
 
 from pyradioconfig.calculator_model_framework.Utils.LogMgr import LogMgr
 from pycalcmodel.core.input import ModelInputType, ModelInputDefaultVisibilityType
-from host_py_rm_studio_internal.factory import RM_Factory
+from host_py_rm_studio_internal.factory import RM_Factory, RM_S1_PART_FAMILY_NAMES, RM_S2_PART_FAMILY_NAMES
 from pycalcmodel.core.output import ModelOutputType
 
 exclude_inputVal_parts = ['nerio', 'nixi', 'dumbo', 'jumbo', 'panther', 'unit_test_part']
@@ -85,7 +85,10 @@ class ModelChecking:
         else:
             phy_name = model.phy.name
         #Get the regmap object just once for the part (much more efficient than looping)
-        regmap_obj = RM_Factory(part_family.upper())()
+        if model.part_revision == 'ANY' or part_family.upper() in RM_S1_PART_FAMILY_NAMES or part_family.upper() in RM_S2_PART_FAMILY_NAMES:
+            regmap_obj = RM_Factory(part_family.upper())()
+        else:
+            regmap_obj = RM_Factory(part_family.upper(), model.part_revision)()
 
 
 

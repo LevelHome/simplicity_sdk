@@ -1,9 +1,9 @@
 project_name: dci_swd_programming
 package: platform
 quality: production
-label: Platform Security - SoC Series 2 DCI and SWD Programming
+label: Platform Security - SoC DCI and SWD Programming
 description: >
-  This example project demonstrates the DCI and SWD Programming on Series 2 devices.
+  This example project demonstrates the DCI and SWD Programming on Series 2 and Series 3 devices.
 category: Example|Platform
 filter:
   - name: "Device Type"
@@ -48,6 +48,10 @@ component:
 configuration:
   - name: SL_CLOCK_MANAGER_HFRCO_BAND
     value: cmuHFRCODPLLFreq_80M0Hz
+    condition: [device_series_2]
+  - name: SL_CLOCK_MANAGER_HFRCO_BAND
+    value: 38000000
+    condition: [device_series_3]
   - name: SL_BOARD_ENABLE_VCOM
     value: 1
 toolchain_settings:

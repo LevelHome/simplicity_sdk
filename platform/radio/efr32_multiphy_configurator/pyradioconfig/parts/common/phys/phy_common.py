@@ -96,6 +96,13 @@ def PHY_COMMON_FRAME_BLE(phy, model):
     # : set protocol_id to BLE
     model.vars.protocol_id.value_forced = model.vars.protocol_id.var_enum.BLE
 
+# Common Frame Configuration for BLE on a part supporting AOX feature
+def PHY_COMMON_FRAME_BLE_AOX(phy, model):
+    PHY_COMMON_FRAME_BLE(phy, model)
+    # MCUW_RADIO_CFG-1830: BLE PHY must support frames of up to 258 bytes
+    # Whether a packet contains a CTE is not known until the packet payload, thus BLE 1M & 2M PHYs must be able to receive AoX packets
+    phy.profile_inputs.var_length_maxlength.value = 256  # increase by 1 byte due to CTE info if AoX is used
+
 # Common Frame Configuration for Bluetooth LR
 def PHY_COMMON_FRAME_BLE_CODED(phy, model):
     PHY_COMMON_FRAME_BLE(phy, model)

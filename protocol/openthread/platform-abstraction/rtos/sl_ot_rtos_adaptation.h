@@ -35,17 +35,17 @@
 
 typedef enum sl_ot_rtos_event_t
 {
-    SL_OT_RTOS_EVENT_STACK = 1 << 0,
-    SL_OT_RTOS_EVENT_UART  = 1 << 1,
-    SL_OT_RTOS_EVENT_APP   = 1 << 2
+    SL_OT_RTOS_EVENT_STACK  = 1 << 0,
+    SL_OT_RTOS_EVENT_SERIAL = 1 << 1,
+    SL_OT_RTOS_EVENT_APP    = 1 << 2
 } sl_ot_rtos_event_t;
 
 /**
- * API to initialize RTOS stack and CLI tasks.
+ * API to initialize RTOS 'OT Stack' and 'OT Serial' Tasks.
  *
- * Calling this API results in stack and CLI tasks being created. CLI
- * task creation is controlled by the config item @p SL_OPENTHREAD_ENABLE_CLI_TASK.
- * This is enabled by default.
+ * Calling this API results in the 'OT Stack' and 'OT Serial' tasks being
+ * created. 'OT Serial' task creation is controlled by the config item
+ * @p SL_OPENTHREAD_ENABLE_SERIAL_TASK. This is enabled by default.
  *
  */
 void sl_ot_rtos_stack_init(void);

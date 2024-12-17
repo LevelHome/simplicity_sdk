@@ -3,36 +3,20 @@
  * SPDX-FileCopyrightText: 2024 Silicon Laboratories Inc.
  */
 #include "app_credentials.h"
-#include "AppTimer.h"
-#include "SwTimer.h"
 #include "CC_UserCredential.h"
 #include "cc_user_credential_io.h"
+#include "cc_user_credential_io_config.h"
 #include "cc_user_credential_config_api.h"
 #include "events.h"
 #include "CC_DoorLock.h"
+#include <string.h>
+#include <assert.h>
 
-static SSwTimer CredentialLearnTimer;
-
-// PIN code for simulating manual User Credential Entry
-uint8_t credential_learn_pin_code[] = { '1', '1', '6', '7' };
-u3c_event_data_learn_read_done credential_learn_done_data = {
-  .data = credential_learn_pin_code,
-  .data_length = sizeof(credential_learn_pin_code)
-};
 uint8_t credential_learn_steps = 1;
-
-static void CredentialLearnTimerCallback(SSwTimer *pTimer)
-{
-  TimerStop(pTimer);
-  zaf_event_distributor_enqueue_cc_event(
-    COMMAND_CLASS_USER_CREDENTIAL, CC_USER_CREDENTIAL_EVENT_LEARN_READ_DONE,
-    &credential_learn_done_data);
-}
 
 void credentials_init(void)
 {
-  /* Timer for simulating the User entering a Credential */
-  AppTimerRegister(&CredentialLearnTimer, false, CredentialLearnTimerCallback);
+  return;
 }
 
 void initialize_user_credential_database(void)
@@ -53,7 +37,7 @@ void initialize_user_credential_database(void)
     };
     CC_UserCredential_add_user(&user, name);
 
-    unsigned char pin_code[] = { 0x31, 0x32, 0x33, 0x34 };
+    unsigned char pin_code[] = { 0x33, 0x34, 0x39, 0x34 };
     u3c_credential credential = {
       .metadata = {
         .uuid = uuid,
@@ -75,8 +59,6 @@ void request_credential_from_user(void)
     COMMAND_CLASS_USER_CREDENTIAL, CC_USER_CREDENTIAL_EVENT_LEARN_STEP_START,
     &credential_learn_steps
     );
-  // Simulate the User entering their Credential with a timer
-  TimerStart(&CredentialLearnTimer, PIN_CODE_ENTRY_SECONDS * 1000);
 }
 
 void user_credential_app_event_handler(const uint8_t event, const void *data)
@@ -86,8 +68,10 @@ void user_credential_app_event_handler(const uint8_t event, const void *data)
       zaf_event_distributor_enqueue_cc_event(COMMAND_CLASS_DOOR_LOCK, CC_DOOR_LOCK_CODE_EVENT_TOGGLE, NULL);
       break;
     case CC_USER_CREDENTIAL_EVENT_LEARN_START: {
-      if (((u3c_credential_learn_event_data *)data)->target.type == CREDENTIAL_TYPE_PIN_CODE) {
-        // Request app to read PIN code
+      const u3c_credential_type target_type =
+        ((const u3c_credential_learn_event_data *)data)->target.type;
+      if ((target_type == CREDENTIAL_TYPE_PIN_CODE) || (target_type == CREDENTIAL_TYPE_PASSWORD)) {
+        // Request app to read credential
         zaf_event_distributor_enqueue_app_event(EVENT_APP_CREDENTIAL_LEARN_START);
       } else {
         // Other Credential types are not supported, cancel the operation

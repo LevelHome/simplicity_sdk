@@ -535,7 +535,7 @@ static psa_status_t sli_se_verify_message(
       || key_buffer == NULL
       || key_buffer_size == 0
       || (input == NULL && input_length > 0)
-      || signature == NULL) {
+      || (signature == NULL && signature_length != 0)) {
     return PSA_ERROR_INVALID_ARGUMENT;
   }
 
@@ -736,7 +736,7 @@ static psa_status_t sli_se_verify_hash(
       || key_buffer_size == 0
       || hash == NULL
       || hash_length == 0
-      || signature == NULL) {
+      || (signature == NULL && signature_length != 0) ) {
     return PSA_ERROR_INVALID_ARGUMENT;
   }
 

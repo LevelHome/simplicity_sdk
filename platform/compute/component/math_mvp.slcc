@@ -6,6 +6,9 @@ description: >
 category: Platform|Compute
 quality: production
 root_path: platform/compute/math/mvp
+metadata:
+  sbom:
+    license: Zlib
 source:
   - path: src/sl_math_mvp_util.c
   - path: src/sl_math_mvp_complex_matrix_mult.c

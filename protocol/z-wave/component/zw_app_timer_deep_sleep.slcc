@@ -2,7 +2,10 @@ id: zw_app_timer_deep_sleep
 label: Z-Wave App Timer Deep Sleep
 category: Z-Wave
 description: >
-  App timer used for devices that go into Deep Sleep
+  This component ensures that timer callbacks are efficiently performed in the Z-Wave application task.
+  This module wraps a Z-Wave SwTimerLiaison and presents it as a "singleton", easing its 
+  availability among the Application modules. For detailed documentation see SwTimerLiaison.h
+  under `protocol/z-wave/Componets/SwTimer`.
 package: Z-Wave
 quality: production
 metadata:

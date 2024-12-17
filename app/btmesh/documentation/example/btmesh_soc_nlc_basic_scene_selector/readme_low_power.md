@@ -4,7 +4,7 @@ The **Bluetooth Mesh - NLC Basic Scene Selector Low Power** example is a working
 
 The example is an out-of-the-box Software Demo optimized for low current consumption where the device acts as a Basic Scene Selector in an NLC network. It has disabled CLI, logging, and LCD. Button presses on the mainboard or CLI commands can switch between scenes on a remote device implementing the Basic Lightness Controller NLC profile (e.g. **Bluetooth Mesh - NLC Basic Lightness Controller**). The example also acts as a Low Power Node and tries to establish friendship. The example implements the Bluetooth Mesh Basic Scene Selector NLC profile and is based on the Scene Client Model. This example requires one of the Internal Storage Bootloader (single image) variants, depending on device memory.
 
-There are 2 variants of scene selector example. In typical cases, where power consumption is not the most important factor, we recommend using the **Bluetooth Mesh - NLC Basic Scene Selector** example, as it is easier to get feedback about the current state and operations. If you want to have optimized power consumption, use the **Bluetooth Mesh - NLC Basic Scene Selector Low Power** example, which also reduces power by disabling LCD, CLI and logging.
+There are 2 variants of scene selector example. In typical cases, where power consumption is not the most important factor, we recommend using one of the **Bluetooth Mesh - NLC Basic Scene Selector** examples, as it is easier to get feedback about the current state and operations. If you want to have optimized power consumption, use one of the **Bluetooth Mesh - NLC Basic Scene Selector Low Power** examples, which also reduce power by disabling LCD, CLI and logging.
 
 The example requires a friend node to function properly.
 

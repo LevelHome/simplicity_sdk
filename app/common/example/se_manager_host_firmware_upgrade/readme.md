@@ -1,6 +1,6 @@
 # SE Manager Host Firmware Upgrade and Debug Lock
 
-This example uses the SE Manager API to upgrade the host firmware and enable debug lock on the supported Series 2 device.
+This example uses the SE Manager API to upgrade the host firmware and enable debug lock on the supported device.
 
 The host firmware image (`.bin`) can be converted to a C source file using the SEGGER free utility [Bin2C.exe](https://www.segger.com/free-utilities/bin2c/). Copy the host firmware image data array (discard the last `NULL-0x00` character) in the converted C file to `host_firmware_image[]` array in `app_host_firmware_image.c`.
 

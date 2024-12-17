@@ -3,7 +3,8 @@
 ################################################################################
 
 PROJECTNAME = bt_host_uart_dfu
-SDK_DIR = ../../../..
+PROJ_DIR := $(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
+SDK_DIR := $(realpath $(PROJ_DIR)/../../../..)
 
 
 ################################################################################
@@ -25,7 +26,7 @@ include $(SDK_DIR)/app/bluetooth/component_host/uart_dfu.mk
 # Include paths                                                                #
 ################################################################################
 
-override INCLUDEPATHS += . \
+override INCLUDEPATHS += $(PROJ_DIR) \
 $(SDK_DIR)/app/bluetooth/common_host/system \
 $(SDK_DIR)/platform/common/inc \
 $(SDK_DIR)/protocol/bluetooth/inc
@@ -37,8 +38,8 @@ $(SDK_DIR)/protocol/bluetooth/inc
 
 override C_SRC += \
 $(SDK_DIR)/app/bluetooth/common_host/system/system.c \
-app.c \
-main.c
+$(PROJ_DIR)/app.c \
+$(PROJ_DIR)/main.c
 
 
 ################################################################################

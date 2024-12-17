@@ -92,6 +92,10 @@ template_contribution:
     value: 0x8005000
     condition:
       - device_sdid_235 # xG28
+  - name: memory_flash_start
+    value: 0x8005000
+    condition:
+      - device_sdid_240 # xG29
 
   # Memory flash size
   - name: memory_flash_size
@@ -126,3 +130,6 @@ template_contribution:
 toolchain_settings:
   - option: optimize
     value: size
+metadata:
+  sbom:
+    license: MSLA

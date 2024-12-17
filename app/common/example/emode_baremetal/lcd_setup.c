@@ -335,6 +335,15 @@ static void lcd_select_mode(void)
  ******************************************************************************/
 static void disable_before_test(void)
 {
+  sl_gpio_t gpio_btn0 = {
+    .port = SL_SIMPLE_BUTTON_BTN0_PORT,
+    .pin = SL_SIMPLE_BUTTON_BTN0_PIN,
+  };
+  sl_gpio_t gpio_btn1 = {
+    .port = SL_SIMPLE_BUTTON_BTN1_PORT,
+    .pin = SL_SIMPLE_BUTTON_BTN1_PIN,
+  };
+
   // Disable buttons.
   sl_button_disable(&sl_button_btn0);
   sl_button_disable(&sl_button_btn1);
@@ -342,8 +351,9 @@ static void disable_before_test(void)
   // Disabling the GPIO Pins used for Button.
   NVIC_DisableIRQ(GPIO_EVEN_IRQn);
   NVIC_DisableIRQ(GPIO_ODD_IRQn);
-  GPIO_PinModeSet(SL_SIMPLE_BUTTON_BTN0_PORT, SL_SIMPLE_BUTTON_BTN0_PIN, gpioModeDisabled, 1);
-  GPIO_PinModeSet(SL_SIMPLE_BUTTON_BTN1_PORT, SL_SIMPLE_BUTTON_BTN1_PIN, gpioModeDisabled, 1);
+
+  sl_gpio_set_pin_mode(&gpio_btn0, SL_GPIO_MODE_DISABLED, 1);
+  sl_gpio_set_pin_mode(&gpio_btn1, SL_GPIO_MODE_DISABLED, 1);
 
   // Clear LCD display.
   GLIB_clear(&glib_context);

@@ -5,7 +5,7 @@ description: >
   This is a trustzone enabled application used to manage security operations from trustzone aware OpenThread applications.
 
 category: OpenThread Examples
-quality: evaluation
+quality: production
 
 filter:
   - name: "Wireless Technology"
@@ -57,7 +57,7 @@ template_contribution:
     unless: [device_sdid_200]
 
   - name: memory_flash_size
-    value: 0x2C000
+    value: 0x1E000
 
   - name: memory_ram_start
     value: 0x20000000

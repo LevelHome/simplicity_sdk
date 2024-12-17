@@ -57,10 +57,10 @@
 #warning "I2CSPM I2C peripheral not configured"
 // #define SL_I2CSPM_INSTANCE_PERIPHERAL      I2C0
 
-// #define SL_I2CSPM_INSTANCE_SCL_PORT        gpioPortC
+// #define SL_I2CSPM_INSTANCE_SCL_PORT        SL_GPIO_PORT_C
 // #define SL_I2CSPM_INSTANCE_SCL_PIN         11
 
-// #define SL_I2CSPM_INSTANCE_SDA_PORT        gpioPortC
+// #define SL_I2CSPM_INSTANCE_SDA_PORT        SL_GPIO_PORT_C
 // #define SL_I2CSPM_INSTANCE_SDA_PIN         10
 
 // [I2C_SL_I2CSPM_INSTANCE]$

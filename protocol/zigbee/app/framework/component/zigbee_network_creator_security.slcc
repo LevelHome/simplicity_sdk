@@ -8,6 +8,8 @@ provides:
   - name: zigbee_network_creator_security
 config_file:
   - path: protocol/zigbee/app/framework/plugin/network-creator-security/config/network-creator-security-config.h
+validation_helper:
+  - path: protocol/zigbee/app/framework/component/scripts/zigbee_network_creator_security_validation.lua
 source:
   - path: protocol/zigbee/app/framework/plugin/network-creator-security/network-creator-security.c
   - path: protocol/zigbee/app/framework/plugin/network-creator-security/network-creator-security-cli.c

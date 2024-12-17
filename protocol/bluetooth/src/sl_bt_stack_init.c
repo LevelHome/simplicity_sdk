@@ -36,7 +36,6 @@
 #include "sl_bt_api.h"
 #include "sl_bt_stack_config.h"
 #include "sl_bt_stack_init.h"
-#include "sl_bluetooth.h"
 #include "sl_bluetooth_config.h"
 #include "sl_btctrl_linklayer.h"
 #include "sli_bt_gattdb_def.h"
@@ -470,6 +469,13 @@ SLI_BT_DECLARE_FEATURE(bt, accurate_api_address_types);
 #define SLI_BT_BGAPI_CONNECTION_ANALYZER
 #endif
 
+#if defined(SL_CATALOG_BLUETOOTH_FEATURE_CONNECTION_SUBRATING_PRESENT)
+SLI_BT_DECLARE_FEATURE(bt, connection_subrate);
+#define SLI_BT_FEATURE_CONNECTION_SUBRATE SLI_BT_USE_FEATURE(bt, connection_subrate),
+#else
+#define SLI_BT_FEATURE_CONNECTION_SUBRATE
+#endif
+
 /** @brief Structure that specifies the Bluetooth configuration */
 static const sl_bt_configuration_t bt_config = SL_BT_CONFIG_DEFAULT;
 
@@ -499,6 +505,7 @@ static const struct sli_bt_feature_use bt_used_features[] =
   SLI_BT_FEATURE_L2CAP
   SLI_BT_FEATURE_CONNECTION
   SLI_BT_FEATURE_CONNECTION_STATISTICS
+  SLI_BT_FEATURE_CONNECTION_SUBRATE
   SLI_BT_FEATURE_DYNAMIC_GATTDB
   SLI_BT_FEATURE_CTE_RECEIVER
   SLI_BT_FEATURE_CTE_TRANSMITTER
@@ -614,6 +621,15 @@ sl_status_t sli_bt_init_controller_features()
 
 #if defined(SL_CATALOG_BLUETOOTH_FEATURE_CONNECTION_STATISTICS_PRESENT)
   sl_btctrl_init_conn_statistics();
+#endif
+
+#if defined(SL_CATALOG_BLUETOOTH_FEATURE_CONNECTION_SUBRATING_PRESENT)
+  sl_btctrl_init_subrate();
+  status = sl_btctrl_allocate_conn_subrate_memory(SL_BT_CONFIG_MAX_CONNECTIONS);
+  if (status != SL_STATUS_OK) {
+    return status;
+  }
+
 #endif
 
 #if defined(SL_CATALOG_BLUETOOTH_FEATURE_POWER_CONTROL_PRESENT)
@@ -799,6 +815,10 @@ void sli_bt_deinit_controller_features()
 
 #if defined(SL_CATALOG_BLUETOOTH_FEATURE_PERIODIC_ADVERTISER_PRESENT)
   (void) sl_btctrl_alloc_periodic_adv(0);
+#endif
+
+#if defined(SL_CATALOG_BLUETOOTH_FEATURE_CONNECTION_SUBRATING_PRESENT)
+  sl_btctrl_allocate_conn_subrate_memory(0);
 #endif
 
   (void) sl_bt_ll_deinit();

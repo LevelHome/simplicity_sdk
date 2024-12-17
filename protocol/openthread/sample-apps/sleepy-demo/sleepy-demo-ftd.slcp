@@ -10,9 +10,7 @@ component:
   - id: ot_stack_ftd
   - id: ot_cli_source
   - id: ot_crash_handler
-  - id: uartdrv_usart
-    instance:
-      - vcom
+  - id: iostream_recommended_console
   - id: simple_button
     instance:
       - btn0
@@ -20,6 +18,8 @@ component:
   - id: rail_util_pti
   - id: bootloader_interface
   - id: clock_manager
+  # Platform - Enable LTO for gcc by installing the following component
+  # - id: toolchain_gcc_lto
 
 include:
   - path: .
@@ -41,6 +41,9 @@ configuration:
   - name: SL_IOSTREAM_USART_VCOM_RX_BUFFER_SIZE
     value: 128 # Increase from default 32
     condition: [iostream_usart]
+  - name: SL_IOSTREAM_EUSART_VCOM_RX_BUFFER_SIZE
+    value: 128 # Increase from default 32
+    condition: [iostream_eusart]
   - name: SL_STACK_SIZE
     value: 4608
   - name: OPENTHREAD_CONFIG_LOG_OUTPUT
@@ -54,6 +57,12 @@ configuration:
     condition: [ot_rtt_log]
   - name: CIRCULAR_QUEUE_LEN_MAX
     value: 16
+  - name: SL_IOSTREAM_USART_VCOM_FLOW_CONTROL_TYPE
+    value: usartHwFlowControlCtsAndRts
+    condition: [iostream_usart]
+  - name: SL_IOSTREAM_EUSART_VCOM_FLOW_CONTROL_TYPE
+    value: SL_IOSTREAM_EUSART_UART_FLOW_CTRL_CTS_RTS
+    condition: [iostream_eusart]
 
 tag:
   - prebuilt_demo

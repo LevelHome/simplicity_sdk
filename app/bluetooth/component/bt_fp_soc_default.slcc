@@ -4,10 +4,14 @@ package: Bluetooth
 description: >
   Includes selection of Bluetooth stack default SoC features.
 category: Bluetooth|Application|Miscellaneous
+metadata:
+  sbom:
+    license: Zlib
 quality: production
 root_path: app/bluetooth
 requires:
   - name: bluetooth_stack
+  - name: bluetooth_feature_gap
   - name: gatt_configuration
   - name: bluetooth_feature_legacy_advertiser
   - name: bluetooth_feature_extended_advertiser

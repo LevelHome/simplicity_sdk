@@ -27,6 +27,12 @@
 #include "sl_component_catalog.h"
 #endif
 
+#if defined(__GNUC__)
+extern uint32_t __ResetReasonStart__;
+#elif defined(__ICCARM__)
+#pragma section = "BOOTLOADER_RESET_REASON"
+#endif
+
 #if defined(BOOTLOADER_INTERFACE_TRUSTZONE_AWARE)
 
 // -----------------------------------------------------------------------------
@@ -231,14 +237,25 @@ int32_t bootloader_deinit(void)
 
 BootloaderResetCause_t bootloader_getResetReason(void)
 {
-  volatile BootloaderResetCause_t* resetCause = (BootloaderResetCause_t*) (SRAM_BASE);
+#if defined(__GNUC__)
+  uint32_t resetReasonBase = (uint32_t)&__ResetReasonStart__;
+#elif defined(__ICCARM__)
+  void *resetReasonBase =   __section_begin("BOOTLOADER_RESET_REASON");
+#endif
+
+  volatile BootloaderResetCause_t *resetCause = (BootloaderResetCause_t *)(resetReasonBase);
   return *resetCause;
 }
 
 void bootloader_rebootAndInstall(void)
 {
   // Set reset reason to bootloader entry
-  BootloaderResetCause_t* resetCause = (BootloaderResetCause_t*) (SRAM_BASE);
+#if defined(__GNUC__)
+  uint32_t resetReasonBase = (uint32_t)&__ResetReasonStart__;
+#elif defined(__ICCARM__)
+  void *resetReasonBase =   __section_begin("BOOTLOADER_RESET_REASON");
+#endif
+  BootloaderResetCause_t *resetCause = (BootloaderResetCause_t *) (resetReasonBase);
   resetCause->reason = BOOTLOADER_RESET_REASON_BOOTLOAD;
   resetCause->signature = BOOTLOADER_RESET_SIGNATURE_VALID;
 #if defined(RMU_PRESENT)
@@ -357,7 +374,7 @@ uint32_t bootloader_parserContextSize(void)
 #endif
   }
 
-  return mainBootloaderTable->parserContextSize();
+  return (uint32_t)mainBootloaderTable->parserContextSize();
 }
 
 bool bootloader_verifyApplication(uint32_t startAddress)
@@ -431,7 +448,7 @@ uint32_t bootloader_remainingApplicationUpgrades(void)
     return 0UL;
   }
 
-  return mainBootloaderTable->remainingApplicationUpgrades();
+  return (uint32_t)mainBootloaderTable->remainingApplicationUpgrades();
 }
 #endif
 
@@ -574,7 +591,7 @@ void bootloader_ppusatdnSaveReconfigureState(Bootloader_PPUSATDnCLKENnState_t *c
   SMU->PPUPATD1 = SMU_NS_CFGNS->PPUNSPATD1;
   #if defined(_SILICON_LABS_32B_SERIES_2_CONFIG_6)
   SMU->PPUPATD2 = SMU_NS_CFGNS->PPUNSPATD2;
-  #endif  
+  #endif
 #endif // SMU_NS_CFGNS_BASE
 
 #if defined(CMU_CLKEN0_LDMA)
@@ -628,7 +645,8 @@ void bootloader_ppusatdnSaveReconfigureState(Bootloader_PPUSATDnCLKENnState_t *c
   }
 
   SMU->PPUSATD0_SET = SMU_PPUSATD0_HFRCO0;
-#if !defined(_SILICON_LABS_32B_SERIES_2_CONFIG_5) && !defined(_SILICON_LABS_32B_SERIES_2_CONFIG_6) && !defined(_SILICON_LABS_32B_SERIES_2_CONFIG_8)
+#if !defined(_SILICON_LABS_32B_SERIES_2_CONFIG_5) && !defined(_SILICON_LABS_32B_SERIES_2_CONFIG_6) \
+  && !defined(_SILICON_LABS_32B_SERIES_2_CONFIG_8) && !defined(_SILICON_LABS_32B_SERIES_2_CONFIG_9)
   SMU->PPUSATD0_SET = SMU_PPUSATD0_GPIO;
 #endif
 #if defined(_SILICON_LABS_32B_SERIES_2_CONFIG_6)
@@ -654,7 +672,7 @@ void bootloader_ppusatdnSaveReconfigureState(Bootloader_PPUSATDnCLKENnState_t *c
 #endif // BOOTLOADER_DISABLE_MULTI_TIERED_FALLBACK
 
 #if defined(_SILICON_LABS_32B_SERIES_2_CONFIG_6)
-  bootloader_getPeripheralList(&ppusatd0, &ppusatd1,&ppusatd2);
+  bootloader_getPeripheralList(&ppusatd0, &ppusatd1, &ppusatd2);
   SMU->PPUSATD0_SET = ppusatd0;
   SMU->PPUSATD1_SET = ppusatd1;
   SMU->PPUSATD2_SET = ppusatd2;
@@ -702,7 +720,11 @@ void bootloader_ppusatdnRestoreState(Bootloader_PPUSATDnCLKENnState_t *ctx)
     while (LDMA_S->STATUS & LDMA_STATUS_ANYBUSY) ;
   }
 #if defined(CRYPTOACC_PRESENT)
-  CMU_S->CLKEN1_SET = CMU_CLKEN1_CRYPTOACC;
+  if (SMU->PPUSATD0 & SMU_PPUSATD0_CMU) {
+    CMU_S->CLKEN1_SET = CMU_CLKEN1_CRYPTOACC;
+  } else {
+    CMU_NS->CLKEN1_SET = CMU_CLKEN1_CRYPTOACC;
+  }
   #if defined(_SILICON_LABS_GECKO_INTERNAL_SDID_230)
   while (CRYPTOACC_S->DMACTRL_STATUS & (CRYPTOACC_DMACTRL_STATUS_FETCH_BUSY | CRYPTOACC_DMACTRL_STATUS_PUSH_BUSY | CRYPTOACC_DMACTRL_STATUS_SOFT_RST_BUSY)) ;
     #else
@@ -904,7 +926,12 @@ void SMU_SECURE_IRQHandler(void)
     // perform a reset to recover from the failure state.
   }
 
-  BootloaderResetCause_t* resetCause = (BootloaderResetCause_t*) (SRAM_BASE);
+#if defined(__GNUC__)
+  uint32_t resetReasonBase = (uint32_t)&__ResetReasonStart__;
+#elif defined(__ICCARM__)
+  void *resetReasonBase =   __section_begin("BOOTLOADER_RESET_REASON");
+#endif
+  BootloaderResetCause_t *resetCause = (BootloaderResetCause_t *) (resetReasonBase);
   resetCause->reason = BOOTLOADER_RESET_REASON_FAULT;
   resetCause->signature = BOOTLOADER_RESET_SIGNATURE_VALID;
   NVIC_SystemReset();

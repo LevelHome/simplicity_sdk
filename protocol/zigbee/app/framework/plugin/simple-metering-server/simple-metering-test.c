@@ -99,9 +99,9 @@ static void addToByteArrayHighLow(uint8_t *data,
 void afTestMeterPrint(void)
 {
   sl_zigbee_af_simple_metering_cluster_println("TM:\r\n"
-                                               "mode:%x\r\n"
-                                               "meterConsumptionRate:%2x\r\n"
-                                               "meterConsumptionVariance:%2x\r\n",
+                                               "mode:%02X\r\n"
+                                               "meterConsumptionRate:%04X\r\n"
+                                               "meterConsumptionVariance:%04X\r\n",
                                                testMode,
                                                meterConsumptionRate,
                                                meterConsumptionVariance);
@@ -109,13 +109,13 @@ void afTestMeterPrint(void)
 
 void afTestMeterSetConsumptionRate(uint16_t rate, uint8_t endpoint)
 {
-  sl_zigbee_af_simple_metering_cluster_println("TM: set consumption rate %2x", rate);
+  sl_zigbee_af_simple_metering_cluster_println("TM: set consumption rate %04X", rate);
   meterConsumptionRate = rate;
 }
 
 void afTestMeterSetConsumptionVariance(uint16_t variance)
 {
-  sl_zigbee_af_simple_metering_cluster_println("TM: set consumption variance %2x", variance);
+  sl_zigbee_af_simple_metering_cluster_println("TM: set consumption variance %04X", variance);
   meterConsumptionVariance = variance;
 }
 
@@ -141,7 +141,7 @@ void afTestMeterAdjust(uint8_t endpoint)
   addToByteArrayLowHigh(summation, 6, diff);
 #endif  // BIGENDIAN_CPU
 
-  sl_zigbee_af_simple_metering_cluster_println("Summation:%x %x %x %x %x %x",
+  sl_zigbee_af_simple_metering_cluster_println("Summation:%02X %02X %02X %02X %02X %02X",
                                                summation[0],
                                                summation[1],
                                                summation[2],
@@ -177,7 +177,7 @@ void afTestMeterMode(uint8_t endpoint, uint8_t mode)
     unitOfMeasure = SL_ZIGBEE_ZCL_AMI_UNIT_OF_MEASURE_BT_US_OR_BTU_PER_HOUR;
     deviceType = SL_ZIGBEE_ZCL_METERING_DEVICE_TYPE_GAS_METERING;
   }
-  sl_zigbee_af_simple_metering_cluster_println("TM: mode %x", testMode);
+  sl_zigbee_af_simple_metering_cluster_println("TM: mode %02X", testMode);
 
   // Set attributes...
 
@@ -218,7 +218,7 @@ void afTestMeterMode(uint8_t endpoint, uint8_t mode)
 void afTestMeterSetError(uint8_t endpoint,
                          uint8_t error)
 {
-  sl_zigbee_af_simple_metering_cluster_println("TM: set error %x", error);
+  sl_zigbee_af_simple_metering_cluster_println("TM: set error %02X", error);
   (void) sl_zigbee_af_write_attribute(endpoint,
                                       ZCL_SIMPLE_METERING_CLUSTER_ID,
                                       ZCL_STATUS_ATTRIBUTE_ID,
@@ -229,7 +229,7 @@ void afTestMeterSetError(uint8_t endpoint,
 
 void afTestMeterRandomError(uint8_t chanceIn256)
 {
-  sl_zigbee_af_simple_metering_cluster_println("TM: random error %x", chanceIn256);
+  sl_zigbee_af_simple_metering_cluster_println("TM: random error %02X", chanceIn256);
   errorChance = chanceIn256;
 }
 #endif // TEST_METER_ERRORS
@@ -241,7 +241,7 @@ uint32_t testMeterIntervalEndTimes[SL_ZIGBEE_AF_PLUGIN_SIMPLE_METERING_SERVER_TE
 void afTestMeterEnableProfiles(uint8_t enable)
 {
   uint8_t i;
-  sl_zigbee_af_simple_metering_cluster_println("TM: profiles %x", enable);
+  sl_zigbee_af_simple_metering_cluster_println("TM: profiles %02X", enable);
   switch (enable) {
     case 0:
       testMode &= (~0x04);
@@ -259,7 +259,7 @@ void afTestMeterEnableProfiles(uint8_t enable)
     // fallthrough
     case 3:
       for ( i = 0; i < SL_ZIGBEE_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_PROFILES; i++ ) {
-        sl_zigbee_af_simple_metering_cluster_println("P %x: %x%x%x",
+        sl_zigbee_af_simple_metering_cluster_println("P %02X: %02X%02X%02X",
                                                      i,
                                                      testMeterProfiles[i][0],
                                                      testMeterProfiles[i][1],
@@ -335,7 +335,7 @@ void sli_zigbee_af_test_meter_tick(uint8_t endpoint)
   uint8_t ep = sl_zigbee_af_find_cluster_server_endpoint_index(endpoint,
                                                                ZCL_SIMPLE_METERING_CLUSTER_ID);
   if (ep == 0xFF) {
-    sl_zigbee_af_simple_metering_cluster_println("Invalid endpoint %x", endpoint);
+    sl_zigbee_af_simple_metering_cluster_println("Invalid endpoint %02X", endpoint);
     return;
   }
 
@@ -357,7 +357,7 @@ void sli_zigbee_af_test_meter_tick(uint8_t endpoint)
                                        &dataType);
 
   if ( status != SL_ZIGBEE_ZCL_STATUS_SUCCESS ) {
-    sl_zigbee_af_simple_metering_cluster_println("ERR: can't read summation status 0x%x", status);
+    sl_zigbee_af_simple_metering_cluster_println("ERR: can't read summation status 0x%02X", status);
     return;
   }
 
@@ -373,7 +373,7 @@ void sli_zigbee_af_test_meter_tick(uint8_t endpoint)
 #endif  // BIGENDIAN_CPU
 
   if ((*hourCounter % 60) == 0) {
-    // sl_zigbee_af_simple_metering_cluster_println("TM summation:%x %x %x %x %x %x",
+    // sl_zigbee_af_simple_metering_cluster_println("TM summation:%02X %02X %02X %02X %02X %02X",
     //                                     summation[0],
     //                                     summation[1],
     //                                     summation[2],
@@ -427,7 +427,7 @@ void sli_zigbee_af_test_meter_tick(uint8_t endpoint)
                                            3,
                                            &dataType);
       if ( status != SL_ZIGBEE_ZCL_STATUS_SUCCESS ) {
-        sl_zigbee_af_simple_metering_cluster_println("ERR: can't read interval summation status 0x%x", status);
+        sl_zigbee_af_simple_metering_cluster_println("ERR: can't read interval summation status 0x%02X", status);
         return;
       }
 
@@ -452,7 +452,7 @@ void sli_zigbee_af_test_meter_tick(uint8_t endpoint)
       for ( status = SL_ZIGBEE_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_PROFILES - 1;
             status > 0;
             status-- ) {
-        //sl_zigbee_af_simple_metering_cluster_println("Copying from %u:%x%x%x to %u:%x%x%x", status, testMeterProfiles[status][0],testMeterProfiles[status][1],testMeterProfiles[status][2],status-1,testMeterProfiles[status-1][0],testMeterProfiles[status-1][1],testMeterProfiles[status-1][2]);
+        //sl_zigbee_af_simple_metering_cluster_println("Copying from %u:%02X%02X%02X to %u:%02X%02X%02X", status, testMeterProfiles[status][0],testMeterProfiles[status][1],testMeterProfiles[status][2],status-1,testMeterProfiles[status-1][0],testMeterProfiles[status-1][1],testMeterProfiles[status-1][2]);
         memcpy(testMeterProfiles[status],
                testMeterProfiles[status - 1],
                3);
@@ -468,9 +468,9 @@ void sli_zigbee_af_test_meter_tick(uint8_t endpoint)
       for ( status = 0;
             status < SL_ZIGBEE_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_PROFILES;
             status++ ) {
-        sl_zigbee_af_simple_metering_cluster_println("i %u profile %x%x%x time %u", status, testMeterProfiles[status][0], testMeterProfiles[status][1], testMeterProfiles[status][2], testMeterIntervalEndTimes[status]);
+        sl_zigbee_af_simple_metering_cluster_println("i %u profile %02X%02X%02X time %u", status, testMeterProfiles[status][0], testMeterProfiles[status][1], testMeterProfiles[status][2], testMeterIntervalEndTimes[status]);
       }
-      //sl_zigbee_af_simple_metering_cluster_println("Copying Interval Summation %x%x%x",testMeterProfiles[0][0],testMeterProfiles[0][1],testMeterProfiles[0][2]);
+      //sl_zigbee_af_simple_metering_cluster_println("Copying Interval Summation %02X%02X%02X",testMeterProfiles[0][0],testMeterProfiles[0][1],testMeterProfiles[0][2]);
       intervalSummation[0]
         = intervalSummation[1]
             = intervalSummation[2] = 0;
@@ -496,7 +496,7 @@ void sli_zigbee_af_test_meter_tick(uint8_t endpoint)
       for ( status = 0;
             status < SL_ZIGBEE_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_PROFILES;
             status++ ) {
-        // sl_zigbee_af_simple_metering_cluster_println("TM: Pr %x: %x%x%x",
+        // sl_zigbee_af_simple_metering_cluster_println("TM: Pr %02X: %02X%02X%02X",
         //  status,
         //  testMeterProfiles[status][0],
         //  testMeterProfiles[status][1],
@@ -548,7 +548,7 @@ void sli_zigbee_af_test_meter_tick(uint8_t endpoint)
                                           CLUSTER_MASK_SERVER,
                                           &batteryLife,
                                           ZCL_INT8U_ATTRIBUTE_TYPE);
-      sl_zigbee_af_simple_metering_cluster_println("TM battery life: %x",
+      sl_zigbee_af_simple_metering_cluster_println("TM battery life: %02X",
                                                    batteryLife);
     } // end if hourCounter is at minute else do nothing
   } // end if contains attribute battery life
@@ -581,7 +581,7 @@ void sli_zigbee_af_test_meter_tick(uint8_t endpoint)
                                           CLUSTER_MASK_SERVER,
                                           hoursInOperation,
                                           ZCL_INT24U_ATTRIBUTE_TYPE);
-      sl_zigbee_af_simple_metering_cluster_println("TM hours in operation:%x %x %x",
+      sl_zigbee_af_simple_metering_cluster_println("TM hours in operation:%02X %02X %02X",
                                                    hoursInOperation[0],
                                                    hoursInOperation[1],
                                                    hoursInOperation[2]);
@@ -605,7 +605,7 @@ void sli_zigbee_af_test_meter_tick(uint8_t endpoint)
 #endif  // BIGENDIAN_CPU
     // uncomment this to test. it's too noisy to do each time and
     // not useful to do once in a while, since it's random.
-    //sl_zigbee_af_simple_metering_cluster_println("TM instantaneous demand:%x %x %x",
+    //sl_zigbee_af_simple_metering_cluster_println("TM instantaneous demand:%02X %02X %02X",
     //                                    instantaneousDemand[0],
     //                                    instantaneousDemand[1],
     //                                    instantaneousDemand[2]);
@@ -621,9 +621,9 @@ void sli_zigbee_af_test_meter_tick(uint8_t endpoint)
   (*hourCounter)++; // this function called every second
 }
 
-bool sli_zigbee_af_test_meter_get_profiles(uint8_t intervalChannel,
-                                           uint32_t endTime,
-                                           uint8_t numberOfPeriods)
+sl_zigbee_af_zcl_request_status_t sli_zigbee_af_test_meter_get_profiles(uint8_t intervalChannel,
+                                                                        uint32_t endTime,
+                                                                        uint8_t numberOfPeriods)
 {
 #if (SL_ZIGBEE_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_PROFILES != 0)
   // Get the current time
@@ -679,7 +679,7 @@ bool sli_zigbee_af_test_meter_get_profiles(uint8_t intervalChannel,
         stop = SL_ZIGBEE_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_PROFILES;
       }
 
-      sl_zigbee_af_simple_metering_cluster_println("end Time 0x%4x, lastValidInterval 0x%4x, start %u", endTime, lastValidInterval, start);
+      sl_zigbee_af_simple_metering_cluster_println("end Time 0x%08X, lastValidInterval 0x%08X, start %u", endTime, lastValidInterval, start);
       profilesReturned = (stop - start);
 
       if (profilesReturned > numberOfPeriods) {
@@ -688,7 +688,7 @@ bool sli_zigbee_af_test_meter_get_profiles(uint8_t intervalChannel,
 
       //DEBUG
       intervalEndTime = testMeterIntervalEndTimes[start];
-      sl_zigbee_af_simple_metering_cluster_println("start: %x, stop: %x, preq: %x, pret, %x", start, stop, numberOfPeriods, profilesReturned);
+      sl_zigbee_af_simple_metering_cluster_println("start: %02X, stop: %02X, preq: %02X, pret, %02X", start, stop, numberOfPeriods, profilesReturned);
       sl_zigbee_af_simple_metering_cluster_flush();
 
       //Set the return Status
@@ -715,18 +715,18 @@ bool sli_zigbee_af_test_meter_get_profiles(uint8_t intervalChannel,
       for (i = 0; i < profilesReturned; i++) {
         uint32_t data = (0x00 << 24) | (testMeterProfiles[start + i][0] << 16) | (testMeterProfiles[start + i][1] << 8) | (testMeterProfiles[start + i][2]);
         sl_zigbee_af_copy_int24u(appResponseData, 10 + (i * 3), data);
-        sl_zigbee_af_simple_metering_cluster_println("i %u profile %x%x%x time %u", i, testMeterProfiles[start + i][0], testMeterProfiles[start + i][1], testMeterProfiles[start + i][2], testMeterIntervalEndTimes[start + i]);
+        sl_zigbee_af_simple_metering_cluster_println("i %u profile %02X%02X%02X time %u", i, testMeterProfiles[start + i][0], testMeterProfiles[start + i][1], testMeterProfiles[start + i][2], testMeterIntervalEndTimes[start + i]);
       }
       appResponseLength = 10 + (3 * profilesReturned);
 
       sl_zigbee_af_send_response();
 
-      sl_zigbee_af_simple_metering_cluster_println("get profile: 0x%x, 0x%4x, 0x%x",
+      sl_zigbee_af_simple_metering_cluster_println("get profile: 0x%02X, 0x%08X, 0x%02X",
                                                    intervalChannel,
                                                    endTime,
                                                    numberOfPeriods);
 
-      return true;
+      return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
     }
   }
 #endif //(SL_ZIGBEE_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_PROFILES != 0)
@@ -741,7 +741,7 @@ bool sli_zigbee_af_test_meter_get_profiles(uint8_t intervalChannel,
   appResponseData[1] = sl_zigbee_af_incoming_zcl_sequence_number;
   appResponseLength = 10;
   sl_zigbee_af_send_response();
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
 #else
@@ -754,10 +754,10 @@ void sli_zigbee_af_test_meter_init(uint8_t endpoint)
 void sli_zigbee_af_test_meter_tick(uint8_t endpoint)
 {
 }
-bool sli_zigbee_af_test_meter_get_profiles(uint8_t intervalChannel,
-                                           uint32_t endTime,
-                                           uint8_t numberOfPeriods)
+sl_zigbee_af_zcl_request_status_t sli_zigbee_af_test_meter_get_profiles(uint8_t intervalChannel,
+                                                                        uint32_t endTime,
+                                                                        uint8_t numberOfPeriods)
 {
-  return false;
+  return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 }
 #endif // TEST_METER_ENABLE

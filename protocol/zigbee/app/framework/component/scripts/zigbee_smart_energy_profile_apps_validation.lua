@@ -5,7 +5,8 @@
     a) If an application configured with Smart Energy security type then
         a) Make sure either zigbee_cbke_163k1 or zigbee_cbke_283k1 provides present in the project.
         b) Make sure zigbee_key_establishment component is present.
-        c) SL_ZIGBEE_KEY_TABLE_SIZE is set to non zero.
+        c) SL_ZIGBEE_KEY_TABLE_SIZE is set to non zero, if it exists for this application
+           (host apps do not have this configuration as they rely on the NCP for key storage)).
     b) If the zigbee_key_establishment component is present in the application then validate
       the security type to be Smart Energy Test or Full. --]]
 
@@ -29,13 +30,16 @@ if not secondary_network_enabled then
                         nil,
                         nil)
     end
-    -- SL_ZIGBEE_KEY_TABLE_SIZE is set to non zero.
-    local key_table_size_val = slc.config("SL_ZIGBEE_KEY_TABLE_SIZE").value
-    if key_table_size_val == "0" then
-      validation.error("Smart Energy profile application needs key table to store keys.",
-                        validation.target_for_defines({"SL_ZIGBEE_KEY_TABLE_SIZE"}),
-                        "Recommended key table size value is 12",
-                        nil)
+    -- SL_ZIGBEE_KEY_TABLE_SIZE is set to non zero (if not a host app).
+    local key_table_size_config = slc.config("SL_ZIGBEE_KEY_TABLE_SIZE")
+    if (key_table_size_config ~= nil) then
+      local key_table_size_val = slc.config("SL_ZIGBEE_KEY_TABLE_SIZE").value
+      if key_table_size_val == "0" then
+        validation.error("Smart Energy profile application needs key table to store keys.",
+                          validation.target_for_defines({"SL_ZIGBEE_KEY_TABLE_SIZE"}),
+                          "Recommended key table size value is 12",
+                          nil)
+      end
     end
   end
 

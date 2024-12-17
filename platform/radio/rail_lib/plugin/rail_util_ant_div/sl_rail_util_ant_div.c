@@ -18,11 +18,7 @@
 #include "sl_rail_util_ant_div.h"
 #include "rail.h"
 #include "em_device.h"
-#if defined(_SILICON_LABS_32B_SERIES_2) || defined(SIMULATION_DEVICE)
-#include "em_gpio.h"
-#else
 #include "sl_gpio.h"
-#endif
 
 #if ((_SILICON_LABS_32B_SERIES_2_CONFIG == 1) \
   || (_SILICON_LABS_32B_SERIES_2_CONFIG == 3) \

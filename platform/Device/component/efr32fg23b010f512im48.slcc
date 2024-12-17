@@ -8,6 +8,10 @@
   - name: EFR32FG23B010F512IM48
     unless:
     - device_content_override
+  - name: SL_CODE_COMPONENT_SYSTEM
+    unless:
+    - device_content_override
+    value: system
 - source:
   - path: platform/Device/SiliconLabs/EFR32FG23/Source/system_efr32fg23.c
     unless:
@@ -170,6 +174,8 @@
   - id: trustzone_unaware
 - requires:
   - name: cmsis_core
+  - name: code_classification
+  - name: component_catalog
 - template_contribution:
   - name: device_opn
     value: EFR32FG23B010F512IM48
@@ -219,6 +225,8 @@
       count: '6'
       mask: '0x003F'
       name: gpio_port_d
+  - name: code_classification_components
+    value: system
 - tag:
   - device:opn:efr32fg23b010f512im48
 - toolchain_settings:

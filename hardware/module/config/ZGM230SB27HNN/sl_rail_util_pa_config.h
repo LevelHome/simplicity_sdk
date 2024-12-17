@@ -32,6 +32,9 @@
 #define SL_RAIL_UTIL_PA_CONFIG_H
 
 #include "rail_types.h"
+#ifdef RAIL_INTERNAL_BUILD
+#include "sl_rail_util_pa_config_internal.h"
+#endif
 
 // <<< Use Configuration Wizard in Context Menu >>>
 
@@ -46,11 +49,13 @@
 // <o SL_RAIL_UTIL_PA_VOLTAGE_MV> Milli-volts on PA supply pin (PA_VDD)
 // <0-65535:1>
 // <i> Default: 3300
-#define SL_RAIL_UTIL_PA_VOLTAGE_MV          3300
+#define SL_RAIL_UTIL_PA_VOLTAGE_MV          1800
 // <o SL_RAIL_UTIL_PA_SELECTION_2P4GHZ> 2.4 GHz PA Selection
 // <RAIL_TX_POWER_MODE_NONE=> Disable
 // <i> Default: RAIL_TX_POWER_MODE_NONE
+#ifndef SL_RAIL_UTIL_PA_SELECTION_2P4GHZ
 #define SL_RAIL_UTIL_PA_SELECTION_2P4GHZ    RAIL_TX_POWER_MODE_NONE
+#endif
 // <o SL_RAIL_UTIL_PA_SELECTION_SUBGHZ> Sub-1 GHz PA Selection
 // <RAIL_TX_POWER_MODE_SUBGIG_HIGHEST=> Enable
 // <RAIL_TX_POWER_MODE_NONE=> Disable

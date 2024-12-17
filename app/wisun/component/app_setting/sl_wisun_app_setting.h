@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief Wi-SUN Application Core CLI
+ * @file sl_wisun_app_setting.h
+ * @brief Wi-SUN Application Settings
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __SL_WISUN_APP_SETTING_H__
-#define __SL_WISUN_APP_SETTING_H__
+#ifndef SL_WISUN_APP_SETTING_H
+#define SL_WISUN_APP_SETTING_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,14 +38,12 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include "sl_status.h"
 #include "sl_wisun_api.h"
 #include "sl_wisun_config.h"
 
 /**************************************************************************//**
- * @defgroup SL_WISUN_APP_CORE_CLI Application Core CLI
- * @ingroup SL_WISUN_APP_CORE
+ * @addtogroup SL_WISUN_APP_SETTING
  * @{
  *****************************************************************************/
 
@@ -54,11 +52,16 @@ extern "C" {
 // -----------------------------------------------------------------------------
 
 ///  Wi-SUN default network name size
-#define MAX_SIZE_OF_NETWORK_NAME           (SL_WISUN_NETWORK_NAME_SIZE + 1)
+#define APP_SETTING_NETWORK_NAME_MAX_SIZE   (SL_WISUN_NETWORK_NAME_SIZE + 1)
 
 /// Wi-SUN settings default subscription channel
-#define APP_SETTING_DEFAULT_SUBSCRIPT_CH   0U
+#define APP_SETTING_DEFAULT_SUBSCRIPT_CH     0U
 
+/**************************************************************************//**
+ * @addtogroup APP_SETTING_TYPES Type definitions
+ * @ingroup SL_WISUN_APP_SETTING
+ * @{
+ *****************************************************************************/
 /// App settings notification channels
 typedef enum app_setting_notification {
   /// Set Network Name notification
@@ -72,9 +75,9 @@ typedef enum app_setting_notification {
 } app_setting_notification_t;
 
 /// Wisun setting structure
-typedef struct {
+typedef struct app_setting_wisun{
   /// Network Name
-  char network_name[SL_WISUN_NETWORK_NAME_SIZE + 1];
+  char network_name[APP_SETTING_NETWORK_NAME_MAX_SIZE];
   /// Network size
   uint8_t network_size;
   /// TX Power
@@ -87,7 +90,8 @@ typedef struct {
   bool is_default_phy;
   /// PHY settings
   sl_wisun_phy_config_t phy;
-}app_setting_wisun_t;
+} app_setting_wisun_t;
+/** @} (end APP_SETTING_TYPES) */
 
 // -----------------------------------------------------------------------------
 //                                Global Variables
@@ -104,7 +108,7 @@ void app_wisun_setting_init(void);
 
 /**************************************************************************//**
  * @brief Get the Wi-SUN settings.
- * @param[out] *wisun_setting is the obtained Wi-SUN setting
+ * @param[out] wisun_setting is the obtained Wi-SUN setting
  * @return sl_status_t if the getting is successful it returns SL_STATUS_OK, otherwise
  * error code.
  *****************************************************************************/
@@ -112,7 +116,7 @@ sl_status_t app_wisun_setting_get(app_setting_wisun_t *const wisun_setting);
 
 /**************************************************************************//**
  * @brief Set the Wi-SUN network name.
- * @param[out] *name is the network name that will be set.
+ * @param[out] name is the network name that will be set.
  * @return sl_status_t if the set is successful it returns SL_STATUS_OK, otherwise
  * error code.
  *****************************************************************************/
@@ -120,7 +124,7 @@ sl_status_t app_wisun_setting_set_network_name(const char *const name);
 
 /**************************************************************************//**
  * @brief Set the Wi-SUN network size.
- * @param[out] *name is the network size that will be set.
+ * @param[in] size is the pointer to network size that will be set.
  * @return sl_status_t if the set is successful it returns SL_STATUS_OK, otherwise
  * error code.
  *****************************************************************************/
@@ -128,15 +132,15 @@ sl_status_t app_wisun_setting_set_network_size(const uint8_t *const size);
 
 /**************************************************************************//**
  * @brief Set the Wi-SUN TX power.
- * @param[out] *tx_power is the TX power that will be set.
+ * @param[out] tx_power is the pointer to TX power that will be set.
  * @return sl_status_t if the set is successful it returns SL_STATUS_OK, otherwise
  * error code.
  *****************************************************************************/
-sl_status_t app_wisun_setting_set_tx_power(const int8_t *const tx_power);
+sl_status_t app_wisun_setting_set_tx_power(const int16_t * const tx_power);
 
 /**************************************************************************//**
  * @brief Set the Wi-SUN PHY.
- * @param[out] *phy is the PHY that will be set.
+ * @param[out] phy is the PHY that will be set.
  * @return sl_status_t if the set is successful it returns SL_STATUS_OK, otherwise
  * error code.
  *****************************************************************************/
@@ -144,8 +148,8 @@ sl_status_t app_wisun_setting_set_phy(const sl_wisun_phy_config_t *const phy);
 
 /**************************************************************************//**
  * @brief Get the Wi-SUN network name.
- * @param[out] *name pointer where the name is copied onto
- * @param[oin] length is the size of the name buffer
+ * @param[out] name pointer where the name is copied onto
+ * @param[in] size is the size of the name buffer
  * @return sl_status_t it is successful if it returns SL_STATUS_OK otherwise
  *         it is not.
  *****************************************************************************/
@@ -153,7 +157,7 @@ sl_status_t app_wisun_setting_get_network_name(char *const name, uint8_t size);
 
 /**************************************************************************//**
  * @brief Get the Wi-SUN network size.
- * @param[out] *size pointer where the network size is copied onto
+ * @param[out] size pointer where the network size is copied onto
  * @return sl_status_t it is successful if it returns SL_STATUS_OK otherwise
  *         it is not.
  *****************************************************************************/
@@ -161,15 +165,15 @@ sl_status_t app_wisun_setting_get_network_size(uint8_t *const size);
 
 /**************************************************************************//**
  * @brief Get the Wi-SUN TX power.
- * @param[out] *tx_power pointer where the TX power is copied onto
+ * @param[out] tx_power pointer where the TX power is copied onto
  * @return sl_status_t it is successful if it returns SL_STATUS_OK otherwise
  *         it is not.
  *****************************************************************************/
-sl_status_t app_wisun_setting_get_tx_power(int8_t *const tx_power);
+sl_status_t app_wisun_setting_get_tx_power(int16_t * const tx_power);
 
 /**************************************************************************//**
  * @brief Get the Wi-SUN PHY.
- * @param[out] *phy pointer where the PHY is copied onto
+ * @param[out] phy pointer where the PHY is copied onto
  * @return sl_status_t it is successful if it returns SL_STATUS_OK otherwise
  *         it is not.
  *****************************************************************************/
@@ -179,6 +183,8 @@ sl_status_t app_wisun_setting_get_phy(sl_wisun_phy_config_t *const phy);
  * @brief Init internal PHY settings
  * @details Full radio config: data initialized with default HPY for appropriate board
  *          Simple PHY: get first element of PHY list by 'sl_wisun_util_get_rf_settings'
+ * @return sl_status_t it is successful if it returns SL_STATUS_OK otherwise
+ *         it is not.
  *****************************************************************************/
 sl_status_t app_wisun_setting_init_phy_cfg(void);
 
@@ -220,7 +226,10 @@ void app_wisun_setting_unsubscribe(const app_setting_notification_t notif,
 void app_wisun_setting_ack_notification(const app_setting_notification_t notif,
                                         const uint8_t channel);
 
+/** @}*/
+
 #ifdef __cplusplus
 }
 #endif
-#endif
+
+#endif // SL_WISUN_APP_SETTING_H

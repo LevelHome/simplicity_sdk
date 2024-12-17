@@ -11,6 +11,7 @@ provides:
   - name: iot_sbom_lib_abstraction_common_io
 metadata:
   sbom:
+    id: iot_sbom_lib_abstraction_common_io
     license: MIT
     upstream:
       name: amazon-freertos

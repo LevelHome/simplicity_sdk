@@ -94,13 +94,13 @@ void sl_zigbee_af_color_control_cluster_server_tick_cb(uint8_t endpoint)
 
   status = colorControlReadCurrentHue(endpoint, &hue);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_color_control_cluster_println("ERR: could not read current hue %x",
+    sl_zigbee_af_color_control_cluster_println("ERR: could not read current hue %02X",
                                                status);
     return;
   }
   status = colorControlReadCurrentSaturation(endpoint, &sat);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_color_control_cluster_println("ERR: could not read current saturation %x",
+    sl_zigbee_af_color_control_cluster_println("ERR: could not read current saturation %02X",
                                                status);
     return;
   }
@@ -163,7 +163,7 @@ void sl_zigbee_af_color_control_cluster_server_tick_cb(uint8_t endpoint)
                                                  (uint8_t *)&remainingTime,
                                                  ZCL_INT16U_ATTRIBUTE_TYPE);
     if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-      sl_zigbee_af_color_control_cluster_println("ERR: writing remaining time %x", status);
+      sl_zigbee_af_color_control_cluster_println("ERR: writing remaining time %02X", status);
       return;
     }
   }
@@ -190,7 +190,7 @@ static void colorControlClearRemainingTime(uint8_t endpoint)
                                                                      (uint8_t *)&data,
                                                                      ZCL_INT16U_ATTRIBUTE_TYPE);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_color_control_cluster_println("ERR: writing remaining time %x", status);
+    sl_zigbee_af_color_control_cluster_println("ERR: writing remaining time %02X", status);
     return;
   }
 }
@@ -205,10 +205,10 @@ static void colorControlSetHue(uint8_t endpoint, uint8_t hue)
                                                                      (uint8_t *)&hue,
                                                                      ZCL_INT8U_ATTRIBUTE_TYPE);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_color_control_cluster_println("ERR: writing current hue %x", status); sl_zigbee_af_color_control_cluster_flush();
+    sl_zigbee_af_color_control_cluster_println("ERR: writing current hue %02X", status); sl_zigbee_af_color_control_cluster_flush();
     return;
   }
-  sl_zigbee_af_debug_println("hue=%x", hue);
+  sl_zigbee_af_debug_println("hue=%02X", hue);
 }
 
 // Sets the saturation attribute
@@ -220,11 +220,11 @@ static void colorControlSetSaturation(uint8_t endpoint, uint8_t saturation)
                                                                      (uint8_t *)&saturation,
                                                                      ZCL_INT8U_ATTRIBUTE_TYPE);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_color_control_cluster_println("ERR: writing current saturation %x",
+    sl_zigbee_af_color_control_cluster_println("ERR: writing current saturation %02X",
                                                status);
     return;
   }
-  sl_zigbee_af_debug_println("saturation=%x", saturation);
+  sl_zigbee_af_debug_println("saturation=%02X", saturation);
 }
 
 static void colorControlSetColorModeToZero(void)
@@ -239,9 +239,9 @@ static void colorControlSetColorModeToZero(void)
                                                                      &colorMode,
                                                                      ZCL_ENUM8_ATTRIBUTE_TYPE);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_color_control_cluster_println("ERR: writing color mode%x", status);
+    sl_zigbee_af_color_control_cluster_println("ERR: writing color mode%02X", status);
   }
-  sl_zigbee_af_debug_println("colorMode=%x", colorMode); sl_zigbee_af_color_control_cluster_flush();
+  sl_zigbee_af_debug_println("colorMode=%02X", colorMode); sl_zigbee_af_color_control_cluster_flush();
 #else
   sl_zigbee_af_debug_println("no color mode attribute"); sl_zigbee_af_color_control_cluster_flush();
 #endif //ZCL_USING_COLOR_CONTROL_CLUSTER_COLOR_CONTROL_COLOR_MODE_ATTRIBUTE
@@ -257,7 +257,7 @@ static sl_zigbee_af_status_t colorControlReadCurrentHue(uint8_t endpoint, uint8_
                                                                     hue,
                                                                     sizeof(uint8_t));
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_color_control_cluster_println("ERR: reading current hue %x", status);
+    sl_zigbee_af_color_control_cluster_println("ERR: reading current hue %02X", status);
   }
   return status;
 }
@@ -273,7 +273,7 @@ static sl_zigbee_af_status_t colorControlReadCurrentSaturation(uint8_t endpoint,
                                                                     saturation,
                                                                     sizeof(uint8_t));
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_color_control_cluster_println("ERR: reading current saturation %x",
+    sl_zigbee_af_color_control_cluster_println("ERR: reading current saturation %02X",
                                                status);
   }
   return status;
@@ -281,17 +281,17 @@ static sl_zigbee_af_status_t colorControlReadCurrentSaturation(uint8_t endpoint,
 
 /****************** COMMAND HANDLERS **********************/
 
-static bool moveToHueCommandHandler(uint8_t hue,
-                                    uint8_t direction,
-                                    uint16_t transitionTime,
-                                    uint8_t optionsMask,
-                                    uint8_t optionsOverride)
+static sl_zigbee_af_status_t moveToHueCommandHandler(uint8_t hue,
+                                                     uint8_t direction,
+                                                     uint16_t transitionTime,
+                                                     uint8_t optionsMask,
+                                                     uint8_t optionsOverride)
 {
   sli_zigbee_color_control_state_t *state = getColorControlState(sl_zigbee_af_current_endpoint());
   sl_zigbee_af_status_t status;
   uint8_t currentHue, currentSaturation;
 
-  sl_zigbee_af_color_control_cluster_println("ColorControl: MoveToHue (%x, %x, %2x)",
+  sl_zigbee_af_color_control_cluster_println("ColorControl: MoveToHue (%02X, %02X, %04X)",
                                              hue,
                                              direction,
                                              transitionTime);
@@ -375,18 +375,17 @@ static bool moveToHueCommandHandler(uint8_t hue,
   goto send_default_response;
 
   send_default_response:
-  sl_zigbee_af_send_immediate_default_response(status);
-  return true;
+  return status;
 }
 
 // Move hue to a given hue, taking transitionTime until completed.
-bool sl_zigbee_af_color_control_cluster_move_to_hue_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_color_control_cluster_move_to_hue_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_color_control_cluster_move_to_hue_command_t cmd_data;
 
   if (zcl_decode_color_control_cluster_move_to_hue_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   return moveToHueCommandHandler(cmd_data.hue,
@@ -397,7 +396,7 @@ bool sl_zigbee_af_color_control_cluster_move_to_hue_cb(sl_zigbee_af_cluster_comm
 }
 
 // Move hue continuously at the given rate. If mode is stop, then stop.
-bool sl_zigbee_af_color_control_cluster_move_hue_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_color_control_cluster_move_hue_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_color_control_cluster_move_hue_command_t cmd_data;
   uint8_t moveMode;
@@ -408,13 +407,13 @@ bool sl_zigbee_af_color_control_cluster_move_hue_cb(sl_zigbee_af_cluster_command
 
   if (zcl_decode_color_control_cluster_move_hue_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   moveMode = cmd_data.moveMode;
   rate = cmd_data.rate;
 
-  sl_zigbee_af_color_control_cluster_println("ColorControl: MoveHue (%x, %x)",
+  sl_zigbee_af_color_control_cluster_println("ColorControl: MoveHue (%02X, %02X)",
                                              moveMode,
                                              rate);
 
@@ -476,13 +475,11 @@ bool sl_zigbee_af_color_control_cluster_move_hue_cb(sl_zigbee_af_cluster_command
   goto send_default_response;
 
   send_default_response:
-  sl_zigbee_af_send_immediate_default_response(status);
-
-  return true;
+  return status;
 }
 
 // Step hue by one step, taking time as specified.
-bool sl_zigbee_af_color_control_cluster_step_hue_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_color_control_cluster_step_hue_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_color_control_cluster_step_hue_command_t cmd_data;
   uint8_t stepMode;
@@ -495,14 +492,14 @@ bool sl_zigbee_af_color_control_cluster_step_hue_cb(sl_zigbee_af_cluster_command
 
   if (zcl_decode_color_control_cluster_step_hue_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   stepMode = cmd_data.stepMode;
   stepSize = cmd_data.stepSize;
   transitionTime = cmd_data.transitionTime;
 
-  sl_zigbee_af_color_control_cluster_println("ColorControl: StepHue (%x, %x, %x)",
+  sl_zigbee_af_color_control_cluster_println("ColorControl: StepHue (%02X, %02X, %02X)",
                                              stepMode,
                                              stepSize,
                                              transitionTime);
@@ -580,22 +577,20 @@ bool sl_zigbee_af_color_control_cluster_step_hue_cb(sl_zigbee_af_cluster_command
   goto send_default_response;
 
   send_default_response:
-  sl_zigbee_af_send_immediate_default_response(status);
-
-  return true;
+  return status;
 }
 
 // Move saturation to a given saturation, taking transitionTime until completed.
-static bool moveToSaturationCommandHandler(uint8_t saturation,
-                                           uint16_t transitionTime,
-                                           uint8_t optionsMask,
-                                           uint8_t optionsOverride)
+static sl_zigbee_af_status_t moveToSaturationCommandHandler(uint8_t saturation,
+                                                            uint16_t transitionTime,
+                                                            uint8_t optionsMask,
+                                                            uint8_t optionsOverride)
 {
   sli_zigbee_color_control_state_t *state = getColorControlState(sl_zigbee_af_current_endpoint());
   sl_zigbee_af_status_t status;
   uint8_t currentHue, currentSaturation;
 
-  sl_zigbee_af_color_control_cluster_println("ColorControl: MoveToSaturation (%x, %2x)",
+  sl_zigbee_af_color_control_cluster_println("ColorControl: MoveToSaturation (%02X, %04X)",
                                              saturation,
                                              transitionTime);
 
@@ -654,18 +649,16 @@ static bool moveToSaturationCommandHandler(uint8_t saturation,
   goto send_default_response;
 
   send_default_response:
-  sl_zigbee_af_send_immediate_default_response(status);
-
-  return true;
+  return status;
 }
 
-bool sl_zigbee_af_color_control_cluster_move_to_saturation_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_color_control_cluster_move_to_saturation_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_color_control_cluster_move_to_saturation_command_t cmd_data;
 
   if (zcl_decode_color_control_cluster_move_to_saturation_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   return moveToSaturationCommandHandler(cmd_data.saturation,
@@ -675,7 +668,7 @@ bool sl_zigbee_af_color_control_cluster_move_to_saturation_cb(sl_zigbee_af_clust
 }
 
 // Move sat continuously at the given rate. If mode is stop, then stop.
-bool sl_zigbee_af_color_control_cluster_move_saturation_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_color_control_cluster_move_saturation_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_color_control_cluster_move_saturation_command_t cmd_data;
   uint8_t moveMode;
@@ -686,13 +679,13 @@ bool sl_zigbee_af_color_control_cluster_move_saturation_cb(sl_zigbee_af_cluster_
 
   if (zcl_decode_color_control_cluster_move_saturation_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   moveMode = cmd_data.moveMode;
   rate = cmd_data.rate;
 
-  sl_zigbee_af_color_control_cluster_println("ColorControl: MoveSaturation (%x, %x)",
+  sl_zigbee_af_color_control_cluster_println("ColorControl: MoveSaturation (%02X, %02X)",
                                              moveMode,
                                              rate);
 
@@ -753,13 +746,11 @@ bool sl_zigbee_af_color_control_cluster_move_saturation_cb(sl_zigbee_af_cluster_
   goto send_default_response;
 
   send_default_response:
-  sl_zigbee_af_send_immediate_default_response(status);
-
-  return true;
+  return status;
 }
 
 // Step sat by one step, taking time as specified.
-bool sl_zigbee_af_color_control_cluster_step_saturation_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_color_control_cluster_step_saturation_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_color_control_cluster_step_saturation_command_t cmd_data;
   uint8_t stepMode;
@@ -772,14 +763,14 @@ bool sl_zigbee_af_color_control_cluster_step_saturation_cb(sl_zigbee_af_cluster_
 
   if (zcl_decode_color_control_cluster_step_saturation_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   stepMode = cmd_data.stepMode;
   stepSize = cmd_data.stepSize;
   transitionTime = cmd_data.transitionTime;
 
-  sl_zigbee_af_color_control_cluster_println("ColorControl: StepSaturation (%x, %x, %x)",
+  sl_zigbee_af_color_control_cluster_println("ColorControl: StepSaturation (%02X, %02X, %02X)",
                                              stepMode,
                                              stepSize,
                                              transitionTime);
@@ -855,13 +846,11 @@ bool sl_zigbee_af_color_control_cluster_step_saturation_cb(sl_zigbee_af_cluster_
   goto send_default_response;
 
   send_default_response:
-  sl_zigbee_af_send_immediate_default_response(status);
-
-  return true;
+  return status;
 }
 
 // Move hue and saturation to a given values, taking time as specified.
-bool sl_zigbee_af_color_control_cluster_move_to_hue_and_saturation_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_color_control_cluster_move_to_hue_and_saturation_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_color_control_cluster_move_to_hue_and_saturation_command_t cmd_data;
   uint8_t hue;
@@ -874,14 +863,14 @@ bool sl_zigbee_af_color_control_cluster_move_to_hue_and_saturation_cb(sl_zigbee_
 
   if (zcl_decode_color_control_cluster_move_to_hue_and_saturation_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   hue = cmd_data.hue;
   saturation = cmd_data.saturation;
   transitionTime = cmd_data.transitionTime;
 
-  sl_zigbee_af_color_control_cluster_println("ColorControl: MoveToHueAndSaturation (%x, %x, %2x)",
+  sl_zigbee_af_color_control_cluster_println("ColorControl: MoveToHueAndSaturation (%02X, %02X, %04X)",
                                              hue,
                                              saturation,
                                              transitionTime);
@@ -963,9 +952,7 @@ bool sl_zigbee_af_color_control_cluster_move_to_hue_and_saturation_cb(sl_zigbee_
   goto send_default_response;
 
   send_default_response:
-  sl_zigbee_af_send_immediate_default_response(status);
-
-  return true;
+  return status;
 }
 
 static bool colorControlHueAndSaturationHandler(uint8_t endpoint)
@@ -983,13 +970,13 @@ static bool colorControlHueAndSaturationHandler(uint8_t endpoint)
 
   status = colorControlReadCurrentHue(endpoint, &hue);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_color_control_cluster_println("ERR: could not read current hue %x",
+    sl_zigbee_af_color_control_cluster_println("ERR: could not read current hue %02X",
                                                status);
     return false;
   }
   status = colorControlReadCurrentSaturation(endpoint, &sat);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_color_control_cluster_println("ERR: could not read current saturation %x",
+    sl_zigbee_af_color_control_cluster_println("ERR: could not read current saturation %02X",
                                                status);
     return false;
   }
@@ -1067,49 +1054,47 @@ uint32_t sl_zigbee_af_color_control_cluster_server_command_parse(sl_service_opco
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_MOVE_TO_HUE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_color_control_cluster_move_to_hue_cb(cmd);
+        status = sl_zigbee_af_color_control_cluster_move_to_hue_cb(cmd);
         break;
       }
       case ZCL_MOVE_HUE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_color_control_cluster_move_hue_cb(cmd);
+        status = sl_zigbee_af_color_control_cluster_move_hue_cb(cmd);
         break;
       }
       case ZCL_STEP_HUE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_color_control_cluster_step_hue_cb(cmd);
+        status = sl_zigbee_af_color_control_cluster_step_hue_cb(cmd);
         break;
       }
       case ZCL_MOVE_TO_SATURATION_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_color_control_cluster_move_to_saturation_cb(cmd);
+        status = sl_zigbee_af_color_control_cluster_move_to_saturation_cb(cmd);
         break;
       }
       case ZCL_MOVE_SATURATION_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_color_control_cluster_move_saturation_cb(cmd);
+        status = sl_zigbee_af_color_control_cluster_move_saturation_cb(cmd);
         break;
       }
       case ZCL_STEP_SATURATION_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_color_control_cluster_step_saturation_cb(cmd);
+        status = sl_zigbee_af_color_control_cluster_step_saturation_cb(cmd);
         break;
       }
       case ZCL_MOVE_TO_HUE_AND_SATURATION_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_color_control_cluster_move_to_hue_and_saturation_cb(cmd);
+        status = sl_zigbee_af_color_control_cluster_move_to_hue_and_saturation_cb(cmd);
         break;
       }
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

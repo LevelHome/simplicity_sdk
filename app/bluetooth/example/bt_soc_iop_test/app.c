@@ -57,7 +57,9 @@ void app_init(void)
  ******************************************************************************/
 void app_process_action(void)
 {
-  app_throughput_step();
+  if (app_is_process_required()) {
+    app_throughput_step();
+  }
 }
 
 /***************************************************************************//**
@@ -87,7 +89,7 @@ void sl_bt_on_event(sl_bt_msg_t* evt)
                    evt->data.evt_system_boot.build);
 
       // Read address.
-      sc = sl_bt_system_get_identity_address(&public_address, 0);
+      sc = sl_bt_gap_get_identity_address(&public_address, 0);
       app_assert_status(sc);
 
       app_log_info("Public device address: ");
@@ -197,7 +199,7 @@ void sl_bt_on_event(sl_bt_msg_t* evt)
     case sl_bt_evt_sm_passkey_display_id: {
       passkey = evt->data.evt_sm_passkey_display.passkey; // Store passkey.
       app_log_info("Passkey: %4lu." APP_LOG_NL, passkey); // Make it appear on Console.
-      // Note: It also appears in the EFR Connect app.
+      // Note: It also appears in the Simplicity Connect app.
       set_display(DISPLAY_PASSKEY); // Make it appear on LCD.
       break;
     }

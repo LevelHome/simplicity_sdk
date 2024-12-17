@@ -574,6 +574,26 @@ sl_status_t sl_bt_gap_set_identity_address(bd_addr address, uint8_t addr_type) {
 
 }
 
+sl_status_t sl_bt_gap_get_identity_address(bd_addr *address, uint8_t *type) {
+    struct sl_bt_packet *cmd = (struct sl_bt_packet *)sl_bt_cmd_msg;
+
+    struct sl_bt_packet *rsp = (struct sl_bt_packet *)sl_bt_rsp_msg;
+
+
+    cmd->header=sl_bt_cmd_gap_get_identity_address_id+(((0)&0xff)<<8)+(((0)&0x700)>>8);
+
+
+    sl_bt_host_handle_command();
+    if (address) {
+        memcpy(address,&rsp->data.rsp_gap_get_identity_address.address,sizeof(bd_addr));
+    }
+    if (type) {
+        *type = rsp->data.rsp_gap_get_identity_address.type;
+    }
+    return rsp->data.rsp_gap_get_identity_address.result;
+
+}
+
 sl_status_t sl_bt_advertiser_create_set(uint8_t *handle) {
     struct sl_bt_packet *cmd = (struct sl_bt_packet *)sl_bt_cmd_msg;
 
@@ -1065,20 +1085,6 @@ sl_status_t sl_bt_scanner_set_parameters_and_filter(uint8_t mode,
 
 }
 
-sl_status_t sl_bt_scanner_stop() {
-    struct sl_bt_packet *cmd = (struct sl_bt_packet *)sl_bt_cmd_msg;
-
-    struct sl_bt_packet *rsp = (struct sl_bt_packet *)sl_bt_rsp_msg;
-
-
-    cmd->header=sl_bt_cmd_scanner_stop_id+(((0)&0xff)<<8)+(((0)&0x700)>>8);
-
-
-    sl_bt_host_handle_command();
-    return rsp->data.rsp_scanner_stop.result;
-
-}
-
 sl_status_t sl_bt_scanner_start(uint8_t scanning_phy, uint8_t discover_mode) {
     struct sl_bt_packet *cmd = (struct sl_bt_packet *)sl_bt_cmd_msg;
 
@@ -1092,6 +1098,20 @@ sl_status_t sl_bt_scanner_start(uint8_t scanning_phy, uint8_t discover_mode) {
 
     sl_bt_host_handle_command();
     return rsp->data.rsp_scanner_start.result;
+
+}
+
+sl_status_t sl_bt_scanner_stop() {
+    struct sl_bt_packet *cmd = (struct sl_bt_packet *)sl_bt_cmd_msg;
+
+    struct sl_bt_packet *rsp = (struct sl_bt_packet *)sl_bt_rsp_msg;
+
+
+    cmd->header=sl_bt_cmd_scanner_stop_id+(((0)&0xff)<<8)+(((0)&0x700)>>8);
+
+
+    sl_bt_host_handle_command();
+    return rsp->data.rsp_scanner_stop.result;
 
 }
 
@@ -1478,6 +1498,29 @@ sl_status_t sl_bt_connection_set_default_data_length(uint16_t tx_data_len) {
 
     sl_bt_host_handle_command();
     return rsp->data.rsp_connection_set_default_data_length.result;
+
+}
+
+sl_status_t sl_bt_connection_set_default_acceptable_subrate(uint16_t min_subrate,
+                                                            uint16_t max_subrate,
+                                                            uint16_t max_latency,
+                                                            uint16_t continuation_number,
+                                                            uint16_t max_timeout) {
+    struct sl_bt_packet *cmd = (struct sl_bt_packet *)sl_bt_cmd_msg;
+
+    struct sl_bt_packet *rsp = (struct sl_bt_packet *)sl_bt_rsp_msg;
+
+    cmd->data.cmd_connection_set_default_acceptable_subrate.min_subrate=min_subrate;
+    cmd->data.cmd_connection_set_default_acceptable_subrate.max_subrate=max_subrate;
+    cmd->data.cmd_connection_set_default_acceptable_subrate.max_latency=max_latency;
+    cmd->data.cmd_connection_set_default_acceptable_subrate.continuation_number=continuation_number;
+    cmd->data.cmd_connection_set_default_acceptable_subrate.max_timeout=max_timeout;
+
+    cmd->header=sl_bt_cmd_connection_set_default_acceptable_subrate_id+(((10)&0xff)<<8)+(((10)&0x700)>>8);
+
+
+    sl_bt_host_handle_command();
+    return rsp->data.rsp_connection_set_default_acceptable_subrate.result;
 
 }
 
@@ -1873,6 +1916,72 @@ sl_status_t sl_bt_connection_get_scheduling_details(uint8_t connection,
 
 }
 
+sl_status_t sl_bt_connection_get_remote_address(uint8_t connection,
+                                                bd_addr *address,
+                                                uint8_t *address_type) {
+    struct sl_bt_packet *cmd = (struct sl_bt_packet *)sl_bt_cmd_msg;
+
+    struct sl_bt_packet *rsp = (struct sl_bt_packet *)sl_bt_rsp_msg;
+
+    cmd->data.cmd_connection_get_remote_address.connection=connection;
+
+    cmd->header=sl_bt_cmd_connection_get_remote_address_id+(((1)&0xff)<<8)+(((1)&0x700)>>8);
+
+
+    sl_bt_host_handle_command();
+    if (address) {
+        memcpy(address,&rsp->data.rsp_connection_get_remote_address.address,sizeof(bd_addr));
+    }
+    if (address_type) {
+        *address_type = rsp->data.rsp_connection_get_remote_address.address_type;
+    }
+    return rsp->data.rsp_connection_get_remote_address.result;
+
+}
+
+sl_status_t sl_bt_connection_request_subrate(uint8_t connection,
+                                             uint16_t min_subrate,
+                                             uint16_t max_subrate,
+                                             uint16_t max_latency,
+                                             uint16_t continuation_number,
+                                             uint16_t timeout) {
+    struct sl_bt_packet *cmd = (struct sl_bt_packet *)sl_bt_cmd_msg;
+
+    struct sl_bt_packet *rsp = (struct sl_bt_packet *)sl_bt_rsp_msg;
+
+    cmd->data.cmd_connection_request_subrate.connection=connection;
+    cmd->data.cmd_connection_request_subrate.min_subrate=min_subrate;
+    cmd->data.cmd_connection_request_subrate.max_subrate=max_subrate;
+    cmd->data.cmd_connection_request_subrate.max_latency=max_latency;
+    cmd->data.cmd_connection_request_subrate.continuation_number=continuation_number;
+    cmd->data.cmd_connection_request_subrate.timeout=timeout;
+
+    cmd->header=sl_bt_cmd_connection_request_subrate_id+(((11)&0xff)<<8)+(((11)&0x700)>>8);
+
+
+    sl_bt_host_handle_command();
+    return rsp->data.rsp_connection_request_subrate.result;
+
+}
+
+sl_status_t sl_bt_connection_get_state(uint8_t connection, uint8_t *state) {
+    struct sl_bt_packet *cmd = (struct sl_bt_packet *)sl_bt_cmd_msg;
+
+    struct sl_bt_packet *rsp = (struct sl_bt_packet *)sl_bt_rsp_msg;
+
+    cmd->data.cmd_connection_get_state.connection=connection;
+
+    cmd->header=sl_bt_cmd_connection_get_state_id+(((1)&0xff)<<8)+(((1)&0x700)>>8);
+
+
+    sl_bt_host_handle_command();
+    if (state) {
+        *state = rsp->data.rsp_connection_get_state.state;
+    }
+    return rsp->data.rsp_connection_get_state.result;
+
+}
+
 sl_status_t sl_bt_connection_close(uint8_t connection) {
     struct sl_bt_packet *cmd = (struct sl_bt_packet *)sl_bt_cmd_msg;
 
@@ -1900,44 +2009,6 @@ sl_status_t sl_bt_connection_forcefully_close(uint8_t connection) {
 
     sl_bt_host_handle_command();
     return rsp->data.rsp_connection_forcefully_close.result;
-
-}
-
-SL_BGAPI_DEPRECATED sl_status_t sl_bt_connection_get_rssi(uint8_t connection) {
-    struct sl_bt_packet *cmd = (struct sl_bt_packet *)sl_bt_cmd_msg;
-
-    struct sl_bt_packet *rsp = (struct sl_bt_packet *)sl_bt_rsp_msg;
-
-    cmd->data.cmd_connection_get_rssi.connection=connection;
-
-    cmd->header=sl_bt_cmd_connection_get_rssi_id+(((1)&0xff)<<8)+(((1)&0x700)>>8);
-
-
-    sl_bt_host_handle_command();
-    return rsp->data.rsp_connection_get_rssi.result;
-
-}
-
-sl_status_t sl_bt_connection_get_remote_address(uint8_t connection,
-                                                bd_addr *address,
-                                                uint8_t *address_type) {
-    struct sl_bt_packet *cmd = (struct sl_bt_packet *)sl_bt_cmd_msg;
-
-    struct sl_bt_packet *rsp = (struct sl_bt_packet *)sl_bt_rsp_msg;
-
-    cmd->data.cmd_connection_get_remote_address.connection=connection;
-
-    cmd->header=sl_bt_cmd_connection_get_remote_address_id+(((1)&0xff)<<8)+(((1)&0x700)>>8);
-
-
-    sl_bt_host_handle_command();
-    if (address) {
-        memcpy(address,&rsp->data.rsp_connection_get_remote_address.address,sizeof(bd_addr));
-    }
-    if (address_type) {
-        *address_type = rsp->data.rsp_connection_get_remote_address.address_type;
-    }
-    return rsp->data.rsp_connection_get_remote_address.result;
 
 }
 
@@ -2187,6 +2258,29 @@ sl_status_t sl_bt_gatt_read_multiple_characteristic_values(uint8_t connection,
 
 }
 
+sl_status_t sl_bt_gatt_read_variable_length_characteristic_values(uint8_t connection,
+                                                                  size_t characteristic_list_len,
+                                                                  const uint8_t* characteristic_list) {
+    struct sl_bt_packet *cmd = (struct sl_bt_packet *)sl_bt_cmd_msg;
+
+    struct sl_bt_packet *rsp = (struct sl_bt_packet *)sl_bt_rsp_msg;
+
+    cmd->data.cmd_gatt_read_variable_length_characteristic_values.connection=connection;
+    if ((2+characteristic_list_len) > SL_BGAPI_MAX_PAYLOAD_SIZE )
+    {
+        return SL_STATUS_COMMAND_TOO_LONG;
+    }
+    cmd->data.cmd_gatt_read_variable_length_characteristic_values.characteristic_list.len=characteristic_list_len;
+    memcpy(cmd->data.cmd_gatt_read_variable_length_characteristic_values.characteristic_list.data,characteristic_list,characteristic_list_len);
+
+    cmd->header=sl_bt_cmd_gatt_read_variable_length_characteristic_values_id+(((2+characteristic_list_len)&0xff)<<8)+(((2+characteristic_list_len)&0x700)>>8);
+
+
+    sl_bt_host_handle_command();
+    return rsp->data.rsp_gatt_read_variable_length_characteristic_values.result;
+
+}
+
 sl_status_t sl_bt_gatt_read_characteristic_value_by_uuid(uint8_t connection,
                                                          uint32_t service,
                                                          size_t uuid_len,
@@ -2384,6 +2478,24 @@ sl_status_t sl_bt_gatt_write_descriptor_value(uint8_t connection,
 
     sl_bt_host_handle_command();
     return rsp->data.rsp_gatt_write_descriptor_value.result;
+
+}
+
+sl_status_t sl_bt_gatt_get_mtu(uint8_t connection, uint16_t *mtu) {
+    struct sl_bt_packet *cmd = (struct sl_bt_packet *)sl_bt_cmd_msg;
+
+    struct sl_bt_packet *rsp = (struct sl_bt_packet *)sl_bt_rsp_msg;
+
+    cmd->data.cmd_gatt_get_mtu.connection=connection;
+
+    cmd->header=sl_bt_cmd_gatt_get_mtu_id+(((1)&0xff)<<8)+(((1)&0x700)>>8);
+
+
+    sl_bt_host_handle_command();
+    if (mtu) {
+        *mtu = rsp->data.rsp_gatt_get_mtu.mtu;
+    }
+    return rsp->data.rsp_gatt_get_mtu.result;
 
 }
 
@@ -2781,6 +2893,25 @@ sl_status_t sl_bt_gattdb_abort(uint16_t session) {
 
 }
 
+sl_status_t sl_bt_gattdb_get_attribute_state(uint16_t attribute,
+                                             uint8_t *state) {
+    struct sl_bt_packet *cmd = (struct sl_bt_packet *)sl_bt_cmd_msg;
+
+    struct sl_bt_packet *rsp = (struct sl_bt_packet *)sl_bt_rsp_msg;
+
+    cmd->data.cmd_gattdb_get_attribute_state.attribute=attribute;
+
+    cmd->header=sl_bt_cmd_gattdb_get_attribute_state_id+(((2)&0xff)<<8)+(((2)&0x700)>>8);
+
+
+    sl_bt_host_handle_command();
+    if (state) {
+        *state = rsp->data.rsp_gattdb_get_attribute_state.state;
+    }
+    return rsp->data.rsp_gattdb_get_attribute_state.result;
+
+}
+
 sl_status_t sl_bt_gatt_server_set_max_mtu(uint16_t max_mtu,
                                           uint16_t *max_mtu_out) {
     struct sl_bt_packet *cmd = (struct sl_bt_packet *)sl_bt_cmd_msg;
@@ -2845,6 +2976,37 @@ sl_status_t sl_bt_gatt_server_find_attribute(uint16_t start,
 
 }
 
+sl_status_t sl_bt_gatt_server_find_primary_service(uint16_t start,
+                                                   size_t uuid_len,
+                                                   const uint8_t* uuid,
+                                                   uint16_t *start_out,
+                                                   uint16_t *end_out) {
+    struct sl_bt_packet *cmd = (struct sl_bt_packet *)sl_bt_cmd_msg;
+
+    struct sl_bt_packet *rsp = (struct sl_bt_packet *)sl_bt_rsp_msg;
+
+    cmd->data.cmd_gatt_server_find_primary_service.start=start;
+    if ((3+uuid_len) > SL_BGAPI_MAX_PAYLOAD_SIZE )
+    {
+        return SL_STATUS_COMMAND_TOO_LONG;
+    }
+    cmd->data.cmd_gatt_server_find_primary_service.uuid.len=uuid_len;
+    memcpy(cmd->data.cmd_gatt_server_find_primary_service.uuid.data,uuid,uuid_len);
+
+    cmd->header=sl_bt_cmd_gatt_server_find_primary_service_id+(((3+uuid_len)&0xff)<<8)+(((3+uuid_len)&0x700)>>8);
+
+
+    sl_bt_host_handle_command();
+    if (start_out) {
+        *start_out = rsp->data.rsp_gatt_server_find_primary_service.start_out;
+    }
+    if (end_out) {
+        *end_out = rsp->data.rsp_gatt_server_find_primary_service.end_out;
+    }
+    return rsp->data.rsp_gatt_server_find_primary_service.result;
+
+}
+
 sl_status_t sl_bt_gatt_server_read_attribute_value(uint16_t attribute,
                                                    uint16_t offset,
                                                    size_t max_value_size,
@@ -2892,6 +3054,45 @@ sl_status_t sl_bt_gatt_server_read_attribute_type(uint16_t attribute,
         memcpy(type,rsp->data.rsp_gatt_server_read_attribute_type.type.data,rsp->data.rsp_gatt_server_read_attribute_type.type.len);
     }
     return rsp->data.rsp_gatt_server_read_attribute_type.result;
+
+}
+
+sl_status_t sl_bt_gatt_server_read_attribute_properties(uint16_t attribute,
+                                                        uint8_t *category,
+                                                        uint16_t *security,
+                                                        uint16_t *properties,
+                                                        uint8_t *value_type,
+                                                        uint16_t *len,
+                                                        uint16_t *max_writable_len) {
+    struct sl_bt_packet *cmd = (struct sl_bt_packet *)sl_bt_cmd_msg;
+
+    struct sl_bt_packet *rsp = (struct sl_bt_packet *)sl_bt_rsp_msg;
+
+    cmd->data.cmd_gatt_server_read_attribute_properties.attribute=attribute;
+
+    cmd->header=sl_bt_cmd_gatt_server_read_attribute_properties_id+(((2)&0xff)<<8)+(((2)&0x700)>>8);
+
+
+    sl_bt_host_handle_command();
+    if (category) {
+        *category = rsp->data.rsp_gatt_server_read_attribute_properties.category;
+    }
+    if (security) {
+        *security = rsp->data.rsp_gatt_server_read_attribute_properties.security;
+    }
+    if (properties) {
+        *properties = rsp->data.rsp_gatt_server_read_attribute_properties.properties;
+    }
+    if (value_type) {
+        *value_type = rsp->data.rsp_gatt_server_read_attribute_properties.value_type;
+    }
+    if (len) {
+        *len = rsp->data.rsp_gatt_server_read_attribute_properties.len;
+    }
+    if (max_writable_len) {
+        *max_writable_len = rsp->data.rsp_gatt_server_read_attribute_properties.max_writable_len;
+    }
+    return rsp->data.rsp_gatt_server_read_attribute_properties.result;
 
 }
 
@@ -3700,31 +3901,6 @@ sl_status_t sl_bt_sm_set_remote_oob(uint8_t enable,
 
 }
 
-sl_status_t sl_bt_sm_set_bonding_data(uint8_t connection,
-                                      uint8_t type,
-                                      size_t data_len,
-                                      const uint8_t* data) {
-    struct sl_bt_packet *cmd = (struct sl_bt_packet *)sl_bt_cmd_msg;
-
-    struct sl_bt_packet *rsp = (struct sl_bt_packet *)sl_bt_rsp_msg;
-
-    cmd->data.cmd_sm_set_bonding_data.connection=connection;
-    cmd->data.cmd_sm_set_bonding_data.type=type;
-    if ((3+data_len) > SL_BGAPI_MAX_PAYLOAD_SIZE )
-    {
-        return SL_STATUS_COMMAND_TOO_LONG;
-    }
-    cmd->data.cmd_sm_set_bonding_data.data.len=data_len;
-    memcpy(cmd->data.cmd_sm_set_bonding_data.data.data,data,data_len);
-
-    cmd->header=sl_bt_cmd_sm_set_bonding_data_id+(((3+data_len)&0xff)<<8)+(((3+data_len)&0x700)>>8);
-
-
-    sl_bt_host_handle_command();
-    return rsp->data.rsp_sm_set_bonding_data.result;
-
-}
-
 sl_status_t sl_bt_external_bondingdb_set_data(uint8_t connection,
                                               uint8_t type,
                                               size_t data_len,
@@ -4072,7 +4248,7 @@ sl_status_t sl_bt_cs_create_config(uint8_t connection,
                                    uint8_t channel_selection_type,
                                    uint8_t ch3c_shape,
                                    uint8_t ch3c_jump,
-                                   uint8_t companion_signal_state) {
+                                   uint8_t reserved) {
     struct sl_bt_packet *cmd = (struct sl_bt_packet *)sl_bt_cmd_msg;
 
     struct sl_bt_packet *rsp = (struct sl_bt_packet *)sl_bt_rsp_msg;
@@ -4094,7 +4270,7 @@ sl_status_t sl_bt_cs_create_config(uint8_t connection,
     cmd->data.cmd_cs_create_config.channel_selection_type=channel_selection_type;
     cmd->data.cmd_cs_create_config.ch3c_shape=ch3c_shape;
     cmd->data.cmd_cs_create_config.ch3c_jump=ch3c_jump;
-    cmd->data.cmd_cs_create_config.companion_signal_state=companion_signal_state;
+    cmd->data.cmd_cs_create_config.reserved=reserved;
 
     cmd->header=sl_bt_cmd_cs_create_config_id+(((27)&0xff)<<8)+(((27)&0x700)>>8);
 
@@ -4221,19 +4397,19 @@ sl_status_t sl_bt_cs_read_local_supported_capabilities(uint8_t *num_config,
                                                        uint8_t *num_antennas,
                                                        uint8_t *max_antenna_paths,
                                                        uint8_t *roles,
-                                                       uint8_t *optional_modes,
+                                                       uint8_t *modes,
                                                        uint8_t *rtt_capability,
                                                        uint8_t *rtt_aa_only,
                                                        uint8_t *rtt_sounding,
                                                        uint8_t *rtt_random_payload,
-                                                       uint8_t *optional_cs_sync_phys,
-                                                       uint16_t *optional_subfeatures,
-                                                       uint16_t *optional_t_ip1_times,
-                                                       uint16_t *optional_t_ip2_times,
-                                                       uint16_t *optional_t_fcs_times,
-                                                       uint16_t *optional_t_pm_times,
+                                                       uint8_t *cs_sync_phys,
+                                                       uint16_t *subfeatures,
+                                                       uint16_t *t_ip1_times,
+                                                       uint16_t *t_ip2_times,
+                                                       uint16_t *t_fcs_times,
+                                                       uint16_t *t_pm_times,
                                                        uint8_t *t_sw_times,
-                                                       uint8_t *optional_tx_snr_capability) {
+                                                       uint8_t *tx_snr_capability) {
     struct sl_bt_packet *cmd = (struct sl_bt_packet *)sl_bt_cmd_msg;
 
     struct sl_bt_packet *rsp = (struct sl_bt_packet *)sl_bt_rsp_msg;
@@ -4258,8 +4434,8 @@ sl_status_t sl_bt_cs_read_local_supported_capabilities(uint8_t *num_config,
     if (roles) {
         *roles = rsp->data.rsp_cs_read_local_supported_capabilities.roles;
     }
-    if (optional_modes) {
-        *optional_modes = rsp->data.rsp_cs_read_local_supported_capabilities.optional_modes;
+    if (modes) {
+        *modes = rsp->data.rsp_cs_read_local_supported_capabilities.modes;
     }
     if (rtt_capability) {
         *rtt_capability = rsp->data.rsp_cs_read_local_supported_capabilities.rtt_capability;
@@ -4273,29 +4449,29 @@ sl_status_t sl_bt_cs_read_local_supported_capabilities(uint8_t *num_config,
     if (rtt_random_payload) {
         *rtt_random_payload = rsp->data.rsp_cs_read_local_supported_capabilities.rtt_random_payload;
     }
-    if (optional_cs_sync_phys) {
-        *optional_cs_sync_phys = rsp->data.rsp_cs_read_local_supported_capabilities.optional_cs_sync_phys;
+    if (cs_sync_phys) {
+        *cs_sync_phys = rsp->data.rsp_cs_read_local_supported_capabilities.cs_sync_phys;
     }
-    if (optional_subfeatures) {
-        *optional_subfeatures = rsp->data.rsp_cs_read_local_supported_capabilities.optional_subfeatures;
+    if (subfeatures) {
+        *subfeatures = rsp->data.rsp_cs_read_local_supported_capabilities.subfeatures;
     }
-    if (optional_t_ip1_times) {
-        *optional_t_ip1_times = rsp->data.rsp_cs_read_local_supported_capabilities.optional_t_ip1_times;
+    if (t_ip1_times) {
+        *t_ip1_times = rsp->data.rsp_cs_read_local_supported_capabilities.t_ip1_times;
     }
-    if (optional_t_ip2_times) {
-        *optional_t_ip2_times = rsp->data.rsp_cs_read_local_supported_capabilities.optional_t_ip2_times;
+    if (t_ip2_times) {
+        *t_ip2_times = rsp->data.rsp_cs_read_local_supported_capabilities.t_ip2_times;
     }
-    if (optional_t_fcs_times) {
-        *optional_t_fcs_times = rsp->data.rsp_cs_read_local_supported_capabilities.optional_t_fcs_times;
+    if (t_fcs_times) {
+        *t_fcs_times = rsp->data.rsp_cs_read_local_supported_capabilities.t_fcs_times;
     }
-    if (optional_t_pm_times) {
-        *optional_t_pm_times = rsp->data.rsp_cs_read_local_supported_capabilities.optional_t_pm_times;
+    if (t_pm_times) {
+        *t_pm_times = rsp->data.rsp_cs_read_local_supported_capabilities.t_pm_times;
     }
     if (t_sw_times) {
         *t_sw_times = rsp->data.rsp_cs_read_local_supported_capabilities.t_sw_times;
     }
-    if (optional_tx_snr_capability) {
-        *optional_tx_snr_capability = rsp->data.rsp_cs_read_local_supported_capabilities.optional_tx_snr_capability;
+    if (tx_snr_capability) {
+        *tx_snr_capability = rsp->data.rsp_cs_read_local_supported_capabilities.tx_snr_capability;
     }
     return rsp->data.rsp_cs_read_local_supported_capabilities.result;
 
@@ -4334,7 +4510,7 @@ sl_status_t sl_bt_cs_test_start(uint8_t main_mode_type,
                                 uint8_t t_pm_time,
                                 uint8_t t_sw_time,
                                 uint8_t tone_antenna_config,
-                                uint8_t companion_signal_state,
+                                uint8_t reserved,
                                 uint8_t snr_control_initiator,
                                 uint8_t snr_control_reflector,
                                 uint16_t drbg_nonce,
@@ -4364,7 +4540,7 @@ sl_status_t sl_bt_cs_test_start(uint8_t main_mode_type,
     cmd->data.cmd_cs_test_start.t_pm_time=t_pm_time;
     cmd->data.cmd_cs_test_start.t_sw_time=t_sw_time;
     cmd->data.cmd_cs_test_start.tone_antenna_config=tone_antenna_config;
-    cmd->data.cmd_cs_test_start.companion_signal_state=companion_signal_state;
+    cmd->data.cmd_cs_test_start.reserved=reserved;
     cmd->data.cmd_cs_test_start.snr_control_initiator=snr_control_initiator;
     cmd->data.cmd_cs_test_start.snr_control_reflector=snr_control_reflector;
     cmd->data.cmd_cs_test_start.drbg_nonce=drbg_nonce;
@@ -4382,6 +4558,20 @@ sl_status_t sl_bt_cs_test_start(uint8_t main_mode_type,
 
     sl_bt_host_handle_command();
     return rsp->data.rsp_cs_test_start.result;
+
+}
+
+sl_status_t sl_bt_cs_test_end() {
+    struct sl_bt_packet *cmd = (struct sl_bt_packet *)sl_bt_cmd_msg;
+
+    struct sl_bt_packet *rsp = (struct sl_bt_packet *)sl_bt_rsp_msg;
+
+
+    cmd->header=sl_bt_cmd_cs_test_end_id+(((0)&0xff)<<8)+(((0)&0x700)>>8);
+
+
+    sl_bt_host_handle_command();
+    return rsp->data.rsp_cs_test_end.result;
 
 }
 

@@ -73,32 +73,25 @@ void sl_zigbee_af_identify_cluster_server_attribute_changed_cb(uint8_t endpoint,
   }
 }
 
-bool sl_zigbee_af_identify_cluster_identify_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_identify_cluster_identify_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_identify_cluster_identify_command_t cmd_data;
-  sl_status_t sendStatus;
+  sl_zigbee_af_status_t status;
 
   if (zcl_decode_identify_cluster_identify_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS ) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   // This Identify callback writes the new attribute, which will trigger the
   // Attribute Changed callback above, which in turn will schedule or cancel the
   // tick.  Because of this, the tick does not have to be scheduled here.
-  sl_zigbee_af_identify_cluster_println("RX identify:IDENTIFY 0x%2x", cmd_data.identifyTime);
-  sendStatus = sl_zigbee_af_send_immediate_default_response(
-    writeIdentifyTime(sl_zigbee_af_current_endpoint(), cmd_data.identifyTime));
-  if (SL_STATUS_OK != sendStatus) {
-    sl_zigbee_af_identify_cluster_println("Identify: failed to send %s response: "
-                                          "0x%x",
-                                          "default",
-                                          sendStatus);
-  }
-  return true;
+  sl_zigbee_af_identify_cluster_println("RX identify:IDENTIFY 0x%04X", cmd_data.identifyTime);
+  status = writeIdentifyTime(sl_zigbee_af_current_endpoint(), cmd_data.identifyTime);
+  return status;
 }
 
-bool sl_zigbee_af_identify_cluster_identify_query_cb(void)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_identify_cluster_identify_query_cb(void)
 {
   sl_zigbee_af_status_t status;
   sl_status_t sendStatus;
@@ -111,24 +104,17 @@ bool sl_zigbee_af_identify_cluster_identify_query_cb(void)
   // Identify Time attribute fails, send a Default Response.
   status = readIdentifyTime(sl_zigbee_af_current_endpoint(), &identifyTime);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS || identifyTime == 0) {
-    sendStatus = sl_zigbee_af_send_immediate_default_response(status);
-    if (SL_STATUS_OK != sendStatus) {
-      sl_zigbee_af_identify_cluster_println("Identify: failed to send %s response: "
-                                            "0x%x",
-                                            "default",
-                                            sendStatus);
-    }
-    return true;
+    return status;
   }
 
   sl_zigbee_af_fill_command_identify_cluster_identify_query_response(identifyTime);
   sendStatus = sl_zigbee_af_send_response();
   if (SL_STATUS_OK != sendStatus) {
-    sl_zigbee_af_identify_cluster_println("Identify: failed to send %s response: 0x%x",
+    sl_zigbee_af_identify_cluster_println("Identify: failed to send %s response: 0x%02X",
                                           "query",
                                           sendStatus);
   }
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
 static sl_zigbee_af_status_t readIdentifyTime(uint8_t endpoint,
@@ -142,7 +128,7 @@ static sl_zigbee_af_status_t readIdentifyTime(uint8_t endpoint,
                                                              sizeof(*identifyTime),
                                                              NULL); // data type
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_identify_cluster_println("ERR: reading identify time %x", status);
+    sl_zigbee_af_identify_cluster_println("ERR: reading identify time %02X", status);
   }
   return status;
 }
@@ -156,7 +142,7 @@ static sl_zigbee_af_status_t writeIdentifyTime(uint8_t endpoint, uint16_t identi
                                                               (uint8_t *)&identifyTime,
                                                               ZCL_INT16U_ATTRIBUTE_TYPE);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_identify_cluster_println("ERR: writing identify time %x", status);
+    sl_zigbee_af_identify_cluster_println("ERR: writing identify time %02X", status);
   }
   return status;
 }
@@ -198,24 +184,22 @@ uint32_t sl_zigbee_af_identify_cluster_server_command_parse(sl_service_opcode_t 
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_IDENTIFY_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_identify_cluster_identify_cb(cmd);
+        status = sl_zigbee_af_identify_cluster_identify_cb(cmd);
         break;
       }
       case ZCL_IDENTIFY_QUERY_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_identify_cluster_identify_query_cb();
+        status = sl_zigbee_af_identify_cluster_identify_query_cb();
         break;
       }
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

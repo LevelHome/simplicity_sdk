@@ -30,3 +30,6 @@ provides:
     condition: [bootloader_core_nonsecure]
   - name: bootloader_secure_incompatible
     condition: [bootloader_core_secure]
+metadata:
+  sbom:
+    license: MSLA

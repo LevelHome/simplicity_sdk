@@ -7,6 +7,11 @@ description: >
 package: platform
 category: Platform|Radio
 quality: production
+metadata:
+  sbom:
+    id: rail_util_built_in_phys
+    name: RAIL Utility, Built-in PHYs Across HFXO Frequencies
+    license: Zlib
 requires:
   - name: rail_lib
   - name: device

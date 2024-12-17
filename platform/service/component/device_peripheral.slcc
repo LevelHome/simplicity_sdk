@@ -2,9 +2,9 @@ id: device_peripheral
 label: Device Manager Peripheral
 package: platform
 description: >
-  The Device Peripheral component defines the different peripherals
+  The Device Manager Peripheral component defines the different peripherals
   that exist accross all Silicon Labs devices and their utility functions.
-category: Services
+category: Services|Device Manager
 quality: production
 metadata:
   sbom:
@@ -16,11 +16,19 @@ include:
   - path: inc
     file_list:
       - path: sl_device_peripheral.h
+      - path: sl_device_peripheral_types.h
 provides:
   - name: device_peripheral
 requires:
   - name: device_clock
   - name: device_peripheral_hal
+  - name: code_classification
+define:
+  - name: SL_CODE_COMPONENT_DEVICE_PERIPHERAL
+    value: device_peripheral
+template_contribution:
+  - name: code_classification_components
+    value: device_peripheral
 documentation:
   docset: gecko-platform
   document: platform-service/device-manager-peripheral

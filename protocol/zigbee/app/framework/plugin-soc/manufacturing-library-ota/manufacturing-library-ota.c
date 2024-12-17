@@ -197,11 +197,11 @@ static void kickoffEventHandler(sl_zigbee_af_event_t * event)
       switch (currentActiveCommand) {
         case ACTIVE_COMMAND_TONE:
           status = mfglibStartTone();
-          sl_zigbee_af_core_println("Tone Start %x", status);
+          sl_zigbee_af_core_println("Tone Start %02X", status);
           break;
         case ACTIVE_COMMAND_STREAM:
           status = mfglibStartStream();
-          sl_zigbee_af_core_println("Stream Start %x", status);
+          sl_zigbee_af_core_println("Stream Start %02X", status);
           break;
         case ACTIVE_COMMAND_RX_MODE:
           // no calls required for mfglib for RX mode

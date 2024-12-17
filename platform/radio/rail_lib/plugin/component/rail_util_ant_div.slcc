@@ -4,6 +4,11 @@ description: Utility to aid with antenna diversity configuration
 package: platform
 category: Platform|Radio
 quality: production
+metadata:
+  sbom:
+    id: rail_util_ant_div
+    name: RAIL Utility, Antenna Diversity Configuration
+    license: MSLA
 requires:
   - name: device
   - name: status
@@ -15,7 +20,7 @@ requires:
   - name: rail_util_rf_path
     condition:
       - device_sdid_210
-  - name: hal_generic_gpio
+  - name: gpio
 provides:
   - name: rail_util_ant_div
 documentation:

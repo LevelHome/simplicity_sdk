@@ -34,17 +34,20 @@ from ap_logger import getLogger
 # B1 block, octet 2 (header) for EAD encryption, CSS d11, Part A, 1.23.3
 ENCRYPTED_DATA_B1_HEADER = 0xEA
 
-class KeyMaterial():
-    """ Encrypted Advertising Data Key Material """
+
+class KeyMaterial:
+    """Encrypted Advertising Data Key Material"""
+
     def __init__(self, keymat):
         self.key = None
         self.iv = None
         try:
-            self.key = keymat[0:16][::-1] # Reverse byteorder to big-endian for the key
-            self.iv = keymat[16:24]
+            self.key = keymat[0:AES_KEY_SIZE][::-1]  # Reverse byteorder to big-endian for the key
+            self.iv = keymat[AES_KEY_SIZE:EAD_KEY_MATERIAL_SIZE]
             self.log.debug("Preparing Key Material byte order for use.")
         except TypeError as e:
             self.log.critical(e)
+
     # Logger
     @property
     def log(self):
@@ -54,46 +57,50 @@ class KeyMaterial():
     def valid(self):
         return self.key is not None and self.iv is not None
 
-class EAD():
-    """ Encrypted Advertising Data handling class """
+
+class EAD:
+    """Encrypted Advertising Data handling class"""
+
     # Logger
     @property
     def log(self):
         return getLogger("EAD")
 
     def encrypt(self, data, key_material, random=None):
-        """ Encrypt PA data and assemble the ESL payload """
+        """Encrypt PA data and assemble the ESL payload"""
         if data is None or key_material is None or not key_material.valid:
             return None
 
-        ead_ad_type = EAD_AD_TYPE.to_bytes(1, byteorder='little')
-        esl_ad_type = ESL_AD_TYPE.to_bytes(1, byteorder='little')
+        ead_ad_type = EAD_AD_TYPE.to_bytes(1, byteorder="little")
+        esl_ad_type = ESL_AD_TYPE.to_bytes(1, byteorder="little")
 
         if random is not None:
             randomizer = random
         else:
             randomizer = secrets.token_bytes(EAD_RANDOMIZER_SIZE)
 
-        add_data = (ENCRYPTED_DATA_B1_HEADER).to_bytes(1, byteorder='little')
+        add_data = (ENCRYPTED_DATA_B1_HEADER).to_bytes(1, byteorder="little")
         nonce = randomizer + key_material.iv
 
         aes_ccm = AESCCM(key_material.key, 4)
         payload_length = len(esl_ad_type) + len(data)
-        data = payload_length.to_bytes(1, byteorder='little') + esl_ad_type + data
+        data = payload_length.to_bytes(1, byteorder="little") + esl_ad_type + data
         ad_data = aes_ccm.encrypt(nonce, data, add_data)
 
         length = len(ead_ad_type) + len(randomizer) + len(ad_data)
-        ret = length.to_bytes(1, byteorder='little') + ead_ad_type + randomizer + ad_data
+        ret = (
+            length.to_bytes(1, byteorder="little") + ead_ad_type + randomizer + ad_data
+        )
         self.log.debug("EAD encryption completed.")
         return ret
 
     def decrypt(self, data, key_material):
-        """ Decrypt encrypted PA data """
+        """Decrypt encrypted PA data"""
         if data is None or key_material is None or not key_material.valid:
             return None
 
         ad_data = b""
-        add_data = (ENCRYPTED_DATA_B1_HEADER).to_bytes(1, byteorder='little')
+        add_data = (ENCRYPTED_DATA_B1_HEADER).to_bytes(1, byteorder="little")
         randomizer, enc_data = self.unpack(data)
 
         if randomizer is not None:
@@ -108,7 +115,7 @@ class EAD():
         return ad_data
 
     def unpack(self, data):
-        """ Unpack fields from PA data """
+        """Unpack fields from PA data"""
         randomizer = None
         enc_data = None
         if (data[0] > EAD_PACKET_OVERHEAD) and data[1] == EAD_AD_TYPE:
@@ -120,12 +127,12 @@ class EAD():
         return randomizer, enc_data
 
     def generate_key(self, bitlen=128):
-        """ Generate AES key """
+        """Generate AES key"""
         self.log.debug("Generating AES-128 Key.")
         return AESCCM.generate_key(bit_length=bitlen)
 
     def generate_key_material(self):
-        """ Generate AP key """
+        """Generate AP key"""
         keymat = self.generate_key() + secrets.token_bytes(EAD_IV_SIZE)
         self.log.debug("Generating ESL Key Material from AES-128 Key.")
         return keymat

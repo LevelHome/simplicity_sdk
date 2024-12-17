@@ -1,6 +1,6 @@
 id: "connect_ble_cli"
 label: "BLE CLI commands"
-package: "Flex"
+package: "Connect"
 category: "Connect"
 quality: "production"
 description: "Provides CLI commands to perform basic BLE operations."

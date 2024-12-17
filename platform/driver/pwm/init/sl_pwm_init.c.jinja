@@ -33,11 +33,7 @@
 #include "sl_pwm_init_{{ inst }}_config.h"
 {% endfor %}
 
-#if defined(SL_CATALOG_GPIO_PRESENT)
 #include "sl_gpio.h"
-#else
-#include "em_gpio.h"
-#endif
 
 {% for inst in pwm_instances %}
 sl_pwm_instance_t sl_pwm_{{ inst }} = {

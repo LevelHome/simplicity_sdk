@@ -55,3 +55,13 @@ toolchain_settings:
     value: --diag_suppress Pa082
 provides:
   - name: sl_fault_injection_hardening
+
+metadata:
+  sbom:
+    license: Zlib AND BSD-3-Clause
+    upstream:
+      name: TrustedFirmware-M (TF-M)
+      version: v1.5
+      supplier: Trusted Firmware
+      url: https://review.trustedfirmware.org/TF-M/trusted-firmware-m.git
+      comment: Trusted Firmware for M profile Arm CPUs

@@ -8,6 +8,10 @@
   - name: EFR32ZG28B320F1024IM48
     unless:
     - device_content_override
+  - name: SL_CODE_COMPONENT_SYSTEM
+    unless:
+    - device_content_override
+    value: system
 - source:
   - path: platform/Device/SiliconLabs/EFR32ZG28/Source/system_efr32zg28.c
     unless:
@@ -175,6 +179,8 @@
   - id: trustzone_unaware
 - requires:
   - name: cmsis_core
+  - name: code_classification
+  - name: component_catalog
 - template_contribution:
   - name: device_opn
     value: EFR32ZG28B320F1024IM48
@@ -224,6 +230,8 @@
       count: '6'
       mask: '0x003F'
       name: gpio_port_d
+  - name: code_classification_components
+    value: system
 - tag:
   - device:opn:efr32zg28b320f1024im48
 - toolchain_settings:

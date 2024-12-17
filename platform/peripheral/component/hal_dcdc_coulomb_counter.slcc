@@ -22,7 +22,7 @@ provides:
   - name: hal_dcdc_coulomb_counter
 requires:
   - name: device
-  - name: device_sdid_230
+  - name: device_has_coulomb_counter
   - name: device_has_dcdc
   - name: emlib_common
   - name: emlib_cmu
@@ -34,4 +34,4 @@ documentation:
   docset: gecko-platform
   document:
     - page: emlib/api/efr32xg27/group-dcdccoulombcounter
-      condition: [device_sdid_230]
+      condition: [device_has_coulomb_counter]

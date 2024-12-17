@@ -47,7 +47,7 @@ void (*sl_high_datarate_phy_tx_complete_callback)(uint8_t mac_index, sl_status_t
 extern sl_status_t sl_mac_send_raw_high_datarate_phy_message(uint8_t nwk_index, uint8_t *payload);
 extern sl_status_t sl_mac_send_raw_high_datarate_phy_scheduled_message(uint8_t nwk_index, uint8_t *payload, RAIL_Time_t timestamp);
 extern void sli_mac_lower_mac_set_high_datarate_csma_params (RAIL_CsmaConfig_t *csmaParams);
-extern void sli_mac_lower_mac_set_high_datarate_phy_radio_priorities (sl_zigbee_multiprotocol_priorities_t *priorities);
+extern void sli_mac_lower_mac_set_high_datarate_phy_radio_priorities (sl_802154_radio_priorities_t *priorities);
 extern RAIL_Status_t sl_mac_set_mode_switch_sync_detect(bool enable_f);
 
 /**
@@ -172,7 +172,7 @@ void sl_high_datarate_phy_config_csma_params(RAIL_CsmaConfig_t *csma_params)
  * @param[in]  Pointer to csma params used on high datarate phy packets
  *
  */
-void sl_high_datarate_phy_config_radio_priorities(sl_zigbee_multiprotocol_priorities_t *priorities)
+void sl_high_datarate_phy_config_radio_priorities(sl_802154_radio_priorities_t *priorities)
 {
   sli_mac_lower_mac_set_high_datarate_phy_radio_priorities(priorities);
 }
@@ -232,7 +232,7 @@ void sl_high_datarate_phy_tx_sched_command(sl_cli_command_arg_t *arguments)
  * and this cannot be done from anywhere except the zigbee task context in an RTOS
  * application
  */
-#include "em_gpio.h"
+#include "sl_gpio.h"
 static void app_cli_event_handler(sl_zigbee_af_event_t *event)
 {
   if ( length > MAX_PAYLOAD_LEN ) {

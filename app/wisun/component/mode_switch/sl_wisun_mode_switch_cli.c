@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_wisun_mode_switch_cli.c
+ * @brief Wi-SUN Mode Switch CLI handler
  *******************************************************************************
  * # License
  * <b>Copyright 2022 Silicon Laboratories Inc. www.silabs.com</b>
@@ -34,11 +34,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+
 #include "sl_component_catalog.h"
 #include "sl_cli.h"
 #include "sl_wisun_api.h"
 #include "sl_wisun_cli_util.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -56,15 +56,15 @@
 // -----------------------------------------------------------------------------
 
 // -----------------------------------------------------------------------------
-//                          Public Function Definitions
-// -----------------------------------------------------------------------------
-
-// -----------------------------------------------------------------------------
 //                          Static Function Definitions
 // -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
+//                          Public Function Definitions
+// -----------------------------------------------------------------------------
+
 /* CLI app mode switch */
-void app_mode_switch(sl_cli_command_arg_t *arguments)
+void app_mode_switch(const sl_cli_command_arg_t *arguments)
 {
   sl_status_t res;
   sl_wisun_mac_address_t address;

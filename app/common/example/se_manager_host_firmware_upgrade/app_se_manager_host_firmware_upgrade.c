@@ -19,6 +19,7 @@
 //                                   Includes
 // -----------------------------------------------------------------------------
 #include "app_se_manager_host_firmware_upgrade.h"
+#include "sli_se_manager_mailbox.h"
 
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
@@ -174,10 +175,10 @@ sl_status_t check_executed_command(void)
 sl_status_t get_executed_command_response(uint8_t *buf, uint32_t buf_len)
 {
   // Allocate buffer for reading the executed command response
-  SE_DataTransfer_t out_buf = SE_DATATRANSFER_DEFAULT(buf, buf_len);
+  sli_se_datatransfer_t out_buf = SLI_SE_DATATRANSFER_DEFAULT(buf, buf_len);
 
   // Set executed command and buffer to run sl_se_ack_command()
-  SE_addDataOutput(&cmd_ctx.command, &out_buf);
+  sli_se_mailbox_command_add_output(&cmd_ctx.command, &out_buf);
 
   // Acknowledge and get status and output data of an executed command
   print_error_cycle(sl_se_ack_command(&cmd_ctx), NULL);

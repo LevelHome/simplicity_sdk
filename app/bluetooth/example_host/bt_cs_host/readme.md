@@ -6,18 +6,36 @@ This is the host application for the Channel Sounding (CS) NCP target applicatio
 ## Features
 
 * Control of the multi role CS NCP
-  * Creating initiator instance
-  * Creating reflector instances
-* Distance estimation is done on the NCP target side (On the Wireless MCU)
-* Displaying measurement results
-* Writing log data from the RTL
+  * Create initiator and/or reflector instances
+  * Configure wired or wireless antenna setup
+  * Configure CS mode
+  * Configure object tracking mode
+  * Configure antenna selection for antenna switching
+  * Configure connection PHY
+  * Use reflector address filtering
+* Display only measurement results
+* Use BGAPI Trace to get logging data
 
-In two way CS, both the initiator and the reflector instances collects IQ samples. The initiator starts and orchestrate the whole procedure. The reflector component responds to the initiator, and sends its measurement data to the initiator. When all data collected, the initiator estimates the instance.
+In two way CS, both the initiator and the reflector instances are collecting IQ samples. The initiator starts and orchestrate the whole procedure. The reflector component responds to the initiator, and sends its measurement data to the initiator. When all data collected, the initiator estimates the distance.
+
+The host application is extended with application specific messages that we refer to as ACP (Application Co-Processor) messages.
+The following ACP commands are sent from the host to the target device:
+* Create initiator instance
+* Delete initiator instance
+* Create reflector instance
+* Delete reflector instance
+* Configure antenna
+* Enable BGAPI Trace
+
+The following ACP events are sent from the target device to the host:
+* CS results
+* CS intermediate results
+* CS extended results
+* Error events
 
 ## Limitations, known issues
 
-- Only one initiator instance is supported (-I1)
-- In case of high data flow from the RTL logging functionality, the VCOM interface can experience congestion. The best way to sort this out is to increase the throughput of the NCP VCOM as described in [this article](https://community.silabs.com/s/article/wstk-virtual-com-port-baudrate-setting?language=en_US). The baudrate is configured using the SL_UARTDRV_USART_VCOM_BAUDRATE macro. After changing the WSTK VCOM speed, please don't forget to update the VCOM Baud rate configuration of the CS NCP accordingly, then re-build and re-flash the target with the new firmware.
+- Max 4 initiator/reflector instances are supported (-I4 -R4)
 
 ## Getting started
 
@@ -29,7 +47,8 @@ To compile the sources, you need the following tools:
 * make utility
 
 ### Building the application
-Build the application by issuing the following command:
+On the target: Build and flash the "bt_cs_ncp" application.
+On the host: Build the application by issuing the following command:
 
 `make`
 
@@ -61,19 +80,43 @@ in the project's root directory. This will build your executable, and place it i
   2 : Critical, error, warning.
   3 : Critical, error, warning, info.
   4 : Critical, error, warning, info, debug.
-* -R  <max_reflector_instances>
+* -R <max_reflector_instances>
   Maximum number of reflector instances, default: 1
-* -I  <max_initiator_instances>
-    Maximum number of initiator instances, default: 1
-
+* -I <max_initiator_instances>
+  Maximum number of initiator instances, default: 1
+* -p <channel_map_preset>
+  Pre-set parameters for channel map selection, default: 2
+  0 : low (channel spacing: 1, number of channels: 20)
+  1 : medium (channel spacing: 2, number of channels: 38)
+  2 : high (channel spacing: 1, number of channels: 72)
+  3 : load custom from configuration macro CS_CUSTOM_CHANNEL_MAP
+* -a <antenna_configuration_index>
+  Antenna configuration index for antenna switching, default: 7
+  0 : Single antennas on both sides
+  1 : Dual antenna initiator & single antenna reflector
+  4 : Single antenna initiator & dual antenna reflector
+  7 : Dual antennas on both sides
+  Note: considered only with CS mode: PBR!
+* -q <cs_sync_antenna>
+  Antenna usage for CS SYNC packets, default: 0xFE
+  1 : use antenna ID1 only
+  2 : use antenna ID2 only
+  0xFE : Switching between antennas for each channel
+  Note: considered only with CS mode: RTT!
+* -T <trace>
+  Enable RTT trace including BGAPI messages and RTL log
+  Note that the RTT blocks the target if no client is connected
+* -P <connection_phy>
+  Use 1M connection PHY
+  Note: Default is 2M
 * -F <reflector_ble_address>
   Enable reflector BLE address filtering
 * -r  Enable RSSI distance measurement
 * -w  Use wired antenna offset
-* -o
+* -o <object_tracking_mode>
   Object tracking setting, default: 0
-  0: Use moving object tracking (up to 5 km/h) setting
-  1: Use stationary object tracking settings
+  0 : Use moving object tracking (up to 5 km/h) setting
+  1 : Use stationary object tracking settings
 * -h  Print help message.
 
 ### Running the application
@@ -84,6 +127,4 @@ To run the application with the default options, use the following command line.
 
 This will create one initiator and one reflector instance on the NCP.
 
-The initiator instance starts to scan for usable reflectors, and initiates a connection to it. When connected, the Initiator component starts measuring distance.
-
-The reflector instance starts advertising.
+The initiator instances are scanning for usable reflectors, and initiate a connection to it. When connected, the Initiator component starts the CS procedure. The initiator estimates the distance, and displays them in the command line terminal. Reflector instances are advertising with device name "CS RFLCT".

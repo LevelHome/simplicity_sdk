@@ -176,10 +176,6 @@ void sli_mac_stack_lower_mac_force_sleep(bool sleep);
 // the scheduler make better choices
 #define CSMA_OVERHEAD_US                                    1000
 
-#define RADIO_SCHEDULER_BACKGROUND_RX_DEFAULT_PRIORITY      255
-#define RADIO_SCHEDULER_ACTIVE_RX_DEFAULT_PRIORITY          255
-#define RADIO_SCHEDULER_TX_DEFAULT_PRIORITY                 100
-
 #define SL_ZIGBEE_APPENDED_INFO_FLAG_ACK_FRAME_PENDING_SET      0x01
 // Appended info defines
 #ifdef MAC_TEST_STACK

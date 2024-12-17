@@ -1,5 +1,5 @@
 /***************************************************************************//**
- * @file
+ * @file sli_wisun_coap_mem.h
  * @brief Wi-SUN CoAP memory handler module
  *******************************************************************************
  * # License
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __SL_WISUN_COAP_MEM_H__
-#define __SL_WISUN_COAP_MEM_H__
+#ifndef SLI_WISUN_COAP_MEM_H
+#define SLI_WISUN_COAP_MEM_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,7 +46,7 @@ extern "C" {
 
 /**************************************************************************//**
  * @defgroup SL_WISUN_COAP_MEMORY Memory Handler
- * @ingroup SL_WISUN_COAP
+ * @ingroup SL_WISUN_COAP_API
  * @{
  *****************************************************************************/
 
@@ -96,15 +96,6 @@ extern "C" {
 //                          Public Function Declarations
 // -----------------------------------------------------------------------------
 
-#else
-
-// Choose headers for os provided malloc & free
-#if defined(SL_CATALOG_FREERTOS_KERNEL_PRESENT)
-# include "FreeRTOS.h"
-#else
-# include "sl_memory_manager.h"
-#endif
-
 #endif
 
 // -----------------------------------------------------------------------------
@@ -138,4 +129,4 @@ void sli_wisun_coap_mem_free(void *addr);
 }
 #endif
 
-#endif // end __SL_WISUN_COAP_MEM_H__
+#endif // SLI_WISUN_COAP_MEM_H

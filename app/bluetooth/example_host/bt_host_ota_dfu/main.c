@@ -1,8 +1,8 @@
 /***************************************************************************//**
  * @file
- * @brief Bluetotoh over-the-air (OTA) device firmware update (DFU) example
+ * @brief Bluetooth over-the-air (OTA) device firmware update (DFU) example
  *
- * Bluetotoh over-the-air (OTA) device firmware update (DFU) example for
+ * Bluetooth over-the-air (OTA) device firmware update (DFU) example for
  * x86 host using Network Co-Processor (NCP)
  *******************************************************************************
  * # License
@@ -47,29 +47,32 @@
 #include <time.h>
 #include <errno.h>
 #include <string.h>
+#include <unistd.h>
 #include "sl_bt_api.h"
 #include "sl_bt_ncp_host.h"
-#include "uart.h"
 #include "app_log.h"
 #include "app_assert.h"
+#include "ncp_host.h"
 
-#ifndef POSIX
-#include <windows.h>
-#endif
+// Optstring argument for getopt.
+#define OPTSTRING      NCP_HOST_OPTSTRING "g:a:wm:h"
 
-/**
- * Configurable parameters that can be modified to match the test setup.
- */
+// Usage info.
+#define USAGE          "\n%s -g <gbl_file> -a <remote_address> [-w] [-m <max_mtu>] " NCP_HOST_USAGE " [-h]\n"
 
-/** The serial port to use for BGAPI communication. */
-static char* uart_port = NULL;
+// Options info.
+#define OPTIONS                                                                     \
+  "\nOPTIONS\n"                                                                     \
+  "    -g  GBL file\n"                                                              \
+  "        <gbl_file>       Path to the GBL file\n"                                 \
+  "    -a  Remote address\n"                                                        \
+  "        <remote_address> Bluetooth public device address of the remote device\n" \
+  "    -w  Force write without response\n"                                          \
+  "    -m  Set the maximum size of ATT Message Transfer Units (MTU)\n"              \
+  "        <max_mtu>        Maximum MTU size in bytes\n"                            \
+  NCP_HOST_OPTIONS                                                                  \
+  "    -h  Print this help message.\n"
 
-/** The baud rate to use. */
-static uint32_t baud_rate = 0;
-
-/** Usage string */
-#define USAGE "Usage: %s [serial port] [baud rate] [ota file] [remote address] [(optional) force write without response: 0 / 1] [optional max mtu]\n\n"
-/**/
 /** dfu file to upload*/
 FILE *dfu_file = NULL;
 /** remote device address*/
@@ -125,8 +128,6 @@ enum ota_states {
   OTA_READ_APPLICATION_VERSION, //Read application version
 } ota_state = OTA_INIT;
 void ota_change_state(enum ota_states new_state);
-static int32_t uart_rx_wrapper(uint32_t len, uint8_t* data);
-static int32_t uart_peek_wrapper(void);
 
 ///DFU
 #define MAX_DFU_PACKET 256
@@ -146,14 +147,6 @@ uint32_t bootloader_version = -1;
 uint32_t application_version = -1;
 uint16_t apploader_version[4] = { 0 };
 uint8_t ota_version = 0;
-//
-#ifdef POSIX
-int32_t handle = -1;
-void *handle_ptr = &handle;
-#else
-HANDLE serial_handle;
-void *handle_ptr = &serial_handle;
-#endif
 
 int dfu_read_size()
 {
@@ -396,7 +389,7 @@ void ota_change_state(enum ota_states new_state)
         sl_status_t sc;
         bd_addr address;
         uint8_t address_type;
-        sc = sl_bt_system_get_identity_address(&address, &address_type);
+        sc = sl_bt_gap_get_identity_address(&address, &address_type);
         if (sc) {
           ERROR_EXIT("Error, failed to get Bluetooth address,0x%x", sc);
         }
@@ -470,29 +463,6 @@ void ota_change_state(enum ota_states new_state)
   }
 }
 
-/**
- * Function called when a message needs to be written to the serial port.
- * @param msg_len Length of the message.
- * @param msg_data Message data, including the header.
- * @param data_len Optional variable data length.
- * @param data Optional variable data.
- */
-static void on_message_send(uint32_t msg_len, uint8_t* msg_data)
-{
-  /** Variable for storing function return values. */
-  int ret;
-
-#if DEBUG
-  app_log("on_message_send()\n");
-#endif /* DEBUG */
-
-  ret = uartTx(handle_ptr, msg_len, msg_data);
-  if (ret < 0) {
-    app_log("on_message_send() - failed to write to serial port %s, ret: %d, errno: %d\n", uart_port, ret, errno);
-    exit(EXIT_FAILURE);
-  }
-}
-
 void print_address(bd_addr address)
 {
   for (int i = 5; i >= 0; i--) {
@@ -540,54 +510,87 @@ int parse_address(const char *str, bd_addr *addr)
 
   return 0;
 }
-int hw_init(int argc, char* argv[])
+
+static void app_init(int argc, char* argv[])
 {
-  int ret = 0;
-  if (argc < 5) {
+  sl_status_t sc;
+  int opt;
+  char *gbl_file_path = NULL;
+  bool remote_address_set = false;
+
+  // Process command line options.
+  while ((opt = getopt(argc, argv, OPTSTRING)) != -1) {
+    switch (opt) {
+      // Print help.
+      case 'h':
+        app_log(USAGE, argv[0]);
+        app_log(OPTIONS);
+        exit(EXIT_SUCCESS);
+
+      case 'g':
+        gbl_file_path = optarg;
+        break;
+
+      case 'a':
+        if (parse_address(optarg, &remote_public_address)) {
+          app_log("Unable to parse address %s", optarg);
+          app_log(USAGE, argv[0]);
+          exit(EXIT_FAILURE);
+        }
+        remote_address_set = true;
+        break;
+
+      case 'w':
+        force_write_without_rsp = 1;
+        break;
+
+      case 'm':
+        max_mtu = atoi(optarg);
+        if (max_mtu > MAX_MTU) {
+          max_mtu = MAX_MTU;
+        } else if (max_mtu < MIN_MTU) {
+          max_mtu = MIN_MTU;
+        }
+        app_log("MTU set to %u\n", max_mtu);
+        break;
+
+      // Process options for other modules.
+      default:
+        sc = ncp_host_set_option((char)opt, optarg);
+        if (sc != SL_STATUS_OK) {
+          app_log(USAGE, argv[0]);
+          exit(EXIT_FAILURE);
+        }
+        break;
+    }
+  }
+
+  if (!remote_address_set) {
+    app_log("remote address is mandatory\n");
     app_log(USAGE, argv[0]);
     exit(EXIT_FAILURE);
   }
-  /**
-   * Handle the command-line arguments.
-   */
 
-  //filename
-  dfu_file = fopen(argv[3], "rb");
-  if (dfu_file == NULL) {
-    app_log("cannot open file %s\n", argv[3]);
-    exit(-1);
-  }
-  //baudrate
-  baud_rate = atoi(argv[2]);
-  //uart port
-  uart_port = argv[1];
-  //remote address
-  if (parse_address(argv[4], &remote_public_address)) {
-    app_log("Unable to parse address %s", argv[4]);
+  if (gbl_file_path == NULL) {
+    app_log("GBL file is mandatory\n");
+    app_log(USAGE, argv[0]);
     exit(EXIT_FAILURE);
   }
 
-  if (argc >= 6) {
-    force_write_without_rsp = atoi(argv[5]);
+  dfu_file = fopen(gbl_file_path, "rb");
+  if (dfu_file == NULL) {
+    app_log("cannot open file %s\n", gbl_file_path);
+    exit(EXIT_FAILURE);
   }
 
-  if (argc == 7) {
-    max_mtu = atoi(argv[6]);
-    if (max_mtu > MAX_MTU) {
-      max_mtu = MAX_MTU;
-    } else if (max_mtu < MIN_MTU) {
-      max_mtu = MIN_MTU;
-    }
-    app_log("MTU set to %u\n", max_mtu);
+  // Initialize NCP connection.
+  sc = ncp_host_init();
+  if (sc == SL_STATUS_INVALID_PARAMETER) {
+    app_log(USAGE, argv[0]);
+    exit(EXIT_FAILURE);
   }
-  /**
-   * Initialise the serial port.
-   */
-  ret = uartOpen(handle_ptr, (int8_t*)uart_port, baud_rate, 1, 100);
-  if (ret >= 0) {
-    uartFlush(handle_ptr);
-  }
-  return ret;
+  app_assert_status(sc);
+  app_log("NCP host initialised.\n");
 }
 
 static void handle_scan_event(uint8_t *address,
@@ -624,18 +627,9 @@ int main(int argc, char* argv[])
 {
   sl_bt_msg_t evt;
   sl_bt_msg_t *p = &evt;
-  /**
-   * Initialize BGLIB with our output function for sending messages.
-   */
-  sl_status_t sc = sl_bt_api_initialize_nonblock(on_message_send, uart_rx_wrapper, uart_peek_wrapper);
-  app_assert(sc == SL_STATUS_OK,
-             "[E: 0x%04x] Failed to init Bluetooth NCP\n",
-             (int)sc);
 
-  if (hw_init(argc, argv) < 0) {
-    app_log("HW init failure\n");
-    exit(EXIT_FAILURE);
-  }
+  app_init(argc, argv);
+
   ota_change_state(OTA_INIT);
   while (1) {
     sl_bt_wait_event(&evt);
@@ -981,14 +975,4 @@ int main(int argc, char* argv[])
 
   fclose(dfu_file);
   return 0;
-}
-
-static inline int32_t uart_rx_wrapper(uint32_t len, uint8_t* data)
-{
-  return uartRx(handle_ptr, len, data);
-}
-
-static inline int32_t uart_peek_wrapper(void)
-{
-  return uartRxPeek(handle_ptr);
 }

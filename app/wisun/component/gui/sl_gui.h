@@ -1,5 +1,5 @@
 /***************************************************************************//**
- * @file
+ * @file sl_gui.h
  * @brief Graphical User Interface
  *******************************************************************************
  * # License
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __SL_GUI_H__
-#define __SL_GUI_H__
+#ifndef SL_GUI_H
+#define SL_GUI_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,11 +38,9 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include "sl_widget.h"
 #include "sl_status.h"
 #include "sl_wisun_types.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -54,6 +52,11 @@ typedef enum sl_gui_button_id {
   /// GUI Button1
   SL_GUI_BUTTON1
 } sl_gui_button_id_t;
+
+/// Thread loop definition
+#ifndef SL_GUI_THREAD_LOOP
+  #define SL_GUI_THREAD_LOOP  while (1)
+#endif
 
 // -----------------------------------------------------------------------------
 //                                Global Variables
@@ -282,4 +285,5 @@ __STATIC_INLINE void sl_gui_update_all_widget(void)
 #ifdef __cplusplus
 }
 #endif
-#endif
+
+#endif // SL_GUI_H

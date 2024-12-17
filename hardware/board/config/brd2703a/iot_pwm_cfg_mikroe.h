@@ -63,7 +63,7 @@
 #define IOT_PWM_CFG_MIKROE_PERIPHERAL_NO         4
 
 // TIMER4 CC0 on PA00
-#define IOT_PWM_CFG_MIKROE_CC0_PORT              gpioPortA
+#define IOT_PWM_CFG_MIKROE_CC0_PORT              SL_GPIO_PORT_A
 #define IOT_PWM_CFG_MIKROE_CC0_PIN               0
 
 

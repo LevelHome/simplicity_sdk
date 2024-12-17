@@ -29,7 +29,6 @@
 
 #include <stddef.h>
 
-#include "em_core.h"
 #include "sl_uart_recorder.h"
 #include "sl_uart_recorder_config.h"
 #include "sl_status.h"

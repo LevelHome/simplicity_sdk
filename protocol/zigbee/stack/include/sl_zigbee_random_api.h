@@ -20,10 +20,6 @@
 
 #include "stack/include/sl_zigbee_types.h"
 
-#if defined(MBEDTLS_CONFIG_FILE) && !defined(ZIGBEE_STACK_ON_HOST)
-#include MBEDTLS_CONFIG_FILE
-#endif
-
 /**
  * @addtogroup security
  *

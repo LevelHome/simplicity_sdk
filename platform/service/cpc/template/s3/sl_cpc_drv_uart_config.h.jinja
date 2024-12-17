@@ -1,7 +1,7 @@
 #ifndef SL_CPC_DRV_UART_SECONDARY_CONFIG_H
 #define SL_CPC_DRV_UART_SECONDARY_CONFIG_H
-{% for instance in cpc_instance_name %}
-{% for periph in cpc_periph_type %}
+{% for instance in cpc_uart_instance_name %}
+{% for periph in cpc_uart_periph_type %}
 #include "sl_cpc_drv_uart_eusart_{{ instance }}_config.h"
 
 #define SL_CPC_DRV_PERIPH_IS_{{ periph | upper }}
@@ -13,6 +13,7 @@
 #define CAT(a,...) CAT_IMPL(a, __VA_ARGS__)
 #define CAT_IMPL(a,...) a ## __VA_ARGS__
 
+#define SL_CPC_DRV_UART_RX_BUFFER_MAX_COUNT          SL_CPC_DRV_UART_{{ instance | upper }}_RX_BUFFER_MAX_COUNT
 #define SL_CPC_DRV_UART_RX_QUEUE_SIZE                SL_CPC_DRV_UART_{{ instance | upper }}_RX_QUEUE_SIZE
 #define SL_CPC_DRV_UART_TX_QUEUE_SIZE                SL_CPC_DRV_UART_{{ instance | upper }}_TX_QUEUE_SIZE
 #define SL_CPC_DRV_UART_BAUDRATE                     SL_CPC_DRV_UART_{{ instance | upper }}_BAUDRATE

@@ -18,10 +18,6 @@ requires:
   - name: zigbee_cli
     condition:
       - cli
-  - name: legacy_printf
-    condition:
-      - zigbee_debug_print
-      - zigbee_stack_common
   - name: zigbee_system_common_app_framework
 
 config_file:
@@ -957,7 +953,7 @@ template_contribution:
     value:
       name: attr
       group: print
-      handler: sl_zigbee_af_print_attribute_table
+      handler: printAttributeTable
       help: Prints attribute.
   - name: cli_command
     value:

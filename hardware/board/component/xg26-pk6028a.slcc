@@ -17,9 +17,9 @@
   - name: SL_KIT_NAME
     value: '"XG26-PK6028A"'
   - name: SL_KIT_REV
-    value: '"A00"'
+    value: '"A01"'
 - tag:
   - kit:opn:xG26-PK6028A
   - kit:pn:PK6028
   - kit:variant:A
-  - kit:revision:A00
+  - kit:revision:A01

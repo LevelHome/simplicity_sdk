@@ -119,6 +119,10 @@ EmberStatus emApiNcpSetLongMessagesUse(bool useLongMessages);
 
 bool emApiUsingLongMessages(void);
 
+EmberStatus emApiSetRadioPriority(sl_connect_radio_priority_t *radio_priority);
+
+EmberStatus emApiGetRadioPriority(sl_connect_radio_priority_t *radio_priority);
+
 uint32_t emApiStackIdleTimeMs(uint16_t * currentStackTasks);
 
 void emApiTick(void);

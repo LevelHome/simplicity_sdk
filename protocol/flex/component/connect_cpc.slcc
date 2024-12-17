@@ -1,6 +1,6 @@
 id: connect_cpc
 label: Connect stack CPC
-package: Flex
+package: Connect
 description: CPC Connect stack component
 category: Services|Co-Processor Communication
 quality: production
@@ -13,7 +13,7 @@ provides:
 requires:
   - name: cpc_secondary
 
-include: 
+include:
   - path: "protocol/flex/ncp"
     file_list:
       - path: "ncp-cpc-interface.h"

@@ -3,7 +3,7 @@
  * @brief main() function.
  *******************************************************************************
  * # License
- * <b>Copyright 2020 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -27,8 +27,11 @@
  * 3. This notice may not be removed or altered from any source distribution.
  *
  ******************************************************************************/
-#include "sl_component_catalog.h"
 
+// -----------------------------------------------------------------------------
+// Includes
+
+#include "sl_component_catalog.h"
 #include "sl_system_init.h"
 #include "app.h"
 #if defined(SL_CATALOG_POWER_MANAGER_PRESENT)
@@ -40,6 +43,9 @@
 #include "sl_system_process_action.h"
 #endif // SL_CATALOG_KERNEL_PRESENT
 
+// -----------------------------------------------------------------------------
+// Public function definitions
+
 int main(void)
 {
   // Initialize Silicon Labs device, system, service(s) and protocol stack(s).
@@ -50,6 +56,10 @@ int main(void)
   // Initialize the application. For example, create periodic timer(s) or
   // task(s) if the kernel is present.
   app_init();
+
+  // Initialize the application runtime. For example create task(s) if a
+  // kernel is present.
+  app_init_runtime();
 
 #if defined(SL_CATALOG_KERNEL_PRESENT)
   // Start the kernel. Task(s) created in app_init() will start running.
@@ -66,7 +76,7 @@ int main(void)
 #if defined(SL_CATALOG_POWER_MANAGER_PRESENT)
     // Let the CPU go to sleep if the system allows it.
     sl_power_manager_sleep();
-#endif
+#endif // SL_CATALOG_POWER_MANAGER_PRESENT
   }
 #endif // SL_CATALOG_KERNEL_PRESENT
 }

@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sli_wisun_network_measurement_ping_gui.c
+ * @brief Wi-SUN Network Measurement Ping GUI
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -31,11 +31,11 @@
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
 #include <assert.h>
+
 #include "sl_component_catalog.h"
 #include "sl_wisun_trace_util.h"
 #include "sl_wisun_app_core.h"
@@ -48,7 +48,6 @@
 #include "socket/socket.h"
 #include "sl_wisun_ping.h"
 #include "silabs_wisun_logo.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -428,21 +427,21 @@ static void _settings_form(void *args)
 
 static void _set_packet_count(void *args)
 {
-  app_enum_t *val = (void *) args;
+  const app_enum_t *val = (const app_enum_t *) args;
   _meas_settings.packet_count = val->value;
   sl_display_renderer(_settings_form, NULL, 0);
 }
 
 static void _set_meas_type(void *args)
 {
-  app_enum_t *val = (void *) args;
+  const app_enum_t *val = (const app_enum_t *) args;
   _meas_settings.meas_type = (sl_wisun_nwm_target_type_t) val->value;
   sl_display_renderer(_settings_form, NULL, 0);
 }
 
 static void _set_packet_length(void *args)
 {
-  app_enum_t *val = (void *) args;
+  const app_enum_t *val = (const app_enum_t *) args;
   _meas_settings.packet_length = val->value;
   sl_display_renderer(_settings_form, NULL, 0);
 }

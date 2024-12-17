@@ -36,3 +36,7 @@ template_contribution:
       key: SILABS_BR_KEY
     condition:
       - wisun_br_stack
+
+metadata:
+  sbom:
+    license: MSLA

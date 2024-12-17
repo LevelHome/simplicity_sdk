@@ -43,20 +43,21 @@ void sli_zigbee_af_set_response_mode(bool mode)
   respondToCheckIn = mode;
 }
 
-bool sl_zigbee_af_poll_control_cluster_check_in_cb(void)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_poll_control_cluster_check_in_cb(void)
 {
   sl_zigbee_af_poll_control_cluster_println("RX: CheckIn");
   if (respondToCheckIn) {
     sl_zigbee_af_fill_command_poll_control_cluster_check_in_response(fastPolling,
                                                                      fastPollingTimeout);
     sl_zigbee_af_send_response();
+    return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
   }
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
 void sli_zigbee_af_poll_control_client_print(void)
 {
-  sl_zigbee_af_poll_control_cluster_println("Poll Control Client:\n%p %p\n%p 0x%2x",
+  sl_zigbee_af_poll_control_cluster_println("Poll Control Client:\n%s %s\n%s 0x%04X",
                                             "fast polling: ",
                                             fastPolling ? "on" : "off",
                                             "fast polling timeout: ",
@@ -67,14 +68,12 @@ uint32_t sl_zigbee_af_poll_control_cluster_client_command_parse(sl_service_opcod
                                                                 sl_service_function_context_t *context)
 {
   (void)opcode;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
   if (!cmd->mfgSpecific && cmd->commandId == ZCL_CHECK_IN_COMMAND_ID) {
-    wasHandled = sl_zigbee_af_poll_control_cluster_check_in_cb();
+    status = sl_zigbee_af_poll_control_cluster_check_in_cb();
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

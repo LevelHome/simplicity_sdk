@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef SL_PWM_INIT_PWM_CONFIG_H
-#define SL_PWM_INIT_PWM_CONFIG_H
+#ifndef SL_PWM_INIT_LED0_CONFIG_H
+#define SL_PWM_INIT_LED0_CONFIG_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,7 +61,7 @@ extern "C" {
 
 #define SL_PWM_LED0_OUTPUT_CHANNEL               0
 // TIMER0 CC0 on PD04
-#define SL_PWM_LED0_OUTPUT_PORT                  gpioPortD
+#define SL_PWM_LED0_OUTPUT_PORT                  SL_GPIO_PORT_D
 #define SL_PWM_LED0_OUTPUT_PIN                   4
 
 // [TIMER_SL_PWM_LED0]$
@@ -72,4 +72,4 @@ extern "C" {
 }
 #endif
 
-#endif // SL_PWM_INIT_PWM_CONFIG_H
+#endif // SL_PWM_INIT_LED0_CONFIG_H

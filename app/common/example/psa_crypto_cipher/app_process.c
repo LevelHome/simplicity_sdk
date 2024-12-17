@@ -244,7 +244,7 @@ void app_process_action(void)
   switch (app_state) {
     case PSA_CRYPTO_INIT:
       printf("\n%s - Core running at %" PRIu32 " kHz.\n", example_string,
-             CMU_ClockFreqGet(cmuClock_CORE) / 1000);
+             SystemHCLKGet() / 1000);
       printf("  . PSA Crypto initialization... ");
       if (init_psa_crypto() == PSA_SUCCESS) {
         printf("  + Filling %d bytes message buffer with random number... ",
@@ -405,6 +405,12 @@ void app_process_action(void)
       break;
 
     case CHACHA20_TEST:
+#if defined(_SILICON_LABS_32B_SERIES_3_CONFIG_301)
+      if (symmetric_key_storage_select > KEY_STORAGE_PLAIN_MAX) {
+        app_state = START_CFB_STREAM;
+        break;
+      }
+#endif
       if (symmetric_key_size_select != KEY_SIZE_MAX) {
         printf("\n  . ChaCha20 algorithm can only use 256-bit key.\n");
       } else {
@@ -780,6 +786,12 @@ void app_process_action(void)
       break;
 
     case START_CHACHA20_STREAM:
+#if defined(_SILICON_LABS_32B_SERIES_3_CONFIG_301)
+      if (symmetric_key_storage_select > KEY_STORAGE_PLAIN_MAX) {
+        print_key_storage();
+        break;
+      }
+#endif
       app_state = PSA_CRYPTO_EXIT;
       if (!encrypt_decrypt) {
         printf("\n  . CHACHA20 stream encryption\n");

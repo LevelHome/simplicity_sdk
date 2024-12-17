@@ -42,17 +42,7 @@
 #include "sl_bt_rtos_adaptation.h"
 #include "sl_custom_token_header.h"
 
-#if !defined(MBEDTLS_CONFIG_FILE)
-#include "mbedtls/config.h"
-#else
-#include MBEDTLS_CONFIG_FILE
-#endif
-
-#ifdef MBEDTLS_CONFIG_FILE
-  #include MBEDTLS_CONFIG_FILE
-#else
-  #include "mbedtls/config.h"
-#endif
+#include <mbedtls/build_info.h>
 
 #include "mbedtls/ccm.h"
 
@@ -61,7 +51,7 @@
 #endif
 
 #if !defined(MBEDTLS_AES_C)
-  #error Must enable mbedTLS AES  module
+  #error Must enable mbedTLS AES module
 #endif
 
 #define ZIGBEE_DIRECT_NONCE_LENGTH 13
@@ -75,6 +65,8 @@ uint8_t sl_zigbee_direct_interface_state = 0x01;
 uint32_t outgoing_counter = 1;
 uint32_t incoming_counter = 0;
 static mbedtls_ccm_context ccm_zigbee_direct_Ctx;
+static mbedtls_ccm_context ccm_zigbee_direct_Ctx_encrypt;
+
 uint8_t zigbee_direct_session_key[SL_ZIGBEE_ENCRYPTION_KEY_SIZE];
 extern sl_zigbee_direct_dlk_public_key_tlv_t ourPointTlv;
 uint8_t sl_my_connection;
@@ -92,6 +84,7 @@ void sli_zigbee_direct_anonymous_join_event_handler(sl_zigbee_af_event_t *event)
     sl_zigbee_direct_anonymous_join_timeout_sec = 0;
     if (sl_zvd_connection_status <= PROVISIONED_IN_PROVISIONING_SESSION) {
       sl_bt_connection_close(sl_my_connection);
+      //todo set state to BLE_OFF ?
     }
   }
 }
@@ -116,11 +109,11 @@ sl_status_t sl_zigbee_direct_calculate_basic_key(sl_802154_long_addr_t zvd_IEEE,
 
   sl_zigbee_app_debug_print("Calculating Basic Key for Device [");
   for (i = 0; i < EUI64_SIZE; i++) {
-    sl_zigbee_app_debug_print(" %X", input[i]);
+    sl_zigbee_app_debug_print(" %02X", input[i]);
   }
   sl_zigbee_app_debug_print("] with network key [");
   for (i = 0; i < 16; i++) {
-    sl_zigbee_app_debug_print(" %X", input[i + 8]);
+    sl_zigbee_app_debug_print(" %02X", input[i + 8]);
   }
   sl_zigbee_app_debug_println("]");
 
@@ -225,13 +218,14 @@ sl_status_t sli_zigbee_direct_security_init()
 {
   sl_status_t status;
 
-  sl_zigbee_app_debug_print("Crypto Key:");
+  sl_zigbee_app_debug_print("Session Key:");
   for (uint8_t i = 0; i < 16; i++) {
-    sl_zigbee_app_debug_print(" %X", zigbee_direct_session_key[i]);
+    sl_zigbee_app_debug_print(" %02X", zigbee_direct_session_key[i]);
   }
   sl_zigbee_app_debug_println("");
 
   status = mbedtls_ccm_setkey(&ccm_zigbee_direct_Ctx, MBEDTLS_CIPHER_ID_AES, zigbee_direct_session_key, ENCRYPTION_KEYBITS);
+  status = mbedtls_ccm_setkey(&ccm_zigbee_direct_Ctx_encrypt, MBEDTLS_CIPHER_ID_AES, zigbee_direct_session_key, ENCRYPTION_KEYBITS);
 
   outgoing_counter = 1;
   incoming_counter = 0;
@@ -262,7 +256,7 @@ sl_status_t sl_zigbee_direct_security_encrypt_packet(sl_802154_long_addr_t sourc
   memcpy(&authData[17], characteristic_uuid, UUID_SIZE);  // 3. Characteristic UUID (byte 17-32)
   authData[33] = 0x00; // Characteristic Instance (SHALL be 0)
 
-  status = mbedtls_ccm_encrypt_and_tag(&ccm_zigbee_direct_Ctx,
+  status = mbedtls_ccm_encrypt_and_tag(&ccm_zigbee_direct_Ctx_encrypt,
                                        dataLen,
                                        nonce,
                                        ZIGBEE_DIRECT_NONCE_LENGTH,
@@ -294,10 +288,9 @@ bool sl_zigbee_direct_security_decrypt_packet(sl_802154_long_addr_t sourceEui, u
   //check counter
   counter_from_packet = sl_util_fetch_low_high_int32u(decryptData);
   if (incoming_counter >= counter_from_packet) {
-    sl_zigbee_app_debug_print("Received Frame counter too small %4X", counter_from_packet);
+    sl_zigbee_app_debug_println("Received Frame counter too small %08X", counter_from_packet);
     return false;
   } else {
-    sl_zigbee_app_debug_print("Frame counter check ok %4X", counter_from_packet);
     incoming_counter = counter_from_packet;
   }
 
@@ -323,7 +316,7 @@ bool sl_zigbee_direct_security_decrypt_packet(sl_802154_long_addr_t sourceEui, u
                                     &decryptData[dataLen - 4],
                                     ZIGBEE_DIRECT_MIC_LENGTH);
   if (status != SL_STATUS_OK) {
-    sl_zigbee_core_debug_println("Error from mbed TLS: %4X", status);
+    sl_zigbee_core_debug_println("Error from mbed TLS: %08X", status);
     return false;
   }
 
@@ -412,7 +405,7 @@ static int sli_zigbee_direct_calculate_mac_tag_value(bool useKC_2_U, uint8_t *ou
       ret = mbedtls_md_hmac_update(&ctx, &ourPointTlv.value[8], 32);
       sl_zigbee_core_debug_print("ZDD Point X: ");
       for (uint8_t i = 0; i < 32; i++) {
-        sl_zigbee_core_debug_print(" %X", ourPointTlv.value[8 + i]);
+        sl_zigbee_core_debug_print(" %02X", ourPointTlv.value[8 + i]);
       }
       sl_zigbee_core_debug_println("");
     }
@@ -421,7 +414,7 @@ static int sli_zigbee_direct_calculate_mac_tag_value(bool useKC_2_U, uint8_t *ou
       ret = mbedtls_md_hmac_update(&ctx, &ourPointTlv.value[40], 32);
       sl_zigbee_core_debug_print("ZDD Point Y: ");
       for (uint8_t i = 0; i < 32; i++) {
-        sl_zigbee_core_debug_print(" %X", ourPointTlv.value[40 + i]);
+        sl_zigbee_core_debug_print(" %02X", ourPointTlv.value[40 + i]);
       }
       sl_zigbee_core_debug_println("");
     }
@@ -435,7 +428,7 @@ static int sli_zigbee_direct_calculate_mac_tag_value(bool useKC_2_U, uint8_t *ou
       ret = mbedtls_md_hmac_update(&ctx, sl_zvd_public_point_x, DLK_ECC_COORDINATE_SIZE);
       sl_zigbee_core_debug_print("ZVD Point X: ");
       for (uint8_t i = 0; i < 32; i++) {
-        sl_zigbee_core_debug_print(" %X", sl_zvd_public_point_x[i]);
+        sl_zigbee_core_debug_print(" %02X", sl_zvd_public_point_x[i]);
       }
       sl_zigbee_core_debug_println("");
     }
@@ -443,7 +436,7 @@ static int sli_zigbee_direct_calculate_mac_tag_value(bool useKC_2_U, uint8_t *ou
       ret = mbedtls_md_hmac_update(&ctx, sl_zvd_public_point_y, DLK_ECC_COORDINATE_SIZE);
       sl_zigbee_core_debug_print("ZVD Point Y: ");
       for (uint8_t i = 0; i < 32; i++) {
-        sl_zigbee_core_debug_print(" %X", sl_zvd_public_point_y[i]);
+        sl_zigbee_core_debug_print(" %02X", sl_zvd_public_point_y[i]);
       }
       sl_zigbee_core_debug_println("");
     }
@@ -497,7 +490,7 @@ static void sli_zigbee_direct_send_mac_tag(uint8_t connection, uint16_t characte
   } else {
     sl_zigbee_app_debug_print("Message 4 sent successfully [");
     for (uint8_t i = 0; i < 19 + point_offset; i++) {
-      sl_zigbee_app_debug_print(" %X", sl_response[i]);
+      sl_zigbee_app_debug_print(" %02X", sl_response[i]);
     }
     sl_zigbee_app_debug_println("]");
   }
@@ -511,9 +504,9 @@ void sl_zigbee_direct_handle_authenticate_write(uint8_t connection, uint8array *
 
   uint8_t i;
 
-  sl_zigbee_app_debug_print("Received SE message: %X [", writeValue->data[0]);
+  sl_zigbee_app_debug_print("Received SE message: %02X [", writeValue->data[0]);
   for (i = 1; (i < writeValue->len); i++) {
-    sl_zigbee_app_debug_print(" %X", writeValue->data[i]);
+    sl_zigbee_app_debug_print(" %02X", writeValue->data[i]);
   }
   sl_zigbee_app_debug_println("]");
   uint8_t buffer_len = (writeValue->len - 1);
@@ -523,7 +516,7 @@ void sl_zigbee_direct_handle_authenticate_write(uint8_t connection, uint8array *
     case 1:
       // handle Key Negotiation Req Selected Key Negotiation Method TLV
       if (sl_zigbee_tlv_search_buffer_payload_for_id(buffer_len, buffer_ptr, 0, SL_ZIGBEE_DIRECT_SECURITY_TLV_SELECTED_KEY_NEGOTIATION_METHOD_TAG_ID, (sl_zigbee_tlv_t *) &sl_tlv_pointer1, 78 /*writeValue->len - 1*/) == SL_STATUS_OK) {
-        sl_zigbee_app_debug_println("Use Key Negotiation method %X and pre-shared secret %X", sl_tlv_pointer1.value[0], sl_tlv_pointer1.value[1]);
+        sl_zigbee_app_debug_println("Use Key Negotiation method %02X and pre-shared secret %02X", sl_tlv_pointer1.value[0], sl_tlv_pointer1.value[1]);
         sli_zigbee_direct_key_negotiation_method = sl_tlv_pointer1.value[0];
         sli_zigbee_direct_preshared_key = sl_tlv_pointer1.value[1];
       } else {
@@ -532,18 +525,18 @@ void sl_zigbee_direct_handle_authenticate_write(uint8_t connection, uint8array *
       }
 
       if ( sl_zigbee_tlv_search_buffer_payload_for_id(buffer_len, buffer_ptr, 0, SL_ZIGBEE_DIRECT_SECURITY_TLV_P256_PUBLIC_POINT_TAG_ID, (sl_zigbee_tlv_t *) &sl_tlv_pointer1, 78 /*writeValue->len - 1*/) == SL_STATUS_OK) {
-        sl_zigbee_app_debug_print("Negotiate a key with %X%X%X%X%X%X%X%X using the P-256 public point [", sl_tlv_pointer1.value[0], sl_tlv_pointer1.value[1], sl_tlv_pointer1.value[2], sl_tlv_pointer1.value[3], sl_tlv_pointer1.value[4], sl_tlv_pointer1.value[5], sl_tlv_pointer1.value[6], sl_tlv_pointer1.value[7]);
+        sl_zigbee_app_debug_print("Negotiate a key with %02X%02X%02X%02X%02X%02X%02X%02X using the P-256 public point [", sl_tlv_pointer1.value[0], sl_tlv_pointer1.value[1], sl_tlv_pointer1.value[2], sl_tlv_pointer1.value[3], sl_tlv_pointer1.value[4], sl_tlv_pointer1.value[5], sl_tlv_pointer1.value[6], sl_tlv_pointer1.value[7]);
         for (i = 0; i < 64; i++) {
-          sl_zigbee_app_debug_print(" %X", sl_tlv_pointer1.value[i + 8]);
+          sl_zigbee_app_debug_print(" %02X", sl_tlv_pointer1.value[i + 8]);
         }
         sl_zigbee_app_debug_println("]");
         memcpy(sl_zvd_eui, &sl_tlv_pointer1.value[0], EUI64_SIZE);
         memcpy(sl_zvd_public_point_x, &sl_tlv_pointer1.value[8], DLK_ECC_COORDINATE_SIZE);
         memcpy(sl_zvd_public_point_y, &sl_tlv_pointer1.value[40], DLK_ECC_COORDINATE_SIZE);
       } else if ( sl_zigbee_tlv_search_buffer_payload_for_id(buffer_len, buffer_ptr, 0, SL_ZIGBEE_DIRECT_SECURITY_TLV_C25519_PUBLIC_POINT_TAG_ID, (sl_zigbee_tlv_t *) &sl_tlv_pointer1, writeValue->len - 1) == SL_STATUS_OK) {
-        sl_zigbee_app_debug_print("Negotiate a key with %X%X%X%X%X%X%X%X using the C25519 public point [", sl_tlv_pointer1.value[0], sl_tlv_pointer1.value[1], sl_tlv_pointer1.value[2], sl_tlv_pointer1.value[3], sl_tlv_pointer1.value[4], sl_tlv_pointer1.value[5], sl_tlv_pointer1.value[6], sl_tlv_pointer1.value[7]);
+        sl_zigbee_app_debug_print("Negotiate a key with %02X%02X%02X%02X%02X%02X%02X%02X using the C25519 public point [", sl_tlv_pointer1.value[0], sl_tlv_pointer1.value[1], sl_tlv_pointer1.value[2], sl_tlv_pointer1.value[3], sl_tlv_pointer1.value[4], sl_tlv_pointer1.value[5], sl_tlv_pointer1.value[6], sl_tlv_pointer1.value[7]);
         for (i = 0; i < 32; i++) {
-          sl_zigbee_app_debug_print(" %X", sl_tlv_pointer1.value[i + 8]);
+          sl_zigbee_app_debug_print(" %02X", sl_tlv_pointer1.value[i + 8]);
         }
         sl_zigbee_app_debug_println("]");
         memcpy(sl_zvd_eui, &sl_tlv_pointer1.value[0], EUI64_SIZE);
@@ -567,7 +560,7 @@ void sl_zigbee_direct_handle_authenticate_write(uint8_t connection, uint8array *
       if ( sl_zigbee_tlv_search_buffer_payload_for_id(buffer_len, buffer_ptr, 0, SL_ZIGBEE_DIRECT_SECURITY_TLV_MAC_TAG_TAG_ID, (sl_zigbee_tlv_t *) &sl_tlv_pointer1, writeValue->len - 1) == SL_STATUS_OK) {
         sl_zigbee_app_debug_print("Received the MacTag [");
         for (i = 0; i < (writeValue->len - 1); i++) {
-          sl_zigbee_app_debug_print(" %X", sl_tlv_pointer1.value[i]);
+          sl_zigbee_app_debug_print(" %02X", sl_tlv_pointer1.value[i]);
         }
         sl_zigbee_app_debug_println("]");
       } else {
@@ -591,7 +584,7 @@ void sl_zigbee_direct_handle_authenticate_write(uint8_t connection, uint8array *
 
       sl_zigbee_app_debug_print("The MacTag should be afaik [");
       for (i = 0; i < compare_length; i++) {
-        sl_zigbee_app_debug_print(" %X", MacTag_check[i]);
+        sl_zigbee_app_debug_print(" %02X", MacTag_check[i]);
       }
       sl_zigbee_app_debug_println("]");
 

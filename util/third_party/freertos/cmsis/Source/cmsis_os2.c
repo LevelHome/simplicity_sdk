@@ -147,9 +147,9 @@ static osKernelState_t KernelState = osKernelInactive;
 #undef SysTick_Handler
 
 /* CMSIS SysTick interrupt handler prototype */
-extern void SysTick_Handler     (void);
+extern void SysTick_Handler     (void) PRIVILEGED_FUNCTION;
 /* FreeRTOS tick timer interrupt handler prototype */
-extern void xPortSysTickHandler (void);
+extern void xPortSysTickHandler (void) PRIVILEGED_FUNCTION;
 
 /*
   SysTick handler implementation that also clears overflow flag.
@@ -168,7 +168,7 @@ void SysTick_Handler (void) {
 /*
   Setup SVC to reset value.
 */
-__STATIC_INLINE void SVC_Setup (void) {
+PRIVILEGED_FUNCTION __STATIC_INLINE void SVC_Setup (void) {
 #if (__ARM_ARCH_7A__ == 0U)
   /* Service Call interrupt might be configured before kernel start     */
   /* and when its priority is lower or equal to BASEPRI, svc intruction */
@@ -186,7 +186,7 @@ __STATIC_INLINE void SVC_Setup (void) {
 
 /*---------------------------------------------------------------------------*/
 
-osStatus_t osKernelInitialize (void) {
+PRIVILEGED_FUNCTION osStatus_t osKernelInitialize (void) {
   osStatus_t stat;
 
   if (IS_IRQ()) {
@@ -210,7 +210,7 @@ osStatus_t osKernelInitialize (void) {
   return (stat);
 }
 
-osStatus_t osKernelGetInfo (osVersion_t *version, char *id_buf, uint32_t id_size) {
+PRIVILEGED_FUNCTION osStatus_t osKernelGetInfo (osVersion_t *version, char *id_buf, uint32_t id_size) {
 
   if (version != NULL) {
     /* Version encoding is major.minor.rev: mmnnnrrrr dec */
@@ -228,7 +228,7 @@ osStatus_t osKernelGetInfo (osVersion_t *version, char *id_buf, uint32_t id_size
   return (osOK);
 }
 
-osKernelState_t osKernelGetState (void) {
+PRIVILEGED_FUNCTION osKernelState_t osKernelGetState (void) {
   osKernelState_t state;
 
   switch (xTaskGetSchedulerState()) {
@@ -253,7 +253,7 @@ osKernelState_t osKernelGetState (void) {
   return (state);
 }
 
-osStatus_t osKernelStart (void) {
+PRIVILEGED_FUNCTION osStatus_t osKernelStart (void) {
   osStatus_t stat;
 
   if (IS_IRQ()) {
@@ -276,7 +276,7 @@ osStatus_t osKernelStart (void) {
   return (stat);
 }
 
-int32_t osKernelLock (void) {
+PRIVILEGED_FUNCTION int32_t osKernelLock (void) {
   int32_t lock;
 
   if (IS_IRQ()) {
@@ -303,7 +303,7 @@ int32_t osKernelLock (void) {
   return (lock);
 }
 
-int32_t osKernelUnlock (void) {
+PRIVILEGED_FUNCTION int32_t osKernelUnlock (void) {
   int32_t lock;
 
   if (IS_IRQ()) {
@@ -335,7 +335,7 @@ int32_t osKernelUnlock (void) {
   return (lock);
 }
 
-int32_t osKernelRestoreLock (int32_t lock) {
+PRIVILEGED_FUNCTION int32_t osKernelRestoreLock (int32_t lock) {
 
   if (IS_IRQ()) {
     lock = (int32_t)osErrorISR;
@@ -371,7 +371,7 @@ int32_t osKernelRestoreLock (int32_t lock) {
   return (lock);
 }
 
-uint32_t osKernelGetTickCount (void) {
+PRIVILEGED_FUNCTION uint32_t osKernelGetTickCount (void) {
   TickType_t ticks;
 
   if (IS_IRQ()) {
@@ -383,11 +383,11 @@ uint32_t osKernelGetTickCount (void) {
   return (ticks);
 }
 
-uint32_t osKernelGetTickFreq (void) {
+PRIVILEGED_FUNCTION uint32_t osKernelGetTickFreq (void) {
   return (configTICK_RATE_HZ);
 }
 
-uint32_t osKernelGetSysTimerCount (void) {
+PRIVILEGED_FUNCTION uint32_t osKernelGetSysTimerCount (void) {
   uint32_t irqmask = IS_IRQ_MASKED();
   TickType_t ticks;
   uint32_t val;
@@ -410,13 +410,13 @@ uint32_t osKernelGetSysTimerCount (void) {
   return (val);
 }
 
-uint32_t osKernelGetSysTimerFreq (void) {
+PRIVILEGED_FUNCTION uint32_t osKernelGetSysTimerFreq (void) {
   return (configCPU_CLOCK_HZ);
 }
 
 /*---------------------------------------------------------------------------*/
 
-osThreadId_t osThreadNew (osThreadFunc_t func, void *argument, const osThreadAttr_t *attr) {
+PRIVILEGED_FUNCTION osThreadId_t osThreadNew (osThreadFunc_t func, void *argument, const osThreadAttr_t *attr) {
   const char *name;
   uint32_t stack;
   TaskHandle_t hTask;
@@ -484,7 +484,7 @@ osThreadId_t osThreadNew (osThreadFunc_t func, void *argument, const osThreadAtt
   return ((osThreadId_t)hTask);
 }
 
-const char *osThreadGetName (osThreadId_t thread_id) {
+PRIVILEGED_FUNCTION const char *osThreadGetName (osThreadId_t thread_id) {
   TaskHandle_t hTask = (TaskHandle_t)thread_id;
   const char *name;
 
@@ -497,7 +497,7 @@ const char *osThreadGetName (osThreadId_t thread_id) {
   return (name);
 }
 
-osThreadId_t osThreadGetId (void) {
+PRIVILEGED_FUNCTION osThreadId_t osThreadGetId (void) {
   osThreadId_t id;
 
   id = (osThreadId_t)xTaskGetCurrentTaskHandle();
@@ -505,7 +505,7 @@ osThreadId_t osThreadGetId (void) {
   return (id);
 }
 
-osThreadState_t osThreadGetState (osThreadId_t thread_id) {
+PRIVILEGED_FUNCTION osThreadState_t osThreadGetState (osThreadId_t thread_id) {
   TaskHandle_t hTask = (TaskHandle_t)thread_id;
   osThreadState_t state;
 
@@ -527,7 +527,7 @@ osThreadState_t osThreadGetState (osThreadId_t thread_id) {
   return (state);
 }
 
-uint32_t osThreadGetStackSpace (osThreadId_t thread_id) {
+PRIVILEGED_FUNCTION uint32_t osThreadGetStackSpace (osThreadId_t thread_id) {
   TaskHandle_t hTask = (TaskHandle_t)thread_id;
   uint32_t sz;
 
@@ -540,7 +540,7 @@ uint32_t osThreadGetStackSpace (osThreadId_t thread_id) {
   return (sz);
 }
 
-osStatus_t osThreadSetPriority (osThreadId_t thread_id, osPriority_t priority) {
+PRIVILEGED_FUNCTION osStatus_t osThreadSetPriority (osThreadId_t thread_id, osPriority_t priority) {
   TaskHandle_t hTask = (TaskHandle_t)thread_id;
   osStatus_t stat;
 
@@ -558,7 +558,7 @@ osStatus_t osThreadSetPriority (osThreadId_t thread_id, osPriority_t priority) {
   return (stat);
 }
 
-osPriority_t osThreadGetPriority (osThreadId_t thread_id) {
+PRIVILEGED_FUNCTION osPriority_t osThreadGetPriority (osThreadId_t thread_id) {
   TaskHandle_t hTask = (TaskHandle_t)thread_id;
   osPriority_t prio;
 
@@ -571,7 +571,7 @@ osPriority_t osThreadGetPriority (osThreadId_t thread_id) {
   return (prio);
 }
 
-osStatus_t osThreadYield (void) {
+PRIVILEGED_FUNCTION osStatus_t osThreadYield (void) {
   osStatus_t stat;
 
   if (IS_IRQ()) {
@@ -585,7 +585,7 @@ osStatus_t osThreadYield (void) {
 }
 
 #if (configUSE_OS2_THREAD_SUSPEND_RESUME == 1)
-osStatus_t osThreadSuspend (osThreadId_t thread_id) {
+PRIVILEGED_FUNCTION osStatus_t osThreadSuspend (osThreadId_t thread_id) {
   TaskHandle_t hTask = (TaskHandle_t)thread_id;
   osStatus_t stat;
 
@@ -603,7 +603,7 @@ osStatus_t osThreadSuspend (osThreadId_t thread_id) {
   return (stat);
 }
 
-osStatus_t osThreadResume (osThreadId_t thread_id) {
+PRIVILEGED_FUNCTION osStatus_t osThreadResume (osThreadId_t thread_id) {
   TaskHandle_t hTask = (TaskHandle_t)thread_id;
   osStatus_t stat;
 
@@ -622,14 +622,14 @@ osStatus_t osThreadResume (osThreadId_t thread_id) {
 }
 #endif /* (configUSE_OS2_THREAD_SUSPEND_RESUME == 1) */
 
-__NO_RETURN void osThreadExit (void) {
+PRIVILEGED_FUNCTION __NO_RETURN void osThreadExit (void) {
 #ifndef USE_FreeRTOS_HEAP_1
   vTaskDelete (NULL);
 #endif
   for (;;);
 }
 
-osStatus_t osThreadTerminate (osThreadId_t thread_id) {
+PRIVILEGED_FUNCTION osStatus_t osThreadTerminate (osThreadId_t thread_id) {
   TaskHandle_t hTask = (TaskHandle_t)thread_id;
   osStatus_t stat;
 #ifndef USE_FreeRTOS_HEAP_1
@@ -658,7 +658,7 @@ osStatus_t osThreadTerminate (osThreadId_t thread_id) {
   return (stat);
 }
 
-uint32_t osThreadGetCount (void) {
+PRIVILEGED_FUNCTION uint32_t osThreadGetCount (void) {
   uint32_t count;
 
   if (IS_IRQ()) {
@@ -671,7 +671,7 @@ uint32_t osThreadGetCount (void) {
 }
 
 #if (configUSE_OS2_THREAD_ENUMERATE == 1)
-uint32_t osThreadEnumerate (osThreadId_t *thread_array, uint32_t array_items) {
+PRIVILEGED_FUNCTION uint32_t osThreadEnumerate (osThreadId_t *thread_array, uint32_t array_items) {
   uint32_t i, count;
   TaskStatus_t *task;
 
@@ -701,7 +701,7 @@ uint32_t osThreadEnumerate (osThreadId_t *thread_array, uint32_t array_items) {
 #endif /* (configUSE_OS2_THREAD_ENUMERATE == 1) */
 
 #if (configUSE_OS2_THREAD_FLAGS == 1)
-uint32_t osThreadFlagsSet (osThreadId_t thread_id, uint32_t flags) {
+PRIVILEGED_FUNCTION uint32_t osThreadFlagsSet (osThreadId_t thread_id, uint32_t flags) {
   TaskHandle_t hTask = (TaskHandle_t)thread_id;
   uint32_t rflags;
   BaseType_t yield;
@@ -729,7 +729,7 @@ uint32_t osThreadFlagsSet (osThreadId_t thread_id, uint32_t flags) {
   return (rflags);
 }
 
-uint32_t osThreadFlagsClear (uint32_t flags) {
+PRIVILEGED_FUNCTION uint32_t osThreadFlagsClear (uint32_t flags) {
   TaskHandle_t hTask;
   uint32_t rflags, cflags;
 
@@ -759,7 +759,7 @@ uint32_t osThreadFlagsClear (uint32_t flags) {
   return (rflags);
 }
 
-uint32_t osThreadFlagsGet (void) {
+PRIVILEGED_FUNCTION uint32_t osThreadFlagsGet (void) {
   TaskHandle_t hTask;
   uint32_t rflags;
 
@@ -777,7 +777,7 @@ uint32_t osThreadFlagsGet (void) {
   return (rflags);
 }
 
-uint32_t osThreadFlagsWait (uint32_t flags, uint32_t options, uint32_t timeout) {
+PRIVILEGED_FUNCTION uint32_t osThreadFlagsWait (uint32_t flags, uint32_t options, uint32_t timeout) {
   uint32_t rflags, nval;
   uint32_t clear;
   TickType_t t0, td, tout;
@@ -853,7 +853,7 @@ uint32_t osThreadFlagsWait (uint32_t flags, uint32_t options, uint32_t timeout) 
 }
 #endif /* (configUSE_OS2_THREAD_FLAGS == 1) */
 
-osStatus_t osDelay (uint32_t ticks) {
+PRIVILEGED_FUNCTION osStatus_t osDelay (uint32_t ticks) {
   osStatus_t stat;
 
   if (IS_IRQ()) {
@@ -870,7 +870,7 @@ osStatus_t osDelay (uint32_t ticks) {
   return (stat);
 }
 
-osStatus_t osDelayUntil (uint32_t ticks) {
+PRIVILEGED_FUNCTION osStatus_t osDelayUntil (uint32_t ticks) {
   TickType_t tcnt, delay;
   osStatus_t stat;
 
@@ -901,7 +901,7 @@ osStatus_t osDelayUntil (uint32_t ticks) {
 /*---------------------------------------------------------------------------*/
 #if (configUSE_OS2_TIMER == 1)
 
-static void TimerCallback (TimerHandle_t hTimer) {
+PRIVILEGED_FUNCTION static void TimerCallback (TimerHandle_t hTimer) {
   TimerCallback_t *callb;
 
   callb = (TimerCallback_t *)pvTimerGetTimerID (hTimer);
@@ -911,7 +911,7 @@ static void TimerCallback (TimerHandle_t hTimer) {
   }
 }
 
-osTimerId_t osTimerNew (osTimerFunc_t func, osTimerType_t type, void *argument, const osTimerAttr_t *attr) {
+PRIVILEGED_FUNCTION osTimerId_t osTimerNew (osTimerFunc_t func, osTimerType_t type, void *argument, const osTimerAttr_t *attr) {
   const char *name;
   TimerHandle_t hTimer;
   TimerCallback_t *callb;
@@ -977,7 +977,7 @@ osTimerId_t osTimerNew (osTimerFunc_t func, osTimerType_t type, void *argument, 
   return ((osTimerId_t)hTimer);
 }
 
-const char *osTimerGetName (osTimerId_t timer_id) {
+PRIVILEGED_FUNCTION const char *osTimerGetName (osTimerId_t timer_id) {
   TimerHandle_t hTimer = (TimerHandle_t)timer_id;
   const char *p;
 
@@ -990,7 +990,7 @@ const char *osTimerGetName (osTimerId_t timer_id) {
   return (p);
 }
 
-osStatus_t osTimerStart (osTimerId_t timer_id, uint32_t ticks) {
+PRIVILEGED_FUNCTION osStatus_t osTimerStart (osTimerId_t timer_id, uint32_t ticks) {
   TimerHandle_t hTimer = (TimerHandle_t)timer_id;
   osStatus_t stat;
 
@@ -1011,7 +1011,7 @@ osStatus_t osTimerStart (osTimerId_t timer_id, uint32_t ticks) {
   return (stat);
 }
 
-osStatus_t osTimerStop (osTimerId_t timer_id) {
+PRIVILEGED_FUNCTION osStatus_t osTimerStop (osTimerId_t timer_id) {
   TimerHandle_t hTimer = (TimerHandle_t)timer_id;
   osStatus_t stat;
 
@@ -1037,7 +1037,7 @@ osStatus_t osTimerStop (osTimerId_t timer_id) {
   return (stat);
 }
 
-uint32_t osTimerIsRunning (osTimerId_t timer_id) {
+PRIVILEGED_FUNCTION uint32_t osTimerIsRunning (osTimerId_t timer_id) {
   TimerHandle_t hTimer = (TimerHandle_t)timer_id;
   uint32_t running;
 
@@ -1050,7 +1050,7 @@ uint32_t osTimerIsRunning (osTimerId_t timer_id) {
   return (running);
 }
 
-osStatus_t osTimerDelete (osTimerId_t timer_id) {
+PRIVILEGED_FUNCTION osStatus_t osTimerDelete (osTimerId_t timer_id) {
   TimerHandle_t hTimer = (TimerHandle_t)timer_id;
   osStatus_t stat;
 #ifndef USE_FreeRTOS_HEAP_1
@@ -1082,7 +1082,7 @@ osStatus_t osTimerDelete (osTimerId_t timer_id) {
 
 /*---------------------------------------------------------------------------*/
 
-osEventFlagsId_t osEventFlagsNew (const osEventFlagsAttr_t *attr) {
+PRIVILEGED_FUNCTION osEventFlagsId_t osEventFlagsNew (const osEventFlagsAttr_t *attr) {
   EventGroupHandle_t hEventGroup;
   int32_t mem;
 
@@ -1122,7 +1122,7 @@ osEventFlagsId_t osEventFlagsNew (const osEventFlagsAttr_t *attr) {
   return ((osEventFlagsId_t)hEventGroup);
 }
 
-uint32_t osEventFlagsSet (osEventFlagsId_t ef_id, uint32_t flags) {
+PRIVILEGED_FUNCTION uint32_t osEventFlagsSet (osEventFlagsId_t ef_id, uint32_t flags) {
   EventGroupHandle_t hEventGroup = (EventGroupHandle_t)ef_id;
   uint32_t rflags;
   BaseType_t yield;
@@ -1153,7 +1153,7 @@ uint32_t osEventFlagsSet (osEventFlagsId_t ef_id, uint32_t flags) {
   return (rflags);
 }
 
-uint32_t osEventFlagsClear (osEventFlagsId_t ef_id, uint32_t flags) {
+PRIVILEGED_FUNCTION uint32_t osEventFlagsClear (osEventFlagsId_t ef_id, uint32_t flags) {
   EventGroupHandle_t hEventGroup = (EventGroupHandle_t)ef_id;
   uint32_t rflags;
 
@@ -1179,7 +1179,7 @@ uint32_t osEventFlagsClear (osEventFlagsId_t ef_id, uint32_t flags) {
   return (rflags);
 }
 
-uint32_t osEventFlagsGet (osEventFlagsId_t ef_id) {
+PRIVILEGED_FUNCTION uint32_t osEventFlagsGet (osEventFlagsId_t ef_id) {
   EventGroupHandle_t hEventGroup = (EventGroupHandle_t)ef_id;
   uint32_t rflags;
 
@@ -1196,7 +1196,7 @@ uint32_t osEventFlagsGet (osEventFlagsId_t ef_id) {
   return (rflags);
 }
 
-uint32_t osEventFlagsWait (osEventFlagsId_t ef_id, uint32_t flags, uint32_t options, uint32_t timeout) {
+PRIVILEGED_FUNCTION uint32_t osEventFlagsWait (osEventFlagsId_t ef_id, uint32_t flags, uint32_t options, uint32_t timeout) {
   EventGroupHandle_t hEventGroup = (EventGroupHandle_t)ef_id;
   BaseType_t wait_all;
   BaseType_t exit_clr;
@@ -1246,7 +1246,7 @@ uint32_t osEventFlagsWait (osEventFlagsId_t ef_id, uint32_t flags, uint32_t opti
   return (rflags);
 }
 
-osStatus_t osEventFlagsDelete (osEventFlagsId_t ef_id) {
+PRIVILEGED_FUNCTION osStatus_t osEventFlagsDelete (osEventFlagsId_t ef_id) {
   EventGroupHandle_t hEventGroup = (EventGroupHandle_t)ef_id;
   osStatus_t stat;
 
@@ -1271,7 +1271,7 @@ osStatus_t osEventFlagsDelete (osEventFlagsId_t ef_id) {
 /*---------------------------------------------------------------------------*/
 #if (configUSE_OS2_MUTEX == 1)
 
-osMutexId_t osMutexNew (const osMutexAttr_t *attr) {
+PRIVILEGED_FUNCTION osMutexId_t osMutexNew (const osMutexAttr_t *attr) {
   SemaphoreHandle_t hMutex;
   uint32_t type;
   uint32_t rmtx;
@@ -1358,7 +1358,7 @@ osMutexId_t osMutexNew (const osMutexAttr_t *attr) {
   return ((osMutexId_t)hMutex);
 }
 
-osStatus_t osMutexAcquire (osMutexId_t mutex_id, uint32_t timeout) {
+PRIVILEGED_FUNCTION osStatus_t osMutexAcquire (osMutexId_t mutex_id, uint32_t timeout) {
   SemaphoreHandle_t hMutex;
   osStatus_t stat;
   uint32_t rmtx;
@@ -1401,7 +1401,7 @@ osStatus_t osMutexAcquire (osMutexId_t mutex_id, uint32_t timeout) {
   return (stat);
 }
 
-osStatus_t osMutexRelease (osMutexId_t mutex_id) {
+PRIVILEGED_FUNCTION osStatus_t osMutexRelease (osMutexId_t mutex_id) {
   SemaphoreHandle_t hMutex;
   osStatus_t stat;
   uint32_t rmtx;
@@ -1436,14 +1436,16 @@ osStatus_t osMutexRelease (osMutexId_t mutex_id) {
   return (stat);
 }
 
-osThreadId_t osMutexGetOwner (osMutexId_t mutex_id) {
+PRIVILEGED_FUNCTION osThreadId_t osMutexGetOwner (osMutexId_t mutex_id) {
   SemaphoreHandle_t hMutex;
   osThreadId_t owner;
 
   hMutex = (SemaphoreHandle_t)((uint32_t)mutex_id & ~1U);
 
-  if (IS_IRQ() || (hMutex == NULL)) {
+  if (hMutex == NULL) {
     owner = NULL;
+  } else if (IS_IRQ()) {
+    owner = (osThreadId_t)xSemaphoreGetMutexHolderFromISR (hMutex);
   } else {
     owner = (osThreadId_t)xSemaphoreGetMutexHolder (hMutex);
   }
@@ -1451,7 +1453,7 @@ osThreadId_t osMutexGetOwner (osMutexId_t mutex_id) {
   return (owner);
 }
 
-osStatus_t osMutexDelete (osMutexId_t mutex_id) {
+PRIVILEGED_FUNCTION osStatus_t osMutexDelete (osMutexId_t mutex_id) {
   osStatus_t stat;
 #ifndef USE_FreeRTOS_HEAP_1
   SemaphoreHandle_t hMutex;
@@ -1481,7 +1483,7 @@ osStatus_t osMutexDelete (osMutexId_t mutex_id) {
 
 /*---------------------------------------------------------------------------*/
 
-osSemaphoreId_t osSemaphoreNew (uint32_t max_count, uint32_t initial_count, const osSemaphoreAttr_t *attr) {
+PRIVILEGED_FUNCTION osSemaphoreId_t osSemaphoreNew (uint32_t max_count, uint32_t initial_count, const osSemaphoreAttr_t *attr) {
   SemaphoreHandle_t hSemaphore;
   int32_t mem;
   #if (configQUEUE_REGISTRY_SIZE > 0)
@@ -1556,7 +1558,7 @@ osSemaphoreId_t osSemaphoreNew (uint32_t max_count, uint32_t initial_count, cons
   return ((osSemaphoreId_t)hSemaphore);
 }
 
-osStatus_t osSemaphoreAcquire (osSemaphoreId_t semaphore_id, uint32_t timeout) {
+PRIVILEGED_FUNCTION osStatus_t osSemaphoreAcquire (osSemaphoreId_t semaphore_id, uint32_t timeout) {
   SemaphoreHandle_t hSemaphore = (SemaphoreHandle_t)semaphore_id;
   osStatus_t stat;
   BaseType_t yield;
@@ -1593,7 +1595,7 @@ osStatus_t osSemaphoreAcquire (osSemaphoreId_t semaphore_id, uint32_t timeout) {
   return (stat);
 }
 
-osStatus_t osSemaphoreRelease (osSemaphoreId_t semaphore_id) {
+PRIVILEGED_FUNCTION osStatus_t osSemaphoreRelease (osSemaphoreId_t semaphore_id) {
   SemaphoreHandle_t hSemaphore = (SemaphoreHandle_t)semaphore_id;
   osStatus_t stat;
   BaseType_t yield;
@@ -1621,7 +1623,7 @@ osStatus_t osSemaphoreRelease (osSemaphoreId_t semaphore_id) {
   return (stat);
 }
 
-uint32_t osSemaphoreGetCount (osSemaphoreId_t semaphore_id) {
+PRIVILEGED_FUNCTION uint32_t osSemaphoreGetCount (osSemaphoreId_t semaphore_id) {
   SemaphoreHandle_t hSemaphore = (SemaphoreHandle_t)semaphore_id;
   uint32_t count;
 
@@ -1637,7 +1639,7 @@ uint32_t osSemaphoreGetCount (osSemaphoreId_t semaphore_id) {
   return (count);
 }
 
-osStatus_t osSemaphoreDelete (osSemaphoreId_t semaphore_id) {
+PRIVILEGED_FUNCTION osStatus_t osSemaphoreDelete (osSemaphoreId_t semaphore_id) {
   SemaphoreHandle_t hSemaphore = (SemaphoreHandle_t)semaphore_id;
   osStatus_t stat;
 
@@ -1665,7 +1667,7 @@ osStatus_t osSemaphoreDelete (osSemaphoreId_t semaphore_id) {
 
 /*---------------------------------------------------------------------------*/
 
-osMessageQueueId_t osMessageQueueNew (uint32_t msg_count, uint32_t msg_size, const osMessageQueueAttr_t *attr) {
+PRIVILEGED_FUNCTION osMessageQueueId_t osMessageQueueNew (uint32_t msg_count, uint32_t msg_size, const osMessageQueueAttr_t *attr) {
   QueueHandle_t hQueue;
   int32_t mem;
   #if (configQUEUE_REGISTRY_SIZE > 0)
@@ -1722,7 +1724,7 @@ osMessageQueueId_t osMessageQueueNew (uint32_t msg_count, uint32_t msg_size, con
   return ((osMessageQueueId_t)hQueue);
 }
 
-osStatus_t osMessageQueuePut (osMessageQueueId_t mq_id, const void *msg_ptr, uint8_t msg_prio, uint32_t timeout) {
+PRIVILEGED_FUNCTION osStatus_t osMessageQueuePut (osMessageQueueId_t mq_id, const void *msg_ptr, uint8_t msg_prio, uint32_t timeout) {
   QueueHandle_t hQueue = (QueueHandle_t)mq_id;
   osStatus_t stat;
   BaseType_t yield;
@@ -1763,7 +1765,7 @@ osStatus_t osMessageQueuePut (osMessageQueueId_t mq_id, const void *msg_ptr, uin
   return (stat);
 }
 
-osStatus_t osMessageQueueGet (osMessageQueueId_t mq_id, void *msg_ptr, uint8_t *msg_prio, uint32_t timeout) {
+PRIVILEGED_FUNCTION osStatus_t osMessageQueueGet (osMessageQueueId_t mq_id, void *msg_ptr, uint8_t *msg_prio, uint32_t timeout) {
   QueueHandle_t hQueue = (QueueHandle_t)mq_id;
   osStatus_t stat;
   BaseType_t yield;
@@ -1804,7 +1806,7 @@ osStatus_t osMessageQueueGet (osMessageQueueId_t mq_id, void *msg_ptr, uint8_t *
   return (stat);
 }
 
-uint32_t osMessageQueueGetCapacity (osMessageQueueId_t mq_id) {
+PRIVILEGED_FUNCTION uint32_t osMessageQueueGetCapacity (osMessageQueueId_t mq_id) {
   StaticQueue_t *mq = (StaticQueue_t *)mq_id;
   uint32_t capacity;
 
@@ -1818,7 +1820,7 @@ uint32_t osMessageQueueGetCapacity (osMessageQueueId_t mq_id) {
   return (capacity);
 }
 
-uint32_t osMessageQueueGetMsgSize (osMessageQueueId_t mq_id) {
+PRIVILEGED_FUNCTION uint32_t osMessageQueueGetMsgSize (osMessageQueueId_t mq_id) {
   StaticQueue_t *mq = (StaticQueue_t *)mq_id;
   uint32_t size;
 
@@ -1832,7 +1834,7 @@ uint32_t osMessageQueueGetMsgSize (osMessageQueueId_t mq_id) {
   return (size);
 }
 
-uint32_t osMessageQueueGetCount (osMessageQueueId_t mq_id) {
+PRIVILEGED_FUNCTION uint32_t osMessageQueueGetCount (osMessageQueueId_t mq_id) {
   QueueHandle_t hQueue = (QueueHandle_t)mq_id;
   UBaseType_t count;
 
@@ -1849,7 +1851,7 @@ uint32_t osMessageQueueGetCount (osMessageQueueId_t mq_id) {
   return ((uint32_t)count);
 }
 
-uint32_t osMessageQueueGetSpace (osMessageQueueId_t mq_id) {
+PRIVILEGED_FUNCTION uint32_t osMessageQueueGetSpace (osMessageQueueId_t mq_id) {
   StaticQueue_t *mq = (StaticQueue_t *)mq_id;
   uint32_t space;
   uint32_t isrm;
@@ -1872,7 +1874,7 @@ uint32_t osMessageQueueGetSpace (osMessageQueueId_t mq_id) {
   return (space);
 }
 
-osStatus_t osMessageQueueReset (osMessageQueueId_t mq_id) {
+PRIVILEGED_FUNCTION osStatus_t osMessageQueueReset (osMessageQueueId_t mq_id) {
   QueueHandle_t hQueue = (QueueHandle_t)mq_id;
   osStatus_t stat;
 
@@ -1890,7 +1892,7 @@ osStatus_t osMessageQueueReset (osMessageQueueId_t mq_id) {
   return (stat);
 }
 
-osStatus_t osMessageQueueDelete (osMessageQueueId_t mq_id) {
+PRIVILEGED_FUNCTION osStatus_t osMessageQueueDelete (osMessageQueueId_t mq_id) {
   QueueHandle_t hQueue = (QueueHandle_t)mq_id;
   osStatus_t stat;
 
@@ -1924,7 +1926,7 @@ static void  FreeBlock   (MemPool_t *mp, void *block);
 static void *AllocBlock  (MemPool_t *mp);
 static void *CreateBlock (MemPool_t *mp);
 
-osMemoryPoolId_t osMemoryPoolNew (uint32_t block_count, uint32_t block_size, const osMemoryPoolAttr_t *attr) {
+PRIVILEGED_FUNCTION osMemoryPoolId_t osMemoryPoolNew (uint32_t block_count, uint32_t block_size, const osMemoryPoolAttr_t *attr) {
   MemPool_t *mp;
   const char *name;
   int32_t mem_cb, mem_mp;
@@ -2041,7 +2043,7 @@ osMemoryPoolId_t osMemoryPoolNew (uint32_t block_count, uint32_t block_size, con
   return (mp);
 }
 
-const char *osMemoryPoolGetName (osMemoryPoolId_t mp_id) {
+PRIVILEGED_FUNCTION const char *osMemoryPoolGetName (osMemoryPoolId_t mp_id) {
   MemPool_t *mp = (osMemoryPoolId_t)mp_id;
   const char *p;
 
@@ -2058,7 +2060,7 @@ const char *osMemoryPoolGetName (osMemoryPoolId_t mp_id) {
   return (p);
 }
 
-void *osMemoryPoolAlloc (osMemoryPoolId_t mp_id, uint32_t timeout) {
+PRIVILEGED_FUNCTION void *osMemoryPoolAlloc (osMemoryPoolId_t mp_id, uint32_t timeout) {
   MemPool_t *mp;
   void *block;
   uint32_t isrm;
@@ -2115,7 +2117,7 @@ void *osMemoryPoolAlloc (osMemoryPoolId_t mp_id, uint32_t timeout) {
   return (block);
 }
 
-osStatus_t osMemoryPoolFree (osMemoryPoolId_t mp_id, void *block) {
+PRIVILEGED_FUNCTION osStatus_t osMemoryPoolFree (osMemoryPoolId_t mp_id, void *block) {
   MemPool_t *mp;
   osStatus_t stat;
   uint32_t isrm;
@@ -2177,7 +2179,7 @@ osStatus_t osMemoryPoolFree (osMemoryPoolId_t mp_id, void *block) {
   return (stat);
 }
 
-uint32_t osMemoryPoolGetCapacity (osMemoryPoolId_t mp_id) {
+PRIVILEGED_FUNCTION uint32_t osMemoryPoolGetCapacity (osMemoryPoolId_t mp_id) {
   MemPool_t *mp;
   uint32_t  n;
 
@@ -2201,7 +2203,7 @@ uint32_t osMemoryPoolGetCapacity (osMemoryPoolId_t mp_id) {
   return (n);
 }
 
-uint32_t osMemoryPoolGetBlockSize (osMemoryPoolId_t mp_id) {
+PRIVILEGED_FUNCTION uint32_t osMemoryPoolGetBlockSize (osMemoryPoolId_t mp_id) {
   MemPool_t *mp;
   uint32_t  sz;
 
@@ -2225,7 +2227,7 @@ uint32_t osMemoryPoolGetBlockSize (osMemoryPoolId_t mp_id) {
   return (sz);
 }
 
-uint32_t osMemoryPoolGetCount (osMemoryPoolId_t mp_id) {
+PRIVILEGED_FUNCTION uint32_t osMemoryPoolGetCount (osMemoryPoolId_t mp_id) {
   MemPool_t *mp;
   uint32_t  n;
 
@@ -2255,7 +2257,7 @@ uint32_t osMemoryPoolGetCount (osMemoryPoolId_t mp_id) {
   return (n);
 }
 
-uint32_t osMemoryPoolGetSpace (osMemoryPoolId_t mp_id) {
+PRIVILEGED_FUNCTION uint32_t osMemoryPoolGetSpace (osMemoryPoolId_t mp_id) {
   MemPool_t *mp;
   uint32_t  n;
 
@@ -2283,7 +2285,7 @@ uint32_t osMemoryPoolGetSpace (osMemoryPoolId_t mp_id) {
   return (n);
 }
 
-osStatus_t osMemoryPoolDelete (osMemoryPoolId_t mp_id) {
+PRIVILEGED_FUNCTION osStatus_t osMemoryPoolDelete (osMemoryPoolId_t mp_id) {
   MemPool_t *mp;
   osStatus_t stat;
 
@@ -2329,7 +2331,7 @@ osStatus_t osMemoryPoolDelete (osMemoryPoolId_t mp_id) {
 /*
   Create new block given according to the current block index.
 */
-static void *CreateBlock (MemPool_t *mp) {
+PRIVILEGED_FUNCTION static void *CreateBlock (MemPool_t *mp) {
   MemPoolBlock_t *p = NULL;
 
   if (mp->n < mp->bl_cnt) {
@@ -2346,7 +2348,7 @@ static void *CreateBlock (MemPool_t *mp) {
 /*
   Allocate a block by reading the list of free blocks.
 */
-static void *AllocBlock (MemPool_t *mp) {
+PRIVILEGED_FUNCTION static void *AllocBlock (MemPool_t *mp) {
   MemPoolBlock_t *p = NULL;
 
   if (mp->head != NULL) {
@@ -2363,7 +2365,7 @@ static void *AllocBlock (MemPool_t *mp) {
 /*
   Free block by putting it to the list of free blocks.
 */
-static void FreeBlock (MemPool_t *mp, void *block) {
+PRIVILEGED_FUNCTION static void FreeBlock (MemPool_t *mp, void *block) {
   MemPoolBlock_t *p = block;
 
   /* Store current head into block memory space */
@@ -2376,11 +2378,11 @@ static void FreeBlock (MemPool_t *mp, void *block) {
 /*---------------------------------------------------------------------------*/
 
 /* Callback function prototypes */
-extern void vApplicationIdleHook (void);
-extern void vApplicationTickHook (void);
-extern void vApplicationMallocFailedHook (void);
-extern void vApplicationDaemonTaskStartupHook (void);
-extern void vApplicationStackOverflowHook (TaskHandle_t xTask, char *pcTaskName);
+extern void vApplicationIdleHook (void) PRIVILEGED_FUNCTION;
+extern void vApplicationTickHook (void) PRIVILEGED_FUNCTION;
+extern void vApplicationMallocFailedHook (void) PRIVILEGED_FUNCTION;
+extern void vApplicationDaemonTaskStartupHook (void) PRIVILEGED_FUNCTION;
+extern void vApplicationStackOverflowHook (TaskHandle_t xTask, char *pcTaskName) PRIVILEGED_FUNCTION;
 
 /**
   Dummy implementation of the callback function vApplicationIdleHook().
@@ -2424,8 +2426,8 @@ __WEAK void vApplicationStackOverflowHook (TaskHandle_t xTask, char *pcTaskName)
 /*---------------------------------------------------------------------------*/
 #if (configSUPPORT_STATIC_ALLOCATION == 1)
 /* External Idle and Timer task static memory allocation functions */
-extern void vApplicationGetIdleTaskMemory  (StaticTask_t **ppxIdleTaskTCBBuffer,  StackType_t **ppxIdleTaskStackBuffer,  uint32_t *pulIdleTaskStackSize);
-extern void vApplicationGetTimerTaskMemory (StaticTask_t **ppxTimerTaskTCBBuffer, StackType_t **ppxTimerTaskStackBuffer, uint32_t *pulTimerTaskStackSize);
+extern void vApplicationGetIdleTaskMemory  (StaticTask_t **ppxIdleTaskTCBBuffer,  StackType_t **ppxIdleTaskStackBuffer,  uint32_t *pulIdleTaskStackSize) PRIVILEGED_FUNCTION;
+extern void vApplicationGetTimerTaskMemory (StaticTask_t **ppxTimerTaskTCBBuffer, StackType_t **ppxTimerTaskStackBuffer, uint32_t *pulTimerTaskStackSize) PRIVILEGED_FUNCTION;
 
 /*
   vApplicationGetIdleTaskMemory gets called when configSUPPORT_STATIC_ALLOCATION

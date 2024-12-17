@@ -6,7 +6,7 @@ import os
 import re
 import sys
 from jinja2 import Environment, FileSystemLoader
-from host_py_rm_studio_internal import RM_Factory
+from host_py_rm_studio_internal import RM_Factory, factory
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '../..'))
 TEMPLATE_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'templates')
@@ -42,7 +42,6 @@ ACTION_USING_REG_ADDR = [
 
 class Sequences(object):
     def __init__(self, chip, regBaseYml, dataYml, isInternal=False):
-        self.chip = chip
         self.regBaseYml = regBaseYml
         self.dataYml = dataYml
         self.isInternal = isInternal
@@ -52,7 +51,21 @@ class Sequences(object):
         self.sequences = {}
         self.regBases = {}
 
-        rm_factory = RM_Factory(chip.upper())
+        self.chip = chip.upper()
+        self.part = self.chip
+        try:
+            factory.get_mod_name(self.chip)
+        except KeyError:
+            for code_name in factory.RM_S3_PART_FAMILY_NAMES:
+                try:
+                    if factory.get_mod_name(code_name).upper() == self.chip:
+                        self.part = code_name
+                        break
+                except KeyError:
+                    pass
+
+        rm_factory = RM_Factory(self.part)
+
         self.rm = rm_factory()
 
     def handler(self):
@@ -66,7 +79,14 @@ class Sequences(object):
                 self.regBases[sequence.baseAddrConfigName] = {}
                 self.regBases[sequence.baseAddrConfigName]['BaseAddr'] = sequence.baseAddrConfig['BaseAddr']
                 self.regBases[sequence.baseAddrConfigName]['BasePos'] = sequence.basePos << 4
-                self.regBases[sequence.baseAddrConfigName]['Define'] = sequence.baseAddrConfig['Define']
+                self.regBases[sequence.baseAddrConfigName]['Define'] = sequence.baseAddrConfig.get('Define', 'SEQACC_BASE_ADDR_CFG_DFLT_ARRAY_SZ')
+                self.regBases[sequence.baseAddrConfigName]['RegBasesMask'] = (((1 << (28 - sequence.basePos)) - 1) << sequence.basePos)
+
+                self.regBases[sequence.baseAddrConfigName]['BitOpMask'] = 0
+                for i, addr in enumerate(list(sequence.baseAddrConfig['BaseAddr'].keys())[:-1]):
+                    if addr != 0xB0000000 and addr != 0xA0000000:
+                        self.regBases[sequence.baseAddrConfigName]['BitOpMask'] |= (1 << i)
+
 
             print("{}: {} bytes".format(sequenceName, sequence.lengthWord * 4))
 
@@ -84,8 +104,21 @@ class Sequence(Sequences):
         self.isInternal = isInternal
         self.baseAddrConfigName = self.data.get('BaseAddrCfg', {}).get('Name', 'BaseAddrCfgDefault')
         self.baseAddrAccess = self.data.get('BaseAddrCfg', {}).get('Access', self.baseAddrConfigName)
-        self.basePos = (self.getConfig(regBaseYml, chip, self.baseAddrConfigName, 'BasePos') & 0x1F)
+
         self.baseAddrConfig = self.getConfig(regBaseYml, chip, self.baseAddrConfigName)
+        if self.baseAddrConfig is None:
+            self.baseAddrConfig = self.getConfig(regBaseYml, self.part, self.baseAddrConfigName)
+            if self.baseAddrConfig is None:
+                    raise Exception("{} part is not defined in seqacc_regbases.yml."
+                                    "\nCheck if base addresses are defined for this part.".format(chip, self.baseAddrConfigName))
+
+        self.basePos = self.getConfig(regBaseYml, chip, self.baseAddrConfigName, 'BasePos')
+        if self.basePos is None:
+            self.basePos = self.getConfig(regBaseYml, self.part, self.baseAddrConfigName, 'BasePos')
+            if self.basePos is None:
+                raise Exception("BasePos field not found in {}".format(self.baseAddrConfigName))
+        self.basePos &= 0x1F
+
         self.sequenceCfg = self._encodeCfg()
         self.contWrPos = seqData.get('SequenceCfg', {}).get('CNTWRPOS', 16)
         self.value = []
@@ -135,7 +168,22 @@ class Sequence(Sequences):
                                 # Check if an alias is used
                                 alias = self.alias.get(block_register, block_register)
                                 # Store addr
-                                optimized_write.append(Action.findRegAddress(self.rm, alias))
+                                address = Action.findRegAddress(self.rm, alias, '_S')
+
+                                baseAddrDict = self.baseAddrConfig['BaseAddr']
+                                try:
+                                    regBaseId = baseAddrDict[int(address) & (0xFFFF << self.contWrPos)]
+                                except KeyError:
+                                    address = Action.findRegAddress(self.rm, block_register, '_NS')
+                                    try:
+                                        regBaseId = baseAddrDict[int(address) & (0xFFFF << self.contWrPos)]
+                                    except:
+                                        baseAddress = int(address) & (0xFFFF << self.contWrPos)
+                                        # If we end up here, it means an address is hardcoded in the sequence !
+                                        # In that case, the address must be changed within the sequence.
+                                        raise KeyError('Base address {} missing for {} address '
+                                                       'in seqacc_regbases.yml.'.format(hex(baseAddress), hex(address)))
+                                optimized_write.append(address)
 
                         # Then, sort instructions by registers addresses
                         optimized_write = sorted(optimized_write)
@@ -330,6 +378,8 @@ class Action(object):
         self.isInternal = isInternal
         self.isSimpleArg = False
         self.addOffset = None
+        self.wordOffset = 0
+        self.lineNumber = 0
         self.encodeAction(arg)
 
     def getOpCode(self):
@@ -397,6 +447,65 @@ class Action(object):
         regInfo = list(filter(lambda x: (x != '' and x != ' '), regInfo))  # remove empty str ''
         #      block,      reg
         return regInfo[0], regInfo[1]
+
+    def getTrace(self, seqName, fileName, lineNumber, wordOffset):
+        traceStr = ""
+        opCode = self.name
+        # compute target addr, first get the base address from the index
+
+        for addr, data in self.inst.items():
+            if addr == 0xFFFFFFFF:
+                baseAddr = 0
+            else:
+                baseAddrIdx = (addr & ((2**(28-self.basePos) - 1) << self.basePos)) >> self.basePos
+                baseAddr = list(self.baseAddrDict.keys())[baseAddrIdx] if baseAddrIdx != 0xFFFFFFFF else 0
+
+            if self.isSimpleArg:
+                # This case handles a one line instruction, like JUMP, NOP, ENDSEQ etc.
+                # Some have a single value (JUMP, JUMPABS) and some not (ENDSEQ)
+                register = 0
+                numData = 1 if data[0][1] is not None else 0
+            else:
+                numData = len(data)
+
+                firstAddr = baseAddr + data[0][0] # base address + offset
+                try:
+                    # Retrieve the register name by its address and filter the _S and _NS in name
+                    register = self.rm.zz_reg_addr_to_name[firstAddr].replace('.', '_')
+                except KeyError:
+                    # Otherwise just get the raw address
+                    register = firstAddr
+
+            # Print the start of the string except values that are dynamic
+            traceStr += "{},{}.c,{},{},{},{},{}".format(seqName, fileName, lineNumber, wordOffset, opCode,
+                                                        hex(register) if (type(register) is int and register != 0) else register,
+                                                        numData)
+            # Print values now according to their type
+            for offset, val in data:
+                if val is None:
+                    break
+
+                if type(val) is dict:
+                    val = val['VALUE']
+
+                traceStr = traceStr + "," + str(hex(val)) if type(val) is int else traceStr + "," + str(val)
+            traceStr += ",\n"
+
+            # Update word offset count
+            wordOffset = wordOffset + 1 if data[0][1] is None else wordOffset + 1 + len(data)
+            self.wordOffset = wordOffset
+
+            # Update line number count
+            lineNumber = lineNumber + len(data) if len(data) > 1 else lineNumber + 1
+            self.lineNumber = lineNumber
+
+        return traceStr
+
+    def getWordOffset(self):
+        return self.wordOffset
+
+    def getLineNumber(self):
+        return self.lineNumber
 
     def computeVal(self, rm):
         """
@@ -502,12 +611,12 @@ class Action(object):
                     value[offset] = valueToConvert
 
     @staticmethod
-    def findRegAddress(rm, block_register):
+    def findRegAddress(rm, block_register, suffix):
         if type(block_register) is str:
             regInfo = re.split("[(_\-> )]+", block_register)
             regInfo = list(filter(lambda x: (x != '' and x != ' '), regInfo))  # remove empty str ''
 
-            address = eval('rm.' + regInfo[0] + '.' + regInfo[1] + '.address')
+            address = eval('rm.' + regInfo[0] + suffix + '.' + regInfo[1] + '.address')
 
             if 'SET' in regInfo:
                 offset = 'setOffset'
@@ -519,21 +628,11 @@ class Action(object):
                 offset = None
 
             if offset is not None:
-                address += eval('rm.' + regInfo[0] + '.' + regInfo[1] + '.' + offset)
+                address += eval('rm.' + regInfo[0] + suffix + '.' + regInfo[1] + '.' + offset)
 
             return address
         else:
             return block_register
-
-    def findRegBase(self, address):
-        minDelta = 0xFFFFFFFF
-        minBaseAddr = 0
-        for baseAddr in self.baseAddrDict.keys():
-            delta = address - baseAddr
-            if 0 <= delta < minDelta:
-                minDelta = delta
-                minBaseAddr = baseAddr
-        return minBaseAddr, self.baseAddrDict[minBaseAddr]
 
     def findAlias(self, dest, val):
         alias = self.alias.get(dest, dest)
@@ -584,18 +683,30 @@ class Action(object):
                     for block_register, val in regInstr.items():
                         # Get the destination address: it can either be a register or a direct address
                         block_register = self.findAlias(block_register, val)
-                        address = self.findRegAddress(self.rm, block_register)
 
-                        # Extract the closest base address from register address and the index
-                        regBase, regBaseId = self.findRegBase(address)
-                        regOffset = address - regBase
+                        # Extract correct base address from register. Try to get _S polarity then _NS polarity if
+                        # the first one didn't succeed. This is done to allow agility between _S and _NS addresses and
+                        # to avoid constantly changing base addresses between 0xA000 and 0xB000.
+                        address = self.findRegAddress(self.rm, block_register, '_S')
+                        try:
+                            regBaseId = self.baseAddrDict[int(address) & (0xFFFF << self.contWrPos)]
+                        except KeyError:
+                            address = self.findRegAddress(self.rm, block_register, '_NS')
+                            try:
+                                regBaseId = self.baseAddrDict[int(address) & (0xFFFF << self.contWrPos)]
+                            except:
+                                baseAddress = int(address) & (0xFFFF << self.contWrPos)
+                                # If we end up here, it means an address is hardcoded in the sequence !
+                                # In that case, the address must be changed within the sequence.
+                                raise KeyError('Base address {} missing for {} address '
+                                               'in seqacc_regbases.yml.'.format(hex(baseAddress), hex(address)))
+
+                        regOffset = address & ((2 ** self.contWrPos) - 1)
 
                         # Check offset width
                         if regOffset > (2 ** self.contWrPos) - 1:
-                            raise Exception("Address 0x{0:08X} doesn\'t fit with base address and CNTWRPOS settings".format(regOffset) +
-                                            " for action " + self.name + " in " + self.seqName + ". "
-                                            "Check base addresses in seqacc_regbases.yml"
-                                            "You must either increase CNTWRPOS or add a base address in seqacc_regbases.yml")
+                            raise Exception("Base address not found for register address 0x{0:08X}."
+                                            " Check base addresses in seqacc_regbases.yml".format(address))
 
                         self.store(regBaseId, regOffset, val)
                 else:
@@ -664,18 +775,20 @@ class Action(object):
 
 
 class SequenceGenerator(object):
-    def __init__(self, outputDir, regbaseOutputDir, fileName, template=None):
-        self.source = open(os.path.join(outputDir, fileName + '.c'), "w+", newline='\r\n')
-        self.header = open(os.path.join(outputDir, fileName + '.h'), "w+", newline='\r\n')
+    def __init__(self, outputDir, regbaseOutputDir, fileName, rm, template=None):
+        self.rm = rm
+        self.source = open(os.path.join(outputDir, fileName + '.c'), "w+", newline='\n')
+        self.header = open(os.path.join(outputDir, fileName + '.h'), "w+", newline='\n')
         self.env = Environment(loader=FileSystemLoader(TEMPLATE_PATH), keep_trailing_newline=True)
         print("Output code files: {}, \n{}".format(os.path.join(outputDir, fileName + ".c"),
                                                    os.path.join(outputDir, fileName + ".h")))
 
         self.env.filters['printStatement'] = self.printStatement
         self.env.filters['printHeader'] = self.printHeader
+        self.env.filters['printBaseAddr'] = self.printBaseAddr
 
-        self.regBaseSource = open(os.path.join(regbaseOutputDir, 'seqacc_regbases.c'), "w+", newline='\r\n')
-        self.regBaseHeader = open(os.path.join(regbaseOutputDir, 'seqacc_regbases.h'), "w+", newline='\r\n')
+        self.regBaseSource = open(os.path.join(regbaseOutputDir, 'seqacc_regbases.c'), "w+", newline='\n')
+        self.regBaseHeader = open(os.path.join(regbaseOutputDir, 'seqacc_regbases.h'), "w+", newline='\n')
         self.template_regbases_src = self.env.get_template("seqacc_regbases.c.j2")
         self.template_regbases_hdr = self.env.get_template("seqacc_regbases.h.j2")
 
@@ -701,6 +814,38 @@ class SequenceGenerator(object):
         self.header.close()
         self.regBaseSource.close()
         self.regBaseHeader.close()
+
+    def generateTrace(self, sequencesObj, outputDir, outputFile):
+        self.source = {sequencesObj.fileName: {}}
+
+        # 1) Get sequence name and their starting line in C file
+        with open(os.path.join(outputDir, sequencesObj.fileName + ".c"), 'r') as cFile:
+            for number, line in enumerate(cFile, 1):
+                for sequence in sequencesObj.sequences.keys():
+                    if 'uint32_t ' + sequence in line:
+                        # Add 1 to the line number because the sequence starts at beginning of next line
+                        self.source[sequencesObj.fileName][sequence] = number + 1
+                    elif '#if' in line:
+                        raise TypeError('#if/#ifdef detected in C file {}.c::{} while generating Trace file. '
+                                        'Feature not available yet, please remove it to continue.'.format(sequencesObj.fileName, sequence))
+                    else:
+                        pass
+        cFile.close()
+
+        # 2) Now compute the word offset, the line number based on the optimized instructions and print them
+        traceStr = ""
+        for seqName, sequence in sequencesObj.sequences.items():
+            lineNumber = self.source[sequencesObj.fileName][seqName]
+            wordOffset = 0
+            for actionObj in sequence.value:
+                if type(actionObj) is not str:
+                    traceStr += actionObj.getTrace(seqName, sequencesObj.fileName, lineNumber, wordOffset)
+                    wordOffset = actionObj.getWordOffset()
+                    lineNumber = actionObj.getLineNumber()
+                else:
+                    pass
+
+        outputFile.write(traceStr)
 
     # Filter definition
     def printStatement(self, action):
@@ -737,8 +882,7 @@ class SequenceGenerator(object):
 
         return returnStr
 
-    @staticmethod
-    def getAddrFromInst(action, instruction):
+    def getAddrFromInst(self, action, instruction):
         offsetMask = 2**action.contWrPos - 1
         offset = instruction & offsetMask
         baseAddrMask = 2**(28 - action.basePos) - 1  # 28: opCode bit position
@@ -748,8 +892,15 @@ class SequenceGenerator(object):
             return " /* {} */".format(action.name)
         else:
             baseAddr = [addr for addr, Id in action.baseAddrDict.items() if Id == baseAddrId][0]
-            baseAddr += offset
-            return " /* {0} at 0x{1:08X} */".format(action.name, baseAddr)
+            regAddr = baseAddr + offset
+            try:
+                # Retrieve the register name by its address
+                register = self.rm.zz_reg_addr_to_name[regAddr]
+                strPattern = " /* {} at {}, regBaseIdx: {} */".format(action.name, register, baseAddrId)
+            except KeyError:
+                register = regAddr
+                strPattern = " /* {0} at 0x{1:08X}, regBaseIdx: {2} */".format(action.name, register, baseAddrId)
+            return strPattern
 
     @staticmethod
     def printAction(action, value):
@@ -782,21 +933,25 @@ class SequenceGenerator(object):
             pass
         return returnStr
 
+    @staticmethod
+    def printBaseAddr(baseAddr):
+        return '0x{0:04X}U,'.format(baseAddr >> 16)
 
-if __name__ == "__main__":
+
+def main(argv=None):
     """
-    For more details on how to use this tool, please read the documentation
-    at https://confluence.silabs.com/display/RFSW/Sequence+Compiler
-    """
+        For more details on how to use this tool, please read the documentation
+        at https://confluence.silabs.com/display/RFSW/Sequence+Compiler
+        """
 
     parser = argparse.ArgumentParser(description='Run SEQACC sequence compiler')
     parser.add_argument('--source',
-                         help='YAML source script to process. Usually stored in rail_lib/chip/efr32/seq_s3/.',
-                         type=str,
-                         required=True)
+                        help='YAML source script to process. Usually stored in rail_lib/chip/efr32/seq_s3/.',
+                        type=str,
+                        required=True)
     parser.add_argument('--destination',
-                         help='Destination folder for the output C header file. Default points to same source directory',
-                         type=str)
+                        help='Destination folder for the output C header file. Default points to same source directory',
+                        type=str)
     parser.add_argument('--regbase',
                         help='YAML regBases source to process.'
                              'Default is seqacc_regbases.yml located alongside the compiler.',
@@ -807,17 +962,20 @@ if __name__ == "__main__":
                              'Default points to same source directory.',
                         type=str)
     parser.add_argument('--part',
-                         help='The part\'s code name that will execute the sequence.',
-                         type=str,
-                         default='rainier')
+                        help='The part\'s code name that will execute the sequence.',
+                        type=str,
+                        default='rainier')
     parser.add_argument('--template',
                         help='Override default template file',
                         type=str,
                         required=False)
     parser.add_argument('--internal',
-                         help='Compute the register addresses and other defines',
-                         action='store_true')
-    args = parser.parse_args()
+                        help='Compute the register addresses and other defines',
+                        action='store_true')
+    parser.add_argument('--trace',
+                        help='Output the Trace file',
+                        action='store_true')
+    args = parser.parse_args(argv)
 
     if args.destination is None:
         destination = os.path.dirname(args.source)
@@ -831,7 +989,6 @@ if __name__ == "__main__":
     else:
         regbaseOutput = args.regbase_output
 
-
     print('YAML regBase source path: {}'.format(args.regbase))
     ymlRegBase = yaml.safe_load(open(args.regbase))
 
@@ -843,6 +1000,9 @@ if __name__ == "__main__":
     else:
         sources.append(args.source)
 
+    if args.trace:
+        traceFile = open(os.path.join(destination, "sequences.trace"), 'w+')
+
     for source in sources:
         print('YAML sequence source path: {}'.format(os.path.join(os.path.dirname(args.source), source)))
         ymlData = yaml.safe_load(open(os.path.join(os.path.dirname(args.source), source)))
@@ -850,5 +1010,16 @@ if __name__ == "__main__":
         sequences = Sequences(args.part, ymlRegBase, ymlData, isInternal=args.internal)
         sequences.handler()
 
-        generator = SequenceGenerator(destination, regbaseOutput, sequences.fileName)
+        # Generate C files
+        generator = SequenceGenerator(destination, regbaseOutput, sequences.fileName, sequences.rm)
         generator.render(sequences.getRender())
+
+        if args.trace:
+            # Generate Trace file
+            generator.generateTrace(sequences, destination, traceFile)
+
+    if args.trace:
+        traceFile.close()
+
+if __name__ == "__main__":
+    main()

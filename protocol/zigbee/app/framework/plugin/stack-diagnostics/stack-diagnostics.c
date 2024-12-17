@@ -120,7 +120,7 @@ void printChildTable(sl_cli_command_arg_t *arguments)
       childData.type = SL_ZIGBEE_SLEEPY_END_DEVICE + 1;
     }
     used++;
-    sl_zigbee_af_app_print("%d: %p 0x%2X ", i, types[childData.type], childData.id);
+    sl_zigbee_af_app_print("%d: %s 0x%04X ", i, types[childData.type], childData.id);
     sl_zigbee_af_app_debug_exec(sl_zigbee_af_print_big_endian_eui64(childData.eui64));
     sl_zigbee_af_app_print(" ");
     if (childData.timeout == SECONDS_10) {
@@ -140,7 +140,7 @@ void printChildTable(sl_cli_command_arg_t *arguments)
       returnFrameCounter = 0xFFFFFFFF;
     }
 
-    sl_zigbee_af_app_print(" 0x%4X ", returnFrameCounter);
+    sl_zigbee_af_app_print(" 0x%08X ", returnFrameCounter);
     sl_zigbee_af_app_println("");
   }
   sl_zigbee_af_app_println("\n%d of %d entries used.",
@@ -174,11 +174,11 @@ void printNeighborTable(sl_cli_command_arg_t *arguments)
       returnFrameCounter = 0xFFFFFFFF;
     }
 
-    sl_zigbee_af_app_print("%d: 0x%2X %d  %d   %d    %d    "
+    sl_zigbee_af_app_print("%d: 0x%04X %d  %d   %d    %d    "
                     #ifdef RECORD_LQI_RSSI
                            "%d      %d     "
                     #endif // RECORD_LQI_RSSI
-                           "0x%4X  "
+                           "0x%08X  "
                            ,
                            i,
                            n.shortId,
@@ -223,7 +223,7 @@ void printRouteTable(sl_cli_command_arg_t *arguments)
       continue;
     }
     used++;
-    sl_zigbee_af_app_println("%d: 0x%2X  0x%2X  %d   %p  %p",
+    sl_zigbee_af_app_println("%d: 0x%04X  0x%04X  %d   %s  %s",
                              i,
                              entry.destination,
                              entry.nextHop,
@@ -254,10 +254,10 @@ void printInfo(sl_cli_command_arg_t *arguments)
                                                            &parameters);
 
   sl_zigbee_af_app_println("Stack Profile: %d", sl_zigbee_af_get_stack_profile());
-  sl_zigbee_af_app_println("Configured Node Type (%d): %p",
+  sl_zigbee_af_app_println("Configured Node Type (%d): %s",
                            sli_zigbee_af_current_zigbee_pro_network->nodeType,
                            nodeTypeStrings[sli_zigbee_af_current_zigbee_pro_network->nodeType]);
-  sl_zigbee_af_app_println("Running Node Type    (%d): %p\n",
+  sl_zigbee_af_app_println("Running Node Type    (%d): %s\n",
                            type,
                            nodeTypeStrings[type]);
 
@@ -267,19 +267,19 @@ void printInfo(sl_cli_command_arg_t *arguments)
   }
 
   sl_zigbee_af_app_println("Channel:       %d", parameters.radioChannel);
-  sl_zigbee_af_app_println("Node ID:       0x%2X", id);
-  sl_zigbee_af_app_println("PAN ID:        0x%2X", parameters.panId);
+  sl_zigbee_af_app_println("Node ID:       0x%04X", id);
+  sl_zigbee_af_app_println("PAN ID:        0x%04X", parameters.panId);
   sl_zigbee_af_app_print("Extended PAN:  ");
   sl_zigbee_af_print_big_endian_eui64(parameters.extendedPanId);
   sl_zigbee_af_app_println("");
-  sl_zigbee_af_app_println("\nNWK Update ID: 0x%X\n", parameters.nwkUpdateId);
+  sl_zigbee_af_app_println("\nNWK Update ID: 0x%02X\n", parameters.nwkUpdateId);
 
-  sl_zigbee_af_app_println("NWK Manager ID: 0x%2X", parameters.nwkManagerId);
+  sl_zigbee_af_app_println("NWK Manager ID: 0x%04X", parameters.nwkManagerId);
   sl_zigbee_af_app_print("NWK Manager Channels: ");
   sl_zigbee_af_print_channel_list_from_mask(parameters.channels);
   sl_zigbee_af_app_println("\n");
 
-  sl_zigbee_af_app_println("Send Multicasts to sleepies: %p\n",
+  sl_zigbee_af_app_println("Send Multicasts to sleepies: %s\n",
                            (sl_zigbee_af_get_sleepy_multicast_config()
                             ? "yes"
                             : "no"));
@@ -293,7 +293,7 @@ void printInfo(sl_cli_command_arg_t *arguments)
   } else if (rejoinReason >= SL_ZIGBEE_REJOIN_DUE_TO_ZLL_TOUCHLINK) {
     index = UNKNOWN_REJOIN_REASON_INDEX;
   }
-  sl_zigbee_af_app_println("Last Rejoin Reason (%d): %p",
+  sl_zigbee_af_app_println("Last Rejoin Reason (%d): %s",
                            rejoinReason,
                            rejoinReasonStrings[index]);
 
@@ -303,10 +303,10 @@ void printInfo(sl_cli_command_arg_t *arguments)
   } else if (leaveReason > SL_ZIGBEE_LEAVE_DUE_TO_ZLL_TOUCHLINK) {
     index = UNKNOWN_LEAVE_REASON_INDEX;
   }
-  sl_zigbee_af_app_println("Last Leave Reason  (%d): %p",
+  sl_zigbee_af_app_println("Last Leave Reason  (%d): %s",
                            leaveReason,
                            leaveReasonStrings[index]);
-  sl_zigbee_af_app_println("Node that sent leave: 0x%2X", nodeThatSentLeave);
+  sl_zigbee_af_app_println("Node that sent leave: 0x%04X", nodeThatSentLeave);
 }
 
 #ifdef RECORD_LQI_RSSI

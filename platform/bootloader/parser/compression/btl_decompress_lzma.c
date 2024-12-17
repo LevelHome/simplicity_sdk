@@ -64,6 +64,17 @@
 // --------------------------------
 // Prototypes
 
+static int32_t decompressAndFlash(ParserContext_t                   *ctx,
+                                  const BootloaderParserCallbacks_t *callbacks,
+                                  bool                              finish);
+static int32_t decompressData(uint8_t          *dstBuffer,
+                              size_t           *dstBufferLen,
+                              const uint8_t          *srcBuffer,
+                              size_t           *srcBufferLen,
+                              ELzmaStatus      *status);
+static void *lzmaAlloc(ISzAllocPtr p, size_t size);
+static void lzmaFree(ISzAllocPtr p, void *address);
+
 // --------------------------------
 // Static variables
 
@@ -92,7 +103,7 @@ static int allocSeq = 0;
 // --------------------------------
 // LZMA Allocators
 
-void *lzmaAlloc(ISzAllocPtr p, size_t size)
+static void *lzmaAlloc(ISzAllocPtr p, size_t size)
 {
   BTL_DEBUG_PRINT("LZMA: Allocate 0x");
   BTL_DEBUG_PRINT_WORD_HEX(size);
@@ -116,7 +127,7 @@ void *lzmaAlloc(ISzAllocPtr p, size_t size)
   }
 }
 
-void lzmaFree(ISzAllocPtr p, void *address)
+static void lzmaFree(ISzAllocPtr p, void *address)
 {
   (void)p;
   (void)address;
@@ -137,11 +148,11 @@ void lzmaFree(ISzAllocPtr p, void *address)
 // --------------------------------
 // LZMA decompression implementation
 
-int32_t decompressData(uint8_t          *dstBuffer,
-                       size_t           *dstBufferLen,
-                       uint8_t          *srcBuffer,
-                       size_t           *srcBufferLen,
-                       ELzmaStatus      *status)
+static int32_t decompressData(uint8_t          *dstBuffer,
+                              size_t           *dstBufferLen,
+                              const uint8_t          *srcBuffer,
+                              size_t           *srcBufferLen,
+                              ELzmaStatus      *status)
 {
   SRes res;
 
@@ -194,9 +205,9 @@ int32_t decompressData(uint8_t          *dstBuffer,
   return BOOTLOADER_OK;
 }
 
-int32_t decompressAndFlash(ParserContext_t                   *ctx,
-                           const BootloaderParserCallbacks_t *callbacks,
-                           bool                              finish)
+static int32_t decompressAndFlash(ParserContext_t                   *ctx,
+                                  const BootloaderParserCallbacks_t *callbacks,
+                                  bool                              finish)
 {
   int32_t ret = BOOTLOADER_OK;
   ELzmaStatus status = LZMA_STATUS_NOT_FINISHED;
@@ -298,7 +309,7 @@ int32_t gbl_lzmaParseProgTag(ParserContext_t *ctx,
                              size_t length,
                              const BootloaderParserCallbacks_t *callbacks)
 {
-  uint8_t *dataArray = (uint8_t *)data;
+  const uint8_t *dataArray = (uint8_t *)data;
   size_t dataOffset = 0UL;
   int32_t ret;
 
@@ -318,7 +329,7 @@ int32_t gbl_lzmaParseProgTag(ParserContext_t *ctx,
     // First call to function contains programming address in first word
 #if defined(BTL_PARSER_SUPPORT_DELTA_DFU)
     if ((callbacks->applicationCallback != NULL) && (ctx->customTagId == GBL_TAG_ID_DELTA_LZMA)) {
-      ctx->programmingAddress = (uint32_t)ctx->deltaPatchAddress;
+      ctx->programmingAddress = ctx->deltaPatchAddress;
     } else {
 #endif
     ctx->programmingAddress = *(uint32_t *)data;
@@ -345,6 +356,7 @@ int32_t gbl_lzmaParseProgTag(ParserContext_t *ctx,
     LzmaDec_Init(&decompressorState);
 
     if (ctx->customTagId == GBL_TAG_ID_DELTA_LZMA) {
+      // 4 bytes address + 5 byte header + 4 bytes fwCRC + 4 bytes fWSize + 8 byte file length should be skipped
       dataOffset = 25UL;
     } else {
       // 4 bytes address + 5 byte header + 8 byte file length should be skipped
@@ -381,12 +393,22 @@ int32_t gbl_lzmaParseProgTag(ParserContext_t *ctx,
 
 size_t gbl_lzmaNumBytesRequired(ParserContext_t *ctx)
 {
-  // If this is the first data in the tag, we need:
-  //  - a full word to set the programming address correctly
-  //  - 5 bytes containing LZMA_PROPS (lc, lp, dict size)
-  //  - 8 bytes containing size of decompressed data
   if (ctx->offsetInTag == 0) {
-    return 17UL;
+    if (ctx->customTagId == GBL_TAG_ID_DELTA_LZMA) {
+      // For delta gbl we need full word of length 25UL
+      //  - a full word to set the programming address correctly
+      //  - 5 bytes containing LZMA_PROPS (lc, lp, dict size)
+      //  - 8 bytes containing size of decompressed data
+      //  - 4 bytes containing newFwCRC
+      //  - 4 bytes containing newFwSize
+      return 25UL;
+    } else {
+      // If this is the first data in the tag, we need:
+      //  - a full word to set the programming address correctly
+      //  - 5 bytes containing LZMA_PROPS (lc, lp, dict size)
+      //  - 8 bytes containing size of decompressed data
+      return 17UL;
+    }
   } else {
     return 1UL;
   }

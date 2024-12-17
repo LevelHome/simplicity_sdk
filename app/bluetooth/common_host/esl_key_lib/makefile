@@ -3,7 +3,8 @@
 ################################################################################
 
 PROJECTNAME = esl_key_lib
-SDK_DIR = ../../../..
+PROJ_DIR := $(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
+SDK_DIR := $(realpath $(PROJ_DIR)/../../../..)
 
 ################################################################################
 # Components                                                                   #
@@ -19,7 +20,7 @@ include $(SDK_DIR)/app/bluetooth/component_host/app_log.mk
 # Include paths                                                                #
 ################################################################################
 
-override INCLUDEPATHS += . \
+override INCLUDEPATHS += $(PROJ_DIR) \
 $(SDK_DIR)/util/third_party/sqlite \
 $(SDK_DIR)/util/third_party/mbedtls/include \
 $(SDK_DIR)/app/bluetooth/common_host/system \
@@ -35,7 +36,7 @@ $(SDK_DIR)/app/bluetooth/common/ead_core \
 ################################################################################
 
 override C_SRC += \
-esl_key_lib.c \
+$(PROJ_DIR)/esl_key_lib.c \
 $(SDK_DIR)/util/third_party/sqlite/sqlite3.c
 
 ################################################################################
@@ -76,11 +77,11 @@ CFLAGS_RELEASE ?= -DNDEBUG \
 
 include $(SDK_DIR)/app/bluetooth/component_host/targets.mk
 
-$(PROJECTNAME)_wrapper.py: $(PROJECTNAME).h
+$(PROJECTNAME)_wrapper.py: $(PROJ_DIR)/$(PROJECTNAME).h
 	@echo "Generating Python wrapper"
-	ctypesgen --no-gnu-types --allow-gnu-c --no-macro-warnings $(INCFLAGS) $(PROJECTNAME).h -o $(PROJECTNAME)_wrapper.py 2> /dev/null
+	ctypesgen --no-gnu-types --allow-gnu-c --no-macro-warnings $(INCFLAGS) $(PROJ_DIR)/$(PROJECTNAME).h $(SDK_DIR)/platform/common/inc/sl_status.h -o $(PROJECTNAME)_wrapper.py 2> /dev/null
 	@echo "Fixing up Python wrapper"
-	../../script/ctypesgen_wrapper_fix.py $(PROJECTNAME)_wrapper.py -v
+	$(PROJ_DIR)/../../script/ctypesgen_wrapper_fix.py $(PROJECTNAME)_wrapper.py -v
 
 clean: clean_wrapper
 

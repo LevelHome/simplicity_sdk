@@ -308,7 +308,7 @@ void sl_zigbee_af_gbcs_gas_meter_report_attributes(void)
                                         ZCL_ENUM8_ATTRIBUTE_TYPE);
     setSleepyMeterState(MIRROR_UPDATE_IN_PROGRESS);
   } else {
-    sl_zigbee_af_gbcs_gas_meter_println("Cannot report attributes. State is 0x%x", state);
+    sl_zigbee_af_gbcs_gas_meter_println("Cannot report attributes. State is 0x%02X", state);
   }
 }
 
@@ -453,7 +453,7 @@ static void sleepyMeterEventHandler(sl_zigbee_af_event_t * event)
       // it every time this event is called but first check if we need to retry the
       // tunnel creation.
       if (tunnel.state == REQUEST_PENDING_TUNNEL) {
-        sl_zigbee_af_gbcs_gas_meter_println("Retrying tunnel creation to node ID 0x%2x",
+        sl_zigbee_af_gbcs_gas_meter_println("Retrying tunnel creation to node ID 0x%04X",
                                             tunnel.remoteNodeId);
         requestTunnel();
       }
@@ -573,7 +573,7 @@ void sl_zigbee_af_simple_metering_server_process_notification_flags_cb(sl_zigbee
 {
   uint32_t requestMessages = 0;
 
-  sl_zigbee_af_gbcs_gas_meter_println("GSME: ProcessNotificationFlags: 0x%2x, 0x%4x",
+  sl_zigbee_af_gbcs_gas_meter_println("GSME: ProcessNotificationFlags: 0x%04X, 0x%08X",
                                       attributeId, bitMap);
 
   /*
@@ -660,7 +660,7 @@ void sl_zigbee_af_simple_metering_server_process_notification_flags_cb(sl_zigbee
       requestMessages = bitMap & (SL_ZIGBEE_AF_METERING_FNF_GET_SNAPSHOT | SL_ZIGBEE_AF_METERING_FNF_GET_SAMPLED_DATA);
     }
     if (requestMessages != 0) {
-      sl_zigbee_af_gbcs_gas_meter_println("GSME: GetNotifiedMessage: 0x%2x, 0x%4x",
+      sl_zigbee_af_gbcs_gas_meter_println("GSME: GetNotifiedMessage: 0x%04X, 0x%08X",
                                           attributeId, requestMessages);
       sl_zigbee_af_fill_command_simple_metering_cluster_get_notified_message(SL_ZIGBEE_ZCL_NOTIFICATION_SCHEME_PREDEFINED_NOTIFICATION_SCHEME_B,
                                                                              attributeId,
@@ -682,7 +682,7 @@ void sl_zigbee_af_simple_metering_server_process_notification_flags_cb(sl_zigbee
  */
 void sl_zigbee_af_registration_cb(bool success)
 {
-  sl_zigbee_af_gbcs_gas_meter_println("GSME: Smart Energy Registration %p.",
+  sl_zigbee_af_gbcs_gas_meter_println("GSME: Smart Energy Registration %s.",
                                       (success ? "completed" : "FAILED"));
   if (!success) {
     return;
@@ -706,7 +706,7 @@ void sl_zigbee_af_tunneling_client_tunnel_opened_cb(uint8_t tunnelId,
                                                     sl_zigbee_af_plugin_tunneling_client_status_t tunnelStatus,
                                                     uint16_t maximumIncomingTransferSize)
 {
-  sl_zigbee_af_gbcs_gas_meter_println("GSME: ClientTunnelOpened:0x%x,0x%x,0x%2x",
+  sl_zigbee_af_gbcs_gas_meter_println("GSME: ClientTunnelOpened:0x%02X,0x%02X,0x%04X",
                                       tunnelId, tunnelStatus, maximumIncomingTransferSize);
 
   if (tunnelStatus == SL_ZIGBEE_AF_PLUGIN_TUNNELING_CLIENT_SUCCESS) {
@@ -746,7 +746,7 @@ void sl_zigbee_af_tunneling_client_data_received_cb(uint8_t tunnelId,
                                                     uint8_t *data,
                                                     uint16_t dataLen)
 {
-  sl_zigbee_af_gbcs_gas_meter_print("GSME: ClientDataReceived:%x,[", tunnelId);
+  sl_zigbee_af_gbcs_gas_meter_print("GSME: ClientDataReceived:%02X,[", tunnelId);
   sl_zigbee_af_gbcs_gas_meter_print_buffer(data, dataLen, false);
   sl_zigbee_af_gbcs_gas_meter_println("]");
 
@@ -780,7 +780,7 @@ void sl_zigbee_af_tunneling_client_data_received_cb(uint8_t tunnelId,
  */
 void sl_zigbee_af_tunneling_client_tunnel_closed_cb(uint8_t tunnelId)
 {
-  sl_zigbee_af_gbcs_gas_meter_println("GSME: ClientTunnelClosed:0x%x", tunnelId);
+  sl_zigbee_af_gbcs_gas_meter_println("GSME: ClientTunnelClosed:0x%02X", tunnelId);
 
   if (tunnel.tunnelId == tunnelId) {
     tunnel.state = CLOSED_TUNNEL;
@@ -833,7 +833,7 @@ static void setSleepyMeterState(uint8_t newState)
 static bool tunnelCreate(sl_802154_short_addr_t remoteNodeId,
                          uint8_t remoteEndpoint)
 {
-  sl_zigbee_af_gbcs_gas_meter_println("GSME: TunnelCreate 0x%2x 0x%x",
+  sl_zigbee_af_gbcs_gas_meter_println("GSME: TunnelCreate 0x%04X 0x%02X",
                                       remoteNodeId, remoteEndpoint);
 
   // We only support one tunnel to a given node so if we already have a tunnel
@@ -891,7 +891,7 @@ static bool tunnelSendData(uint16_t dataLen,
 
   success = (status == SL_ZIGBEE_ZCL_STATUS_SUCCESS);
   if (!success) {
-    sl_zigbee_af_app_println("%p%p%p0x%x",
+    sl_zigbee_af_app_println("%s%s%s0x%02X",
                              "Error: ",
                              "Tunnel SendData failed: ",
                              "Tunneling Status: ",
@@ -922,7 +922,7 @@ static bool requestTunnel(void)
 // See if we can recover from tunnel creation issues.
 static bool handleRequestTunnelFailure(sl_zigbee_af_plugin_tunneling_client_status_t status)
 {
-  sl_zigbee_af_gbcs_gas_meter_println("GSME: handleRequestTunnelFailure 0x%x",
+  sl_zigbee_af_gbcs_gas_meter_println("GSME: handleRequestTunnelFailure 0x%02X",
                                       status);
 
   if (status == SL_ZIGBEE_AF_PLUGIN_TUNNELING_CLIENT_BUSY) {
@@ -937,7 +937,7 @@ static bool handleRequestTunnelFailure(sl_zigbee_af_plugin_tunneling_client_stat
     // and once all responses are received try the RequestTunnel again
     // Nothing really we can do because we are only supporting one tunnel
     // to the CHF.
-    sl_zigbee_af_app_println("%p%p%p",
+    sl_zigbee_af_app_println("%s%s%s",
                              "Error: ",
                              "Tunnel Create failed: ",
                              "No more tunnel ids");
@@ -947,7 +947,7 @@ static bool handleRequestTunnelFailure(sl_zigbee_af_plugin_tunneling_client_stat
 
   // All other errors are either due to mis-configuration or errors that we
   // cannot recover from so print the error and return false.
-  sl_zigbee_af_app_println("%p%p%p0x%x",
+  sl_zigbee_af_app_println("%s%s%s0x%02X",
                            "Error: ",
                            "Tunnel Create failed: ",
                            "Tunneling Client Status: ",
@@ -1094,7 +1094,7 @@ bool sl_zigbee_af_simple_metering_cluster_request_mirror_response_cb(sl_zigbee_a
     if (state != MIRROR_READY) {
       mirrorEndpoint = endpointId;
       mirrorAddress = sl_zigbee_af_current_command()->source;
-      sl_zigbee_af_app_println("Mirror ADDED on 0x%2x, 0x%x", mirrorAddress, endpointId);
+      sl_zigbee_af_app_println("Mirror ADDED on 0x%04X, 0x%02X", mirrorAddress, endpointId);
 
       uint32_t issuerEventId = sl_zigbee_af_get_current_time();
       sl_zigbee_af_fill_command_simple_metering_cluster_configure_mirror(issuerEventId,
@@ -1106,7 +1106,7 @@ bool sl_zigbee_af_simple_metering_cluster_request_mirror_response_cb(sl_zigbee_a
 
       setSleepyMeterState(MIRROR_READY);
     } else {
-      sl_zigbee_af_app_println("Mirror add for 0x%2x, 0x%x ignored, already mirrored on 0x%2x 0x%x.",
+      sl_zigbee_af_app_println("Mirror add for 0x%04X, 0x%02X ignored, already mirrored on 0x%04X 0x%02X.",
                                sl_zigbee_af_current_command()->source, endpointId,
                                mirrorAddress, mirrorEndpoint);
     }
@@ -1132,7 +1132,7 @@ bool sl_zigbee_af_simple_metering_cluster_mirror_removed_cb(sl_zigbee_af_cluster
   if (endpointId == 0xffff) {
     sl_zigbee_af_app_println("Mirror remove FAILED");
   } else {
-    sl_zigbee_af_app_println("Mirror REMOVED from %x", endpointId);
+    sl_zigbee_af_app_println("Mirror REMOVED from %02X", endpointId);
     setSleepyMeterState(INITIAL_STATE);
   }
   sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);

@@ -31,13 +31,15 @@
 #ifndef CBAP_CONFIG_H
 #define CBAP_CONFIG_H
 
+#include "sl_bt_api.h"
+
 // <<< Use Configuration Wizard in Context Menu >>>
 
 // <o ROLE> Role
-//   <SL_BT_CBAP_ROLE_PERIPHERAL=> Peripheral
-//   <SL_BT_CBAP_ROLE_CENTRAL=> Central
+//   <sl_bt_connection_role_peripheral=> Peripheral
+//   <sl_bt_connection_role_central=> Central
 // <i> Default: Peripheral
-#define ROLE        SL_BT_CBAP_ROLE_PERIPHERAL
+#define ROLE        sl_bt_connection_role_peripheral
 
 // <e ADDR_ENABLE> Scanning configuration
 // <i> Default: 0

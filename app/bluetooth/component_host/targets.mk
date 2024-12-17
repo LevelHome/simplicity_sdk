@@ -27,12 +27,25 @@ else
 HELP_FLAG =
 endif
 
+# GATT database resources
+ifneq ($(GATT_XML_FILES),)
+
+override INCLUDEPATHS += \
+$(PROJ_DIR)/autogen
+
+override C_SRC += \
+$(PROJ_DIR)/autogen/gatt_db.c
+
+PROJ_FILES += $(wildcard $(SDK_DIR)/protocol/bluetooth/bin/gatt/*)
+PROJ_FILES += $(GATT_XML_FILES)
+HELP_MESSAGE += \
+"  gattdb  - generate GATT database\n"
+
+endif
+
 # uniq is a function which removes duplicate elements from a list
 uniq = $(strip $(if $1,$(firstword $1) \
        $(call uniq,$(filter-out $(firstword $1),$1))))
-
-# reverse is a function that reverse the list
-reverse = $(if $(1),$(call reverse,$(wordlist 2,$(words $(1)),$(1)))) $(firstword $(1))
 
 INCFLAGS = $(addprefix -I, $(INCLUDEPATHS))
 
@@ -45,10 +58,8 @@ OBJS = $(C_OBJS)
 
 # Project resources
 INC_FILES = $(foreach dir,$(INCLUDEPATHS),$(wildcard $(dir)/*.h))
-PROJ_FILES += $(call uniq, $(C_SRC) $(INC_FILES) $(MAKEFILE_LIST) $(OTHER_FILES))
-TECHNOLOGY = $(word 3,$(call reverse, $(subst /, ,$(CURDIR))))
-DST_DIR = $(EXPORT_DIR)/app/$(TECHNOLOGY)/example_host/$(PROJECTNAME)/
-DST_FILES = $(addprefix $(DST_DIR), $(PROJ_FILES))
+PROJ_FILES += $(call uniq, $(C_SRC) $(INC_FILES) $(MAKEFILE_LIST))
+EXPORT_FILES = $(foreach file,$(PROJ_FILES),$(EXPORT_DIR)$(subst $(SDK_DIR),,$(realpath $(file))))
 
 vpath %.c $(C_PATHS)
 
@@ -90,7 +101,7 @@ pre-build:
 
 # Create objects from C SRC files
 $(OBJ_DIR)/%.o: %.c
-	@echo "Building file: $<"
+	@echo "Building file: $(notdir $<)"
 	$(CC) $(CFLAGS) $(INCFLAGS) -c -o $@ $<
 
 # Link
@@ -109,14 +120,46 @@ clean_export:
 	fi
 
 # Collect project files for exporting
-$(DST_FILES) : $(addprefix $(DST_DIR), %) : %
+$(EXPORT_FILES) : $(addprefix $(EXPORT_DIR), %) : $(SDK_DIR)%
 	@mkdir -p $(dir $@) && cp -pRv $< $@
 
-export: $(DST_FILES)
+export: $(EXPORT_FILES)
 	@echo "Exporting done."
 
 help:
 	@echo $(HELP_FLAG) $(HELP_MESSAGE)
+
+# GATT database targets
+ifneq ($(GATT_XML_FILES),)
+
+.PHONY: gattdb clean_gattdb
+
+BGBUILD := $(SDK_DIR)/protocol/bluetooth/bin/gatt/bgbuild.py
+
+# GATT XML directory
+GATT_XML_DIR = $(PROJ_DIR)/config/btconf
+
+# Generate a list of GATT XML destination files
+GATT_XML_DST_FILES = $(addprefix $(GATT_XML_DIR)/,$(notdir $(GATT_XML_FILES)))
+
+# The bgbuild tool expects the GATT XML files to be in the same folder
+$(GATT_XML_DIR)/%.xml: $(filter %.xml,$(GATT_XML_FILES))
+	@cp -f $< $@
+
+clean: clean_gattdb
+
+clean_gattdb:
+	rm -rf $(GATT_XML_DIR)/*.xml
+
+gattdb: $(GATT_XML_DST_FILES)
+	@echo Generate GATT database
+	@python3 $(BGBUILD) $(GATT_XML_DIR) -o $(PROJ_DIR)/autogen
+
+$(PROJ_DIR)/autogen/gatt_db.c: $(GATT_XML_DST_FILES)
+	@echo
+	@echo The GATT database might be outdated. Please run: make gattdb
+	@echo
+endif
 
 # include auto-generated dependency files (explicit rules)
 ifneq (clean,$(findstring clean, $(MAKECMDGOALS)))

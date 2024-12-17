@@ -37,8 +37,6 @@
 #include <stdarg.h>
 #include <stdbool.h>
 
-#define SLI_CPC_RX_FRAME_MAX_LENGTH ((uint16_t)(SLI_CPC_RX_DATA_MAX_LENGTH + SLI_CPC_HDLC_HEADER_RAW_SIZE))
-
 typedef struct {
   bool preprocess_hdlc_header;            ///< Is the HDLC header validated by driver
   bool uart_flowcontrol;                  ///< Is UART flow control enabled
@@ -120,11 +118,29 @@ extern "C"
 // -----------------------------------------------------------------------------
 // Core to driver commands
 
+#if defined(SL_CATALOG_CPC_PRIMARY_PRESENT)
 /***************************************************************************//**
  * Return a driver instance. Currently only driver instance can be enabled at
  * the same time. In the future, that limitation might be lifted.
  ******************************************************************************/
 sli_cpc_drv_t* sli_cpc_drv_get_driver(void);
+#else
+#if defined(SL_CATALOG_CPC_DRIVER_UART_PRESENT)
+extern sli_cpc_drv_t uart_driver;
+#endif
+
+#if defined(SL_CATALOG_CPC_DRIVER_SPI_PRESENT)
+extern sli_cpc_drv_t spi_driver;
+#endif
+
+#if defined(SL_CATALOG_CPC_DRIVER_SDIO_PRESENT)
+extern sli_cpc_drv_t sdio_driver;
+#endif
+
+#if defined(SL_CATALOG_CPC_DRIVER_EMUL_PRESENT)
+extern sli_cpc_drv_t emul_driver;
+#endif
+#endif // defined(SL_CATALOG_CPC_PRIMARY_PRESENT)
 
 /** @} (end addtogroup cpc) */
 

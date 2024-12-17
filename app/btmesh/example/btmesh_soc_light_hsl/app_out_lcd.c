@@ -30,7 +30,6 @@
 
 #include <stdbool.h>
 #include <stdio.h>
-#include "em_common.h"
 #include "sl_status.h"
 
 #include "app.h"

@@ -16,12 +16,13 @@ provides:
 
 requires:
   - name: slist
+  - name: sl_core
 
 root_path: app/common/util/app_queue
 
 include:
   - path: .
-    file_list: 
+    file_list:
       - path: app_queue.h
 
 source:

@@ -35,11 +35,16 @@
 #include <stdio.h>
 
 #include "sl_sleeptimer.h"
+#include "sl_assert.h"
+#include "sl_gpio.h"
 #include "sl_clock_manager.h"
 #include "em_device.h"
-#include "em_assert.h"
-#include "em_gpio.h"
+
+#if defined(_SILICON_LABS_32B_SERIES_2)
 #include "em_eusart.h"
+#else
+#include "sl_hal_eusart.h"
+#endif
 
 /** @cond DO_NOT_INCLUDE_WITH_DOXYGEN */
 static void sl_icm40627_chip_select_set(bool select);
@@ -136,6 +141,7 @@ sl_status_t sl_icm40627_read_register(uint16_t addr, int num_bytes, uint8_t *dat
   /* Enable chip select */
   sl_icm40627_chip_select_set(true);
 
+#if defined(_SILICON_LABS_32B_SERIES_2)
   /* Set R/W bit to 1 - read */
   EUSART_Spi_TxRx(SL_ICM40627_SPI_EUSART_PERIPHERAL, (regAddr | 0x80));
 
@@ -143,7 +149,15 @@ sl_status_t sl_icm40627_read_register(uint16_t addr, int num_bytes, uint8_t *dat
   while ( num_bytes-- ) {
     *data++ = EUSART_Spi_TxRx(SL_ICM40627_SPI_EUSART_PERIPHERAL, 0x00);
   }
+#else
+  *Set R / W bit to 1 - read
+  * / sl_hal_eusart_spi_tx_rx(SL_ICM40627_SPI_EUSART_PERIPHERAL, (regAddr | 0x80));
 
+  /* Transmit 0's to provide clock and read the data */
+  while ( num_bytes-- ) {
+    *data++ = sl_hal_eusart_spi_tx_rx(SL_ICM40627_SPI_EUSART_PERIPHERAL, 0x00);
+  }
+#endif
   /* Disable chip select */
   sl_icm40627_chip_select_set(false);
 
@@ -167,11 +181,19 @@ sl_status_t sl_icm40627_write_register(uint16_t addr, uint8_t data)
   /* Enable chip select */
   sl_icm40627_chip_select_set(true);
 
+#if defined(_SILICON_LABS_32B_SERIES_2)
   /* clear R/W bit - write, send the address */
   EUSART_Spi_TxRx(SL_ICM40627_SPI_EUSART_PERIPHERAL, (regAddr & 0x7F));
 
   /* Send the data */
   EUSART_Spi_TxRx(SL_ICM40627_SPI_EUSART_PERIPHERAL, data);
+#else
+  /* clear R/W bit - write, send the address */
+  sl_hal_eusart_spi_tx_rx(SL_ICM40627_SPI_EUSART_PERIPHERAL, (regAddr & 0x7F));
+
+  /* Send the data */
+  sl_hal_eusart_spi_tx_rx(SL_ICM40627_SPI_EUSART_PERIPHERAL, data);
+#endif
 
   /* Disable chip select */
   sl_icm40627_chip_select_set(false);
@@ -210,6 +232,8 @@ sl_status_t sl_icm40627_reset(void)
 sl_status_t sl_icm40627_spi_init(void)
 {
   EUSART_TypeDef *eusart = SL_ICM40627_SPI_EUSART_PERIPHERAL;
+
+#if defined(_SILICON_LABS_32B_SERIES_2)
   EUSART_SpiInit_TypeDef init = EUSART_SPI_MASTER_INIT_DEFAULT_HF;
   EUSART_SpiAdvancedInit_TypeDef advancedInit = EUSART_SPI_ADVANCED_INIT_DEFAULT;
 
@@ -218,19 +242,34 @@ sl_status_t sl_icm40627_spi_init(void)
 
   advancedInit.autoCsEnable = false;
   advancedInit.msbFirst = true;
+#else
+  sl_hal_eusart_spi_config_t init = SL_HAL_EUSART_SPI_MASTER_INIT_DEFAULT_HF;
+  sl_hal_eusart_spi_advanced_config_t advancedInit = SL_HAL_EUSART_SPI_ADVANCED_INIT_DEFAULT;
 
+  init.advanced_config = &advancedInit;
+
+  advancedInit.auto_cs_enable = false;
+  advancedInit.msb_first = true;
+#endif
   /* Enabling clock to EUSART */
   sl_clock_manager_enable_bus_clock(ICM40627_SPI_CLK(SL_ICM40627_SPI_EUSART_PERIPHERAL_NO));
   sl_clock_manager_enable_bus_clock(SL_BUS_CLOCK_GPIO);
 
   /* IO configuration */
-  GPIO_PinModeSet(SL_ICM40627_SPI_EUSART_TX_PORT, SL_ICM40627_SPI_EUSART_TX_PIN, gpioModePushPull, 0);      /* TX - MOSI */
-  GPIO_PinModeSet(SL_ICM40627_SPI_EUSART_RX_PORT, SL_ICM40627_SPI_EUSART_RX_PIN, gpioModeInput, 0);         /* RX - MISO */
-  GPIO_PinModeSet(SL_ICM40627_SPI_EUSART_SCLK_PORT, SL_ICM40627_SPI_EUSART_SCLK_PIN, gpioModePushPull, 0);  /* Clock */
-  GPIO_PinModeSet(SL_ICM40627_SPI_EUSART_CS_PORT, SL_ICM40627_SPI_EUSART_CS_PIN, gpioModePushPull, 1);      /* CS */
+  sl_gpio_set_pin_mode(&(sl_gpio_t) {SL_ICM40627_SPI_EUSART_TX_PORT, SL_ICM40627_SPI_EUSART_TX_PIN }, SL_GPIO_MODE_PUSH_PULL, 0);  /* TX - MOSI */
+  sl_gpio_set_pin_mode(&(sl_gpio_t) {SL_ICM40627_SPI_EUSART_RX_PORT, SL_ICM40627_SPI_EUSART_RX_PIN }, SL_GPIO_MODE_PUSH_PULL, 0);  /* RX - MISO */
+  sl_gpio_set_pin_mode(&(sl_gpio_t) {SL_ICM40627_SPI_EUSART_SCLK_PORT, SL_ICM40627_SPI_EUSART_SCLK_PIN }, SL_GPIO_MODE_PUSH_PULL, 0);  /* Clock */
+  sl_gpio_set_pin_mode(&(sl_gpio_t) {SL_ICM40627_SPI_EUSART_CS_PORT, SL_ICM40627_SPI_EUSART_CS_PIN }, SL_GPIO_MODE_PUSH_PULL, 1);  /* CS */
 
   /* Initialize EUSART, in SPI master mode. */
+#if defined(_SILICON_LABS_32B_SERIES_2)
   EUSART_SpiInit(eusart, &init);
+#else
+  sl_hal_eusart_init_spi(eusart, &init);
+  sl_hal_eusart_enable(eusart);
+  sl_hal_eusart_enable_tx(eusart);
+  sl_hal_eusart_enable_rx(eusart);
+#endif
 
   /* Enable pins at correct EUSART location. */
   GPIO->EUSARTROUTE[SL_ICM40627_SPI_EUSART_PERIPHERAL_NO].TXROUTE = ((SL_ICM40627_SPI_EUSART_TX_PORT << _GPIO_EUSART_TXROUTE_PORT_SHIFT) | (SL_ICM40627_SPI_EUSART_TX_PIN << _GPIO_EUSART_TXROUTE_PIN_SHIFT));
@@ -273,57 +312,62 @@ float sl_icm40627_set_sample_rate(float sample_rate)
   uint8_t accel_sample_rate_setting;
   uint8_t gyro_sample_rate_setting;
 
-  /* Map sample_rate to corresponding register values*/
-  switch ((int)sample_rate) {
-    case 8000:
-      accel_sample_rate_setting = ICM40627_ACCEL_ODR_VALUE_8000;
-      gyro_sample_rate_setting = ICM40627_GYRO_ODR_VALUE_8000;
-      break;
-    case 4000:
-      accel_sample_rate_setting = ICM40627_ACCEL_ODR_VALUE_4000;
-      gyro_sample_rate_setting = ICM40627_GYRO_ODR_VALUE_4000;
-      break;
-    case 2000:
-      accel_sample_rate_setting = ICM40627_ACCEL_ODR_VALUE_2000;
-      gyro_sample_rate_setting = ICM40627_GYRO_ODR_VALUE_2000;
-      break;
-    case 1000:
-      accel_sample_rate_setting = ICM40627_ACCEL_ODR_VALUE_1000;
-      gyro_sample_rate_setting = ICM40627_GYRO_ODR_VALUE_1000;
-      break;
-    case 500:
-      accel_sample_rate_setting = ICM40627_ACCEL_ODR_VALUE_500;
-      gyro_sample_rate_setting = ICM40627_GYRO_ODR_VALUE_500;
-      break;
-    case 200:
-      accel_sample_rate_setting = ICM40627_ACCEL_ODR_VALUE_200;
-      gyro_sample_rate_setting = ICM40627_GYRO_ODR_VALUE_200;
-      break;
-    case 100:
-      accel_sample_rate_setting = ICM40627_ACCEL_ODR_VALUE_100;
-      gyro_sample_rate_setting = ICM40627_GYRO_ODR_VALUE_100;
-      break;
-    case 50:
-      accel_sample_rate_setting = ICM40627_ACCEL_ODR_VALUE_50;
-      gyro_sample_rate_setting = ICM40627_GYRO_ODR_VALUE_50;
-      break;
-    case 25:
-      accel_sample_rate_setting = ICM40627_ACCEL_ODR_VALUE_25;
-      gyro_sample_rate_setting = ICM40627_GYRO_ODR_VALUE_25;
-      break;
-    case 12:
-      accel_sample_rate_setting = ICM40627_ACCEL_ODR_VALUE_12_5;
-      gyro_sample_rate_setting = ICM40627_GYRO_ODR_VALUE_12_5;
-      break;
-    default:
-      return -1.0f;
+  /* Map sample_rate to corresponding register values */
+  if (sample_rate > 6000.0f) {
+    accel_sample_rate_setting = ICM40627_ACCEL_ODR_VALUE_8000;
+    gyro_sample_rate_setting = ICM40627_GYRO_ODR_VALUE_8000;
+    sample_rate = 8000.0f;
+  } else if (sample_rate > 3000.0f) {
+    accel_sample_rate_setting = ICM40627_ACCEL_ODR_VALUE_4000;
+    gyro_sample_rate_setting = ICM40627_GYRO_ODR_VALUE_4000;
+    sample_rate = 4000.0f;
+  } else if (sample_rate > 1500.0f) {
+    accel_sample_rate_setting = ICM40627_ACCEL_ODR_VALUE_2000;
+    gyro_sample_rate_setting = ICM40627_GYRO_ODR_VALUE_2000;
+    sample_rate = 2000.0f;
+  } else if (sample_rate > 750.0f) {
+    accel_sample_rate_setting = ICM40627_ACCEL_ODR_VALUE_1000;
+    gyro_sample_rate_setting = ICM40627_GYRO_ODR_VALUE_1000;
+    sample_rate = 1000.0f;
+  } else if (sample_rate > 375.0f) {
+    accel_sample_rate_setting = ICM40627_ACCEL_ODR_VALUE_500;
+    gyro_sample_rate_setting = ICM40627_GYRO_ODR_VALUE_500;
+    sample_rate = 500.0f;
+  } else if (sample_rate > 100.0f) {
+    accel_sample_rate_setting = ICM40627_ACCEL_ODR_VALUE_200;
+    gyro_sample_rate_setting = ICM40627_GYRO_ODR_VALUE_200;
+    sample_rate = 200.0f;
+  } else if (sample_rate > 75.0f) {
+    accel_sample_rate_setting = ICM40627_ACCEL_ODR_VALUE_100;
+    gyro_sample_rate_setting = ICM40627_GYRO_ODR_VALUE_100;
+    sample_rate = 100.0f;
+  } else if (sample_rate > 37.0f) {
+    accel_sample_rate_setting = ICM40627_ACCEL_ODR_VALUE_50;
+    gyro_sample_rate_setting = ICM40627_GYRO_ODR_VALUE_50;
+    sample_rate = 50.0f;
+  } else if (sample_rate > 18.0f) {
+    accel_sample_rate_setting = ICM40627_ACCEL_ODR_VALUE_25;
+    gyro_sample_rate_setting = ICM40627_GYRO_ODR_VALUE_25;
+    sample_rate = 25.0f;
+  } else if (sample_rate > 9.0f) {
+    accel_sample_rate_setting = ICM40627_ACCEL_ODR_VALUE_12_5;
+    gyro_sample_rate_setting = ICM40627_GYRO_ODR_VALUE_12_5;
+    sample_rate = 12.5f;
+  } else if (sample_rate > 6.0f) {
+    accel_sample_rate_setting = ICM40627_ACCEL_ODR_VALUE_6_25;
+    gyro_sample_rate_setting = ICM40627_GYRO_ODR_VALUE_12_5;
+    sample_rate = 6.25f;
+  } else {
+    accel_sample_rate_setting = ICM40627_ACCEL_ODR_VALUE_3_125;
+    gyro_sample_rate_setting = ICM40627_GYRO_ODR_VALUE_12_5;
+    sample_rate = 3.125f;
   }
 
-  /* Set the sample rate for gyroscope and accelerometer*/
+  /* Set the sample rate for gyroscope and accelerometer */
   sl_icm40627_gyro_set_sample_rate((sl_gyro_ODR_t)gyro_sample_rate_setting);
   sl_icm40627_accel_set_sample_rate((sl_accel_ODR_t)accel_sample_rate_setting);
 
-  /* Return the actual sample rate set*/
+  /* Return the actual sample rate set */
   return sample_rate;
 }
 
@@ -1155,11 +1199,19 @@ sl_status_t sl_icm40627_select_register_bank(uint8_t bank)
   /* Enable chip select */
   sl_icm40627_chip_select_set(true);
 
+#if defined(_SILICON_LABS_32B_SERIES_2)
   /* Select the Bank Select register */
   EUSART_Spi_TxRx(SL_ICM40627_SPI_EUSART_PERIPHERAL, ICM40627_REG_REG_BANK_SEL);
 
   /* Send the data */
   EUSART_Spi_TxRx(SL_ICM40627_SPI_EUSART_PERIPHERAL, bank);
+#else
+  /* Select the Bank Select register */
+  sl_hal_eusart_spi_tx_rx(SL_ICM40627_SPI_EUSART_PERIPHERAL, ICM40627_REG_REG_BANK_SEL);
+
+  /* Write the desired bank address 0..4 */
+  sl_hal_eusart_spi_tx_rx(SL_ICM40627_SPI_EUSART_PERIPHERAL, bank);
+#endif
 
   /* Disable chip select */
   sl_icm40627_chip_select_set(false);
@@ -1181,10 +1233,15 @@ sl_status_t sl_icm40627_select_register_bank(uint8_t bank)
  ******************************************************************************/
 static void sl_icm40627_chip_select_set(bool select)
 {
-  if ( select ) {
-    GPIO_PinOutClear(SL_ICM40627_SPI_EUSART_CS_PORT, SL_ICM40627_SPI_EUSART_CS_PIN);
+  sl_gpio_t spi_eusart_cs_gpio = {
+    .port = SL_ICM40627_SPI_EUSART_CS_PORT,
+    .pin = SL_ICM40627_SPI_EUSART_CS_PIN,
+  };
+
+  if (select) {
+    sl_gpio_clear_pin(&spi_eusart_cs_gpio);
   } else {
-    GPIO_PinOutSet(SL_ICM40627_SPI_EUSART_CS_PORT, SL_ICM40627_SPI_EUSART_CS_PIN);
+    sl_gpio_set_pin(&spi_eusart_cs_gpio);
   }
 }
 

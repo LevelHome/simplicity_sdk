@@ -10,6 +10,7 @@ root_path: "protocol/wisun/stack"
 
 requires:
   - name: "device_supports_wisun"
+  - name: segger_rtt
 
 provides:
   - name: "wisun_stack_debug"

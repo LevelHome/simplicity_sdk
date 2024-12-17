@@ -37,12 +37,12 @@ void sli_zigbee_af_device_query_service_status_command(sl_cli_command_arg_t *arg
   sl_802154_long_addr_t currentEui64;
   bool enabled = sl_zigbee_af_device_query_service_get_enabled_state();
   sl_zigbee_af_device_query_service_get_current_discovery_target_eui64(currentEui64);
-  sl_zigbee_af_core_println("Enabled: %p", enabled ? "yes" : "no");
+  sl_zigbee_af_core_println("Enabled: %s", enabled ? "yes" : "no");
   sl_zigbee_af_core_print("Current Discovery Target: ");
   sl_zigbee_af_print_big_endian_eui64(currentEui64);
   sl_zigbee_af_core_println("");
   const sl_zigbee_af_device_info_t* device = sl_zigbee_af_device_database_find_device_by_eui64(currentEui64);
-  sl_zigbee_af_core_println("Status: %p",
+  sl_zigbee_af_core_println("Status: %s",
                             (device == NULL
                              ? ""
                              : sl_zigbee_af_device_database_get_status_string(device->status)));

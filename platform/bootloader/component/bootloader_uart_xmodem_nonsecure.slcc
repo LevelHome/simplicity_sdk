@@ -26,3 +26,6 @@ requires:
 config_file:
   - path: platform/bootloader/config/btl_xmodem_config.h
     file_id: btl_uart_xmodem_config
+metadata:
+  sbom:
+    license: MSLA

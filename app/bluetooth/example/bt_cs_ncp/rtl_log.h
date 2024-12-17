@@ -1,6 +1,6 @@
 /***************************************************************************//**
  * @file
- * @brief Log RTL events (NCP target).
+ * @brief RTL log.
  *******************************************************************************
  * # License
  * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
@@ -37,8 +37,8 @@
 void rtl_log_init(void);
 
 /**************************************************************************//**
- * RTL logging task.
+ * Deinitialize RTL logging globally.
  *****************************************************************************/
-void rtl_log_step(void);
+void rtl_log_deinit(void);
 
 #endif // RTL_LOG_H

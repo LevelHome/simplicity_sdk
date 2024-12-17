@@ -1,7 +1,7 @@
 label: ot-cli-mtd-tz-workspace
 description: >
     Workspace to build trustzone enabled ot-cli-mtd application and accompanying bootloader.
-quality: evaluation
+quality: production
 
 project:
   - path: ../../ot-tz-secure-app/ot-tz-secure-application.slcp

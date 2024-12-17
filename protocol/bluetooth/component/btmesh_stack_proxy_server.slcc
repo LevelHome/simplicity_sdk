@@ -11,8 +11,14 @@ requires:
   - name: "btmesh_stack_proxy"
   - name: "btmesh_core"
   - name: "bluetooth_feature_gatt_server"
+    condition:
+      - device_efx
   - name: "bluetooth_feature_dynamic_gattdb"
+    condition:
+      - device_efx
   - name: gatt_configuration
+    condition:
+      - device_efx
   
 provides:
   - name: "btmesh_stack_proxy_server"  

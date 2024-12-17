@@ -1,0 +1,40 @@
+project_name: wisun_soc_ddp_ram
+label: Wi-SUN - SoC DDP RAM application
+description: |
+  The Wi-SUN DDP RAM application provides support for run-time provisioning of device-specific Wi-SUN data.
+package: wisun
+category: Wi-SUN
+quality: production
+component:
+  - id: ddp_common
+  - id: ddp_initialize_nvm
+  - id: ddp_write_nvm
+  - id: ddp_rtt
+  - id: ddp_ram_linker
+  - id: ddp_nvm_default
+  - id: wisun_ddp_generate_csr
+  - id: wisun_ddp_generate_key_pair
+  - id: wisun_ddp_inject_key
+  - id: sl_system
+  - id: device_init
+include:
+  - path: .
+    file_list:
+      - path: app.h
+source:
+  - path: main.c
+  - path: app.c
+configuration:
+  - name: SL_STACK_SIZE
+    value: 4096
+  - name: SL_DDP_RTT_INPUT_BUF_SIZE
+    value: 768
+template_contribution:
+  - name: psa_its_files
+    value:
+      name: psa_its_files_ddp
+      count: 9
+readme:
+  - path: doc/readme.md
+tag:
+  - prebuilt_demo

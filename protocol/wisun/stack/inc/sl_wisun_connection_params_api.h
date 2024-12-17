@@ -37,7 +37,7 @@
 #include "sl_status.h"
 
 /// API version used to check compatibility (do not edit when using this header)
-#define SL_WISUN_PARAMS_API_VERSION  4
+#define SL_WISUN_PARAMS_API_VERSION  5
 
 /**************************************************************************//**
  * @addtogroup SL_WISUN_TYPES
@@ -56,6 +56,56 @@ typedef struct {
   /// Reserved, set to zero
   uint8_t reserved[3];
 } SL_ATTRIBUTE_PACKED sl_wisun_trickle_params_t;
+SL_PACK_END()
+
+/// Key lifetimes parameter set
+SL_PACK_START(1)
+typedef struct {
+  /// PMK lifetime (minutes)
+  uint32_t pmk_lifetime_m;
+  /// LPMK lifetime (minutes)
+  uint32_t lpmk_lifetime_m;
+  /// PTK lifetime (minutes)
+  uint32_t ptk_lifetime_m;
+  /// LPTK lifetime (minutes)
+  uint32_t lptk_lifetime_m;
+  /// GTK_EXPIRE_OFFSET (minutes)
+  /// The expiration time of a GTK is calculated as
+  /// the expiration time of the GTK most recently installed at
+  /// the Border Router plus GTK_EXPIRE_OFFSET
+  uint32_t gtk_expire_offset_m;
+  /// LGTK_EXPIRE_OFFSET (minutes)
+  /// The expiration time of a LGTK is calculated as
+  /// the expiration time of the GTK most recently installed at
+  /// the Border Router plus LGTK_EXPIRE_OFFSET
+  uint32_t lgtk_expire_offset_m;
+  /// GTK_NEW_ACTIVATION_TIME
+  /// The time at which the Border Router activates the next GTK
+  /// prior to expiration of the currently activated GTK.
+  uint32_t gtk_new_activation_time;
+  /// LGTK_NEW_ACTIVATION_TIME
+  /// The time at which the Border Router activates the next LGTK
+  /// prior to expiration of the currently activated LGTK.
+  uint32_t lgtk_new_activation_time;
+  /// GTK_NEW_INSTALL_REQUIRED
+  /// The percentage of time elapsed in the active GTK’s lifetime
+  /// at which a new GTK must be installed on the Border Router
+  uint32_t gtk_new_install_required;
+  /// LGTK_NEW_INSTALL_REQUIRED
+  /// The percentage of time elapsed in the active LGTK’s lifetime
+  /// at which a new LGTK must be installed on the Border Router
+  uint32_t lgtk_new_install_required;
+  /// FFN_REVOCATION_LIFETIME_REDUCTION
+  /// Factor by which the active GTK lifetime is reduced during node
+  /// revocation procedures.
+  uint32_t ffn_revocation_lifetime_reduction;
+  /// LFN_REVOCATION_LIFETIME_REDUCTION
+  /// Factor by which the active LGTK lifetime is reduced during node
+  /// revocation procedures.
+  uint32_t lfn_revocation_lifetime_reduction;
+  /// Reserved, set to zero
+  uint8_t reserved[3];
+} SL_ATTRIBUTE_PACKED sl_wisun_key_lifetimes_params_t;
 SL_PACK_END()
 
 /// PAN discovery parameter set
@@ -173,11 +223,18 @@ SL_PACK_END()
 /// LFN parent parameter set
 SL_PACK_START(1)
 typedef struct {
+  /// Interval after which an FFN parent must disable LFN broadcast messaging
+  /// if the FFN parent is unable communicate with its Border Router.
+  uint16_t lfn_pan_timeout_m;
   /// Number of broadcast LFN Pan Config retries when LFN Version is incremented
   /// Referred to as LFN_MAINTAIN_PARENT_TIME in FAN TPS 1.1
   uint8_t lfn_lpc_retry_count;
-  /// Reserved, set to zero
-  uint8_t reserved[3];
+  /// Duration for which an FFN retransmits DAO on behalf of a registering LFN (minutes).
+  /// This value is administratively configured and should be consistent throughout
+  /// the network.
+  /// Make sure that the value is equal to or less than the corresponding field on LFNs.
+  /// Specification range [30, 120] (set lower for test purposes)
+  uint8_t lfn_na_wait_duration_m;
 } SL_ATTRIBUTE_PACKED sl_wisun_params_lfn_parent;
 SL_PACK_END()
 
@@ -217,6 +274,8 @@ typedef struct {
   sl_wisun_params_lfn_parent lfn_parent;
   /// Misc parameter set
   sl_wisun_params_misc misc;
+  /// Direct Connect Authentication parameter set
+  sl_wisun_params_eapol direct_connect_eapol;
 } sl_wisun_connection_params_t;
 SL_PACK_END()
 
@@ -236,28 +295,28 @@ static const sl_wisun_connection_params_t SL_WISUN_PARAMS_PROFILE_TEST = {
   .version = SL_WISUN_PARAMS_API_VERSION,
   .discovery = {
     .trickle_pa = {
-      .imin_s = 5,
+      .imin_s = 15,
       .imax_s = 60,
-      .k = 1
+      .k = 3
     },
     .trickle_pas = {
-      .imin_s = 5,
-      .imax_s = 15,
-      .k = 1
+      .imin_s = 15,
+      .imax_s = 60,
+      .k = 3
     },
     .eapol_target_min_sens = DBM_TO_RSL_RANGE(-60),
     .allow_skip = true
   },
   .configuration = {
     .trickle_pc = {
-      .imin_s = 5,
+      .imin_s = 15,
       .imax_s = 60,
-      .k = 1
+      .k = 3
     },
     .trickle_pcs = {
-      .imin_s = 5,
-      .imax_s = 15,
-      .k = 1
+      .imin_s = 15,
+      .imax_s = 60,
+      .k = 3
     }
   },
   .eapol = {
@@ -271,9 +330,9 @@ static const sl_wisun_connection_params_t SL_WISUN_PARAMS_PROFILE_TEST = {
     .sec_prot_retry_timeout_s = 450,
     .initial_key_min_s = 2,
     .initial_key_max_s = 3,
-    .initial_key_retry_min_s = 180,
-    .initial_key_retry_max_s = 420,
-    .initial_key_retry_max_limit_s = 420,
+    .initial_key_retry_min_s = 18,
+    .initial_key_retry_max_s = 42,
+    .initial_key_retry_max_limit_s = 42,
     .temp_min_timeout_s = 330,
     .gtk_request_imin_m = 1,
     .gtk_request_imax_m = 4,
@@ -289,27 +348,44 @@ static const sl_wisun_connection_params_t SL_WISUN_PARAMS_PROFILE_TEST = {
     .init_parent_selection_s = 1,
     .etx_probe_period_max_s = 4,
     .address_registration_lifetime_s = 2220,
-    .etx_samples_init = 1,
+    .etx_samples_init = 2,
     .etx_samples_refresh = 4,
     .candidate_parents_max = 5,
     .parents_max = 2,
   },
   .mpl = {
     .trickle = {
-      .imin_s = 1,
-      .imax_s = 10,
-      .k = 8,
+      .imin_s = 6,
+      .imax_s = 48,
+      .k = 3,
     },
-    .seed_set_entry_lifetime_s = 180,
-    .trickle_expirations = 2,
+    .seed_set_entry_lifetime_s = 1800,
+    .trickle_expirations = 3,
     .seed_id_type = 0,
   },
   .lfn_parent = {
+    .lfn_pan_timeout_m = 60,
     .lfn_lpc_retry_count = 5,
+    .lfn_na_wait_duration_m = 1,
   },
   .misc = {
     .temp_link_min_timeout_s = 260,
     .pan_timeout_m = 30,
+  },
+  .direct_connect_eapol = {
+    .pmk_lifetime_m = 0,
+    .ptk_lifetime_m = 0,
+    .sec_prot_retry_timeout_s = 450,
+    .initial_key_min_s = 1,
+    .initial_key_max_s = 3,
+    .initial_key_retry_min_s = 10,
+    .initial_key_retry_max_s = 30,
+    .initial_key_retry_max_limit_s = 30,
+    .gtk_request_imin_m = 1,
+    .gtk_request_imax_m = 4,
+    .gtk_max_mismatch_m = 64,
+    .initial_key_retry_limit = 2,
+    .allow_skip = false
   }
 };
 
@@ -378,20 +454,37 @@ static const sl_wisun_connection_params_t SL_WISUN_PARAMS_PROFILE_CERTIF = {
   },
   .mpl = {
     .trickle = {
-      .imin_s = 5,
-      .imax_s = 40,
-      .k = 8,
+      .imin_s = 10,
+      .imax_s = 80,
+      .k = 3,
     },
-    .seed_set_entry_lifetime_s = 720,
-    .trickle_expirations = 2,
+    .seed_set_entry_lifetime_s = 1800,
+    .trickle_expirations = 3,
     .seed_id_type = 0,
   },
   .lfn_parent = {
+    .lfn_pan_timeout_m = 60,
     .lfn_lpc_retry_count = 5,
+    .lfn_na_wait_duration_m = 30,
   },
   .misc = {
     .temp_link_min_timeout_s = 260,
     .pan_timeout_m = 30,
+  },
+  .direct_connect_eapol = {
+    .pmk_lifetime_m = 0,
+    .ptk_lifetime_m = 0,
+    .sec_prot_retry_timeout_s = 450,
+    .initial_key_min_s = 1,
+    .initial_key_max_s = 3,
+    .initial_key_retry_min_s = 10,
+    .initial_key_retry_max_s = 30,
+    .initial_key_retry_max_limit_s = 30,
+    .gtk_request_imin_m = 1,
+    .gtk_request_imax_m = 4,
+    .gtk_max_mismatch_m = 64,
+    .initial_key_retry_limit = 2,
+    .allow_skip = false
   }
 };
 
@@ -469,11 +562,28 @@ static const sl_wisun_connection_params_t SL_WISUN_PARAMS_PROFILE_SMALL = {
     .seed_id_type = 0,
   },
   .lfn_parent = {
+    .lfn_pan_timeout_m = 60,
     .lfn_lpc_retry_count = 5,
+    .lfn_na_wait_duration_m = 30,
   },
   .misc = {
     .temp_link_min_timeout_s = 260,
     .pan_timeout_m = 30,
+  },
+  .direct_connect_eapol = {
+    .pmk_lifetime_m = 0,
+    .ptk_lifetime_m = 0,
+    .sec_prot_retry_timeout_s = 450,
+    .initial_key_min_s = 1,
+    .initial_key_max_s = 3,
+    .initial_key_retry_min_s = 10,
+    .initial_key_retry_max_s = 30,
+    .initial_key_retry_max_limit_s = 30,
+    .gtk_request_imin_m = 1,
+    .gtk_request_imax_m = 4,
+    .gtk_max_mismatch_m = 64,
+    .initial_key_retry_limit = 2,
+    .allow_skip = false
   }
 };
 
@@ -551,11 +661,28 @@ static const sl_wisun_connection_params_t SL_WISUN_PARAMS_PROFILE_MEDIUM = {
     .seed_id_type = 0,
   },
   .lfn_parent = {
+    .lfn_pan_timeout_m = 120,
     .lfn_lpc_retry_count = 20,
+    .lfn_na_wait_duration_m = 30,
   },
   .misc = {
     .temp_link_min_timeout_s = 260,
     .pan_timeout_m = 60,
+  },
+  .direct_connect_eapol = {
+    .pmk_lifetime_m = 0,
+    .ptk_lifetime_m = 0,
+    .sec_prot_retry_timeout_s = 450,
+    .initial_key_min_s = 1,
+    .initial_key_max_s = 3,
+    .initial_key_retry_min_s = 10,
+    .initial_key_retry_max_s = 30,
+    .initial_key_retry_max_limit_s = 30,
+    .gtk_request_imin_m = 1,
+    .gtk_request_imax_m = 4,
+    .gtk_max_mismatch_m = 64,
+    .initial_key_retry_limit = 2,
+    .allow_skip = false
   }
 };
 
@@ -633,11 +760,28 @@ static const sl_wisun_connection_params_t SL_WISUN_PARAMS_PROFILE_LARGE = {
     .seed_id_type = 0,
   },
   .lfn_parent = {
+    .lfn_pan_timeout_m = 180,
     .lfn_lpc_retry_count = 60,
+    .lfn_na_wait_duration_m = 30,
   },
   .misc = {
     .temp_link_min_timeout_s = 520,
     .pan_timeout_m = 90,
+  },
+  .direct_connect_eapol = {
+    .pmk_lifetime_m = 0,
+    .ptk_lifetime_m = 0,
+    .sec_prot_retry_timeout_s = 450,
+    .initial_key_min_s = 1,
+    .initial_key_max_s = 3,
+    .initial_key_retry_min_s = 10,
+    .initial_key_retry_max_s = 30,
+    .initial_key_retry_max_limit_s = 30,
+    .gtk_request_imin_m = 1,
+    .gtk_request_imax_m = 4,
+    .gtk_max_mismatch_m = 64,
+    .initial_key_retry_limit = 2,
+    .allow_skip = false
   }
 };
 

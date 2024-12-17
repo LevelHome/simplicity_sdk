@@ -24,7 +24,7 @@ config_file:
   - path: profile_long_range.restriction
     directory: rail
     unless:
-      - device_sdid_200
+      - device_generic_family_efr32xg21
       - device_is_module
 
 #-------- Hides Component for user in Studio ---------

@@ -4,10 +4,13 @@
 
 #include "seqacc_regbases.h"
 
+// SEQACC base address configuration
+// Only MSB are kept, assuming the LSB are all zeros.
+// Note: Need to keep 0xB000 for PHYINFO location by rail_scripts
 {% for baseAddrName, baseAddrCfg in RegBases.items() -%}
-uint32_t {{baseAddrName}}Array[{{"{}".format(baseAddrCfg['Define'])}}] = {
+uint16_t {{baseAddrName}}Array[{{"{}".format(baseAddrCfg['Define'])}}] = {
   {%- for addr in baseAddrCfg['BaseAddr'].keys() %}
-  {{"0x{0:08X}UL,".format(addr)}}
+  {{"{}".format(addr|printBaseAddr)}}
   {%- endfor %}
 };
 {% endfor %}
@@ -15,6 +18,6 @@ uint32_t {{baseAddrName}}Array[{{"{}".format(baseAddrCfg['Define'])}}] = {
 {%- for baseAddrName, baseAddrCfg in RegBases.items() %}
 SeqAccBaseAddrCfg_t {{baseAddrName}} = {
   .basePos = {{"0x{0:08X}U,".format(baseAddrCfg['BasePos'])}}
-  .baseAddrPtr = (uint32_t *) {{baseAddrName}}Array
+  .baseAddrPtr = (uint16_t *) {{baseAddrName}}Array
 };
 {% endfor %}

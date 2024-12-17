@@ -83,7 +83,8 @@ WEAK(void sl_zigbee_get_authentication_level_callback(sl_zigbee_zdo_status_t rsp
   UNUSED_VAR(link_key_update);
 }
 
-WEAK(void sl_zigbee_zdo_get_config_response_handler(sli_buffer_manager_buffer_t response,
+WEAK(void sl_zigbee_zdo_get_config_response_handler(uint8_t response_length,
+                                                    uint8_t *response,
                                                     uint16_t payload_index,
                                                     sl_802154_short_addr_t source))
 {

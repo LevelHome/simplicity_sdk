@@ -39,7 +39,7 @@ void sl_zigbee_af_concentrator_print_source_route_table(sl_cli_command_arg_t *ar
       return;
     }
 
-    sl_zigbee_af_app_print("%d: 0x%2X -> ",
+    sl_zigbee_af_app_print("%d: 0x%04X -> ",
                            index, destination);
 
     while (closerIndex != SOURCE_ROUTE_NULL_INDEX) {
@@ -48,13 +48,13 @@ void sl_zigbee_af_concentrator_print_source_route_table(sl_cli_command_arg_t *ar
                                                          &destination,
                                                          &closerIndex);
       if (status == SL_STATUS_OK) {
-        sl_zigbee_af_app_print("0x%2X -> ", destination);
+        sl_zigbee_af_app_print("0x%04X -> ", destination);
       } else {
         sl_zigbee_af_app_print("NULL ");
         return;
       }
     }
-    sl_zigbee_af_app_println("0x%2X (Me)", sl_zigbee_af_get_node_id());
+    sl_zigbee_af_app_println("0x%04X (Me)", sl_zigbee_af_get_node_id());
   }
   sl_zigbee_af_app_println("%d of %d total entries.",
                            sl_zigbee_af_get_source_route_table_filled_size(),
@@ -63,7 +63,7 @@ void sl_zigbee_af_concentrator_print_source_route_table(sl_cli_command_arg_t *ar
 
 void sl_zigbee_af_concentrator_status(sl_cli_command_arg_t *arguments)
 {
-  sl_zigbee_af_app_println("Type:  %p RAM",
+  sl_zigbee_af_app_println("Type:  %s RAM",
                            ((SL_ZIGBEE_AF_PLUGIN_CONCENTRATOR_CONCENTRATOR_TYPE
                              == SL_ZIGBEE_LOW_RAM_CONCENTRATOR)
                             ? "Low"
@@ -105,9 +105,15 @@ void sl_zigbee_af_concentrator_set_router_behavior_command(sl_cli_command_arg_t 
     = (sl_zigbee_af_plugin_concentrator_router_behavior_t)sl_cli_get_argument_uint8(arguments, 0);
 
   if (behavior > SL_ZIGBEE_AF_PLUGIN_CONCENTRATOR_ROUTER_BEHAVIOR_MAX) {
-    sl_zigbee_af_core_println("Illegal concentrator router behavior: 0x%X", behavior);
+    sl_zigbee_af_core_println("Illegal concentrator router behavior: 0x%02X", behavior);
   } else {
-    sl_zigbee_af_core_println("Illegal to change concentrator router behavior at run time."); // EZSP support required, if still needed
+    sl_zigbee_af_core_println("Set concentrator router behavior to: 0x%02X", behavior);
+    if (behavior != sl_zigbee_af_concentrator_get_router_behavior()) {
+      sl_status_t status = sl_zigbee_af_concentrator_change_router_behavior(behavior);
+      if (status != SL_STATUS_OK) {
+        sl_zigbee_af_core_println("Set concentrator router behavior failed: 0x%02X", status);
+      }
+    }
   }
 }
 

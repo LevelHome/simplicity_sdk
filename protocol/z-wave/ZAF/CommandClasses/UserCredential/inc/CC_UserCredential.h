@@ -20,6 +20,7 @@
 #include <stdbool.h>
 #include "CC_Common.h"
 #include "ZW_classcmd.h"
+#include "cc_user_credential_config.h"
 
 /**
  * @addtogroup CC
@@ -33,6 +34,10 @@
 /****************************************************************************/
 
 #define U3C_CREDENTIAL_TYPE_PIN_CODE_MIN_LENGTH_REQUIREMENT 4
+#define ASCII_AC_MAX 0x7F //< Maximum Admin PIN code character (highest ASCII code)
+#define AC_MIN_LENGTH 4   //< Minimum Admin PIN code length
+#define AC_MAX_LENGTH 10  //< Maximum Admin PIN code length
+#define U3C_BUFFER_SIZE_USER_NAME CC_USER_CREDENTIAL_MAX_LENGTH_USER_NAME
 
 typedef enum u3c_modifier_type_ {
   MODIFIER_TYPE_DNE = CREDENTIAL_REPORT_DNE,
@@ -68,7 +73,7 @@ typedef enum _u3c_credential_report_type_t_ {
   CREDENTIAL_REP_TYPE_MODIF_AGAINST_EMPTY =         CREDENTIAL_REPORT_MODIFY_AGAINST_EMPTY,
   CREDENTIAL_REP_TYPE_DUPLICATE =                   CREDENTIAL_REPORT_DUPLICATE,
   CREDENTIAL_REP_TYPE_MANUFACTURER_SECURITY_RULES = CREDENTIAL_REPORT_MANUFACTURER_SECURITY_RULES,
-  CREDENTIAL_REP_TYPE_ASSIGNED_TO_DIFFERENT_USER =  CREDENTIAL_REPORT_ASSIGNED_TO_DIFFERENT_USER,
+  CREDENTIAL_REP_TYPE_WRONG_UUID =                  CREDENTIAL_REPORT_WRONG_USER_UNIQUE_IDENTIFIER,
   CREDENTIAL_REP_TYPE_DUPLICATE_ADMIN_PIN_CODE =    CREDENTIAL_REPORT_DUPLICATE_ADMIN_PIN_CODE
 } u3c_credential_report_type_t;
 
@@ -83,15 +88,26 @@ typedef enum u3c_credential_learn_status_ {
   CL_STATUS_INVALID_MODIFY_OPERATION_TYPE = CREDENTIAL_LEARN_REPORT_INVALID_CREDENTIAL_LEARN_MODIFY_OPERATION_TYPE
 } u3c_credential_learn_status;
 
+typedef enum {
+  U3C_UCAR_STATUS_SUCCESS                                        = USER_CREDENTIAL_ASSOCIATION_REPORT_SUCCESS,
+  U3C_UCAR_STATUS_CREDENTIAL_TYPE_INVALID                        = USER_CREDENTIAL_ASSOCIATION_REPORT_CREDENTIAL_TYPE_INVALID,
+  U3C_UCAR_STATUS_SOURCE_CREDENTIAL_SLOT_INVALID                 = USER_CREDENTIAL_ASSOCIATION_REPORT_SOURCE_CREDENTIAL_SLOT_INVALID,
+  U3C_UCAR_STATUS_SOURCE_CREDENTIAL_SLOT_EMPTY                   = USER_CREDENTIAL_ASSOCIATION_REPORT_SOURCE_CREDENTIAL_SLOT_EMPTY,
+  U3C_UCAR_STATUS_DESTINATION_USER_UNIQUE_IDENTIFIER_INVALID     = USER_CREDENTIAL_ASSOCIATION_REPORT_DESTINATION_USER_UNIQUE_IDENTIFIER_INVALID,
+  U3C_UCAR_STATUS_DESTINATION_USER_UNIQUE_IDENTIFIER_NONEXISTENT = USER_CREDENTIAL_ASSOCIATION_REPORT_DESTINATION_USER_UNIQUE_IDENTIFIER_NONEXISTENT,
+  U3C_UCAR_STATUS_DESTINATION_CREDENTIAL_SLOT_INVALID            = USER_CREDENTIAL_ASSOCIATION_REPORT_DESTINATION_CREDENTIAL_SLOT_INVALID,
+  U3C_UCAR_STATUS_DESTINATION_CREDENTIAL_SLOT_OCCUPIED           = USER_CREDENTIAL_ASSOCIATION_REPORT_DESTINATION_CREDENTIAL_SLOT_OCCUPIED
+} u3c_user_credential_association_report_status_t;
+
 typedef enum u3c_user_report_type_t_ {
-  USER_REP_TYPE_ADDED                  = USER_REPORT_ADDED,
-  USER_REP_TYPE_MODIFIED               = USER_REPORT_MODIFIED,
-  USER_REP_TYPE_DELETED                = USER_REPORT_DELETED,
-  USER_REP_TYPE_UNCHANGED              = USER_REPORT_UNCHANGED,
-  USER_REP_TYPE_RESPONSE_TO_GET        = USER_REPORT_RESPONSE_TO_GET,
-  USER_REP_TYPE_ADD_AGAINST_OCCUPIED   = USER_REPORT_ADD_AGAINST_OCCUPIED,
-  USER_REP_TYPE_MODIF_AGAINST_EMPTY    = USER_REPORT_MODIFY_AGAINST_EMPTY,
-  USER_REP_TYPE_EXP_NZ_EXP_MIN_INVALID = USER_REPORT_NON_ZERO_EXPIRING_MINUTES_INVALID
+  USER_REP_TYPE_ADDED                = USER_REPORT_ADDED,
+  USER_REP_TYPE_MODIFIED             = USER_REPORT_MODIFIED,
+  USER_REP_TYPE_DELETED              = USER_REPORT_DELETED,
+  USER_REP_TYPE_UNCHANGED            = USER_REPORT_UNCHANGED,
+  USER_REP_TYPE_RESPONSE_TO_GET      = USER_REPORT_RESPONSE_TO_GET,
+  USER_REP_TYPE_ADD_AGAINST_OCCUPIED = USER_REPORT_ADD_AGAINST_OCCUPIED,
+  USER_REP_TYPE_MODIF_AGAINST_EMPTY  = USER_REPORT_MODIFY_AGAINST_EMPTY,
+  USER_REP_TYPE_Z_EXP_MIN_INVALID    = USER_REPORT_ZERO_EXPIRING_MINUTES_INVALID
 } u3c_user_report_type_t;
 
 typedef enum u3c_user_type_ {
@@ -180,11 +196,13 @@ typedef struct u3c_credential_identifier_ {
   uint16_t slot;
 } u3c_credential_identifier;
 
+/// Payload for CC_USER_CREDENTIAL_EVENT_VALIDATE, received from the application
 typedef struct u3c_event_data_validate_ {
   u3c_credential * credential;
   bool is_unlocked;
 } u3c_event_data_validate;
 
+/// Payload for CC_USER_CREDENTIAL_EVENT_LEARN_READ_DONE, passed to the application
 typedef struct u3c_event_data_learn_read_done_ {
   uint8_t * data;
   uint8_t data_length;
@@ -285,6 +303,24 @@ void CC_UserCredential_CredentialReport_tx(
   const u3c_credential_type next_credential_type,
   const uint16_t next_credential_slot,
   RECEIVE_OPTIONS_TYPE_EX * p_rx_options
+);
+
+/**
+ * Sends a Notification Report frame with Event/State parameters containing the
+ * Credential Usage Data
+ * 
+ * @param[in] notification_event    The type of notification to send
+ * @param[in] uuid                  The unique identifier of the user
+ * @param[in] credential_count      The number of credentials in the notification
+ * @param[in] p_credential_metadata Pointer to the metadata of the credentials
+ *
+ * @returns Whether the transmission was successful
+ */
+JOB_STATUS CC_User_Credential_UsageNotification_tx(
+  const uint8_t notification_event,
+  const uint16_t uuid,
+  const uint8_t credential_count,
+  const u3c_credential_metadata * const p_credential_metadata
 );
 
 /**

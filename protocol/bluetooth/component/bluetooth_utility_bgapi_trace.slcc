@@ -20,10 +20,13 @@ other_file:
   - path: "api/sli_bgapi_debug.xapi"
 requires:
   - name: segger_rtt
-  - name: emlib_core
+  - name: sl_core
   - name: sleeptimer
 provides:
   - name: "bluetooth_utility_bgapi_trace"
+template_contribution:
+  - name: component_catalog
+    value: bgapi_trace
 metadata:
   sbom:
     license: Zlib AND MSLA

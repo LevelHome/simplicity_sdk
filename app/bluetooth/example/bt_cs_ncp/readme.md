@@ -12,21 +12,25 @@ The NCP Host and Target communicate via a serial interface (UART), which can be 
 
 ## Interface
 
-The NCP provides a high level interface to host applications. To configure and start a reflector or initiator instance in the NCP, the host application shall use the
+The NCP is extended with application specific messages that we refer to as ACP (Application Co-Processor) messages.
+The following ACP commands are sent from the host to the target device:
+* Create initiator instance
+* Delete initiator instance
+* Create reflector instance
+* Delete reflector instance
+* Configure antenna
 
-sl_bt_user_cs_service_message_to_target() calls.
-
-Any asynchronous event triggers a sl_bt_evt_user_cs_service_message_to_host_id event at the host side. These events must be further parsed by the host application to get the exact event. These events can be
-
+The following ACP events are sent from the target device to the host:
 * CS results
-* RTL library log segments
+* CS intermediate results, used in stationary object tracking mode
+* CS extended results, used by the tooling
 * Error events
 
 All interface related data types are defined in cs_acp.h.
 
 ## Usage
 
-Build and flash the application. Use the "bt_cs_host" host sample application to connect to it. The host application will scan for a reflector advertising with the "CS RFLCT" device name. When found, the initiator will create a connection between them and will start the distance measurement process. The initiator estimates the distance, and displays them in the command line terminal.
+Build and flash the application. Use the "bt_cs_host" host sample application to connect to it. If the host was started with any initiator instance, it will scan for a reflectors advertising with the "CS RFLCT" device name. If started with reflector instances, it will start advertising. When an initiator instance finds a reflector, it will create a connection between them and will start the distance measurement process. The initiator estimates the distance, and displays them in the command line terminal.
 
 ## Troubleshooting
 
@@ -52,7 +56,7 @@ This sample application does need a bootloader.
 
 ### Programming the Radio Board
 
-Before programming the radio board mounted on the mainboard, make sure the power supply switch the AEM position (right side) as shown below.
+In case of a WSTK & Radio Board setup, before programming the radio board mounted on the mainboard, make sure the power supply switch is in the AEM position (right side) as shown below.
 
 ![](./image/readme_img0.png)
 

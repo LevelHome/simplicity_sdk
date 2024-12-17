@@ -32,13 +32,15 @@
  *
  */
 
-#include "security_manager.h"
 #include <openthread-core-config.h>
 #include <stddef.h>
 #include <openthread/platform/entropy.h>
 #include "utils/code_utils.h"
 
 #if OPENTHREAD_CONFIG_CRYPTO_LIB == OPENTHREAD_CONFIG_CRYPTO_LIB_PSA
+
+#include "security_manager.h"
+
 void otPlatCryptoRandomInit(void)
 {
     // Security manager is initialised by OT stack, in key_manager.

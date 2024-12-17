@@ -113,6 +113,12 @@ extern otError OT_API_REAL_NAME(otThreadSetMeshLocalPrefix)(otInstance          
 extern otError OT_API_REAL_NAME(otThreadSetNetworkKey)(otInstance *aInstance, const otNetworkKey *aKey);
 extern otError OT_API_REAL_NAME(otThreadSetNetworkKeyRef)(otInstance *aInstance, otNetworkKeyRef aKeyRef);
 extern otError OT_API_REAL_NAME(otThreadSetNetworkName)(otInstance *aInstance, const char *aNetworkName);
+extern otError OT_API_REAL_NAME(otThreadWakeup)(otInstance         *aInstance,
+                                                const otExtAddress *aWedAddress,
+                                                uint16_t            aWakeupIntervalUs,
+                                                uint16_t            aWakeupDurationMs,
+                                                otWakeupCallback    aCallback,
+                                                void               *aCallbackContext);
 extern otLinkModeConfig OT_API_REAL_NAME(otThreadGetLinkMode)(otInstance *aInstance);
 extern otNetworkKeyRef  OT_API_REAL_NAME(otThreadGetNetworkKeyRef)(otInstance *aInstance);
 extern uint16_t         OT_API_REAL_NAME(otThreadGetKeySwitchGuardTime)(otInstance *aInstance);
@@ -122,6 +128,7 @@ extern uint32_t         OT_API_REAL_NAME(otThreadGetChildTimeout)(otInstance *aI
 extern uint32_t         OT_API_REAL_NAME(otThreadGetKeySequenceCounter)(otInstance *aInstance);
 extern uint32_t         OT_API_REAL_NAME(otThreadGetMaxTimeInQueue)(otInstance *aInstance);
 extern uint32_t         OT_API_REAL_NAME(otThreadGetPartitionId)(otInstance *aInstance);
+extern uint32_t         OT_API_REAL_NAME(otThreadGetStoreFrameCounterAhead)(otInstance *aInstance);
 extern uint8_t          OT_API_REAL_NAME(otThreadGetLeaderRouterId)(otInstance *aInstance);
 extern uint8_t          OT_API_REAL_NAME(otThreadGetLeaderWeight)(otInstance *aInstance);
 extern void OT_API_REAL_NAME(otConvertDurationInSecondsToString)(uint32_t aDuration, char *aBuffer, uint16_t aSize);
@@ -142,6 +149,8 @@ extern void OT_API_REAL_NAME(otThreadSetDiscoveryRequestCallback)(otInstance    
                                                                   void                            *aContext);
 extern void OT_API_REAL_NAME(otThreadSetKeySequenceCounter)(otInstance *aInstance, uint32_t aKeySequenceCounter);
 extern void OT_API_REAL_NAME(otThreadSetKeySwitchGuardTime)(otInstance *aInstance, uint16_t aKeySwitchGuardTime);
+extern void OT_API_REAL_NAME(otThreadSetStoreFrameCounterAhead)(otInstance *aInstance,
+                                                                uint32_t    aStoreFrameCounterAhead);
 
 bool OT_API_WRAPPER_NAME(otThreadIsAnycastLocateInProgress)(otInstance *aInstance)
 {
@@ -511,6 +520,20 @@ otError OT_API_WRAPPER_NAME(otThreadSetNetworkName)(otInstance *aInstance, const
     return ret;
 }
 
+otError OT_API_WRAPPER_NAME(otThreadWakeup)(otInstance         *aInstance,
+                                            const otExtAddress *aWedAddress,
+                                            uint16_t            aWakeupIntervalUs,
+                                            uint16_t            aWakeupDurationMs,
+                                            otWakeupCallback    aCallback,
+                                            void               *aCallbackContext)
+{
+    sl_ot_rtos_acquire_stack_mutex();
+    otError ret = OT_API_REAL_NAME(
+        otThreadWakeup)(aInstance, aWedAddress, aWakeupIntervalUs, aWakeupDurationMs, aCallback, aCallbackContext);
+    sl_ot_rtos_release_stack_mutex();
+    return ret;
+}
+
 otLinkModeConfig OT_API_WRAPPER_NAME(otThreadGetLinkMode)(otInstance *aInstance)
 {
     sl_ot_rtos_acquire_stack_mutex();
@@ -579,6 +602,14 @@ uint32_t OT_API_WRAPPER_NAME(otThreadGetPartitionId)(otInstance *aInstance)
 {
     sl_ot_rtos_acquire_stack_mutex();
     uint32_t ret = OT_API_REAL_NAME(otThreadGetPartitionId)(aInstance);
+    sl_ot_rtos_release_stack_mutex();
+    return ret;
+}
+
+uint32_t OT_API_WRAPPER_NAME(otThreadGetStoreFrameCounterAhead)(otInstance *aInstance)
+{
+    sl_ot_rtos_acquire_stack_mutex();
+    uint32_t ret = OT_API_REAL_NAME(otThreadGetStoreFrameCounterAhead)(aInstance);
     sl_ot_rtos_release_stack_mutex();
     return ret;
 }
@@ -680,5 +711,12 @@ void OT_API_WRAPPER_NAME(otThreadSetKeySwitchGuardTime)(otInstance *aInstance, u
 {
     sl_ot_rtos_acquire_stack_mutex();
     OT_API_REAL_NAME(otThreadSetKeySwitchGuardTime)(aInstance, aKeySwitchGuardTime);
+    sl_ot_rtos_release_stack_mutex();
+}
+
+void OT_API_WRAPPER_NAME(otThreadSetStoreFrameCounterAhead)(otInstance *aInstance, uint32_t aStoreFrameCounterAhead)
+{
+    sl_ot_rtos_acquire_stack_mutex();
+    OT_API_REAL_NAME(otThreadSetStoreFrameCounterAhead)(aInstance, aStoreFrameCounterAhead);
     sl_ot_rtos_release_stack_mutex();
 }

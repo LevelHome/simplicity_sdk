@@ -48,6 +48,10 @@
 #include <stdbool.h>
 #include <time.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @addtogroup sl_rtl_error Error Codes
  * @{
@@ -70,6 +74,9 @@ enum sl_rtl_error_code{
   SL_RTL_ERROR_IQ_SAMPLE_QA, ///< IQ sample quality analysis failed
   SL_RTL_ERROR_FEATURE_NOT_SUPPORTED, ///< The requested feature is not supported by the library
   SL_RTL_ERROR_INCORRECT_MEASUREMENT, ///< The error of the last measurement for this locator was too large
+  SL_RTL_ERROR_CS_CHANNEL_MAP_TOO_SPARSE, ///< Too many skipped channels in the proposed channel map
+  SL_RTL_ERROR_CS_CHANNEL_MAP_TOO_FEW_CHANNELS, ///< Too few channels in the proposed channel map
+  SL_RTL_ERROR_CS_CHANNEL_SPACING_TOO_LARGE, ///< Channel spacing is too large in the proposed channel map
 
   SL_RTL_ERROR_LAST ///< Number of error codes
 };
@@ -186,7 +193,7 @@ enum sl_rtl_aox_switch_pattern_mode{
 };
 
 /// Angle of Arrival / Departure library item
-typedef void* sl_rtl_aox_libitem;
+typedef void *sl_rtl_aox_libitem;
 
 // Structure for IQ sample quality calculation antenna-specific results
 typedef struct {
@@ -235,7 +242,7 @@ typedef enum {
  * @param[in] item Pointer to the libitem to be initialized.
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_aox_init(sl_rtl_aox_libitem* item);
+enum sl_rtl_error_code sl_rtl_aox_init(sl_rtl_aox_libitem *item);
 
 /**************************************************************************//**
  * Deinitialize a libitem instance of the AoX estimator.
@@ -243,7 +250,7 @@ enum sl_rtl_error_code sl_rtl_aox_init(sl_rtl_aox_libitem* item);
  * @param[in] item Pointer to the libitem to be deinitialized.
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_aox_deinit(sl_rtl_aox_libitem* item);
+enum sl_rtl_error_code sl_rtl_aox_deinit(sl_rtl_aox_libitem *item);
 
 /* NARROWBAND AOA ESTIMATION */
 
@@ -254,7 +261,7 @@ enum sl_rtl_error_code sl_rtl_aox_deinit(sl_rtl_aox_libitem* item);
  * @param[in] num_snapshots Number of snapshots as positive integer value.
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_aox_set_num_snapshots(sl_rtl_aox_libitem* item, uint32_t num_snapshots);
+enum sl_rtl_error_code sl_rtl_aox_set_num_snapshots(sl_rtl_aox_libitem *item, uint32_t num_snapshots);
 
 /**************************************************************************//**
  * Set the array type used with the estimator.
@@ -267,7 +274,7 @@ enum sl_rtl_error_code sl_rtl_aox_set_num_snapshots(sl_rtl_aox_libitem* item, ui
  * For example, the array type should be set to ::SL_RTL_AOX_ARRAY_TYPE_4x4_URA
  * when using the reference 4x4 URA board.
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_aox_set_array_type(sl_rtl_aox_libitem* item, enum sl_rtl_aox_array_type array_type);
+enum sl_rtl_error_code sl_rtl_aox_set_array_type(sl_rtl_aox_libitem *item, enum sl_rtl_aox_array_type array_type);
 
 /**************************************************************************//**
  * Set the estimation mode.
@@ -280,7 +287,7 @@ enum sl_rtl_error_code sl_rtl_aox_set_array_type(sl_rtl_aox_libitem* item, enum 
  * and estimates both azimuth and elevation. For further description of the modes,
  * see the documentation of ::sl_rtl_aox_mode.
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_aox_set_mode(sl_rtl_aox_libitem* item, enum sl_rtl_aox_mode mode);
+enum sl_rtl_error_code sl_rtl_aox_set_mode(sl_rtl_aox_libitem *item, enum sl_rtl_aox_mode mode);
 
 /**************************************************************************//**
  * Estimate the I/Q-sample phase rotation error in degrees.
@@ -298,7 +305,7 @@ enum sl_rtl_error_code sl_rtl_aox_set_mode(sl_rtl_aox_libitem* item, enum sl_rtl
  * Estimate the I/Q-sample phase rotation error caused by switching
  * and CTE frequency error based on I/Q samples from the reference period.
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_aox_calculate_iq_sample_phase_rotation(sl_rtl_aox_libitem* item, float iq_data_downsampling_factor, float* i_samples, float* q_samples, uint32_t num_samples, float* phase_rotation_out);
+enum sl_rtl_error_code sl_rtl_aox_calculate_iq_sample_phase_rotation(sl_rtl_aox_libitem *item, float iq_data_downsampling_factor, float *i_samples, float *q_samples, uint32_t num_samples, float *phase_rotation_out);
 
 /**************************************************************************//**
  * Set a constant value of I/Q sample phase rotation in degrees.
@@ -312,7 +319,7 @@ enum sl_rtl_error_code sl_rtl_aox_calculate_iq_sample_phase_rotation(sl_rtl_aox_
  * @note: This function should be called only after the estimator is
  * created.
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_aox_set_iq_sample_phase_rotation(sl_rtl_aox_libitem* item, float phase_rotation);
+enum sl_rtl_error_code sl_rtl_aox_set_iq_sample_phase_rotation(sl_rtl_aox_libitem *item, float phase_rotation);
 
 /**************************************************************************//**
  * Add constraints for the estimator. Call before sl_rtl_aox_create_estimator.
@@ -331,7 +338,7 @@ enum sl_rtl_error_code sl_rtl_aox_set_iq_sample_phase_rotation(sl_rtl_aox_libite
  * a RF-reflective surface.
  * @note: This function must called before the estimator is created.
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_aox_add_constraint(sl_rtl_aox_libitem* item, enum sl_rtl_aox_constraint_type constraint_type, float min_value, float max_value);
+enum sl_rtl_error_code sl_rtl_aox_add_constraint(sl_rtl_aox_libitem *item, enum sl_rtl_aox_constraint_type constraint_type, float min_value, float max_value);
 
 /**************************************************************************//**
  * Configure the IQ sampling sample rate for the library.
@@ -340,7 +347,7 @@ enum sl_rtl_error_code sl_rtl_aox_add_constraint(sl_rtl_aox_libitem* item, enum 
  * @param[in] sampleRate The new sample rate.
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_aox_set_sample_rate(sl_rtl_aox_libitem* item, float sampleRate);
+enum sl_rtl_error_code sl_rtl_aox_set_sample_rate(sl_rtl_aox_libitem *item, float sampleRate);
 
 /**************************************************************************//**
  * Configure the number of radio channels.
@@ -349,7 +356,7 @@ enum sl_rtl_error_code sl_rtl_aox_set_sample_rate(sl_rtl_aox_libitem* item, floa
  * @param[in] channels The new number of radio channels.
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_aox_set_num_radio_channels(sl_rtl_aox_libitem* item, uint32_t channels);
+enum sl_rtl_error_code sl_rtl_aox_set_num_radio_channels(sl_rtl_aox_libitem *item, uint32_t channels);
 
 /**************************************************************************//**
  * Configure the IQ sample quality analysis.
@@ -360,7 +367,7 @@ enum sl_rtl_error_code sl_rtl_aox_set_num_radio_channels(sl_rtl_aox_libitem* ite
  * This function turns the IQ sample quality analysis,
  * which is not done by default.
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_aox_iq_sample_qa_configure(sl_rtl_aox_libitem* item);
+enum sl_rtl_error_code sl_rtl_aox_iq_sample_qa_configure(sl_rtl_aox_libitem *item);
 
 /**************************************************************************//**
  * Get the IQ sample quality analysis overall results.
@@ -368,7 +375,7 @@ enum sl_rtl_error_code sl_rtl_aox_iq_sample_qa_configure(sl_rtl_aox_libitem* ite
  * @param[in] item Pointer to the initialized and configured AoX libitem.
  * @return bitmask of found problems, zero indicates that everything is OK
  *****************************************************************************/
-uint32_t sl_rtl_aox_iq_sample_qa_get_results(sl_rtl_aox_libitem* item);
+uint32_t sl_rtl_aox_iq_sample_qa_get_results(sl_rtl_aox_libitem *item);
 
 /**************************************************************************//**
  * Get the IQ sample quality analysis detailed results for the latest packet.
@@ -380,7 +387,7 @@ uint32_t sl_rtl_aox_iq_sample_qa_get_results(sl_rtl_aox_libitem* item);
  *
  * Fetch the results for the latest packet.
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_aox_iq_sample_qa_get_details(sl_rtl_aox_libitem* item, sl_rtl_clib_iq_sample_qa_dataset_t *results, sl_rtl_clib_iq_sample_qa_antenna_data_t *antenna_data);
+enum sl_rtl_error_code sl_rtl_aox_iq_sample_qa_get_details(sl_rtl_aox_libitem *item, sl_rtl_clib_iq_sample_qa_dataset_t *results, sl_rtl_clib_iq_sample_qa_antenna_data_t *antenna_data);
 
 /**************************************************************************//**
  * Get the IQ sample quality analysis detailed results for the requested radio channel.
@@ -394,7 +401,7 @@ enum sl_rtl_error_code sl_rtl_aox_iq_sample_qa_get_details(sl_rtl_aox_libitem* i
  * Fetch the latest results for the given radio channel, which may be other than the latest
  * packet received.
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_aox_iq_sample_qa_get_channel_details(sl_rtl_aox_libitem* item, uint8_t channel, sl_rtl_clib_iq_sample_qa_dataset_t *results, sl_rtl_clib_iq_sample_qa_antenna_data_t *antenna_data);
+enum sl_rtl_error_code sl_rtl_aox_iq_sample_qa_get_channel_details(sl_rtl_aox_libitem *item, uint8_t channel, sl_rtl_clib_iq_sample_qa_dataset_t *results, sl_rtl_clib_iq_sample_qa_antenna_data_t *antenna_data);
 
 /**************************************************************************//**
  * Create the estimator after initializing the libitem and setting parameters.
@@ -402,7 +409,7 @@ enum sl_rtl_error_code sl_rtl_aox_iq_sample_qa_get_channel_details(sl_rtl_aox_li
  * @param[in] item Pointer to the initialized and configured AoX libitem.
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_aox_create_estimator(sl_rtl_aox_libitem* item);
+enum sl_rtl_error_code sl_rtl_aox_create_estimator(sl_rtl_aox_libitem *item);
 
 /**************************************************************************//**
  * Convert data in RAW IQ-data buffers to downsampled IQ-data buffers.
@@ -422,7 +429,7 @@ enum sl_rtl_error_code sl_rtl_aox_create_estimator(sl_rtl_aox_libitem* item);
  *            checks if the given number of snapshots and calculated snapshots based on the length of RAW-data match
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_aox_convert_raw_samples(sl_rtl_aox_libitem* item, uint32_t start_offset, float iq_data_downsampling_factor, float* raw_i_samples_in, float* raw_q_samples_in, uint32_t num_raw_samples_in, float** i_samples_out, float** q_samples_out, uint32_t num_snapshots_out);
+enum sl_rtl_error_code sl_rtl_aox_convert_raw_samples(sl_rtl_aox_libitem *item, uint32_t start_offset, float iq_data_downsampling_factor, float *raw_i_samples_in, float *raw_q_samples_in, uint32_t num_raw_samples_in, float **i_samples_out, float **q_samples_out, uint32_t num_snapshots_out);
 
 /**************************************************************************//**
  * Calculate the number of downsampled snapshots in a RAW IQ-data buffer. Use this function to get the number
@@ -437,7 +444,7 @@ enum sl_rtl_error_code sl_rtl_aox_convert_raw_samples(sl_rtl_aox_libitem* item, 
  * @param[out] num_snapshots_out Calculated number of snapshots based on the input.
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_aox_calculate_number_of_snapshots(sl_rtl_aox_libitem* item, uint32_t num_raw_samples_in, uint32_t start_offset, float iq_data_downsampling_factor, uint32_t num_channels, uint32_t* num_snapshots_out);
+enum sl_rtl_error_code sl_rtl_aox_calculate_number_of_snapshots(sl_rtl_aox_libitem *item, uint32_t num_raw_samples_in, uint32_t start_offset, float iq_data_downsampling_factor, uint32_t num_channels, uint32_t *num_snapshots_out);
 
 /**************************************************************************//**
  * Set switch pattern mode. Sets internal mode used by the library. See enum sl_rtl_aox_switch_pattern_mode
@@ -449,7 +456,7 @@ enum sl_rtl_error_code sl_rtl_aox_calculate_number_of_snapshots(sl_rtl_aox_libit
  * @param[in] mode Required mode.
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_aox_set_switch_pattern_mode(sl_rtl_aox_libitem* item, enum sl_rtl_aox_switch_pattern_mode mode);
+enum sl_rtl_error_code sl_rtl_aox_set_switch_pattern_mode(sl_rtl_aox_libitem *item, enum sl_rtl_aox_switch_pattern_mode mode);
 
 /**************************************************************************//**
  * Update switch pattern, which is used by the estimator algorithm.
@@ -476,7 +483,7 @@ enum sl_rtl_error_code sl_rtl_aox_set_switch_pattern_mode(sl_rtl_aox_libitem* it
  * internally defined switch pattern modes, otherwise can be zero.
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_aox_update_switch_pattern(sl_rtl_aox_libitem* item, uint32_t* switch_pattern_in, uint32_t** switch_pattern_out);
+enum sl_rtl_error_code sl_rtl_aox_update_switch_pattern(sl_rtl_aox_libitem *item, uint32_t *switch_pattern_in, uint32_t **switch_pattern_out);
 
 /**************************************************************************//**
  * Set the random seed for the switch pattern, which is used for the random pattern mode.
@@ -486,7 +493,7 @@ enum sl_rtl_error_code sl_rtl_aox_update_switch_pattern(sl_rtl_aox_libitem* item
  * @param[in] seed_value The seed value to be used.
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_aox_set_switch_pattern_seed(sl_rtl_aox_libitem* item, int32_t seed_value);
+enum sl_rtl_error_code sl_rtl_aox_set_switch_pattern_seed(sl_rtl_aox_libitem *item, int32_t seed_value);
 
 /**************************************************************************//**
  * Convert switching pattern from antenna indices to antenna switching pin control logic.
@@ -504,7 +511,7 @@ enum sl_rtl_error_code sl_rtl_aox_set_switch_pattern_seed(sl_rtl_aox_libitem* it
 
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_aox_convert_switch_pattern(sl_rtl_aox_libitem* item, uint32_t array_id, uint32_t options, uint32_t switch_pattern_size_in, uint32_t* switch_pattern_in, uint32_t* switch_pattern_size_out, uint32_t** switch_pattern_out);
+enum sl_rtl_error_code sl_rtl_aox_convert_switch_pattern(sl_rtl_aox_libitem *item, uint32_t array_id, uint32_t options, uint32_t switch_pattern_size_in, uint32_t *switch_pattern_in, uint32_t *switch_pattern_size_out, uint32_t **switch_pattern_out);
 
 /**************************************************************************//**
  * Reset estimator state. Calling this function causes the selected aox-mode to start from its initial state.
@@ -513,7 +520,7 @@ enum sl_rtl_error_code sl_rtl_aox_convert_switch_pattern(sl_rtl_aox_libitem* ite
  * @param[in] item Pointer to the initialized and configured AoX libitem.
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_aox_reset_estimator(sl_rtl_aox_libitem* item);
+enum sl_rtl_error_code sl_rtl_aox_reset_estimator(sl_rtl_aox_libitem *item);
 
 /**************************************************************************//**
  * Calculate the angle estimate.
@@ -536,7 +543,7 @@ enum sl_rtl_error_code sl_rtl_aox_reset_estimator(sl_rtl_aox_libitem* item);
  * indicated by the ::sl_rtl_aox_mode used by the estimator before the final
  * estimate is output.
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_aox_process(sl_rtl_aox_libitem* item, float** i_samples, float** q_samples, float tone_frequency, float* az_out, float* el_out);
+enum sl_rtl_error_code sl_rtl_aox_process(sl_rtl_aox_libitem *item, float **i_samples, float **q_samples, float tone_frequency, float *az_out, float *el_out);
 
 /**************************************************************************//**
  * Get the standard deviation for the latest AoA/AoD-estimate.
@@ -553,12 +560,12 @@ enum sl_rtl_error_code sl_rtl_aox_process(sl_rtl_aox_libitem* item, float** i_sa
  * indicate line-of-sight detection and negative values indicate likely
  * non-line-of-sight detection.
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_aox_get_latest_aox_standard_deviation(sl_rtl_aox_libitem* item, float* az_std_dev, float* el_std_dev);
+enum sl_rtl_error_code sl_rtl_aox_get_latest_aox_standard_deviation(sl_rtl_aox_libitem *item, float *az_std_dev, float *el_std_dev);
 
 /**************************************************************************//**
  * Kept for backward compatibility
  *****************************************************************************/
-static inline enum sl_rtl_error_code sl_rtl_aox_get_latest_aoa_standard_deviation(sl_rtl_aox_libitem* item, float* az_std_dev, float* el_std_dev)
+static inline enum sl_rtl_error_code sl_rtl_aox_get_latest_aoa_standard_deviation(sl_rtl_aox_libitem *item, float *az_std_dev, float *el_std_dev)
 {
   return sl_rtl_aox_get_latest_aox_standard_deviation(item, az_std_dev, el_std_dev);
 }
@@ -566,7 +573,7 @@ static inline enum sl_rtl_error_code sl_rtl_aox_get_latest_aoa_standard_deviatio
 /**************************************************************************//**
  * Kept for backward compatibility
  *****************************************************************************/
-static inline enum sl_rtl_error_code sl_rtl_aox_get_latest_aod_standard_deviation(sl_rtl_aox_libitem* item, float* az_std_dev, float* el_std_dev)
+static inline enum sl_rtl_error_code sl_rtl_aox_get_latest_aod_standard_deviation(sl_rtl_aox_libitem *item, float *az_std_dev, float *el_std_dev)
 {
   return sl_rtl_aox_get_latest_aox_standard_deviation(item, az_std_dev, el_std_dev);
 }
@@ -585,7 +592,7 @@ static inline enum sl_rtl_error_code sl_rtl_aox_get_latest_aod_standard_deviatio
  * for example, it has locked to a reflection rather than to the line of sight signal.
  * See also sl_rtl_loc_get_expected_direction().
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_aox_set_expected_direction(sl_rtl_aox_libitem* item, float expected_az, float expected_el);
+enum sl_rtl_error_code sl_rtl_aox_set_expected_direction(sl_rtl_aox_libitem *item, float expected_az, float expected_el);
 
 /**************************************************************************//**
  * Feed the expected angle deviations back to the locator.
@@ -602,7 +609,7 @@ enum sl_rtl_error_code sl_rtl_aox_set_expected_direction(sl_rtl_aox_libitem* ite
  * for the expected deviations.
  * See also sl_rtl_loc_get_expected_deviation() and sl_rtl_aox_set_expected_direction().
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_aox_set_expected_deviation(sl_rtl_aox_libitem* item, float deviation_az, float deviation_el);
+enum sl_rtl_error_code sl_rtl_aox_set_expected_deviation(sl_rtl_aox_libitem *item, float deviation_az, float deviation_el);
 
 /**************************************************************************//**
  * Clear the expected directions and deviations from the locator.
@@ -612,7 +619,7 @@ enum sl_rtl_error_code sl_rtl_aox_set_expected_deviation(sl_rtl_aox_libitem* ite
  *
  * See also sl_rtl_aox_set_expected_direction() and sl_rtl_aox_set_expected_deviation().
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_aox_clear_expected_direction(sl_rtl_aox_libitem* item);
+enum sl_rtl_error_code sl_rtl_aox_clear_expected_direction(sl_rtl_aox_libitem *item);
 
 /**************************************************************************//**
  * Enable or disable outputting the pseudospectrum. This function should be called
@@ -622,7 +629,7 @@ enum sl_rtl_error_code sl_rtl_aox_clear_expected_direction(sl_rtl_aox_libitem* i
  * @param[in] enable Set to true to enable outputting the pseudospectrum.
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_aox_enable_spectrum(sl_rtl_aox_libitem* item, bool enable);
+enum sl_rtl_error_code sl_rtl_aox_enable_spectrum(sl_rtl_aox_libitem *item, bool enable);
 
 /**************************************************************************//**
  * Get the size of the pseudospectrum. This function should be called after calling the AoX process
@@ -633,7 +640,7 @@ enum sl_rtl_error_code sl_rtl_aox_enable_spectrum(sl_rtl_aox_libitem* item, bool
  * @param[out] cols Number of columns in the pseudospecutrm data array.
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_aox_get_spectrum_size(sl_rtl_aox_libitem* item, uint32_t* rows, uint32_t* cols);
+enum sl_rtl_error_code sl_rtl_aox_get_spectrum_size(sl_rtl_aox_libitem *item, uint32_t *rows, uint32_t *cols);
 
 /**************************************************************************//**
  * Get the size of the polarization pseudospectrum.
@@ -645,7 +652,7 @@ enum sl_rtl_error_code sl_rtl_aox_get_spectrum_size(sl_rtl_aox_libitem* item, ui
  * @param[out] cols Number of columns in the pseudospecutrm data array.
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_aox_get_polarization_spectrum_size(sl_rtl_aox_libitem* item, uint32_t* rows, uint32_t* cols);
+enum sl_rtl_error_code sl_rtl_aox_get_polarization_spectrum_size(sl_rtl_aox_libitem *item, uint32_t *rows, uint32_t *cols);
 
 /**************************************************************************//**
  * Get the pseudospectrum. Memory for the output spectrum must be allocated by the
@@ -655,7 +662,7 @@ enum sl_rtl_error_code sl_rtl_aox_get_polarization_spectrum_size(sl_rtl_aox_libi
  * @param[out] spectrum_out Outputted pseudospectrum.
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_aox_get_spectrum(sl_rtl_aox_libitem* item, float** spectrum_out);
+enum sl_rtl_error_code sl_rtl_aox_get_spectrum(sl_rtl_aox_libitem *item, float **spectrum_out);
 
 /**************************************************************************//**
  * Get the polarization spectrum. Memory for the output spectrum must be allocated by the
@@ -665,10 +672,10 @@ enum sl_rtl_error_code sl_rtl_aox_get_spectrum(sl_rtl_aox_libitem* item, float**
  * @param[out] spectrum_out Outputted polarization pseudospectrum.
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_aox_get_polarization_spectrum(sl_rtl_aox_libitem* item, float** spectrum_out);
+enum sl_rtl_error_code sl_rtl_aox_get_polarization_spectrum(sl_rtl_aox_libitem *item, float **spectrum_out);
 
 /// Angle of Arrival / Departure antenna array radiation pattern
-typedef void* sl_rtl_aox_antenna_pattern;
+typedef void *sl_rtl_aox_antenna_pattern;
 
 /**************************************************************************//**
  * Initialize the antenna radiation pattern item for the given array board.
@@ -678,7 +685,7 @@ typedef void* sl_rtl_aox_antenna_pattern;
  * @param[in] array_type Array type of the board for which the pattern is loaded.
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_aox_antenna_pattern_init(sl_rtl_aox_antenna_pattern* pattern, enum sl_rtl_aox_array_type array_type);
+enum sl_rtl_error_code sl_rtl_aox_antenna_pattern_init(sl_rtl_aox_antenna_pattern *pattern, enum sl_rtl_aox_array_type array_type);
 
 /**************************************************************************//**
  * Set the given estimator to use the given antenna radiation pattern in the
@@ -692,7 +699,7 @@ enum sl_rtl_error_code sl_rtl_aox_antenna_pattern_init(sl_rtl_aox_antenna_patter
  * @param[in] pattern Pointer to the initialized antenna pattern item.
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_aox_set_antenna_pattern(sl_rtl_aox_libitem* item, sl_rtl_aox_antenna_pattern* pattern);
+enum sl_rtl_error_code sl_rtl_aox_set_antenna_pattern(sl_rtl_aox_libitem *item, sl_rtl_aox_antenna_pattern *pattern);
 
 /**************************************************************************//**
  * Deinitialize the antenna radiation pattern item.
@@ -700,7 +707,7 @@ enum sl_rtl_error_code sl_rtl_aox_set_antenna_pattern(sl_rtl_aox_libitem* item, 
  * @param[in] pattern Pointer to the initialized pattern item.
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_aox_antenna_pattern_deinit(sl_rtl_aox_antenna_pattern* pattern);
+enum sl_rtl_error_code sl_rtl_aox_antenna_pattern_deinit(sl_rtl_aox_antenna_pattern *pattern);
 
 /** @} */ // end addtogroup sl_rtl_aox
 
@@ -744,10 +751,8 @@ enum sl_rtl_error_code sl_rtl_aox_antenna_pattern_deinit(sl_rtl_aox_antenna_patt
       term (PCT) in CS step data. */
 #define SL_RTL_CS_STEP_MODE_BIT_LEN              8
 /**< Number of bits used for indicating step mode in CS step data. */
-#define SL_RTL_CS_TONE_ARRAY_LEN                 2
-/**< Array length of tones in CS step data. This is calculated as number of
-      antenna paths + 1. Note: Currently, RTL library supports only single
-      antenna path.  */
+#define SL_RTL_CS_CHANNEL_MAP_SIZE               10
+/**< Size of the channel map in bytes. */
 
 typedef enum {
   SL_RTL_CS_ROLE_INITIATOR = 0, /**< Initiator role. */
@@ -772,17 +777,25 @@ typedef enum  {
                                          (PBR). */
 } sl_rtl_cs_mode;
 
-typedef enum  {
-  SL_RTL_CS_RTT_TYPE_AAONLY =   0,
-  SL_RTL_CS_RTT_TYPE_SS_32BIT = 1,
-  SL_RTL_CS_RTT_TYPE_SS_96BIT = 2,
+typedef enum {
+  SL_RTL_CS_RTT_TYPE_AAONLY   = 0,  /**< RTT AA Only.
+                                         Currently unsupported type. */
+  SL_RTL_CS_RTT_TYPE_SS_32BIT = 1,  /**< RTT with 32-bit sounding sequence.
+                                         Currently unsupported type. */
+  SL_RTL_CS_RTT_TYPE_SS_96BIT = 2,  /**< RTT with 96-bit sounding sequence.
+                                     */
+  SL_RTL_CS_RTT_TYPE_RS_32BIT = 3,  /**< RTT with 32-bit random sequence.
+                                         Currently unsupported type. */
+  SL_RTL_CS_RTT_TYPE_RS_64BIT = 4,  /**< RTT with 64-bit random sequence.
+                                         Currently unsupported type. */
+  SL_RTL_CS_RTT_TYPE_RS_96BIT = 5,  /**< RTT with 96-bit random sequence.
+                                         Currently unsupported type. */
+  SL_RTL_CS_RTT_TYPE_RS_128BIT = 6, /**< RTT with 128-bit random sequence.
+                                         Currently unsupported type. */
 } sl_rtl_cs_rtt_type;
 
 typedef PACKSTRUCT (struct {
-  uint32_t max_number_of_frequencies; /**< Maximum number of frequencies.
-                                          Affects amount of memory allocated by
-                                          the RTL library. */
-  uint32_t delta_f; /**< Channel frequency jump in Hz. */
+  uint8_t channel_map[SL_RTL_CS_CHANNEL_MAP_SIZE]; ///< Bluetooth channel bitmap
 }) sl_rtl_cs_params;
 
 typedef PACKSTRUCT (struct {
@@ -859,13 +872,18 @@ typedef PACKSTRUCT (struct {
   uint8_t packet_antenna;
 }) sl_rtl_cs_mode_rtt_data;
 
+typedef PACKSTRUCT (struct tone {
+  int32_t pct_i : SL_RTL_CS_PCT_IQ_BIT_LEN;
+  int32_t pct_q : SL_RTL_CS_PCT_IQ_BIT_LEN;
+  uint8_t quality_indicator;
+}) sl_rtl_cs_pbr_tone;
+
 typedef PACKSTRUCT (struct {
   uint8_t antenna_permutation_index;
-  PACKSTRUCT(struct tone {
-    int32_t pct_i: SL_RTL_CS_PCT_IQ_BIT_LEN;
-    int32_t pct_q: SL_RTL_CS_PCT_IQ_BIT_LEN;
-    uint8_t quality_indicator;
-  }) tones[SL_RTL_CS_TONE_ARRAY_LEN];
+  sl_rtl_cs_pbr_tone tones[];
+  /**< Array of tones. The arraysize is always num_antenna_paths + 1, where
+     num_antenna_paths is a member of the sl_rtl_cs_config struct. The
+     additional slot (+1) accounts for the tone extension. */
 }) sl_rtl_cs_mode_pbr_data;
 
 typedef PACKSTRUCT (struct {
@@ -917,19 +935,23 @@ typedef PACKSTRUCT (struct {
 
 typedef enum  {
   SL_RTL_CS_DISTANCE_ESTIMATE_TYPE_FILTERED =  0,
-  SL_RTL_CS_DISTANCE_ESTIMATE_TYPE_RSSI
+  /**< Distance estimate with built-in post-filtering. Note: The post-filtering
+        would remove any large undesired jumps in the distance reported.
+        However, post-filtering introduces latency in distance reported. */
+  SL_RTL_CS_DISTANCE_ESTIMATE_TYPE_RSSI,
+  /**< Distance estimate based on the Packet_RSSI in the calibration (Mode 0)
+        steps */
+  SL_RTL_CS_DISTANCE_ESTIMATE_TYPE_RAW
+  /**< Distance estimate based solely on the most recent procedure input. */
 } sl_rtl_cs_distance_estimate_type;
 
 typedef enum  {
   SL_RTL_CS_DISTANCE_ESTIMATE_CONFIDENCE_TYPE_LIKELINESS = 0,
-  SL_RTL_CS_DISTANCE_ESTIMATE_CONFIDENCE_TYPE_BIT_ERROR_RATE, /**< Bit error
-                                                                 rate
-                                                                 is only
-                                                                 supported for
-                                                                 RTT
-                                                                 with RTT types
-                                                                 SS_32BIT and
-                                                                 SS_96BIT. */
+  /**< Likeliness of the distance estimate accuracy, ranging from 0 to 1 */
+  SL_RTL_CS_DISTANCE_ESTIMATE_CONFIDENCE_TYPE_BIT_ERROR_RATE,
+  /**< Bit error rate in the RTT random or sounding sequence, ranging from 0
+        to 1. Only supported for RTT types (see sl_rtl_cs_rtt_type) with
+        random sequence (RS) or sounding sequence (SS). */
 } sl_rtl_cs_distance_estimate_confidence_type;
 
 typedef enum  {
@@ -939,7 +961,7 @@ typedef enum  {
 } sl_rtl_cs_distance_estimate_extended_info_type;
 
 /// CS library item
-typedef void* sl_rtl_cs_libitem;
+typedef void *sl_rtl_cs_libitem;
 
 typedef PACKSTRUCT (struct {
   struct timespec timestamp;  /**< Epoch time of the RTL library
@@ -986,7 +1008,8 @@ enum sl_rtl_error_code sl_rtl_cs_deinit(sl_rtl_cs_libitem *item);
  * @param[in] mode Estimator mode as ::sl_rtl_cs_algo_mode
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *
- * Set the estimation algorithm mode. For
+ * Set the estimation mode. For example,
+ * ::SL_RTL_CS_ALGO_MODE_REAL_TIME_BASIC sets medium filtering. For
  * further description of the modes, see the documentation
  * of::sl_rtl_cs_algo_mode. CS libitem must be initialized before
  * calling this method, or it will fail with return code
@@ -1143,9 +1166,9 @@ sl_rtl_cs_get_distance_estimate_confidence(
  *****************************************************************************/
 enum sl_rtl_error_code
 sl_rtl_cs_get_distance_estimate_extended_info(
-  sl_rtl_cs_libitem* item,
+  sl_rtl_cs_libitem *item,
   const sl_rtl_cs_distance_estimate_extended_info_type extended_info_type,
-  float* extended_info);
+  float *extended_info);
 
 /**************************************************************************//**
  * Enable logging for the given CS libitem.
@@ -1176,10 +1199,11 @@ enum sl_rtl_error_code sl_rtl_cs_log_disable(sl_rtl_cs_libitem *item);
  * Get the instance ID of the given CS libitem.
  *
  * @param[in] item Pointer to the CS libitem
- * @return Instance ID of the given CS libitem. The value 0 is returned,
- * if the libitem is not initialized.
+ * @param[out] instance_id Instance ID of the given CS libitem
+ * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-uint8_t sl_rtl_cs_log_get_instance_id(sl_rtl_cs_libitem* item);
+enum sl_rtl_error_code sl_rtl_cs_log_get_instance_id(sl_rtl_cs_libitem *item,
+                                                     uint8_t *instance_id);
 /** @} */ // end addtogroup sl_rtl_cs
 
 /**
@@ -1290,7 +1314,7 @@ struct sl_rtl_loc_locator_item{
 };
 
 /// Locationing library item
-typedef void* sl_rtl_loc_libitem;
+typedef void *sl_rtl_loc_libitem;
 
 // Initialization functions
 
@@ -1300,7 +1324,7 @@ typedef void* sl_rtl_loc_libitem;
  * @param[in] item Pointer to the libitem to be initialized
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_init(sl_rtl_loc_libitem* item);
+enum sl_rtl_error_code sl_rtl_loc_init(sl_rtl_loc_libitem *item);
 
 /**************************************************************************//**
  * Deinitialize the locationing libitem instance.
@@ -1308,7 +1332,7 @@ enum sl_rtl_error_code sl_rtl_loc_init(sl_rtl_loc_libitem* item);
  * @param[in] item Pointer to the libitem to be initialized
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_deinit(sl_rtl_loc_libitem* item);
+enum sl_rtl_error_code sl_rtl_loc_deinit(sl_rtl_loc_libitem *item);
 
 /**************************************************************************//**
  * Reinitialize the locationing libitem instance.
@@ -1320,7 +1344,7 @@ enum sl_rtl_error_code sl_rtl_loc_deinit(sl_rtl_loc_libitem* item);
  * @param[in] item Pointer to the libitem to be initialized
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_reinit(sl_rtl_loc_libitem* item);
+enum sl_rtl_error_code sl_rtl_loc_reinit(sl_rtl_loc_libitem *item);
 
 /**************************************************************************//**
  * Set the locationing dimensionality mode. Possible choices are 2D or 3D
@@ -1334,7 +1358,7 @@ enum sl_rtl_error_code sl_rtl_loc_reinit(sl_rtl_loc_libitem* item);
  * @param[in] mode Estimation mode as enum
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_set_mode(sl_rtl_loc_libitem* item, enum sl_rtl_loc_estimation_mode mode);
+enum sl_rtl_error_code sl_rtl_loc_set_mode(sl_rtl_loc_libitem *item, enum sl_rtl_loc_estimation_mode mode);
 
 /**************************************************************************//**
  * Set the measurement validation method. If not given, the minimum method is
@@ -1349,7 +1373,7 @@ enum sl_rtl_error_code sl_rtl_loc_set_mode(sl_rtl_loc_libitem* item, enum sl_rtl
  * @param[in] method Validation method as enum
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_set_measurement_validation(sl_rtl_loc_libitem* item, enum sl_rtl_loc_measurement_validation_method method);
+enum sl_rtl_error_code sl_rtl_loc_set_measurement_validation(sl_rtl_loc_libitem *item, enum sl_rtl_loc_measurement_validation_method method);
 
 /**************************************************************************//**
  * Add a locator item into the locationing estimator after setting its position
@@ -1362,7 +1386,7 @@ enum sl_rtl_error_code sl_rtl_loc_set_measurement_validation(sl_rtl_loc_libitem*
  * @param[out] locator_id_out ID of the locator assigned by the library
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_add_locator(sl_rtl_loc_libitem* item, struct sl_rtl_loc_locator_item* locator_item, uint32_t* locator_id_out);
+enum sl_rtl_error_code sl_rtl_loc_add_locator(sl_rtl_loc_libitem *item, struct sl_rtl_loc_locator_item *locator_item, uint32_t *locator_id_out);
 
 /**************************************************************************//**
  * Add an asset tag item into the locationing estimator.
@@ -1371,7 +1395,7 @@ enum sl_rtl_error_code sl_rtl_loc_add_locator(sl_rtl_loc_libitem* item, struct s
  * @param[out] tag_id_out ID of the tag assigned by the library
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_add_tag(sl_rtl_loc_libitem* item, int32_t *tag_id_out);
+enum sl_rtl_error_code sl_rtl_loc_add_tag(sl_rtl_loc_libitem *item, int32_t *tag_id_out);
 
 /**************************************************************************//**
  * Remove an asset tag item previously added with sl_rtl_loc_add_tag.
@@ -1380,7 +1404,7 @@ enum sl_rtl_error_code sl_rtl_loc_add_tag(sl_rtl_loc_libitem* item, int32_t *tag
  * @param[out]  ID of the tag to be removed
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_remove_tag(sl_rtl_loc_libitem* item, int32_t tag_id);
+enum sl_rtl_error_code sl_rtl_loc_remove_tag(sl_rtl_loc_libitem *item, int32_t tag_id);
 
 /**************************************************************************//**
  * Create the position estimator instance after all locators have been added.
@@ -1388,7 +1412,7 @@ enum sl_rtl_error_code sl_rtl_loc_remove_tag(sl_rtl_loc_libitem* item, int32_t t
  * @param[in] item Pointer to the libitem
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_create_position_estimator(sl_rtl_loc_libitem* item);
+enum sl_rtl_error_code sl_rtl_loc_create_position_estimator(sl_rtl_loc_libitem *item);
 
 // Processing functions
 
@@ -1402,7 +1426,7 @@ enum sl_rtl_error_code sl_rtl_loc_create_position_estimator(sl_rtl_loc_libitem* 
  * @param[in] value New value for the parameter
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_set_locator_parameter(sl_rtl_loc_libitem* item, uint32_t locator_id, enum sl_rtl_loc_locator_parameter parameter, float value);
+enum sl_rtl_error_code sl_rtl_loc_set_locator_parameter(sl_rtl_loc_libitem *item, uint32_t locator_id, enum sl_rtl_loc_locator_parameter parameter, float value);
 
 /**************************************************************************//**
  * Set target-specific parameters, such as the known target height.
@@ -1413,7 +1437,7 @@ enum sl_rtl_error_code sl_rtl_loc_set_locator_parameter(sl_rtl_loc_libitem* item
  * @param[in] value New value for the parameter
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_set_target_parameter(sl_rtl_loc_libitem* item, enum sl_rtl_loc_target_parameter parameter, float value);
+enum sl_rtl_error_code sl_rtl_loc_set_target_parameter(sl_rtl_loc_libitem *item, enum sl_rtl_loc_target_parameter parameter, float value);
 
 /**************************************************************************//**
  * Set target-specific parameters, such as the known target height for a specified tag.
@@ -1424,7 +1448,7 @@ enum sl_rtl_error_code sl_rtl_loc_set_target_parameter(sl_rtl_loc_libitem* item,
  * @param[in] tag_id TagID of the asset to be changed or ::SL_RTL_LOC_ALL_TAGS
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_set_target_parameter_tag(sl_rtl_loc_libitem* item, enum sl_rtl_loc_target_parameter parameter, float value, int32_t tag_id);
+enum sl_rtl_error_code sl_rtl_loc_set_target_parameter_tag(sl_rtl_loc_libitem *item, enum sl_rtl_loc_target_parameter parameter, float value, int32_t tag_id);
 
 /**************************************************************************//**
  * Clear previous measurements. Call this function before setting
@@ -1434,7 +1458,7 @@ enum sl_rtl_error_code sl_rtl_loc_set_target_parameter_tag(sl_rtl_loc_libitem* i
  * @param[in] item Pointer to the libitem
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_clear_measurements(sl_rtl_loc_libitem* item);
+enum sl_rtl_error_code sl_rtl_loc_clear_measurements(sl_rtl_loc_libitem *item);
 
 /**************************************************************************//**
  * Clear previous measurements for a specified tag. Call this function before setting
@@ -1445,7 +1469,7 @@ enum sl_rtl_error_code sl_rtl_loc_clear_measurements(sl_rtl_loc_libitem* item);
  * @param[in] tag_id TagID of the asset to be changed or ::SL_RTL_LOC_ALL_TAGS
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_clear_measurements_tag(sl_rtl_loc_libitem* item, int32_t tag_id);
+enum sl_rtl_error_code sl_rtl_loc_clear_measurements_tag(sl_rtl_loc_libitem *item, int32_t tag_id);
 
 /**************************************************************************//**
  * Set a new measurement for a locator specified by the locator ID.
@@ -1456,7 +1480,7 @@ enum sl_rtl_error_code sl_rtl_loc_clear_measurements_tag(sl_rtl_loc_libitem* ite
  * @param[in] value New value for the measurement
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_set_locator_measurement(sl_rtl_loc_libitem* item, uint32_t locator_id, enum sl_rtl_loc_locator_measurement_field field, float value);
+enum sl_rtl_error_code sl_rtl_loc_set_locator_measurement(sl_rtl_loc_libitem *item, uint32_t locator_id, enum sl_rtl_loc_locator_measurement_field field, float value);
 
 /**************************************************************************//**
  * Set a new measurement for a locator specified by the locator ID for a specified tag.
@@ -1468,7 +1492,7 @@ enum sl_rtl_error_code sl_rtl_loc_set_locator_measurement(sl_rtl_loc_libitem* it
  * @param[in] tag_id TagID of the asset to be changed
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_set_locator_measurement_tag(sl_rtl_loc_libitem* item, uint32_t locator_id, enum sl_rtl_loc_locator_measurement_field field, float value, int32_t tag_id);
+enum sl_rtl_error_code sl_rtl_loc_set_locator_measurement_tag(sl_rtl_loc_libitem *item, uint32_t locator_id, enum sl_rtl_loc_locator_measurement_field field, float value, int32_t tag_id);
 
 /**************************************************************************//**
  * Set a new measurement for the target. Because the current version does not support this
@@ -1479,7 +1503,7 @@ enum sl_rtl_error_code sl_rtl_loc_set_locator_measurement_tag(sl_rtl_loc_libitem
  * @param[in] value New value for the measurement
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_set_target_measurement(sl_rtl_loc_libitem* item, enum sl_rtl_loc_target_measurement_field field, float value);
+enum sl_rtl_error_code sl_rtl_loc_set_target_measurement(sl_rtl_loc_libitem *item, enum sl_rtl_loc_target_measurement_field field, float value);
 
 /**************************************************************************//**
  * Set the default accuracy value for direction / distance.
@@ -1491,7 +1515,7 @@ enum sl_rtl_error_code sl_rtl_loc_set_target_measurement(sl_rtl_loc_libitem* ite
  * @param[in] value New value for the default accuracy
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_set_default_accuracy(sl_rtl_loc_libitem* item, uint32_t locator_id, enum sl_rtl_loc_default_accuracy_parameter param, float value);
+enum sl_rtl_error_code sl_rtl_loc_set_default_accuracy(sl_rtl_loc_libitem *item, uint32_t locator_id, enum sl_rtl_loc_default_accuracy_parameter param, float value);
 
 /**************************************************************************//**
  * Process the current time step of the locationing filter. Call this function
@@ -1505,7 +1529,7 @@ enum sl_rtl_error_code sl_rtl_loc_set_default_accuracy(sl_rtl_loc_libitem* item,
  * separation between the previous step and this current step.
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_process(sl_rtl_loc_libitem* item, float time_step);
+enum sl_rtl_error_code sl_rtl_loc_process(sl_rtl_loc_libitem *item, float time_step);
 
 /**************************************************************************//**
  * Process the current time step of the locationing filter for a specified tag.
@@ -1520,7 +1544,7 @@ enum sl_rtl_error_code sl_rtl_loc_process(sl_rtl_loc_libitem* item, float time_s
  * @param[in] tag_id TagID of the asset to be processed or ::SL_RTL_LOC_ALL_TAGS
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_process_tag(sl_rtl_loc_libitem* item, float time_step, int32_t tag_id);
+enum sl_rtl_error_code sl_rtl_loc_process_tag(sl_rtl_loc_libitem *item, float time_step, int32_t tag_id);
 
 /**************************************************************************//**
  * Get result of the current state variables or state covariances.
@@ -1530,7 +1554,7 @@ enum sl_rtl_error_code sl_rtl_loc_process_tag(sl_rtl_loc_libitem* item, float ti
  * @param[out] value The value output of the state variable
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_get_result(sl_rtl_loc_libitem* item, enum sl_rtl_loc_result result, float* value);
+enum sl_rtl_error_code sl_rtl_loc_get_result(sl_rtl_loc_libitem *item, enum sl_rtl_loc_result result, float *value);
 
 /**************************************************************************//**
  * Get result of the current state variables or state covariances for a specified tag.
@@ -1541,7 +1565,7 @@ enum sl_rtl_error_code sl_rtl_loc_get_result(sl_rtl_loc_libitem* item, enum sl_r
  * @param[in] tag_id TagID of the asset to fetch the results for
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_get_result_tag(sl_rtl_loc_libitem* item, enum sl_rtl_loc_result result, float* value, int32_t tag_id);
+enum sl_rtl_error_code sl_rtl_loc_get_result_tag(sl_rtl_loc_libitem *item, enum sl_rtl_loc_result result, float *value, int32_t tag_id);
 
 /**************************************************************************//**
  * Get the latest measurement converted into the coordinate system of the
@@ -1553,7 +1577,7 @@ enum sl_rtl_error_code sl_rtl_loc_get_result_tag(sl_rtl_loc_libitem* item, enum 
  * @param[out] value_out The value output of the state variable
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_get_measurement_in_system_coordinates(sl_rtl_loc_libitem* item, uint32_t locator_id, enum sl_rtl_loc_locator_measurement_field field, float* value_out);
+enum sl_rtl_error_code sl_rtl_loc_get_measurement_in_system_coordinates(sl_rtl_loc_libitem *item, uint32_t locator_id, enum sl_rtl_loc_locator_measurement_field field, float *value_out);
 
 /**************************************************************************//**
  * Get the latest measurement converted into the coordinate system of the
@@ -1566,7 +1590,7 @@ enum sl_rtl_error_code sl_rtl_loc_get_measurement_in_system_coordinates(sl_rtl_l
  * @param[in] tag_id TagID of the asset
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_get_measurement_in_system_coordinates_tag(sl_rtl_loc_libitem* item, uint32_t locator_id, enum sl_rtl_loc_locator_measurement_field field, float* value_out, int32_t tag_id);
+enum sl_rtl_error_code sl_rtl_loc_get_measurement_in_system_coordinates_tag(sl_rtl_loc_libitem *item, uint32_t locator_id, enum sl_rtl_loc_locator_measurement_field field, float *value_out, int32_t tag_id);
 
 /**************************************************************************//**
  * Get the expected direction of the asset for the locator.
@@ -1586,7 +1610,7 @@ enum sl_rtl_error_code sl_rtl_loc_get_measurement_in_system_coordinates_tag(sl_r
  * internal state so that in can recover from this incorrectness faster.
  * See also sl_rtl_aox_set_expected_direction()
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_get_expected_direction(sl_rtl_loc_libitem* item, uint32_t locator_id, float *azimuth, float *elevation, float *distance);
+enum sl_rtl_error_code sl_rtl_loc_get_expected_direction(sl_rtl_loc_libitem *item, uint32_t locator_id, float *azimuth, float *elevation, float *distance);
 
 /**************************************************************************//**
  * Get the expected direction of the asset for the locator for a specified tag.
@@ -1607,7 +1631,7 @@ enum sl_rtl_error_code sl_rtl_loc_get_expected_direction(sl_rtl_loc_libitem* ite
  * internal state so that in can recover from this incorrectness faster.
  * See also sl_rtl_aox_set_expected_direction().
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_get_expected_direction_tag(sl_rtl_loc_libitem* item, uint32_t locator_id, float *azimuth, float *elevation, float *distance, int32_t tag_id);
+enum sl_rtl_error_code sl_rtl_loc_get_expected_direction_tag(sl_rtl_loc_libitem *item, uint32_t locator_id, float *azimuth, float *elevation, float *distance, int32_t tag_id);
 
 /**************************************************************************//**
  * Get the deviation values for expected direction of the asset for the locator.
@@ -1619,7 +1643,7 @@ enum sl_rtl_error_code sl_rtl_loc_get_expected_direction_tag(sl_rtl_loc_libitem*
  * @param[out] distance The expected distance value's standard deviation
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_get_expected_deviation(sl_rtl_loc_libitem* item, uint32_t locator_id, float *azimuth, float *elevation, float *distance);
+enum sl_rtl_error_code sl_rtl_loc_get_expected_deviation(sl_rtl_loc_libitem *item, uint32_t locator_id, float *azimuth, float *elevation, float *distance);
 
 /**************************************************************************//**
  * Get the deviation values for expected direction of the asset for the locator
@@ -1633,7 +1657,7 @@ enum sl_rtl_error_code sl_rtl_loc_get_expected_deviation(sl_rtl_loc_libitem* ite
  * @param[in] tag_id TagID of the asset
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_get_expected_deviation_tag(sl_rtl_loc_libitem* item, uint32_t locator_id, float *azimuth, float *elevation, float *distance, int32_t tag_id);
+enum sl_rtl_error_code sl_rtl_loc_get_expected_deviation_tag(sl_rtl_loc_libitem *item, uint32_t locator_id, float *azimuth, float *elevation, float *distance, int32_t tag_id);
 
 /**************************************************************************//**
  * Get the number of locators, which are disabled from position calculation because
@@ -1642,7 +1666,7 @@ enum sl_rtl_error_code sl_rtl_loc_get_expected_deviation_tag(sl_rtl_loc_libitem*
  * @param[in] item Pointer to the libitem
  * @returns Number of locators needing correction, or -1 in case of any other error
  *****************************************************************************/
-int sl_rtl_loc_get_number_disabled(sl_rtl_loc_libitem* item);
+int sl_rtl_loc_get_number_disabled(sl_rtl_loc_libitem *item);
 
 /**************************************************************************//**
  * Get the number of locators, which are disabled from position calculation because
@@ -1652,7 +1676,7 @@ int sl_rtl_loc_get_number_disabled(sl_rtl_loc_libitem* item);
  * @param[in] tag_id TagID of the asset
  * @returns Number of locators needing correction, or -1 in case of any other error
  *****************************************************************************/
-int sl_rtl_loc_get_number_disabled_tag(sl_rtl_loc_libitem* item, int32_t tag_id);
+int sl_rtl_loc_get_number_disabled_tag(sl_rtl_loc_libitem *item, int32_t tag_id);
 
 /**************************************************************************//**
  * Check if the asset is in reach of a given locator according to the
@@ -1662,7 +1686,7 @@ int sl_rtl_loc_get_number_disabled_tag(sl_rtl_loc_libitem* item, int32_t tag_id)
  * @param[in] locator_id ID of the locator to run the test
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-bool sl_rtl_loc_filter_in_reach(sl_rtl_loc_libitem* item, uint32_t locator_id);
+bool sl_rtl_loc_filter_in_reach(sl_rtl_loc_libitem *item, uint32_t locator_id);
 
 /**************************************************************************//**
  * Clear all the position-based filters from a locator or from all
@@ -1672,7 +1696,7 @@ bool sl_rtl_loc_filter_in_reach(sl_rtl_loc_libitem* item, uint32_t locator_id);
  * @param[in] locator_id ID of a single locator or ::SL_RTL_LOC_ALL_LOCATORS
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_filter_clear(sl_rtl_loc_libitem* item, uint32_t locator_id);
+enum sl_rtl_error_code sl_rtl_loc_filter_clear(sl_rtl_loc_libitem *item, uint32_t locator_id);
 
 /**************************************************************************//**
  * Add a position-based filter. This filter is based on the distance from a locator.
@@ -1685,7 +1709,7 @@ enum sl_rtl_error_code sl_rtl_loc_filter_clear(sl_rtl_loc_libitem* item, uint32_
  * @param[in] exclude_region If true, define an excluded region instead
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_filter_sphere(sl_rtl_loc_libitem* item, uint32_t locator_id, float radius, bool exclude_region);
+enum sl_rtl_error_code sl_rtl_loc_filter_sphere(sl_rtl_loc_libitem *item, uint32_t locator_id, float radius, bool exclude_region);
 
 /**************************************************************************//**
  * Add a position-based filter. The two dimensional filter is based on
@@ -1699,7 +1723,7 @@ enum sl_rtl_error_code sl_rtl_loc_filter_sphere(sl_rtl_loc_libitem* item, uint32
  * @param[in] exclude_region If true, define an excluded region instead
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_filter_circle(sl_rtl_loc_libitem* item, uint32_t locator_id, float radius, bool exclude_region);
+enum sl_rtl_error_code sl_rtl_loc_filter_circle(sl_rtl_loc_libitem *item, uint32_t locator_id, float radius, bool exclude_region);
 
 /**************************************************************************//**
  * Add a position-based filter. This filter defines relative distances in
@@ -1715,7 +1739,7 @@ enum sl_rtl_error_code sl_rtl_loc_filter_circle(sl_rtl_loc_libitem* item, uint32
  * @param[in] exclude_region If true, define an excluded region instead
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_filter_box(sl_rtl_loc_libitem* item, uint32_t locator_id, float xDelta, float yDelta, float zDelta, bool exclude_region);
+enum sl_rtl_error_code sl_rtl_loc_filter_box(sl_rtl_loc_libitem *item, uint32_t locator_id, float xDelta, float yDelta, float zDelta, bool exclude_region);
 
 /**************************************************************************//**
  * Add a position-based filter. This two dimensional filter defines relative
@@ -1730,7 +1754,7 @@ enum sl_rtl_error_code sl_rtl_loc_filter_box(sl_rtl_loc_libitem* item, uint32_t 
  * @param[in] exclude_region If true, define an excluded region instead
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_filter_rect(sl_rtl_loc_libitem* item, uint32_t locator_id, float xDelta, float yDelta, bool exclude_region);
+enum sl_rtl_error_code sl_rtl_loc_filter_rect(sl_rtl_loc_libitem *item, uint32_t locator_id, float xDelta, float yDelta, bool exclude_region);
 
 /**************************************************************************//**
  * Add a position-based filter. This filter defines an area in global
@@ -1749,7 +1773,7 @@ enum sl_rtl_error_code sl_rtl_loc_filter_rect(sl_rtl_loc_libitem* item, uint32_t
  * @param[in] exclude_region If true, define an excluded region instead
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_filter_room(sl_rtl_loc_libitem* item, uint32_t locator_id, float minX, float maxX, float minY, float maxY, float minZ, float maxZ, bool exclude_region);
+enum sl_rtl_error_code sl_rtl_loc_filter_room(sl_rtl_loc_libitem *item, uint32_t locator_id, float minX, float maxX, float minY, float maxY, float minZ, float maxZ, bool exclude_region);
 
 /**************************************************************************//**
  * Add a position-based filter. The two dimensional filter defines an area in
@@ -1766,7 +1790,7 @@ enum sl_rtl_error_code sl_rtl_loc_filter_room(sl_rtl_loc_libitem* item, uint32_t
  * @param[in] exclude_region If true, define an excluded region instead
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_filter_floor(sl_rtl_loc_libitem* item, uint32_t locator_id, float minX, float maxX, float minY, float maxY, bool exclude_region);
+enum sl_rtl_error_code sl_rtl_loc_filter_floor(sl_rtl_loc_libitem *item, uint32_t locator_id, float minX, float maxX, float minY, float maxY, bool exclude_region);
 
 /**************************************************************************//**
  * Enable trilateration method in location calculation.
@@ -1782,7 +1806,7 @@ enum sl_rtl_error_code sl_rtl_loc_filter_floor(sl_rtl_loc_libitem* item, uint32_
  * @param[in] value Turn the trilateration on or off
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_enable_trilateration(sl_rtl_loc_libitem* item, bool value);
+enum sl_rtl_error_code sl_rtl_loc_enable_trilateration(sl_rtl_loc_libitem *item, bool value);
 
 /**************************************************************************//**
  * Prefer the asset location below or above the locator plane.
@@ -1797,7 +1821,7 @@ enum sl_rtl_error_code sl_rtl_loc_enable_trilateration(sl_rtl_loc_libitem* item,
  * @param[in] value Turn the trilateration on or off
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_loc_trilateration_prefer_below_plane(sl_rtl_loc_libitem* item, bool value);
+enum sl_rtl_error_code sl_rtl_loc_trilateration_prefer_below_plane(sl_rtl_loc_libitem *item, bool value);
 
 /** @} */ // end addtogroup sl_rtl_loc
 
@@ -1812,7 +1836,7 @@ enum sl_rtl_error_code sl_rtl_loc_trilateration_prefer_below_plane(sl_rtl_loc_li
  */
 
 /// Utility library item
-typedef void* sl_rtl_util_libitem;
+typedef void *sl_rtl_util_libitem;
 
 /// Util parameter
 enum sl_rtl_util_parameter{
@@ -1825,7 +1849,7 @@ enum sl_rtl_util_parameter{
  * @param[in] item Pointer to the libitem to be initialized
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_util_init(sl_rtl_util_libitem* item);
+enum sl_rtl_error_code sl_rtl_util_init(sl_rtl_util_libitem *item);
 
 /**************************************************************************//**
  * Deinitialize a Util libitem instance.
@@ -1833,7 +1857,7 @@ enum sl_rtl_error_code sl_rtl_util_init(sl_rtl_util_libitem* item);
  * @param[in] item Pointer to the libitem to be deinitialized
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_util_deinit(sl_rtl_util_libitem* item);
+enum sl_rtl_error_code sl_rtl_util_deinit(sl_rtl_util_libitem *item);
 
 /**************************************************************************//**
  * Set util parameters.
@@ -1843,7 +1867,7 @@ enum sl_rtl_error_code sl_rtl_util_deinit(sl_rtl_util_libitem* item);
  * @param[in] value Value of the parameter
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_util_set_parameter(sl_rtl_util_libitem* item, enum sl_rtl_util_parameter parameter, float value);
+enum sl_rtl_error_code sl_rtl_util_set_parameter(sl_rtl_util_libitem *item, enum sl_rtl_util_parameter parameter, float value);
 
 /**************************************************************************//**
  * Filter a value using the moving average.
@@ -1853,7 +1877,7 @@ enum sl_rtl_error_code sl_rtl_util_set_parameter(sl_rtl_util_libitem* item, enum
  * @param[out] value_out Pointer to the filtered value
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_util_filter(sl_rtl_util_libitem* item, float value_in, float* value_out);
+enum sl_rtl_error_code sl_rtl_util_filter(sl_rtl_util_libitem *item, float value_in, float *value_out);
 
 /**************************************************************************//**
  * Convert an RSSI-value to distance in meters.
@@ -1863,7 +1887,7 @@ enum sl_rtl_error_code sl_rtl_util_filter(sl_rtl_util_libitem* item, float value
  * @param[out] distance_out Distance in meters
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_util_rssi2distance(float tx_power, float rssi, float* distance_out);
+enum sl_rtl_error_code sl_rtl_util_rssi2distance(float tx_power, float rssi, float *distance_out);
 
 /**************************************************************************//**
  * Set up the IQ sample quality analysis.
@@ -1886,7 +1910,7 @@ enum sl_rtl_error_code sl_rtl_util_iq_sample_qa_setup(sl_rtl_util_libitem *item,
  * @param[in] number_of_channels Number of radio channels
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_util_iq_sample_qa_set_parameters(sl_rtl_util_libitem* item, uint32_t sample_rate, uint8_t sample_offset, uint8_t samples_in_slot, uint8_t number_of_channels);
+enum sl_rtl_error_code sl_rtl_util_iq_sample_qa_set_parameters(sl_rtl_util_libitem *item, uint32_t sample_rate, uint8_t sample_offset, uint8_t samples_in_slot, uint8_t number_of_channels);
 
 /**************************************************************************//**
  * Set up IQ sample QA downsampling ratio.
@@ -1898,7 +1922,7 @@ enum sl_rtl_error_code sl_rtl_util_iq_sample_qa_set_parameters(sl_rtl_util_libit
  * @param[in] dsf The downsampling factor
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_util_iq_sample_qa_set_downsampling_factor(sl_rtl_util_libitem* item, float dsf);
+enum sl_rtl_error_code sl_rtl_util_iq_sample_qa_set_downsampling_factor(sl_rtl_util_libitem *item, float dsf);
 
 /**************************************************************************//**
  * Set data samples offset.
@@ -1911,7 +1935,7 @@ enum sl_rtl_error_code sl_rtl_util_iq_sample_qa_set_downsampling_factor(sl_rtl_u
  * @param[in] offset The data samples' offset
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_util_iq_sample_qa_set_data_offset(sl_rtl_util_libitem* item, uint32_t offset);
+enum sl_rtl_error_code sl_rtl_util_iq_sample_qa_set_data_offset(sl_rtl_util_libitem *item, uint32_t offset);
 
 /**************************************************************************//**
  * Set the switch pattern for the IQ sample quality.
@@ -1921,7 +1945,7 @@ enum sl_rtl_error_code sl_rtl_util_iq_sample_qa_set_data_offset(sl_rtl_util_libi
  * @param[in] pattern Array of integers representing the switch pattern
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_util_iq_sample_qa_set_switch_pattern(sl_rtl_util_libitem* item, uint32_t size, uint32_t *pattern);
+enum sl_rtl_error_code sl_rtl_util_iq_sample_qa_set_switch_pattern(sl_rtl_util_libitem *item, uint32_t size, uint32_t *pattern);
 
 /**************************************************************************//**
  * Feed the IQ sample quality analysis the reference period data.
@@ -1973,7 +1997,7 @@ enum sl_rtl_error_code sl_rtl_util_iq_sample_qa_get_details(sl_rtl_util_libitem 
  * @param[out] antenna_data The array of antenna specific results
  * @return ::SL_RTL_ERROR_SUCCESS if successful
  *****************************************************************************/
-enum sl_rtl_error_code sl_rtl_util_iq_sample_qa_get_channel_details(sl_rtl_util_libitem* item, uint8_t channel, sl_rtl_clib_iq_sample_qa_dataset_t *iq_sample_qa_results, sl_rtl_clib_iq_sample_qa_antenna_data_t *antenna_data);
+enum sl_rtl_error_code sl_rtl_util_iq_sample_qa_get_channel_details(sl_rtl_util_libitem *item, uint8_t channel, sl_rtl_clib_iq_sample_qa_dataset_t *iq_sample_qa_results, sl_rtl_clib_iq_sample_qa_antenna_data_t *antenna_data);
 
 /**************************************************************************//**
  * Write the IQ sample quality analysis code as human readable strings in the provided buffer.
@@ -1984,6 +2008,24 @@ enum sl_rtl_error_code sl_rtl_util_iq_sample_qa_get_channel_details(sl_rtl_util_
  * @returns pointer to the buffer containing data, or to a constant string
  *****************************************************************************/
 char *sl_rtl_util_iq_sample_qa_code2string(char *buf, int size, uint32_t code);
+
+/**************************************************************************//**
+ * Validate Bluetooth channel map for Channel Sounding (CS) measurement based
+ * on the user input parameters. The function will return SL_RTL_ERROR_SUCCESS
+ * if the requested channel map is compatible with the algorithm and the
+ * selected mode settings. Otherwise an error will be returned. This function
+ * does not check for any Bluetooth-related constraints (for example skipping
+ * of the advertisement channels).
+ *
+ * @param[in] cs_mode Channel sounding mode (see the CS API)
+ * @param[in] algo_mode Channel sounding algorithm mode (see the CS API)
+ * @param[in] channel_map Bluetooth channel bitmap to validate
+ * @return ::SL_RTL_ERROR_SUCCESS if successful
+ *****************************************************************************/
+enum sl_rtl_error_code sl_rtl_util_validate_bluetooth_cs_channel_map(
+  const sl_rtl_cs_mode cs_mode,
+  const sl_rtl_cs_algo_mode algo_mode,
+  const uint8_t channel_map[10]);
 
 /** @} */ // end addtogroup sl_rtl_util
 
@@ -2068,5 +2110,9 @@ sl_rtl_log_configure(const sl_rtl_log_params *log_params);
 enum sl_rtl_error_code sl_rtl_log_deinit(void);
 
 /** @} */ // end addtogroup sl_rtl_log
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*SL_RTL_CLIB_API_H*/

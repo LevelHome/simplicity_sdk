@@ -23,7 +23,7 @@ bool sli_zigbee_af_general_response_commands_read_attributes_response_callback(s
                                                                                uint16_t bufLen)
 {
   uint16_t bufIndex = 0;
-  sl_zigbee_af_debug_print("%p_RESP: ", "READ_ATTR");
+  sl_zigbee_af_debug_print("%s_RESP: ", "READ_ATTR");
   sl_zigbee_af_debug_debug_exec(sl_zigbee_af_decode_and_print_cluster_with_mfg_code(clusterId, sl_zigbee_af_get_mfg_code_from_current_command()));
   sl_zigbee_af_debug_println("");
   sl_zigbee_af_debug_flush();
@@ -41,12 +41,12 @@ bool sli_zigbee_af_general_response_commands_read_attributes_response_callback(s
     bufIndex += 2;
     status = (sl_zigbee_af_status_t)sl_zigbee_af_get_int8u(buffer, bufIndex, bufLen);
     bufIndex++;
-    sl_zigbee_af_debug_println(" - attr:%2x, status:%x", attributeId, status);
+    sl_zigbee_af_debug_println(" - attr:%04X, status:%02X", attributeId, status);
     if (status == SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
       uint8_t dataType;
       uint16_t dataSize;
       if (bufLen - bufIndex < 1) {
-        sl_zigbee_af_debug_println("ERR: attr:%2x premature end of buffer after success status", attributeId);
+        sl_zigbee_af_debug_println("ERR: attr:%04X premature end of buffer after success status", attributeId);
         break;
       }
       dataType = sl_zigbee_af_get_int8u(buffer, bufIndex, bufLen);
@@ -56,7 +56,7 @@ bool sli_zigbee_af_general_response_commands_read_attributes_response_callback(s
                                                    buffer + bufIndex,
                                                    bufLen - bufIndex);
 
-      sl_zigbee_af_debug_print("   type:%x, val:", dataType);
+      sl_zigbee_af_debug_print("   type:%02X, val:", dataType);
       if (dataSize != 0) {
         if (sl_zigbee_af_is_string_attribute_type(dataType)) {
           sl_zigbee_af_debug_print_string(buffer + bufIndex);
@@ -70,7 +70,7 @@ bool sli_zigbee_af_general_response_commands_read_attributes_response_callback(s
         bufIndex += dataSize;
       } else {
         // dataSize exceeds buffer length, terminate loop
-        sl_zigbee_af_debug_println("ERR: attr:%2x size exceeds buffer size %d", attributeId, dataSize);
+        sl_zigbee_af_debug_println("ERR: attr:%04X size exceeds buffer size %d", attributeId, dataSize);
         sl_zigbee_af_debug_flush();
         break; // while
       }
@@ -85,7 +85,7 @@ bool sl_zigbee_af_write_attributes_response_cb(sl_zigbee_af_cluster_id_t cluster
                                                uint16_t bufLen)
 {
   uint16_t bufIndex = 0;
-  sl_zigbee_af_debug_print("%p_RESP: ", "WRITE_ATTR");
+  sl_zigbee_af_debug_print("%s_RESP: ", "WRITE_ATTR");
   sl_zigbee_af_debug_debug_exec(sl_zigbee_af_decode_and_print_cluster_with_mfg_code(clusterId, sl_zigbee_af_get_mfg_code_from_current_command()));
   sl_zigbee_af_debug_println("");
   sl_zigbee_af_debug_flush();
@@ -97,7 +97,7 @@ bool sl_zigbee_af_write_attributes_response_cb(sl_zigbee_af_cluster_id_t cluster
                                                                                  bufIndex,
                                                                                  bufLen);
     bufIndex++;
-    sl_zigbee_af_debug_println(" - status:%x", status);
+    sl_zigbee_af_debug_println(" - status:%02X", status);
     if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
       sl_zigbee_af_attribute_id_t attributeId = (sl_zigbee_af_attribute_id_t)sl_zigbee_af_get_int16u(buffer,
                                                                                                      bufIndex,
@@ -107,7 +107,7 @@ bool sl_zigbee_af_write_attributes_response_cb(sl_zigbee_af_cluster_id_t cluster
       (void)attributeId;
 
       bufIndex += 2;
-      sl_zigbee_af_debug_println("   attr:%2x", attributeId);
+      sl_zigbee_af_debug_println("   attr:%04X", attributeId);
     }
     sl_zigbee_af_debug_flush();
   }
@@ -120,7 +120,7 @@ bool sl_zigbee_af_configure_reporting_response_cb(sl_zigbee_af_cluster_id_t clus
                                                   uint16_t bufLen)
 {
   uint16_t bufIndex = 0;
-  sl_zigbee_af_reporting_print("%p_RESP: ", "CFG_RPT");
+  sl_zigbee_af_reporting_print("%s_RESP: ", "CFG_RPT");
   sl_zigbee_af_reporting_debug_exec(sl_zigbee_af_decode_and_print_cluster_with_mfg_code(clusterId, sl_zigbee_af_get_mfg_code_from_current_command()));
   sl_zigbee_af_reporting_println("");
   sl_zigbee_af_reporting_flush();
@@ -133,7 +133,7 @@ bool sl_zigbee_af_configure_reporting_response_cb(sl_zigbee_af_cluster_id_t clus
                                                                                  bufIndex,
                                                                                  bufLen);
     bufIndex++;
-    sl_zigbee_af_reporting_println(" - status:%x", status);
+    sl_zigbee_af_reporting_println(" - status:%02X", status);
     if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
       sl_zigbee_af_reporting_direction_t direction;
       sl_zigbee_af_attribute_id_t attributeId;
@@ -145,7 +145,7 @@ bool sl_zigbee_af_configure_reporting_response_cb(sl_zigbee_af_cluster_id_t clus
                                                                          bufIndex,
                                                                          bufLen);
       bufIndex += 2;
-      sl_zigbee_af_reporting_println("   direction:%x, attr:%2x",
+      sl_zigbee_af_reporting_println("   direction:%02X, attr:%04X",
                                      direction,
                                      attributeId);
     }
@@ -160,7 +160,7 @@ bool sl_zigbee_af_read_reporting_configuration_response_cb(sl_zigbee_af_cluster_
                                                            uint16_t bufLen)
 {
   uint16_t bufIndex = 0;
-  sl_zigbee_af_reporting_print("%p_RESP: ", "READ_RPT_CFG");
+  sl_zigbee_af_reporting_print("%s_RESP: ", "READ_RPT_CFG");
   sl_zigbee_af_reporting_debug_exec(sl_zigbee_af_decode_and_print_cluster_with_mfg_code(clusterId, sl_zigbee_af_get_mfg_code_from_current_command()));
   sl_zigbee_af_reporting_println("");
   sl_zigbee_af_reporting_flush();
@@ -182,7 +182,7 @@ bool sl_zigbee_af_read_reporting_configuration_response_cb(sl_zigbee_af_cluster_
                                                                        bufIndex,
                                                                        bufLen);
     bufIndex += 2;
-    sl_zigbee_af_reporting_println(" - status:%x, direction:%x, attr:%2x",
+    sl_zigbee_af_reporting_println(" - status:%02X, direction:%02X, attr:%04X",
                                    status,
                                    direction,
                                    attributeId);
@@ -203,7 +203,7 @@ bool sl_zigbee_af_read_reporting_configuration_response_cb(sl_zigbee_af_cluster_
           bufIndex += 2;
           maxInterval = sl_zigbee_af_get_int16u(buffer, bufIndex, bufLen);
           bufIndex += 2;
-          sl_zigbee_af_reporting_println("   type:%x, min:%2x, max:%2x",
+          sl_zigbee_af_reporting_println("   type:%02X, min:%04X, max:%04X",
                                          dataType,
                                          minInterval,
                                          maxInterval);
@@ -221,11 +221,11 @@ bool sl_zigbee_af_read_reporting_configuration_response_cb(sl_zigbee_af_cluster_
         {
           uint16_t timeout = sl_zigbee_af_get_int16u(buffer, bufIndex, bufLen);
           bufIndex += 2;
-          sl_zigbee_af_reporting_println("   timeout:%2x", timeout);
+          sl_zigbee_af_reporting_println("   timeout:%04X", timeout);
           break;
         }
         default:
-          sl_zigbee_af_reporting_println("ERR: unknown direction %x", direction);
+          sl_zigbee_af_reporting_println("ERR: unknown direction %02X", direction);
           sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_INVALID_FIELD);
           return true;
       }
@@ -263,8 +263,8 @@ bool sli_zigbee_af_general_response_commands_report_attributes_callback(sl_zigbe
                                                  buffer + bufIndex,
                                                  bufLen - bufIndex);
 
-    sl_zigbee_af_reporting_println(" - attr:%2x", attributeId);
-    sl_zigbee_af_reporting_print("   type:%x, val:", dataType);
+    sl_zigbee_af_reporting_println(" - attr:%04X", attributeId);
+    sl_zigbee_af_reporting_print("   type:%02X, val:", dataType);
     if (dataSize != 0) {
       if (sl_zigbee_af_is_string_attribute_type(dataType)) {
         sl_zigbee_af_reporting_print_string(buffer + bufIndex);
@@ -278,7 +278,7 @@ bool sli_zigbee_af_general_response_commands_report_attributes_callback(sl_zigbe
       bufIndex += dataSize;
     } else {
       // dataSize exceeds buffer length, terminate loop
-      sl_zigbee_af_debug_println("ERR: attr:%2x size %d exceeds buffer size", attributeId, dataSize);
+      sl_zigbee_af_debug_println("ERR: attr:%04X size %d exceeds buffer size", attributeId, dataSize);
       sl_zigbee_af_reporting_flush();
       break; // while
     }
@@ -291,9 +291,9 @@ bool sl_zigbee_af_default_response_cb(sl_zigbee_af_cluster_id_t clusterId,
                                       uint8_t commandId,
                                       sl_zigbee_af_status_t status)
 {
-  sl_zigbee_af_debug_print("%p_RESP: ", "DEFAULT");
+  sl_zigbee_af_debug_print("%s_RESP: ", "DEFAULT");
   sl_zigbee_af_debug_debug_exec(sl_zigbee_af_decode_and_print_cluster_with_mfg_code(clusterId, sl_zigbee_af_get_mfg_code_from_current_command()));
-  sl_zigbee_af_debug_println(" cmd %x status %x", commandId, status);
+  sl_zigbee_af_debug_println(" cmd %02X status %02X", commandId, status);
   sl_zigbee_af_debug_flush();
   return true;
 }
@@ -306,9 +306,9 @@ bool sl_zigbee_af_discover_attributes_response_cb(sl_zigbee_af_cluster_id_t clus
 {
   uint16_t bufIndex = 0;
 
-  sl_zigbee_af_debug_print("%p%p_RESP: ", "DISC_ATTR", (extended ? "_EXT" : ""));
+  sl_zigbee_af_debug_print("%s%s_RESP: ", "DISC_ATTR", (extended ? "_EXT" : ""));
   sl_zigbee_af_debug_debug_exec(sl_zigbee_af_decode_and_print_cluster_with_mfg_code(clusterId, sl_zigbee_af_get_mfg_code_from_current_command()));
-  sl_zigbee_af_debug_println(" comp %pDONE", discoveryComplete ? "" : "NOT_");
+  sl_zigbee_af_debug_println(" comp %sDONE", discoveryComplete ? "" : "NOT_");
   sl_zigbee_af_debug_flush();
 
   // Each record in the response has a two-byte attribute id and a one-byte
@@ -331,9 +331,9 @@ bool sl_zigbee_af_discover_attributes_response_cb(sl_zigbee_af_cluster_id_t clus
     if (extended) {
       accessControl = sl_zigbee_af_get_int8u(buffer, bufIndex, bufLen);
       bufIndex++;
-      sl_zigbee_af_debug_println(" - attr:%2x, type:%x ac:%x", attributeId, dataType, accessControl);
+      sl_zigbee_af_debug_println(" - attr:%04X, type:%02X ac:%02X", attributeId, dataType, accessControl);
     } else {
-      sl_zigbee_af_debug_println(" - attr:%2x, type:%x", attributeId, dataType);
+      sl_zigbee_af_debug_println(" - attr:%04X, type:%02X", attributeId, dataType);
     }
     sl_zigbee_af_debug_flush();
   }

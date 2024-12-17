@@ -1,6 +1,6 @@
 # SE Manager Key Agreement (ECDH)
 
-This example uses the SE Manager API to perform the key agreement (ECDH) on the supported Series 2 device.
+This example uses the SE Manager API to perform the key agreement (ECDH) on the supported device.
 
 The Elliptic Curve Diffie-Hellman (ECDH) is an anonymous key agreement protocol that allows two parties, each having an elliptic curve public-private key pair, to establish a shared secret over an insecure channel.
 

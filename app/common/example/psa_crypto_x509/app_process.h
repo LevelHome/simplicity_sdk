@@ -83,6 +83,8 @@ typedef enum {
 #define KEY_STORAGE_MAX         PERSISTENT_PLAIN_KEY
 #endif
 #define SECPR1_SIZE_MAX         (3)
+#define SECPR1_256_SIZE         (1)
+#define KEY_STORAGE_PLAIN_MAX   PERSISTENT_PLAIN_KEY
 #define HASH_ALGO_MAX           (3)
 
 /// Default key usage is ECDSA sigan and verify hash

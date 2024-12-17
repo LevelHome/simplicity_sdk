@@ -37,6 +37,38 @@ library:
     unless:
       - zigbee_multi_network
       - zigbee_x86_64
+  - path: protocol/zigbee/build/gcc/aarch64_tizen-0.1-13.1_gcc-9.2-softfp/zigbee-r22-support-mac-test-cmds/release/libzigbee-r22-support-mac-test-cmds.a
+    condition:
+      - toolchain_gcc
+      - aarch64_tizen-0.1-13.1_gcc-9.2-softfp
+      - zigbee_stack_unix
+      - zigbee_multi_network
+      - zigbee_mac_test_commands_support
+    unless: []
+  - path: protocol/zigbee/build/gcc/aarch64_tizen-0.1-13.1_gcc-9.2-softfp/zigbee-r22-support-mac-test-cmds/release_singlenetwork/libzigbee-r22-support-mac-test-cmds.a
+    condition:
+      - toolchain_gcc
+      - aarch64_tizen-0.1-13.1_gcc-9.2-softfp
+      - zigbee_stack_unix
+      - zigbee_mac_test_commands_support
+    unless:
+      - zigbee_multi_network
+  - path: protocol/zigbee/build/gcc/armv7l_tizen-0.1-13.1_gcc-9.2-softfp/zigbee-r22-support-mac-test-cmds/release/libzigbee-r22-support-mac-test-cmds.a
+    condition:
+      - toolchain_gcc
+      - armv7l_tizen-0.1-13.1_gcc-9.2-softfp
+      - zigbee_stack_unix
+      - zigbee_multi_network
+      - zigbee_mac_test_commands_support
+    unless: []
+  - path: protocol/zigbee/build/gcc/armv7l_tizen-0.1-13.1_gcc-9.2-softfp/zigbee-r22-support-mac-test-cmds/release_singlenetwork/libzigbee-r22-support-mac-test-cmds.a
+    condition:
+      - toolchain_gcc
+      - armv7l_tizen-0.1-13.1_gcc-9.2-softfp
+      - zigbee_stack_unix
+      - zigbee_mac_test_commands_support
+    unless:
+      - zigbee_multi_network
   - path: protocol/zigbee/build/gcc/arm32v7/zigbee-r22-support-mac-test-cmds/release/libzigbee-r22-support-mac-test-cmds.a
     condition:
       - toolchain_gcc
@@ -237,6 +269,22 @@ library:
       - zigbee_multi_network
       - zigbee_phy_2_4_subghz_selection_end_device
       - zigbee_phy_2_4_subghz_switch_coordinator
+  - path: protocol/zigbee/build/llvm/aarch64-android-ndk-r25c/zigbee-r22-support-mac-test-cmds/release/libzigbee-r22-support-mac-test-cmds.a
+    condition:
+      - toolchain_gcc
+      - aarch64-android-ndk-r25c
+      - zigbee_stack_unix
+      - zigbee_multi_network
+      - zigbee_mac_test_commands_support
+    unless: []
+  - path: protocol/zigbee/build/llvm/aarch64-android-ndk-r25c/zigbee-r22-support-mac-test-cmds/release_singlenetwork/libzigbee-r22-support-mac-test-cmds.a
+    condition:
+      - toolchain_gcc
+      - aarch64-android-ndk-r25c
+      - zigbee_stack_unix
+      - zigbee_mac_test_commands_support
+    unless:
+      - zigbee_multi_network
 metadata:
   sbom:
     license: MSLA

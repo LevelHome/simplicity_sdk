@@ -30,16 +30,9 @@
 #include <stdio.h>
 #include "sl_component_catalog.h"
 #include "sl_common.h"
+#include "sl_memory_manager.h"
 #include "ble_peer_manager_filter.h"
 #include "ble_peer_manager_filter_config.h"
-
-#ifndef HOST_TOOLCHAIN
-  #include "sl_memory_manager.h"
-#else // ifndef HOST_TOOLCHAIN
-  #include <stdlib.h>
-  #define sl_malloc malloc
-  #define sl_free free
-#endif // ifndef HOST_TOOLCHAIN
 
 #if defined(SL_CATALOG_APP_LOG_PRESENT) && defined(BLE_PEER_MANAGER_FILTER_LOG)
   #include "app_log.h"
@@ -350,6 +343,9 @@ bool ble_peer_manager_find_match(bd_addr *address,
   uint8_t advertisement_length;
   uint8_t advertisement_type;
   uint8_t i = 0;
+  bool found_service_uuid16 = false;
+  bool found_service_uuid128 = false;
+  bool found_name = false;
   filter_set_t found;
   found.total = 0;
 
@@ -382,31 +378,27 @@ bool ble_peer_manager_find_match(bd_addr *address,
     }
     ble_peer_manager_filter_log_debug("Found matching RSSI" APP_LOG_NL);
   }
+
   while (i < (adv_data->len - 1)) {
     advertisement_length = adv_data->data[i];
     advertisement_type = adv_data->data[i + 1];
     if (active_filter.filter_set.flags.device_name == FILTER_SET) {
       if ((advertisement_type == AD_TYPE_SHORTENED_LOCAL_NAME) || (advertisement_type == AD_TYPE_COMPLETE_LOCAL_NAME)) {
         found.flags.device_name = FILTER_SET;
-        if (advertisement_length - 1 < active_filter.device_name_len) {
-          return false;
-        }
         if (active_filter.filter_set.flags.device_name_full_match) {
-          // Full match requested but lengths are not equal
-          if (advertisement_length - 1 != active_filter.device_name_len) {
-            return false;
-          }
+          found.flags.device_name_full_match = FILTER_SET;
         }
-        if (memcmp(&adv_data->data[i + 2], active_filter.device_name, active_filter.device_name_len) == 0) {
-          ble_peer_manager_filter_log_debug("Found matching device name" APP_LOG_NL);
-        } else {
-          return false;
+        if (advertisement_length - 1 >= active_filter.device_name_len
+            && (!active_filter.filter_set.flags.device_name_full_match
+                || advertisement_length - 1 == active_filter.device_name_len) ) {
+          if (memcmp(&adv_data->data[i + 2], active_filter.device_name, active_filter.device_name_len) == 0) {
+            ble_peer_manager_filter_log_debug("Found matching device name" APP_LOG_NL);
+            found_name = true;
+          }
         }
       }
     }
     if (active_filter.filter_set.flags.service_uuid16 == FILTER_SET) {
-      bool found_service_uuid16 = false;
-      found.flags.service_uuid16 = FILTER_SET;
       if ((advertisement_type == AD_TYPE_INCOMPLETE_LIST_16_BIT_SERVICE_IDS)
           || (advertisement_type == AD_TYPE_COMPLETE_LIST_16_BIT_SERVICE_IDS)) {
         found.flags.service_uuid16 = FILTER_SET;
@@ -418,14 +410,9 @@ bool ble_peer_manager_find_match(bd_addr *address,
             found_service_uuid16 = true;
           }
         }
-        if (!found_service_uuid16) {
-          return false;
-        }
       }
     }
     if (active_filter.filter_set.flags.service_uuid128 == FILTER_SET) {
-      bool found_service_uuid128 = false;
-      found.flags.service_uuid128 = FILTER_SET;
       if ((advertisement_type == AD_TYPE_INCOMPLETE_LIST_128_BIT_SERVICE_IDS)
           || (advertisement_type == AD_TYPE_COMPLETE_LIST_128_BIT_SERVICE_IDS)) {
         found.flags.service_uuid128 = FILTER_SET;
@@ -437,13 +424,9 @@ bool ble_peer_manager_find_match(bd_addr *address,
             found_service_uuid128 = true;
           }
         }
-        if (!found_service_uuid128) {
-          return false;
-        }
       }
     }
     if (active_filter.filter_set.flags.service_data == FILTER_SET) {
-      found.flags.service_data = FILTER_SET;
       if (advertisement_type == AD_TYPE_SERVICE_DATA) {
         found.flags.service_data = FILTER_SET;
         if (advertisement_length - 1
@@ -478,9 +461,23 @@ bool ble_peer_manager_find_match(bd_addr *address,
     // Jump to next AD record
     i = i + advertisement_length + 1;
   }
+  if ((active_filter.filter_set.flags.device_name == FILTER_SET
+       || active_filter.filter_set.flags.device_name_full_match == FILTER_SET)
+      && !found_name) {
+    return false;
+  }
+  if (active_filter.filter_set.flags.service_uuid16 == FILTER_SET
+      && !found_service_uuid16) {
+    return false;
+  }
+  if (active_filter.filter_set.flags.service_uuid128 == FILTER_SET
+      && !found_service_uuid128) {
+    return false;
+  }
   if (active_filter.filter_set.total != found.total) {
     return false;
   }
+
   ble_peer_manager_filter_log_info("Found matching device based on the configured filters" APP_LOG_NL);
   return true;
 }

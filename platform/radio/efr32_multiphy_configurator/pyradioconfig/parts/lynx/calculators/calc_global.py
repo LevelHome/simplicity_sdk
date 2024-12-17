@@ -37,7 +37,10 @@ class CALC_Global_lynx(CALC_Global_panther):
         self._add_antswend_regs(model)
         self._add_cfgantpatt_regs(model)
         self._add_RAC_ADC_regs(model)
+        self._add_RAC_CLKMULTEN1_en(model)
 
+    def _add_common_regs(self, model):
+        super()._add_common_regs(model)
         self._addModelRegister(model, 'AGC.CTRL2.DEBCNTRST', int, ModelVariableFormat.HEX)
         self._addModelRegister(model, 'AGC.CTRL4.PERIODRFPKD', int, ModelVariableFormat.HEX)
         self._addModelRegister(model, 'AGC.CTRL4.RFPKDPRDGEAR', int, ModelVariableFormat.HEX)
@@ -114,7 +117,6 @@ class CALC_Global_lynx(CALC_Global_panther):
         self._addModelRegister(model, 'RAC.CLKMULTEN0.CLKMULTENREG3', int, ModelVariableFormat.HEX)
         self._addModelRegister(model, 'RAC.CLKMULTEN0.CLKMULTENBYPASS40MHZ', int, ModelVariableFormat.HEX)
         self._addModelRegister(model, 'RAC.CLKMULTEN0.CLKMULTREG3ADJV', int, ModelVariableFormat.HEX)
-        self._addModelRegister(model, 'RAC.CLKMULTEN1.CLKMULTDRVAMPSEL', int, ModelVariableFormat.HEX)
         self._addModelRegister(model, 'RAC.LNAMIXDEBUG.LNAMIXDISMXR', int, ModelVariableFormat.HEX)
         # Already added as model in Panther, but not an output
         # self._addModelRegister(model, 'RAC.LNAMIXTRIM0.LNAMIXRFPKDBWSEL', int, ModelVariableFormat.HEX)
@@ -200,6 +202,9 @@ class CALC_Global_lynx(CALC_Global_panther):
     def _add_RAC_CLKMULTEN0_en(self, model):
         super()._add_RAC_CLKMULTEN0_en(model)
         self._addModelRegister(model, 'RAC.CLKMULTEN0.CLKMULTENDRVP', int, ModelVariableFormat.HEX)
+
+    def _add_RAC_CLKMULTEN1_en(self, model):
+        self._addModelRegister(model, 'RAC.CLKMULTEN1.CLKMULTDRVAMPSEL', int, ModelVariableFormat.HEX)
 
     def _add_RAC_ADC_regs(self, model):
         self._addModelRegister(model, 'RAC.IFADCTRIM0.IFADCCLKSEL', int, ModelVariableFormat.HEX)

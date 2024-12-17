@@ -1269,7 +1269,6 @@ sl_status_t sl_usbd_core_endpoint_transfer_async(uint8_t      ep_addr,
       } else if ((SL_IS_BIT_SET(p_urb->flags, SLI_USBD_URB_FLAG_XFER_END) == true)
                  && (p_urb->transfer_len % p_ep->max_pkt_size == 0u)
                  && (p_urb->transfer_len != 0u)) {
-        // TODO This case should be tested more thoroughly.
         // Send ZLP if needed, at end of xfer.
         SL_CLEAR_BIT(p_urb->flags, (uint8_t)SLI_USBD_URB_FLAG_XFER_END);
 
@@ -2484,7 +2483,6 @@ static sl_status_t usbd_core_endpoint_write(sli_usbd_endpoint_t         *p_ep,
       && (status == SL_STATUS_OK)
       && ((p_urb->buf_len % p_ep->max_pkt_size) == 0u)
       && (p_urb->buf_len != 0u)) {
-    // TODO This case should be tested more thoroughly.
     SLI_USBD_DBG_STATS_EP_INC(p_ep->index, driver_tx_zlp_nbr);
 
     status = sli_usbd_driver_endpoint_tx_zlp(p_ep->address);
@@ -2762,7 +2760,7 @@ static sl_status_t usbd_core_get_urb(sli_usbd_endpoint_t    *p_ep,
 #if (USBD_CFG_URB_EXTRA_EN == 1)
   // Check if EP is empty, if enough URB rem or if main URB avail.
   if ((ep_empty == true)
-      || (usbd_ptr->urb_extra_avail_count > 0u) // TODO
+      || (usbd_ptr->urb_extra_avail_count > 0u)
       || (p_ep->urb_main_avail == true)) {
 #else
   // Check if EP is empty.

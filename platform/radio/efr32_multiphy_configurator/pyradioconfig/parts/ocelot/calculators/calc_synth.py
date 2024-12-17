@@ -24,8 +24,7 @@ class CALC_Synth_ocelot(CALC_Synth_lynx):
         """
 
         # Build variables from Lynx
-        calc_synth_lynx_obj = CALC_Synth_lynx()
-        calc_synth_lynx_obj.buildVariables(model)
+        super().buildVariables(model)
 
         # New variables
         self._addModelVariable(model, 'synth_rx_mode', Enum, ModelVariableFormat.DECIMAL)

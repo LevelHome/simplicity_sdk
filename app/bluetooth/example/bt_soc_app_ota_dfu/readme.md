@@ -35,56 +35,53 @@ This example demonstrates how to use the Application OTA DFU software component.
 
 By deafult, the Application OTA DFU software component takes care of the full OTA DFU process. It manages the upload process and it interfaces with the bootloader. The main application (app.c) only extends this component with some nice-to-have features - such as progress reporting and error handling - and takes care of the device reboot. The developer is free to modify this code.
 
-
 ## Testing the Example
 
 This is a minimal example with the application OTA service that allows it to do a firmware update during runtime. There is no need to change to 'OTA mode' and no Apploader utility is required. Once the new firmware is downloaded to the device, a restart will happen and the new firmware will overwrite the original application content. The application OTA example has to be uploaded to a device that already has an **internal storage bootloader** with at least **one configured flash storage** (slot 0) with enough capacity to store the new firmware. When started, the application first checks this flash storage and if necessary it will erase its content. When the OTA update finished and reboot is done, this storage will be cleared again if necessary. To test this update feature do the following:
 
 1. Build and flash an internal storage bootloader to your device. (See Troubleshooting section.)
 2. Build and flash the SoC-Application-OTA-DFU sample app to your device.
-3. Create the full.gbl firmware upgrade file with the create_bl_files.bat/.sh script, which is part of your project. If it does not work, see the instructions in [AN1086: Using the Gecko Bootloader with the Silicon Labs Bluetooth® Applications](https://www.silabs.com/documents/public/application-notes/an1086-gecko-bootloader-bluetooth.pdf).
-4. Save full.gbl outside of your project for later use.
-5. Modify the code so that you can differentiate the old and the new firmware (e.g., change the first app_log message in app_init() function or change the device name in the GATT database). 
-6. Build the project again, but do not flash.
-7. Create a new full.gbl file with create_bl_files.bat/.sh.
-8. Open a terminal program and connect to your radio board via the JLink adapter to see the debug messages.
-9. Download the **EFR Connect** smartphone application available on [iOS](https://apps.apple.com/us/app/efr-connect/id1030932759) and [Android](https://play.google.com/store/apps/details?id=com.siliconlabs.bledemo).
-10. Open the app and choose the Bluetooth Browser.
-   ![EFR Connect start screen](image/readme_img2.png)
-11. Now you should find your device advertising as "Application OTA". Tap **Connect**.
-   ![Bluetooth Browser](image/readme_img3.png)
-12. The connection is opened, and the GATT database is automatically discovered. Find the device name characteristic under Generic Access service and try to read out the device name.
+3. Modify the code so that you can differentiate the old and the new firmware (e.g., add an app_log message in the *app_init()* function or change the device name in the GATT database).
+4. Optionally, you can modify the *create_gbl* step in the *Post-Build Editor (PBE)*. You can learn more about generating GBL files using the *Post-Build Editor* in [Simplicity Studio 5 Users Guide: Post-Build Editor (PBE)](https://docs.silabs.com/simplicity-studio-5-users-guide/latest/ss-5-users-guide-building-and-flashing/post-build-editor).
+5. Build the project again, but do not flash.
+6. Observe that a GBL (Gecko Bootloader) file is generated automatically along with the build artifacts. The filename is something similar to *bt_soc_app_ota_dfu.gbl* but may vary based on the project variant. Copy this file to your smartphone.
+7. Open a terminal program and connect to your radio board via the JLink adapter to see the debug messages.
+8. Download the **Simplicity Connect** smartphone application available on [iOS](https://apps.apple.com/us/app/simplicity-connect/id1030932759) and [Android](https://play.google.com/store/apps/details?id=com.siliconlabs.bledemo&hl=en&gl=US).
+9. Open the app and choose the [Scan] option.  
+   ![Simplicity Connect start scanning](image/readme_img2.png)
+10. Now you should find your device advertising as "Application OTA". Tap **Connect**.  
+   ![Scan results](image/readme_img3.png)
+11. The connection is opened, and the GATT database is automatically discovered. Find the device name characteristic under Generic Access service and try to read out the device name.
+12. Select **OTA Firmware** option.  
    ![GATT database of the device](image/readme_img4.png)
-13. Select the 3 dots menu and choose OTA DFU.
-   ![OTA DFU menu](image/readme_img5.png)
-14. Use the Partial OTA tab (default)
-   ![Select gbl file](image/readme_img6.png)
-15. Select the full.gbl file and tap **OTA** to start the OTA transfer.
-16. Once its done tap **END** to finalize the process.
-17. Press push button 0 on your kit to restart your device. The bootloader will automatically install the new firmware image.
-18. Check if the new firmware is started either by checking the (modified) device name in EFR Connect or by checking the (modified) logs in the terminal.
+13. Use the Partial OTA tab (default)  
+   ![OTA DFU popup](image/readme_img5.png)
+14. Select the *bt_soc_app_ota_dfu.gbl* file and tap **Upload** to start the OTA transfer.
+15. Once its done tap **END** to finalize the process.
+16. Press push button 0 on your kit to restart your device. The bootloader will automatically install the new firmware image.
+17. Check if the new firmware is started either by checking the (modified) device name in Simplicity Connect or by checking the (modified) logs in the terminal.
 
 
 ## Troubleshooting
 
 ### Bootloader Issues
 
-Note that Example Projects do not include a bootloader. However, Bluetooth-based Example Projects expect a bootloader to be present on the device in order to support device firmware upgrade (DFU). To get your application to work, you should either 
+Note that Example Projects do not include a bootloader. However, Bluetooth-based Example Projects expect a bootloader to be present on the device in order to support device firmware upgrade (DFU). To get your application to work, you should either
 - flash the proper bootloader or
 - remove the DFU functionality from the project.
 
 **If you do not wish to add a bootloader**, then remove the DFU functionality by uninstalling the *Bootloader Application Interface* software component -- and all of its dependants. This will automatically put your application code to the start address of the flash, which means that a bootloader is no longer needed, but also that you will not be able to upgrade your firmware.
 
-**If you want to add a bootloader**, then either 
+**If you want to add a bootloader**, then either
 - Create a bootloader project, build it and flash it to your device. Note that different projects expect different bootloaders:
   - for NCP and RCP projects create a *BGAPI UART DFU* type bootloader
   - for SoC projects on Series 2 devices create a *Bluetooth Apploader OTA DFU* type bootloader
 
-- or run a precompiled Demo on your device from the Launcher view before flashing your application. Precompiled demos flash both bootloader and application images to the device. Flashing your own application image after the demo will overwrite the demo application but leave the bootloader in place. 
+- or run a precompiled Demo on your device from the Launcher view before flashing your application. Precompiled demos flash both bootloader and application images to the device. Flashing your own application image after the demo will overwrite the demo application but leave the bootloader in place.
   - For NCP and RCP projects, flash the *Bluetooth - NCP* demo.
   - For SoC projects, flash the *Bluetooth - SoC Thermometer* demo.
 
-**Important Notes:** 
+**Important Notes:**
 - when you flash your application image to the device, use the *.hex* or *.s37* output file. Flashing *.bin* files may overwrite (erase) the bootloader.
 
 - On Series 2 devices SoC example projects require a *Bluetooth Apploader OTA DFU* type bootloader by default. This bootloader needs a lot of flash space and does not fit into the regular bootloader area, hence the application start address must be shifted. This shift is automatically done by the *Apploader Support for Applications* software component, which is installed by default. If you want to use any other bootloader type, you should remove this software component in order to shift the application start address back to the end of the regular bootloader area. Note, that in this case you cannot do OTA DFU with Apploader, but you can still implement application-level OTA DFU by installing the *Application OTA DFU* software component instead of *In-place OTA DFU*.

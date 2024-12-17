@@ -2,8 +2,10 @@ id: zw_zpal_zniffer_production
 label: Z-Wave ZPAL Zniffer Production
 category: Z-Wave
 description: >
-  This component contains ZPAL libraries used for the Z-Wave Zniffer production build. It
-  includes processor-specific libraries for Series 2 chips.
+  This component contains ZPAL libraries used for the Z-Wave Zniffer PTI production build.
+  Z-Wave Zniffer PTI provides functionality for capturing and analyzing Z-Wave network traffic and send it
+  with SiliconLabs PTI (Packet Trace Interface) over Ethernet. Z-Wave PTI appliction is supported
+  in PC Zniffer application out of the box.
 package: Z-Wave
 quality: production
 metadata:

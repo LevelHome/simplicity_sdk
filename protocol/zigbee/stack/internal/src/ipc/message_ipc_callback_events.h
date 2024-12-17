@@ -21,6 +21,24 @@
 #include "stack/internal/inc/message_internal_def.h"
 
 typedef struct {
+  sl_zigbee_gp_status_t status;
+  uint8_t gpdLink;
+  uint8_t sequenceNumber;
+  sl_zigbee_gp_address_t addr;
+  sl_zigbee_gp_security_level_t gpdfSecurityLevel;
+  sl_zigbee_gp_key_type_t gpdfSecurityKeyType;
+  bool autoCommissioning;
+  uint8_t bidirectionalInfo;
+  uint32_t gpdSecurityFrameCounter;
+  uint8_t gpdCommandId;
+  uint32_t mic;
+  uint8_t proxyTableIndex;
+  uint8_t gpdCommandPayloadLength;
+  uint8_t gpdCommandPayload;
+  sl_zigbee_rx_packet_info_t packetInfo;
+} sli_zigbee_stack_gpep_incoming_message_handler_ipc_event_t;
+
+typedef struct {
   sl_802154_short_addr_t conflictingId;
 } sli_zigbee_stack_id_conflict_handler_ipc_event_t;
 

@@ -102,7 +102,7 @@ typedef enum {
 #define GAS_PROXY_FUNCTION_GBZ_COMPONENT_FROM_DATE_TIME_MASK (0x10)
 
 // Forward declaration
-sl_zigbee_af_status_t sl_zigbee_af_cluster_specific_command_parse(sl_zigbee_af_cluster_command_t *cmd);
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_cluster_specific_command_parse(sl_zigbee_af_cluster_command_t *cmd);
 
 typedef enum {
   SL_ZIGBEE_AF_GBZ_NOT_LAST_UNENCRYPTED_MESSAGE = 0x00,

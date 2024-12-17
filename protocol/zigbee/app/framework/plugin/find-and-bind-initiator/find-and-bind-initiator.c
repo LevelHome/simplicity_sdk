@@ -182,7 +182,7 @@ static void checkTargetResponsesEventHandler(sl_zigbee_af_event_t * event)
 
     case STATE_NONE:
     default:
-      debugPrintln("%p: %p: 0x%X",
+      debugPrintln("%s: %s: 0x%02X",
                    SL_ZIGBEE_AF_PLUGIN_FIND_AND_BIND_INITIATOR_PLUGIN_NAME,
                    "Bad state",
                    state);
@@ -194,7 +194,7 @@ static void checkTargetResponsesEventHandler(sl_zigbee_af_event_t * event)
   }
 }
 
-bool sl_zigbee_af_identify_cluster_identify_query_response_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_identify_cluster_identify_query_response_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   (void)cmd;
 
@@ -208,7 +208,7 @@ bool sl_zigbee_af_identify_cluster_identify_query_response_cb(sl_zigbee_af_clust
   sl_zcl_identify_cluster_identify_query_response_command_t cmd_data;
   if (zcl_decode_identify_cluster_identify_query_response_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 #endif
 
@@ -232,9 +232,7 @@ bool sl_zigbee_af_identify_cluster_identify_query_response_cb(sl_zigbee_af_clust
     }
   }
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
 void sli_zigbee_af_find_and_bind_initiator_init_callback(uint8_t init_level)
@@ -277,7 +275,7 @@ static sl_status_t broadcastIdentifyQuery(void)
   status // BDB wants 0xFFFF
     = sl_zigbee_af_send_command_broadcast(SL_ZIGBEE_SLEEPY_BROADCAST_ADDRESS, SL_ZIGBEE_NULL_NODE_ID, 0);
 
-  debugPrintln("%p: %p: 0x%X",
+  debugPrintln("%s: %s: 0x%02X",
                SL_ZIGBEE_AF_PLUGIN_FIND_AND_BIND_INITIATOR_PLUGIN_NAME,
                "Broadcast",
                status);
@@ -296,7 +294,7 @@ static sl_status_t sendIeeeAddrRequest(void)
   status = sl_zigbee_af_find_ieee_address(currentTargetInfoNodeId,
                                           handleIeeeAddrResponse);
 
-  debugPrintln("%p: %p: 0x%X",
+  debugPrintln("%s: %s: 0x%02X",
                SL_ZIGBEE_AF_PLUGIN_FIND_AND_BIND_INITIATOR_PLUGIN_NAME,
                "Ieee request",
                status);
@@ -306,7 +304,7 @@ static sl_status_t sendIeeeAddrRequest(void)
 
 static void handleIeeeAddrResponse(const sl_zigbee_af_service_discovery_result_t *result)
 {
-  debugPrintln("%p: %p: 0x%X",
+  debugPrintln("%s: %s: 0x%02X",
                SL_ZIGBEE_AF_PLUGIN_FIND_AND_BIND_INITIATOR_PLUGIN_NAME,
                "Ieee response",
                result->status);
@@ -333,7 +331,7 @@ static sl_status_t sendSimpleDescriptorRequest()
                                                              currentTargetInfoEndpoint,
                                                              handleSimpleDescriptorResponse);
 
-  debugPrintln("%p: %p: 0x%X",
+  debugPrintln("%s: %s: 0x%02X",
                SL_ZIGBEE_AF_PLUGIN_FIND_AND_BIND_INITIATOR_PLUGIN_NAME,
                "Descriptor request",
                status);
@@ -346,7 +344,7 @@ static void handleSimpleDescriptorResponse(const sl_zigbee_af_service_discovery_
   sl_status_t status = SL_STATUS_OK;
   sl_zigbee_af_cluster_list_t *clusterList = (sl_zigbee_af_cluster_list_t *)(result->responseData);
 
-  debugPrintln("%p: %p: 0x%X",
+  debugPrintln("%s: %s: 0x%02X",
                SL_ZIGBEE_AF_PLUGIN_FIND_AND_BIND_INITIATOR_PLUGIN_NAME,
                "Descriptor response",
                result->status);
@@ -395,7 +393,7 @@ static void processClusterList(bool clientList,
                                                                &bindingEntry,
                                                                groupName)) {
       *status = writeSimpleDescriptorResponse(&bindingEntry, groupName);
-      debugPrintln("%p: write cluster 0x%2X: 0x%X",
+      debugPrintln("%s: write cluster 0x%04X: 0x%02X",
                    SL_ZIGBEE_AF_PLUGIN_FIND_AND_BIND_INITIATOR_PLUGIN_NAME,
                    clusters[i],
                    *status);
@@ -458,7 +456,7 @@ static sl_status_t writeSimpleDescriptorResponse(sl_zigbee_binding_table_entry_t
 
 static void cleanupAndStop(sl_status_t status)
 {
-  debugPrintln("%p: Stop. Status: 0x%X. State: 0x%X",
+  debugPrintln("%s: Stop. Status: 0x%02X. State: 0x%02X",
                SL_ZIGBEE_AF_PLUGIN_FIND_AND_BIND_INITIATOR_PLUGIN_NAME,
                status,
                state);
@@ -470,14 +468,12 @@ uint32_t sl_zigbee_af_identify_cluster_client_command_parse(sl_service_opcode_t 
                                                             sl_service_function_context_t *context)
 {
   (void)opcode;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
   if (!cmd->mfgSpecific && cmd->commandId == ZCL_IDENTIFY_QUERY_RESPONSE_COMMAND_ID) {
-    wasHandled = sl_zigbee_af_identify_cluster_identify_query_response_cb(cmd);
+    status = sl_zigbee_af_identify_cluster_identify_query_response_cb(cmd);
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

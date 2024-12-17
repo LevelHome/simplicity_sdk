@@ -19,6 +19,7 @@
 #include <string.h>
 #include "em_assert.h"
 #include "sl_core.h"
+#include "sl_gpio.h"
 #include "em_cmu.h"
 #include "rail.h"
 

@@ -88,11 +88,11 @@
 #define IOT_I2C_CFG_QWIIC_PERIPHERAL_NO          0
 
 // I2C0 SCL on PA06
-#define IOT_I2C_CFG_QWIIC_SCL_PORT               gpioPortA
+#define IOT_I2C_CFG_QWIIC_SCL_PORT               SL_GPIO_PORT_A
 #define IOT_I2C_CFG_QWIIC_SCL_PIN                6
 
 // I2C0 SDA on PA07
-#define IOT_I2C_CFG_QWIIC_SDA_PORT               gpioPortA
+#define IOT_I2C_CFG_QWIIC_SDA_PORT               SL_GPIO_PORT_A
 #define IOT_I2C_CFG_QWIIC_SDA_PIN                7
 
 // [I2C_IOT_I2C_CFG_QWIIC]$

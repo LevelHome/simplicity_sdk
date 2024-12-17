@@ -53,9 +53,9 @@
 #define CSR_GENERATOR_CONFIG_CERTIFICATE_ON_DEVICE              1
 
 // <o CSR_GENERATOR_CSR_RAM_ADDRESS> Certificate Request RAM address
-// <i> Default: 0x2000FC00
+// <i> Default: 0x20007C00 (31k)
 // <i> The RAM address where the Certificate Request is stored.
-#define CSR_GENERATOR_CSR_RAM_ADDRESS                           0x2000FC00
+#define CSR_GENERATOR_CSR_RAM_ADDRESS                           0x20007C00
 
 // <o CSR_GENERATOR_NVM3_REGION> NVM3 key region to use
 // <i> Default: 0x60000

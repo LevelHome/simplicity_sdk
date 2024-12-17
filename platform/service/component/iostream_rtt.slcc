@@ -12,9 +12,9 @@ metadata:
 root_path: platform/service/iostream
 provides:
   - name: iostream_rtt
-  - name: iostream_transport_core
-    allow_multiple: true
   - name: iostream_transport
+    allow_multiple: true
+  - name: iostream_console_support
     allow_multiple: true
 requires:
   - name: segger_rtt
@@ -40,5 +40,5 @@ template_contribution:
       include: sl_iostream_rtt.h
       handler: sl_iostream_instance_rtt_info
 documentation:
-    docset: gecko-platform
-    document: platform-service/iostream-rtt
+  docset: gecko-platform
+  document: platform-service/iostream-rtt

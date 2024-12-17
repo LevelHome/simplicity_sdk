@@ -30,6 +30,9 @@
 #if !defined(ZIGBEE_STACK_ON_HOST) && !defined(SL_ZIGBEE_TEST)
 #include "sl_token_manufacturing_api.h"
 #endif // !defined(ZIGBEE_STACK_ON_HOST) && !defined(SL_ZIGBEE_TEST)
+#ifdef SL_COMPONENT_CATALOG_PRESENT
+#include "sl_component_catalog.h"
+#endif // SL_COMPONENT_CATALOG_PRESENT
 //------------------------------------------------------------------------------
 // Preprocessor definitions
 
@@ -81,8 +84,13 @@
 // Avoid macro redefinition warning
 #undef ASH_PORT
 #if !defined(SL_ZIGBEE_TEST) && !defined(UNIX_HOST)
+#ifdef SL_CATALOG_IOSTREAM_USART_PRESENT
 #include "sl_iostream_usart_vcom_config.h"
 #define ASH_PORT ((uint8_t)(COM_USART0) + SL_IOSTREAM_USART_VCOM_PERIPHERAL_NO)
+#elif defined(SL_CATALOG_IOSTREAM_EUSART_PRESENT)
+#include "sl_iostream_eusart_vcom_config.h"
+#define ASH_PORT ((uint8_t)(COM_USART0) + SL_IOSTREAM_EUSART_VCOM_PERIPHERAL_NO)
+#endif // SL_CATALOG_IOSTREAM_USART_PRESENT
 #else
 #define ASH_PORT 1
 #endif // !defined(SL_ZIGBEE_TEST) && !defined(UNIX_HOST)
@@ -880,8 +888,10 @@ static uint16_t ashFrameType(uint16_t control, uint16_t len)
 // Trace output functions
 
 #if defined (CORTEXM3)
+#ifdef ashConfigAddr
   #define ASH_TOKEN_ADDRESS ashConfigAddr
-#endif
+#endif // ashConfigAddr
+#endif // CORTEXM3
 
 #ifdef ASH_VUART_TRACE
 
@@ -1007,12 +1017,14 @@ static void ashTraceEventDebugOnly(sl_zigbee_ezsp_status_t status)
 {
 #if !defined(SL_ZIGBEE_TEST) && !defined(ZIGBEE_STACK_ON_HOST)
   if (status == SL_ZIGBEE_EZSP_ASH_STARTED) {
+#ifdef ASH_TOKEN_ADDRESS
     sli_zigbee_debug_binary_format(EM_DEBUG_EZSP_UART,
                                    "BBlf",
                                    ASH_VERSION,
                                    SL_ZIGBEE_EZSP_ASH_STARTED,
                                    MFG_ASH_CONFIG_ARRAY_SIZE * sizeof(tokTypeMfgAshConfig),
                                    ASH_TOKEN_ADDRESS);
+#endif // ASH_TOKEN_ADDRESS
   } else {
     sli_zigbee_debug_binary_format(EM_DEBUG_EZSP_UART,
                                    "BBBB",

@@ -4,6 +4,11 @@ description: Utility to aid with IEEE802.15.4 High Speed PHY Configuration
 package: platform
 category: Platform|Radio
 quality: evaluation
+metadata:
+  sbom:
+    id: rail_util_ieee802154_high_speed
+    name: RAIL Utility, IEEE802.15.4 High Speed PHY Configuration
+    license: Zlib
 requires:
   - name: rail_util_ieee802154_phy_select
 provides:

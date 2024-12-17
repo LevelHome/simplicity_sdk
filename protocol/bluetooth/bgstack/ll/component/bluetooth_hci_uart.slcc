@@ -40,6 +40,12 @@ template_contribution:
     priority: 2
   - name: event_handler
     value:
+      event: internal_app_init
+      include: sl_hci_uart.h
+      handler: sl_hci_uart_init
+    priority: 1
+  - name: event_handler
+    value:
       event: service_process_action
       include: sl_btctrl_hci_packet.h
       handler: sl_btctrl_hci_packet_step

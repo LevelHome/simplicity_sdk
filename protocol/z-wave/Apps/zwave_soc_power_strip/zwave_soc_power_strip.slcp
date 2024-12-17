@@ -15,12 +15,9 @@ component:
   - id: emlib_timer
   - id: emlib_msc
   - id: gpiointerrupt
-  - id: pwm
-    instance: [led1]
   - id: zw_role_type_always_on
   - id: zaf_soc
   - id: zw_core
-  - id: zw_appshw_powerstrip
   - id: zw_zaf
   - id: zw_true_status
   - id: zw_ota
@@ -43,23 +40,44 @@ component:
   - id: zw_cc_supervision
   - id: zw_cc_version
   - id: zw_cc_zwaveplusinfo
+  - id: zw_appshw
   - id: sl_system
   - id: device_init
   - id: mpu # disable execution from RAM
+  - id: pwm
+    instance: [led1]
   - id: simple_rgb_pwm_led
-    instance: [led]
+    instance: [rgb_led0]
+    condition: [hardware_board_has_rgb]
   - id: ZW_MIGRATION_TO_7_19
   - id: zw_cli_common
     condition: [zw_production]
+  - id: app_button_press
+  - id: app_assert
+  - id: simple_button
+    instance: [btn0, btn1]
+  - id: simple_led
+    instance: [led0, led1]
+
 source:
   - path: app.c
   - path: main.c
   - path: app_cli.c
+    condition: [zw_cli_common]
+  - path: app_btn_handler.c
+    condition: [simple_button]
+  - path: app_cc_binary_switch_callbacks.c
+  - path: app_cc_multilevel_switch_callbacks.c
+
 include:
   - path: .
     file_list:
       - path: events.h
 configuration:
+  - name: SHORT_BUTTON_PRESS_DURATION
+    value: (400)
+  - name: MEDIUM_BUTTON_PRESS_DURATION
+    value: (1500)
   - name: CC_MULTI_CHANNEL_IDENTICAL_ENDPOINTS
     value: 0
   - name: ZAF_CONFIG_REQUEST_KEY_S0
@@ -150,20 +168,18 @@ define:
     value: "0x00000" # Range: 0x00000 - 0x0FFFF
 
 config_file:
-  # Override LED config
-  - path: ../../platform/SiliconLabs/AppsHw/src/PowerStrip/config/sl_simple_rgb_pwm_led_led_config.h
-    override:
-      file_id: simple_rgb_pwm_led_config
-      component: simple_rgb_pwm_led
-      instance: led
-    condition: ["device_series_2"]
   - path: PowerStrip.cc_config
     directory: cc_config
-
-other_file:
-  - path: ../../DevTools/postbuild.sh
+  # Sample keys for signing
+  - path: ../../platform/SiliconLabs/PAL/BootLoader/sample-keys/sample_encrypt.key
+    directory: sample_keys
+  - path: ../../platform/SiliconLabs/PAL/BootLoader/sample-keys/sample_sign.key
+    directory: sample_keys
 
 template_contribution:
+  - name: component_catalog
+    condition: [hardware_board_has_rgb]
+    value: RGB_LED
 #------------------ CLI commands ---------------------
   - name: cli_command
     condition: [zw_cli_common]
@@ -179,7 +195,7 @@ template_contribution:
     value:
       name: dim_endpoint
       handler: cli_dim_endpoint
-      help: Dimm the endpoint 2
+      help: Dim the endpoint 2
       argument:
       - type: uint8
         help: New dimming level, it can be minimum 0 and maximum 99
@@ -189,9 +205,21 @@ template_contribution:
       name: toggle_notification_sending
       handler: cli_toggle_notification_sending
       help: Send Overload detected notification, for more information, see the application README
+  - name: cli_command
+    condition: [zw_cli_common]
+    value:
+      name: get_rgb_values
+      handler: cli_get_rgb_values
+      help: Get rgb LED values
+  - name: cli_command
+    condition: [zw_cli_common]
+    value:
+      name: get_led_state
+      handler: cli_get_led_state
+      help: Get LED1 state from the expansion header
 
 post_build:
-  profile: zwave_soc_power_strip
+  profile: zwave_application
 
 tag:
   - prebuilt_demo

@@ -32,7 +32,7 @@ bool sl_zigbee_af_process_message_into_zcl_cmd(sl_zigbee_aps_frame_t* apsFrame,
                        : SL_ZIGBEE_AF_ZCL_OVERHEAD);
 
   if (messageLength < minLength) {
-    sl_zigbee_af_app_println("%pRX pkt too short: %d < %d", "ERROR: ", messageLength, minLength);
+    sl_zigbee_af_app_println("%sRX pkt too short: %d < %d", "ERROR: ", messageLength, minLength);
     return false;
   }
 
@@ -57,7 +57,7 @@ bool sl_zigbee_af_process_message_into_zcl_cmd(sl_zigbee_aps_frame_t* apsFrame,
   returnCmd->seqNum         = message[returnCmd->payloadStartIndex++];
   returnCmd->commandId      = message[returnCmd->payloadStartIndex++];
   if ( returnCmd->payloadStartIndex > returnCmd->bufLen ) {
-    sl_zigbee_af_app_println("%pRX pkt malformed: %d < %d", "ERROR: ", returnCmd->bufLen, returnCmd->payloadStartIndex);
+    sl_zigbee_af_app_println("%sRX pkt malformed: %d < %d", "ERROR: ", returnCmd->bufLen, returnCmd->payloadStartIndex);
     return false;
   }
   returnCmd->interPanHeader = interPanHeader;

@@ -305,7 +305,7 @@ static void publishDebtLog(sl_802154_short_addr_t nodeId, uint8_t srcEndpoint, u
   sl_zigbee_af_get_command_aps_frame()->options |= SL_ZIGBEE_APS_OPTION_SOURCE_EUI64;
   status = sl_zigbee_af_send_command_unicast(SL_ZIGBEE_OUTGOING_DIRECT, nodeId);
   if ( status != SL_STATUS_OK ) {
-    sl_zigbee_af_prepayment_cluster_println("Error in Publish Debt Log %x", status);
+    sl_zigbee_af_prepayment_cluster_println("Error in Publish Debt Log %02X", status);
   }
 }
 
@@ -313,7 +313,7 @@ static void publishDebtLog(sl_802154_short_addr_t nodeId, uint8_t srcEndpoint, u
 // ZCL commands callbacks
 
 // Handles the prepayment Change Debt command.
-bool sl_zigbee_af_prepayment_cluster_change_debt_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_prepayment_cluster_change_debt_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_prepayment_cluster_change_debt_command_t cmd_data;
   uint8_t endpoint;
@@ -326,7 +326,7 @@ bool sl_zigbee_af_prepayment_cluster_change_debt_cb(sl_zigbee_af_cluster_command
 
   if (zcl_decode_prepayment_cluster_change_debt_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   // Look at the debtAmountType field to see how to process the new debt -
@@ -343,8 +343,7 @@ bool sl_zigbee_af_prepayment_cluster_change_debt_cb(sl_zigbee_af_cluster_command
     attributeGroupOffset = (DEBT_RECOVERY_GROUP_DELTA * 2);   // DEBT_#3
     debtType = 2;
   } else {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_NOT_FOUND);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_NOT_FOUND;
   }
 
   // TODO:  Ensure the event Id is > any previous event ID for this debt type.
@@ -421,12 +420,12 @@ bool sl_zigbee_af_prepayment_cluster_change_debt_cb(sl_zigbee_af_cluster_command
   sl_zigbee_af_prepayment_cluster_println("RX Change Debt");
   sl_zigbee_af_prepayment_server_schedule_debt_repayment(endpoint, cmd_data.issuerEventId, debtType, cmd_data.debtRecoveryCollectionTime,
                                                          cmd_data.debtRecoveryStartTime, cmd_data.debtRecoveryFrequency);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
 // Handles the Get Debt Repayment Log command and sends a "Publish Debt Log" response
 // command that provides the requested info from the debt log.
-bool sl_zigbee_af_prepayment_cluster_get_debt_repayment_log_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_prepayment_cluster_get_debt_repayment_log_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_prepayment_cluster_get_debt_repayment_log_command_t cmd_data;
   sl_802154_short_addr_t nodeId;
@@ -434,10 +433,10 @@ bool sl_zigbee_af_prepayment_cluster_get_debt_repayment_log_cb(sl_zigbee_af_clus
 
   if (zcl_decode_prepayment_cluster_get_debt_repayment_log_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_prepayment_cluster_println("RX: GetDebtLog, endTime=0x%4x, numDebts=%d, debtType=%d",
+  sl_zigbee_af_prepayment_cluster_println("RX: GetDebtLog, endTime=0x%08X, numDebts=%d, debtType=%d",
                                           cmd_data.latestEndTime, cmd_data.numberOfDebts, cmd_data.debtType);
   nodeId = sl_zigbee_af_current_command()->source;
   srcEndpoint = sl_zigbee_af_get_command_aps_frame()->destinationEndpoint;
@@ -446,14 +445,14 @@ bool sl_zigbee_af_prepayment_cluster_get_debt_repayment_log_cb(sl_zigbee_af_clus
 
   sl_zigbee_af_send_publish_debt_log(nodeId, srcEndpoint, dstEndpoint, cmd_data.latestEndTime, cmd_data.numberOfDebts, cmd_data.debtType);
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
 void sl_zigbee_af_prepayment_print_debt_log_index(uint8_t index)
 {
   if ( index < DEBT_LOG_TABLE_SIZE ) {
     sl_zigbee_af_prepayment_cluster_println("= Debt Log Entry %d:", index);
-    sl_zigbee_af_prepayment_cluster_println("  collectionTime=0x%4x", DebtLogTable[index].collectionTime);
+    sl_zigbee_af_prepayment_cluster_println("  collectionTime=0x%08X", DebtLogTable[index].collectionTime);
     sl_zigbee_af_prepayment_cluster_println("  amountCollected=%d", DebtLogTable[index].amountCollected);
     sl_zigbee_af_prepayment_cluster_println("  outstandingDebt=%d", DebtLogTable[index].outstandingDebt);
     sl_zigbee_af_prepayment_cluster_println("  debtType=%d", DebtLogTable[index].debtType);
@@ -519,42 +518,42 @@ void sl_zigbee_af_prepayment_print_debt_attributes(uint8_t endpoint, uint8_t ind
   status = sl_zigbee_af_read_attribute(endpoint, ZCL_PREPAYMENT_CLUSTER_ID, attributeId, CLUSTER_MASK_SERVER,
                                        (uint8_t *)&valString, 14, NULL);
 
-  sl_zigbee_af_prepayment_cluster_println("  DebtLabel status=0x%x, val=0x%x %x %x %x %x %x %x %x %x %x %x %x %x %x...", status, valString[0], valString[1],
+  sl_zigbee_af_prepayment_cluster_println("  DebtLabel status=0x%02X, val=0x%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X...", status, valString[0], valString[1],
                                           valString[2], valString[3], valString[4], valString[5], valString[6], valString[7],
                                           valString[8], valString[9], valString[10], valString[11], valString[12], valString[13]);
 
   attributeId = ZCL_DEBT_AMOUNT_1_ATTRIBUTE_ID + (index * DEBT_RECOVERY_GROUP_DELTA);
   status = sl_zigbee_af_read_attribute(endpoint, ZCL_PREPAYMENT_CLUSTER_ID, attributeId, CLUSTER_MASK_SERVER,
                                        (uint8_t *)&val32u, 4, NULL);
-  sl_zigbee_af_prepayment_cluster_println("  DebtAmount status=0x%x, val=%d", status, val32u);
+  sl_zigbee_af_prepayment_cluster_println("  DebtAmount status=0x%02X, val=%d", status, val32u);
 
   attributeId = ZCL_DEBT_RECOVERY_METHOD_1_ATTRIBUTE_ID + (index * DEBT_RECOVERY_GROUP_DELTA);
   status = sl_zigbee_af_read_attribute(endpoint, ZCL_PREPAYMENT_CLUSTER_ID, attributeId, CLUSTER_MASK_SERVER,
                                        (uint8_t *)&val8u, 1, NULL);
-  sl_zigbee_af_prepayment_cluster_println("  RecovMethod status=0x%x, val=%d", status, val8u);
+  sl_zigbee_af_prepayment_cluster_println("  RecovMethod status=0x%02X, val=%d", status, val8u);
 
   attributeId = ZCL_DEBT_RECOVERY_START_TIME_1_ATTRIBUTE_ID + (index * DEBT_RECOVERY_GROUP_DELTA);
   status = sl_zigbee_af_read_attribute(endpoint, ZCL_PREPAYMENT_CLUSTER_ID, attributeId, CLUSTER_MASK_SERVER,
                                        (uint8_t *)&val32u, 4, NULL);
-  sl_zigbee_af_prepayment_cluster_println("  RecovStartTime status=0x%x, val=%d", status, val32u);
+  sl_zigbee_af_prepayment_cluster_println("  RecovStartTime status=0x%02X, val=%d", status, val32u);
 
   attributeId = ZCL_DEBT_RECOVERY_COLLECTION_TIME_1_ATTRIBUTE_ID + (index * DEBT_RECOVERY_GROUP_DELTA);
   status = sl_zigbee_af_read_attribute(endpoint, ZCL_PREPAYMENT_CLUSTER_ID, attributeId, CLUSTER_MASK_SERVER,
                                        (uint8_t *)&val16u, 2, NULL);
-  sl_zigbee_af_prepayment_cluster_println("  RecovCollectTime status=0x%x, val=%d", status, val16u);
+  sl_zigbee_af_prepayment_cluster_println("  RecovCollectTime status=0x%02X, val=%d", status, val16u);
 
   attributeId = ZCL_DEBT_RECOVERY_FREQUENCY_1_ATTRIBUTE_ID + (index * DEBT_RECOVERY_GROUP_DELTA);
   status = sl_zigbee_af_read_attribute(endpoint, ZCL_PREPAYMENT_CLUSTER_ID, attributeId, CLUSTER_MASK_SERVER,
                                        (uint8_t *)&val8u, 1, NULL);
-  sl_zigbee_af_prepayment_cluster_println("  RecovFreq status=0x%x, val=%d", status, val8u);
+  sl_zigbee_af_prepayment_cluster_println("  RecovFreq status=0x%02X, val=%d", status, val8u);
 
   attributeId = ZCL_DEBT_RECOVERY_AMOUNT_1_ATTRIBUTE_ID + (index * DEBT_RECOVERY_GROUP_DELTA);
   status = sl_zigbee_af_read_attribute(endpoint, ZCL_PREPAYMENT_CLUSTER_ID, attributeId, CLUSTER_MASK_SERVER,
                                        (uint8_t *)&val32u, 4, NULL);
-  sl_zigbee_af_prepayment_cluster_println("  RecovAmount status=0x%x, val=%d", status, val32u);
+  sl_zigbee_af_prepayment_cluster_println("  RecovAmount status=0x%02X, val=%d", status, val32u);
 
   attributeId = ZCL_DEBT_RECOVERY_TOP_UP_PERCENTAGE_1_ATTRIBUTE_ID + (index * DEBT_RECOVERY_GROUP_DELTA);
   status = sl_zigbee_af_read_attribute(endpoint, ZCL_PREPAYMENT_CLUSTER_ID, attributeId, CLUSTER_MASK_SERVER,
                                        (uint8_t *)&val16u, 2, NULL);
-  sl_zigbee_af_prepayment_cluster_println("  RecovPercent status=0x%x, val=%d", status, val16u);
+  sl_zigbee_af_prepayment_cluster_println("  RecovPercent status=0x%02X, val=%d", status, val16u);
 }

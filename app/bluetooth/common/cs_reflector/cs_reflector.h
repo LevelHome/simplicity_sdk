@@ -43,6 +43,7 @@
 
 typedef PACKSTRUCT (struct {
   int8_t max_tx_power_dbm;
+  uint8_t cs_sync_antenna;
 }) cs_reflector_config_t;
 
 /**************************************************************************//**

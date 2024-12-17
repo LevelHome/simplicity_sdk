@@ -15,25 +15,41 @@ class CalcDemodulatorRainier(Calc_Demodulator_Bobcat):
         """
         super().buildVariables(model)
 
-        self._addModelActual(model, 'adc_rate_mode', Enum, ModelVariableFormat.DECIMAL)
-        model.vars.adc_rate_mode_actual.var_enum = model.vars.adc_rate_mode.var_enum
-
         self._addModelVariable(model, 'synchronous_ifadc_clk', bool, ModelVariableFormat.DECIMAL,
                                desc='Flag used treat ifadc_clk as synchronous to clk_demod and bypass afifo')
 
         member_data = [
-            ['STANDARD', 0, 'Standard'],
-            ['LEGACY', 1, 'Legacy Demod'],
-            ['COHERENT', 2, 'Coherent Demod'],
-            ['ANTDIV', 3, 'Antenna Diversity'],
-            ['FEM', 4, 'External LNA'],
-            ['ANTDIV_FEM', 5, 'Antenna Diversity with External LNA'],
-            ['FCS', 6, 'Fast channel switch'],
-            ['ENHANCED', 7, 'Enhanced Demod'],
+            ['NONE', 0, 'None'],
+            ['STANDARD', 1, 'Standard'],
+            ['LEGACY', 2, 'Legacy Demod'],
+            ['COHERENT', 3, 'Coherent Demod'],
+            ['ANTDIV', 4, 'Antenna Diversity'],
+            ['FEM', 5, 'External LNA'],
+            ['ANTDIV_FEM', 6, 'Antenna Diversity with External LNA'],
+            ['FCS', 7, 'Fast channel switch'],
+            ['ENHANCED', 8, 'Enhanced Demod'],
         ]
         model.vars.zigbee_feature.var_enum = CreateModelVariableEnum(
             'ZigbeeFeatureEnum',
             'List of supported zigbee PHY features',
+            member_data)
+
+        member_data = [
+            ['NONE', 0, 'None'],
+            ['LE_1M', 1, 'Bluetooth LE 1Mbps'],
+            ['LE_2M', 2, 'Bluetooth LE 2Mbps'],
+            ['CODED_500K', 3, 'Bluetooth LE Coded 500Kbps'],
+            ['CODED_125K', 4, 'Bluetooth LE Coded 125Kbps'],
+            ['AOX_1M', 5, 'Bluetooth LE AoX 1Mbps'],
+            ['AOX_2M', 6, 'Bluetooth LE AoX 2Mbps'],
+            ['CONCURRENT', 7, 'Bluetooth Concurrent'],
+            ['HADM_1M', 8, 'Bluetooth LE AoX 1Mbps'],
+            ['HADM_2M', 9, 'Bluetooth LE AoX 2Mbps'],
+            ['HADM_2M_2BT', 10, 'Bluetooth LE AoX 2Mbps 2BT'],
+        ]
+        model.vars.ble_feature.var_enum = CreateModelVariableEnum(
+            'BleFeatureEnum',
+            'List of supported Bluetooth LE PHY features',
             member_data)
 
     def _add_demod_select_variable(self, model):
@@ -50,14 +66,12 @@ class CalcDemodulatorRainier(Calc_Demodulator_Bobcat):
                 ['BCR', 4, 'PRO2 BCR Demod'],
                 ['LONGRANGE', 5, 'BLE Long Range Demod'],
                 ['ENHANCED_DSSS', 6, 'Enhanced OQPSK+DSSS Demod'],
-                ['BTC', 7, 'Bluetooth Classic Demod'],
                 ['HDT', 8, 'BLE Higher Data Rate Demod']
             ])
 
     def get_limits(self, demod_select, withremod, relaxsrc2, model):
 
         if demod_select == model.vars.demod_select.var_enum.ENHANCED_DSSS or \
-                demod_select == model.vars.demod_select.var_enum.BTC or \
                 demod_select == model.vars.demod_select.var_enum.HDT:
             osr_list = [4]
             min_osr = 4
@@ -235,10 +249,6 @@ class CalcDemodulatorRainier(Calc_Demodulator_Bobcat):
 
         return best_osr, best_dec0, best_dec1, min_osr, max_osr
 
-    def calc_chmutetimer(self, model):
-        #Set to POR default (only used in select PHYs for now)
-        self._reg_write(model.vars.MODEM_SRCCHF_CHMUTETIMER, default=True)
-
     def calc_synchronous_ifadc_clk(self, model):
         # default to disabled, only HADM PHYs will set the profile input
         model.vars.synchronous_ifadc_clk.value = False
@@ -290,7 +300,6 @@ class CalcDemodulatorRainier(Calc_Demodulator_Bobcat):
 
         # Unused in Rainier
         bcr_used = 0
-        btc_used = 0
         soft_modem_used = 0
 
         self._reg_write(model.vars.SEQ_MODEMINFO_LEGACY_EN, legacy_used)
@@ -302,5 +311,40 @@ class CalcDemodulatorRainier(Calc_Demodulator_Bobcat):
         self._reg_write(model.vars.SEQ_MODEMINFO_ENHDSSS_EN, enhdsss_used)
         self._reg_write(model.vars.SEQ_MODEMINFO_SPARE1, 0)
         self._reg_write(model.vars.SEQ_MODEMINFO_SOFTMODEM_EN, soft_modem_used)
-        self._reg_write(model.vars.SEQ_MODEMINFO_BTC_EN, btc_used)
         self._reg_write(model.vars.SEQ_MODEMINFO_SPARE2, 0)
+
+    def calc_rssi_rf_adjust_db(self, model):
+        model.vars.rssi_rf_adjust_db.value = -14.0
+
+    def calc_dsss_concurrent_reg(self, model):
+        trecs_used = model.vars.MODEM_VITERBIDEMOD_VTDEMODEN.value
+        enhdsss_used = model.vars.MODEM_EHDSSSCTRL_EHDSSSEN.value
+        # https://jira.silabs.com/browse/MCUW_RADIO_CFG-2587
+        # enabling concurrent detection on signify PHYs causes FSM to get stuck in presense of 802154 blocker
+        # making this calculation makes sure concurrent detection is disabled for standalone PHYs
+        if trecs_used and enhdsss_used:
+            self._reg_write(model.vars.MODEM_COCURRMODE_DSSSCONCURRENT, 1)
+        else:
+            self._reg_write(model.vars.MODEM_COCURRMODE_DSSSCONCURRENT, 0)
+
+    def calc_softd_reg(self, model):
+        trecs_used = model.vars.MODEM_VITERBIDEMOD_VTDEMODEN.value
+        fec_enabled = model.vars.fec_enabled.value
+        is_ble_longrange = model.vars.MODEM_LONGRANGE_LRBLE.value
+        # https://jira.silabs.com/browse/MCUW_RADIO_CFG-2587
+        # For the most PHYs, FEC is not selected in PHY's definition. So, TRECSCFG_SOFTD = 0 is as the default.
+        # For Signify 1M PHY, FEC is selected in PHY's definition and uses TRECS demod. TRECS demod provides softcode
+        # and hardcode to Viterbi decoder in FRC. So, we set TRECSCFG_SOFTD = 1 to get better performance.
+
+        if not(is_ble_longrange) and (trecs_used and fec_enabled):
+            self._reg_write(model.vars.MODEM_TRECSCFG_SOFTD, 1)
+        else:
+            self._reg_write(model.vars.MODEM_TRECSCFG_SOFTD, 0)
+
+    def calc_freq_gain_virtual_reg(self,model):
+        freqgain_e = model.vars.MODEM_MODINDEX_FREQGAINE.value
+        freqgain_m = model.vars.MODEM_MODINDEX_FREQGAINM.value
+        self._reg_write(model.vars.SEQ_MODINDEX_CALC_FREQGAINM, freqgain_m)
+        self._reg_write(model.vars.SEQ_MODINDEX_CALC_FREQGAINE, freqgain_e)
+        self._reg_write(model.vars.SEQ_MODINDEX_CALC_MODINDEXE_DOUBLED_FREQGAINM, freqgain_m)
+        self._reg_write(model.vars.SEQ_MODINDEX_CALC_MODINDEXE_DOUBLED_FREQGAINE, freqgain_e)

@@ -41,6 +41,9 @@ extern "C" {
 #if (SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_TRY_ALL_KEYS == 1)
 #define TRY_ALL_KEYS
 #endif
+#if (SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_ENABLE_AUTOSTART == 1)
+#define ENABLE_STEERING_AUTOSTART
+#endif
 
 /**
  * @defgroup network-steering Network Steering
@@ -93,19 +96,21 @@ enum
   SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_STATE_SCAN_SECONDARY_DISTRIBUTED   = 0x08,
   SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_STATE_SCAN_FINISHED                = 0x09,
 #else // !OPTIMIZE_SCANS
-  SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_STATE_SCAN_PRIMARY_INSTALL_CODE    = 0x01,
-  SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_STATE_SCAN_PRIMARY_CENTRALIZED     = 0x02,
-  SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_STATE_SCAN_PRIMARY_DISTRIBUTED     = 0x03,
-  SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_STATE_SCAN_SECONDARY_INSTALL_CODE  = 0x04,
-  SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_STATE_SCAN_SECONDARY_CENTRALIZED   = 0x05,
-  SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_STATE_SCAN_SECONDARY_DISTRIBUTED   = 0x06,
+  SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_STATE_SCAN_PRIMARY_CONFIGURED      = 0x01,
+  SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_STATE_SCAN_PRIMARY_INSTALL_CODE    = 0x02,
+  SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_STATE_SCAN_PRIMARY_CENTRALIZED     = 0x03,
+  SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_STATE_SCAN_PRIMARY_DISTRIBUTED     = 0x04,
+  SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_STATE_SCAN_SECONDARY_CONFIGURED    = 0x05,
+  SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_STATE_SCAN_SECONDARY_INSTALL_CODE  = 0x06,
+  SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_STATE_SCAN_SECONDARY_CENTRALIZED   = 0x07,
+  SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_STATE_SCAN_SECONDARY_DISTRIBUTED   = 0x08,
 
   // Either the USE_ALL_KEY states are run or the non USE_ALL_KEY states are
   // run, but never both
-  SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_STATE_SCAN_PRIMARY_USE_ALL_KEYS    = 0x07,
-  SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_STATE_SCAN_SECONDARY_USE_ALL_KEYS  = 0x08,
+  SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_STATE_SCAN_PRIMARY_USE_ALL_KEYS    = 0x09,
+  SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_STATE_SCAN_SECONDARY_USE_ALL_KEYS  = 0x0A,
 
-  SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_STATE_SCAN_FINISHED                = 0x09,
+  SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_STATE_SCAN_FINISHED                = 0x0B,
 #endif // OPTIMIZE_SCANS
 
   SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_STATE_UPDATE_TCLK                  = 0x10,
@@ -265,11 +270,18 @@ void sli_zigbee_af_network_steering_set_extended_pan_id_filter(uint8_t* extended
                                                                bool turnFilterOn);
 
 /** @brief Set a different key to use when joining. */
-void sli_zigbee_af_network_steering_set_configured_key(uint8_t *key,
+void sli_zigbee_af_network_steering_set_configured_key(const uint8_t *key,
                                                        bool useConfiguredKey);
 
 /** @brief Clean up the network steering process which took place */
 void sli_zigbee_af_network_steering_cleanup(sl_status_t status);
+
+/** @brief Configurable wrapper for sl_zigbee_af_network_steering_start.
+ * Calls sl_zigbee_af_network_steering_start and prints its status if
+ * SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_ENABLE_AUTOSTART is configured to be true,
+ * will do nothing if it is false.
+ */
+void sl_zigbee_af_network_steering_autostart(void);
 
 #ifdef __cplusplus
 }

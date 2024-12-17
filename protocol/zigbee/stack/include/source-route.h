@@ -61,7 +61,10 @@ uint8_t sl_zigbee_get_source_route_table_total_size(void);
  * Since each hop consumes 2 bytes in the packet, this routine calculates the
  * total number of bytes needed based on number of hops to reach the destination.
  * @param destination The destination's short address.
- * @return uint8_t The number of bytes needed for source routing in a packet.
+ * @return uint8_t The number of bytes needed for source routing in a packet or
+ * SL_ZIGBEE_SOURCE_ROUTE_OVERHEAD_UNKNOWN (no source route overhead).
+ * @internal SL_ZIGBEE_IPC_ARGS
+ * {# return | default: SL_ZIGBEE_SOURCE_ROUTE_OVERHEAD_UNKNOWN #}
  */
 uint8_t sl_zigbee_get_source_route_overhead(sl_802154_short_addr_t destination);
 

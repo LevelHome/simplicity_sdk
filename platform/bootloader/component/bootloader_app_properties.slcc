@@ -22,3 +22,6 @@ config_file:
   - path: platform/bootloader/config/app_properties_config.h
 template_file:
   - path: platform/bootloader/app_properties/config/sl_application_type.h.jinja
+metadata:
+  sbom:
+    license: Zlib

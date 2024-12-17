@@ -1,0 +1,34 @@
+id: memory_manager_redirect
+label: "Memory Manager Redirect"
+package: platform
+description: >
+  This component provides an API similar to the memory manager API but redirects
+  the memory management functions to use the standard library versions.
+  It is useful for components that do not yet support advanced memory management
+  features, such as long-term and short-term block allocation.
+category: Services|Memory Manager
+quality: production
+metadata:
+  sbom:
+    license: Zlib
+root_path: platform/service/memory_manager
+include:
+  - path: inc
+    file_list:
+      - path: sl_memory_manager.h
+      - path: sl_memory_manager_region.h
+  - path: src
+    file_list:
+      - path: sli_memory_manager.h
+source:
+  - path: src/sl_memory_manager_redirect.c
+  - path: src/sl_memory_manager_pool.c
+  - path: src/sl_memory_manager_cpp.cpp
+provides:
+  - name: memory_manager_redirect
+requires:
+  - name: sl_core
+  - name: sl_common
+  - name: status
+conflicts:
+  - name: memory_manager

@@ -533,7 +533,7 @@ void sli_zigbee_af_load_control_event_table_print(uint8_t endpoint)
 
   for (i = 0; i < SL_ZIGBEE_AF_PLUGIN_DRLC_EVENT_TABLE_SIZE; i++) {
     e = &loadControlEventTable[ep][i];
-    sl_zigbee_af_demand_response_load_control_cluster_println("[%x] %x %4x %4x %2x %x %x",
+    sl_zigbee_af_demand_response_load_control_cluster_println("[%02X] %02X %08X %08X %04X %02X %02X",
                                                               i,
                                                               e->entryStatus,
                                                               e->event.eventId,

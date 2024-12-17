@@ -4,10 +4,13 @@ description: Utility to aid with Angle of Arrival/Departure (AoX) Configuration
 package: platform
 category: Platform|Radio
 quality: production
+metadata:
+  sbom:
+    id: rail_util_aox
+    name: RAIL Utility, AoX
+    license: Zlib
 requires:
-  - name: emlib_gpio
-    condition:
-      - device_series_2
+  - name: gpio
   - name: rail_lib
   - name: device_supports_bluetooth_cte
 provides:
@@ -36,6 +39,11 @@ config_file:
     condition:
       - device_series_2
       - device_sdid_230
+  - path: platform/radio/rail_lib/plugin/rail_util_aox/config/efr32xg29/sl_rail_util_aox_config.h
+    file_id: rail_util_aox_config
+    condition:
+      - device_series_2
+      - device_sdid_240
   - path: platform/radio/rail_lib/plugin/rail_util_aox/config/sixg301/sl_rail_util_aox_config.h
     file_id: rail_util_aox_config
     condition:

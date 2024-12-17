@@ -176,13 +176,13 @@ static uint16_t get_length(sl_zigbee_af_gbz_zcl_command_t * cmd,
 
 void sl_zigbee_af_gbz_message_controller_print_command_info(sl_zigbee_af_gbz_zcl_command_t * cmd)
 {
-  sl_zigbee_af_gbz_message_controller_println("GBZ: ZCL command: cluster id: 0x%2x", cmd->clusterId);
-  sl_zigbee_af_gbz_message_controller_println("GBZ: ZCL command: command id: 0x%x", cmd->commandId);
-  sl_zigbee_af_gbz_message_controller_println("GBZ: ZCL command: frame control: 0x%x", cmd->frameControl);
-  sl_zigbee_af_gbz_message_controller_println("GBZ: ZCL command: direction: 0x%x", cmd->direction);
-  sl_zigbee_af_gbz_message_controller_println("GBZ: ZCL command: cluster specific: 0x%x", cmd->clusterSpecific);
-  sl_zigbee_af_gbz_message_controller_println("GBZ: ZCL command: mfg specific: 0x%x", cmd->mfgSpecific);
-  sl_zigbee_af_gbz_message_controller_println("GBZ: ZCL command: trans. seq. number: 0x%x", cmd->transactionSequenceNumber);
+  sl_zigbee_af_gbz_message_controller_println("GBZ: ZCL command: cluster id: 0x%04X", cmd->clusterId);
+  sl_zigbee_af_gbz_message_controller_println("GBZ: ZCL command: command id: 0x%02X", cmd->commandId);
+  sl_zigbee_af_gbz_message_controller_println("GBZ: ZCL command: frame control: 0x%02X", cmd->frameControl);
+  sl_zigbee_af_gbz_message_controller_println("GBZ: ZCL command: direction: 0x%02X", cmd->direction);
+  sl_zigbee_af_gbz_message_controller_println("GBZ: ZCL command: cluster specific: 0x%02X", cmd->clusterSpecific);
+  sl_zigbee_af_gbz_message_controller_println("GBZ: ZCL command: mfg specific: 0x%02X", cmd->mfgSpecific);
+  sl_zigbee_af_gbz_message_controller_println("GBZ: ZCL command: trans. seq. number: 0x%02X", cmd->transactionSequenceNumber);
   sl_zigbee_af_gbz_message_controller_print("GBZ: ZCL command: payload: ");
   sl_zigbee_af_gbz_message_controller_print_buffer(cmd->payload, cmd->payloadLength, true);
   sl_zigbee_af_gbz_message_controller_println("");
@@ -223,7 +223,7 @@ bool sl_zigbee_af_gbz_message_controller_parser_init(sl_zigbee_af_gbz_message_pa
   profileId =  (gbzCommand[0] << 8) | gbzCommand[1];
 
   if (profileId != SE_PROFILE_ID) {
-    sl_zigbee_af_gbz_message_controller_println("GBZ: ERR: invalid profile id: 0x%2x ", profileId);
+    sl_zigbee_af_gbz_message_controller_println("GBZ: ERR: invalid profile id: 0x%04X ", profileId);
     return false;
   }
 

@@ -23,13 +23,14 @@ component:
   - id: sl_system
   - id: clock_manager
   - id: device_init
-  - id: bt_post_build
   - id: bootloader_interface
   - id: uartdrv_usart
     instance:
       - vcom
   - id: mpu
   - id: bluetooth_feature_nvm
+  - id: sl_common
+  - id: app_assert
 
 requires:
   - name: bluetooth_stack
@@ -39,6 +40,7 @@ requires:
   - name: bluetooth_feature_l2cap
   - name: bluetooth_feature_system
   - name: bluetooth_feature_connection
+  - name: bluetooth_feature_accept_list
   - name: bluetooth_feature_gatt_server
   - name: bluetooth_feature_dynamic_gattdb
   - name: bluetooth_feature_legacy_scanner
@@ -56,6 +58,7 @@ requires:
 source:
   - path: main.c
   - path: app.c
+  - path: app_bm.c
 
 include:
   - path: .
@@ -76,25 +79,27 @@ other_file:
 
 configuration:
   - name: SL_STACK_SIZE
-    value: "2752"
+    value: "3456"
   - name: SL_NCP_CMD_BUF_SIZE
     value: "288"
   - name: SL_NCP_EVT_BUF_SIZE
     value: "264"
-  - name: SL_SIMPLE_COM_TX_BUF_SIZE
+  - name: SL_BT_NCP_TRANSPORT_CONFIG_TX_BUF_SIZE
     value: "528"
-  - name: SL_SIMPLE_COM_RX_BUF_SIZE
-    value: "288"
+  - name: SL_BT_NCP_TRANSPORT_CONFIG_RX_BUF_SIZE
+    value: "576"
   - name: SL_NCP_CMD_TIMEOUT_MS
     value: "50"
   - name: SL_BT_CONFIG_MAX_CONNECTIONS
-    value: "8"
+    value: "5"
   - name: SL_BT_CONFIG_USER_L2CAP_COC_CHANNELS
-    value: "8"
+    value: "5"
   - name: SL_BT_CONFIG_MAX_SOFTWARE_TIMERS
     value: "0"
   - name: SL_BT_CONFIG_BUFFER_SIZE
-    value: "8192"
+    value: "6144"
+  - name: SL_BT_CONFIG_ACCEPT_LIST_SIZE
+    value: "63"
   - name: SL_BT_CONFIG_USER_ADVERTISERS
     value: "3"
   - name: SL_BT_CONFIG_MAX_PERIODIC_ADVERTISERS
@@ -117,6 +122,8 @@ configuration:
     value: "1"
   - name: SL_UARTDRV_USART_VCOM_TX_BUFFER_SIZE
     value: "2"
+  - name: SL_UARTDRV_USART_VCOM_RX_BUFFER_SIZE
+    value: "2"
   - name: SL_UARTDRV_USART_VCOM_FLOW_CONTROL_TYPE
     value: uartdrvFlowControlHw
     condition:
@@ -137,7 +144,7 @@ configuration:
       - brd4002a
       - brd4001c
   - name: SL_PSA_KEY_USER_SLOT_COUNT
-    value: "0"
+    value: "1"
     condition:
       - psa_crypto
   - name: SL_BT_GATTDB_INCLUDE_STATIC_DATABASE
@@ -148,6 +155,10 @@ configuration:
     value: "32768"
   - name: SL_NCP_EMIT_SYSTEM_ERROR_EVT
     value: "1"
+
+post_build:
+  - profile: bt_common
+    condition: [device_series_2, bootloader_app_properties]
 
 tag:
   - prebuilt_demo

@@ -166,7 +166,10 @@ int select(int nfds, fd_set *restrict readfds,
            struct timeval *restrict timeout)
 {
   (void) exceptfds;
-  uint32_t flags = 0x00000000U;
+  bool is_zero_timeout  = false;
+  uint64_t timeout_us   = 0;
+  uint64_t ticks        = 0;
+  uint32_t flags        = 0x00000000U;
   uint32_t ready_fd_cnt = 0;
 
   if (nfds < 0 || nfds > FD_SETSIZE) {
@@ -179,26 +182,38 @@ int select(int nfds, fd_set *restrict readfds,
     return -1;
   }
 
-  // check if there is already ready fds without clearing user fd sets
-  ready_fd_cnt = check_fds_state(nfds, readfds, writefds, false);
+  if(!timeout) {
+    // timeout is specified as NULL, select() blocks indefinitely waiting
+    // for a file descriptor to become ready.
+    ticks = osWaitForever;
+  } else if (timeout->tv_sec != 0 || timeout->tv_usec != 0) {
+    timeout_us = (timeout->tv_sec * 1000000) + timeout->tv_usec;
+    ticks      = (timeout_us * osKernelGetTickFreq()) / 1000000;
+  } else {
+    // both fields of the timeval structure are zero, then select() returns
+    // immediately.
+    is_zero_timeout = true;
+  }
 
-  // If no file descriptors were ready, set the flags and wait for timeout
-  while (ready_fd_cnt == 0) {
-    uint64_t timeout_us = (timeout->tv_sec * 1000000) + timeout->tv_usec;
-    uint64_t ticks = (timeout_us == 0) ? osWaitForever :
-                     (timeout_us * osKernelGetTickFreq()) / 1000000;
-    flags = osEventFlagsWait(sock_fds_check_event_id,
-                             READ_SOCK_FDS_CHECK_FLAG | WRITE_SOCK_FDS_CHECK_FLAG,
-                             osFlagsWaitAny,
-                             (uint32_t) ticks);
-    if (flags == osFlagsErrorParameter) {
-      return -1;
-    } else if (flags == osFlagsErrorTimeout) {
-      break;
-    }
-
-    // check if target fds are ready without clearing user fd sets
+  if(!is_zero_timeout) {
+    // check if there is already ready fds without clearing user fd sets
     ready_fd_cnt = check_fds_state(nfds, readfds, writefds, false);
+
+    // If no file descriptors were ready, set the flags and wait for timeout
+    while (ready_fd_cnt == 0) {
+      flags = osEventFlagsWait(sock_fds_check_event_id,
+                              READ_SOCK_FDS_CHECK_FLAG | WRITE_SOCK_FDS_CHECK_FLAG,
+                              osFlagsWaitAny,
+                              (uint32_t) ticks);
+      if (flags == osFlagsErrorParameter) {
+        return -1;
+      } else if (flags == osFlagsErrorTimeout) {
+        break;
+      }
+
+      // check if target fds are ready without clearing user fd sets
+      ready_fd_cnt = check_fds_state(nfds, readfds, writefds, false);
+    }
   }
 
   // Update user fds and exit

@@ -42,8 +42,11 @@ class CALC_Frame_Detect(ICalculator):
         self._addModelActual(model,    'syncword_1'     ,  long,         ModelVariableFormat.HEX, ) #  desc='Syncword 1 extracted from the register )
 
         # FIXME: MW: Need to resolve after RTL fixed
-        self._addModelRegister(model, 'MODEM.CTRL1.DUALSYNC'           , int, ModelVariableFormat.HEX )
-        self._addModelRegister(model, 'MODEM.CTRL0.FDM0DIFFDIS'        , int, ModelVariableFormat.HEX )
+        self._build_framedet_regs(model)
+
+    def _build_framedet_regs(self, model):
+        self._addModelRegister(model, 'MODEM.CTRL1.DUALSYNC', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'MODEM.CTRL0.FDM0DIFFDIS', int, ModelVariableFormat.HEX)
         
     @staticmethod
     def flip_bits(input, numbits):

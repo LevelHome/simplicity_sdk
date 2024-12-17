@@ -183,7 +183,7 @@ static void enrollWithClient(uint8_t endpoint)
   if (status == SL_STATUS_OK) {
     sl_zigbee_af_ias_zone_cluster_println("Sent enroll request to IAS Zone client.");
   } else {
-    sl_zigbee_af_ias_zone_cluster_println("Error sending enroll request: 0x%x\n",
+    sl_zigbee_af_ias_zone_cluster_println("Error sending enroll request: 0x%02X\n",
                                           status);
   }
 }
@@ -332,7 +332,7 @@ static void updateEnrollState(uint8_t endpoint, bool enrolled)
                                       ZCL_ZONE_STATE_ATTRIBUTE_ID,
                                       (uint8_t*)&zoneState,
                                       ZCL_INT8U_ATTRIBUTE_TYPE);
-  sl_zigbee_af_ias_zone_cluster_println("IAS Zone Server State: %pEnrolled",
+  sl_zigbee_af_ias_zone_cluster_println("IAS Zone Server State: %sEnrolled",
                                         (enrolled
                                          ? ""
                                          : "NOT "));
@@ -341,7 +341,7 @@ static void updateEnrollState(uint8_t endpoint, bool enrolled)
 //------------------------
 // Commands callbacks
 
-bool sl_zigbee_af_ias_zone_cluster_zone_enroll_response_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_ias_zone_cluster_zone_enroll_response_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_ias_zone_cluster_zone_enroll_response_command_t cmd_data;
   uint8_t endpoint;
@@ -350,7 +350,7 @@ bool sl_zigbee_af_ias_zone_cluster_zone_enroll_response_cb(sl_zigbee_af_cluster_
 
   if (zcl_decode_ias_zone_cluster_zone_enroll_response_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   endpoint = sl_zigbee_af_current_endpoint();
@@ -368,11 +368,11 @@ bool sl_zigbee_af_ias_zone_cluster_zone_enroll_response_cb(sl_zigbee_af_cluster_
       setZoneId(endpoint, UNDEFINED_ZONE_ID);
     }
 
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
   }
 
   sl_zigbee_af_app_println("ERROR: IAS Zone Server unable to read zone ID attribute");
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
 static sl_status_t sendZoneUpdate(uint16_t zoneStatus,
@@ -478,7 +478,7 @@ sl_status_t sl_zigbee_af_ias_zone_server_update_zone_status(
       addNewEntryToQueue(&newBufferEntry);
 #endif // ENABLE_QUEUE
     }
-    sl_zigbee_af_ias_zone_cluster_println("Failed to send IAS Zone update. Err 0x%x",
+    sl_zigbee_af_ias_zone_cluster_println("Failed to send IAS Zone update. Err 0x%02X",
                                           sendStatus);
   }
   return sendStatus;
@@ -638,7 +638,7 @@ static bool areZoneServerAttributesTokenized(uint8_t endpoint)
 
 static void setZoneId(uint8_t endpoint, uint8_t zoneId)
 {
-  sl_zigbee_af_ias_zone_cluster_println("IAS Zone Server Zone ID: 0x%X", zoneId);
+  sl_zigbee_af_ias_zone_cluster_println("IAS Zone Server Zone ID: 0x%02X", zoneId);
   sl_zigbee_af_write_server_attribute(endpoint,
                                       ZCL_IAS_ZONE_CLUSTER_ID,
                                       ZCL_ZONE_ID_ATTRIBUTE_ID,
@@ -961,19 +961,17 @@ uint32_t sl_zigbee_af_ias_zone_cluster_server_command_parse(sl_service_opcode_t 
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_ZONE_ENROLL_RESPONSE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_ias_zone_cluster_zone_enroll_response_cb(cmd);
+        status = sl_zigbee_af_ias_zone_cluster_zone_enroll_response_cb(cmd);
         break;
       }
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

@@ -112,11 +112,6 @@ source:
   - path: interface/src/tfm_crypto_func_api.c
     condition: [trustzone_nonsecure]
 
-  # Workaround required in order to give TLS code living in the NS application
-  # access to helper functions that normally live in psa_crypto.c.
-  - path: ../../../platform/security/sl_component/sl_trustzone/src/sli_tz_tls_helpers.c
-    condition: [trustzone_nonsecure]
-
 define:
   - name: TFM_PARTITION_CRYPTO
     condition: [trustzone_secure]
@@ -125,3 +120,13 @@ template_contribution:
   - name: tz_service_config
     value: TZ_SERVICE_PSA_CRYPTO_PRESENT
     condition: [trustzone_nonsecure]
+
+metadata:
+  sbom:
+    license: Zlib AND BSD-3-Clause
+    upstream:
+      name: TrustedFirmware-M (TF-M)
+      version: v1.5
+      supplier: Trusted Firmware
+      url: https://review.trustedfirmware.org/TF-M/trusted-firmware-m.git
+      comment: Trusted Firmware for M profile Arm CPUs

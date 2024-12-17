@@ -43,7 +43,7 @@ void sli_zigbee_xncp_init(void)
 #endif  // SL_ZIGBEE_MULTI_NETWORK_STRIPPED
 
   sl_status_t status = sli_zigbee_stack_set_radio_ieee802154_cca_mode(SL_ZIGBEE_RADIO_802154_CCA_MODE);
-  sl_zigbee_debug_printf("Init: default CCA mode set to %d: 0x%X",
+  sl_zigbee_debug_printf("Init: default CCA mode set to %d: 0x%02X",
                          SL_ZIGBEE_RADIO_802154_CCA_MODE,
                          status);
 #ifndef DEBUG_ROUTINES_PRESENT
@@ -100,3 +100,14 @@ void sl_zigbee_set_or_get_ezsp_token_command_handler(bool isSet)
 #endif
 
 #endif /* __NCP_CONFIG__ */
+
+WEAK(sl_status_t mfglibInternalSetCtune(uint16_t ctune))
+{
+  (void) ctune;
+  return SL_STATUS_NOT_AVAILABLE;
+}
+
+WEAK(uint16_t mfglibInternalGetCtune(void))
+{
+  return 0xFFFF; //invalid value
+}

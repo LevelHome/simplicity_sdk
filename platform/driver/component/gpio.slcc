@@ -21,6 +21,7 @@ requires:
   - name: hal_gpio
   - name: status
   - name: sl_core
+  - name: interrupt_manager
   - name: clock_manager_runtime
   - name: device_gpio
   - name: component_catalog

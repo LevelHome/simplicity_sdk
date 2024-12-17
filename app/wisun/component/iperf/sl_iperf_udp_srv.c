@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_iperf_udp_srv.c
+ * @brief iPerf UDP server
  *******************************************************************************
  * # License
  * <b>Copyright 2022 Silicon Laboratories Inc. www.silabs.com</b>
@@ -31,7 +31,6 @@
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <assert.h>
 #include <string.h>
 #include <stddef.h>
@@ -43,7 +42,6 @@
 #include "sl_iperf.h"
 #include "sl_iperf_util.h"
 #include "sl_iperf_udp_srv.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -61,12 +59,11 @@ static void _iperf_udp_finack(sl_iperf_test_t * const test);
 
 /**************************************************************************//**
  * @brief iPerf get timestamp from packet
- * @details get timestamp from packet and convert to milisec
+ * @details get timestamp from packet and convert to millisec
  * @param[in] dtg Datagram header
  * @return sl_iperf_ts_ms_t Converted timestamp in ms
  *****************************************************************************/
-__STATIC_INLINE sl_iperf_ts_ms_t _get_ms_ts_from_clnt_header(const sl_iperf_udp_clnt_hdr_t
-                                                             * const hdr);
+__STATIC_INLINE sl_iperf_ts_ms_t _get_ms_ts_from_clnt_header(const sl_iperf_udp_clnt_hdr_t * const hdr);
 
 /**************************************************************************//**
  * @brief iPerf get absolute delta time
@@ -140,7 +137,7 @@ void sl_iperf_test_udp_server(sl_iperf_test_t * test)
   }
   sl_iperf_test_log_verbose(test, "UDP Server: bind done.\n");
 
-  // Join multicast group if it's required
+  // Join multicast group if it is required
   if (test->opt.multicast) {
     sl_iperf_inet_pton(test->opt.remote_addr, &mc_addr);
     r = sl_iperf_join_multicast_group(test->conn.socket_id, &mc_addr);
@@ -250,7 +247,7 @@ void sl_iperf_test_udp_server(sl_iperf_test_t * test)
   sl_iperf_calc_time_from_ms(&time, sl_iperf_test_calc_time_duration_ms(test));
   sl_iperf_test_log_verbose(test, "UDP Server: Done (Time: %lu.%.4lus)\n", time.sec, time.usec);
 
-  // leave multicast group if it's required
+  // leave multicast group if it is required
   if (test->opt.multicast) {
     r = sl_iperf_leave_multicast_group(test->conn.socket_id, &mc_addr);
     if (r == SL_IPERF_NW_API_ERROR) {
@@ -354,7 +351,7 @@ static void _iperf_calc_jitter(sl_iperf_test_t * const test)
   uint32_t abs_d = 0;
   int64_t v1 = 0;
 
-  // skip if there isn't previous packet info
+  // skip if there is not previous packet info
   if (test->statistic.nbr_rcv_snt_packets <= 1) {
     return;
   }

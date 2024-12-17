@@ -1,7 +1,10 @@
 id: zw_appshw_zniffer
 label: Zniffer AppsHw
 category: Z-Wave|AppsHw
-description: AppsHw for Zniffer application
+description: > 
+  This SLC component provides support for Z-Wave Zniffer (beta) Application.
+  The Z-Wave Zniffer Application provides functionality for capturing and analyzing Z-Wave network traffic and sends it
+  through a Serial connection. The Z-Wave PTI appliction is supported in the PC Zniffer application out of the box.
 package: Z-Wave
 quality: production
 metadata:

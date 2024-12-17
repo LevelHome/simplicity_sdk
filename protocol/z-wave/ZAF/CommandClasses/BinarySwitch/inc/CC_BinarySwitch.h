@@ -48,6 +48,11 @@ typedef struct cc_binary_switch_t {
                                             ///< a duration higher than zero).
 } cc_binary_switch_t;
 
+typedef enum cc_binary_switch_event_t {
+  CC_BINARY_SWITCH_EVENT_START_LEVEL_CHANGE, ///< The switch pointed to by the event data has started changing level
+  CC_BINARY_SWITCH_EVENT_REACHED_FINAL_VALUE ///< The switch pointed to by the event data has reached its final value
+} cc_binary_switch_event_t;
+
 /**
  * Handler for mapping Basic Set to Multilevel Switch Set.
  *

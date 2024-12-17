@@ -37,6 +37,7 @@
  **************************************************************************************************/
 
 #include "sl_status.h"
+#include "btl_interface.h"
 #include "sli_bt_app_ota_dfu.h"
 
 // Bootloader internal storage slot index.
@@ -93,7 +94,7 @@ typedef struct  {
 // Bootloader storage info structure for
 // bootloader and storage initialization event.
 typedef struct {
-  uint8_t bootloader_type;
+  BootloaderType_t bootloader_type;
   uint32_t bootloader_ver;
   uint32_t storage_start_addr;
   uint32_t storage_size_bytes;

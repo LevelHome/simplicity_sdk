@@ -6,7 +6,9 @@ description: All FreeRTOS+ libraries.
 
 package: amazon_platform
 quality: production
-
+metadata:
+  sbom:
+    license: MIT
 provides:
   - name: freertos_plus
 

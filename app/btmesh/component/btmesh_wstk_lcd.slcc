@@ -29,12 +29,14 @@ include:
     file_list:
       - path: "sl_btmesh_wstk_graphics.h"
       - path: "sl_btmesh_wstk_lcd.h"
+      - path: "sli_btmesh_wstk_lcd.h"
 config_file:
   - path: "config/sl_btmesh_wstk_lcd_config.h"
 provides:
   - name: "btmesh_wstk_lcd"
 requires:
   - name: "app_assert"
+  - name: "app_rta"
   - name: "btmesh_stack"
   - name: "dmd_memlcd"
   - name: "glib"
@@ -42,6 +44,10 @@ requires:
   - name: "memory_manager"
 
 template_contribution:
+  - name: app_rta_init
+    value:
+      include: sli_btmesh_wstk_lcd.h
+      handler: sli_btmesh_LCD_ctx_init
   - name: event_handler
     value:
       event: internal_app_init

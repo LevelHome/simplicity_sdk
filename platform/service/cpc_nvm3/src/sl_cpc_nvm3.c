@@ -34,7 +34,7 @@
 #include "sl_cpc_config.h"
 #include "sl_sleeptimer.h"
 #include "sl_status.h"
-#include "sli_cpc_timer.h"
+#include "sl_sleeptimer.h"
 
 #if defined(SL_COMPONENT_CATALOG_PRESENT)
 #include "sl_component_catalog.h"
@@ -66,7 +66,7 @@
 #define CPC_NVM3_OS_DELAY_MS 1
 #endif
 
-#define CPC_NVM3_API_VERSION_MAJOR 1
+#define CPC_NVM3_API_VERSION_MAJOR 2
 #define CPC_NVM3_API_VERSION_MINOR 0
 #define CPC_NVM3_API_VERSION_PATCH 0
 
@@ -633,15 +633,18 @@ static void on_delete_object_command(void *rx_buffer,
  ******************************************************************************/
 static void complete_write_transaction(void)
 {
+  MCU_DECLARE_IRQ_STATE;
+  MCU_ENTER_ATOMIC();
   write_data_command_context.offset = 0;
   write_data_command_context.total_write_size = 0;
   write_data_command_context.lock = 0;
+  MCU_EXIT_ATOMIC();
 }
 
 /***************************************************************************//**
  * This function is called when the write lock has timed out
  ******************************************************************************/
-static void write_lock_timeout(sli_cpc_timer_handle_t *handle, void *data)
+static void on_write_lock_timeout(sl_sleeptimer_timer_handle_t *handle, void *data)
 {
   (void)handle;
   (void)data;
@@ -654,58 +657,59 @@ static void write_lock_timeout(sli_cpc_timer_handle_t *handle, void *data)
 static void on_write_data_command(void *rx_buffer,
                                   tx_buffer_t *tx_buffer)
 {
-  static sli_cpc_timer_handle_t write_lock_timer;
+  static sl_sleeptimer_timer_handle_t write_lock_timer;
   Ecode_t error_code;
   sl_status_t status;
-
-  MCU_DECLARE_IRQ_STATE;
-
+  uint32_t timer_timeout = 0;
+  write_data_command_context_t write_context;
   write_data_command_t *rx_packet = (write_data_command_t *)rx_buffer;
+  CORE_DECLARE_IRQ_STATE;
 
-  MCU_ENTER_ATOMIC();
+  CORE_ENTER_ATOMIC();
+  sl_sleeptimer_get_timer_time_remaining(&write_lock_timer, &timer_timeout);
+  sl_sleeptimer_stop_timer(&write_lock_timer);
+  write_context = write_data_command_context;
+  CORE_EXIT_ATOMIC();
+
   // Check if the write is locked
-  if ((write_data_command_context.lock > 0 && write_data_command_context.lock != rx_packet->header.unique_id)) {
-    MCU_EXIT_ATOMIC();
+  if ((write_context.lock > 0 && write_context.lock != rx_packet->header.unique_id)) {
+    status = sl_sleeptimer_restart_timer(&write_lock_timer, timer_timeout, on_write_lock_timeout, NULL, 0, 0);
     status_is(SL_STATUS_BUSY, tx_buffer, SL_STATUS);
     return;
   }
 
   uint16_t write_fragment_size = rx_packet->header.len - (sizeof(write_data_command_t) - (sizeof(header_t)));
-  if (rx_packet->offset < write_data_command_context.offset || rx_packet->offset + write_fragment_size > sizeof(write_buffer)) {
+  if (rx_packet->offset < write_context.offset || rx_packet->offset + write_fragment_size > sizeof(write_buffer)) {
     status_is(SL_STATUS_FAIL, tx_buffer, SL_STATUS);
     complete_write_transaction();
-    sli_cpc_timer_stop_timer(&write_lock_timer);
-    MCU_EXIT_ATOMIC();
+    //Timer already stopped
     return;
   }
 
   // Assign the lock to the current unique id
-  write_data_command_context.lock = rx_packet->header.unique_id;
+  write_context.lock = rx_packet->header.unique_id;
+  memcpy(write_buffer + rx_packet->offset, rx_packet->data, write_fragment_size);
+  write_context.offset = rx_packet->offset;
+  write_context.total_write_size += write_fragment_size;
+
+  MCU_ATOMIC_SECTION(write_data_command_context = write_context; );
 
   // Start the lock timeout timer
-  status = sli_cpc_timer_restart_timer(&write_lock_timer,
-                                       sli_cpc_timer_ms_to_tick(SL_CPC_NVM3_WRITE_LOCK_TIMEOUT_MS),
-                                       write_lock_timeout,
-                                       NULL);
+  timer_timeout = sl_sleeptimer_ms_to_tick(SL_CPC_NVM3_WRITE_LOCK_TIMEOUT_MS);
+  status = sl_sleeptimer_restart_timer(&write_lock_timer, timer_timeout, on_write_lock_timeout, NULL, 0, 0);
   EFM_ASSERT(status == SL_STATUS_OK);
-
-  memcpy(write_buffer + rx_packet->offset, rx_packet->data, write_fragment_size);
-  write_data_command_context.offset = rx_packet->offset;
-  write_data_command_context.total_write_size += write_fragment_size;
 
   if (rx_packet->last_frag) {
     // Write to the NVM3 instance
-    error_code = nvm3_writeData(nvm3_defaultHandle, rx_packet->key, write_buffer, write_data_command_context.total_write_size);
+    error_code = nvm3_writeData(nvm3_defaultHandle, rx_packet->key, write_buffer, write_context.total_write_size);
     complete_write_transaction();
-    sli_cpc_timer_stop_timer(&write_lock_timer);
+    sl_sleeptimer_stop_timer(&write_lock_timer);
     if (error_code != ECODE_OK) {
       status_is((uint32_t)error_code, tx_buffer, ECODE);
-      MCU_EXIT_ATOMIC();
       return;
     }
   }
   status_is(SL_STATUS_OK, tx_buffer, SL_STATUS);
-  MCU_EXIT_ATOMIC();
 }
 
 /***************************************************************************//**

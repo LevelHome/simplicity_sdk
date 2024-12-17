@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief File Transfer Portocol Client header
+ * @file sl_ftp_clnt.c
+ * @brief File Transfer Protocol Client
  *******************************************************************************
  * # License
  * <b>Copyright 2023 Silicon Laboratories Inc. www.silabs.com</b>
@@ -31,14 +31,13 @@
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+
 #include "cmsis_os2.h"
 #include "sl_ftp_clnt.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -119,7 +118,7 @@
 // -----------------------------------------------------------------------------
 
 /***************************************************************************//**
- * @brief Requeset data channel operation
+ * @brief Request data channel operation
  * @details Helper function
  * @param[in,out] clnt FTP Client
  * @param[in] evt_flag_msk Event flag mask to request
@@ -168,7 +167,7 @@ static sl_status_t _send_on_ch(sl_ftp_clnt_ch_t * const clnt_ch,
  * @brief Receive on channel
  * @details Helper function
  * @param[in,out] clnt_ch Client channel
- * @param[in] timeout Timeout in milisecs
+ * @param[in] timeout Timeout in millisecs
  * @return int32_t Received buffer size on success, otherwise -1
  ******************************************************************************/
 static int32_t _recv_on_ch(sl_ftp_clnt_ch_t * const clnt_ch,
@@ -867,7 +866,7 @@ static void _clnt_thr_fnc(void * args)
   }
   sl_ftp_debug("FTP Data Service started\n");
   SL_FTP_SERVICE_LOOP() {
-    // Pop Test from the queue
+    // Pop from the queue
     status = osMessageQueueGet(_ftp_clnt_msg_queue_in, &clnt, &msg_prio, osWaitForever);
     if (status != osOK) {
       sl_ftp_delay_ms(1UL);
@@ -939,4 +938,5 @@ static void _clnt_thr_fnc(void * args)
     sl_ftp_delay_ms(1UL);
   }
 }
-#endif
+
+#endif // SL_FTP_ENABLE_FTP_PROTOCOL

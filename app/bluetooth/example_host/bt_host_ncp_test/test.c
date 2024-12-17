@@ -91,9 +91,9 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
     // Do not call any stack command before receiving this boot event!
     case sl_bt_evt_system_boot_id:
       // Extract unique ID from BT Address.
-      sc = sl_bt_system_get_identity_address(&address, &address_type);
+      sc = sl_bt_gap_get_identity_address(&address, &address_type);
       test_assert(sc == SL_STATUS_OK,
-                  "sl_bt_system_get_identity_address failed: 0x%04x",
+                  "sl_bt_gap_get_identity_address failed: 0x%04x",
                   (int)sc);
       app_log_info("Bluetooth %s address: %02X:%02X:%02X:%02X:%02X:%02X",
                    address_type ? "static random" : "public device",

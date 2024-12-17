@@ -4,6 +4,9 @@ label: CS Reflector
 description: >
   Channel Sounding (CS) Reflector role implementation for all BLE Channel Sounding apps.
 category: Bluetooth|Application|Miscellaneous
+metadata:
+  sbom:
+    license: Zlib
 quality: evaluation
 root_path: app/bluetooth/common/cs_reflector
 include:
@@ -39,6 +42,8 @@ provides:
 template_contribution:
   - name: component_catalog
     value: cs_reflector
+  - name: component_catalog
+    value: cs_reflector_config
   - name: ncp_local_evt_process
     value:
       include: cs_reflector.h

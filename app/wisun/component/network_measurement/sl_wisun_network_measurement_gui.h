@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_wisun_network_measurement_gui.h
+ * @brief Wi-SUN Network Measurement GUI
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -27,8 +27,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  *
  ******************************************************************************/
-#ifndef __SL_WISUN_NETWORK_MEASUREMENT_LCD__
-#define __SL_WISUN_NETWORK_MEASUREMENT_LCD__
+#ifndef SL_WISUN_NETWORK_MEASUREMENT_GUI_H
+#define SL_WISUN_NETWORK_MEASUREMENT_GUI_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -76,7 +76,7 @@ void sl_wisun_nwm_main_form(void *args);
 
 /**************************************************************************//**
  * @brief Network Measurement Settings form
- * @details Renderer Sttings form
+ * @details Renderer Settings form
  * @param[in] args Arguments
  *****************************************************************************/
 void sli_wisun_settings_form(void *args);
@@ -99,4 +99,4 @@ void sli_wisun_neighbors_select_form(void *args);
 }
 #endif
 
-#endif
+#endif // SL_WISUN_NETWORK_MEASUREMENT_GUI_H

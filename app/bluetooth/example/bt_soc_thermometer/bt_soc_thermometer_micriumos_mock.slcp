@@ -26,17 +26,17 @@ component:
   - id: bluetooth_feature_sm
   - id: bluetooth_feature_system
   - id: in_place_ota_dfu
+    condition:
+      - device_series_2
   - id: bootloader_interface
+    condition:
+      - device_series_2
   - id: rail_util_pti
   - id: cli
     instance:
       - example
   - id: app_log
   - id: app_assert
-  - id: iostream_usart
-    instance:
-      - vcom
-  - id: iostream_retarget_stdio
   - id: printf
   - id: app_timer
   - id: health_thermometer
@@ -45,10 +45,10 @@ component:
     instance:
       - btn0
   - id: mpu
-  - id: bt_post_build
   - id: sl_system
   - id: clock_manager
   - id: device_init
+  - id: sl_common
 
 source:
   - path: main.c
@@ -79,9 +79,12 @@ configuration:
   - name: SL_BOARD_ENABLE_VCOM
     value: "1"
   - name: SL_IOSTREAM_USART_VCOM_RESTRICT_ENERGY_MODE_TO_ALLOW_RECEPTION
-    value: "1"
-    condition:
-      - iostream_usart
+    value: "0"
+    unless:
+      - cli
+  - name: SL_IOSTREAM_EUSART_VCOM_RESTRICT_ENERGY_MODE_TO_ALLOW_RECEPTION
+    value: "0"
+    unless:
       - cli
   - name: OS_CFG_TMR_EN
     value: "1"
@@ -126,6 +129,10 @@ template_contribution:
       help: "hello"
     condition:
       - cli
+
+post_build:
+  - profile: bt_common
+    condition: [device_series_2, bootloader_app_properties]
 
 tag:
   - hardware:rf:band:2400

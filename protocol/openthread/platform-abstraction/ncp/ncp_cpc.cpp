@@ -183,6 +183,7 @@ void NcpCPC::SendToCPC(void)
     Spinel::Buffer &txFrameBuffer = mTxFrameBuffer;
     uint16_t        bufferLen;
     uint16_t        offset = 0;
+    sl_status_t     status;
 
     VerifyOrExit(mIsReady && !mIsWriting && !txFrameBuffer.IsEmpty());
 
@@ -207,9 +208,11 @@ void NcpCPC::SendToCPC(void)
         }
     }
 
-    if (sl_cpc_write(&mUserEp, mCpcTxBuffer, offset, 0, NULL) != SL_STATUS_OK)
+    status = sl_cpc_write(&mUserEp, mCpcTxBuffer, offset, 0, nullptr);
+    if (status != SL_STATUS_OK)
     {
         mIsWriting = false;
+        otLogWarnPlat("sl_cpc_write error: 0x%04X", status);
     }
 
 exit:
@@ -235,8 +238,8 @@ void NcpCPC::HandleCPCSendDone(sl_cpc_user_endpoint_id_t endpoint_id, void *buff
 
 void NcpCPC::HandleSendDone(void)
 {
-    mIsWriting = false;
     memset(mCpcTxBuffer, 0, sizeof(mCpcTxBuffer));
+    mIsWriting = false;
 }
 
 void NcpCPC::HandleCPCReceive(sl_cpc_user_endpoint_id_t endpoint_id, void *arg)

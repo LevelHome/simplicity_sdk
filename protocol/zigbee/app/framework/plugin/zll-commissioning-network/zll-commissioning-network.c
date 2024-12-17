@@ -68,7 +68,7 @@ sl_status_t sl_zigbee_af_zll_scan_for_joinable_network(void)
     if (status == SL_STATUS_OK) {
       state = JOINABLE_PRIMARY;
     } else {
-      sl_zigbee_af_app_println("Error: %s: 0x%X",
+      sl_zigbee_af_app_println("Error: %s: 0x%02X",
                                "could not scan for joinable network",
                                status);
     }
@@ -85,7 +85,7 @@ sl_status_t sl_zigbee_af_zll_scan_for_unused_pan_id(void)
     if (status == SL_STATUS_OK) {
       state = UNUSED_PRIMARY;
     } else {
-      sl_zigbee_af_app_println("Error: %s: 0x%x",
+      sl_zigbee_af_app_println("Error: %s: 0x%02X",
                                "could not scan for unused network",
                                status);
     }
@@ -117,7 +117,7 @@ void sl_zigbee_af_joinable_network_found_cb(sl_zigbee_zigbee_network_t *networkF
   // because we would be recursing.  Instead, schedule an event to fire at the
   // next tick and restart from there.
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_app_println("Error: %s: 0x%X", "could not join network", status);
+    sl_zigbee_af_app_println("Error: %s: 0x%02X", "could not join network", status);
     sl_zigbee_af_event_set_active(&networkEvent);
   }
 }
@@ -135,7 +135,7 @@ void sli_zigbee_af_zll_commissioning_network_unused_pan_id_found_callback(sl_802
                                                       SL_ZIGBEE_AF_PLUGIN_ZLL_COMMISSIONING_COMMON_RADIO_TX_POWER,
                                                       panId);
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_app_println("Error: %s: 0x%X", "could not form network", status);
+    sl_zigbee_af_app_println("Error: %s: 0x%02X", "could not form network", status);
     sli_zigbee_af_zll_commissioning_network_scan_error_callback(status);
   }
 }
@@ -156,7 +156,7 @@ void sli_zigbee_af_zll_commissioning_network_scan_error_callback(sl_status_t sta
     return;
   }
 #endif
-  sl_zigbee_af_app_println("Error: %s: 0x%X",
+  sl_zigbee_af_app_println("Error: %s: 0x%02X",
                            (state == UNUSED_PRIMARY
                             ? "could not find unused network"
                             : "could not find joinable network"),
@@ -183,7 +183,7 @@ static void networkEventHandler(sl_zigbee_af_event_t * event)
       && sl_zigbee_form_and_join_can_continue_joinable_network_scan()) {
     status = sl_zigbee_scan_for_next_joinable_network();
     if (status != SL_STATUS_OK) {
-      sl_zigbee_af_app_println("Error: %s: 0x%X",
+      sl_zigbee_af_app_println("Error: %s: 0x%02X",
                                "could not continue scan for joinable network",
                                status);
     }
@@ -194,7 +194,7 @@ static void networkEventHandler(sl_zigbee_af_event_t * event)
     status = sl_zigbee_scan_for_joinable_network(sl_zigbee_get_zll_secondary_channel_mask(),
                                                  extendedPanId);
     if (status != SL_STATUS_OK) {
-      sl_zigbee_af_app_println("Error: %s: 0x%X",
+      sl_zigbee_af_app_println("Error: %s: 0x%02X",
                                "could not scan for joinable network",
                                status);
     }

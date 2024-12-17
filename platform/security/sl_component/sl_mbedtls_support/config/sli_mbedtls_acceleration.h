@@ -70,7 +70,6 @@
  * Module:  sl_mbedtls_support/src/mbedtls_ccm.c for all devices, plus:
  *          - sl_psa_driver/src/sli_se_transparent_driver_aead.c and sl_psa_driver/src/sli_se_driver_aead.c for devices with HSE,
  *          - sl_psa_driver/src/sli_cryptoacc_transparent_driver_aead.c for devices with CRYPTOACC
- *          - sl_psa_driver/src/sli_crypto_transparent_driver_aead.c for devices with CRYPTO
  *
  * Requires: \ref MBEDTLS_AES_C and \ref MBEDTLS_CCM_C (CRYPTOACC_PRESENT or SEMAILBOX_PRESENT)
  *
@@ -124,7 +123,6 @@
  * through the mbed TLS APIs.
  *
  * Module:  sl_mbedtls_support/src/mbedtls_sha.c for all devices, plus:
- *          - sl_psa_driver/src/sli_crypto_transparent_driver_hash.c for devices with CRYPTO,
  *          - sl_psa_driver/src/sli_se_transparent_driver_hash.c for devices with HSE,
  *          - sl_psa_driver/src/sli_cryptoacc_transparent_driver_hash.c for devices with CRYPTOACC
  *
@@ -149,7 +147,6 @@
  * hash algorithms through the mbed TLS APIs.
  *
  * Module:  sl_mbedtls_support/src/mbedtls_sha.c for all devices, plus:
- *          - sl_psa_driver/src/sli_crypto_transparent_driver_hash.c for devices with CRYPTO,
  *          - sl_psa_driver/src/sli_se_transparent_driver_hash.c for devices with HSE,
  *          - sl_psa_driver/src/sli_cryptoacc_transparent_driver_hash.c for devices with CRYPTOACC
  *

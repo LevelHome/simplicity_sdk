@@ -1,5 +1,7 @@
 from pyradioconfig.parts.nixi.calculators.calc_global import CALC_Global_nixi
 from pycalcmodel.core.variable import ModelVariableFormat
+from py_2_and_3_compatibility import *
+
 
 class CALC_Global_panther(CALC_Global_nixi):
 
@@ -80,8 +82,11 @@ class CALC_Global_panther(CALC_Global_nixi):
         self._add_RAC_SYNTHCTRL_MMDPOWERBALANCEDISABLE_regs(model)
         self._add_SYTRIM_regs(model)
         self._add_RAC_CLKMULTEN0_en(model)
+        self._add_lpfincap_regs(model)
 
 
+    def _add_common_regs(self, model):
+        super()._add_common_regs(model)
         self._addModelRegister(model, 'AGC.STATUS0.ADCINDEX', int, ModelVariableFormat.HEX)
         # self._addModelRegister(model, 'AGC.CTRL0.PWRTARGET', int, ModelVariableFormat.HEX)
         # self._addModelRegister(model, 'AGC.CTRL0.MODE', int, ModelVariableFormat.HEX)
@@ -1196,6 +1201,8 @@ class CALC_Global_panther(CALC_Global_nixi):
         self._addModelRegister(model, 'SYNTH.VCOTUNING.VCAPSEL', int, ModelVariableFormat.HEX)
         self._addModelRegister(model, 'SYNTH.VCOTUNING.VCOTUNING', int, ModelVariableFormat.HEX)
 
+        self._add_channel_definition(model)
+
     def _add_SYNTH_DSMCTRL_regs(self, model):
         self._addModelRegister(model, 'SYNTH.DSMCTRLRX.DEMMODERX', int, ModelVariableFormat.HEX)
         self._addModelRegister(model, 'SYNTH.DSMCTRLRX.DITHERDACRX', int, ModelVariableFormat.HEX)
@@ -1237,7 +1244,6 @@ class CALC_Global_panther(CALC_Global_nixi):
         self._addModelRegister(model, 'SYNTH.LPFCTRL2RX.CZSELRX', int, ModelVariableFormat.HEX)
         self._addModelRegister(model, 'SYNTH.LPFCTRL2RX.CZVALRX', int, ModelVariableFormat.HEX)
         self._addModelRegister(model, 'SYNTH.LPFCTRL2RX.LPFGNDSWENRX', int, ModelVariableFormat.HEX)
-        self._addModelRegister(model, 'SYNTH.LPFCTRL2RX.LPFINCAPRX', int, ModelVariableFormat.HEX)
         self._addModelRegister(model, 'SYNTH.LPFCTRL2RX.LPFSWENRX', int, ModelVariableFormat.HEX)
         self._addModelRegister(model, 'SYNTH.LPFCTRL2RX.MODESELRX', int, ModelVariableFormat.HEX)
         self._addModelRegister(model, 'SYNTH.LPFCTRL2RX.VCMLVLRX', int, ModelVariableFormat.HEX)
@@ -1247,10 +1253,13 @@ class CALC_Global_panther(CALC_Global_nixi):
         self._addModelRegister(model, 'SYNTH.LPFCTRL2TX.CZSELTX', int, ModelVariableFormat.HEX)
         self._addModelRegister(model, 'SYNTH.LPFCTRL2TX.CZVALTX', int, ModelVariableFormat.HEX)
         self._addModelRegister(model, 'SYNTH.LPFCTRL2TX.LPFGNDSWENTX', int, ModelVariableFormat.HEX)
-        self._addModelRegister(model, 'SYNTH.LPFCTRL2TX.LPFINCAPTX', int, ModelVariableFormat.HEX)
         self._addModelRegister(model, 'SYNTH.LPFCTRL2TX.LPFSWENTX', int, ModelVariableFormat.HEX)
         self._addModelRegister(model, 'SYNTH.LPFCTRL2TX.MODESELTX', int, ModelVariableFormat.HEX)
         self._addModelRegister(model, 'SYNTH.LPFCTRL2TX.VCMLVLTX', int, ModelVariableFormat.HEX)
+
+    def _add_lpfincap_regs(self, model):
+        self._addModelRegister(model, 'SYNTH.LPFCTRL2RX.LPFINCAPRX', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'SYNTH.LPFCTRL2TX.LPFINCAPTX', int, ModelVariableFormat.HEX)
 
     def _add_SYNTH_DENOMINIT_regs(self, model):
         self._addModelRegister(model, 'SYNTH.MMDDENOMINIT.DENOMINIT0', int, ModelVariableFormat.HEX)
@@ -1311,5 +1320,13 @@ class CALC_Global_panther(CALC_Global_nixi):
         self._addModelRegister(model, 'RAC.CLKMULTEN0.CLKMULTENREG1', int, ModelVariableFormat.HEX)
         self._addModelRegister(model, 'RAC.CLKMULTEN0.CLKMULTENREG2', int, ModelVariableFormat.HEX)
         self._addModelRegister(model, 'RAC.CLKMULTEN0.CLKMULTENROTDET', int, ModelVariableFormat.HEX)
+
+    def _add_channel_definition(self, model):
+        self._addModelVariable(model, 'chcfg_base_frequency_hz', long, ModelVariableFormat.DECIMAL, units='Hz', desc='Channel Config RF frequency of channel 0.')
+        self._addModelVariable(model, 'chcfg_channel_spacing_hz', int, ModelVariableFormat.DECIMAL, units='Hz', desc='Channel Config channel raster used for relative frequency configuration')
+        self._addModelVariable(model, 'chcfg_channel_number_start', int, ModelVariableFormat.DECIMAL, desc='Channel Config Start channel number')
+        self._addModelVariable(model, 'chcfg_channel_number_end', int, ModelVariableFormat.DECIMAL, desc='Channel Config Last channel number')
+        self._addModelVariable(model, 'chcfg_physical_channel_offset', int, ModelVariableFormat.DECIMAL, desc='Channel Config Physical channel offset')
+        self._addModelVariable(model, 'rail_tx_power_max', int, ModelVariableFormat.DECIMAL, is_array=True)
 
 

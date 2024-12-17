@@ -7,7 +7,10 @@ class CalcGlobalRainier(Calc_Global_Bobcat):
       # Build variables from the Ocelot calculations
       super().buildVariables(model)
       self._add_SYNTH_S3_regs(model)
+      self._add_syctrl_regs_s3(model)
 
+   def _add_common_regs(self, model):
+      super()._add_common_regs(model)
       self._addModelRegister(model, 'RAC.RX.SYPFDCHPLPENRX', int, ModelVariableFormat.HEX)
 
       self._addModelRegister(model, 'MODEM.DIGMIXCTRL.BLEORZB', int, ModelVariableFormat.HEX)
@@ -134,15 +137,12 @@ class CalcGlobalRainier(Calc_Global_Bobcat):
       self._addModelRegister(model, 'RAC.CLKMULTEN2.CLKMULTDIVXTX', int, ModelVariableFormat.HEX)
       self._addModelRegister(model, 'RAC.CLKMULTEN2.CLKMULTENBYPASS40MHZTX', int, ModelVariableFormat.HEX)
 
-      self._addModelRegister(model, 'RAC.TIAEN.TIAENLATCHI', int, ModelVariableFormat.HEX)
-      self._addModelRegister(model, 'RAC.TIAEN.TIAENLATCHQ', int, ModelVariableFormat.HEX)
       self._addModelRegister(model, 'MODEM.TRECSCFG.SOFTD', int, ModelVariableFormat.HEX)
       self._addModelRegister(model, 'MODEM.TRECSCFG.SDSCALE', int, ModelVariableFormat.HEX)
       self._addModelRegister(model, 'MODEM.DIGMIXCTRL.FWHOPPING', int, ModelVariableFormat.HEX)
       self._addModelRegister(model, 'MODEM.PHDMODCTRL.FASTHOPPINGEN', int, ModelVariableFormat.HEX)
       self._addModelRegister(model, 'MODEM.PHDMODCTRL.CHPWRQUAL', int, ModelVariableFormat.HEX)
 
-      self._addModelRegister(model, 'MODEM.SRCCHF.CHMUTETIMER', int, ModelVariableFormat.HEX)
       self._addModelRegister(model, 'MODEM.CHFCTRL.ADJGAINWIN', int, ModelVariableFormat.HEX)
 
       self._addModelRegister(model, 'AGC.GAINRANGE.PNINDEXBORDER', int, ModelVariableFormat.HEX)
@@ -217,6 +217,7 @@ class CalcGlobalRainier(Calc_Global_Bobcat):
 
       self._addModelRegister(model, 'MODEM.CTRL5.FEFILTCLKSEL', int, ModelVariableFormat.HEX)
       self._addModelRegister(model, 'MODEM.CTRL5.AFIFOBYP', int, ModelVariableFormat.HEX)
+
       self._addModelRegister(model, 'MODEM.TXCTRL.TXAFIFOBYP', int, ModelVariableFormat.HEX)
 
       self._addModelRegister(model, 'SEQ.MODEMINFO.LEGACY_EN', int, ModelVariableFormat.HEX)
@@ -228,9 +229,9 @@ class CalcGlobalRainier(Calc_Global_Bobcat):
       self._addModelRegister(model, 'SEQ.MODEMINFO.ENHDSSS_EN', int, ModelVariableFormat.HEX)
       self._addModelRegister(model, 'SEQ.MODEMINFO.SPARE1', int, ModelVariableFormat.HEX)
       self._addModelRegister(model, 'SEQ.MODEMINFO.SOFTMODEM_EN', int, ModelVariableFormat.HEX)
-      self._addModelRegister(model, 'SEQ.MODEMINFO.BTC_EN', int, ModelVariableFormat.HEX)
       self._addModelRegister(model, 'SEQ.MODEMINFO.SPARE2', int, ModelVariableFormat.HEX)
 
+      self._addModelRegister(model, 'RAC.LNAMIXEN1.LNAMIXMXRLOSEL', int, ModelVariableFormat.HEX)
 
    def _add_TXBR_regs(self, model):
       self._addModelRegister(model, 'MODEM.TXBR.TXBRNUM', int, ModelVariableFormat.HEX)
@@ -275,6 +276,7 @@ class CalcGlobalRainier(Calc_Global_Bobcat):
       self._addModelRegister(model, 'SYNTH.DSMCTRLTX.LSBFORCETX', int, ModelVariableFormat.HEX)
       self._addModelRegister(model, 'SYNTH.DSMCTRLTX.DITHERDACTX', int, ModelVariableFormat.HEX)
       self._addModelRegister(model, 'SYNTH.DSMCTRLTX.PHISELTX', int, ModelVariableFormat.HEX)
+      self._addModelRegister(model, 'SYNTH.DSMCTRLRX.PHISELRX', int, ModelVariableFormat.HEX)
       self._addModelRegister(model, 'SYNTH.DSMCTRLTX.DEMMODETX', int, ModelVariableFormat.HEX)
       self._addModelRegister(model, 'SYNTH.DSMCTRLTX.REQORDERTX', int, ModelVariableFormat.HEX)
       self._addModelRegister(model, 'SYNTH.DSMCTRLTX.QNCMODETX', int, ModelVariableFormat.HEX)
@@ -285,6 +287,10 @@ class CalcGlobalRainier(Calc_Global_Bobcat):
    def _add_SYNTH_DENOMINIT_regs(self, model):
       self._addModelRegister(model, 'SYNTH.MMDDENOMINIT.DENOMINIT0', int, ModelVariableFormat.HEX)
       self._addModelRegister(model, 'SYNTH.MMDDENOMINIT.DENOMINIT1', int, ModelVariableFormat.HEX)
+      self._addModelRegister(model, 'SEQ.MMDDENOMINIT_CALC.DENOMINIT0', int, ModelVariableFormat.HEX)
+      self._addModelRegister(model, 'SEQ.MMDDENOMINIT_CALC.DENOMINIT1', int, ModelVariableFormat.HEX)
+      self._addModelRegister(model, 'SEQ.MMDDENOMINIT_CALC_DOUBLED.DENOMINIT0', int, ModelVariableFormat.HEX)
+      self._addModelRegister(model, 'SEQ.MMDDENOMINIT_CALC_DOUBLED.DENOMINIT1', int, ModelVariableFormat.HEX)
 
    def _add_SYNTH_S3_regs(self, model):
         ## Hopping
@@ -311,7 +317,6 @@ class CalcGlobalRainier(Calc_Global_Bobcat):
         self._addModelRegister(model, 'SYNTH.PLMS.PLMSGEARSLOT', int, ModelVariableFormat.HEX)
         self._addModelRegister(model, 'SYNTH.LMSOVERRIDE.GLMSOVERRIDEEN', int, ModelVariableFormat.HEX)
         self._addModelRegister(model, 'SYNTH.LMSOVERRIDE.PLMSOVERRIDEEN', int, ModelVariableFormat.HEX)
-        self._addModelRegister(model, 'SYNTH.LMSOVERRIDE.PLMSOVERRIDEVAL', int, ModelVariableFormat.HEX)
         ## FCAL HW
         self._addModelRegister(model, 'SYNTH.COMPANION.COMPANION0', int, ModelVariableFormat.HEX)
         self._addModelRegister(model, 'SYNTH.COMPANION.COMPANION1', int, ModelVariableFormat.HEX)
@@ -349,7 +354,16 @@ class CalcGlobalRainier(Calc_Global_Bobcat):
 
         # RFSYNTH CTRL
         self._addModelRegister(model, 'RAC.SYLOCTRL0.SYLODIVDSMDACCLKDIVRATIO', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'RAC.SYLOCTRL0.SYLODIVREGTRIMVREG', int, ModelVariableFormat.HEX)
         self._addModelRegister(model, 'RAC.SYLOCTRLTX0.SYLODIVDSMDACCLKDIVRATIOTX', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'SEQ.MODINDEX_CALC.MODINDEXE', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'SEQ.MODINDEX_CALC.MODINDEXM', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'SEQ.MODINDEX_CALC.FREQGAINE', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'SEQ.MODINDEX_CALC.FREQGAINM', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'SEQ.MODINDEX_CALC_MODINDEXE_DOUBLED.MODINDEXE', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'SEQ.MODINDEX_CALC_MODINDEXE_DOUBLED.MODINDEXM', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'SEQ.MODINDEX_CALC_MODINDEXE_DOUBLED.FREQGAINE', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'SEQ.MODINDEX_CALC_MODINDEXE_DOUBLED.FREQGAINM', int, ModelVariableFormat.HEX)
 
    def _add_RAC_CLKMULTEN0_en(self, model):
       """CLKMULTENADCDRV, CLKMULTENDACDRV become FW controlled as must shut them off during opposite operation"""
@@ -358,7 +372,6 @@ class CalcGlobalRainier(Calc_Global_Bobcat):
    def _add_RAC_ADC_regs(self, model):
       self._addModelRegister(model, 'RAC.ADCCTRL1.ADCENHALFMODE', int, ModelVariableFormat.HEX)
       self._addModelRegister(model, 'RAC.ADCCTRL0.ADCCLKSEL', int, ModelVariableFormat.HEX)
-      self._addModelRegister(model, 'RAC.ADCTRIM0.ADCSIDETONEAMP', int, ModelVariableFormat.HEX)
       self._addModelRegister(model, 'RAC.ADCEN0.ADCENNEGRES', int, ModelVariableFormat.HEX)
 
    def _add_RFPKDTHD_reg(self, model):
@@ -397,3 +410,17 @@ class CalcGlobalRainier(Calc_Global_Bobcat):
 
    def _add_dig_ramp_en_reg_field(self, model):
       pass
+
+   def _add_RAC_CLKMULTEN1_en(self, model):
+      pass
+
+   def _add_syctrl_regs_s3(self, model):
+      self._addModelRegister(model, 'RAC.SYCTRL0.SYVCOTRIMIPTAT', int, ModelVariableFormat.HEX)
+      self._addModelRegister(model, 'RAC.SYCTRL0.SYVCOTRIMIBIAS', int, ModelVariableFormat.HEX)
+      self._addModelRegister(model, 'RAC.SYCTRL0.SYDSMDACTRIMLOADBALDLF', int, ModelVariableFormat.HEX)
+      self._addModelRegister(model, 'RAC.SYCTRL0.SYDSMDACTRIMLOADBALDSM', int, ModelVariableFormat.HEX)
+      self._addModelRegister(model, 'RAC.SYCTRL0.SYENMMDREGREPLICA', int, ModelVariableFormat.HEX)
+      self._addModelRegister(model, 'RAC.SYCTRLTX0.SYVCOTRIMIPTATTX', int, ModelVariableFormat.HEX)
+      self._addModelRegister(model, 'RAC.SYCTRLTX0.SYVCOTRIMIBIASTX', int, ModelVariableFormat.HEX)
+      self._addModelRegister(model, 'RAC.SYCTRLTX0.SYDSMDACTRIMLOADBALDLFTX', int, ModelVariableFormat.HEX)
+      self._addModelRegister(model, 'RAC.SYCTRLTX0.SYENMMDREGREPLICATX', int, ModelVariableFormat.HEX)

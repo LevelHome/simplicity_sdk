@@ -2,7 +2,7 @@
  * @brief RAIL Configuration
  * @details
  *   WARNING: Auto-Generated Radio Config  -  DO NOT EDIT
- *   Radio Configurator Version: 2304.4.4
+ *   Radio Configurator Version: 2404.4.4
  *   RAIL Adapter Version: 2.4.33
  *   RAIL Compatibility: 2.x
  *******************************************************************************
@@ -39,12 +39,16 @@ static const uint8_t irCalConfig[] = {
 };
 
 static const int32_t timingConfig[] = {
-  1103579, 1103579, 500000
+  1103579, 1103579, 500000, 0
 };
 
 static const uint8_t hfxoRetimingConfigEntries[] = {
   2, 0, 0, 0, 0x00, 0x5a, 0x62, 0x02, 6, 20, 0, 0, 0x00, 0xb4, 0xc4, 0x04, 7, 56, 0, 0, 0xa0, 0x08, 0, 0, 0, 0, 0x58, 0x09, 1, 4, 7, 6, 0x10, 0x0a, 1, 4, 7, 7, 0xc8, 0x0a, 0, 4, 8, 7, 0x80, 0x0b, 0, 4, 8, 8, 0x38, 0x0c, 0, 4, 9, 8, 0x61, 0x08, 0, 0, 0, 0, 0xc2, 0x08, 0, 0, 0, 0, 0xc7, 0x09, 1, 4, 4, 3, 0xc4, 0x09, 0, 0, 0, 0, 0x2c, 0x0b, 1, 4, 4, 4, 0xc4, 0x09, 0, 0, 0, 0, 0x92, 0x0c, 1, 4, 5, 4
 };
+
+#ifdef RADIO_CONFIG_ENABLE_STACK_INFO
+static const uint8_t stackInfo_0[2] = { 0x00, 0x00 };
+#endif // RADIO_CONFIG_ENABLE_STACK_INFO
 
 static RAIL_ChannelConfigEntryAttr_t channelConfigEntryAttr = {
 #if RAIL_SUPPORTS_OFDM_PA
@@ -66,7 +70,7 @@ static RAIL_ChannelConfigEntryAttr_t channelConfigEntryAttr = {
 };
 
 static const uint32_t phyInfo[] = {
-  16UL,
+  18UL,
   0x00000000UL, // 0.0
   (uint32_t) NULL,
   (uint32_t) irCalConfig,
@@ -75,14 +79,14 @@ static const uint32_t phyInfo[] = {
   0UL,
   22950000UL,
   1000UL,
-  0x00F30201UL,
+  0x00F20201UL,
   0x03100418UL,
   (uint32_t) NULL,
   (uint32_t) hfxoRetimingConfigEntries,
   (uint32_t) NULL,
   0UL,
   0UL,
-  1999UL,
+  2000UL,
   (uint32_t) NULL,
   (uint32_t) NULL,
   (uint32_t) NULL,
@@ -324,7 +328,7 @@ const RAIL_ChannelConfigEntry_t sl_rfsense_ook_1kbps_40MHz_channels[] = {
     .entryType = 0,
 #endif
 #ifdef RADIO_CONFIG_ENABLE_STACK_INFO
-    .stackInfo = NULL,
+    .stackInfo = stackInfo_0,
 #endif
     .alternatePhy = NULL,
   },

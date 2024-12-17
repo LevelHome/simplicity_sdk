@@ -1,5 +1,5 @@
 id: zw_role_type_sleeping_reporting
-label: Z-Wave Role Type Listening Reporting
+label: Z-Wave Role Type Sleeping Reporting
 category: Z-Wave|Role Types
 description: >
   The Reporting Sleeping End Device Role Type (RSS) is intended for battery-powered devices
@@ -23,6 +23,11 @@ define:
 requires:
   - name: zw_end_device
   - name: zw_app_timer_deep_sleep
+  - name: zw_cli_sleeping
+    condition: [zw_cli_common]
 provides:
   - name: zw_role_type_sleeping_reporting
   - name: zw_role_type
+template_contribution:
+  - name: component_catalog
+    value: zw_sleeping_device

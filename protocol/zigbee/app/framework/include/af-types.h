@@ -228,6 +228,55 @@ typedef struct {
 } sl_zigbee_af_cluster_t;
 
 /**
+ * @brief Zigbee and Matter multi-protocol attribute mapping has its metadata
+ * stored in the struct.
+ *
+ * There is one entry per attribute map between 2 protocols(eg: Zigbee and Matter attributes)
+ */
+typedef struct {
+  /**
+   * Cluster ID, according to the ZCL spec.
+   */
+  sl_zigbee_af_cluster_id_t zigbeeClusterId;
+  /**
+   * Cluster Mfg ID, according to the ZCL spec.
+   */
+  sl_zigbee_af_cluster_id_t zigbeeMfgClusterId;
+  /**
+   * Cluster ID, according to the Data Model spec.
+   */
+  sl_zigbee_af_cluster_id_t matterClusterId;
+  /**
+   * Cluster Mfg ID, according to the Data Model spec.
+   */
+  sl_zigbee_af_cluster_id_t matterMfgClusterId;
+  /**
+   * Attribute ID, according to the ZCL spec.
+   */
+  sl_zigbee_af_attribute_id_t zigbeeAttributeId;
+  /**
+   * Attribute Mfg ID, according to the ZCL spec.
+   */
+  sl_zigbee_af_attribute_id_t zigbeeMfgAttributeId;
+  /**
+   * Attribute Type, according to the ZCL spec.
+   */
+  sl_zigbee_af_attribute_type_t zigbeeAttributeType;
+  /**
+   * Attribute ID, according to the Data Model spec.
+   */
+  sl_zigbee_af_attribute_id_t matterAttributeId;
+  /**
+   * Attribute Mfg ID, according to the Data Model spec.
+   */
+  sl_zigbee_af_attribute_id_t matterMfgAttributeId;
+  /**
+   * Attribute Type, according to the Data Model spec.
+   */
+  sl_zigbee_af_attribute_type_t matterAttributeType;
+} sl_zigbee_matter_af_multi_protocol_attribute_metadata_t;
+
+/**
  * @brief Find an attribute in storage. Together, the elements
  * in this search record constitute the "primary key" used to identify a unique
  * attribute value in the attribute storage.
@@ -1965,6 +2014,17 @@ typedef struct {
  *   1 byte for the sequence and 1 byte for the status code.
  */
 #define SL_ZIGBEE_AF_ZDO_RESPONSE_OVERHEAD 2u
+
+/**
+ * @brief return status for cluster request handlers - may be @ref `sl_zigbee_af_status_t`
+ *        or a special return status indicate special handling of the response by the request handler
+ */
+typedef uint32_t sl_zigbee_af_zcl_request_status_t;
+
+/**
+ * @brief ZCL request handler status indicates a command was handled and no default response should be sent
+ */
+#define SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED 0xFFFFFF00u
 
 /** @} END addtogroup */
 

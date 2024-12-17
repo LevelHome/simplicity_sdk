@@ -11,9 +11,6 @@ class CalcMiscRainier(Calc_Misc_Bobcat):
              model (ModelRoot) : Data model to read and write variables from
         """
 
-        self._reg_write(model.vars.RAC_TIAEN_TIAENLATCHI, 1)
-        self._reg_write(model.vars.RAC_TIAEN_TIAENLATCHQ, 1)
-
         self._reg_write(model.vars.SYNTH_DLFCTRL_LOCKLPFBWGEAR0, 15)
         self._reg_write(model.vars.SYNTH_DLFCTRL_LOCKLPFBWGEAR1, 15)
 
@@ -34,7 +31,6 @@ class CalcMiscRainier(Calc_Misc_Bobcat):
 
         self._reg_write(model.vars.MODEM_CHFCTRL_ADJGAINWIN, 85)
 
-        self._reg_write(model.vars.MODEM_TRECSCFG_SOFTD, 0)
         self._reg_write(model.vars.MODEM_TRECSCFG_SDSCALE, 3)
         self._reg_write(model.vars.MODEM_LRFRC_LRDSACORRTHD, 1000)
 
@@ -42,14 +38,11 @@ class CalcMiscRainier(Calc_Misc_Bobcat):
         self._reg_write_default(model.vars.SYNTH_DSMCTRLTX_DITHERDACTX)
         self._reg_write_default(model.vars.SYNTH_DSMCTRLRX_DITHERDACRX)
         self._reg_write_default(model.vars.SYNTH_DSMCTRLRX_REQORDERRX)
-        self._reg_write_default(model.vars.SYNTH_DSMCTRLTX_PHISELTX)
         self._reg_write_default(model.vars.SYNTH_DSMCTRLTX_REQORDERTX)
         self._reg_write_default(model.vars.SYNTH_QNCCTRL_QNCOFFSET)
         self._reg_write_default(model.vars.SYNTH_LMSOVERRIDE_GLMSOVERRIDEEN)
         self._reg_write_default(model.vars.SYNTH_LMSOVERRIDE_PLMSOVERRIDEEN)
-        self._reg_write_default(model.vars.SYNTH_LMSOVERRIDE_PLMSOVERRIDEVAL)
         self._reg_write_default(model.vars.MODEM_EXPECTPATTDUAL_EXPECTPATTDUAL)
-        self._reg_write_default(model.vars.MODEM_COCURRMODE_DSSSCONCURRENT)
         self._reg_write_default(model.vars.MODEM_EHDSSSCTRL_DSSSDSATHD)
         self._reg_write_default(model.vars.MODEM_EHDSSSCTRL_DUALDSA)
         self._reg_write_default(model.vars.MODEM_EHDSSSCFG2_MAXSCHMODE)
@@ -223,22 +216,10 @@ class CalcMiscRainier(Calc_Misc_Bobcat):
         self._reg_write(model.vars.AGC_DUALRFPKDTHD1_RFPKDHITHD1, 40)
         self._reg_write(model.vars.AGC_DUALRFPKDTHD0_RFPKDLOWTHD0, 1)
         self._reg_write(model.vars.AGC_DUALRFPKDTHD0_RFPKDLOWTHD1, 10)
-        self._reg_write(model.vars.AGC_CTRL6_ENDUALRFPKD, 1)
 
         # reg-fields to modify sync detection reset behavior PGOCELOT-5282
         self._reg_write(model.vars.MODEM_FRMSCHTIME_PMRSTSYCNEN, 0)
         self._reg_write(model.vars.MODEM_FRMSCHTIME_DSARSTSYCNEN, 0)
 
-        #Add LongRange reg writes
-        self._reg_write(model.vars.MODEM_LONGRANGE_LRBLE, 0)
-        self._reg_write(model.vars.MODEM_LONGRANGE_LRBLEDSA, 0)
-        self._reg_write(model.vars.MODEM_LONGRANGE_LRCORRSCHWIN, 0xA)
-        self._reg_write(model.vars.MODEM_LONGRANGE_LRCORRTHD, 0x3E8)
-        self._reg_write(model.vars.MODEM_LONGRANGE_LRDEC, 0)
-        self._reg_write(model.vars.MODEM_LONGRANGE_LRTIMCORRTHD, 0x0FA)
-
-        self._reg_write(model.vars.MODEM_COCURRMODE_CONCURRENT, 0)
-
     def calc_adc_sidetone_amp_reg(self, model):
-        # need to set it to 3 from Phase 2: MCUW_RADIO_CFG-2503
-        self._reg_write(model.vars.RAC_ADCTRIM0_ADCSIDETONEAMP, 3)
+        pass

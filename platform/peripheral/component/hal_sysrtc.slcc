@@ -31,7 +31,7 @@ template_contribution:
   - name: code_classification_components
     value: hal_sysrtc
 define:
-  - name: SL_CODE_COMPONENT_PERIPHERAL_SYSRTC
+  - name: SL_CODE_COMPONENT_HAL_SYSRTC
     value: hal_sysrtc
 documentation:
   docset: gecko-platform

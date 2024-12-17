@@ -102,7 +102,7 @@ static uint8_t printPercentage(const char * prefixString,
       || (percentageComplete >= updateFrequency
           && (percentageComplete
               >= (oldPercentageComplete + updateFrequency)))) {
-    sl_zigbee_af_core_println("%p: %d%% complete", prefixString, percentageComplete);
+    sl_zigbee_af_core_println("%s: %d%% complete", prefixString, percentageComplete);
     oldPercentageComplete = percentageComplete;
   }
   return percentageComplete;

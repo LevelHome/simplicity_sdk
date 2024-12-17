@@ -30,7 +30,7 @@ typedef struct {
 } sli_802154_stack_get_tx_power_mode_ipc_msg_t;
 
 typedef struct {
-  sl_zigbee_multiprotocol_priorities_t priorities;
+  sl_802154_radio_priorities_t priorities;
 } sli_802154_stack_radio_get_scheduler_priorities_ipc_req_t;
 
 typedef struct {
@@ -56,7 +56,7 @@ typedef struct {
 } sli_802154_stack_radio_get_scheduler_sliptime_ipc_msg_t;
 
 typedef struct {
-  sl_zigbee_multiprotocol_priorities_t priorities;
+  sl_802154_radio_priorities_t priorities;
 } sli_802154_stack_radio_set_scheduler_priorities_ipc_req_t;
 
 typedef struct {

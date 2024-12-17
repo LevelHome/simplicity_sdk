@@ -24,6 +24,10 @@
 #include "hal/hal.h"
 #include "internal/inc/internal-defs-patch.h"
 
+#if defined(MBEDTLS_CONFIG_FILE)
+#include MBEDTLS_CONFIG_FILE
+#endif
+
 #ifdef SL_COMPONENT_CATALOG_PRESENT
 #include "sl_component_catalog.h"
 #endif
@@ -35,10 +39,6 @@
 #elif !defined(USE_RADIO_API_FOR_TRNG) && !defined(USE_PSA_API_FOR_TRNG) // None of the components present, then error
 #error Must select one of the strong random api with radio or PSA Crypto
 #endif // SL_CATALOG_ZIGBEE_STRONG_RANDOM_API_
-
-#if defined(MBEDTLS_CONFIG_FILE)
-#include MBEDTLS_CONFIG_FILE
-#endif
 
 #if defined(USE_PSA_API_FOR_TRNG)
 #include "psa/crypto.h"

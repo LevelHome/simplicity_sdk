@@ -32,6 +32,7 @@
 #define SLI_CPC_SYSTEM_SECONDARY_H
 
 #include "sl_common.h"
+#include "sl_compiler.h"
 #include "sli_cpc_system_common.h"
 #include "sli_cpc_timer.h"
 
@@ -77,6 +78,10 @@ typedef struct {
 } sli_cpc_system_cmd_context_t;
 
 SL_NORETURN void cpc_system_reset(sli_cpc_system_reboot_mode_t reboot_mode);
+
+sl_cpc_system_status_t cpc_get_reset_reason(void);
+
+void cpc_get_bootloader_info(sli_cpc_system_bootloader_info_t *infos);
 
 /***************************************************************************//**
  * Invoked when a frame with the Poll/Final flag is set.

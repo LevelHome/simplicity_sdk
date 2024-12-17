@@ -58,11 +58,11 @@
 #define SL_I2CSPM_QWIIC_PERIPHERAL_NO            0
 
 // I2C0 SCL on PA06
-#define SL_I2CSPM_QWIIC_SCL_PORT                 gpioPortA
+#define SL_I2CSPM_QWIIC_SCL_PORT                 SL_GPIO_PORT_A
 #define SL_I2CSPM_QWIIC_SCL_PIN                  6
 
 // I2C0 SDA on PA07
-#define SL_I2CSPM_QWIIC_SDA_PORT                 gpioPortA
+#define SL_I2CSPM_QWIIC_SDA_PORT                 SL_GPIO_PORT_A
 #define SL_I2CSPM_QWIIC_SDA_PIN                  7
 
 // [I2C_SL_I2CSPM_QWIIC]$

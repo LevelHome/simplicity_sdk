@@ -47,15 +47,28 @@
 #include "sl_btmesh_api.h"
 #endif // SL_CATALOG_BTMESH_PRESENT
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/// NCP error type
+typedef enum {
+  SL_NCP_ERROR_RUNTIME    = 0,
+  SL_NCP_ERROR_RECEIVE    = 1,
+  SL_NCP_ERROR_TIMER      = 2,
+  SL_NCP_ERROR_ENCRYPT    = 3,
+  SL_NCP_ERROR_BGAPI_LOCK = 4,
+} sl_ncp_error_t;
+
 /**************************************************************************//**
  * NCP initialization function.
  *****************************************************************************/
 void sl_ncp_init(void);
 
 /**************************************************************************//**
- * NCP process action function.
+ * NCP runtime ready.
  *****************************************************************************/
-void sl_ncp_step(void);
+void sl_ncp_rta_ready(void);
 
 /**************************************************************************//**
  * User command (message_to_target) handler callback.
@@ -73,7 +86,7 @@ void sl_ncp_user_cmd_message_to_target_cb(void *data);
  *
  * @param[in] data Data received from NCP through UART.
  *****************************************************************************/
-void sl_ncp_user_cs_cmd_message_to_target_cb(void *data);
+void sl_ncp_user_cs_cmd_message_to_target_cb(const void *data);
 
 /**************************************************************************//**
  * Send user command (message_to_target) response.
@@ -97,26 +110,6 @@ void sl_ncp_user_cmd_message_to_target_rsp(sl_status_t result,
  * @param[out] data Data to send to NCP.
  *****************************************************************************/
 void sl_ncp_user_evt_message_to_host(uint8_t len, uint8_t *data);
-
-/**************************************************************************//**
- * Check if NCP allows go to sleep
- *****************************************************************************/
-bool sli_ncp_is_ok_to_sleep(void);
-
-/**************************************************************************//**
- * Routine for power manager handler
- *****************************************************************************/
-sl_power_manager_on_isr_exit_t sli_ncp_sleep_on_isr_exit(void);
-
-/**************************************************************************//**
- * OS initialization function - if the OS is present
- *****************************************************************************/
-void sl_ncp_os_task_init(void);
-
-/**************************************************************************//**
- * Function to trigger the OS task to proceed - if the OS is present
- *****************************************************************************/
-void sl_ncp_os_task_proceed(void);
 
 /**************************************************************************//**
  * Local event processor for handling Bluetooth events in the application.
@@ -167,6 +160,23 @@ bool sl_ncp_local_btmesh_evt_process(sl_btmesh_msg_t *evt);
 bool sl_ncp_local_common_btmesh_evt_process(sl_btmesh_msg_t *evt);
 
 #endif // SL_CATALOG_BTMESH_PRESENT
+
+/**************************************************************************//**
+ * NCP runtime error callback.
+ *
+ * @note The error callback is called when an error has occurred in the runtime
+ *       context. The weak implementation asserts. It can be overridden in user
+ *       code by adding a strong implementation.
+ *
+ * @param error  error type
+ * @param status status code
+ *
+ *****************************************************************************/
+void sl_ncp_on_error(sl_ncp_error_t error, sl_status_t status);
+
+#ifdef __cplusplus
+}
+#endif
 
 /** @} (end addtogroup ncp) */
 #endif // SL_NCP_H

@@ -36,7 +36,7 @@
  *  This prevents linker warnings.
  * @{
  ******************************************************************************/
-#include "cmsis_compiler.h"
+#include "sl_compiler.h"
 
 struct stat;
 struct timeval;

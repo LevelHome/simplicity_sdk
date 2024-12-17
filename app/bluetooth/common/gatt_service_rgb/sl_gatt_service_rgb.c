@@ -29,7 +29,7 @@
  ******************************************************************************/
 
 #include <string.h>
-#include "em_core.h"
+#include "sl_core.h"
 #include "sl_status.h"
 #include "gatt_db.h"
 #include "app_assert.h"

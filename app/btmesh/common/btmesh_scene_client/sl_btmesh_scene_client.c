@@ -3,7 +3,7 @@
  * @brief BT mesh scene client module
  *******************************************************************************
  * # License
- * <b>Copyright 2023 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -28,12 +28,12 @@
  *
  ******************************************************************************/
 
-#include "em_common.h"
 #include "sl_status.h"
 
 #include "sl_btmesh_api.h"
 #include "sl_bt_api.h"
 #include "sl_btmesh_dcd.h"
+#include "app_btmesh_rta.h"
 
 #include "app_assert.h"
 #include "app_timer.h"
@@ -139,6 +139,11 @@ void sl_btmesh_select_scene(uint8_t scene_to_recall)
     return;
   }
 
+  sl_status_t sc = app_btmesh_rta_acquire();
+  if (sc != SL_STATUS_OK) {
+    return;
+  }
+
   scene_number = scene_to_recall;
 
   // Recall scene using Scene Client model
@@ -158,6 +163,8 @@ void sl_btmesh_select_scene(uint8_t scene_to_recall)
                                      true);
     app_assert_status_f(sc, "Failed to start periodic timer");
   }
+
+  (void) app_btmesh_rta_release();
 }
 
 /**************************************************************************//**
@@ -190,12 +197,19 @@ static void  scene_retransmission_timer_cb(app_timer_t *handle,
   (void)data;
   (void)handle;
 
+  sl_status_t sc = app_btmesh_rta_acquire();
+  if (sc != SL_STATUS_OK) {
+    return;
+  }
+
   send_scene_recall_request(1);   // Retransmit scene message
   // Stop retransmission timer if it was the last attempt
   if (scene_request_count == 0) {
-    sl_status_t sc = app_timer_stop(&app_scene_retransmission_timer);
+    sc = app_timer_stop(&app_scene_retransmission_timer);
     app_assert_status_f(sc, "Failed to stop periodic timer");
   }
+
+  (void) app_btmesh_rta_release();
 }
 
 /** @} (end addtogroup Scene Client) */

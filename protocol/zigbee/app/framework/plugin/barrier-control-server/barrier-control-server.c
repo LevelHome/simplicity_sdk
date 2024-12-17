@@ -279,14 +279,7 @@ void sl_zigbee_af_barrier_control_cluster_server_tick_cb(uint8_t endpoint)
 // -----------------------------------------------------------------------------
 // Handling commands
 
-static void sendDefaultResponse(sl_zigbee_af_status_t status)
-{
-  if (sl_zigbee_af_send_immediate_default_response(status) != SL_STATUS_OK) {
-    sl_zigbee_af_barrier_control_cluster_println("Failed to send default response");
-  }
-}
-
-bool sl_zigbee_af_barrier_control_cluster_barrier_control_go_to_percent_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_barrier_control_cluster_barrier_control_go_to_percent_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_barrier_control_cluster_barrier_control_go_to_percent_command_t cmd_data;
   uint8_t endpoint = sl_zigbee_af_current_command()->apsFrame->destinationEndpoint;
@@ -294,7 +287,7 @@ bool sl_zigbee_af_barrier_control_cluster_barrier_control_go_to_percent_cb(sl_zi
 
   if (zcl_decode_barrier_control_cluster_barrier_control_go_to_percent_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   sl_zigbee_af_barrier_control_cluster_println("RX: GoToPercentCallback p=%d", cmd_data.percentOpen);
@@ -325,18 +318,15 @@ bool sl_zigbee_af_barrier_control_cluster_barrier_control_go_to_percent_cb(sl_zi
     }
   }
 
-  sendDefaultResponse(status);
-
-  return true;
+  return status;
 }
 
-bool sl_zigbee_af_barrier_control_cluster_barrier_control_stop_cb(void)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_barrier_control_cluster_barrier_control_stop_cb(void)
 {
   uint8_t endpoint = sl_zigbee_af_current_command()->apsFrame->destinationEndpoint;
   sl_zigbee_zcl_deactivate_server_tick(endpoint, ZCL_BARRIER_CONTROL_CLUSTER_ID);
   setMovingState(endpoint, SL_ZIGBEE_ZCL_BARRIER_CONTROL_MOVING_STATE_STOPPED);
-  sendDefaultResponse(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
 uint32_t sl_zigbee_af_barrier_control_cluster_server_command_parse(sl_service_opcode_t opcode,
@@ -345,24 +335,22 @@ uint32_t sl_zigbee_af_barrier_control_cluster_server_command_parse(sl_service_op
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_BARRIER_CONTROL_GO_TO_PERCENT_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_barrier_control_cluster_barrier_control_go_to_percent_cb(cmd);
+        status = sl_zigbee_af_barrier_control_cluster_barrier_control_go_to_percent_cb(cmd);
         break;
       }
       case ZCL_BARRIER_CONTROL_STOP_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_barrier_control_cluster_barrier_control_stop_cb();
+        status = sl_zigbee_af_barrier_control_cluster_barrier_control_stop_cb();
         break;
       }
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

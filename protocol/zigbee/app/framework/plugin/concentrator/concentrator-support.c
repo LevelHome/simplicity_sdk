@@ -82,7 +82,7 @@ void sl_zigbee_af_concentrator_init_cb(uint8_t init_level)
   for (uint8_t i = 0; i < sli_zigbee_supported_networks; i++) {
 #if defined(EZSP_HOST)
     targetIds[i] = SL_ZIGBEE_UNKNOWN_NODE_ID;
-    sourceRouteOverheads[i] = SL_ZIGBEE_EZSP_SOURCE_ROUTE_OVERHEAD_UNKNOWN;
+    sourceRouteOverheads[i] = SL_ZIGBEE_SOURCE_ROUTE_OVERHEAD_UNKNOWN;
 #endif // EZSP_HOST
     sli_zigbee_af_concentrator_router_behaviors[i] = SL_ZIGBEE_AF_PLUGIN_CONCENTRATOR_DEFAULT_ROUTER_BEHAVIOR;
   }
@@ -91,6 +91,42 @@ void sl_zigbee_af_concentrator_init_cb(uint8_t init_level)
 uint32_t sl_zigbee_af_concentrator_queue_discovery(void)
 {
   return sl_zigbee_set_source_route_discovery_mode(SL_ZIGBEE_SOURCE_ROUTE_DISCOVERY_RESCHEDULE);
+}
+
+sl_status_t sl_zigbee_af_concentrator_change_router_behavior(sl_zigbee_af_plugin_concentrator_router_behavior_t behavior)
+{
+  sl_zigbee_node_type_t nodeType;
+  sl_status_t returnStatus = sl_zigbee_af_get_node_type(&nodeType);
+  if (returnStatus == SL_STATUS_OK) {
+    sl_status_t status;
+    if (nodeType == SL_ZIGBEE_COORDINATOR && behavior == SL_ZIGBEE_AF_PLUGIN_CONCENTRATOR_ROUTER_BEHAVIOR_NONE) {
+      return SL_STATUS_NOT_AVAILABLE;
+    } else if (behavior == SL_ZIGBEE_AF_PLUGIN_CONCENTRATOR_ROUTER_BEHAVIOR_FULL) {
+      status = sl_zigbee_set_concentrator(true,
+                                          SL_ZIGBEE_AF_PLUGIN_CONCENTRATOR_CONCENTRATOR_TYPE,
+                                          SL_ZIGBEE_AF_PLUGIN_CONCENTRATOR_MIN_TIME_BETWEEN_BROADCASTS_SECONDS,
+                                          SL_ZIGBEE_AF_PLUGIN_CONCENTRATOR_MAX_TIME_BETWEEN_BROADCASTS_SECONDS,
+                                          SL_ZIGBEE_AF_PLUGIN_CONCENTRATOR_ROUTE_ERROR_THRESHOLD,
+                                          SL_ZIGBEE_AF_PLUGIN_CONCENTRATOR_DELIVERY_FAILURE_THRESHOLD,
+                                          SL_ZIGBEE_AF_PLUGIN_CONCENTRATOR_MAX_HOPS
+                                          );
+    } else {
+      status = sl_zigbee_set_concentrator(false,
+                                          INACTIVE_CONCENTRATOR,
+                                          SL_ZIGBEE_AF_PLUGIN_CONCENTRATOR_MIN_TIME_BETWEEN_BROADCASTS_SECONDS,
+                                          SL_ZIGBEE_AF_PLUGIN_CONCENTRATOR_MAX_TIME_BETWEEN_BROADCASTS_SECONDS,
+                                          SL_ZIGBEE_AF_PLUGIN_CONCENTRATOR_ROUTE_ERROR_THRESHOLD,
+                                          SL_ZIGBEE_AF_PLUGIN_CONCENTRATOR_DELIVERY_FAILURE_THRESHOLD,
+                                          SL_ZIGBEE_AF_PLUGIN_CONCENTRATOR_MAX_HOPS
+                                          );
+    }
+    if (status == SL_STATUS_OK) {
+      sli_zigbee_af_concentrator_router_behavior = behavior;
+    } else {
+      returnStatus = status;
+    }
+  }
+  return returnStatus;
 }
 
 void sl_zigbee_af_concentrator_message_sent_cb(sl_zigbee_outgoing_message_type_t type,
@@ -112,7 +148,7 @@ void sl_zigbee_af_set_source_route_overhead_cb(sl_802154_short_addr_t destinatio
   #if defined(EZSP_HOST)
   (void)sl_zigbee_set_current_network(sl_zigbee_get_callback_network());
 
-  if (!(destination != targetId && overhead == SL_ZIGBEE_EZSP_SOURCE_ROUTE_OVERHEAD_UNKNOWN)) {
+  if (!(destination != targetId && overhead == SL_ZIGBEE_SOURCE_ROUTE_OVERHEAD_UNKNOWN)) {
     targetId = destination;
     sourceRouteOverhead = overhead;
   }
@@ -132,7 +168,7 @@ uint8_t sl_zigbee_af_get_source_route_overhead_cb(sl_802154_short_addr_t destina
   // sl_zigbee_set_current_network(sl_zigbee_get_callback_network()) before referencing
   // targetId and sourceRouteOverhead
 
-  if (targetId == destination && sourceRouteOverhead != SL_ZIGBEE_EZSP_SOURCE_ROUTE_OVERHEAD_UNKNOWN) {
+  if (targetId == destination && sourceRouteOverhead != SL_ZIGBEE_SOURCE_ROUTE_OVERHEAD_UNKNOWN) {
     sl_zigbee_af_debug_println("ValidSourceRouteFound %u ", sourceRouteOverhead);
     return sourceRouteOverhead;
   } else {
@@ -151,18 +187,11 @@ void sl_zigbee_af_concentrator_stack_status_cb(sl_status_t status)
   if (status == SL_STATUS_NETWORK_DOWN
       && !sl_zigbee_is_performing_rejoin()) {
     //now we clear/init the source route table everytime the network is up , therefore we do clear the source route table on rejoin.
-  } else if (status == SL_STATUS_NETWORK_UP) {
-    if ((sli_zigbee_af_concentrator_router_behavior == SL_ZIGBEE_AF_PLUGIN_CONCENTRATOR_ROUTER_BEHAVIOR_FULL)
-        || (sl_zigbee_af_get_node_type(&nodeType) == SL_STATUS_OK
-            && nodeType == SL_ZIGBEE_COORDINATOR)) {
-      sl_zigbee_set_concentrator(true,
-                                 SL_ZIGBEE_AF_PLUGIN_CONCENTRATOR_CONCENTRATOR_TYPE,
-                                 SL_ZIGBEE_AF_PLUGIN_CONCENTRATOR_MIN_TIME_BETWEEN_BROADCASTS_SECONDS,
-                                 SL_ZIGBEE_AF_PLUGIN_CONCENTRATOR_MAX_TIME_BETWEEN_BROADCASTS_SECONDS,
-                                 SL_ZIGBEE_AF_PLUGIN_CONCENTRATOR_ROUTE_ERROR_THRESHOLD,
-                                 SL_ZIGBEE_AF_PLUGIN_CONCENTRATOR_DELIVERY_FAILURE_THRESHOLD,
-                                 SL_ZIGBEE_AF_PLUGIN_CONCENTRATOR_MAX_HOPS
-                                 );
-    }
+  } else if (status == SL_STATUS_NETWORK_UP
+             && ((sl_zigbee_af_concentrator_get_router_behavior() == SL_ZIGBEE_AF_PLUGIN_CONCENTRATOR_ROUTER_BEHAVIOR_FULL)
+                 || (sl_zigbee_af_get_node_type(&nodeType) == SL_STATUS_OK
+                     && nodeType == SL_ZIGBEE_COORDINATOR))) {
+    sli_zigbee_af_concentrator_router_behavior = SL_ZIGBEE_AF_PLUGIN_CONCENTRATOR_ROUTER_BEHAVIOR_FULL;
+    sl_zigbee_af_concentrator_change_router_behavior(SL_ZIGBEE_AF_PLUGIN_CONCENTRATOR_ROUTER_BEHAVIOR_FULL);
   }
 }

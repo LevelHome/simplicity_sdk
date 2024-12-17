@@ -38,8 +38,10 @@
 #include "sl_clock_manager.h"
 #include "sl_core.h"
 #include "sl_interrupt_manager.h"
+#include "sl_code_classification.h"
 
 #if  defined(_SILICON_LABS_32B_SERIES_2)
+#include "em_bus.h"
 #if defined (USART_PRESENT)
 #include "em_usart.h"
 #endif
@@ -125,6 +127,7 @@ static Ecode_t SPIDRV_InitUsart(SPIDRV_Handle_t handle, SPIDRV_Init_t *initData)
 static Ecode_t SPIDRV_InitEusart(SPIDRV_Handle_t handle, SPIDRV_Init_t *initData);
 #endif
 
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_SPIDRV, SL_CODE_CLASS_TIME_CRITICAL)
 static void     BlockingComplete(SPIDRV_Handle_t handle,
                                  Ecode_t transferStatus,
                                  int itemsTransferred);
@@ -136,6 +139,7 @@ static bool     RxDMAComplete(unsigned int channel,
                               void *userParam);
 
 #if defined(EMDRV_SPIDRV_INCLUDE_SLAVE)
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_SPIDRV, SL_CODE_CLASS_TIME_CRITICAL)
 static void     SlaveTimeout(sl_sleeptimer_timer_handle_t *handle, void *data);
 #endif
 
@@ -747,6 +751,10 @@ static Ecode_t SPIDRV_InitEusart(SPIDRV_Handle_t handle, SPIDRV_Init_t *initData
   }
 
   sl_hal_eusart_init_spi(initData->port, &eusartSpiInit);
+  sl_hal_eusart_enable(initData->port);
+  sl_hal_eusart_enable_rx(initData->port);
+  sl_hal_eusart_enable_tx(initData->port);
+  sl_hal_eusart_wait_sync(initData->port, _EUSART_SYNCBUSY_MASK);
 #endif
 
   CORE_DECLARE_IRQ_STATE;
@@ -1004,7 +1012,7 @@ Ecode_t SPIDRV_GetBitrate(SPIDRV_Handle_t handle, uint32_t *bitRate)
     uint32_t freq;
     clock_branch = sl_device_peripheral_get_clock_branch(handle->usartPeripheral);
     sl_clock_manager_get_clock_branch_frequency(clock_branch, &freq);
-    uint32_t div = sl_hal_eusart_uart_get_clock_div(handle->peripheral.eusartPort);
+    uint32_t div = (handle->peripheral.eusartPort->CFG2 & _EUSART_CFG2_SDIV_MASK) >> _EUSART_CFG2_SDIV_SHIFT;
     *bitRate = freq / (div + 1);
 #endif
   }
@@ -1442,7 +1450,19 @@ Ecode_t SPIDRV_SetBitrate(SPIDRV_Handle_t handle, uint32_t bitRate)
     clock_branch = sl_device_peripheral_get_clock_branch(handle->usartPeripheral);
     sl_clock_manager_get_clock_branch_frequency(clock_branch, &ref_freq);
     uint32_t div = sl_hal_eusart_spi_calculate_clock_div(ref_freq, bitRate);
-    sl_hal_eusart_uart_set_clock_div(handle->peripheral.eusartPort, div);
+
+    sl_hal_eusart_disable_rx(handle->peripheral.eusartPort);
+    sl_hal_eusart_disable_tx(handle->peripheral.eusartPort);
+    sl_hal_eusart_disable(handle->peripheral.eusartPort);
+    while (handle->peripheral.eusartPort->EN & _EUSART_EN_DISABLING_MASK) ;
+
+    handle->peripheral.eusartPort->CFG2 = (handle->peripheral.eusartPort->CFG2 & ~(_EUSART_CFG2_SDIV_MASK))
+                                          | ((div << _EUSART_CFG2_SDIV_SHIFT) & _EUSART_CFG2_SDIV_MASK);
+
+    sl_hal_eusart_enable(handle->peripheral.eusartPort);
+    sl_hal_eusart_enable_rx(handle->peripheral.eusartPort);
+    sl_hal_eusart_enable_tx(handle->peripheral.eusartPort);
+    sl_hal_eusart_wait_sync(handle->peripheral.eusartPort, _EUSART_SYNCBUSY_MASK);
 #endif
   }
 #endif
@@ -1524,13 +1544,17 @@ Ecode_t SPIDRV_SetFramelength(SPIDRV_Handle_t handle, uint32_t frameLength)
     sl_hal_eusart_disable_rx(handle->peripheral.eusartPort);
     sl_hal_eusart_disable_tx(handle->peripheral.eusartPort);
     sl_hal_eusart_disable(handle->peripheral.eusartPort);
+    while (handle->peripheral.eusartPort->EN & _EUSART_EN_DISABLING_MASK) ;
+
     handle->peripheral.eusartPort->FRAMECFG = (handle->peripheral.eusartPort->FRAMECFG
                                                & ~_EUSART_FRAMECFG_DATABITS_MASK)
                                               | (frameLength
                                                  << _EUSART_FRAMECFG_DATABITS_SHIFT);
+
     sl_hal_eusart_enable(handle->peripheral.eusartPort);
     sl_hal_eusart_enable_rx(handle->peripheral.eusartPort);
     sl_hal_eusart_enable_tx(handle->peripheral.eusartPort);
+    sl_hal_eusart_wait_sync(handle->peripheral.eusartPort, _EUSART_SYNCBUSY_MASK);
 #endif
   }
 #endif
@@ -1926,125 +1950,63 @@ static Ecode_t ConfigGPIO(SPIDRV_Handle_t handle, bool enable)
     return ret;
   }
 
-#if defined(SL_CATALOG_GPIO_PRESENT)
-  handle->portCs = (sl_gpio_port_t)pins.csPort;
+  handle->portCs = pins.csPort;
   handle->pinCs  = pins.csPin;
 
   sl_gpio_t gpio_mosi, gpio_miso, gpio_clk, gpio_cs;
-  gpio_mosi.port = (sl_gpio_port_t)pins.mosiPort;
+  gpio_mosi.port = pins.mosiPort;
   gpio_mosi.pin = pins.mosiPin;
-  gpio_miso.port = (sl_gpio_port_t)pins.misoPort;
+  gpio_miso.port = pins.misoPort;
   gpio_miso.pin = pins.misoPin;
-  gpio_clk.port = (sl_gpio_port_t)pins.clkPort;
+  gpio_clk.port = pins.clkPort;
   gpio_clk.pin = pins.clkPin;
-  gpio_cs.port = (sl_gpio_port_t)handle->portCs;
+  gpio_cs.port = handle->portCs;
   gpio_cs.pin = handle->pinCs;
 
   if (enable) {
     if (handle->initData.type == spidrvMaster) {
-      sl_hal_gpio_set_pin_mode(&gpio_mosi, SL_HAL_GPIO_MODE_PUSH_PULL, 0);
-      sl_hal_gpio_set_pin_mode(&gpio_miso, SL_HAL_GPIO_MODE_INPUT, 0);
+      sl_gpio_set_pin_mode(&gpio_mosi, SL_GPIO_MODE_PUSH_PULL, 0);
+      sl_gpio_set_pin_mode(&gpio_miso, SL_GPIO_MODE_INPUT, 0);
 
       if ((handle->initData.clockMode == spidrvClockMode0)
           || (handle->initData.clockMode == spidrvClockMode1)) {
-        sl_hal_gpio_set_pin_mode(&gpio_clk, SL_HAL_GPIO_MODE_PUSH_PULL, 0);
+        sl_gpio_set_pin_mode(&gpio_clk, SL_GPIO_MODE_PUSH_PULL, 0);
       } else {
-        sl_hal_gpio_set_pin_mode(&gpio_clk, SL_HAL_GPIO_MODE_PUSH_PULL, 1);
+        sl_gpio_set_pin_mode(&gpio_clk, SL_GPIO_MODE_PUSH_PULL, 1);
       }
       if (handle->initData.csControl == spidrvCsControlAuto) {
-        sl_hal_gpio_set_pin_mode(&gpio_cs, SL_HAL_GPIO_MODE_PUSH_PULL, 1);
+        sl_gpio_set_pin_mode(&gpio_cs, SL_GPIO_MODE_PUSH_PULL, 1);
       }
     } else {
-      sl_hal_gpio_set_pin_mode(&gpio_mosi, SL_HAL_GPIO_MODE_INPUT, 0);
-      sl_hal_gpio_set_pin_mode(&gpio_miso, SL_HAL_GPIO_MODE_PUSH_PULL, 0);
+      sl_gpio_set_pin_mode(&gpio_mosi, SL_GPIO_MODE_INPUT, 0);
+      sl_gpio_set_pin_mode(&gpio_miso, SL_GPIO_MODE_PUSH_PULL, 0);
 
       if ((handle->initData.clockMode == spidrvClockMode0)
           || (handle->initData.clockMode == spidrvClockMode1)) {
-        sl_hal_gpio_set_pin_mode(&gpio_clk, SL_HAL_GPIO_MODE_INPUT_PULL, 0);
+        sl_gpio_set_pin_mode(&gpio_clk, SL_GPIO_MODE_INPUT_PULL, 0);
       } else {
-        sl_hal_gpio_set_pin_mode(&gpio_clk, SL_HAL_GPIO_MODE_INPUT_PULL, 1);
+        sl_gpio_set_pin_mode(&gpio_clk, SL_GPIO_MODE_INPUT_PULL, 1);
       }
 
       if (handle->initData.csControl == spidrvCsControlAuto) {
-        sl_hal_gpio_set_pin_mode(&gpio_cs, SL_HAL_GPIO_MODE_INPUT_PULL, 1);
+        sl_gpio_set_pin_mode(&gpio_cs, SL_GPIO_MODE_INPUT_PULL, 1);
       }
     }
   } else {
-    sl_hal_gpio_set_pin_mode(&gpio_mosi, SL_HAL_GPIO_MODE_INPUT_PULL, 0);
-    sl_hal_gpio_set_pin_mode(&gpio_miso, SL_HAL_GPIO_MODE_INPUT_PULL, 0);
+    sl_gpio_set_pin_mode(&gpio_mosi, SL_GPIO_MODE_INPUT_PULL, 0);
+    sl_gpio_set_pin_mode(&gpio_miso, SL_GPIO_MODE_INPUT_PULL, 0);
 
     if ((handle->initData.clockMode == spidrvClockMode0)
         || (handle->initData.clockMode == spidrvClockMode1)) {
-      sl_hal_gpio_set_pin_mode(&gpio_clk, SL_HAL_GPIO_MODE_INPUT_PULL, 0);
+      sl_gpio_set_pin_mode(&gpio_clk, SL_GPIO_MODE_INPUT_PULL, 0);
     } else {
-      sl_hal_gpio_set_pin_mode(&gpio_clk, SL_HAL_GPIO_MODE_INPUT_PULL, 1);
+      sl_gpio_set_pin_mode(&gpio_clk, SL_GPIO_MODE_INPUT_PULL, 1);
     }
 
     if (handle->initData.csControl == spidrvCsControlAuto) {
-      sl_hal_gpio_set_pin_mode(&gpio_cs, SL_HAL_GPIO_MODE_DISABLED, 0);
+      sl_gpio_set_pin_mode(&gpio_cs, SL_GPIO_MODE_DISABLED, 0);
     }
   }
-#else
-  handle->portCs = (GPIO_Port_TypeDef)pins.csPort;
-  handle->pinCs  = pins.csPin;
-
-  if (enable) {
-    if (handle->initData.type == spidrvMaster) {
-      GPIO_PinModeSet((GPIO_Port_TypeDef)pins.mosiPort, pins.mosiPin,
-                      gpioModePushPull, 0);
-      GPIO_PinModeSet((GPIO_Port_TypeDef)pins.misoPort, pins.misoPin,
-                      gpioModeInput, 0);
-
-      if ((handle->initData.clockMode == spidrvClockMode0)
-          || (handle->initData.clockMode == spidrvClockMode1)) {
-        GPIO_PinModeSet((GPIO_Port_TypeDef)pins.clkPort, pins.clkPin,
-                        gpioModePushPull, 0);
-      } else {
-        GPIO_PinModeSet((GPIO_Port_TypeDef)pins.clkPort, pins.clkPin,
-                        gpioModePushPull, 1);
-      }
-
-      if (handle->initData.csControl == spidrvCsControlAuto) {
-        GPIO_PinModeSet((GPIO_Port_TypeDef)handle->portCs, handle->pinCs,
-                        gpioModePushPull, 1);
-      }
-    } else {
-      GPIO_PinModeSet((GPIO_Port_TypeDef)pins.mosiPort, pins.mosiPin,
-                      gpioModeInput, 0);
-      GPIO_PinModeSet((GPIO_Port_TypeDef)pins.misoPort, pins.misoPin,
-                      gpioModePushPull, 0);
-
-      if ((handle->initData.clockMode == spidrvClockMode0)
-          || (handle->initData.clockMode == spidrvClockMode1)) {
-        GPIO_PinModeSet((GPIO_Port_TypeDef)pins.clkPort, pins.clkPin,
-                        gpioModeInputPull, 0);
-      } else {
-        GPIO_PinModeSet((GPIO_Port_TypeDef)pins.clkPort, pins.clkPin,
-                        gpioModeInputPull, 1);
-      }
-
-      if (handle->initData.csControl == spidrvCsControlAuto) {
-        GPIO_PinModeSet((GPIO_Port_TypeDef)handle->portCs, handle->pinCs,
-                        gpioModeInputPull, 1);
-      }
-    }
-  } else {
-    GPIO_PinModeSet((GPIO_Port_TypeDef)pins.mosiPort, pins.mosiPin, gpioModeInputPull, 0);
-    GPIO_PinModeSet((GPIO_Port_TypeDef)pins.misoPort, pins.misoPin, gpioModeInputPull, 0);
-
-    if ((handle->initData.clockMode == spidrvClockMode0)
-        || (handle->initData.clockMode == spidrvClockMode1)) {
-      GPIO_PinModeSet((GPIO_Port_TypeDef)pins.clkPort, pins.clkPin, gpioModeInputPull, 0);
-    } else {
-      GPIO_PinModeSet((GPIO_Port_TypeDef)pins.clkPort, pins.clkPin, gpioModeInputPull, 1);
-    }
-
-    if (handle->initData.csControl == spidrvCsControlAuto) {
-      GPIO_PinModeSet((GPIO_Port_TypeDef)handle->portCs, handle->pinCs,
-                      gpioModeDisabled, 0);
-    }
-  }
-#endif
 
   return ECODE_EMDRV_SPIDRV_OK;
 }
@@ -2138,8 +2100,15 @@ static void clearEusartFifos(EUSART_TypeDef *eusart)
   EUSART_Enable(eusart, eusartDisable);
   EUSART_Enable(eusart, eusartEnable);
 #else
+  sl_hal_eusart_disable_rx(eusart);
+  sl_hal_eusart_disable_tx(eusart);
   sl_hal_eusart_disable(eusart);
+  while (eusart->EN & _EUSART_EN_DISABLING_MASK) ;
+
   sl_hal_eusart_enable(eusart);
+  sl_hal_eusart_enable_rx(eusart);
+  sl_hal_eusart_enable_tx(eusart);
+  sl_hal_eusart_wait_sync(eusart, _EUSART_SYNCBUSY_MASK);
 #endif
 }
 #endif
@@ -2442,7 +2411,34 @@ static void WaitForTransferCompletion(SPIDRV_Handle_t handle)
 #if defined(_SILICON_LABS_32B_SERIES_2)
       LDMA_IRQHandler();
 #else
-      LDMA0_CHNL0_IRQHandler();
+      switch (handle->rxDMACh) {
+        case 0:
+          LDMA0_CHNL0_IRQHandler();
+          break;
+        case 1:
+          LDMA0_CHNL1_IRQHandler();
+          break;
+        case 2:
+          LDMA0_CHNL2_IRQHandler();
+          break;
+        case 3:
+          LDMA0_CHNL3_IRQHandler();
+          break;
+        case 4:
+          LDMA0_CHNL4_IRQHandler();
+          break;
+        case 5:
+          LDMA0_CHNL5_IRQHandler();
+          break;
+        case 6:
+          LDMA0_CHNL6_IRQHandler();
+          break;
+        case 7:
+          LDMA0_CHNL7_IRQHandler();
+          break;
+        default:
+          break;
+      }
 #endif
 #else
 #error "No valid SPIDRV DMA engine defined."
@@ -2459,16 +2455,13 @@ static void WaitForTransferCompletion(SPIDRV_Handle_t handle)
  ******************************************************************************/
 static Ecode_t WaitForIdleLine(SPIDRV_Handle_t handle)
 {
-#if defined(SL_CATALOG_GPIO_PRESENT)
   sl_gpio_t gpio_cs;
-  gpio_cs.port = (sl_gpio_port_t)handle->portCs;
+  gpio_cs.port = handle->portCs;
   gpio_cs.pin = handle->pinCs;
-  while (!sl_hal_gpio_get_pin_input(&gpio_cs)
-         && (handle->state != spidrvStateIdle)) ;
-#else
-  while (!GPIO_PinInGet((GPIO_Port_TypeDef)handle->portCs, handle->pinCs)
-         && (handle->state != spidrvStateIdle)) ;
-#endif
+  bool value;
+  do {
+    sl_gpio_get_pin_input(&gpio_cs, &value);
+  } while (!value && (handle->state != spidrvStateIdle));
 
   if (handle->state == spidrvStateIdle) {
     return handle->transferStatus;
@@ -2494,6 +2487,7 @@ static Ecode_t sli_spidrv_exit_em23(SPIDRV_Handle_t handle)
   sl_hal_eusart_enable(eusart);
   sl_hal_eusart_enable_rx(eusart);
   sl_hal_eusart_enable_tx(eusart);
+  sl_hal_eusart_wait_sync(eusart, _EUSART_SYNCBUSY_MASK);
   sl_hal_bus_reg_write_mask(&GPIO->EUSARTROUTE[EUSART_NUM(eusart)].ROUTEEN,
                             _GPIO_EUSART_ROUTEEN_TXPEN_MASK | _GPIO_EUSART_ROUTEEN_SCLKPEN_MASK,
                             GPIO_EUSART_ROUTEEN_TXPEN | GPIO_EUSART_ROUTEEN_SCLKPEN);

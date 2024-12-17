@@ -868,6 +868,45 @@ sl_zigbee_packet_action_t sl_zigbee_af_outgoing_packet_filter_cb(sl_zigbee_zigbe
                                                                  uint8_t* size_p,
                                                                  void* data);
 
+/** @brief A callback invoked by the ZigBee GP stack when a GPDF is received..
+ *
+ * @param status The status of the GPDF receive.
+ * @param gpdLink The gpdLink value of the received GPDF.
+ * @param sequenceNumber The GPDF sequence number.
+ * @param addr The address of the source GPD.
+
+ * @param gpdfSecurityLevel The security level of the received GPDF.
+ * @param gpdfSecurityKeyType The securityKeyType used to decrypt/authenticate the incoming GPDF.
+ * @param autoCommissioning Whether the incoming GPDF had the auto-commissioning bit set.
+ * @param bidirectionalInfo Bidirectional information represented in bitfields, where bit0 holds
+ * the rxAfterTx of incoming gpdf and bit1 holds if tx queue is available
+ * for outgoing gpdf.
+ * @param gpdSecurityFrameCounter The security frame counter of the incoming GDPF.
+ * @param gpdCommandId The gpdCommandId of the incoming GPDF.
+ * @param mic The received MIC of the GPDF.
+ * @param proxyTableIndex The proxy table index of the corresponding proxy table entry to the
+ * incoming GPDF.
+ * @param gpdCommandPayloadLength The length of the GPD command payload.
+ * @param gpdCommandPayload The GPD command payload..
+ * @param packetInfo Rx packet information.
+ */
+void sl_zigbee_gpep_incoming_message_handler(
+  sl_zigbee_gp_status_t status,
+  uint8_t gpdLink,
+  uint8_t sequenceNumber,
+  sl_zigbee_gp_address_t *addr,
+  sl_zigbee_gp_security_level_t gpdfSecurityLevel,
+  sl_zigbee_gp_key_type_t gpdfSecurityKeyType,
+  bool autoCommissioning,
+  uint8_t bidirectionalInfo,
+  uint32_t gpdSecurityFrameCounter,
+  uint8_t gpdCommandId,
+  uint32_t mic,
+  uint8_t proxyTableIndex,
+  uint8_t gpdCommandPayloadLength,
+  uint8_t *gpdCommandPayload,
+  sl_zigbee_rx_packet_info_t *packetInfo);
+
 /** @brief Add a network packet into the incoming network queue.
  *
  * Quality: Experimental API for prototyping.

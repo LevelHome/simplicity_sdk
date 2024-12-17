@@ -89,7 +89,7 @@
  */
 typedef struct {
   /** The version of this data structure */
-  uint16_t version;
+  uint32_t version;
 
   /** A bitmask describing the capabilites of this particular external EEPROM */
   uint16_t capabilitiesMask;
@@ -108,7 +108,7 @@ typedef struct {
   uint32_t partSize;
 
   /** Pointer to a string describing the attached external EEPROM */
-  const char * const partDescription;
+  char * partDescription;
 
   /** The number of bytes in a word for the external EEPROM **/
   uint8_t wordSizeBytes;

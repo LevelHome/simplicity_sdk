@@ -9,7 +9,7 @@ def build_modem_regs_lynx(model,profile):
     build_modem_regs_panther_lynx_common_part1(model, profile)
     build_modem_regs_panther_lynx_common_part2(model, profile)
     # Lynx-specific.
-    if model.part_family.lower() in ["lynx", "leopard"]:
+    if model.part_family.lower() in ["lynx", "leopard", "lion"]:
         build_modem_regs_lynx_only(model, profile)
 
 def build_modem_regs_panther_lynx_common_part1(model, profile):
@@ -63,7 +63,7 @@ def build_modem_regs_panther_lynx_common_part1(model, profile):
     profile.outputs.append(ModelOutput(model.vars.AGC_GAINRANGE_PNGAINSTEP, '',         ModelOutputType.SVD_REG_FIELD, readable_name='AGC.GAINRANGE.PNGAINSTEP'           ))
     profile.outputs.append(ModelOutput(model.vars.AGC_GAINRANGE_LATCHEDHISTEP, '',         ModelOutputType.SVD_REG_FIELD, readable_name='AGC.GAINRANGE.LATCHEDHISTEP'           ))
     profile.outputs.append(ModelOutput(model.vars.AGC_GAINRANGE_HIPWRTHD, '',         ModelOutputType.SVD_REG_FIELD, readable_name='AGC.GAINRANGE.HIPWRTHD'           ))
-    if model.part_family.lower() in ["panther", "lynx", "leopard"]:
+    if model.part_family.lower() in ["panther", "lynx", "leopard", "lion"]:
         profile.outputs.append(ModelOutput(model.vars.AGC_GAINRANGE_BOOSTLNA, '',         ModelOutputType.SVD_REG_FIELD, readable_name='AGC.GAINRANGE.BOOSTLNA'           ))
         profile.outputs.append(ModelOutput(model.vars.AGC_GAINRANGE_LNABWADJ, '',         ModelOutputType.SVD_REG_FIELD, readable_name='AGC.GAINRANGE.LNABWADJ'           ))
         profile.outputs.append(ModelOutput(model.vars.AGC_AGCPERIOD_PERIODHI, '',         ModelOutputType.SVD_REG_FIELD, readable_name='AGC.AGCPERIOD.PERIODHI'           ))
@@ -141,7 +141,7 @@ def build_modem_regs_panther_lynx_common_part1(model, profile):
     # profile.outputs.append(ModelOutput(model.vars.FRC_RXCTRL_RXFRAMEENDAHEADBYTES, '',         ModelOutputType.SVD_REG_FIELD, readable_name='FRC.RXCTRL.RXFRAMEENDAHEADBYTES'           ))
     # profile.outputs.append(ModelOutput(model.vars.FRC_TRAILTXDATACTRL_TRAILTXDATA, '',         ModelOutputType.SVD_REG_FIELD, readable_name='FRC.TRAILTXDATACTRL.TRAILTXDATA'           ))
     # profile.outputs.append(ModelOutput(model.vars.FRC_TRAILTXDATACTRL_TRAILTXDATACNT, '',         ModelOutputType.SVD_REG_FIELD, readable_name='FRC.TRAILTXDATACTRL.TRAILTXDATACNT'           ))
-    if model.part_family.lower() in ["panther", "lynx", "leopard"]:
+    if model.part_family.lower() in ["panther", "lynx", "leopard", "lion"]:
         profile.outputs.append(ModelOutput(model.vars.MODEM_MIXCTRL_ANAMIXMODE, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.MIXCTRL.ANAMIXMODE'           ))
     if model.part_family.lower() not in ["sol"]:
         profile.outputs.append(ModelOutput(model.vars.MODEM_MIXCTRL_DIGIQSWAPEN, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.MIXCTRL.DIGIQSWAPEN'           ))
@@ -229,11 +229,12 @@ def build_modem_regs_panther_lynx_common_part1(model, profile):
     if model.part_family.lower() not in ["sol"]:
         profile.outputs.append(ModelOutput(model.vars.MODEM_CF_DEC0, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.CF.DEC0'           ))
         profile.outputs.append(ModelOutput(model.vars.MODEM_CF_DEC1, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.CF.DEC1'           ))
-        profile.outputs.append(ModelOutput(model.vars.MODEM_CF_DEC2, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.CF.DEC2'           ))
         profile.outputs.append(ModelOutput(model.vars.MODEM_CF_CFOSR, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.CF.CFOSR'           ))
         profile.outputs.append(ModelOutput(model.vars.MODEM_CF_DEC1GAIN, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.CF.DEC1GAIN'           ))
         profile.outputs.append(ModelOutput(model.vars.MODEM_CF_ADCBITORDERI, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.CF.ADCBITORDERI'           ))
-        profile.outputs.append(ModelOutput(model.vars.MODEM_CF_ADCBITORDERQ, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.CF.ADCBITORDERQ'           ))        
+        profile.outputs.append(ModelOutput(model.vars.MODEM_CF_ADCBITORDERQ, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.CF.ADCBITORDERQ'           ))
+    if model.part_family.lower() not in ["sol"]:
+        profile.outputs.append(ModelOutput(model.vars.MODEM_CF_DEC2, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.CF.DEC2'           ))
     profile.outputs.append(ModelOutput(model.vars.MODEM_PRE_BASE, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.PRE.BASE'           ))
     profile.outputs.append(ModelOutput(model.vars.MODEM_PRE_BASEBITS, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.PRE.BASEBITS'           ))
     profile.outputs.append(ModelOutput(model.vars.MODEM_PRE_PRESYMB4FSK, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.PRE.PRESYMB4FSK'           ))
@@ -259,7 +260,7 @@ def build_modem_regs_panther_lynx_common_part1(model, profile):
     profile.outputs.append(ModelOutput(model.vars.MODEM_MODINDEX_FREQGAINE, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.MODINDEX.FREQGAINE'           ))
     profile.outputs.append(ModelOutput(model.vars.MODEM_MODINDEX_FREQGAINM, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.MODINDEX.FREQGAINM'           ))
     # Not in Ocelot.
-    if model.part_family.lower() in ["panther", "lynx", "leopard"]:
+    if model.part_family.lower() in ["panther", "lynx", "leopard", "lion"]:
         profile.outputs.append(ModelOutput(model.vars.MODEM_AFC_AFCSCALEM, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.AFC.AFCSCALEM'           ))
         profile.outputs.append(ModelOutput(model.vars.MODEM_AFC_AFCSCALEE, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.AFC.AFCSCALEE'           ))
         profile.outputs.append(ModelOutput(model.vars.MODEM_SRCCHF_SRCRATIO1, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.SRCCHF.SRCRATIO1'           ))
@@ -310,6 +311,7 @@ def build_modem_regs_panther_lynx_common_part1(model, profile):
         profile.outputs.append(ModelOutput(model.vars.MODEM_DCCOMPFILTINIT_DCCOMPINIT, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.DCCOMPFILTINIT.DCCOMPINIT'           ))
         profile.outputs.append(ModelOutput(model.vars.MODEM_SRCCHF_SRCRATIO2, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.SRCCHF.SRCRATIO2'           ))
         profile.outputs.append(ModelOutput(model.vars.MODEM_SRCCHF_SRCENABLE2, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.SRCCHF.SRCENABLE2'           ))
+    if model.part_family.lower() not in ["sol"]:
         profile.outputs.append(ModelOutput(model.vars.MODEM_SRCCHF_INTOSR, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.SRCCHF.INTOSR'           ))
     if model.part_family.lower() not in ["rainier"]:
         profile.outputs.append(ModelOutput(model.vars.MODEM_DSATHD0_SPIKETHD, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.DSATHD0.SPIKETHD'           ))
@@ -362,7 +364,7 @@ def build_modem_regs_panther_lynx_common_part1(model, profile):
     profile.outputs.append(ModelOutput(model.vars.MODEM_VITERBIDEMOD_CORRCYCLE, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.VITERBIDEMOD.CORRCYCLE'           ))
     profile.outputs.append(ModelOutput(model.vars.MODEM_VITERBIDEMOD_CORRSTPSIZE, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.VITERBIDEMOD.CORRSTPSIZE'           ))
     # Panther-specific. Not in Ocelot.
-    if model.part_family.lower() in ["panther", "lynx", "leopard"]:
+    if model.part_family.lower() in ["panther", "lynx", "leopard", "lion"]:
         profile.outputs.append(ModelOutput(model.vars.MODEM_VITERBIDEMOD_DISDEMODOF, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.VITERBIDEMOD.DISDEMODOF'           ))
         profile.outputs.append(ModelOutput(model.vars.MODEM_VTCORRCFG1_CORRSHFTLEN, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.VTCORRCFG1.CORRSHFTLEN'           ))
         profile.outputs.append(ModelOutput(model.vars.MODEM_VTCORRCFG1_BUFFHEAD, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.VTCORRCFG1.BUFFHEAD'           ))
@@ -389,13 +391,13 @@ def build_modem_regs_panther_lynx_common_part1(model, profile):
     profile.outputs.append(ModelOutput(model.vars.MODEM_DIRECTMODE_SYNCPREAM, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.DIRECTMODE.SYNCPREAM'           ))
     profile.outputs.append(ModelOutput(model.vars.MODEM_DIRECTMODE_CLKWIDTH, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.DIRECTMODE.CLKWIDTH'           ))
     # Not in Ocelot.
-    if model.part_family.lower() in ["panther", "lynx", "leopard"]:
+    if model.part_family.lower() in ["panther", "lynx", "leopard", "lion"]:
         profile.outputs.append(ModelOutput(model.vars.MODEM_LONGRANGE_LRCORRTHD, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.LONGRANGE.LRCORRTHD'           ))
         profile.outputs.append(ModelOutput(model.vars.MODEM_LONGRANGE_LRBLE, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.LONGRANGE.LRBLE'           ))
         profile.outputs.append(ModelOutput(model.vars.MODEM_LONGRANGE_LRTIMCORRTHD, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.LONGRANGE.LRTIMCORRTHD'           ))
         profile.outputs.append(ModelOutput(model.vars.MODEM_LONGRANGE_LRBLEDSA, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.LONGRANGE.LRBLEDSA'           ))
         profile.outputs.append(ModelOutput(model.vars.MODEM_LONGRANGE_LRDEC, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.LONGRANGE.LRDEC'           ))
-    if model.part_family.lower() in ["panther", "lynx", "bobcat", "leopard", "caracal", "rainier"]:
+    if model.part_family.lower() in ["panther", "lynx", "bobcat", "leopard", "lion", "caracal", "rainier"]:
         profile.outputs.append(ModelOutput(model.vars.MODEM_LONGRANGE_LRCORRSCHWIN, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.LONGRANGE.LRCORRSCHWIN'           ))
     profile.outputs.append(ModelOutput(model.vars.MODEM_LONGRANGE1_LRSS, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.LONGRANGE1.LRSS'           ))
     profile.outputs.append(ModelOutput(model.vars.MODEM_LONGRANGE1_LRTIMEOUTTHD, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.LONGRANGE1.LRTIMEOUTTHD'           ))
@@ -442,7 +444,7 @@ def build_modem_regs_panther_lynx_common_part2(model, profile):
     # profile.outputs.append(ModelOutput(model.vars.MODEM_CMD_AFCTXLOCK, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.CMD.AFCTXLOCK'           ))
     # profile.outputs.append(ModelOutput(model.vars.MODEM_CMD_AFCTXCLEAR, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.CMD.AFCTXCLEAR'           ))
     # profile.outputs.append(ModelOutput(model.vars.MODEM_CMD_AFCRXCLEAR, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.CMD.AFCRXCLEAR'           ))
-    if model.part_family.lower() in ["panther", "lynx", "leopard"]:
+    if model.part_family.lower() in ["panther", "lynx", "leopard", "lion"]:
         profile.outputs.append(ModelOutput(model.vars.MODEM_BLEIQDSA_BLEIQDSAEN, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.BLEIQDSA.BLEIQDSAEN'           ))
         profile.outputs.append(ModelOutput(model.vars.MODEM_BLEIQDSA_BLEIQDSATH, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.BLEIQDSA.BLEIQDSATH'           ))
         profile.outputs.append(ModelOutput(model.vars.MODEM_BLEIQDSA_BLEIQDSAIIRCOEFPWR, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.BLEIQDSA.BLEIQDSAIIRCOEFPWR'           ))
@@ -472,13 +474,13 @@ def build_modem_regs_panther_lynx_common_part2(model, profile):
         profile.outputs.append(ModelOutput(model.vars.MODEM_PADEBUG_ENMANPASELSLICE, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.PADEBUG.ENMANPASELSLICE'           ))
 
     # Not in Ocelot.
-    if model.part_family.lower() in ["panther", "lynx", "leopard"]:
+    if model.part_family.lower() in ["panther", "lynx", "leopard", "lion"]:
         profile.outputs.append(ModelOutput(model.vars.RAC_PGACTRL_LNAMIXRFPKDTHRESHSEL, '',         ModelOutputType.SVD_REG_FIELD, readable_name='RAC.PGACTRL.LNAMIXRFPKDTHRESHSEL'           ))
         profile.outputs.append(ModelOutput(model.vars.RAC_VCOCTRL_VCODETAMPLITUDE, '', ModelOutputType.SVD_REG_FIELD, readable_name='RAC.VCOCTRL.VCODETAMPLITUDE'))
     if model.part_family.lower() in ["panther", "lynx"]:
         #Removed from Leopard as this is now set by PTE
         profile.outputs.append(ModelOutput(model.vars.RAC_LNAMIXTRIM0_LNAMIXLOWCUR, '', ModelOutputType.SVD_REG_FIELD, readable_name='RAC.LNAMIXTRIM0.LNAMIXLOWCUR'))
-    if model.part_family.lower() in ["panther", "lynx", "bobcat", "leopard", "caracal"]:
+    if model.part_family.lower() in ["panther", "lynx", "bobcat", "caracal"]:
         profile.outputs.append(ModelOutput(model.vars.SYNTH_LPFCTRL2TX_LPFINCAPTX, '', ModelOutputType.SVD_REG_FIELD, readable_name='SYNTH.LPFCTRL2TX.LPFINCAPTX'))
         profile.outputs.append(ModelOutput(model.vars.SYNTH_LPFCTRL2RX_LPFINCAPRX, '', ModelOutputType.SVD_REG_FIELD, readable_name='SYNTH.LPFCTRL2RX.LPFINCAPRX'))
     if model.part_family.lower() not in ["rainier"]:  ### removed in Series 3
@@ -568,7 +570,7 @@ def build_modem_regs_panther_lynx_common_part2(model, profile):
     profile.outputs.append(ModelOutput(model.vars.SYNTH_DSMCTRLRX_DITHERDACRX, '', ModelOutputType.SVD_REG_FIELD, readable_name='SYNTH.DSMCTRLRX.DITHERDACRX'))
     profile.outputs.append(ModelOutput(model.vars.SYNTH_DSMCTRLRX_LSBFORCERX, '', ModelOutputType.SVD_REG_FIELD, readable_name='SYNTH.DSMCTRLRX.LSBFORCERX'))
     # Not in Ocelot.
-    if model.part_family.lower() in ["panther", "lynx", "leopard"]:
+    if model.part_family.lower() in ["panther", "lynx", "leopard", "lion"]:
         profile.outputs.append(ModelOutput(model.vars.RAC_SYNTHCTRL_MMDPOWERBALANCEDISABLE, '',         ModelOutputType.SVD_REG_FIELD, readable_name='RAC.SYNTHCTRL.MMDPOWERBALANCEDISABLE'           ))
 
 
@@ -582,7 +584,7 @@ def build_modem_regs_lynx_only(model, profile):
     profile.outputs.append(ModelOutput(model.vars.AGC_CTRL4_RFPKDCNTEN, '',         ModelOutputType.SVD_REG_FIELD, readable_name='AGC.CTRL4.RFPKDCNTEN'           ))
     profile.outputs.append(ModelOutput(model.vars.AGC_CTRL5_PNUPDISTHD, '',         ModelOutputType.SVD_REG_FIELD, readable_name='AGC.CTRL5.PNUPDISTHD'           ))
     profile.outputs.append(ModelOutput(model.vars.AGC_CTRL5_PNUPRELTHD, '',         ModelOutputType.SVD_REG_FIELD, readable_name='AGC.CTRL5.PNUPRELTHD'           ))
-    if model.part_family.lower() in ["panther", "lynx", "leopard"]:
+    if model.part_family.lower() in ["panther", "lynx", "leopard", "lion"]:
         profile.outputs.append(ModelOutput(model.vars.AGC_GAINSTEPLIM_PNINDEXMAX, '',         ModelOutputType.SVD_REG_FIELD, readable_name='AGC.GAINSTEPLIM.PNINDEXMAX'           ))
         profile.outputs.append(ModelOutput(model.vars.AGC_PNRFATT3_LNAMIXRFATT15, '',         ModelOutputType.SVD_REG_FIELD, readable_name='AGC.PNRFATT3.LNAMIXRFATT15'           ))
         profile.outputs.append(ModelOutput(model.vars.AGC_PNRFATT3_LNAMIXRFATT16, '',         ModelOutputType.SVD_REG_FIELD, readable_name='AGC.PNRFATT3.LNAMIXRFATT16'           ))
@@ -641,7 +643,7 @@ def build_modem_regs_lynx_only(model, profile):
     profile.outputs.append(ModelOutput(model.vars.MODEM_SHAPING11_COEFF47, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.SHAPING11.COEFF47'           ))
     if model.part_family.lower() not in ["sol"]:
         profile.outputs.append(ModelOutput(model.vars.MODEM_DIGMIXCTRL_DIGMIXFB, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.DIGMIXCTRL.DIGMIXFB'           ))
-    if model.part_family.lower() in ["lynx", "leopard"]:
+    if model.part_family.lower() in ["lynx", "leopard", "lion"]:
         profile.outputs.append(ModelOutput(model.vars.MODEM_VTTRACK_SYNCTIMEOUTSEL, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.VTTRACK.SYNCTIMEOUTSEL'           ))
     profile.outputs.append(ModelOutput(model.vars.MODEM_LRFRC_LRCORRMODE, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.LRFRC.LRCORRMODE'           ))
     # profile.outputs.append(ModelOutput(model.vars.MODEM_RAMPCTRL_RAMPRATE0, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.RAMPCTRL.RAMPRATE0'           ))
@@ -673,7 +675,7 @@ def build_modem_regs_lynx_only(model, profile):
     profile.outputs.append(ModelOutput(model.vars.MODEM_TRECPMDET_PMTIMEOUTSEL, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.TRECPMDET.PMTIMEOUTSEL'           ))
     profile.outputs.append(ModelOutput(model.vars.MODEM_TRECPMDET_PHSCALE, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.TRECPMDET.PHSCALE'           ))
     profile.outputs.append(ModelOutput(model.vars.MODEM_TRECPMDET_PMMINCOSTTHD, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.TRECPMDET.PMMINCOSTTHD'           ))
-    if model.part_family.lower() in ["lynx", "leopard"]:
+    if model.part_family.lower() in ["lynx", "leopard", "lion"]:
         profile.outputs.append(ModelOutput(model.vars.MODEM_TRECPMDET_VTPMDETSEL, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.TRECPMDET.VTPMDETSEL'           ))
     profile.outputs.append(ModelOutput(model.vars.MODEM_TRECPMDET_COSTHYST, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.TRECPMDET.COSTHYST'           ))
     profile.outputs.append(ModelOutput(model.vars.MODEM_TRECPMDET_PREAMSCH, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.TRECPMDET.PREAMSCH'           ))
@@ -683,24 +685,24 @@ def build_modem_regs_lynx_only(model, profile):
     profile.outputs.append(ModelOutput(model.vars.MODEM_ETSTIM_ETSCOUNTEREN, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.ETSTIM.ETSCOUNTEREN'           ))
     profile.outputs.append(ModelOutput(model.vars.MODEM_ANTSWCTRL1_TIMEPERIOD, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.ANTSWCTRL1.TIMEPERIOD'           ))
     # Panther-specific. Not in Ocelot.
-    if model.part_family.lower() in ["lynx", "leopard"]:
+    if model.part_family.lower() in ["lynx", "leopard", "lion"]:
         profile.outputs.append(ModelOutput(model.vars.MODEM_COCURRMODE_CONCURRENT, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.COCURRMODE.CONCURRENT'           ))
     profile.outputs.append(ModelOutput(model.vars.MODEM_ANTDIVCTRL_ADPRETHRESH, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.ANTDIVCTRL.ADPRETHRESH'           ))
     profile.outputs.append(ModelOutput(model.vars.MODEM_ANTDIVCTRL_ENADPRETHRESH, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.ANTDIVCTRL.ENADPRETHRESH'           ))
     # Panther-specific. Not in Ocelot.
-    if model.part_family.lower() in ["lynx", "leopard"]:
+    if model.part_family.lower() in ["lynx", "leopard", "lion"]:
         profile.outputs.append(ModelOutput(model.vars.MODEM_BLEIQDSAEXT2_DISMAXPEAKTRACKMODE, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.BLEIQDSAEXT2.DISMAXPEAKTRACKMODE'           ))
         profile.outputs.append(ModelOutput(model.vars.MODEM_BLEIQDSAEXT2_BBSSDEBOUNCETIM, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.BLEIQDSAEXT2.BBSSDEBOUNCETIM'           ))
         profile.outputs.append(ModelOutput(model.vars.MODEM_BLEIQDSAEXT2_BBSSDIFFCHVAL, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.BLEIQDSAEXT2.BBSSDIFFCHVAL'           ))
     profile.outputs.append(ModelOutput(model.vars.RAC_CLKMULTEN0_CLKMULTENDRVN, '',         ModelOutputType.SVD_REG_FIELD, readable_name='RAC.CLKMULTEN0.CLKMULTENDRVN'           ))
     if model.part_family.lower() not in ["rainier"]:
         profile.outputs.append(ModelOutput(model.vars.RAC_CLKMULTEN0_CLKMULTENDRVP, '',         ModelOutputType.SVD_REG_FIELD, readable_name='RAC.CLKMULTEN0.CLKMULTENDRVP'           ))
+        profile.outputs.append(ModelOutput(model.vars.RAC_CLKMULTEN1_CLKMULTDRVAMPSEL, '', ModelOutputType.SVD_REG_FIELD, readable_name='RAC.CLKMULTEN1.CLKMULTDRVAMPSEL'))
 
     profile.outputs.append(ModelOutput(model.vars.RAC_CLKMULTEN0_CLKMULTENBYPASS40MHZ, '',         ModelOutputType.SVD_REG_FIELD, readable_name='RAC.CLKMULTEN0.CLKMULTENBYPASS40MHZ'           ))
-    profile.outputs.append(ModelOutput(model.vars.RAC_CLKMULTEN1_CLKMULTDRVAMPSEL, '',         ModelOutputType.SVD_REG_FIELD, readable_name='RAC.CLKMULTEN1.CLKMULTDRVAMPSEL'           ))
 
     # Lynx-specific. Not in Ocelot.
-    if model.part_family.lower() in ["lynx", "leopard"]:
+    if model.part_family.lower() in ["lynx", "leopard", "lion"]:
         profile.outputs.append(ModelOutput(model.vars.RAC_LNAMIXDEBUG_LNAMIXDISMXR, '',         ModelOutputType.SVD_REG_FIELD, readable_name='RAC.LNAMIXDEBUG.LNAMIXDISMXR'           ))
         profile.outputs.append(ModelOutput(model.vars.RAC_LNAMIXTRIM0_LNAMIXRFPKDBWSEL, '',         ModelOutputType.SVD_REG_FIELD, readable_name='RAC.LNAMIXTRIM0.LNAMIXRFPKDBWSEL'           ))
         profile.outputs.append(ModelOutput(model.vars.RAC_LNAMIXTRIM0_LNAMIXRFPKDCALDM, '',         ModelOutputType.SVD_REG_FIELD, readable_name='RAC.LNAMIXTRIM0.LNAMIXRFPKDCALDM'           ))

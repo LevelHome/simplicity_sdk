@@ -9,6 +9,7 @@
 #include "hal.h"
 #include "api/btl_interface.h"
 #include "api/btl_interface_storage.h"
+#include "em_device.h"
 
 #ifndef SLOT_MANAGER_NUM_SLOTS
  #define SLOT_MANAGER_NUM_SLOTS 8
@@ -57,12 +58,19 @@ void sl_util_af_slot_manager_print_external_flash_info(void)
   }
 
   bootloader_getStorageInfo(&storageInfo);
+#if defined(_SILICON_LABS_32B_SERIES_2)
   printf("Version     : %d\n", storageInfo.info->version);
   printf("Part        : %s\n", ((storageInfo.info->partDescription != NULL) ? storageInfo.info->partDescription : "NA"));
   printf("Capabilities: 0x%x\n", storageInfo.info->capabilitiesMask);
   printf("Part size   : %d B\n", storageInfo.info->partSize);
   printf("Page size   : %d B\n", storageInfo.info->pageSize);
   printf("Word size   : %d B\n", storageInfo.info->wordSizeBytes);
+#elif defined(_SILICON_LABS_32B_SERIES_3)
+  printf("Version     : %d\n", storageInfo.version);
+  printf("Capabilities: 0x%x\n", storageInfo.capabilities);
+  printf("Storage Type: 0x%x (see BootloaderStorageType_t)\n", storageInfo.storageType);
+  printf("Page size   : %d B\n", FLASH_PAGE_SIZE);
+#endif // _SILICON_LABS_32B_SERIES_2 || _SILICON_LABS_32B_SERIES_3
   printf("Slots       : %d\n", gBootloaderNumSlots);
 }
 
@@ -228,18 +236,18 @@ sl_status_t sl_util_af_slot_manager_erase_slot(uint32_t slotId)
     return SL_STATUS_FAIL;
   }
 
-  bytesToErase = (storageSlotInfo.length / storageInfo.info->pageSize)
-                 * storageInfo.info->pageSize;
+  bytesToErase = (storageSlotInfo.length / FLASH_PAGE_SIZE)
+                 * FLASH_PAGE_SIZE;
 
   // Check for a misaligned slot
   // This shouldn't happen unless the user configures something improperly, and
   // even then, the bootloader may complain when being compiled/run
-  if (storageSlotInfo.length % storageInfo.info->pageSize) {
+  if (storageSlotInfo.length % FLASH_PAGE_SIZE) {
     printf("Slot Manager warning: slot %d length (%d) not aligned "
            "to page size (%d). The entire slot will not be erased.\n",
            slotId,
            storageSlotInfo.length,
-           storageInfo.info->pageSize);
+           FLASH_PAGE_SIZE);
   }
 
   address = storageSlotInfo.address;
@@ -248,16 +256,16 @@ sl_status_t sl_util_af_slot_manager_erase_slot(uint32_t slotId)
   while ((BOOTLOADER_OK == rv)
          && ((address - storageSlotInfo.address) < bytesToErase)) {
     halResetWatchdog();
-    rv = bootloader_eraseRawStorage(address, storageInfo.info->pageSize);
-    address += storageInfo.info->pageSize;
+    rv = bootloader_eraseRawStorage(address, FLASH_PAGE_SIZE);
+    address += FLASH_PAGE_SIZE;
   }
 
   if (BOOTLOADER_OK != rv) {
     printf("Slot Manager: failed to erase %d bytes in slot %d at "
            "address 0x%4x (error 0x%x)\n",
-           storageInfo.info->pageSize,
+           FLASH_PAGE_SIZE,
            slotId,
-           address - storageInfo.info->pageSize,
+           address - FLASH_PAGE_SIZE,
            rv);
   } else {
     printf("Erased %d bytes in slot %d\n", bytesToErase, slotId);

@@ -133,7 +133,7 @@ static uint8_t networkCount;    // The number of sli_zigbee_network_info_t recor
 
    #define SCAN_DEBUG_XPAN_PRINT(xpan)                              \
   do {                                                              \
-    sl_zigbee_core_debug_print("%x%x%x%x%x%x%x%x",                  \
+    sl_zigbee_core_debug_print("%02X%02X%02X%02X%02X%02X%02X%02X",  \
                                xpan[0], xpan[1], xpan[2], xpan[3],  \
                                xpan[4], xpan[5], xpan[6], xpan[7]); \
     (void) sli_legacy_serial_wait_send(1);                          \
@@ -147,7 +147,7 @@ bool isTestFrameworkDebugOn(void);
   #define SCAN_DEBUG(x) debug(x)
   #define SCAN_DEBUG_XPAN_PRINT(xpan)          \
   do {                                         \
-    debug("%x%x%x%x%x%x%x%x",                  \
+    debug("%02X%02X%02X%02X%02X%02X%02X%02X",  \
           xpan[0], xpan[1], xpan[2], xpan[3],  \
           xpan[4], xpan[5], xpan[6], xpan[7]); \
   } while (false)
@@ -174,7 +174,7 @@ static bool isArrayZero(uint8_t* array, uint8_t size);
 static void printChannelMaskInfo(uint32_t channelMask)
 {
 #ifdef SL_CATALOG_ZIGBEE_NETWORK_FIND_SUB_GHZ_PRESENT
-  sl_zigbee_af_app_print("Page %d %p", channelMask >> SL_ZIGBEE_MAX_CHANNELS_PER_PAGE, "channels: ");
+  sl_zigbee_af_app_print("Page %d %s", channelMask >> SL_ZIGBEE_MAX_CHANNELS_PER_PAGE, "channels: ");
 #else
   sl_zigbee_af_app_print("Channels: ");
 #endif
@@ -255,7 +255,7 @@ static void energyScanComplete(void)
 #ifdef SL_CATALOG_ZIGBEE_NETWORK_FIND_SUB_GHZ_PRESENT
   uint8_t currentPage = channelMaskCache >> SL_ZIGBEE_MAX_CHANNELS_PER_PAGE;
   SCAN_DEBUG_MSG("Scan complete on channel %d,", currentPage);
-  SCAN_DEBUG_MSG(" mask 0x%4x\n", channelMaskCache & 0x07FFFFFFUL);
+  SCAN_DEBUG_MSG(" mask 0x%08X\n", channelMaskCache & 0x07FFFFFFUL);
 
   // Decide whether we need to proceed to the next channel page.
   // This can be a bit tricky. We have the flexibility of the search mode,
@@ -280,7 +280,7 @@ static void energyScanComplete(void)
       // Finished scanning the current page, try the next page if available
       if (currentPage < SL_ZIGBEE_MAX_SUGBHZ_PAGE_NUMBER) {
         currentPage++;
-        SCAN_DEBUG_MSG("%p on page ", "Continue energy scan");
+        SCAN_DEBUG_MSG("%s on page ", "Continue energy scan");
         SCAN_DEBUG_MSG("%d\n", currentPage);
         if (startScanForUnusedPanId((((uint32_t)currentPage) << SL_ZIGBEE_MAX_CHANNELS_PER_PAGE) | sli_zigbee_af_get_unused_network_channel_mask(currentPage),
                                     scanDurationCache) == SL_STATUS_OK) {
@@ -322,7 +322,7 @@ static void energyScanComplete(void)
       candidateCount++;
       SCAN_DEBUG_MSG("Candidate %d: ", candidateCount);         // 1-based index
       SCAN_DEBUG_MSG("%d ", channelCandidates[i].chanPg);       // 8-bit endoced channel + page
-      SCAN_DEBUG_MSG("(0x%x), ", channelCandidates[i].chanPg);  // same in hex
+      SCAN_DEBUG_MSG("(0x%02X), ", channelCandidates[i].chanPg);  // same in hex
       SCAN_DEBUG_MSG("%d dBm\n", channelCandidates[i].rssi);    // RSSI
     }
   }
@@ -389,7 +389,7 @@ static void startPanIdScan(void)
   while (i < NUM_PAN_ID_CANDIDATES) {
     uint16_t panId = sl_zigbee_get_pseudo_random_number() & 0xFFFF;
     if (panId != 0xFFFF) {
-      SCAN_DEBUG_MSG("panIdCandidate: 0x%2X\n", panId);
+      SCAN_DEBUG_MSG("panIdCandidate: 0x%04X\n", panId);
       panIdCandidates[i] = panId;
       i++;
     }
@@ -453,7 +453,7 @@ static sl_status_t startSecondInterface(void)
   if (status == SL_STATUS_OK) {
     sl_zigbee_af_app_println("Success!");
   } else {
-    sl_zigbee_af_app_println("Error 0x%x", status);
+    sl_zigbee_af_app_println("Error 0x%02X", status);
   }
 
   sli_zigbee_af_secondary_interface_formed_callback(status);
@@ -628,7 +628,7 @@ void sli_zigbee_af_form_and_join_energy_scan_result_callback(uint8_t channel, in
   }
 
   SCAN_DEBUG_MSG("SCAN: found energy %d dBm on ", maxRssiValue);
-  SCAN_DEBUG_MSG("channel 0x%x", channel);
+  SCAN_DEBUG_MSG("channel 0x%02X", channel);
 
 #ifdef SL_CATALOG_ZIGBEE_NETWORK_FIND_PRESENT
   if (sl_zigbee_af_network_find_get_enable_scanning_all_channels_cb()
@@ -729,7 +729,7 @@ void sl_zigbee_form_and_join_cleanup(sl_status_t status)
 static sl_status_t startScan(sl_zigbee_network_scan_type_t type, uint32_t mask, uint8_t duration)
 {
   sl_status_t status = sl_zigbee_start_scan(type, mask, duration);
-  SCAN_DEBUG_MSG("SCAN: start scan, status 0x%x\r\n", status);
+  SCAN_DEBUG_MSG("SCAN: start scan, status 0x%02X\r\n", status);
   if (status != SL_STATUS_OK) {
     sl_zigbee_form_and_join_cleanup(status);
   }

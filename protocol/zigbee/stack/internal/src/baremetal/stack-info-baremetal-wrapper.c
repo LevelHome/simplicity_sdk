@@ -23,7 +23,7 @@ uint16_t sl_802154_get_tx_power_mode(void)
   return sli_802154_stack_get_tx_power_mode();
 }
 
-sl_status_t sl_802154_radio_get_scheduler_priorities(sl_zigbee_multiprotocol_priorities_t *priorities)
+sl_status_t sl_802154_radio_get_scheduler_priorities(sl_802154_radio_priorities_t *priorities)
 {
   return sli_802154_stack_radio_get_scheduler_priorities(priorities);
 }
@@ -33,7 +33,7 @@ sl_status_t sl_802154_radio_get_scheduler_sliptime(uint32_t *slipTime)
   return sli_802154_stack_radio_get_scheduler_sliptime(slipTime);
 }
 
-sl_status_t sl_802154_radio_set_scheduler_priorities(const sl_zigbee_multiprotocol_priorities_t *priorities)
+sl_status_t sl_802154_radio_set_scheduler_priorities(const sl_802154_radio_priorities_t *priorities)
 {
   return sli_802154_stack_radio_set_scheduler_priorities(priorities);
 }

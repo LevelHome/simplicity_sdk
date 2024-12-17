@@ -1,5 +1,5 @@
 /***************************************************************************//**
- * @file
+ * @file sl_display.c
  * @brief Display
  *******************************************************************************
  * # License
@@ -31,23 +31,21 @@
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
+
 #include "sl_component_catalog.h"
 #include "em_types.h"
 #include "dmd/dmd.h"
 #include "sl_display.h"
 #include "sl_board_control.h"
-#include "sl_wisun_trace_util.h"
 #include "sl_display_config.h"
 
 #if defined(SL_CATALOG_KERNEL_PRESENT)
 #include "cmsis_os2.h"
 #include "sl_cmsis_os2_common.h"
 #endif
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -205,6 +203,7 @@ void sl_display_init(void)
   assert(status == DMD_OK);
 
   status = GLIB_contextInit(&_disp.glib_context);
+  assert(status == DMD_OK);
 
   _disp.glib_context.backgroundColor = White;
   _disp.glib_context.foregroundColor = Black;
@@ -480,7 +479,7 @@ static void _display_renderer_task(void *args)
   static sl_display_renderer_queue_t disp_ctrl;
   uint8_t msg_prio = 0;
   (void) args;
-  SL_WISUN_THREAD_LOOP {
+  SL_DISPLAY_THREAD_LOOP {
     stat = osMessageQueueGet(_display_msg_queue, &disp_ctrl, &msg_prio, 0U);
     (void) msg_prio;
     if (stat == osOK) {

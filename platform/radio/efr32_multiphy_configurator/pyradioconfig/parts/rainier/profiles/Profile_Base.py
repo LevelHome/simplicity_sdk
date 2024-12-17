@@ -39,3 +39,10 @@ class ProfileBaseRainier(Profile_Base_Bobcat):
 
         IProfile.make_hidden_input(profile, model.vars.synchronous_ifadc_clk, 'Advanced', readable_name="Synchronous IFADC clock")
         IProfile.make_hidden_input(profile, model.vars.synchronous_mixdac_clk, 'Advanced', readable_name="Synchronous MIXDAC clock")
+
+        IProfile.make_hidden_input(profile, model.vars.rx_rdm_state, 'Advanced', readable_name="RX RDM State")
+        IProfile.make_hidden_input(profile, model.vars.tx_rdm_state, 'Advanced', readable_name="TX RDM State")
+
+        IProfile.make_hidden_input(profile, model.vars.agc_power_mode, 'Advanced', readable_name="AGC Power Mode")
+        IProfile.make_hidden_input(profile, model.vars.rfpkd_mode, 'Advanced', readable_name="RFPKD Mode")
+

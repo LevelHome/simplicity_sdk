@@ -39,13 +39,20 @@ extern "C" {
 #include <stdlib.h>
 #include "esl_lib.h"
 
+// Try to print only the file name or fall back to the old macro for GCC v.<12.
+#ifndef __FILE_NAME__
+  #define _FILENAME __FILE__
+#else
+  #define _FILENAME __FILE_NAME__
+#endif // __FILE_NAME__
+
 #ifdef ESL_LIB_MEMORY_LEAK_CHECK
-#define esl_lib_memory_allocate(size) _esl_lib_malloc(size, __FILE__, __LINE__)
-#define esl_lib_memory_free(ptr) do { _esl_lib_free(ptr, __FILE__, __LINE__); ptr = NULL; } while (0)
+#define esl_lib_memory_allocate(size) _esl_lib_malloc(size, _FILENAME, __func__, __LINE__)
+#define esl_lib_memory_free(ptr) do { _esl_lib_free(ptr, _FILENAME, __func__, __LINE__); ptr = NULL; } while (0)
 // Internal allocator function
-void *_esl_lib_malloc(size_t size, const char *file, uint32_t line);
+void *_esl_lib_malloc(size_t size, const char *file, const char *func, uint32_t line);
 // Internal free function
-void _esl_lib_free(void *ptr, const char *file, uint32_t line);
+void _esl_lib_free(void *ptr, const char *file, const char *func, uint32_t line);
 
 /**************************************************************************//**
  * Log memory items for leak check.

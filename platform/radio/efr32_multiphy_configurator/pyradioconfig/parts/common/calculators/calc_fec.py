@@ -63,34 +63,37 @@ class CALC_FEC(ICalculator):
         """
         #Outputs
         """
-        self._addModelRegister(model, 'FRC.FECCTRL.CONVMODE', int, ModelVariableFormat.HEX )
-        self._addModelRegister(model, 'FRC.FECCTRL.CONVDECODEMODE', int, ModelVariableFormat.HEX )
-        self._addModelRegister(model, 'FRC.FECCTRL.CONVTRACEBACKDISABLE', int, ModelVariableFormat.HEX )
-        self._addModelRegister(model, 'FRC.FECCTRL.CONVINV', int, ModelVariableFormat.HEX )
-        self._addModelRegister(model, 'FRC.FECCTRL.INTERLEAVEMODE', int, ModelVariableFormat.HEX )
-        self._addModelRegister(model, 'FRC.FECCTRL.INTERLEAVEFIRSTINDEX', int, ModelVariableFormat.HEX )
-        self._addModelRegister(model, 'FRC.FECCTRL.INTERLEAVEWIDTH', int, ModelVariableFormat.HEX )
-        self._addModelRegister(model, 'FRC.FECCTRL.CONVBUSLOCK', int, ModelVariableFormat.HEX )
-        self._addModelRegister(model, 'FRC.FECCTRL.CONVSUBFRAMETERMINATE', int, ModelVariableFormat.HEX )
-        self._addModelRegister(model, 'FRC.FECCTRL.SINGLEBLOCK', int, ModelVariableFormat.HEX )
-        self._addModelRegister(model, 'FRC.FECCTRL.FORCE2FSK', int, ModelVariableFormat.HEX )
-        self._addModelRegister(model, 'FRC.FECCTRL.CONVHARDERROR', int, ModelVariableFormat.HEX )
-
-        self._addModelRegister(model, 'FRC.TRAILTXDATACTRL.TRAILTXDATA', int, ModelVariableFormat.HEX )
-        self._addModelRegister(model, 'FRC.TRAILTXDATACTRL.TRAILTXDATACNT', int, ModelVariableFormat.HEX )
-        self._addModelRegister(model, 'FRC.TRAILTXDATACTRL.TRAILTXDATAFORCE', int, ModelVariableFormat.HEX )
-
-        self._addModelRegister(model, 'FRC.CONVGENERATOR.GENERATOR0', int, ModelVariableFormat.HEX )
-        self._addModelRegister(model, 'FRC.CONVGENERATOR.GENERATOR1', int, ModelVariableFormat.HEX )
-        self._addModelRegister(model, 'FRC.CONVGENERATOR.RECURSIVE', int, ModelVariableFormat.HEX )
-        self._addModelRegister(model, 'FRC.CONVGENERATOR.NONSYSTEMATIC', int, ModelVariableFormat.HEX )
-
-        self._addModelRegister(model, 'FRC.PUNCTCTRL.PUNCT0', int, ModelVariableFormat.HEX )
-        self._addModelRegister(model, 'FRC.PUNCTCTRL.PUNCT1', int, ModelVariableFormat.HEX )
+        self._build_frc_reg_var(model)
 
         # Output software variables for RAIL to consume
         self._addModelVariable(model, 'frc_conv_decoder_buffer_size', int, ModelVariableFormat.DECIMAL, units='bytes', desc='Size (in bytes) of the buffer necessary for the Convolutional Decoder')
         self._addModelVariable(model, 'fec_enabled', int, ModelVariableFormat.DECIMAL, 'FEC enabled flag')
+
+    def _build_frc_reg_var(self, model):
+        self._addModelRegister(model, 'FRC.FECCTRL.CONVMODE', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'FRC.FECCTRL.CONVDECODEMODE', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'FRC.FECCTRL.CONVTRACEBACKDISABLE', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'FRC.FECCTRL.CONVINV', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'FRC.FECCTRL.INTERLEAVEMODE', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'FRC.FECCTRL.INTERLEAVEFIRSTINDEX', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'FRC.FECCTRL.INTERLEAVEWIDTH', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'FRC.FECCTRL.CONVBUSLOCK', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'FRC.FECCTRL.CONVSUBFRAMETERMINATE', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'FRC.FECCTRL.SINGLEBLOCK', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'FRC.FECCTRL.FORCE2FSK', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'FRC.FECCTRL.CONVHARDERROR', int, ModelVariableFormat.HEX)
+
+        self._addModelRegister(model, 'FRC.TRAILTXDATACTRL.TRAILTXDATA', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'FRC.TRAILTXDATACTRL.TRAILTXDATACNT', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'FRC.TRAILTXDATACTRL.TRAILTXDATAFORCE', int, ModelVariableFormat.HEX)
+
+        self._addModelRegister(model, 'FRC.CONVGENERATOR.GENERATOR0', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'FRC.CONVGENERATOR.GENERATOR1', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'FRC.CONVGENERATOR.RECURSIVE', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'FRC.CONVGENERATOR.NONSYSTEMATIC', int, ModelVariableFormat.HEX)
+
+        self._addModelRegister(model, 'FRC.PUNCTCTRL.PUNCT0', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'FRC.PUNCTCTRL.PUNCT1', int, ModelVariableFormat.HEX)
 
     def _build_fec_var(self, model):
         # This function adds the fec_en enumerated variable. It is a separate method to allow overwriting in future parts.

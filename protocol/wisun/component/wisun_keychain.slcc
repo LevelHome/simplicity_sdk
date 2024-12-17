@@ -25,3 +25,7 @@ include:
   - path: plugin/
     file_list:
       - path: sl_wisun_keychain.h
+
+metadata:
+  sbom:
+    license: MSLA

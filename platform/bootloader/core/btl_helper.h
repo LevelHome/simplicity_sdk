@@ -24,9 +24,12 @@
 #endif
 // Linker Symbols
 #if defined (__GNUC__)
-extern uint32_t __StackTop, __StackLimit;
-extern uint32_t __data_start__, __data_end__;
-extern uint32_t __bss_start__, __bss_end__;
+extern uint32_t __StackTop;
+extern uint32_t __StackLimit;
+extern uint32_t __data_start__;
+extern uint32_t __data_end__;
+extern uint32_t __bss_start__;
+extern uint32_t __bss_end__;
 #else
 extern uint32_t CSTACK$$Base, CSTACK$$Limit;
 extern uint32_t STACKSEAL$$Limit, HEAP$$Base;

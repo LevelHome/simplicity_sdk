@@ -152,6 +152,16 @@ uint16_t ZW_GetProtocolBuildNumber(void);
  */
 const uint8_t* ZW_GetProtocolGitHash(void);
 
+#ifdef ZW_CONTROLLER
+/**
+ * Notify the Z-Wave task with the configured status
+ * 
+ * @param[in] status Status to notify the task with
+ */
+
+void ZW_RequestEncryptionStatus(uint32_t status);
+#endif
+
 /**
  * @} // BASIS
  * @} // ZWaveAPI

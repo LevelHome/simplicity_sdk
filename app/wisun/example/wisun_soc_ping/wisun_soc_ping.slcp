@@ -29,7 +29,7 @@ component:
   - id: "sl_wisun_trace_util"
   - id: "sl_wisun_app_core"
   - id: "sl_wisun_app_setting"
-  - id: "sl_wisun_app_cli"
+  - id: "sl_wisun_cli"
   - id: "sl_wisun_ping"
   - id: "cli"
     instance:
@@ -53,7 +53,6 @@ include:
 define:
   - name: "DEBUG_EFM"
 
-# note: here is the cli configuration but the cli components required in the app_cli.
 configuration:
   - name: "SL_BOARD_ENABLE_VCOM"
     value: "1"

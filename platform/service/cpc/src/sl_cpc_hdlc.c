@@ -31,6 +31,7 @@
 #include "sli_cpc.h"
 #include "sli_cpc_hdlc.h"
 #include "sli_cpc_crc.h"
+#include "sl_cpc_instance_handles.h"
 
 /***************************************************************************/ /**
  * Create an HDLC header from given inputs.
@@ -76,9 +77,6 @@ int sli_cpc_hdlc_extract_payload_size(const uint8_t *header)
   }
 
   payload_len = (int) sli_cpc_hdlc_get_length(header);
-  if (payload_len > SLI_CPC_RX_DATA_MAX_LENGTH) {
-    return -1;
-  }
 
   return payload_len;
 }

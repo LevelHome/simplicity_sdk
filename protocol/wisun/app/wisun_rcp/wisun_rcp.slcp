@@ -14,7 +14,7 @@ component:
   - id: iostream_retarget_stdio
   - id: iostream_stdlib_config
   - id: cpc_security_secondary_none
-  - id: wisun_full_radioconf
+  - id: wisun_default_radioconf
   - id: wisun_stack_ffn
   - id: wisun_rcp_app
 

@@ -25,7 +25,7 @@ requires:
   - name: device
   - name: status
   - name: emlib_core
-  - name: se_manager_osal
+  - name: sli_psec_osal
     condition: [device_has_radioaes]
   - name: psa_crypto_trng
     condition: [device_has_radioaes]
@@ -42,8 +42,18 @@ template_contribution:
     value:
       event: service_init
       include: sli_protocol_crypto.h
+      handler: sli_protocol_crypto_init
+    priority: 1
+    condition: [device_has_radioaes]
+  - name: event_handler
+    value:
+      event: service_init
+      include: sli_protocol_crypto.h
       handler: sli_aes_seed_mask
     # Seeding of the RADIOAES mask should come after init of Mbed TLS and the
     # PSA crypto core.
     priority: 2
     condition: [device_has_radioaes]
+metadata:
+  sbom:
+    license: Zlib

@@ -30,7 +30,7 @@
 #include "os.h"
 #include "rail.h"
 #include "sl_rail_util_init.h"
-#include "em_common.h"
+#include "sl_common.h"
 #include "app_assert.h"
 #include "app_proprietary.h"
 
@@ -99,12 +99,12 @@ static void app_proprietary_task(void *p_arg)
   // CONSUMPTION OF YOUR PRODUCT.                                            //
   //                                                                         //
   // For further examples on sending / recieving in a DMP application, and   //
-  // also on reducing the overall power demand, the following Flex projects  //
-  // could serve as a good starting point:                                   //
+  // also on reducing the overall power demand, the following Connect and    //
+  // RAIL projects could serve as a good starting point:                     //
   //                                                                         //
-  //  - Flex (Connect) - Soc Empty Example DMP                               //
-  //  - Flex (RAIL) - Range Test DMP                                         //
-  //  - Flex (RAIL) - Energy Mode                                            //
+  //  - Connect Bluetooth DMP - SoC Empty                                    //
+  //  - RAIL Bluetooth DMP - SoC Range Test                                  //
+  //  - RAIL - SoC Energy Mode                                               //
   //                                                                         //
   // See also: AN1134: Dynamic Multiprotocol Development with Bluetooth and  //
   //                   Proprietary Protocols on RAIL in GSDK v2.x            //
@@ -157,7 +157,7 @@ void sl_rail_util_on_event(RAIL_Handle_t rail_handle,
   /////////////////////////////////////////////////////////////////////////////
   // Add event handlers here as your application requires!                   //
   //                                                                         //
-  // Flex (RAIL) - Simple TRX might serve as a good example on how to        //
+  // RAIL - SoC Simple TRX    might serve as a good example on how to        //
   // implement this event handler properly.                                  //
   /////////////////////////////////////////////////////////////////////////////
 }

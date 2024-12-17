@@ -52,55 +52,6 @@ typedef enum _EVENT_SYSTEM_
   EVENT_SYSTEM_EMPTY
 } EVENT_SYSTEM;
 
-/**
- * Button events
- *
- * NB: For every button there MUST be the following events in this order:
- *     DOWN, UP, SHORT_PRESS, HOLD, LONG_PRESS
- *     The macros BTN_EVENT_xxx in board.h depends on it.
- */
-typedef enum _BUTTON_EVENT_
-{
-  EVENT_PB1_DOWN = DEFINE_EVENT_KEY_NBR, // 64
-  EVENT_PB1_UP,
-  EVENT_PB1_SHORT_PRESS,
-  EVENT_PB1_HOLD,
-  EVENT_PB1_LONG_PRESS,
-  EVENT_PB2_DOWN,
-  EVENT_PB2_UP,
-  EVENT_PB2_SHORT_PRESS,
-  EVENT_PB2_HOLD,
-  EVENT_PB2_LONG_PRESS,
-  EVENT_PB3_DOWN,
-  EVENT_PB3_UP,
-  EVENT_PB3_SHORT_PRESS,
-  EVENT_PB3_HOLD,
-  EVENT_PB3_LONG_PRESS,
-  EVENT_PB4_DOWN,
-  EVENT_PB4_UP,
-  EVENT_PB4_SHORT_PRESS,
-  EVENT_PB4_HOLD,
-  EVENT_PB4_LONG_PRESS,
-  EVENT_PB5_DOWN,
-  EVENT_PB5_UP,
-  EVENT_PB5_SHORT_PRESS,
-  EVENT_PB5_HOLD,
-  EVENT_PB5_LONG_PRESS,
-  EVENT_PB6_DOWN,
-  EVENT_PB6_UP,
-  EVENT_PB6_SHORT_PRESS,
-  EVENT_PB6_HOLD,
-  EVENT_PB6_LONG_PRESS,
-  EVENT_SLIDER1_DOWN,
-  EVENT_SLIDER1_UP,
-  EVENT_SLIDER1_SHORT_PRESS, // Not used, but don't delete because of BTN_EVENT_xxx macros
-  EVENT_SLIDER1_HOLD,        // Not used, but don't delete because of BTN_EVENT_xxx macros
-  EVENT_SLIDER1_LONG_PRESS,  // Not used, but don't delete because of BTN_EVENT_xxx macros
-  EVENT_BTN_MAX /**< EVENT_BTN_MAX define the last enum type*/
-} BUTTON_EVENT;
-
-#define BTN_EVENT_FILTER(btnEvent)          ((btnEvent >= DEFINE_EVENT_KEY_NBR) && (btnEvent < EVENT_BTN_MAX))
-
 #define EventSchedulerInit ZAF_eventSchedulerInit
 /**
  * @brief Initializes event scheduler.

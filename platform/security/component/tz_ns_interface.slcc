@@ -21,20 +21,33 @@ include:
   - path: ../../util/third_party/trusted-firmware-m/interface/include
     file_list:
       - path: psa/client.h
-      - path: psa/crypto_types.h
-      - path: psa_config.h
-      - path: psa/error.h
       - path: psa/crypto.h
-      - path: psa/crypto_values.h
       - path: psa/crypto_client_struct.h
       - path: psa/crypto_compat.h
+      - path: psa/crypto_driver_contexts_composites.h
+      - path: psa/crypto_driver_contexts_primitives.h
       - path: psa/crypto_extra.h
       - path: psa/crypto_sizes.h
       - path: psa/crypto_struct.h
+      - path: psa/crypto_platform.h
+      - path: psa/crypto_types.h
+      - path: psa/crypto_values.h
+      - path: psa/error.h
+      - path: psa/storage_common.h
+      - path: psa_config.h
       - path: tfm_api.h
       - path: tfm_crypto_defs.h
       - path: tfm_ns_interface.h
-      - path: psa/storage_common.h
 
 source:
   - path: sl_component/sl_trustzone/src/sli_tz_ns_interface.c
+
+metadata:
+  sbom:
+    license: Zlib AND BSD-3-Clause
+    upstream:
+      name: TrustedFirmware-M (TF-M)
+      version: v1.5
+      supplier: Trusted Firmware
+      url: https://review.trustedfirmware.org/TF-M/trusted-firmware-m.git
+      comment: Trusted Firmware for M profile Arm CPUs

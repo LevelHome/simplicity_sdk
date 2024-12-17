@@ -95,7 +95,7 @@
 // $[GPIO_IOT_GPIO_CFG_INSTANCE]
 
 #warning "Common I/O GPIO instance not configured"
-//#define IOT_GPIO_CFG_TEST_PORT         gpioPortA
+//#define IOT_GPIO_CFG_TEST_PORT         SL_GPIO_PORT_A
 //#define IOT_GPIO_CFG_TEST_PIN          0
 
 // <<< sl:end pin_tool >>>

@@ -33,6 +33,8 @@ template_contribution:
   - name: psa_crypto_config
     value: PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY 1
   - name: psa_crypto_config
+    value: PSA_WANT_KEY_TYPE_ECC_KEY_PAIR 1
+  - name: psa_crypto_config
     value: PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC 1
   - name: psa_crypto_config
     value: PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT 1
@@ -60,3 +62,12 @@ template_contribution:
   - name: mbedtls_config
     value: MBEDTLS_ECP_C
     condition: [mbedtls_uses_psa_crypto]
+metadata:
+  sbom:
+    license: Apache-2.0
+    upstream:
+      name: Mbed TLS
+      version: v3.6.2
+      supplier: Trusted Firmware
+      url: https://github.com/Mbed-TLS/mbedtls.git
+      comment: Mbed TLS is a C library implementing the PSA Cryptography API, cryptographic primitives, X.509 certificate manipulation and the SSL/TLS and DTLS protocols

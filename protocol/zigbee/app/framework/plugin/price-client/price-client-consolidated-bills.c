@@ -101,7 +101,7 @@ void sl_zigbee_af_price_init_consolidated_bills_table(uint8_t endpoint)
    return billIsValid;
    }
  */
-bool sl_zigbee_af_price_cluster_publish_consolidated_bill_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_price_cluster_publish_consolidated_bill_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_price_cluster_publish_consolidated_bill_command_t cmd_data;
   uint32_t adjustedStartTime;
@@ -121,10 +121,10 @@ bool sl_zigbee_af_price_cluster_publish_consolidated_bill_cb(sl_zigbee_af_cluste
   if ((zcl_decode_price_cluster_publish_consolidated_bill_command(cmd, &cmd_data)
        != SL_ZIGBEE_ZCL_STATUS_SUCCESS)
       || ep == 0xFF) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_price_cluster_println("RX: PublishConsolidatedBill eventId=%d,  timeNow=0x%4x", cmd_data.issuerEventId, timeNow);
+  sl_zigbee_af_price_cluster_println("RX: PublishConsolidatedBill eventId=%d,  timeNow=0x%08X", cmd_data.issuerEventId, timeNow);
 
   if ( cmd_data.billingPeriodStartTime != CANCELLATION_START_TIME ) {
     if ( cmd_data.billingPeriodStartTime == 0 ) {
@@ -145,7 +145,7 @@ bool sl_zigbee_af_price_cluster_publish_consolidated_bill_cb(sl_zigbee_af_cluste
 
     // Search table for matching entry, invalid entry, lowestEventId
     for ( i = 0; i < SL_ZIGBEE_AF_PLUGIN_PRICE_CLIENT_CONSOLIDATED_BILL_TABLE_SIZE; i++ ) {
-      sl_zigbee_af_price_cluster_println(" == i=%d, val=%d, event=%d, start=0x%4x,  timeNow=0x%4x",
+      sl_zigbee_af_price_cluster_println(" == i=%d, val=%d, event=%d, start=0x%08X,  timeNow=0x%08X",
                                          i, ConsolidatedBillsTable[ep][i].valid, ConsolidatedBillsTable[ep][i].issuerEventId,
                                          ConsolidatedBillsTable[ep][i].billingPeriodStartTime, timeNow);
       if ( cmd_data.billingPeriodStartTime == CANCELLATION_START_TIME ) {
@@ -199,8 +199,7 @@ bool sl_zigbee_af_price_cluster_publish_consolidated_bill_cb(sl_zigbee_af_cluste
     }
   }
   kickout:
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
 void sli_zigbee_af_price_print_consolidated_bill_table_index(uint8_t endpoint, uint8_t i)
@@ -214,9 +213,9 @@ void sli_zigbee_af_price_print_consolidated_bill_table_index(uint8_t endpoint, u
     sl_zigbee_af_price_cluster_println("  isValid=%d", ConsolidatedBillsTable[ep][i].valid);
     sl_zigbee_af_price_cluster_println("  providerId=%d", ConsolidatedBillsTable[ep][i].providerId);
     sl_zigbee_af_price_cluster_println("  issuerEventId=%d", ConsolidatedBillsTable[ep][i].issuerEventId);
-    sl_zigbee_af_price_cluster_println("  billingPeriodStartTime=0x%4x", ConsolidatedBillsTable[ep][i].billingPeriodStartTime);
+    sl_zigbee_af_price_cluster_println("  billingPeriodStartTime=0x%08X", ConsolidatedBillsTable[ep][i].billingPeriodStartTime);
     sl_zigbee_af_price_cluster_println("  billingPeriodDuration=0x%d", ConsolidatedBillsTable[ep][i].billingPeriodDuration);
-    sl_zigbee_af_price_cluster_println("  billingPeriodDurationType=0x%X", ConsolidatedBillsTable[ep][i].billingPeriodDurationType);
+    sl_zigbee_af_price_cluster_println("  billingPeriodDurationType=0x%02X", ConsolidatedBillsTable[ep][i].billingPeriodDurationType);
     sl_zigbee_af_price_cluster_println("  tariffType=%d", ConsolidatedBillsTable[ep][i].tariffType);
     sl_zigbee_af_price_cluster_println("  consolidatedBill=%d", ConsolidatedBillsTable[ep][i].consolidatedBill);
     sl_zigbee_af_price_cluster_println("  currency=%d", ConsolidatedBillsTable[ep][i].currency);
@@ -250,7 +249,7 @@ uint8_t sli_zigbee_af_price_consolidated_bill_table_get_current_index(uint8_t en
     return 0xFF;
   }
 
-  sl_zigbee_af_price_cluster_println("=======  GET CURRENT INDEX, timeNow=0x%4x", currTime);
+  sl_zigbee_af_price_cluster_println("=======  GET CURRENT INDEX, timeNow=0x%08X", currTime);
 
   for ( i = 0; i < SL_ZIGBEE_AF_PLUGIN_PRICE_CLIENT_CONSOLIDATED_BILL_TABLE_SIZE; i++ ) {
     if ( ConsolidatedBillsTable[ep][i].valid

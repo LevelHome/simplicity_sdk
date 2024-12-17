@@ -63,9 +63,12 @@ class CALC_Whitening(ICalculator):
         """
         #Outputs
         """
-        self._addModelRegister(model, 'FRC.FECCTRL.BLOCKWHITEMODE', int, ModelVariableFormat.HEX )
+        self._build_fecctrl_reg(model)
 
         self._addModelVariable(model, 'frame_coding_array_packed', long, ModelVariableFormat.HEX, is_array=True)
+
+    def _build_fecctrl_reg(self, model):
+        self._addModelRegister(model, 'FRC.FECCTRL.BLOCKWHITEMODE', int, ModelVariableFormat.HEX)
 
 
     def _calc_init(self, model):

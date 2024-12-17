@@ -63,11 +63,33 @@
 #include "sli_mem_pool.h"
 #endif
 
+// Derive name of sli_cpc_instance_t based on the peripheral name
+#define SL_CPC_INSTANCE_NAME(_peripheral)       SL_CONCAT_PASTER_2(sli_cpc_instance_, _peripheral)
+
+#define SL_CPC_INSTANCE_PTR(_peripheral)        SL_CONCAT_PASTER_2(&sli_cpc_instance_, _peripheral)
+
+// This set of macro allows to compute different values
+// based on the user configuration stored in the instance
+#define SLI_CPC_RX_DATA_MAX_LENGTH_INST(_inst)             (SLI_CPC_RX_DATA_MAX_LENGTH_CFG((_inst)->rx_user_payload_max_length))
+#define SLI_CPC_HDLC_REJECT_MAX_COUNT_INST(_inst)          (SLI_CPC_HDLC_REJECT_MAX_COUNT_CFG((_inst)->rx_buffer_max_count))
+#define SLI_CPC_RX_QUEUE_ITEM_MAX_COUNT_INST(_inst)        (SLI_CPC_RX_QUEUE_ITEM_MAX_COUNT_CFG((_inst)->rx_buffer_max_count))
+#define SLI_CPC_TX_QUEUE_ITEM_SFRAME_MAX_COUNT_INST(_inst) (SLI_CPC_TX_QUEUE_ITEM_SFRAME_MAX_COUNT_CFG(SLI_CPC_RX_QUEUE_ITEM_MAX_COUNT_INST(_inst)))
+#define SLI_CPC_BUFFER_HANDLE_MAX_COUNT_INST(_inst)        (SLI_CPC_BUFFER_HANDLE_MAX_COUNT_CFG( \
+                                                              (_inst)->tx_queue_item_max_count,  \
+                                                              (_inst)->rx_buffer_max_count,      \
+                                                              SLI_CPC_TX_QUEUE_ITEM_SFRAME_MAX_COUNT_INST(_inst)))
+#define SLI_CPC_HDLC_HEADER_MAX_COUNT_INST(_inst)          (SLI_CPC_HDLC_HEADER_MAX_COUNT_CFG(SLI_CPC_BUFFER_HANDLE_MAX_COUNT_INST(_inst)))
+#define SLI_CPC_RX_FRAME_MAX_LENGTH_INST(_inst)            (SLI_CPC_RX_FRAME_MAX_LENGTH_CFG(SLI_CPC_RX_DATA_MAX_LENGTH_INST(_inst)))
+#define SLI_CPC_RX_BUFFER_MAX_LENGTH_INST(_inst)           (SLI_CPC_RX_BUFFER_MAX_LENGTH_CFG(SLI_CPC_RX_FRAME_MAX_LENGTH_INST(_inst)))
+#define SLI_CPC_EVENT_SIGNAL_MAX_COUNT_INST(_inst)         (SLI_CPC_EVENT_SIGNAL_MAX_COUNT_CFG( \
+                                                              (_inst)->tx_queue_item_max_count, \
+                                                              SLI_CPC_RX_QUEUE_ITEM_MAX_COUNT_INST(_inst)))
+
 /** @brief Struct representing a memory pool handle. */
 typedef struct sl_cpc_mem_pool_handle_t {
   // support having the memory manager or not
 #if defined(SL_CATALOG_MEMORY_MANAGER_PRESENT)
-  sl_memory_pool_t      handle;
+  sl_memory_pool_t      *handle;
 #else
   sli_mem_pool_handle_t handle;
 #endif
@@ -120,8 +142,13 @@ struct sli_cpc_instance {
   sli_cpc_drv_t *driver;
   sli_cpc_drv_capabilities_t sli_cpc_driver_capabilities;
 
-  // The default value of 0 means that there is no maximum length. This will stay at 0 with a Linux host
-  // and will be set to a certain value with a MCU Primary.
+  uint32_t rx_user_payload_max_length;          ///< Maximum length of a user payload (USER CONFIG)
+  uint16_t rx_buffer_max_count;                 ///< Maximum count of RX buffer (USER CONFIG)
+  uint16_t tx_queue_item_max_count;             ///< Maximum TX queue item (USER CONFIG)
+
+  // The default value of 0 means that there is no maximum length.
+  // This will stay at 0 with a Linux host and will be set to a
+  // certain value with a MCU Primary.
   uint16_t remote_tx_payload_max_length;
 
   sl_slist_node_t *postponed_free_rx_queue_item;
@@ -169,8 +196,6 @@ struct sli_cpc_instance {
 };
 
 typedef struct sli_cpc_instance sli_cpc_instance_t;
-
-extern struct sli_cpc_instance g_instance;
 
 /***************************************************************************/ /**
  * Get back a CPC instance from a system endpoint pointer.

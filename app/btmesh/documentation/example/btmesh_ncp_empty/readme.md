@@ -103,6 +103,7 @@ Steps for setting up secure BGAPI communication:
    - Build the example by typing 'make'.
    - run the example with appropriate parameters (e.g., exe/ncp_daemon.exe /dev/ttyS13 115200 encrypted unencrypted).
      - 1st parameter: serial port
+       - Windows serial port COM[N] is mapped to /dev/ttyS[N-1] MSYS serial port
      - 2nd parameter: serial port speed
      - 3rd parameter: file descriptor for encrypted domain socket (it can be any string)
      - 4th parameter: file descriptor for unencrypted domain socket (it can be any string)
