@@ -165,6 +165,7 @@
   - name: device_supports_connect
   - name: device_supports_zwave
   - name: device_supports_zwave_end_device
+  - name: device_supports_thread
   - name: device_compute_basic
 - recommends:
   - id: trustzone_unaware
