@@ -29,7 +29,7 @@ void xmodem_reset(void)
   started = false;
 }
 
-int32_t xmodem_parsePacket(XmodemPacket_t *packet, uint8_t *response)
+int32_t xmodem_parsePacket(const XmodemPacket_t *packet, uint8_t *response)
 {
   uint16_t crc16 = 0;
 
@@ -84,7 +84,6 @@ int32_t xmodem_parsePacket(XmodemPacket_t *packet, uint8_t *response)
       BTL_DEBUG_PRINTLN("EOT");
       *response = XMODEM_CMD_ACK;
       return BOOTLOADER_ERROR_XMODEM_DONE;
-      break;
     case XMODEM_CMD_CAN:
     case XMODEM_CMD_C:
     case XMODEM_CMD_CTRL_C:

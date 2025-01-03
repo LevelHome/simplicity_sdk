@@ -11,7 +11,7 @@ metadata:
 root_path: platform/common
 source:
   - path: src/sl_core_cortexm.c
-    unless: [device_host]
+    condition: [device_cortexm]
   - path: src/sl_core_mock.c
     condition: [device_host]
 include:
@@ -23,15 +23,23 @@ config_file:
     file_id: sl_core_config
 provides:
   - name: sl_core
+  - name: sl_core_arch
+    condition: [device_cortexm]
+  - name: sl_core_arch
+    condition: [device_host]
 requires:
   - name: device
     condition: [device_cortexm]
   - name: cmsis_core
+    condition: [device_cortexm]
   - name: sl_common
   - name: code_classification
+  - name: sl_core_arch
 template_contribution:
   - name: code_classification_components
     value: core
+  - name: component_catalog
+    value: sl_core
 define:
   - name: SL_CODE_COMPONENT_CORE
     value: core

@@ -1,6 +1,6 @@
 id: "connect_app_framework_common"
 label: "Application Framework Common"
-package: "Flex"
+package: "Connect"
 category: "Connect"
 quality: "production"
 description: "Declares all the required application framework globals, initializes the Connect stack and dispatches stack callbacks calls as needed to the application components."

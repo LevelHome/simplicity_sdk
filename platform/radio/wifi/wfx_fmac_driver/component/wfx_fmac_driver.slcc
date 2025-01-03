@@ -109,3 +109,7 @@ template_contribution:
 documentation:
   docset: wifi/wf200/rtos
   document: group-f-u-l-l-m-a-c-d-r-i-v-e-r-a-p-i
+
+metadata:
+  sbom:
+    license: MSLA

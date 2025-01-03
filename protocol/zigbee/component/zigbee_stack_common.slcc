@@ -43,7 +43,11 @@ requires:
   - name: zigbee_ipc
     condition:
       - cmsis_rtos2
+  - name: zigbee_ipc
+    condition:
+      - device_series_3
   - name: byte_utilities
+  - name: zigbee_stack_code_classification
 
 recommends:
   - id: rail_lib_singleprotocol
@@ -333,10 +337,6 @@ source:
   - path: protocol/zigbee/stack/internal/src/ipc/binding-table-ipc-command-messages.c
     condition:
       - zigbee_use_ipc
-  - path: protocol/zigbee/stack/internal/src/baremetal/binding-table-baremetal-wrapper.c
-    unless:
-      - zigbee_use_ipc
-      - native_host
   - path: protocol/zigbee/stack/internal/src/ipc/zigbee_ipc_callback_event_stub.c
     condition:
       - zigbee_use_ipc
@@ -366,9 +366,6 @@ source:
       - rail_util_coex
   - path: protocol/zigbee/stack/config/sl_zigbee_configuration.c
   - path: protocol/zigbee/stack/config/sl_zigbee_configuration_access.c
-  - path: protocol/zigbee/app/em260/command-handlers-binding-generated.c
-    condition:
-      - zigbee_ncp
   - path: protocol/zigbee/stack/config/sl_zigbee_callback_stubs.c
   - path: protocol/zigbee/stack/config/sl_zigbee_endpoint_stubs.c
   - path: protocol/zigbee/stack/security/security-address-cache.c
@@ -557,9 +554,6 @@ source:
   - path: protocol/zigbee/stack/internal/src/ipc/message_ipc_command_messages.c
     condition:
       - zigbee_use_ipc
-  - path: protocol/zigbee/stack/internal/src/ipc/message_ipc_command_messages.c
-    condition:
-      - zigbee_use_ipc
   - path: protocol/zigbee/stack/internal/src/ipc/library_ipc_command_messages.c
     condition:
       - zigbee_use_ipc
@@ -584,19 +578,10 @@ source:
   - path: protocol/zigbee/stack/internal/src/ipc/sl_zigbee_duty_cycle_ipc_command_messages.c
     condition:
       - zigbee_use_ipc
-  - path: protocol/zigbee/stack/internal/src/ipc/message_ipc_callback_events.c
-    condition:
-      - zigbee_use_ipc
-  - path: protocol/zigbee/stack/internal/src/ipc/network-formation-ipc-callback-events.c
-    condition:
-      - zigbee_use_ipc
   - path: protocol/zigbee/stack/internal/src/ipc/raw-message-ipc-callback-events.c
     condition:
       - zigbee_use_ipc
   - path: protocol/zigbee/stack/internal/src/ipc/security_ipc_callback_events.c
-    condition:
-      - zigbee_use_ipc
-  - path: protocol/zigbee/stack/internal/src/ipc/stack-info-ipc-callback-events.c
     condition:
       - zigbee_use_ipc
   - path: protocol/zigbee/stack/internal/src/ipc/sl_zigbee_random_api_ipc_command_messages.c
@@ -644,6 +629,10 @@ template_contribution:
     value: APPLICATION_TYPE_ZIGBEE
     condition:
       - bootloader_app_properties
+  - name: application_type
+    value: APPLICATION_TYPE_ZIGBEE
+    condition:
+      - btl_app_properties
   # These callbacks are consumed by zigbee pro NCP command handlers.
   - name: rail_util_ieee802154_phy_select_callbacks
     value:

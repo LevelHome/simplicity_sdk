@@ -44,6 +44,8 @@
 #include "app_trx.h"
 #include "hal_common.h"
 
+#include "sl_hal_gpio.h"
+
 #include "rail_features.h"
 #include "sl_rail_util_init.h"
 
@@ -621,17 +623,24 @@ void getVdet(sl_cli_command_arg_t *args)
 
   if (status == RAIL_STATUS_INVALID_STATE) {
     responsePrintError(sl_cli_get_command_string(args, 0), RAIL_STATUS_INVALID_STATE,
-                       "VDET not initialized, measurement has not occurred since last reading/VDET was cancelled due to AuxADC contention, or VDET was aborted due to short packet.");
+                       "VDET not initialized, measurement has not occurred since last reading, VDET was aborted due to short packet, or bad AuxADC value.");
     return;
   } else if (status == RAIL_STATUS_INVALID_CALL) {
     responsePrintError(sl_cli_get_command_string(args, 0), RAIL_STATUS_INVALID_CALL,
                        "VDET is in progress, wait until VDET capture is complete and try again.");
     return;
+  } else if (status == RAIL_STATUS_INVALID_PARAMETER) {
+    responsePrintError(sl_cli_get_command_string(args, 0), RAIL_STATUS_INVALID_PARAMETER,
+                       "When using IMMEDIATE, send `enablevdet 1` before each call to `getvdet`.");
+  } else if (status == RAIL_STATUS_SUSPENDED) {
+    responsePrintStart(sl_cli_get_command_string(args, 0));
+    responsePrintEnd("Status:%s",
+                     "Blocked due to AuxADC contention");
+  } else {
+    responsePrintStart(sl_cli_get_command_string(args, 0));
+    responsePrintEnd("VDET(mV):%d",
+                     vdetMv);
   }
-  responsePrintStart(sl_cli_get_command_string(args, 0));
-  responsePrintEnd("VDET(mV):%d",
-                   vdetMv
-                   );
 #else
   responsePrintError(sl_cli_get_command_string(args, 0), 0xFF, "Feature not supported in this target.");
 #endif // RAIL_SUPPORTS_VDET
@@ -767,42 +776,21 @@ static uint32_t *prsmuxlsbSetAddress = (uint32_t*)0xB60411B0UL,
 static char pinForOFDMPRSSignal[OFDM_PRS_SIGNAL_COUNT][5];
 #endif//RAIL_SUPPORTS_OFDM_PA
 
-#if (_SILICON_LABS_32B_SERIES_2_CONFIG >= 3)
-#define RAIL_NEEDS_DOUT_DCLK_WORKAROUND 1
-#else
-#define RAIL_NEEDS_DOUT_DCLK_WORKAROUND 0
-#endif
-
-#if RAIL_NEEDS_DOUT_DCLK_WORKAROUND
-// RAIL_LIB-8179: for SERIES_2_CONFIG >= 3, the MODEM DOUT and DCLK PRS signals
+#if SLI_HAL_RAIL_NEEDS_DOUT_DCLK_WORKAROUND
+// For platform having MODEM_PRSCTRL_SYNCSENTSEL_LR_or_RXD_VALID and
+// MODEM_PRSCTRL_PRESENTSEL_LR_or_RXD fields, MODEM DOUT and DCLK PRS signals
 // only work in Tx. The same information can be recovered in Rx using MODEM
 // PRESENT and SYNCSENT PRS signals with a MODEM PRS ctrl register
 // reconfiguration. The workaround consist in routing the DOUT/DCLK and
-// PRESENT/SYNCSENT signals to the same pin and reconfiguring MODEM psr ctrl
-// register when the user request DOUT/DCLK.
+// PRESENT/SYNCSENT signals to the same pin and reconfiguring MODEM prs ctrl
+// register when the user requests DOUT/DCLK.
 // Note that it is not possible to use PRESENT/SYNCSENT to show preamble sent
 // or syncword sent while they are used for DOUT/DCLK, and vice versa.
 
 #define PRESENT_SYNCSENT_PRS_SIGNAL_AVAILABLE         '\0'
 
-#ifndef MODEM_PRSCTRL_PRESENTSEL_SHIFT
-#define MODEM_PRSCTRL_PRESENTSEL_SHIFT (0xA)
-#endif
-
-#ifndef MODEM_PRSCTRL_PRESENTSEL_LR_or_RXD
-#define MODEM_PRSCTRL_PRESENTSEL_LR_or_RXD (0x1)
-#endif
-
-#ifndef MODEM_PRSCTRL_SYNCSENTSEL_SHIFT
-#define MODEM_PRSCTRL_SYNCSENTSEL_SHIFT (0x8)
-#endif
-
-#ifndef MODEM_PRSCTRL_SYNCSENTSEL_LR_or_RXD_VALID
-#define MODEM_PRSCTRL_SYNCSENTSEL_LR_or_RXD_VALID (0x1)
-#endif
-
 // Set and clear addresses for MODEM_PRSCTRL register
-#if (_SILICON_LABS_32B_SERIES_2_CONFIG == 7)
+#if ((_SILICON_LABS_32B_SERIES_2_CONFIG == 7) || (_SILICON_LABS_32B_SERIES_2_CONFIG == 9))
 static uint32_t *prsctrlAddress = (uint32_t*)0xB8014240UL,
                 *prsctrlSetAddress = (uint32_t*)0xB8015240UL,
                 *prsctrlClrAddress = (uint32_t*)0xB8016240UL;
@@ -816,9 +804,9 @@ static uint32_t *prsctrlAddress = (uint32_t*)0xB80141ACUL,
 // these signals are already used.
 static char pinForPRESENTPRSSignal[5],
             pinForSYNCSENTPRSSignal[5];
-#endif //RAIL_NEEDS_DOUT_DCLK_WORKAROUND
+#endif //SLI_HAL_RAIL_NEEDS_DOUT_DCLK_WORKAROUND
 
-char pinForPRSChannel[SL_HAL_PRS_ASYNC_CHAN_COUNT][5];
+char pinForPRSChannel[PRS_ASYNC_CH_NUM][5];
 
 static void printDebugSignalHelp(char *cmdName,
                                  const debugSignal_t *signals,
@@ -834,7 +822,7 @@ static void printDebugSignalHelp(char *cmdName,
   RAILTEST_PRINTF("\nPins: Any pin from PA, PB, PC, and PD available for debug, but only 10 total from PA and PB, and 6 total from PC and PD\n");
   #endif
   RAILTEST_PRINTF("\nPins in Use: \n");
-  for (i = 0; i < SL_HAL_PRS_ASYNC_CHAN_COUNT; i++) {
+  for (i = 0; i < PRS_ASYNC_CH_NUM; i++) {
     if (pinForPRSChannel[i][0] != '\0') {
       if (!isFirstInstance) {
         RAILTEST_PRINTF(", ");
@@ -958,8 +946,8 @@ static RAIL_Status_t getPinAndChannelFromInput(debugPin_t *pin, char *pinArg, bo
 
   if (((pinArg[0] != 'P') && (pinArg[0] != 'p'))
       || (strlen(pinArg) >= 5)
-      || (!SL_GPIO_PORT_IS_VALID(pin->gpioPortPin.port))
-      || (!SL_GPIO_PORT_PIN_IS_VALID(pin->gpioPortPin.pin, pinNumber))
+      || (!SL_HAL_GPIO_PORT_IS_VALID(pin->gpioPortPin.port))
+      || (!SL_HAL_GPIO_PORT_PIN_IS_VALID(pin->gpioPortPin.port, pinNumber))
       ) {
     responsePrintError(pin->name, 0x50, "Not a valid pin name");
     return RAIL_STATUS_INVALID_PARAMETER;
@@ -970,7 +958,7 @@ static RAIL_Status_t getPinAndChannelFromInput(debugPin_t *pin, char *pinArg, bo
   // If disabling the pin, search for the PRS channel that is being used by that pin so that it can be disabled
   if (disablePin) {
     // Search for what PRS channel the pin uses it and remove the reference
-    for (i = 0; i < SL_HAL_PRS_ASYNC_CHAN_COUNT; i++) {
+    for (i = 0; i < PRS_ASYNC_CH_NUM; i++) {
       if (strcasecmp(pinForPRSChannel[i], pin->name) == 0) {
         pin->prsChannel = i;
         pinForPRSChannel[i][0] = '\0';
@@ -978,21 +966,19 @@ static RAIL_Status_t getPinAndChannelFromInput(debugPin_t *pin, char *pinArg, bo
       }
     }
 
-    if (i == SL_HAL_PRS_ASYNC_CHAN_COUNT) {
+    if (i == PRS_ASYNC_CH_NUM) {
       responsePrint(pin->name, "\nPin not in use");
       return RAIL_STATUS_INVALID_PARAMETER;
     }
   } else if (signal->isPrs) {
-#if RAIL_NEEDS_DOUT_DCLK_WORKAROUND
+#if SLI_HAL_RAIL_NEEDS_DOUT_DCLK_WORKAROUND
     // 2 PRS signals are routed to the same pin for DOUT/DCLK workaround. Skip
     // the following check for DOUT/DCLK PRS signals.
-    if ((signal->loc.prs.source != _PRS_ASYNC_CH_CTRL_SOURCESEL_MODEML)
-        || ((signal->loc.prs.signal != _PRS_ASYNC_CH_CTRL_SIGSEL_MODEMLDOUT)
-            && (signal->loc.prs.signal != _PRS_ASYNC_CH_CTRL_SIGSEL_MODEMLDCLK)))
+    if (signal->loc.prs.source != _PRS_ASYNC_CH_CTRL_SOURCESEL_DOUT_DCLK_WORKAROUND)
 #endif
     {
       // Check if pin is already in use (RAIL_LIB-8181)
-      for (i = 0; i < SL_HAL_PRS_ASYNC_CHAN_COUNT; i++) {
+      for (i = 0; i < PRS_ASYNC_CH_NUM; i++) {
         if (strcasecmp(pinForPRSChannel[i], pinArg) == 0) {
           responsePrint(pin->name, "\nPin already in use");
           return RAIL_STATUS_INVALID_PARAMETER;
@@ -1042,7 +1028,7 @@ static RAIL_Status_t getPinAndChannelFromInput(debugPin_t *pin, char *pinArg, bo
   return RAIL_STATUS_NO_ERROR;
 }
 
-#if RAIL_NEEDS_DOUT_DCLK_WORKAROUND
+#if SLI_HAL_RAIL_NEEDS_DOUT_DCLK_WORKAROUND
 static RAIL_Status_t checkPresentIsFree(void)
 {
   if (pinForPRESENTPRSSignal[0] != PRESENT_SYNCSENT_PRS_SIGNAL_AVAILABLE) {
@@ -1074,8 +1060,8 @@ static void setPresentPrsSignal(debugPin_t *pin, const debugSignal_t *signal)
                _PRS_ASYNC_CH_CTRL_SIGSEL_MODEMHPRESENT
                );
 
-  // Reconfigure modem PRS register according to directions given in RAIL_LIB-8179
-  *prsctrlSetAddress = (MODEM_PRSCTRL_PRESENTSEL_LR_or_RXD << MODEM_PRSCTRL_PRESENTSEL_SHIFT);
+  // Reconfigure modem PRS register
+  *prsctrlSetAddress = MODEM_PRSCTRL_PRESENTSEL_LR_or_RXD;
 }
 
 static void setSyncsentPrsSignal(debugPin_t *pin, const debugSignal_t *signal)
@@ -1093,8 +1079,8 @@ static void setSyncsentPrsSignal(debugPin_t *pin, const debugSignal_t *signal)
                _PRS_ASYNC_CH_CTRL_SIGSEL_MODEMHSYNCSENT
                );
 
-  // Reconfigure modem PRS register according to directions given in RAIL_LIB-8179.
-  *prsctrlSetAddress = (MODEM_PRSCTRL_SYNCSENTSEL_LR_or_RXD_VALID << MODEM_PRSCTRL_SYNCSENTSEL_SHIFT);
+  // Reconfigure modem PRS register
+  *prsctrlSetAddress = MODEM_PRSCTRL_SYNCSENTSEL_LR_or_RXD_VALID;
 }
 
 static void clearPresentPrsSignal(debugPin_t *pin, const debugSignal_t *signal)
@@ -1102,13 +1088,13 @@ static void clearPresentPrsSignal(debugPin_t *pin, const debugSignal_t *signal)
   // If we are disabling the pin used for present PRS signal.
   if (strcasecmp(pinForPRESENTPRSSignal, pin->name) == 0) {
     // Clear the second PRS if it has been activated, so when MODEM_PRSCTRL_PRESENTSEL_LR_or_RXD is set.
-    if ((*prsctrlAddress & (MODEM_PRSCTRL_PRESENTSEL_LR_or_RXD << MODEM_PRSCTRL_PRESENTSEL_SHIFT)) != 0U) {
+    if ((*prsctrlAddress & MODEM_PRSCTRL_PRESENTSEL_LR_or_RXD) != 0U) {
       (void) getPinAndChannelFromInput(pin, pin->name, true, signal);
       halDisablePrs(pin->prsChannel);
     }
     // Always clear table and modem prsctrl register
     pinForPRESENTPRSSignal[0] = PRESENT_SYNCSENT_PRS_SIGNAL_AVAILABLE;
-    *prsctrlClrAddress = (MODEM_PRSCTRL_PRESENTSEL_LR_or_RXD << MODEM_PRSCTRL_PRESENTSEL_SHIFT);
+    *prsctrlClrAddress = MODEM_PRSCTRL_PRESENTSEL_LR_or_RXD;
   }
 }
 
@@ -1117,17 +1103,17 @@ static void clearSyncsentPrsSignal(debugPin_t *pin, const debugSignal_t *signal)
   // If we are disabling the pin used for syncsent PRS signal.
   if (strcasecmp(pinForSYNCSENTPRSSignal, pin->name) == 0) {
     // Clear the second PRS if it has been activated, so when MODEM_PRSCTRL_SYNCSENTSEL_LR_or_RXD_VALID is set.
-    if ((*prsctrlAddress & (MODEM_PRSCTRL_SYNCSENTSEL_LR_or_RXD_VALID << MODEM_PRSCTRL_SYNCSENTSEL_SHIFT)) != 0U) {
+    if ((*prsctrlAddress & MODEM_PRSCTRL_SYNCSENTSEL_LR_or_RXD_VALID) != 0U) {
       (void) getPinAndChannelFromInput(pin, pin->name, true, signal);
       halDisablePrs(pin->prsChannel);
     }
     // Always clear table and modem prsctrl register
     pinForSYNCSENTPRSSignal[0] = PRESENT_SYNCSENT_PRS_SIGNAL_AVAILABLE;
-    *prsctrlClrAddress = (MODEM_PRSCTRL_SYNCSENTSEL_LR_or_RXD_VALID << MODEM_PRSCTRL_SYNCSENTSEL_SHIFT);
+    *prsctrlClrAddress = MODEM_PRSCTRL_SYNCSENTSEL_LR_or_RXD_VALID;
   }
 }
 
-#endif //RAIL_NEEDS_DOUT_DCLK_WORKAROUND
+#endif //SLI_HAL_RAIL_NEEDS_DOUT_DCLK_WORKAROUND
 
 void setDebugSignal(sl_cli_command_arg_t * args)
 {
@@ -1150,7 +1136,7 @@ void setDebugSignal(sl_cli_command_arg_t * args)
   uint32_t ofdmPrsSignalIndex = 0;
   #endif//RAIL_SUPPORTS_OFDM_PA
 
-  // Get the debug signals
+  // Get the debug signals from hal_efr.c::debugSignals
   signalList = halGetDebugSignals(&numSignals);
 
   // Provide information about the pins and signals supported by this chip if
@@ -1203,7 +1189,7 @@ void setDebugSignal(sl_cli_command_arg_t * args)
       return;
     }
   }
-#if RAIL_SUPPORTS_OFDM_PA || RAIL_NEEDS_DOUT_DCLK_WORKAROUND
+#if RAIL_SUPPORTS_OFDM_PA || SLI_HAL_RAIL_NEEDS_DOUT_DCLK_WORKAROUND
   if (signal != NULL) {
 #if RAIL_SUPPORTS_OFDM_PA
     prsSignal = signal->loc.prs.signal;
@@ -1216,16 +1202,16 @@ void setDebugSignal(sl_cli_command_arg_t * args)
       }
     }
 #endif //RAIL_SUPPORTS_OFDM_PA
-#if RAIL_NEEDS_DOUT_DCLK_WORKAROUND
+#if SLI_HAL_RAIL_NEEDS_DOUT_DCLK_WORKAROUND
     if (((signal->loc.prs.source == _PRS_ASYNC_CH_CTRL_SOURCESEL_MODEMH)
          && (signal->loc.prs.signal == _PRS_ASYNC_CH_CTRL_SIGSEL_MODEMHPRESENT))
-        || ((signal->loc.prs.source == _PRS_ASYNC_CH_CTRL_SOURCESEL_MODEML)
+        || ((signal->loc.prs.source == _PRS_ASYNC_CH_CTRL_SOURCESEL_DOUT_DCLK_WORKAROUND)
             && (signal->loc.prs.signal == _PRS_ASYNC_CH_CTRL_SIGSEL_MODEMLDOUT))) {
       status = checkPresentIsFree();
     }
     if (((signal->loc.prs.source == _PRS_ASYNC_CH_CTRL_SOURCESEL_MODEMH)
          && (signal->loc.prs.signal == _PRS_ASYNC_CH_CTRL_SIGSEL_MODEMHSYNCSENT))
-        || ((signal->loc.prs.source == _PRS_ASYNC_CH_CTRL_SOURCESEL_MODEML)
+        || ((signal->loc.prs.source == _PRS_ASYNC_CH_CTRL_SOURCESEL_DOUT_DCLK_WORKAROUND)
             && (signal->loc.prs.signal == _PRS_ASYNC_CH_CTRL_SIGSEL_MODEMLDCLK))) {
       status = checkSyncsentIsFree();
     }
@@ -1233,9 +1219,9 @@ void setDebugSignal(sl_cli_command_arg_t * args)
       responsePrintError(signal->name, 0x50, "No more MODEM PRS channels available, please turn off DOUT, DCLK, SYNCSENT or PRESENT before setting this one");
       return;
     }
-#endif //RAIL_NEEDS_DOUT_DCLK_WORKAROUND
+#endif //SLI_HAL_RAIL_NEEDS_DOUT_DCLK_WORKAROUND
   }
-#endif  //RAIL_SUPPORTS_OFDM_PA || RAIL_NEEDS_DOUT_DCLK_WORKAROUND
+#endif  //RAIL_SUPPORTS_OFDM_PA || SLI_HAL_RAIL_NEEDS_DOUT_DCLK_WORKAROUND
 
   // Determine the pin, port, and prsChannel from the input arguments
   status = getPinAndChannelFromInput(pin, pinArg, disablePin, signal);
@@ -1260,10 +1246,10 @@ void setDebugSignal(sl_cli_command_arg_t * args)
 #endif//RAIL_SUPPORTS_OFDM_PA
     // Turn off the PRS output on this pin's channel
     halDisablePrs(pin->prsChannel);
-#if RAIL_NEEDS_DOUT_DCLK_WORKAROUND
+#if SLI_HAL_RAIL_NEEDS_DOUT_DCLK_WORKAROUND
     clearPresentPrsSignal(pin, signal);
     clearSyncsentPrsSignal(pin, signal);
-#endif //RAIL_NEEDS_DOUT_DCLK_WORKAROUND
+#endif //SLI_HAL_RAIL_NEEDS_DOUT_DCLK_WORKAROUND
     // @TODO: Turn off the RAIL debug event for this pin
     responsePrint(sl_cli_get_command_string(args, 0), "Pin:%s,Signal:OFF", pin->name);
 
@@ -1285,7 +1271,11 @@ void setDebugSignal(sl_cli_command_arg_t * args)
     halEnablePrs(pin->prsChannel,
                  pin->prsLocation,
                  pin->gpioPortPin,
+#if SLI_HAL_RAIL_NEEDS_DOUT_DCLK_WORKAROUND
+                 (signal->loc.prs.source == _PRS_ASYNC_CH_CTRL_SOURCESEL_DOUT_DCLK_WORKAROUND) ? _PRS_ASYNC_CH_CTRL_SOURCESEL_MODEML : signal->loc.prs.source,
+#else
                  signal->loc.prs.source,
+#endif
 #if RAIL_SUPPORTS_OFDM_PA
                  prsSignal
 #else//RAIL_SUPPORTS_OFDM_PA
@@ -1293,7 +1283,7 @@ void setDebugSignal(sl_cli_command_arg_t * args)
 #endif//RAIL_SUPPORTS_OFDM_PA
                  );
 
-#if RAIL_NEEDS_DOUT_DCLK_WORKAROUND
+#if SLI_HAL_RAIL_NEEDS_DOUT_DCLK_WORKAROUND
 // Fill the pin tables when requested PRS is DOUT, DCLK, PRESENT or SYNCSENT.
 // Set PRESENT/SYNCSENT as the second PRS only when the requested one is
 // DOUT/DCLK.
@@ -1301,7 +1291,7 @@ void setDebugSignal(sl_cli_command_arg_t * args)
          && (signal->loc.prs.signal == _PRS_ASYNC_CH_CTRL_SIGSEL_MODEMHPRESENT))) {
       strcpy(pinForPRESENTPRSSignal, pin->name);
     }
-    if (((signal->loc.prs.source == _PRS_ASYNC_CH_CTRL_SOURCESEL_MODEML)
+    if (((signal->loc.prs.source == _PRS_ASYNC_CH_CTRL_SOURCESEL_DOUT_DCLK_WORKAROUND)
          && (signal->loc.prs.signal == _PRS_ASYNC_CH_CTRL_SIGSEL_MODEMLDOUT))) {
       strcpy(pinForPRESENTPRSSignal, pin->name);
       setPresentPrsSignal(pin, signal);
@@ -1310,12 +1300,12 @@ void setDebugSignal(sl_cli_command_arg_t * args)
          && (signal->loc.prs.signal == _PRS_ASYNC_CH_CTRL_SIGSEL_MODEMHSYNCSENT))) {
       strcpy(pinForSYNCSENTPRSSignal, pin->name);
     }
-    if (((signal->loc.prs.source == _PRS_ASYNC_CH_CTRL_SOURCESEL_MODEML)
+    if (((signal->loc.prs.source == _PRS_ASYNC_CH_CTRL_SOURCESEL_DOUT_DCLK_WORKAROUND)
          && (signal->loc.prs.signal == _PRS_ASYNC_CH_CTRL_SIGSEL_MODEMLDCLK))) {
       strcpy(pinForSYNCSENTPRSSignal, pin->name);
       setSyncsentPrsSignal(pin, signal);
     }
-#endif //RAIL_NEEDS_DOUT_DCLK_WORKAROUND
+#endif //SLI_HAL_RAIL_NEEDS_DOUT_DCLK_WORKAROUND
   } else {
     // Turn on the RAIL debug event for this signal
   }

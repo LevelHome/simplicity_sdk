@@ -32,54 +32,15 @@
  * @addtogroup Decompressor Decompressor
  * @details
  * @{
- * @addtogroup LzMADecompressor LZMA Decompressor
- * @brief LZMA decompressor
- * LZMA is a compression algorithm that is used in the Gecko Bootloader for compressing
- * upgrade images. It uses dictionary compression algorithm, a variant of LZ77
+ * @addtogroup LzmaDecompressor LZMA Decompressor
+ * @brief LZMA is a lossless data compression algorithm.
+ * LZMA uses an enhanced LZ77 algorithm with large dictionaries, generating a stream of literals and references.
+ * This stream is then optimally encoded bit by bit using a range encoder with complex probability models.
+ * @ref CustomTags for more information.
  * @details
  * @{
  */
-
-/***************************************************************************//**
- * Decompress LZMA data and flash.
- * @param ctx          Parser context
- * @param callbacks    Callbacks to call with parsed data
- * @param finish       Indicates if decompression is complete
- * @return Error code
- ******************************************************************************/
-int32_t decompressAndFlash(ParserContext_t                   *ctx,
-                           const BootloaderParserCallbacks_t *callbacks,
-                           bool                              finish);
-
-/***************************************************************************//**
- * Decompress LZMA compressed data.
- * @param dstBuffer          Pointer to the destination buffer
- * @param dstBufferLen       Size of the destination buffer
- * @param srcBuffer          Pointer to the source buffer
- * @param srcBufferLen       Size of the source buffer
- * @param status             LZMA status code.
- * @return Error code
- ******************************************************************************/
-int32_t decompressData(uint8_t          *dstBuffer,
-                       size_t           *dstBufferLen,
-                       uint8_t          *srcBuffer,
-                       size_t           *srcBufferLen,
-                       ELzmaStatus      *status);
-
-/***************************************************************************//**
- * LZMA Allocator.
- * @param p                  Pointer to ISzAllocPtr structure instance.
- * @param size               Size of the dictionary buffer
- ******************************************************************************/
-void *lzmaAlloc(ISzAllocPtr p, size_t size);
-
-/***************************************************************************//**
- * LZMA Allocator.
- * @param p                  Pointer to ISzAllocPtr structure instance.
- * @param address            Pointer to ISzAlloc structure
- ******************************************************************************/
-void lzmaFree(ISzAllocPtr p, void *address);
-/** @} addtogroup LzMADecompressor */
+/** @} addtogroup LzmaDecompressor */
 /** @} addtogroup Decompressor */
 /** @} addtogroup Components */
 

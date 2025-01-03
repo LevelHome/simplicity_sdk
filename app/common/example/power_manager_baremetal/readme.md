@@ -16,3 +16,5 @@ Once a mode is selected, the device will remain in that mode until the following
  * EM3: a button is pushed
  * EM4: the device resets 
 
+#### Note:
+>DCDC Boost devices will not enter EM4 mode. 

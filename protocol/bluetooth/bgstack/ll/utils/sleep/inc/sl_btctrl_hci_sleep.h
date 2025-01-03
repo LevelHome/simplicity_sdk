@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <em_common.h>
+#include <sl_common.h>
 #include <sl_status.h>
 
 void sl_btctrl_hci_sleep_init(void);

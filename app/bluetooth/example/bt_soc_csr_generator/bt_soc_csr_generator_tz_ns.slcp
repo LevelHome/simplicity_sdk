@@ -20,14 +20,11 @@ filter:
     value: ["Advanced"]
 
 component:
+  - id: bluetooth_stack
   - id: bootloader_interface
   - id: apploader
   - id: app_assert
   - id: app_log
-  - id: iostream_usart
-    instance:
-      - vcom
-  - id: mpu
   - id: nvm3_lib
   - id: nvm3_default
   - id: trustzone_nonsecure
@@ -47,6 +44,7 @@ component:
   - id: clock_manager
   - id: device_init
   - id: sleeptimer
+  - id: sl_common
 
 source:
   - path: app.c
@@ -78,20 +76,18 @@ import:
 
 configuration:
   - name: SL_STACK_SIZE
+    value: "4000"
+    condition: [device_sdid_205]  # xG22
+  - name: SL_STACK_SIZE
     value: "6200"
-  - name: APP_LOG_LEVEL
-    value: "APP_LOG_LEVEL_INFO"
-  - name: CSR_GENERATOR_NVM3_REGION
-    value: "0x40000"
-  - name: CSR_GENERATOR_CSR_RAM_ADDRESS
-    value: "0x20000000"
-    condition:
-      - "device_generic_family_efr32xg22"
+    unless: [device_sdid_205]  # not xG22
   - name: CSR_GENERATOR_KEY_LOCATION
     value: "PSA_KEY_LOCATION_LOCAL_STORAGE"  # TrustZone
   - name: SL_BOARD_ENABLE_VCOM
     value: "1"
   - name: SL_IOSTREAM_USART_VCOM_RESTRICT_ENERGY_MODE_TO_ALLOW_RECEPTION
+    value: "0"
+  - name: SL_IOSTREAM_EUSART_VCOM_RESTRICT_ENERGY_MODE_TO_ALLOW_RECEPTION
     value: "0"
   - name: SL_PSA_KEY_USER_SLOT_COUNT
     value: "1"
@@ -111,12 +107,25 @@ template_contribution:
     unless: [device_sdid_200, device_sdid_205]
 
   - name: memory_flash_size
+    value: 0x54000  # 336k
+    condition: [device_sdid_205]  # xG22
+  - name: memory_flash_size
     value: 0x64000  # 400k
+    unless: [device_sdid_205]  # not xG22
 
   - name: memory_ram_start
+    value: 0x20002000
+    condition: [device_sdid_205]  # xG22
+  - name: memory_ram_start
     value: 0x20003000
+    unless: [device_sdid_205]  # not xG22
+
+  - name: memory_ram_size
+    value: 0x6000  # 24k
+    condition: [device_sdid_205]  # xG22
   - name: memory_ram_size
     value: 0x8000  # 32k
+    unless: [device_sdid_205]  # not xG22
 
 requires:
   - name: device_supports_bluetooth
@@ -129,8 +138,9 @@ conflicts:
   - name: device_security_vault  # For secure devices use the other slcp variant
 
 tag:
-  - hardware:device:flash:576
-  - hardware:device:ram:64
+  - hardware:rf:band:2400
+  - hardware:device:flash:512
+  - hardware:device:ram:32
   - companion:secure_app  # Needs a companion app and cannot be built alone
 
 ui_hints:

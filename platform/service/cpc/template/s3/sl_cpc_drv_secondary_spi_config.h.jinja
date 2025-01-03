@@ -1,8 +1,7 @@
 #ifndef SL_CPC_DRV_SPI_SECONDARY_CONFIG_H
 #define SL_CPC_DRV_SPI_SECONDARY_CONFIG_H
 
-{% for instance in cpc_instance_name %}
-{% for periph in cpc_periph_type %}
+{% for instance in cpc_spi_instance_name %}
 #include "sl_cpc_drv_secondary_spi_eusart_{{ instance }}_config.h"
 
 #define SL_CPC_DRV_SPI_IS_EUSART
@@ -41,7 +40,6 @@
 
 #define SL_CPC_DRV_SPI_CS_PORT                      SL_CPC_DRV_SPI_{{ instance | upper }}_CS_PORT
 #define SL_CPC_DRV_SPI_CS_PIN                       SL_CPC_DRV_SPI_{{ instance | upper }}_CS_PIN
-{% endfor %}
 {% endfor %}
 
 #endif

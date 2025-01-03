@@ -13,7 +13,7 @@ provides:
   - name: icm20648_driver
 requires:
   - name: clock_manager_runtime
-  - name: emlib_gpio
+  - name: gpio
   - name: emlib_usart
   - name: sleeptimer
   - name: status

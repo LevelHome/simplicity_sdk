@@ -45,8 +45,10 @@
 #include "iot_test_common_io_internal.h"
 #include "iot_test_common_io_config.h"
 
-#include "em_core.h"
+#include "sl_core.h"
 #include "em_device.h"
+
+#include "sl_gpio.h"
 
 #include "sl_power_manager.h"
 
@@ -64,7 +66,6 @@
 #else
 #define HFXO_IRQ_NUMBER  HFXO0_IRQn
 #endif
-
 
 #if (IOT_TEST_COMMON_IO_ADC_SUPPORTED >= 1)
 void SET_TEST_IOT_ADC_CONFIG(int testSet)
@@ -90,8 +91,8 @@ void SET_TEST_IOT_ADC_CONFIG(int testSet)
   uctestIotAdcChListLen = 2;
 
   /* setup pins as input pull-up */
-  GPIO_PinModeSet(gpioPortB, 1, gpioModePushPull, 1);
-  GPIO_PinModeSet(gpioPortB, 2, gpioModePushPull, 1);
+  sl_gpio_set_pin_mode(PB1, SL_GPIO_MODE_PUSH_PULL, 1);
+  sl_gpio_set_pin_mode(PB2, SL_GPIO_MODE_PUSH_PULL, 1);
 
   /* wait until the GPIO pin is set to high */
   vTaskDelay(10);
@@ -136,7 +137,7 @@ void SET_TEST_IOT_FLASH_CONFIG(int testSet)
   ltestIotFlashInstance = testSet;
 
   /* set flash test address */
-  ultestIotFlashStartOffset = testSet ? 0 : FLASH_SIZE-2*FLASH_PAGE_SIZE;
+  ultestIotFlashStartOffset = testSet ? 0 : FLASH_SIZE - 2 * FLASH_PAGE_SIZE;
 }
 #endif
 

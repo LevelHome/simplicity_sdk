@@ -247,7 +247,7 @@ sl_coulomb_counter_output_mask_t sl_coulomb_counter_outputs_available(void)
   sl_coulomb_counter_output_mask_t available_outputs = 0x0;
 
   for (unsigned int mask = 0x1; mask <= SL_COULOMB_COUNTER_OUTPUT_ALL; mask <<= 1) {
-    sli_coulomb_counter_output_t *output = sli_coulomb_counter_hal_get_output((sl_coulomb_counter_output_mask_t)mask);
+    const sli_coulomb_counter_output_t *output = sli_coulomb_counter_hal_get_output((sl_coulomb_counter_output_mask_t)mask);
     if (output) {
       available_outputs |= mask;
     }
@@ -321,7 +321,6 @@ static sl_status_t sl_coulomb_counter_calibrate_output(sli_coulomb_counter_outpu
       }
 
       return SL_STATUS_OK;
-      break;
 
     case SLI_COULOMB_COUNTER_CALIBRATION_EM0_SETTINGS_REQUESTED:
     case SLI_COULOMB_COUNTER_CALIBRATION_EM2_SETTINGS_REQUESTED:
@@ -336,7 +335,6 @@ static sl_status_t sl_coulomb_counter_calibrate_output(sli_coulomb_counter_outpu
         output->calibration_state = SLI_COULOMB_COUNTER_CALIBRATION_NREQ_LOW_STARTED;
       }
       return status;
-      break;
 
     case SLI_COULOMB_COUNTER_CALIBRATION_NREQ_LOW_STARTED:
       status = sli_coulomb_counter_read_result(&ccc);
@@ -356,13 +354,11 @@ static sl_status_t sl_coulomb_counter_calibrate_output(sli_coulomb_counter_outpu
       }
 #endif
 
-      status = sli_coulomb_counter_hal_cal_start(output, handle.cal_nreq_low, CCL_LEVEL_LOW);
+      status = sli_coulomb_counter_hal_cal_start(output, (int8_t) handle.cal_nreq_low, CCL_LEVEL_LOW);
       if (status == SL_STATUS_OK) {
         output->calibration_state = SLI_COULOMB_COUNTER_CALIBRATION_CAL_LOW_STARTED;
       }
       return status;
-
-      break;
 
     case SLI_COULOMB_COUNTER_CALIBRATION_CAL_LOW_STARTED:
       status = sli_coulomb_counter_read_result(&ccc);
@@ -380,13 +376,12 @@ static sl_status_t sl_coulomb_counter_calibrate_output(sli_coulomb_counter_outpu
         handle.cal_nreq_high = 2;
       }
 #endif
-      status = sli_coulomb_counter_hal_cal_start(output, handle.cal_nreq_high, CCL_LEVEL_HIGH);
+      status = sli_coulomb_counter_hal_cal_start(output, (int8_t)handle.cal_nreq_high, CCL_LEVEL_HIGH);
       if (status == SL_STATUS_OK) {
         output->calibration_state = SLI_COULOMB_COUNTER_CALIBRATION_CAL_HIGH_STARTED;
       }
 
       return status;
-      break;
 
     case SLI_COULOMB_COUNTER_CALIBRATION_CAL_HIGH_STARTED:
       status = sli_coulomb_counter_read_result(&ccc);
@@ -396,7 +391,7 @@ static sl_status_t sl_coulomb_counter_calibrate_output(sli_coulomb_counter_outpu
 
       handle.cal_count_high = ccc;
 
-      /* Compute Charge-Per-Pulse (CPP) */
+      // Compute Charge-Per-Pulse (CPP)
       output->cpp = sli_coulomb_counter_hal_compute_cpp(&handle);
 #if SL_COULOMB_COUNTER_DRIVER_PERIPHERAL == SL_COULOMB_COUNTER_DRIVER_PERIPHERAL_EFP
       if (sli_coulomb_counter_hal_output_supports_em2(output)
@@ -408,15 +403,12 @@ static sl_status_t sl_coulomb_counter_calibrate_output(sli_coulomb_counter_outpu
       output->calibration_state = SLI_COULOMB_COUNTER_CALIBRATION_COMPLETE;
 
       return status;
-      break;
 
     case SLI_COULOMB_COUNTER_CALIBRATION_COMPLETE:
       return SL_STATUS_OK;
-      break;
 
     default:
       return SL_STATUS_FAIL;
-      break;
   }
 }
 
@@ -523,7 +515,7 @@ sl_coulomb_counter_calibration_status_t sl_coulomb_counter_calibrate_init(sl_cou
  ******************************************************************************/
 sl_coulomb_counter_calibration_status_t sl_coulomb_counter_calibrate_wait(void)
 {
-  sli_coulomb_counter_output_t *output;
+  const sli_coulomb_counter_output_t *output;
 
   output = sli_coulomb_counter_get_next_output_being_calibrated();
   if (output == NULL) {

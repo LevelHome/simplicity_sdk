@@ -77,7 +77,7 @@ typedef struct {
 
 // TEMPDRV use low-level drivers from platform/peripheral.
 #if defined(_SILICON_LABS_32B_SERIES_3)
-#define EMU_GET_INTERRUPTS   sl_hal_emu_get_interrupts
+#define EMU_GET_INTERRUPTS   sl_hal_emu_get_pending_interrupts
 #define EMU_INT_CLEAR        sl_hal_emu_clear_interrupts
 #define EMU_INT_ENABLE       sl_hal_emu_enable_interrupts
 #define EMU_INT_DISABLE      sl_hal_emu_disable_interrupts

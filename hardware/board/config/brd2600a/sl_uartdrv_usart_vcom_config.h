@@ -93,11 +93,11 @@
 #define SL_UARTDRV_USART_VCOM_PERIPHERAL_NO      0
 
 // USART0 TX on PA09
-#define SL_UARTDRV_USART_VCOM_TX_PORT            gpioPortA
+#define SL_UARTDRV_USART_VCOM_TX_PORT            SL_GPIO_PORT_A
 #define SL_UARTDRV_USART_VCOM_TX_PIN             9
 
 // USART0 RX on PA10
-#define SL_UARTDRV_USART_VCOM_RX_PORT            gpioPortA
+#define SL_UARTDRV_USART_VCOM_RX_PORT            SL_GPIO_PORT_A
 #define SL_UARTDRV_USART_VCOM_RX_PIN             10
 
 

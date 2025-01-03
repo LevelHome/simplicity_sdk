@@ -66,19 +66,18 @@ ras_control_point_parse_result cs_ras_parse_control_point_message(uint8_t *messa
     break;
 
     case CS_RAS_OPCODE_RANGING_DATA_READY_INDICATION:
-    {
       if (message_len != sizeof(ras_ranging_data_ready_indication_t)) {
         app_log_warning(RAS_PREFIX "Message length mismatch, discarding" APP_LOG_NL);
         result.opcode = CS_RAS_OPCODE_INVALID;
         return result;
       }
-      ras_ranging_data_ready_indication_t cmd = *((ras_ranging_data_ready_indication_t *)(message));
       app_log_info(RAS_PREFIX "RAS Ranging Data Ready message received; index='%u' num_se='%u' se_idx='%u' size='%u'" APP_LOG_NL,
-                   cmd.procedure_index, cmd.number_of_subevents, cmd.subevent_index, cmd.subevent_index_data_size);
+                   ((ras_ranging_data_ready_indication_t *)message)->procedure_index,
+                   ((ras_ranging_data_ready_indication_t *)message)->number_of_subevents,
+                   ((ras_ranging_data_ready_indication_t *)message)->subevent_index,
+                   ((ras_ranging_data_ready_indication_t *)message)->subevent_index_data_size);
       result.opcode = CS_RAS_OPCODE_RANGING_DATA_READY_INDICATION;
       return result;
-    }
-    break;
 
     default:
       app_log_warning(RAS_PREFIX "Unknown RAS Control Point message received" APP_LOG_NL);

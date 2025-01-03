@@ -79,9 +79,13 @@ static sl_status_t send_core_error(esl_lib_status_t     lib_status,
 static sl_status_t send_tag_found(uint8_t *addr,
                                   uint8_t address_type,
                                   int8_t  rssi);
+static sl_status_t send_connection_mode_event(void);
 static sl_status_t send_scan_status(void);
+static sl_status_t set_connection_mode(esl_lib_connection_mode_t requested_mode,
+                                       esl_lib_status_t *lib_status);
 static bool find_service_in_advertisement(uint8_t *data, uint8_t len);
 static void esl_lib_core_internal_reset(void);
+static void send_shutdown_ready_event(void);
 
 // -----------------------------------------------------------------------------
 // Private variables
@@ -96,9 +100,13 @@ static struct argparse_descriptor_s arg_descriptor[] =
   { "-device", "" },                // empty string as option allows anything
   { "-baud", "115200,921600" },
   { "-handshake", "no,ctsrts,hw" }, // more options can be given where it's needed
-  { "-secure", NULL },               // enable encryption for NCP communication
+  { "-secure", NULL },              // enable encryption for NCP communication
   { NULL, NULL }
 };
+
+static bd_addr identity_address = { { 0 } };
+// Set identity address type invalid by default to be able to detect if uninitialized
+static uint8_t identity_address_type = (sl_bt_gap_static_address | 0x80);
 
 // -----------------------------------------------------------------------------
 // Public functions
@@ -155,13 +163,12 @@ void esl_lib_deinit(void)
   (void)sl_bt_scanner_stop();
 
   esl_lib_core_internal_reset();
+  esl_lib_auto_initiator_deinit();
 
   esl_lib_memory_free(ap_state);
 
-  // Log memory status
-  esl_lib_memory_log();
-
   ncp_host_deinit();
+  send_shutdown_ready_event();
 }
 
 sl_status_t esl_lib_core_add_command(esl_lib_command_list_cmd_t *cmd)
@@ -171,6 +178,7 @@ sl_status_t esl_lib_core_add_command(esl_lib_command_list_cmd_t *cmd)
 
 void sl_bt_on_event(sl_bt_msg_t *evt)
 {
+  // Do not change the order of processing unless there is a good reason to do so.
   esl_lib_pawr_on_bt_event(evt);
   esl_lib_image_transfer_on_bt_event(evt);
   esl_lib_connection_on_bt_event(evt);
@@ -187,6 +195,88 @@ void esl_lib_core_connection_complete()
   }
 }
 
+sl_status_t esl_lib_core_get_identity_address(bd_addr *address, uint8_t *type)
+{
+  sl_status_t sc = SL_STATUS_INITIALIZATION;
+
+  if (address == NULL || type == NULL) {
+    return SL_STATUS_NULL_POINTER;
+  } else if (identity_address_type <= sl_bt_gap_static_address) {
+    *type = identity_address_type;
+    memcpy(address, &identity_address, sizeof(bd_addr));
+    sc = SL_STATUS_OK;
+  }
+
+  return sc;
+}
+
+sl_status_t esl_lib_core_suspend_scan(uint16_t init_interval, uint16_t init_window)
+{
+  sl_status_t sc = SL_STATUS_OK;
+  // There's room to speed up the suspend/resume processes by creating a custom
+  // NCP for them and doing the stack calls in NCP, not via the much slower UART
+  if (ap_state->scanner_suspended == ESL_LIB_FALSE
+      && ap_state->scan.enabled != ESL_LIB_FALSE) {
+    if (init_interval == 0) {
+      // Take previous user settings for the otherwise implausible 0 value
+      init_interval = ap_state->scan.parameters.interval;
+    }
+
+    if (init_window == 0) {
+      // Set it 100% scanning for the otherwise implausible 0 value
+      init_window = init_interval;
+    }
+
+    esl_lib_log_core_debug("Suspend scanning for connection initiation with parameters: I/W %u/%u" APP_LOG_NL,
+                           init_interval,
+                           init_window);
+    ap_state->scanner_suspended = ap_state->scan.enabled;
+    // Try stop scanning, ignore result
+    (void)sl_bt_scanner_stop();
+
+    // Set the requested scan interval and window values - basically, it's used
+    // to initiate a subsequent connection, hence the variable naming.
+    sc = sl_bt_scanner_set_parameters(sl_bt_scanner_scan_mode_passive,
+                                      init_interval,
+                                      init_window);
+  }
+
+  return sc;
+}
+
+sl_status_t esl_lib_resume_scanning()
+{
+  sl_status_t sc = SL_STATUS_OK;
+
+  if (ap_state->scanner_suspended != ESL_LIB_FALSE) {
+    // Try resuming only if it is currently suspended
+    esl_lib_log_core_debug("Resume scanner to last state" APP_LOG_NL);
+    // There's room to speed up the suspend/resume processes by creating a
+    // custom NCP for them and doing the stack calls in NCP (not via UART!)
+    if (ap_state->scan.enabled == ESL_LIB_TRUE) {
+      sc = sl_bt_scanner_set_parameters(ap_state->scan.parameters.mode,
+                                        ap_state->scan.parameters.interval,
+                                        ap_state->scan.parameters.window);
+      if (sc == SL_STATUS_OK) {
+        sc = sl_bt_scanner_start(ap_state->scan.parameters.scanning_phy,
+                                 ap_state->scan.parameters.discover_mode);
+        esl_lib_log_core_debug("Scanner is enabled again with parameters: I/W %u/%u" APP_LOG_NL,
+                               ap_state->scan.parameters.interval,
+                               ap_state->scan.parameters.window);
+      }
+
+      if (sc != SL_STATUS_OK ) {
+        // If resuming didn't succeed, then the safest thing to do is to report status change to the applicartion
+        ap_state->scan.enabled = ESL_LIB_FALSE;
+        send_scan_status();
+      }
+    }
+    // Resume should be executed regardless of the result
+    ap_state->scanner_suspended = ESL_LIB_FALSE;
+  }
+  return sc;
+}
+
 // -----------------------------------------------------------------------------
 // Private functions
 
@@ -196,8 +286,6 @@ static void esl_lib_core_on_bt_event(sl_bt_msg_t *evt)
   esl_lib_status_t lib_status         = ESL_LIB_STATUS_NO_ERROR;
   bool             lib_critical_error = false;
   esl_lib_evt_t    *new_event         = NULL;
-  bd_addr          address;
-  uint8_t          address_type;
 
   switch (SL_BT_MSG_ID(evt->header)) {
     // -------------------------------
@@ -212,15 +300,15 @@ static void esl_lib_core_on_bt_event(sl_bt_msg_t *evt)
       ap_state->core_state       = ESL_LIB_CORE_STATE_IDLE;
       lib_status                 = ESL_LIB_STATUS_INIT_FAILED;
       // Extract unique ID from BT Address.
-      sc = sl_bt_system_get_identity_address(&address, &address_type);
+      sc = sl_bt_gap_get_identity_address(&identity_address, &identity_address_type);
       if (sc != SL_STATUS_OK) {
         lib_critical_error = true;
       }
 
       esl_lib_log_core_info("Bluetooth " ESL_LIB_LOG_ADDR_FORMAT APP_LOG_NL,
-                            address_type,
-                            address_type ? "random" : "public",
-                            ESL_LIB_LOG_BD_ADDR(address));
+                            identity_address_type,
+                            identity_address_type ? "random" : "public",
+                            ESL_LIB_LOG_BD_ADDR(identity_address));
 
       // Configure Security Manager to default
       sc = sl_bt_sm_configure(0,
@@ -267,8 +355,9 @@ static void esl_lib_core_on_bt_event(sl_bt_msg_t *evt)
         new_event->evt_code = ESL_LIB_EVT_SYSTEM_BOOT;
         new_event->data.evt_boot.status = SL_STATUS_OK;
         memcpy((void *)&new_event->data.evt_boot.address,
-               (void *)&address,
+               (void *)&identity_address,
                sizeof(bd_addr));
+        new_event->data.evt_boot.address.address_type = identity_address_type;
         sc = esl_lib_event_list_push_back(new_event);
       }
       if (sc != SL_STATUS_OK) {
@@ -277,11 +366,29 @@ static void esl_lib_core_on_bt_event(sl_bt_msg_t *evt)
       } else {
         lib_status = ESL_LIB_STATUS_NO_ERROR;
       }
+      send_connection_mode_event();
       break;
     case sl_bt_evt_scanner_legacy_advertisement_report_id:
       if (find_service_in_advertisement(evt->data.evt_scanner_legacy_advertisement_report.data.data,
                                         evt->data.evt_scanner_legacy_advertisement_report.data.len)) {
-        esl_lib_log_core_debug("Tag found with " ESL_LIB_LOG_ADDR_FORMAT ", RSSI = %d" APP_LOG_NL,
+        esl_lib_core_state_t core_status;
+        bool ll_list_busy;
+        uint8_t connections;
+
+        (void)esl_lib_get_connection_mode_and_status(&core_status, &connections, &ll_list_busy);
+        if (ll_list_busy && core_status == ESL_LIB_CORE_STATE_CONNECTING) {
+          // Our internal acceptance list is practically never busy, unlike its LL counterpart, but with hundreds
+          // to thousands of nearby advertisers it's still better to fill our list gradually, i.e. while the LL is
+          // not busy, to initiate a connection to one of the devices on its filter acceptance list.
+          // This helps reduce the otherwise heavy load on the library interface and avoids initial connection
+          // losses, especially when the AP is cold started.
+          esl_lib_log_core_debug("Defer reporting ESL at " ESL_LIB_LOG_ADDR_FORMAT ", RSSI = %d due to controller busy connecting. Connections: %u." APP_LOG_NL,
+                                 ESL_LIB_LOG_ADDR(evt->data.evt_scanner_legacy_advertisement_report),
+                                 evt->data.evt_scanner_legacy_advertisement_report.rssi,
+                                 connections);
+          break; // exit case immediately, do not send report while connecting
+        }
+        esl_lib_log_core_debug("ESL found at " ESL_LIB_LOG_ADDR_FORMAT ", RSSI = %d" APP_LOG_NL,
                                ESL_LIB_LOG_ADDR(evt->data.evt_scanner_legacy_advertisement_report),
                                evt->data.evt_scanner_legacy_advertisement_report.rssi);
         (void)send_tag_found(evt->data.evt_scanner_legacy_advertisement_report.address.addr,
@@ -291,11 +398,54 @@ static void esl_lib_core_on_bt_event(sl_bt_msg_t *evt)
       break;
     case sl_bt_evt_system_resource_exhausted_id:
       lib_status = ESL_LIB_STATUS_RESOURCE_EXCEEDED;
-      esl_lib_log_core_warning("Resource exhausted" APP_LOG_NL);
+      esl_lib_log_core_error("BLE stack resource exhausted, data may have been lost!"
+                             " [discarded: %u, buf: %u, heap: %u, msg: %u]" APP_LOG_NL,
+                             evt->data.evt_system_resource_exhausted.num_buffers_discarded,
+                             evt->data.evt_system_resource_exhausted.num_buffer_allocation_failures,
+                             evt->data.evt_system_resource_exhausted.num_heap_allocation_failures,
+                             evt->data.evt_system_resource_exhausted.num_message_allocation_failures);
       (void)send_core_error(lib_status,
                             SL_STATUS_ALLOCATION_FAILED,
                             ap_state->core_state);
       break;
+    case sl_bt_evt_system_error_id: {
+      uint32_t data = 0;
+      lib_status = ESL_LIB_STATUS_SYSTEM_ERROR;
+
+      // Get a maximum of 4 bytes from the available data. If there's any.
+      switch (evt->data.evt_system_error.data.len) {
+        default:
+        /* FALLTHROUGH */
+        case 4:
+          data |= (evt->data.evt_system_error.data.data[3] << 24);
+        /* FALLTHROUGH */
+        case 3:
+          data |= (evt->data.evt_system_error.data.data[2] << 16);
+        /* FALLTHROUGH */
+        case 2:
+          data |= (evt->data.evt_system_error.data.data[1] << 8);
+        /* FALLTHROUGH */
+        case 1:
+          data |= evt->data.evt_system_error.data.data[0];
+        /* FALLTHROUGH */
+        case 0:
+          break;
+      }
+      // Swap DATA endianness for better readability in error message (can be read as BGAPI MSG HDR data if complete)
+      data = ((data >> 24) & 0xff)        // move byte 3 to byte 0
+             | ((data << 8)  & 0xff0000)  // move byte 1 to byte 2
+             | ((data >> 8)  & 0xff00)    // move byte 2 to byte 1
+             | ((data << 24) & 0xff000000); // byte 0 to byte 3
+
+      if (evt->data.evt_system_error.reason == SL_STATUS_COMMAND_INCOMPLETE) {
+        // Reduce the severity level for incomplete commands (only!)
+        lib_critical_error = false;
+      } else {
+        lib_critical_error = true;
+      }
+      esl_lib_log_core_error("System error occured, sc = 0x%04x, data=0x%08x" APP_LOG_NL, evt->data.evt_system_error.reason, data);
+    } break;
+
     default:
       break;
   }
@@ -394,6 +544,7 @@ static sl_status_t ap_init(esl_lib_ap_state_t **handle_out)
     return SL_STATUS_ALLOCATION_FAILED;
   }
   // Configure default scanning parameters
+  handle->scanner_suspended             = ESL_LIB_FALSE;
   handle->scan.enabled                  = ESL_LIB_FALSE;
   handle->scan.configured               = ESL_LIB_FALSE;
   handle->scan.parameters.scanning_phy  = sl_bt_gap_phy_1m;
@@ -412,6 +563,45 @@ static sl_status_t ap_init(esl_lib_ap_state_t **handle_out)
   return sc;
 }
 
+static sl_status_t send_connection_mode_event(void)
+{
+  sl_status_t   sc;
+  esl_lib_evt_t *lib_evt;
+  esl_lib_core_state_t core_state;
+  esl_lib_connection_mode_t mode;
+  uint8_t connections;
+
+  mode = esl_lib_get_connection_mode_and_status(&core_state, &connections, NULL);
+
+  esl_lib_log_core_debug("Connection mode: %s, %s." APP_LOG_NL,
+                         mode == ESL_LIB_CONNECTION_MODE_SINGLE ? "single" : "accept list",
+                         core_state == ESL_LIB_CORE_STATE_IDLE ? "idle" : "initiating");
+
+  sc = esl_lib_event_list_allocate(ESL_LIB_EVT_CONNECTION_MODE,
+                                   0,
+                                   &lib_evt);
+  if (sc == SL_STATUS_OK) {
+    // Set status data
+    lib_evt->data.evt_connection_mode.mode = mode;
+    lib_evt->data.evt_connection_mode.core_state = core_state;
+
+    if (mode == ESL_LIB_CONNECTION_MODE_SINGLE) {
+      lib_evt->data.evt_connection_mode.filter_size = (core_state == ESL_LIB_CORE_STATE_IDLE) ? 0 : 1;
+    } else {
+      lib_evt->data.evt_connection_mode.filter_size = esl_lib_get_initiator_filter_size();
+    }
+
+    lib_evt->data.evt_connection_mode.connections = connections;
+    sc = esl_lib_event_list_push_back(lib_evt);
+
+    if (sc != SL_STATUS_OK) {
+      // Free up memory on failure
+      esl_lib_memory_free(lib_evt);
+    }
+  }
+  return sc;
+}
+
 static sl_status_t send_scan_status(void)
 {
   sl_status_t   sc;
@@ -423,7 +613,6 @@ static sl_status_t send_scan_status(void)
                                    0,
                                    &lib_evt);
   if (sc == SL_STATUS_OK) {
-    lib_evt->evt_code = ESL_LIB_EVT_SCAN_STATUS;
     // Copy status data
     memcpy(&lib_evt->data,
            &ap_state->scan,
@@ -448,13 +637,12 @@ static sl_status_t send_tag_found(uint8_t *addr,
                                    0,
                                    &lib_evt);
   if (sc == SL_STATUS_OK) {
-    lib_evt->evt_code = ESL_LIB_EVT_TAG_FOUND;
     lib_evt->data.evt_tag_found.rssi = rssi;
     lib_evt->data.evt_tag_found.address.address_type = address_type;
     // Copy address
     memcpy(lib_evt->data.evt_tag_found.address.addr,
            addr,
-           sizeof(bd_addr));
+           sizeof(lib_evt->data.evt_tag_found.address.addr));
 
     sc = esl_lib_event_list_push_back(lib_evt);
     if (sc != SL_STATUS_OK) {
@@ -476,6 +664,21 @@ static sl_status_t send_core_error(esl_lib_status_t     lib_status,
                                 &node_id,
                                 status,
                                 (esl_lib_status_data_t)data);
+  return sc;
+}
+
+static sl_status_t set_connection_mode(esl_lib_connection_mode_t requested_mode,
+                                       esl_lib_status_t *lib_status)
+{
+  sl_status_t sc = SL_STATUS_BUSY;
+
+  if (lib_status == NULL) {
+    return SL_STATUS_NULL_POINTER;
+  }
+
+  sc = esl_lib_change_connection_mode(requested_mode);
+  *lib_status = sc == SL_STATUS_OK ? ESL_LIB_STATUS_NO_ERROR : ESL_LIB_STATUS_CONN_SET_MODE_FAILED;
+
   return sc;
 }
 
@@ -574,7 +777,12 @@ static void run_command(esl_lib_command_list_cmd_t *cmd)
           }
         } else {
           lib_status = ESL_LIB_STATUS_SCAN_STOP_FAILED;
-          sc = sl_bt_scanner_stop();
+
+          if (ap_state->scanner_suspended != ESL_LIB_FALSE) {
+            sc = SL_STATUS_OK;
+          } else {
+            sc = sl_bt_scanner_stop();
+          }
 
           if (sc == SL_STATUS_OK) {
             ap_state->scan.enabled = ESL_LIB_FALSE;
@@ -590,14 +798,15 @@ static void run_command(esl_lib_command_list_cmd_t *cmd)
         ap_state->command_complete = true;
         break;
       case ESL_LIB_CMD_CONNECT:
+        ap_state->command = NULL;
         esl_lib_log_core_debug("Command: connect" APP_LOG_NL);
         // Assume that the connect command is failed
         // and try to initiate the connection.
         lib_status = ESL_LIB_STATUS_CONN_FAILED;
         node_id.type = ESL_LIB_NODE_ID_TYPE_ADDRESS;
         node_id.id.address.address_type = cmd->data.cmd_connect.address.address_type;
-        memcpy(node_id.id.address.addr, cmd->data.cmd_connect.address.addr, sizeof(bd_addr));
-        sc = esl_lib_connection_open(cmd);
+        memcpy(node_id.id.address.addr, cmd->data.cmd_connect.address.addr, sizeof(node_id.id.address.addr));
+        sc = esl_lib_initiate_connection(cmd);
         if (sc == SL_STATUS_OK) {
           lib_status = ESL_LIB_STATUS_NO_ERROR;
         } else {
@@ -608,8 +817,29 @@ static void run_command(esl_lib_command_list_cmd_t *cmd)
           ap_state->command_complete = true;
           esl_lib_memory_free(ap_state->command);
         }
-        ap_state->command = NULL;
         break;
+      case ESL_LIB_CMD_SET_CONNECTION_MODE:
+        sc = set_connection_mode(cmd->data.cmd_set_connection_mode.mode, &lib_status);
+        send_connection_mode_event();
+        ap_state->command_complete = true;
+        break;
+      case ESL_LIB_CMD_GET_CONNECTION_MODE:
+        send_connection_mode_event();
+        lib_status = ESL_LIB_STATUS_NO_ERROR;
+        sc = SL_STATUS_OK;
+        ap_state->command_complete = true;
+        break;
+      case ESL_LIB_CMD_REMOVE_FILTER_ACCEPT_LIST:
+        lib_status = ESL_LIB_STATUS_UNKNOWN_COMMAND;
+        sc = SL_STATUS_FAIL;
+        ap_state->command_complete = true;
+        break;
+      case ESL_LIB_CMD_CLEAR_FILTER_ACCEPT_LIST:
+        lib_status = ESL_LIB_STATUS_UNKNOWN_COMMAND;
+        sc = SL_STATUS_FAIL;
+        ap_state->command_complete = true;
+        break;
+
       default:
         break; // default
     }
@@ -709,11 +939,34 @@ static void esl_lib_core_internal_reset(void)
   esl_lib_image_transfer_cleanup();
   esl_lib_connection_cleanup();
   esl_lib_pawr_cleanup();
-  esl_lib_ap_control_cleanup();
+  (void)esl_lib_ap_control_cleanup();
+  (void)esl_lib_initiator_filter_cleanup();
 
   // Cleanup events
   while ((last_evt = esl_lib_event_list_get_first()) != NULL) {
     esl_lib_event_list_remove_first();
   }
   esl_lib_log_core_debug("Event list cleanup complete" APP_LOG_NL);
+}
+
+static void send_shutdown_ready_event(void)
+{
+  sl_status_t   sc;
+  esl_lib_evt_t *lib_evt;
+
+  // This event shall be the only one on the list and event_handler_step should be called immediately after!
+  if (esl_lib_event_list_get_first() == NULL) {
+    sc = esl_lib_event_list_allocate(ESL_LIB_EVT_SHUTDOWN_READY,
+                                     0,
+                                     &lib_evt);
+    if (sc == SL_STATUS_OK) {
+      sc = esl_lib_event_list_push_back(lib_evt);
+      if (sc != SL_STATUS_OK) {
+        // Free up memory on failure
+        esl_lib_memory_free(lib_evt);
+      }
+    }
+
+    esl_lib_log_core_debug("Library deinit complete with status: 0x%04x." APP_LOG_NL, sc);
+  }
 }

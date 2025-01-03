@@ -58,11 +58,11 @@
 #define SL_I2CSPM_SENSOR_PERIPHERAL_NO           0
 
 // I2C0 SCL on PB05
-#define SL_I2CSPM_SENSOR_SCL_PORT                gpioPortB
+#define SL_I2CSPM_SENSOR_SCL_PORT                SL_GPIO_PORT_B
 #define SL_I2CSPM_SENSOR_SCL_PIN                 5
 
 // I2C0 SDA on PB06
-#define SL_I2CSPM_SENSOR_SDA_PORT                gpioPortB
+#define SL_I2CSPM_SENSOR_SDA_PORT                SL_GPIO_PORT_B
 #define SL_I2CSPM_SENSOR_SDA_PIN                 6
 
 // [I2C_SL_I2CSPM_SENSOR]$

@@ -41,3 +41,7 @@ requires:
 
 provides:
   - name: se_manager_crypto
+
+metadata:
+  sbom:
+    license: Zlib

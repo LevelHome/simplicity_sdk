@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief Application commandline settings
+ * @file sl_wisun_cli_settings.c
+ * @brief Wi-SUN CLI settings
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -31,14 +31,13 @@
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
-#include "sl_wisun_cli_settings.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
+#include "sl_wisun_cli_settings.h"
 #include "sl_wisun_ip6string.h"
 #include "nvm3.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -46,12 +45,12 @@
 /**************************************************************************//**
  * @brief  NVM key base address define
  *****************************************************************************/
-#define APP_SETTINGS_NVM_KEY_BASE    (0x00000000U)
+#define APP_SETTINGS_NVM_KEY_BASE     (0x00000000U)
 
 /**************************************************************************//**
  * @brief App settings None value string
  *****************************************************************************/
-#define APP_SETTINGS_NONE_VALUE_STR  "None"
+#define APP_SETTINGS_NONE_VALUE_STR   "None"
 
 // -----------------------------------------------------------------------------
 //                          Static Function Declarations
@@ -94,7 +93,7 @@ static void app_settings_nvm_delete(uint8_t settings_domain);
  * @param permission Command permission
  * @param entry App settings entry
  *****************************************************************************/
-static void app_help_print_and_pad(const char * permission, const app_settings_entry_t *entry);
+static void app_help_print_and_pad(const char *permission, const app_settings_entry_t *entry);
 
 // -----------------------------------------------------------------------------
 //                                Global Variables
@@ -197,15 +196,14 @@ sl_status_t app_settings_set(char *const domain_and_key, const char *const value
   }
 
   iter = app_settings_entries;
-  while (iter->key) {
-    if (!strcmp(domain, app_settings_domain_str[iter->domain])) {
-      if (!strcmp(iter->key, key)) {
-        if (iter->set_handler) {
-          printf("%s.%s = %s\r\n", app_settings_domain_str[iter->domain], iter->key, value_str);
-          return iter->set_handler(value_str, nested_key, iter);
-        } else {
-          return SL_STATUS_PERMISSION;
-        }
+  while (iter && iter->key) {
+    if (!strcmp(domain, app_settings_domain_str[iter->domain])
+        && !strcmp(iter->key, key)) {
+      if (iter->set_handler) {
+        printf("%s.%s = %s\r\n", app_settings_domain_str[iter->domain], iter->key, value_str);
+        return iter->set_handler(value_str, nested_key, iter);
+      } else {
+        return SL_STATUS_PERMISSION;
       }
     }
     iter++;
@@ -217,7 +215,6 @@ sl_status_t app_settings_set(char *const domain_and_key, const char *const value
 /* App settings get */
 sl_status_t app_settings_get(char *const domain_and_key)
 {
-  sl_status_t ret;
   const app_settings_entry_t *iter;
   const char *domain = NULL;
   char *key = NULL;
@@ -230,16 +227,12 @@ sl_status_t app_settings_get(char *const domain_and_key)
   nested_key = strtok(NULL, ".");
 
   iter = app_settings_entries;
-  while (iter->key) {
-    if (!domain || !strcmp(domain, app_settings_domain_str[iter->domain])) {
-      if (!key || !strcmp(iter->key, key)) {
-        if (iter->get_handler) {
-          ret = iter->get_handler(value_str, nested_key, iter);
-          if (ret == SL_STATUS_OK) {
-            printf("%s.%s = %s\r\n", app_settings_domain_str[iter->domain], iter->key, value_str);
-          }
-        }
-      }
+  while (iter && iter->key) {
+    if ((!domain || !strcmp(domain, app_settings_domain_str[iter->domain]))
+        && (!key || !strcmp(iter->key, key))
+        && iter->get_handler
+        && (iter->get_handler(value_str, nested_key, iter) == SL_STATUS_OK)) {
+      printf("%s.%s = %s\r\n", app_settings_domain_str[iter->domain], iter->key, value_str);
     }
     iter++;
   }
@@ -283,33 +276,23 @@ sl_status_t app_settings_help(char *const domain_and_key, bool get)
            app_settings_domain_str[0], app_settings_domain_str[0], app_settings_domain_str[0]);
     printf("\r\nCommands permissions :\r\n %s : Write Only\r\n %s : Read Only\r\n %s : Read and Write\r\n",
            permission_str[1], permission_str[2], permission_str[3]);
-  } else if (domain) {
-    while (iter->key) {
-      if (!domain || !strcmp(domain, app_settings_domain_str[iter->domain])) {
-        if (!key || !strcmp(iter->key, key)) {
-          uint8_t permission = 0;
-          permission |= (iter->get_handler ? permission_read : 0);
-          permission |= (iter->set_handler ? permission_write : 0);
-          if ((iter->get_handler && get) || (iter->set_handler && !get)) {
-            app_help_print_and_pad(permission_str[permission], iter);
-          }
-        }
+    return SL_STATUS_OK;
+  }
+
+  while (iter && iter->key) {
+    bool domain_match = (!domain || !strcmp(domain, app_settings_domain_str[iter->domain]));
+    bool key_match = (!key || !strcmp(iter->key, key));
+    if (domain_match && key_match) {
+      uint8_t permission = 0;
+      permission |= (iter->get_handler ? permission_read : 0);
+      permission |= (iter->set_handler ? permission_write : 0);
+      if ((iter->get_handler && get) || (iter->set_handler && !get)) {
+        app_help_print_and_pad(permission_str[permission], iter);
       }
-      iter++;
     }
+    iter++;
   }
   return SL_STATUS_OK;
-}
-
-/* App help print and pad */
-static void app_help_print_and_pad(const char * permission, const app_settings_entry_t *entry)
-{
-  printf("%s %s.%s", permission, app_settings_domain_str[entry->domain], entry->key);
-  size_t string_length = strlen(permission) + strlen(app_settings_domain_str[entry->domain]) + strlen(entry->key);
-  for (; string_length < 60; string_length++) {
-    printf(" ");
-  }
-  printf("%s\r\n", entry->description ? entry->description : " ");
 }
 
 /* App settings set string */
@@ -317,7 +300,7 @@ sl_status_t app_settings_set_string(const char *value_str,
                                     const char *key_str,
                                     const app_settings_entry_t *entry)
 {
-  char * entry_value_str;
+  char *entry_value_str;
   (void)key_str;
 
   entry_value_str = entry->value;
@@ -458,6 +441,17 @@ sl_status_t app_settings_get_ip_address(char *value_str,
 // -----------------------------------------------------------------------------
 //                          Static Function Definitions
 // -----------------------------------------------------------------------------
+
+/* App help print and pad */
+static void app_help_print_and_pad(const char * permission, const app_settings_entry_t *entry)
+{
+  printf("%s %s.%s", permission, app_settings_domain_str[entry->domain], entry->key);
+  size_t string_length = strlen(permission) + strlen(app_settings_domain_str[entry->domain]) + strlen(entry->key);
+  for (; string_length < 60; string_length++) {
+    printf(" ");
+  }
+  printf("%s\r\n", entry->description ? entry->description : " ");
+}
 
 /* App settings nvm load */
 static sl_status_t app_settings_nvm_load(uint8_t settings_domain,

@@ -13,6 +13,9 @@ description: >
   colours. Also consider increasing the number of ESL Tag Display instances and
   Image objects if necessary.
 category: Bluetooth|Application|Miscellaneous
+metadata:
+  sbom:
+    license: Zlib
 quality: experimental
 root_path: app/bluetooth/common/esl_tag_pd_epd_driver
 config_file:

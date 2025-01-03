@@ -5,13 +5,11 @@
  * @copyright 2021 Silicon Laboratories Inc.
  */
 #include "app_hw.h"
-#include "board.h"
+#include "sl_component_catalog.h"
 
 void app_hw_deep_sleep_wakeup_handler(void)
 {
-  uint32_t em4_wakeup_flags = Board_GetGpioEm4Flags();
-
-  if (0 != em4_wakeup_flags) {
-    Board_ProcessEm4PinWakeupFlags(em4_wakeup_flags);
-  }
+#ifdef SL_CATALOG_SIMPLE_BUTTON_PRESENT
+  app_button_press_stay_awake_until_release();
+#endif
 }

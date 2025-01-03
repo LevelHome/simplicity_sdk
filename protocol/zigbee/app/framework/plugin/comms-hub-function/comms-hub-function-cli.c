@@ -77,13 +77,13 @@ void sli_zigbee_af_comms_hub_function_cli_simulate_gbz_msg(sl_cli_command_arg_t 
   sl_zigbee_copy_eui64_arg(arguments, 0, destinationDeviceId, true);
 
   if (index >= GBCS_NUM_USE_CASES) {
-    sl_zigbee_af_comms_hub_function_println("Unsupported message code: 0x%2x", messageCode);
+    sl_zigbee_af_comms_hub_function_println("Unsupported message code: 0x%04X", messageCode);
     sli_zigbee_af_comms_hub_function_cli_print_supported_use_cases(arguments);
     return;
   }
 
-  sl_zigbee_af_comms_hub_function_println("GBCS Use Case: %p", useCaseDescriptions[index].description);
-  sl_zigbee_af_comms_hub_function_println("Current Time: 0x%4x", currentTime);
+  sl_zigbee_af_comms_hub_function_println("GBCS Use Case: %s", useCaseDescriptions[index].description);
+  sl_zigbee_af_comms_hub_function_println("Current Time: 0x%08X", currentTime);
 
   if (messageCode == GCS05_MESSAGE_CODE) {
     uint8_t gbzCommand[] = { 0x01, 0x09, // profile id
@@ -483,7 +483,7 @@ void sli_zigbee_af_comms_hub_function_cli_print_supported_use_cases(sl_cli_comma
 
   sl_zigbee_af_comms_hub_function_println("Supported Use Cases");
   for (index = 0; index < GBCS_NUM_USE_CASES; index++) {
-    sl_zigbee_af_comms_hub_function_println("Message Code: 0x%2x, GBCS Use Case: %p",
+    sl_zigbee_af_comms_hub_function_println("Message Code: 0x%04X, GBCS Use Case: %s",
                                             useCaseDescriptions[index].messageCode,
                                             useCaseDescriptions[index].description);
   }
@@ -556,9 +556,9 @@ void sli_zigbee_af_comms_hub_function_cli_get_tunnel_endpoint(sl_cli_command_arg
   nodeId = sl_cli_get_argument_uint16(arguments, 0);
   endpoint = sl_zigbee_af_get_device_tunneling_endpoint(nodeId);
   if ( endpoint == INVALID_TUNNELING_ENDPOINT ) {
-    sl_zigbee_af_comms_hub_function_println("Invalid Tunneling Endpoint for 0x%2x", nodeId);
+    sl_zigbee_af_comms_hub_function_println("Invalid Tunneling Endpoint for 0x%04X", nodeId);
   } else {
-    sl_zigbee_af_comms_hub_function_println("Tunnel Endpoint=0x%x", endpoint);
+    sl_zigbee_af_comms_hub_function_println("Tunnel Endpoint=0x%02X", endpoint);
   }
 }
 

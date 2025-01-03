@@ -46,6 +46,7 @@ requires:
   - name: "btmesh_generic_server"
   - name: "component_catalog"
   - name: "sleeptimer"
+  - name: "sl_common"
   - name: "app_timer"
 
 template_contribution:

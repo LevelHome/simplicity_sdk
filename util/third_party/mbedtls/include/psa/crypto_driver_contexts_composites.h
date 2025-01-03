@@ -16,21 +16,14 @@
  * to define the implementation-defined types of PSA multi-part state objects.
  */
 /*  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
+#if defined(SL_TRUSTZONE_NONSECURE)
 
+/* The NonSecure app must use the crypto_driver_contexts_composites.h from the trusted-firmware-m repo. */
+#include "../../trusted-firmware-m/interface/include/psa/crypto_driver_contexts_composites.h"
+
+#else /* SL_TRUSTZONE_NONSECURE */
 #ifndef PSA_CRYPTO_DRIVER_CONTEXTS_COMPOSITES_H
 #define PSA_CRYPTO_DRIVER_CONTEXTS_COMPOSITES_H
 
@@ -116,6 +109,29 @@ typedef mbedtls_psa_pake_operation_t
 
 #endif /* PSA_CRYPTO_DRIVER_TEST */
 
+/* Include the context structures for all declared hardware drivers */
+#if defined(MBEDTLS_PSA_CRYPTO_DRIVERS)
+
+#include "sli_psa_driver_features.h"
+
+#if defined(SLI_MBEDTLS_DEVICE_HSE)
+  #include "sli_se_transparent_types.h"
+
+  #if defined(SLI_PSA_DRIVER_FEATURE_OPAQUE_KEYS)
+    #include "sli_se_opaque_types.h"
+  #endif
+#endif
+
+#if defined(SLI_MBEDTLS_DEVICE_VSE)
+  #include "sli_cryptoacc_transparent_types.h"
+#endif
+
+#if defined(SLI_MBEDTLS_DEVICE_S1)
+  #include "sli_crypto_transparent_types.h"
+#endif
+
+#endif /* MBEDTLS_PSA_CRYPTO_DRIVERS */
+
 /* Define the context to be used for an operation that is executed through the
  * PSA Driver wrapper layer as the union of all possible driver's contexts.
  *
@@ -189,3 +205,5 @@ typedef union {
 
 #endif /* PSA_CRYPTO_DRIVER_CONTEXTS_COMPOSITES_H */
 /* End of automatically generated file. */
+
+#endif /* SL_TRUSTZONE_NONSECURE */

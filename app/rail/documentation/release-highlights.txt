@@ -1,0 +1,8 @@
+RAIL SDK 2.18.0.0
+- RAIL Apps and Library
+  - RAIL Tutorial moved to docs.silabs.com: https://docs.silabs.com/rail/latest/rail-start/rail-training
+  - RAIL SDK supported on BRD4276A radio board with EFR32FG25 and SKY66122-11 frontend module for high TX power applications
+  - Improved RangeTest Sample Application to fully support multi-PHY configurations and added new feature to control measurements on RX side – in alpha quality
+  - Sigfox TX PHYs and RX PHYs supported on EFR32FG23 and EFR32FG28 parts for EU and NA region
+
+

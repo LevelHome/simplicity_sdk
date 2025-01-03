@@ -73,6 +73,16 @@ class Base_RM_Peripheral(IRegMapPeripheral):
     def isAliased(self):
         return self.getAliasedNames() != []
 
+    def getTrustzoneAwareAliasName(self):
+        if self.name.endswith('_S'):
+            return self.name.split('_S')[0]
+        elif self.name.endswith('_NS'):
+            return self.name.split('_NS')[0]
+        elif '_S_' in self.name:
+            return '_'.join(self.name.split('_S_'))
+        elif '_NS_' in self.name:
+            return '_'.join(self.name.split('_NS_'))
+
     def setAccessedFlags(self):
         for key in self.zz_rdict:
             self.zz_rdict[key].setAccessedFlag()

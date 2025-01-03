@@ -1,12 +1,9 @@
 from pyradioconfig.parts.common.profiles.ocelot_regs import build_modem_regs_ocelot
-from pyradioconfig.parts.ocelot.profiles.Profile_IEEE802154_OQPSK import ProfileIEEE802154OQPSKOcelot
+from pyradioconfig.parts.ocelot.profiles.Profile_IEEE802154 import ProfileIEEE802154Ocelot
 from pyradioconfig.parts.sol.profiles.sw_profile_outputs_common import sw_profile_outputs_common_sol
-from pycalcmodel.core.output import ModelOutput, ModelOutputType
-from pyradioconfig.parts.common.profiles.profile_common import buildCrcOutputs, buildFecOutputs, buildFrameOutputs, \
-    buildWhiteOutputs
 
 
-class ProfileIEEE802154OQPSKSol(ProfileIEEE802154OQPSKOcelot):
+class ProfileIEEE802154OQPSKSol(ProfileIEEE802154Ocelot):
 
     def __init__(self):
         super().__init__()
@@ -19,13 +16,10 @@ class ProfileIEEE802154OQPSKSol(ProfileIEEE802154OQPSKOcelot):
         self._family = "sol"
         self._sw_profile_outputs_common = sw_profile_outputs_common_sol()
 
-    def build_info_profile_outputs(self, model, profile):
-        super().build_info_profile_outputs(model, profile)
-        profile.outputs.append(ModelOutput(model.vars.fpll_band, '', ModelOutputType.INFO, readable_name="RF Frequency Planning Band"))
+    def build_advanced_profile_inputs(self, model, profile):
+        super().build_advanced_profile_inputs(model, profile)
+        self.make_linked_io(profile, model.vars.fpll_band, 'crystal', readable_name="RF Frequency Planning Band")
 
     def build_register_profile_outputs(self, model, profile):
         build_modem_regs_ocelot(model, profile)
 
-    def _build_modem_settings(self, model):
-        super()._build_modem_settings(model)
-        model.vars.directmode_rx.value_forced = None

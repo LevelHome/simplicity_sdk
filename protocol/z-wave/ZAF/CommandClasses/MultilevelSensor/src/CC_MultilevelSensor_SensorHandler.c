@@ -44,7 +44,7 @@ static sensor_administration_t sensor_administrator = { 0 };
 //              Public Function Definitions
 // -----------------------------------------------------------------------------
 cc_multilevel_sensor_return_value
-cc_multilevel_sensor_check_sensor_type_registered(uint8_t sensor_type_value)
+cc_multilevel_sensor_check_sensor_type_registered(uint8_t endpoint, uint8_t sensor_type_value)
 {
   cc_multilevel_sensor_return_value retval = CC_MULTILEVEL_SENSOR_RETURN_VALUE_NOT_FOUND;
   sensor_interface_iterator_t* sensor_interface_iterator;
@@ -52,7 +52,8 @@ cc_multilevel_sensor_check_sensor_type_registered(uint8_t sensor_type_value)
 
   while(sensor_interface_iterator)
   {
-    if(sensor_type_value == sensor_interface_iterator->sensor_type->value)
+    if (endpoint == sensor_interface_iterator->endpoint &&
+        sensor_type_value == sensor_interface_iterator->sensor_type->value)
     {
       retval = CC_MULTILEVEL_SENSOR_RETURN_VALUE_OK;
       break;
@@ -98,7 +99,7 @@ cc_multilevel_sensor_check_scale(const sensor_interface_t* i_interface, uint8_t 
 }
 
 cc_multilevel_sensor_return_value
-cc_multilevel_sensor_get_interface(uint8_t sensor_type_value, sensor_interface_t** o_interface)
+cc_multilevel_sensor_get_interface(uint8_t endpoint, uint8_t sensor_type_value, sensor_interface_t** o_interface)
 {
   cc_multilevel_sensor_return_value retval = CC_MULTILEVEL_SENSOR_RETURN_VALUE_NOT_FOUND;
 
@@ -109,7 +110,8 @@ cc_multilevel_sensor_get_interface(uint8_t sensor_type_value, sensor_interface_t
 
     while(sensor_interface_iterator)
     {
-       if(sensor_type_value == sensor_interface_iterator->sensor_type->value)
+      if (endpoint == sensor_interface_iterator->endpoint &&
+          sensor_type_value == sensor_interface_iterator->sensor_type->value)
       {
         *o_interface = sensor_interface_iterator;
         retval = CC_MULTILEVEL_SENSOR_RETURN_VALUE_OK;
@@ -196,7 +198,7 @@ cc_multilevel_sensor_registration(sensor_interface_t* i_new_sensor)
   {
     if(sensor_administrator.number_of_registrated_sensors < MULTILEVEL_SENSOR_REGISTERED_SENSOR_NUMBER_LIMIT)
     {
-      if(cc_multilevel_sensor_check_sensor_type_registered(i_new_sensor->sensor_type->value) ==
+      if(cc_multilevel_sensor_check_sensor_type_registered(i_new_sensor->endpoint, i_new_sensor->sensor_type->value) ==
          CC_MULTILEVEL_SENSOR_RETURN_VALUE_NOT_FOUND)
       {
         sensor_administrator.registrated_sensors[sensor_administrator.number_of_registrated_sensors] = i_new_sensor;

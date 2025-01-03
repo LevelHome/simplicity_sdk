@@ -99,3 +99,13 @@ template_contribution:
       sid: SLI_TZ_SERVICE_ITS_ENCRYPTED_SID
       func: sli_psa_its_encrypted_req
     condition: [trustzone_nonsecure]
+
+metadata:
+  sbom:
+    license: Zlib AND MSLA AND BSD-3-Clause
+    upstream:
+      name: TrustedFirmware-M (TF-M)
+      version: v1.5
+      supplier: Trusted Firmware
+      url: https://review.trustedfirmware.org/TF-M/trusted-firmware-m.git
+      comment: Trusted Firmware for M profile Arm CPUs

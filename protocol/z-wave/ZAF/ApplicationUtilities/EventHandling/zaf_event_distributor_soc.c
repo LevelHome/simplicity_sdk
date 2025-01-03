@@ -24,7 +24,6 @@
 #include <zaf_nvm_soc.h>
 #include <ZAF_file_ids.h>
 #include <zpal_misc.h>
-#include <zpal_watchdog.h>
 #include <CC_DeviceResetLocally.h>
 #include <CC_Indicator.h>
 
@@ -83,9 +82,6 @@ set_protocol_default(void)
 
   CommandPackage.eCommandType = EZWAVECOMMANDTYPE_SET_DEFAULT;
   pAppHandles = ZAF_getAppHandle();
-
-  DPRINT("\nDisabling watchdog during reset\n");
-  zpal_enable_watchdog(false);
 
   Status = QueueNotifyingSendToBack(pAppHandles->pZwCommandQueue, (uint8_t*)&CommandPackage, 500);
   assert(EQUEUENOTIFYING_STATUS_SUCCESS == Status);
@@ -301,7 +297,7 @@ event_manager(const uint8_t event)
       if (resetInProgress) {
         resetInProgress = false;
         /* Soft reset */
-        zpal_reboot();
+        zpal_reboot_with_info(MFG_ID_ZWAVE_ALLIANCE, ZPAL_RESET_EVENT_FLUSH_MEMORY);
       } else {
         zafi_nvm_app_load_configuration();
       }

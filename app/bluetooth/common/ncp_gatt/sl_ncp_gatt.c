@@ -77,6 +77,8 @@
 // Flag indicating that a service should not be advertised.
 #define GATTDB_NON_ADVERTISED_SERVICE             0x00
 
+#define INVALID_CHARACTERISTIC_HANDLE             0xFFFF
+
 // Structure for attribute values.
 typedef struct {
   uint16_t max_len;
@@ -105,6 +107,9 @@ static attribute_value_t get_attribute_value(const sli_bt_gattdb_attribute_t *at
 // Get the index of the first attrubute to be processed.
 static uint16_t get_start_index(void);
 
+// Find if there is a user type CCCD present for the current characteristic
+static bool look_for_user_cccd(uint16_t start_index);
+
 // Bluetooth stack event handler.
 void sl_ncp_gatt_on_event(sl_bt_msg_t *evt)
 {
@@ -116,6 +121,24 @@ void sl_ncp_gatt_on_event(sl_bt_msg_t *evt)
     default:
       break;
   }
+}
+
+static bool look_for_user_cccd(uint16_t start_index)
+{
+  for (uint16_t j = start_index + 1; j < gattdb.attribute_num; j++) {
+    if (IS_UUID_16(gattdb.attributes[j].uuid)) {
+      uint16_t uuid_16 = gattdb.uuid16[gattdb.attributes[j].uuid];
+      if ((uuid_16 == PRIMARY_SERVICE_UUID)
+          || (uuid_16 == INCLUDE_UUID)
+          || (uuid_16 == CHARACTERISTIC_UUID)) {
+        return false;
+      } else if ((uuid_16 == CLIENT_CHARACTERISTIC_CONFIGURATION_UUID)
+                 && (gattdb.attributes[j].datatype == GATTDB_DATATYPE_USER_VALUE)) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 /**************************************************************************//**
@@ -133,7 +156,7 @@ static void dynamic_gattdb_init(void)
   // The handle of the last added service.
   uint16_t current_service;
   // The handle of the last added characteristic.
-  uint16_t current_characteristic;
+  uint16_t current_characteristic = INVALID_CHARACTERISTIC_HANDLE;
   // The handle of the last added descriptor.
   uint16_t current_descriptor;
   // Start index of the attributes
@@ -205,6 +228,8 @@ static void dynamic_gattdb_init(void)
           attribute_value_t value;
           value = get_attribute_value(&gattdb.attributes[i + 1]);
 
+          bool user_cccd_found = look_for_user_cccd(i);
+
           // Add characteristic.
           if (IS_UUID_16(gattdb.attributes[i].characteristic.char_uuid)) {
             // 16-bit uuid
@@ -214,7 +239,7 @@ static void dynamic_gattdb_init(void)
                                                         current_service,
                                                         (uint16_t)gattdb.attributes[i].characteristic.properties,
                                                         map_security(gattdb.attributes[i + 1].permissions),
-                                                        GATTDB_AUTO_CCCD,
+                                                        user_cccd_found ? SL_BT_GATTDB_NO_AUTO_CCCD : GATTDB_AUTO_CCCD,
                                                         uuid,
                                                         map_value_type(gattdb.attributes[i + 1].datatype),
                                                         value.max_len,
@@ -230,7 +255,7 @@ static void dynamic_gattdb_init(void)
                                                          current_service,
                                                          (uint16_t)gattdb.attributes[i].characteristic.properties,
                                                          map_security(gattdb.attributes[i + 1].permissions),
-                                                         GATTDB_AUTO_CCCD,
+                                                         user_cccd_found ? SL_BT_GATTDB_NO_AUTO_CCCD : GATTDB_AUTO_CCCD,
                                                          uuid,
                                                          map_value_type(gattdb.attributes[i + 1].datatype),
                                                          value.max_len,
@@ -239,7 +264,6 @@ static void dynamic_gattdb_init(void)
                                                          &current_characteristic);
             app_assert_status(sc);
           }
-
           // Check the returned handle.
           app_assert(current_characteristic == gattdb.attributes[i + 1].handle,
                      "Handle mismatch when adding characteristic %d.", i);
@@ -253,8 +277,31 @@ static void dynamic_gattdb_init(void)
         }
 
         case CLIENT_CHARACTERISTIC_CONFIGURATION_UUID:
-          // Client Characteristic Configuration descriptors are created
+          // Non user-type Client Characteristic Configuration descriptors are created
           // automatically by the stack.
+          if (gattdb.attributes[i].datatype == GATTDB_DATATYPE_USER_VALUE) {
+            attribute_value_t value;
+            value = get_attribute_value(&gattdb.attributes[i]);
+
+            // Add descriptor.
+            sl_bt_uuid_16_t uuid;
+            memcpy(&uuid.data, &gattdb.uuid16[gattdb.attributes[i].uuid], UUID_16_LEN);
+            sc = sl_bt_gattdb_add_uuid16_descriptor(gattdb_session,
+                                                    current_characteristic,
+                                                    map_descriptor_property(gattdb.attributes[i].permissions),
+                                                    map_security(gattdb.attributes[i].permissions),
+                                                    uuid,
+                                                    map_value_type(gattdb.attributes[i].datatype),
+                                                    value.max_len,
+                                                    value.len,
+                                                    value.data,
+                                                    &current_descriptor);
+            app_assert_status(sc);
+
+            // Check the returned handle.
+            app_assert(current_descriptor == gattdb.attributes[i].handle,
+                       "Handle mismatch when adding descriptor cccd %d. Handle = 0x%04x. current_descriptor = 0x%04x", i, gattdb.attributes[i].handle, current_descriptor);
+          }
           break;
 
         default: {

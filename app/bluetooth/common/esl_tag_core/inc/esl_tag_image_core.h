@@ -87,5 +87,32 @@ uint8_t esl_image_get_count(void);
  ******************************************************************************/
 void esl_image_reset_storage(void);
 
+/***************************************************************************//**
+ * Reinit image compression algorithm if it is used
+ ******************************************************************************/
+void esl_image_unpack_init(void);
+
+/**************************************************************************//**
+ * Unpack single chunk of received image data if compression is used
+ *
+ * @param *code Pointer to the current incoming data chunk
+ * @param chunk_size Size of the incoming data in bytes
+ * @param *data Pointer to the target area of unpacking
+ * @param data_offset Current write offset from the start of the unpacking area
+ * @param data_length Maximum size of the unpacking area
+ * @param decompressed_length Size of the last chunk written to target area
+ * @returns Returns SL_STATUS_OK on success, SL_STATUS_FAIL if decompression
+ *          fails or SL_STATUS_WOULD_OVERFLOW if an uncompressed data chunk is
+ *          too big to write to the target area.
+ *
+ * Unpacks data slices if the @ref otf_decompressor component is used or copy
+ * uncompressed data to the target area, otherwise.
+ *****************************************************************************/
+sl_status_t esl_image_unpack_chunk(const void *code,
+                                   const size_t chunk_size,
+                                   void *data,
+                                   size_t data_offset,
+                                   size_t data_length,
+                                   size_t* decompressed_length);
 /** @} (end addtogroup esl_tag_core) */
 #endif // ESL_TAG_IMAGE_CORE_H

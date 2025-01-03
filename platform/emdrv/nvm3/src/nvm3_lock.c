@@ -47,6 +47,10 @@
 #include "sl_mpu.h"
 #endif
 
+#if defined(SL_CATALOG_KERNEL_PRESENT)
+#include "cmsis_os2.h"
+#endif
+
 //****************************************************************************
 
 #ifdef NVM3_HOST_BUILD
@@ -55,8 +59,13 @@
 
 #ifdef NVM3_HOST_BUILD
 static int lockCount = 0;
-#else
 /// @cond DO_NOT_INCLUDE_WITH_DOXYGEN
+#elif defined(SL_CATALOG_KERNEL_PRESENT)
+static osMutexId_t nvm3_mutex;                                           ///< NVM3 Lock Mutex
+
+#define NVM3_ERROR_ASSERT()   do { EFM_ASSERT(false); } while (0)
+
+#else
 CORE_DECLARE_IRQ_STATE;
 /// @endcond
 #endif
@@ -71,6 +80,9 @@ nvm3_Obj_t nvm3_internalObjectHandleA;
 nvm3_Obj_t nvm3_internalObjectHandleB;
 nvm3_Obj_t nvm3_internalObjectHandleC;
 nvm3_Obj_t nvm3_internalObjectHandleD;
+#if defined(NVM3_SECURITY)
+nvm3_Obj_t nvm3_internalObjectHandleE;
+#endif
 const uint8_t nvm3_maxFragmentCount = NVM3_FRAGMENT_COUNT;
 const size_t  nvm3_objHandleSize = sizeof(nvm3_Obj_t);
 
@@ -83,12 +95,57 @@ const size_t  nvm3_objHandleSize = sizeof(nvm3_Obj_t);
 
 /***************************************************************************//**
  * @details
+ * The Mutex creation for lock enable and disable.
+ *
+ * It provides options for using "mutexes" for RTOS users
+ * and "core_critical" APIs for bare-metal users.
+ *
+ * @note RTOS users should avoid invoking the nvm3_lock APIs from within
+ *       critical sections, as this may result in unexpected behavior.
+ *       Please, ensure that kernel has been initialized before this API call.
+ ******************************************************************************/
+SL_WEAK void nvm3_lockCreateMutex(void)
+{
+#if defined(SL_CATALOG_KERNEL_PRESENT)
+  if (nvm3_mutex == NULL) {
+    const osMutexAttr_t mutex_attr = {
+      " NVM3 Mutex",
+      osMutexRecursive | osMutexPrioInherit,
+      NULL,
+      0
+    };
+    nvm3_mutex = osMutexNew(&mutex_attr);
+    if (nvm3_mutex == NULL) {
+      NVM3_ERROR_ASSERT();
+    }
+  }
+#endif
+}
+
+/***************************************************************************//**
+ * @details
  * The default lock-begin implementation.
+ * @note RTOS users should avoid invoking the nvm3_lock APIs from within
+ *       critical sections, as this may result in unexpected behavior.
+ *       Please, ensure that kernel has been initialized before this API call.
  ******************************************************************************/
 SL_WEAK void nvm3_lockBegin(void)
 {
 #ifdef NVM3_HOST_BUILD
   lockCount++;
+#elif defined(SL_CATALOG_KERNEL_PRESENT)
+/// @cond DO_NOT_INCLUDE_WITH_DOXYGEN
+  osStatus_t os_status = osError;
+  // Bypass the lock if kernel is not running
+  if (osKernelGetState() == osKernelRunning) {
+    if (nvm3_mutex == NULL) {
+      nvm3_lockCreateMutex();
+    }
+    os_status = osMutexAcquire(nvm3_mutex, osWaitForever);
+    if (os_status != osErrorISR && os_status != osOK) {
+      NVM3_ERROR_ASSERT();
+    }
+  }
 #else
 /// @cond DO_NOT_INCLUDE_WITH_DOXYGEN
   CORE_ENTER_CRITICAL();
@@ -99,6 +156,9 @@ SL_WEAK void nvm3_lockBegin(void)
 /***************************************************************************//**
  * @details
  * The default lock-end implementation.
+ * @note RTOS users should avoid invoking the nvm3_lock APIs from within
+ *       critical sections, as this may result in unexpected behavior.
+ *       Please, ensure that kernel has been initialized before this API call.
  ******************************************************************************/
 SL_WEAK void nvm3_lockEnd(void)
 {
@@ -107,6 +167,15 @@ SL_WEAK void nvm3_lockEnd(void)
     nvm3_tracePrint(NVM3_TRACE_LEVEL_ERROR, "NVM3 ERROR - lockEnd: invalid lock count.\n");
   }
   lockCount--;
+#elif defined(SL_CATALOG_KERNEL_PRESENT)
+  osStatus_t os_status = osError;
+  // Bypass the lock if kernel is not running
+  if (osKernelGetState() == osKernelRunning) {
+    os_status = osMutexRelease(nvm3_mutex);
+    if (os_status != osErrorISR && os_status != osOK) {
+      NVM3_ERROR_ASSERT();
+    }
+  }
 #else
   CORE_EXIT_CRITICAL();
 #endif

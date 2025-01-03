@@ -34,8 +34,10 @@ provides:
 requires:
   - name: "app_assert"
   - name: "app_btmesh_util"
+  - name: "app_btmesh_rta"
   - name: "btmesh_stack_lpn"
   - name: "btmesh_stack_node"
+  - name: "sl_common"
   - name: "app_timer"
 
 template_contribution:

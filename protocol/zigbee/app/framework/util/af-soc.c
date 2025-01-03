@@ -48,7 +48,7 @@ void sli_zigbee_af_init_cb(uint8_t init_level)
 {
   (void)init_level;
 
-  sl_zigbee_af_core_println("Reset info: 0x%x (%p)",
+  sl_zigbee_af_core_println("Reset info: 0x%02X (%s)",
                             halGetResetInfo(),
                             halGetResetString());
 
@@ -139,7 +139,7 @@ sl_zigbee_zdo_status_t sli_zigbee_af_remote_delete_binding_callback(uint8_t inde
     status = deleteStatus == SL_STATUS_OK ? SL_ZIGBEE_ZDP_SUCCESS // binding deleted
              : (deleteStatus == SL_STATUS_ZIGBEE_BINDING_IS_ACTIVE ? SL_ZIGBEE_ZDP_NOT_AUTHORIZED //selected index is active
                 : SL_ZIGBEE_ZDP_NO_ENTRY); // report no entry for any other failure
-    sl_zigbee_af_zdo_println("delete binding: %x %x", index, status);
+    sl_zigbee_af_zdo_println("delete binding: %02X %02X", index, status);
   }
   return status;
 }
@@ -213,7 +213,7 @@ void sli_zigbee_af_fragmentation_message_sent_handler(sl_status_t status,
                                                       uint16_t bufLen)
 {
   // the fragmented message is no longer in process
-  sl_zigbee_af_debug_println("%pend.", "Fragmentation:");
+  sl_zigbee_af_debug_println("%send.", "Fragmentation:");
   sli_zigbee_af_message_sent_handler(status,
                                      type,
                                      indexOrDestination,

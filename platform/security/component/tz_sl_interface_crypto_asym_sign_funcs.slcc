@@ -29,3 +29,7 @@ template_contribution:
   - name: tfm_interface_func
     value: tfm_crypto_asymmetric_decrypt
 
+
+metadata:
+  sbom:
+    license: Zlib

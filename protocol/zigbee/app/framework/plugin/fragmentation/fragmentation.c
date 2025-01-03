@@ -133,6 +133,9 @@ sl_status_t sli_zigbee_af_fragmentation_send_unicast(sl_zigbee_outgoing_message_
   txPacket->fragmentLen = sl_zigbee_af_maximum_aps_payload_length(type,
                                                                   indexOrDestination,
                                                                   &txPacket->apsFrame);
+  if (txPacket->fragmentLen == 0) {
+    return SL_STATUS_MESSAGE_TOO_LONG;
+  }
   fragments = ((bufLen + txPacket->fragmentLen - 1) / txPacket->fragmentLen);
   if (fragments > MAX_INT8U_VALUE) {
     return SL_STATUS_MESSAGE_TOO_LONG;

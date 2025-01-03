@@ -66,14 +66,14 @@
 
 // ARM memory map SRAM location and size.
 #if defined(_SILICON_LABS_32B_SERIES_2) \
-  || (defined(_SILICON_LABS_32B_SERIES_3_CONFIG_1) && defined(SL_RAM_LINKER))
+  || (defined(_SILICON_LABS_32B_SERIES_3) && defined(SL_RAM_LINKER))
 #define MPU_ARM_SRAM_MEM_BASE          SRAM_BASE
 
 // This RAM size is not the real device size. It corresponds to the SRAM max size in the standard
 // ARM Cortex-M33 memory map. The max size is 0.5GB.
 #define MPU_ARM_SRAM_MEM_SIZE          SRAM_SIZE
 
-#elif defined(_SILICON_LABS_32B_SERIES_3_CONFIG_1)
+#elif defined(_SILICON_LABS_32B_SERIES_3)
 // These local constants ensure the MPU regions for the secure/non-secure RAM aliases
 // and the secure/non-secure RAM non-aliases are properly managed for all
 // secure/non-secure project configurations.
@@ -100,10 +100,10 @@
 
 #if defined(__ICCARM__)
 // iccarm
-#pragma section = ".textrw"
-#define RAMFUNC_SECTION_BEGIN       ((uint32_t)(uint32_t *)__section_begin(".textrw"))
-#define RAMFUNC_SECTION_END         ((uint32_t)(uint32_t *)__section_end(".textrw"))
-#define RAMFUNC_SECTION_SIZE        __section_size(".textrw")
+#pragma section = "text_ram"
+#define RAMFUNC_SECTION_BEGIN       ((uint32_t)(uint32_t *)__section_begin("text_ram"))
+#define RAMFUNC_SECTION_END         ((uint32_t)(uint32_t *)__section_end("text_ram"))
+#define RAMFUNC_SECTION_SIZE        __section_size("text_ram")
 
 #elif defined(__GNUC__)
 // armgcc
@@ -149,10 +149,10 @@ static uint32_t region_nbr = 0;
  *
  * @note  (2) On series 3 SIXG301 devices, there are the following RAM-related
  *        address ranges.
- *        - 0x0080_0000 0x0087_FFFF (Alias to DMEM (execute only)) - Secure
- *        - 0x1080_0000 0x1087_FFFF (Alias to DMEM_NS) - Non-secure
- *        - 0x2000_0000 0x2007_FFFF (DMEM) - Secure
- *        - 0x3000_00000x3007_FFFF (DMEM_NS) - Non-secure
+ *        - 0x0080_0000 0x0087_FFFF (Alias to DMEM_NS) - Non-secure
+ *        - 0x1080_0000 0x1087_FFFF (Alias to DMEM (execute only)) -Secure
+ *        - 0x2000_0000 0x2007_FFFF (DMEM_NS) - Non-secure
+ *        - 0x3000_0000 0x3007_FFFF (DMEM) - Secure
  *
  *        The MPU regions are configured differently depending on the RAM layout
  *        described in GCC and IAR linker scripts. A common characteristic
@@ -195,7 +195,7 @@ static uint32_t region_nbr = 0;
  *        non-alias will be used by default for RAMfunc and data in RAM.
  *        Same logic if the Cortex-M33 is in secure, all secure alias/non-alias
  *        will be used by default. The MPU regions creation will adapt to
- *        the default secure or non-secure addresses.And thus the order
+ *        the default secure or non-secure addresses. And thus the order
  *        in which the MPU regions are created can vary.
  *****************************************************************************/
 void sl_mpu_disable_execute_from_ram(void)
@@ -208,7 +208,7 @@ void sl_mpu_disable_execute_from_ram(void)
 
   // See Note #1.
 #if defined(_SILICON_LABS_32B_SERIES_2) \
-  || (defined(_SILICON_LABS_32B_SERIES_3_CONFIG_1) && defined(SL_RAM_LINKER))
+  || (defined(_SILICON_LABS_32B_SERIES_3) && defined(SL_RAM_LINKER))
   // Memory attributes:
   // Outer memory with ARM_MPU_ATTR_MEMORY_(): non-transient data, Write-Through, cache allocation on read miss, no cache allocation on write miss.
   // ARM_MPU_ATTR(): outer attributes filled, no inner memory
@@ -241,7 +241,7 @@ void sl_mpu_disable_execute_from_ram(void)
   }
 
   // See Note #2.
-#elif (defined(_SILICON_LABS_32B_SERIES_3_CONFIG_1) && !defined(SL_RAM_LINKER))
+#elif (defined(_SILICON_LABS_32B_SERIES_3) && !defined(SL_RAM_LINKER))
   // 1. Set the memory attributes for the entire RAM (alias and non-alias ranges).
   // Outer & inner memories: non-cacheable.
   ARM_MPU_SetMemAttr(MPU_MEMORY_ATTRIBUTE_IX_0,
@@ -368,6 +368,10 @@ void sl_mpu_disable_execute_from_ram(void)
   mpu_region_end = (MPU_NOT_USED_SRAM_END & MPU_RLAR_LIMIT_Msk);
   ARM_MPU_SetRegion(region_nbr, rbar, ARM_MPU_RLAR(mpu_region_end, MPU_MEMORY_ATTRIBUTE_IX_0));
   region_nbr++;
+#else
+  (void)rbar;
+  (void)mpu_region_begin;
+  (void)mpu_region_end;
 #endif
 
   // Enable MPU with default background region.

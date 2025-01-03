@@ -28,6 +28,6 @@ void sli_zigbee_af_demand_response_load_control_cluster_dsa_sign_callback(sl_sta
     sli_zigbee_af_note_signature_failure();
   }
 
-  sl_zigbee_af_demand_response_load_control_cluster_println("sl_zigbee_ezsp_dsa_sign_handler() returned 0x%x",
+  sl_zigbee_af_demand_response_load_control_cluster_println("sl_zigbee_ezsp_dsa_sign_handler() returned 0x%02X",
                                                             status);
 }

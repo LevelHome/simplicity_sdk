@@ -43,7 +43,7 @@
 
 #include "em_device.h"
 #include "em_cmu.h"
-#include "em_gpio.h"
+#include "sl_device_gpio.h"
 #include "em_i2c.h"
 
 #include "sl_sleeptimer.h"
@@ -89,19 +89,16 @@ typedef struct IotI2CDescriptor {
   uint8_t                       ucPeripheralNo;
 
   /* SCL port/pin */
-  GPIO_Port_TypeDef             xSclPort;
-  uint8_t                       ucSclPin;
+  sl_gpio_t                     SclGpio;
   uint8_t                       ucSclLoc;
 
   /* SDA port/pin */
-  GPIO_Port_TypeDef             xSdaPort;
-  uint8_t                       ucSdaPin;
+  sl_gpio_t                     SdaGpio;
   uint8_t                       ucSdaLoc;
 
   /* Enable signal port/pin*/
   uint8_t                       ucEnMode;
-  GPIO_Port_TypeDef             xEnPort;
-  uint8_t                       ucEnPin;
+  sl_gpio_t                     EnGpio;
 
   /* clock and IRQ info */
   CMU_Clock_TypeDef             xClock;

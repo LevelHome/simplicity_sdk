@@ -31,13 +31,16 @@
 #include "nvm3.h"
 #include "nvm3_hal_flash.h"
 #include "nvm3_default_config.h"
+#if defined(NVM3_SECURITY)
+#include "nvm3_hal_crypto_handle.h"
+#endif
 
 #if defined(NVM3_BASE)
 /* Manually control the NVM3 address and size */
 
 #elif defined (__ICCARM__)
 
-__root uint8_t nvm3_default_storage[NVM3_DEFAULT_NVM_SIZE] @ "SIMEE";
+__root __no_init uint8_t nvm3_default_storage[NVM3_DEFAULT_NVM_SIZE] @ "SIMEE";
 #define NVM3_BASE (nvm3_default_storage)
 
 #elif defined (__GNUC__)
@@ -78,16 +81,20 @@ nvm3_Init_t nvm3_defaultInitData =
   NVM3_DEFAULT_MAX_OBJECT_SIZE,
   NVM3_DEFAULT_REPACK_HEADROOM,
   &nvm3_halFlashHandle,
+#if defined(NVM3_SECURITY)
+  &nvm3_halCryptoHandle,
+  NVM3_DEFAULT_SECURITY_TYPE,
+#endif
 };
 
 nvm3_Init_t *nvm3_defaultInit = &nvm3_defaultInitData;
 
-Ecode_t nvm3_initDefault(void)
+sl_status_t nvm3_initDefault(void)
 {
   return nvm3_open(nvm3_defaultHandle, nvm3_defaultInit);
 }
 
-Ecode_t nvm3_deinitDefault(void)
+sl_status_t nvm3_deinitDefault(void)
 {
   return nvm3_close(nvm3_defaultHandle);
 }

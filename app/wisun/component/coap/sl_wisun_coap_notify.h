@@ -1,5 +1,5 @@
 /***************************************************************************//**
- * @file
+ * @file sl_wisun_coap_notify.h
  * @brief Wi-SUN CoAP notfication service
  *******************************************************************************
  * # License
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __SL_WISUN_COAP_NOTIFY_H__
-#define __SL_WISUN_COAP_NOTIFY_H__
+#ifndef SL_WISUN_COAP_NOTIFY_H
+#define SL_WISUN_COAP_NOTIFY_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,23 +38,23 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+
 #include "sl_status.h"
 #include "sl_wisun_coap.h"
 #include "sl_wisun_coap_config.h"
 
 /**************************************************************************//**
- * @addtogroup SL_WISUN_COAP_API CoAP
- * @ingroup SL_WISUN_COAP
+ * @addtogroup SL_WISUN_COAP_NOTIFY_API CoAP Notification API
+ * @ingroup SL_WISUN_COAP_API
  * @{
  *****************************************************************************/
 
 /**************************************************************************//**
- * @defgroup SL_WISUN_COAP_NOTIFICATION_TYPES CoAP Notification type definitions
- * @ingroup SL_WISUN_COAP
+ * @defgroup SL_WISUN_COAP_NOTIFY_TYPES Type definitions
+ * @ingroup SL_WISUN_COAP_NOTIFY_API
  * @{
  *****************************************************************************/
 
@@ -80,7 +80,7 @@ typedef struct sl_wisun_coap_notify {
   uint32_t tick_ms;
 } sl_wisun_coap_notify_t;
 
-/** @} (end SL_WISUN_COAP_NOTIFICATION_TYPES) */
+/** @} (end SL_WISUN_COAP_NOTIFY_TYPES) */
 
 // -----------------------------------------------------------------------------
 //                          Public Function Declarations
@@ -157,6 +157,32 @@ sl_status_t sl_wisun_coap_notify_send_notification(const sl_wisun_coap_notify_t 
  *            It includes all the necessary information about destination.
  *****************************************************************************/
 void sl_wisun_coap_notify_error_hnd(const sl_wisun_coap_notify_t * const notify);
+
+/**************************************************************************//**
+ * @brief Enable/Disable notification synchronization with tick event
+ * @details Enable or disable the notification tick event.
+ *          If it's enabled, the notification service will be synchronized with the tick event,
+ *          otherwise the service scheduled by constant delay and the notification check
+ *          the elapsed time as condition.
+ *
+ * @param[in] enable Enable or disable the notification tick event
+ *****************************************************************************/
+void sl_wisun_coap_notify_tick_evt_enable(const bool enable);
+
+/**************************************************************************//**
+ * @brief Check notification tick event is enabled
+ * @details Check the notification tick event is enabled or not.
+ * @return bool true if the notification tick event is enabled, otherwise false
+ *****************************************************************************/
+bool sl_wisun_coap_notify_tick_evt_is_enabled(void);
+
+/**************************************************************************//**
+ * @brief Notification tick event trigger
+ * @details It should be called to trigger notification service.
+ * @return sl_status_t SL_STATUS_OK if the notification is sent successfully,
+ *         otherwise SL_STATUS_FAIL
+ *****************************************************************************/
+sl_status_t sl_wisun_coap_notify_tick(void);
 #endif
 
 /** @}*/
@@ -165,4 +191,4 @@ void sl_wisun_coap_notify_error_hnd(const sl_wisun_coap_notify_t * const notify)
 }
 #endif
 
-#endif
+#endif // SL_WISUN_COAP_NOTIFY_H

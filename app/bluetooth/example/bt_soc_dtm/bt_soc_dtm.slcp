@@ -39,10 +39,10 @@ component:
   - id: iostream_retarget_stdio
   - id: printf
   - id: mpu
-  - id: bt_post_build
   - id: sl_system
   - id: clock_manager
   - id: device_init
+  - id: sl_common
 
 source:
   - path: main.c
@@ -72,6 +72,10 @@ configuration:
     value: "0"
     condition:
       - psa_crypto
+
+post_build:
+  - profile: bt_common
+    condition: [device_series_2, bootloader_app_properties]
 
 tag:
   - hardware:rf:band:2400

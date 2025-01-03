@@ -67,7 +67,7 @@ typedef struct {
   sl_slist_node_t            *command_list;    ///< Command list
   uint8_t                    pawr_handle;      ///< PAwR handle
   esl_lib_storage_handle_t   storage_handle;   ///< Storage handle
-  esl_lib_bool_t             enabled;          ///< Enabled or disabled
+  esl_lib_bool_t             advertise;        ///< Advertising enable flag
   esl_lib_bool_t             configured;       ///< Configuration state
   esl_lib_pawr_config_t      config;           ///< Configuration
 } esl_lib_pawr_t;

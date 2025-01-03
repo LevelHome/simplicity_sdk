@@ -217,7 +217,7 @@ static bool addPanIdCandidate(uint16_t panId)
 {
   uint16_t* panIdPointer = sli_zigbee_af_network_steering_get_stored_pan_id_pointer(0);
   if (panIdPointer == NULL) {
-    sl_zigbee_af_core_println("Error: %p could not get memory pointer for stored PAN IDs",
+    sl_zigbee_af_core_println("Error: %s could not get memory pointer for stored PAN IDs",
                               PLUGIN_NAME);
     return false;
   }
@@ -226,18 +226,18 @@ static bool addPanIdCandidate(uint16_t panId)
   for (i = 0; i < maxNetworks; i++) {
     if (panId == *panIdPointer) {
       // We already know about this PAN, no point in recording it twice.
-      debugPrintln("Ignoring duplicate PAN ID 0x%2X", panId);
+      debugPrintln("Ignoring duplicate PAN ID 0x%04X", panId);
       return true;
     } else if (*panIdPointer == SL_ZIGBEE_AF_INVALID_PAN_ID) {
       *panIdPointer = panId;
-      debugPrintln("Stored PAN ID 0x%2X", *panIdPointer);
+      debugPrintln("Stored PAN ID 0x%04X", *panIdPointer);
       return true;
     }
     panIdPointer++;
   }
 
   if (!printedMaxPanIdsWarning) {
-    sl_zigbee_af_core_println("Warning: %p Max PANs reached (%d)",
+    sl_zigbee_af_core_println("Warning: %s Max PANs reached (%d)",
                               PLUGIN_NAME,
                               maxNetworks);
     printedMaxPanIdsWarning = true;
@@ -258,7 +258,7 @@ static uint16_t getNextCandidate(void)
   uint16_t* pointer =
     sli_zigbee_af_network_steering_get_stored_pan_id_pointer(sli_zigbee_af_network_steering_pan_id_index);
   if (pointer == NULL) {
-    debugPrintln("Error: %p could not get pointer to stored PANs", PLUGIN_NAME);
+    debugPrintln("Error: %s could not get pointer to stored PANs", PLUGIN_NAME);
     return SL_ZIGBEE_AF_INVALID_PAN_ID;
   }
   sli_zigbee_af_network_steering_pan_id_index++;
@@ -289,7 +289,7 @@ static void gotoNextChannel(void)
   status = sl_zigbee_af_scan_dispatch_schedule_scan(&scanData);
 
   if (SL_STATUS_OK != status) {
-    sl_zigbee_af_core_println("Error: %p start scan failed: 0x%X", PLUGIN_NAME, status);
+    sl_zigbee_af_core_println("Error: %s start scan failed: 0x%02X", PLUGIN_NAME, status);
     cleanupAndStop(status);
   } else {
     sl_zigbee_af_core_println("Starting scan on channel %d",
@@ -312,14 +312,14 @@ void tryToJoinNetwork(void)
     return;
   }
 
-  sl_zigbee_af_core_println("%p joining 0x%2x", PLUGIN_NAME, networkParams.panId);
+  sl_zigbee_af_core_println("%s joining 0x%04X", PLUGIN_NAME, networkParams.panId);
   networkParams.radioChannel = sli_zigbee_af_network_steering_current_channel;
   networkParams.radioTxPower = GET_RADIO_TX_POWER(sli_zigbee_af_network_steering_current_channel);
   nodeType = sl_zigbee_af_network_steering_get_node_type_cb(sli_zigbee_af_network_steering_state);
   status = sl_zigbee_join_network(nodeType, &networkParams);
   sli_zigbee_af_network_steering_join_attempts++;
   if (SL_STATUS_OK != status) {
-    sl_zigbee_af_core_println("Error: %p could not attempt join: 0x%X",
+    sl_zigbee_af_core_println("Error: %s could not attempt join: 0x%02X",
                               PLUGIN_NAME,
                               status);
     cleanupAndStop(status);
@@ -354,7 +354,7 @@ void sli_zigbee_af_network_steering_stack_status_callback(sl_status_t status)
     }
     return;
   } else if (status == SL_STATUS_NETWORK_UP) {
-    sl_zigbee_af_core_println("%p network joined.", PLUGIN_NAME);
+    sl_zigbee_af_core_println("%s network joined.", PLUGIN_NAME);
     if (!sli_zigbee_af_network_steering_state_uses_distributed_key()
         && !(sli_zigbee_af_network_steering_options_mask
              & SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_OPTIONS_NO_TCLK_UPDATE)) {
@@ -371,7 +371,7 @@ void sli_zigbee_af_network_steering_stack_status_callback(sl_status_t status)
 static void scanCompleteCallback(uint8_t channel, sl_status_t status)
 {
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_core_println("Error: Scan complete handler returned 0x%X on %d", status, channel);
+    sl_zigbee_af_core_println("Error: Scan complete handler returned 0x%02X on %d", status, channel);
   } else {   // when scan is over, we always return with success
     // EMAPPFWKV2-1462 - make sure we didn't cleanupAndStop() above.
     if (sli_zigbee_af_network_steering_state
@@ -392,7 +392,7 @@ static void networkFoundCallback(sl_zigbee_zigbee_network_t *networkFound,
     return;
   }
 
-  debugPrint("%p nwk found ch: %d, panID 0x%2X, xpan: ",
+  debugPrint("%s nwk found ch: %d, panID 0x%04X, xpan: ",
              PLUGIN_NAME,
              networkFound->channel,
              networkFound->panId);
@@ -413,7 +413,7 @@ static void networkFoundCallback(sl_zigbee_zigbee_network_t *networkFound,
   debugPrintln("");
 
   if (!addPanIdCandidate(networkFound->panId)) {
-    sl_zigbee_af_core_println("Error: %p could not add candidate network.",
+    sl_zigbee_af_core_println("Error: %s could not add candidate network.",
                               PLUGIN_NAME);
     cleanupAndStop(SL_STATUS_FAIL);
     return;
@@ -447,7 +447,7 @@ static sl_status_t tryNextMethod(void)
 
 static void cleanupAndStop(sl_status_t status)
 {
-  sl_zigbee_af_core_println("%p Stop.  Cleaning up.", PLUGIN_NAME);
+  sl_zigbee_af_core_println("%s Stop.  Cleaning up.", PLUGIN_NAME);
   sl_zigbee_af_network_steering_complete_cb(status,
                                             sli_zigbee_af_network_steering_total_beacons,
                                             sli_zigbee_af_network_steering_join_attempts,
@@ -484,12 +484,12 @@ static uint8_t getNextChannel(void)
 static sl_status_t stateMachineRun(void)
 {
   sl_status_t status = SL_STATUS_OK;
-  sl_zigbee_af_core_println("%p State: %p",
+  sl_zigbee_af_core_println("%s State: %s",
                             PLUGIN_NAME,
                             sli_zigbee_af_network_steering_stateNames[sli_zigbee_af_network_steering_state]);
 
   if ((status = setupSecurity()) != SL_STATUS_OK) {
-    sl_zigbee_af_core_println("Error: %p could not setup security: 0x%X",
+    sl_zigbee_af_core_println("Error: %s could not setup security: 0x%02X",
                               PLUGIN_NAME,
                               status);
     return tryNextMethod();
@@ -507,7 +507,7 @@ static sl_status_t stateMachineRun(void)
       break;
   }
 
-  debugPrintln("Channel Mask: 0x%4X", currentChannelMask);
+  debugPrintln("Channel Mask: 0x%08X", currentChannelMask);
   gotoNextChannel();
   return status;
 }
@@ -594,7 +594,7 @@ sl_status_t sl_zigbee_af_network_steering_start(void)
                               sli_zigbee_af_network_steering_plugin_name);
   }
 
-  sl_zigbee_af_core_println("%p: %p: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             sli_zigbee_af_network_steering_plugin_name,
                             "Start",
                             status);
@@ -631,7 +631,7 @@ void sl_zigbee_af_network_steering_finish_steering_event_handler(sl_zigbee_af_ev
     // we leave the network.
     sl_zigbee_af_update_tc_link_key_stop();
     sl_zigbee_leave_network(SL_ZIGBEE_LEAVE_NWK_WITH_NO_OPTION);
-    sl_zigbee_af_core_println("%p: %p",
+    sl_zigbee_af_core_println("%s: %s",
                               PLUGIN_NAME,
                               "Key verification failed. Leaving network");
     cleanupAndStop(SL_STATUS_FAIL);
@@ -646,7 +646,7 @@ void sl_zigbee_af_network_steering_finish_steering_event_handler(sl_zigbee_af_ev
     // We are done!
     status = sl_zigbee_af_permit_join(SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_COMMISSIONING_TIME_S,
                                       true); // Broadcast permit join?
-    sl_zigbee_af_core_println("%p: %p: 0x%X",
+    sl_zigbee_af_core_println("%s: %s: 0x%02X",
                               PLUGIN_NAME,
                               "Broadcasting permit join",
                               status);
@@ -658,7 +658,7 @@ void sl_zigbee_af_network_steering_finish_steering_event_handler(sl_zigbee_af_ev
 void sl_zigbee_af_update_tc_link_key_status_cb(sl_zigbee_key_status_t keyStatus)
 {
   if (sli_zigbee_af_network_steering_state_update_tclk()) {
-    sl_zigbee_af_core_println("%p: %p: 0x%X",
+    sl_zigbee_af_core_println("%s: %s: 0x%02X",
                               PLUGIN_NAME,
                               "Trust center link key update status",
                               keyStatus);
@@ -708,7 +708,7 @@ void sli_zigbee_af_network_steering_set_extended_pan_id_filter(uint8_t* extended
   gFilterByExtendedPanId = turnFilterOn;
 }
 
-void sli_zigbee_af_network_steering_set_configured_key(uint8_t *key,
+void sli_zigbee_af_network_steering_set_configured_key(const uint8_t *key,
                                                        bool useConfiguredKey)
 {
   if (!key) {
@@ -748,6 +748,17 @@ uint16_t* sli_zigbee_af_network_steering_get_stored_pan_id_pointer(uint8_t index
     memoryCleared = true;
   }
   return &(storedNetworks[index]);
+}
+
+void sl_zigbee_af_network_steering_autostart(void)
+{
+#ifdef ENABLE_STEERING_AUTOSTART
+  sl_status_t status = sl_zigbee_af_network_steering_start();
+  sl_zigbee_af_core_println("%s network %s: 0x%02X", "Join", "start", status);
+#else
+  sl_zigbee_af_core_println("Network steering: auto-start disabled by configuration");
+#endif
+  return;
 }
 
 #endif // OPTIMIZE_SCANS

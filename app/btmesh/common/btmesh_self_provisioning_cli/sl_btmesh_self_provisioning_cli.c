@@ -32,7 +32,6 @@
 #include "sl_bt_api.h"
 #include "sl_btmesh_api.h"
 #include "sl_btmesh.h"
-#include "em_common.h"
 #include "sl_cli.h"
 
 #include "sl_component_catalog.h"

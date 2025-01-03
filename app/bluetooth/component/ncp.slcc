@@ -7,26 +7,17 @@ description: >
 
   This is a No-Code component.
 category: Bluetooth|NCP Interface
+metadata:
+  sbom:
+    license: Zlib
 quality: production
 root_path: app/bluetooth/common/ncp
 tag:
   - No-Code
 config_file:
   - path: config/sl_ncp_config.h
-  - path: config/sl_ncp_freertos_config.h
-    condition:
-      - freertos
-  - path: config/sl_ncp_micriumos_config.h
-    condition:
-      - micriumos_kernel
 source:
   - path: sl_ncp.c
-  - path: sl_ncp_freertos.c
-    condition:
-      - freertos
-  - path: sl_ncp_micriumos.c
-    condition:
-      - micriumos_kernel
 include:
   - path: .
     file_list:
@@ -36,44 +27,39 @@ template_file:
 provides:
   - name: ncp
 requires:
-  - name: app_assert
   - name: bluetooth_stack
   - name: component_catalog
   - name: power_manager
-  - name: emlib_common
-  - name: emlib_core
+  - name: sl_common
+  - name: sl_core
   - name: ncp_evt_filter
-  - name: simple_com
+  - name: bluetooth_ncp_transport
   - name: app_timer
+  - name: app_rta
   - name: status
 recommends:
-  - id: app_timer
+  - id: bluetooth_ncp_transport_usart
+    condition:
+      - device_series_2
+  - id: bluetooth_ncp_transport_iostream
+    condition:
+      - device_series_3
 define:
   - name: SL_BT_API_FULL
 template_contribution:
-  - name: event_handler
+  - name: app_rta_init
     value:
-      event: internal_app_init
       include: sl_ncp.h
       handler: sl_ncp_init
-    priority: 5
-  - name: event_handler
+  - name: app_rta_ready
     value:
-      event: internal_app_process_action
       include: sl_ncp.h
-      handler: sl_ncp_step
-    unless:
-      - kernel
-  - name: power_manager_handler
-    value:
-      event: is_ok_to_sleep
-      include: sl_ncp.h
-      handler: sli_ncp_is_ok_to_sleep
-  - name: power_manager_handler
-    value:
-      event: sleep_on_isr_exit
-      include: sl_ncp.h
-      handler: sli_ncp_sleep_on_isr_exit
+      handler: sl_ncp_rta_ready
+validation_library:
+  - path: ../../../common/validation/autonumber_common.lua
+    name: autonumber_common
+validation_helper:
+  - path: config/validator.lua
 documentation:
   docset: bluetooth
   document: bluetooth-service-api/ncp

@@ -13,7 +13,7 @@ provides:
   - name: segment_lcd_driver
 requires:
   - name: clock_manager_runtime
-  - name: emlib_gpio
+  - name: gpio
   - name: emlib_lcd
   - name: status
   - name: device_has_lcd

@@ -176,7 +176,7 @@ static void keyUpdateGotoStateAfterDelay(sli_zigbee_key_update_state_id_t stateI
 {
   currentStateId = stateId;
   sl_zigbee_af_security_flush();
-  sl_zigbee_af_security_println("Delaying %l sec. before going to state: %s",
+  sl_zigbee_af_security_println("Delaying %ld sec. before going to state: %s",
                                 delayQs >> 2,
                                 keyUpdateStateStrings[currentStateId]);
   sl_zigbee_af_security_flush();
@@ -243,7 +243,7 @@ SL_ZIGBEE_TEST_PUBLIC void zdoDiscoveryCallback(const sl_zigbee_af_service_disco
   if (result->status == SL_ZIGBEE_AF_BROADCAST_SERVICE_DISCOVERY_RESPONSE_RECEIVED
       || result->status == SL_ZIGBEE_AF_BROADCAST_SERVICE_DISCOVERY_COMPLETE_WITH_RESPONSE) {
     discoveredNodeId = result->matchAddress;
-    sl_zigbee_af_security_println("Key Table index %d is node ID 0x%2X",
+    sl_zigbee_af_security_println("Key Table index %d is node ID 0x%04X",
                                   keyTableIndex,
                                   discoveredNodeId);
     keyUpdateGotoNextState();
@@ -346,7 +346,7 @@ static bool nextNetworkKeyIsNewer(sl_zigbee_key_struct_t* nextNwkKey)
 
 static void abortKeyUpdate(sl_status_t status)
 {
-  sl_zigbee_af_security_println("Key Update %p (0x%X)",
+  sl_zigbee_af_security_println("Key Update %s (0x%02X)",
                                 (status == SL_STATUS_OK
                                  ? "complete"
                                  : "aborted"),
@@ -381,7 +381,7 @@ static void sendKeyUpdate(sli_zigbee_key_update_result_t result)
                                     keyTableIndex);
       return;
     }
-    sl_zigbee_af_security_println("Sending NWK Key update to 0x%2X",
+    sl_zigbee_af_security_println("Sending NWK Key update to 0x%04X",
                                   discoveredNodeId);
 
     status = sl_zigbee_send_unicast_network_key_update(discoveredNodeId,

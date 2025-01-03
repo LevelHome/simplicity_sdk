@@ -1183,18 +1183,27 @@ psa_status_t sli_cryptoacc_transparent_aead_update(sli_cryptoacc_transparent_aea
 {
   #if defined(PSA_WANT_ALG_CCM) || defined(PSA_WANT_ALG_GCM)
 
-  if (output_size < input_length) {
-    return PSA_ERROR_BUFFER_TOO_SMALL;
-  }
-
-  if (operation == NULL
-      || ((input == NULL || output == NULL) && input_length > 0)
-      || output_length == NULL) {
+  if (operation == NULL) {
     return PSA_ERROR_INVALID_ARGUMENT;
   }
 
   if (operation->alg == 0) {
     return PSA_ERROR_BAD_STATE;
+  }
+
+  // Check output buffer size is not too small. The required size =
+  // input_length + residual data stored in context object from previous update
+  // The PSA Crypto tests require output buffer can hold the residual bytes in
+  // the last AES block even if these are not processed and written in this call
+  // ( they are postponed to the next call to update or finish ).
+
+  if (output_size < input_length + operation->final_data_length) {
+    return PSA_ERROR_BUFFER_TOO_SMALL;
+  }
+
+  if (((input == NULL || output == NULL) && input_length > 0)
+      || output_length == NULL) {
+    return PSA_ERROR_INVALID_ARGUMENT;
   }
 
   // Check variable overflow
@@ -1377,7 +1386,8 @@ psa_status_t sli_cryptoacc_transparent_aead_update(sli_cryptoacc_transparent_aea
         operation->final_data_length = 16;
         input_length -= operation->final_data_length;
         if (!input_length) {
-          return PSA_SUCCESS;
+          return_status = cryptoacc_management_release();
+          return return_status;
         }
       }
 
@@ -1440,6 +1450,7 @@ psa_status_t sli_cryptoacc_transparent_aead_update(sli_cryptoacc_transparent_aea
       break;
       #endif //PSA_WANT_ALG_GCM
     default:
+      (void) cryptoacc_management_release();
       return PSA_ERROR_NOT_SUPPORTED;
   }
   // Release ownership.

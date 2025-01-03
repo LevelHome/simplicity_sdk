@@ -2,8 +2,8 @@
  * @brief RAIL Configuration
  * @details
  *   WARNING: Auto-Generated Radio Config Header  -  DO NOT EDIT
- *   Radio Configurator Version: 2304.2.1
- *   RAIL Adapter Version: 2.4.32
+ *   Radio Configurator Version: 2404.4.4
+ *   RAIL Adapter Version: 2.4.33
  *   RAIL Compatibility: 2.x
  *******************************************************************************
  * # License
@@ -48,7 +48,7 @@ extern const uint32_t sl_rail_ble_phy_500kbps_38M4Hz_0_37_modemConfig[];
 extern const uint32_t sl_rail_ble_phy_simulscan_38M4Hz_0_37_modemConfig[];
 
 #define RAIL0_SL_RAIL_BLE_PHY_1MBPS_VITERBI_38M4HZ_PHY_BLUETOOTH_1M_AOX_PROD
-#define RAIL0_SL_RAIL_BLE_PHY_1MBPS_VITERBI_38M4HZ_PROFILE_BASE
+#define RAIL0_SL_RAIL_BLE_PHY_1MBPS_VITERBI_38M4HZ_PROFILE_BLE
 extern const RAIL_ChannelConfig_t sl_rail_ble_phy_1Mbps_viterbi_38M4Hz_channelConfig;
 extern const RAIL_ChannelConfigEntry_t sl_rail_ble_phy_1Mbps_viterbi_38M4Hz_channels[];
 
@@ -63,17 +63,17 @@ extern const RAIL_ChannelConfig_t sl_rail_ble_phy_2Mbps_aox_38M4Hz_channelConfig
 extern const RAIL_ChannelConfigEntry_t sl_rail_ble_phy_2Mbps_aox_38M4Hz_channels[];
 
 #define RAIL0_SL_RAIL_BLE_PHY_125KBPS_38M4HZ_PHY_BLUETOOTH_LR_125K_PROD
-#define RAIL0_SL_RAIL_BLE_PHY_125KBPS_38M4HZ_PROFILE_BASE
+#define RAIL0_SL_RAIL_BLE_PHY_125KBPS_38M4HZ_PROFILE_BLE
 extern const RAIL_ChannelConfig_t sl_rail_ble_phy_125kbps_38M4Hz_channelConfig;
 extern const RAIL_ChannelConfigEntry_t sl_rail_ble_phy_125kbps_38M4Hz_channels[];
 
 #define RAIL0_SL_RAIL_BLE_PHY_500KBPS_38M4HZ_PHY_BLUETOOTH_LR_500K_PROD
-#define RAIL0_SL_RAIL_BLE_PHY_500KBPS_38M4HZ_PROFILE_BASE
+#define RAIL0_SL_RAIL_BLE_PHY_500KBPS_38M4HZ_PROFILE_BLE
 extern const RAIL_ChannelConfig_t sl_rail_ble_phy_500kbps_38M4Hz_channelConfig;
 extern const RAIL_ChannelConfigEntry_t sl_rail_ble_phy_500kbps_38M4Hz_channels[];
 
 #define RAIL0_SL_RAIL_BLE_PHY_SIMULSCAN_38M4HZ_PHY_BLUETOOTH_1M_CONCURRENT_PROD
-#define RAIL0_SL_RAIL_BLE_PHY_SIMULSCAN_38M4HZ_PROFILE_BASE
+#define RAIL0_SL_RAIL_BLE_PHY_SIMULSCAN_38M4HZ_PROFILE_BLE
 extern const RAIL_ChannelConfig_t sl_rail_ble_phy_simulscan_38M4Hz_channelConfig;
 extern const RAIL_ChannelConfigEntry_t sl_rail_ble_phy_simulscan_38M4Hz_channels[];
 

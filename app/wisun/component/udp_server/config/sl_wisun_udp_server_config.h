@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_wisun_udp_server_config.h
+ * @brief Wi-SUN UDP Server configuration
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -32,9 +32,9 @@
 
 // <<< Use Configuration Wizard in Context Menu >>>
 
-// <h>Wi-SUN UDP Server configuration
+// <h> Wi-SUN UDP Server configuration
 // <o SL_WISUN_UDP_SERVER_PORT> UDP Server port
-// <i> Default: 4567
+// <i> Default: 1234
 // <i> This is the port number where UDP server is listening
 // <1-65536>
 #define SL_WISUN_UDP_SERVER_PORT                    1234U
@@ -43,6 +43,7 @@
 // <i> Default: 128
 // <1-2048>
 #define SL_WISUN_UDP_SERVER_BUFF_SIZE               128U
+
 // </h>
 
 // <<< end of configuration section >>>

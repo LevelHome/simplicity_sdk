@@ -23,7 +23,10 @@
 #include "sl_token_api.h"
 #include "sl_token_manager.h"
 #include "sl_token_manufacturing_api.h"
+#include "sl_code_classification.h"
+#if defined(_SILICON_LABS_32B_SERIES_2)
 #include "em_msc.h"
+#endif // (_SILICON_LABS_32B_SERIES_2)
 
 #if (_SILICON_LABS_32B_SERIES_2_CONFIG == 1)
 #include "sl_se_manager_util.h"
@@ -39,24 +42,20 @@
 #undef TOKEN_MFG
 #undef DEFINETOKENS
 
-#if defined(_SILICON_LABS_32B_SERIES_1)
-  #define SILABS_DEVINFO_EUI64_LOW   (DEVINFO->UNIQUEL)
-  #define SILABS_DEVINFO_EUI64_HIGH  (DEVINFO->UNIQUEH)
-// All Series 1 devices have the same user data space size.
-// All Series 1 devices do not have a USERDATA_END in their header file.
-// The '-1' parameter makes this define match all non-Series 1 defines
-// in that the _END is size-1.
-  #define USERDATA_END (USERDATA_BASE + FLASH_PAGE_SIZE - 1)
-#elif defined(_SILICON_LABS_32B_SERIES_2)
-  #include "em_se.h"
-  #define SILABS_DEVINFO_EUI64_LOW   (DEVINFO->EUI64L)
-  #define SILABS_DEVINFO_EUI64_HIGH  (DEVINFO->EUI64H)
+#if defined(_SILICON_LABS_32B_SERIES_2) || defined(_SILICON_LABS_32B_SERIES_3)
+#define SILABS_DEVINFO_EUI64_LOW   (DEVINFO->EUI64L)
+#define SILABS_DEVINFO_EUI64_HIGH  (DEVINFO->EUI64H)
 #else
-  #error Error: this micro is not yet supported by the manufacturing token code
+  #error The flash map of manufacturing tokens is not available for this device
 #endif
 
 static const uint8_t nullEui[] = { 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU };
 
+//FIXME: Added for zigbee purpose. these values are used only by ZB for now.
+static const char* mfg_string_token = "MFG Tkn NVM3";
+static uint16_t mfg_security_config_token = 0xFFFF; // Reading + Hashing allowed. See security-config-mfg.c
+
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_TOKEN_MANAGER, SL_CODE_CLASS_TIME_CRITICAL)
 static void getMfgTokenData(void *data,
                             uint16_t token,
                             uint8_t index,
@@ -114,14 +113,42 @@ static void getMfgTokenData(void *data,
 /***************************************************************************//**
  * Read the data associated with the specified manufacturing token.
  ******************************************************************************/
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_TOKEN_MANAGER, SL_CODE_CLASS_TIME_CRITICAL)
 sl_status_t sl_token_get_manufacturing_data(uint32_t token,
                                             uint32_t index,
                                             void *data,
                                             uint32_t length)
 {
+  sl_status_t status = SL_STATUS_OK;
+
   if (length == 0U) {
-    return SL_STATUS_INVALID_PARAMETER; // Nothing to do...
+    return SL_STATUS_INVALID_PARAMETER;   // Nothing to do...
   }
+
+  if (nvm3OverrideActive == true) {
+    //FIXME: Added for zigbee purpose
+    if (token == TOKEN_MFG_EUI_64) {
+      uint32_t eui64_low = SILABS_DEVINFO_EUI64_LOW;
+      uint32_t eui64_high = SILABS_DEVINFO_EUI64_HIGH;
+      memcpy((char*)data, &eui64_low, sizeof(eui64_low));
+      memcpy((char*)data + 3, &eui64_high, sizeof(eui64_high));
+    } else if (token == TOKEN_MFG_STRING) {
+      memcpy(data, mfg_string_token, strlen(mfg_string_token));
+    } else if (token == TOKEN_MFG_SECURITY_CONFIG) {
+      memcpy(data, &mfg_security_config_token, sizeof(mfg_security_config_token));
+    } else {
+      //0x7F is a non-indexed token.  Remap to 0 for the address calculation
+      index = (index == 0x7FU) ? 0U : index;
+      //Read the token from NVM3
+      status = sl_token_get_data(NVM3KEY_MFG_TOKEN_RANGE | token,
+                                 index,
+                                 data,
+                                 length);
+    }
+    //Any outcome of the read, return from here
+    return status;
+  }
+
   if (token == MFG_EUI_64_LOCATION) {
     //There are two EUI64's stored in the flash, Ember and Custom.
     //MFG_EUI_64_LOCATION is the address used by the generic EUI64 token.
@@ -146,7 +173,7 @@ sl_status_t sl_token_get_manufacturing_data(uint32_t token,
  * @brief Assign numerical value to the type of erasure requested.
  */
 #define MFB_MASS_ERASE 0x01
-
+#if defined(_SILICON_LABS_32B_SERIES_2)
 // The parameter 'eraseType' chooses which erasure will be performed while
 // the 'address' parameter chooses the page to be erased during MFB page erase.
 sl_status_t halInternalFlashErase(uint8_t eraseType, uint32_t address)
@@ -178,32 +205,6 @@ sl_status_t halInternalFlashErase(uint8_t eraseType, uint32_t address)
   return SL_STATUS_OK;
 }
 
-// Helper function to create and write a 32b word from incoming 16b
-// word/address.
-// Does not check that address16 is properly word-aligned - assumes that the
-// caller has already done this.
-
- #if !defined(_SILICON_LABS_32B_SERIES_2)
-static msc_Return_TypeDef halInternalFlashWrite16(uint32_t address16, uint16_t data16)
-{
-  uint32_t           newData32;
-
-  // Figure out corresponding 32 bit address, remove lowest 2 bits
-  uint32_t address32 = address16 & 0xFFFFFFFCU;
-
-  // Put 16bit data in 32b data.
-  // According to the EFM32 reference manual, any flash bits that aren't being
-  // changed should be written as '1'.
-  if (address16 & 2) {
-    newData32 = (0x0000FFFFU | (((uint32_t)data16) << 16));
-  } else {
-    newData32 = (0xFFFF0000U | data16);
-  }
-
-  return MSC_WriteWord((uint32_t *)address32, &newData32, 4);
-}
- #endif //_SILICON_LABS_32B_SERIES_2
-
 // The parameter 'address' defines the starting address of where the
 // programming will occur - this parameter MUST be half-word aligned since all
 // programming operations are HW.  The parameter 'data' is a pointer to a buffer
@@ -213,79 +214,6 @@ static msc_Return_TypeDef halInternalFlashWrite16(uint32_t address16, uint16_t d
 // if that is attempted.
 sl_status_t halInternalFlashWrite(uint32_t address, uint16_t *data, uint32_t length)
 {
- #if defined(_SILICON_LABS_32B_SERIES_1)
-  uint32_t byteCount, wordCount;
-  uint16_t *dp16, *fp16;
-
-  if (((uint32_t)data & 1U) != 0U || (address & 1U) != 0U) {
-    return SL_STATUS_FAIL; //UNALIGNED;
-  }
-
-  if (length > 0) {
-    // First, do a pass over flash and data and verify that the current flash
-    // value is 0xFFFF OR the data to be written is 0.  If this is untrue for
-    // any 16-bit word that is being written, return a failure without writing
-    // anything
-
-    fp16      = (uint16_t *)address;
-    dp16      = data;
-    wordCount = length + 1;
-
-    while (--wordCount) {
-      if (*fp16 != 0xFFFFU && *dp16 != 0) {
-        return SL_STATUS_FLASH_PROGRAM_FAILED;
-      }
-      ++fp16;
-      ++dp16;
-    }
-
-    MSC_Init();
-
-    // Is this a single 16-bit write or starting the write not aligned to
-    // a longword address?
-
-    if ((length == 1) || (address & 2U) != 0U) {
-      if (halInternalFlashWrite16(address, *data) != mscReturnOk) {
-        MSC_Deinit();
-        return SL_STATUS_FLASH_PROGRAM_FAILED;
-      }
-
-      address += 2;
-      ++data;
-      --length;
-    }
-
-    if (length > 1) {
-      // Calculate the number of 32-bit longwords we want to write, and
-      // calculate the corresponding number of bytes.  If there is an odd
-      // number of 16-bit words, ignore the last word for now.
-
-      wordCount = (length & 0xFFFFFFFEU);
-      byteCount = wordCount * 2;
-
-      if (MSC_WriteWord((uint32_t *)address, (void const *)data, byteCount) != mscReturnOk) {
-        MSC_Deinit();
-        return SL_STATUS_FLASH_PROGRAM_FAILED;
-      }
-
-      address += byteCount;    // Address is bytes,
-      data    += wordCount;    // But data pointer is a uint16_t *
-      length  -= wordCount;
-    }
-
-    // Do we have an odd number of 16-bit words?
-    if (length > 0) {
-      // Yes, write the final 16-bit word as an update to the 32-bit
-      // word that contains it.
-      if (halInternalFlashWrite16(address, *data) != mscReturnOk) {
-        MSC_Deinit();
-        return SL_STATUS_FLASH_PROGRAM_FAILED;
-      }
-    }
-    MSC_Deinit();
-  }
-
- #elif defined(_SILICON_LABS_32B_SERIES_2)
   // halInternalFlashWriteSeries2 should be called for more efficient writing, the following
   // is for backwards compatibility
   uint32_t byteCount, *fp32, i, wordToWrite;
@@ -349,27 +277,21 @@ sl_status_t halInternalFlashWrite(uint32_t address, uint16_t *data, uint32_t len
 
   MSC_Deinit();
 
- #else
- #error Unknown device series
- #endif
-
   return SL_STATUS_OK;
 }
 
-sl_status_t halInternalFlashWrite(uint32_t address, uint16_t *data, uint32_t length);
-
-#if (_SILICON_LABS_32B_SERIES == 2)
 // Odd len is not supported by this function
-static void flashWrite(uint32_t realAddress, void *data, uint32_t len)
+static void halFlashWrite(uint32_t realAddress, void *data, uint32_t len)
 {
   sl_status_t flashStatus = SL_STATUS_FAIL;
   flashStatus = halInternalFlashWrite(realAddress, (uint16_t*)data, (len / 2));
   assert(flashStatus == SL_STATUS_OK);
 }
+
 #endif
 
 #if (_SILICON_LABS_32B_SERIES_2_CONFIG == 1)
-static void flashWriteSE(uint32_t realAddress, void *data, uint32_t len)
+static void halFlashWriteSE(uint32_t realAddress, void *data, uint32_t len)
 {
   if ((realAddress & USERDATA_BASE) == USERDATA_BASE) {
     sl_status_t status = SL_STATUS_OK;
@@ -377,7 +299,7 @@ static void flashWriteSE(uint32_t realAddress, void *data, uint32_t len)
     status = sl_se_write_user_data(&cmd_ctx, (realAddress & 0x0FFF), data, len);
     assert(status == SL_STATUS_OK);
   } else {
-    flashWrite(realAddress, data, len);
+    halFlashWrite(realAddress, data, len);
   }
 }
 #endif // (_SILICON_LABS_32B_SERIES_2_CONFIG == 1)
@@ -385,7 +307,7 @@ static void flashWriteSE(uint32_t realAddress, void *data, uint32_t len)
 #if (_SILICON_LABS_32B_SERIES == 2)
   #if (_SILICON_LABS_32B_SERIES_2_CONFIG == 1)
     #define FLASHWRITE(realAddress, data, len) \
-  (flashWriteSE((realAddress), (data), (len)))
+  (halFlashWriteSE((realAddress), (data), (len)))
   #elif (_SILICON_LABS_32B_SERIES_2_CONFIG == 2) \
   || (_SILICON_LABS_32B_SERIES_2_CONFIG == 3)    \
   || (_SILICON_LABS_32B_SERIES_2_CONFIG == 4)    \
@@ -394,10 +316,12 @@ static void flashWriteSE(uint32_t realAddress, void *data, uint32_t len)
   || (_SILICON_LABS_32B_SERIES_2_CONFIG == 7)    \
   || (_SILICON_LABS_32B_SERIES_2_CONFIG == 8)
     #define FLASHWRITE(realAddress, data, len) \
-  (flashWrite((realAddress), (data), (len)))
+  (halFlashWrite((realAddress), (data), (len)))
   #else
     #error Unknown device configuration
   #endif
+#elif (_SILICON_LABS_32B_SERIES == 3)
+//TODO:Handle S3 flash write by using SE APIs
 #else
   #error Unknown device series
 #endif
@@ -441,11 +365,13 @@ sl_status_t sl_token_set_manufacturing_data(uint32_t token,
                                             void *data,
                                             uint32_t length)
 {
+  sl_status_t status = SL_STATUS_OK;
   uint32_t realAddress = 0;
   //Initializing to a high memory address adds protection by causing a
   //hardfault if accidentally used.
   uint8_t *flash = (uint8_t *)0xFFFFFFF0U;
   uint32_t i;
+
   //The flash library requires the address and length to both
   //be multiples of 16bits.  Since this API is only valid for writing to
   //the UserPage or LockBits page, verify that the token+len falls within
@@ -453,6 +379,22 @@ sl_status_t sl_token_set_manufacturing_data(uint32_t token,
   assert((token & 1) != 1);
   assert((length & 1) != 1);
 
+  if (nvm3OverrideActive == true) {
+    //FIXME: Added for zigbee purpose
+    if (token == TOKEN_MFG_SECURITY_CONFIG) {
+      memcpy(&mfg_security_config_token, data, length);
+    } else {
+      //Write the token into NVM3
+      status = sl_token_set_data(NVM3KEY_MFG_TOKEN_RANGE | token,
+                                 0x7F,
+                                 data,
+                                 length);
+    }
+    //Any outcome of the write, return from here
+    return status;
+  }
+
+#if (_SILICON_LABS_32B_SERIES == 2)
   if ((token & 0xF000) == (USERDATA_TOKENS & 0xF000)) {
     realAddress = ((USERDATA_BASE + (token & 0x0FFF)));
     flash = (uint8_t *)realAddress;
@@ -479,7 +421,6 @@ sl_status_t sl_token_set_manufacturing_data(uint32_t token,
   // sate any compiler warnings about unused variable.
   (void) flash;
 
-  #if (_SILICON_LABS_32B_SERIES == 2)
   // if address is 2 byte aligned instead of 4, write two buffer bytes of 0xFFFF with
   // the first 2 bytes of data separately from the rest of data 2 bytes before
   // realAddress. There is buffer space built into the token map to account for these
@@ -500,11 +441,17 @@ sl_status_t sl_token_set_manufacturing_data(uint32_t token,
     length -= 2;
     writeEndWord(realAddress, data, length);
   }
-  #endif
 
   if (length > 0) {
     FLASHWRITE(realAddress, data, length);
   }
+
+#elif (_SILICON_LABS_32B_SERIES == 3)
+  //TODO: Handle flash write specific to S3
+  (void) realAddress;
+  (void) flash;
+  (void) i;
+#endif
 
   return SL_STATUS_OK;
 }

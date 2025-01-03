@@ -94,7 +94,7 @@ bool sl_zigbee_af_mfglib_enabled(void)
   enabled = true;
 #endif
 
-  sl_zigbee_core_debug_print("MFG_LIB Enabled %x\r\n", enabled);
+  sl_zigbee_core_debug_print("MFG_LIB Enabled %02X\r\n", enabled);
 
   return enabled;
 }
@@ -122,7 +122,7 @@ void sl_zigbee_af_manufacturing_library_cli_check_receive_complete_event_handler
 
   if (savedPacketCount == mfgTotalPacketCounter) {
     inReceivedStream = false;
-    sl_zigbee_af_core_println("%p Receive Complete %d packets",
+    sl_zigbee_af_core_println("%s Receive Complete %d packets",
                               PLUGIN_NAME,
                               mfgCurrentPacketCounter);
     sl_zigbee_af_core_println("First packet: lqi %d, rssi %d, len %d",
@@ -197,7 +197,7 @@ void sl_zigbee_af_mfglib_rx_statistics(uint16_t* packetsReceived,
 void sl_zigbee_af_mfglib_start(bool wantCallback)
 {
   sl_status_t status = mfglibInternalStart(wantCallback);
-  sl_zigbee_af_core_println("%p start, status 0x%X",
+  sl_zigbee_af_core_println("%s start, status 0x%02X",
                             PLUGIN_NAME,
                             status);
   if (status == SL_STATUS_OK) {
@@ -287,7 +287,7 @@ static sl_status_t sendPacket(uint8_t *buffer, uint16_t numPackets)
 
     // print an error on failure
     if (status != SL_STATUS_OK) {
-      sl_zigbee_af_core_println("mfg send err 0x%x index 0x%x\r\n\r\n", status, i);
+      sl_zigbee_af_core_println("mfg send err 0x%02X index 0x%02X\r\n\r\n", status, i);
       if (returnStatus == SL_STATUS_OK) {
         returnStatus = status;
       }
@@ -317,7 +317,7 @@ void sli_zigbee_af_mfglib_send_command(SL_CLI_COMMAND_ARG)
   fillBuffer(sendBuff, length, random);
 
   sl_status_t status = sendPacket(sendBuff, numPackets);
-  sl_zigbee_af_core_println("%p send packet, status 0x%X", PLUGIN_NAME, status);
+  sl_zigbee_af_core_println("%s send packet, status 0x%02X", PLUGIN_NAME, status);
 }
 
 void sli_zigbee_af_mfglib_send_message_command(SL_CLI_COMMAND_ARG)
@@ -418,4 +418,18 @@ void sli_zigbee_af_mfglib_set_options(SL_CLI_COMMAND_ARG)
   uint8_t options = sl_cli_get_argument_uint8(arguments, 0);
   sl_status_t status = sl_zigbee_ezsp_set_value(SL_ZIGBEE_EZSP_VALUE_MFGLIB_OPTIONS, 1, &options);
   sl_zigbee_af_core_println("%s set options, status 0x%08X", PLUGIN_NAME, status);
+}
+
+void sli_zigbee_af_mfglib_set_ctune_command(SL_CLI_COMMAND_ARG)
+{
+  uint16_t ctune = sl_cli_get_argument_uint16(arguments, 0);
+  sl_status_t status = sl_zigbee_ezsp_set_configuration_value(SL_ZIGBEE_EZSP_CONFIG_CTUNE_VALUE, ctune);
+  sl_zigbee_af_core_println("%s set ctune, status 0x%02X", PLUGIN_NAME, status);
+}
+
+void sli_zigbee_af_mfglib_get_ctune_command(SL_CLI_COMMAND_ARG)
+{
+  uint16_t ctune = 0;
+  sl_status_t status = sl_zigbee_ezsp_get_configuration_value(SL_ZIGBEE_EZSP_CONFIG_CTUNE_VALUE, &ctune);
+  sl_zigbee_af_core_println("%s get ctune value: %d, status 0x%02X", PLUGIN_NAME, ctune, status);
 }

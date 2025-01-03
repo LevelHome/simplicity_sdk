@@ -16,7 +16,6 @@ metadata:
     reference: zw_sbom_license
 define:
   - name: ZW_CONTROLLER
-  - name: ZW_CONTROLLER_STATIC
   - name: ZW_CONTROLLER_BRIDGE
   - name: ZAF_CONFIG_DEVICE_OPTION_MASK
     value: GENERIC_TYPE_STATIC_CONTROLLER

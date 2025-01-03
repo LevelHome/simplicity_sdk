@@ -25,3 +25,6 @@ requires:
 config_file:
   - path: platform/bootloader/config/btl_euart_driver_cfg.h
     file_id: btl_euart_driver_cfg
+metadata:
+  sbom:
+    license: MSLA

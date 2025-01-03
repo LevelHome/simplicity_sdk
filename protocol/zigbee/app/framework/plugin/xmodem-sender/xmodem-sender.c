@@ -126,7 +126,7 @@ static sl_status_t sendNextBlock(bool success)
                                      &returnLength,
                                      &lastBlock);
     if (status != SL_STATUS_OK) {
-      xmodemPrintln("Error: Failed to retreive data for offset 0x%4X, size: %d.  Aborting",
+      xmodemPrintln("Error: Failed to retreive data for offset 0x%08X, size: %d.  Aborting",
                     currentOffset,
                     returnLength);
       resetState(false);
@@ -213,7 +213,7 @@ void sl_zigbee_af_xmodem_sender_incoming_block(uint8_t* data,
         resetState(false);
         return;
       } else {
-        xmodemPrintln("Error: Unrecognized xmodem packet received: 0x%X, Ignoring.", data[CONTROL_OFFSET]);
+        xmodemPrintln("Error: Unrecognized xmodem packet received: 0x%02X, Ignoring.", data[CONTROL_OFFSET]);
         return;
       }
 

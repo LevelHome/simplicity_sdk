@@ -74,3 +74,15 @@ include:
       - path: padding.h
       - path: sx_blk_cipher.h
       - path: sxregs.h
+
+other_file:
+  - path: license.txt
+
+metadata:
+  sbom:
+    license: MSLA
+    upstream:
+      name: Secure-IC Crypto Offload C Library
+      version: v20210503_s29p0p0
+      supplier: Secure-IC
+      comment: Software for cryptography offload to hardware, IP from Secure-IC, previously Barco-Silex.

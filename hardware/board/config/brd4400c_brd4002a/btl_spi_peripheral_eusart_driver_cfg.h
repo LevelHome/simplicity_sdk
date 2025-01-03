@@ -49,19 +49,19 @@
 #define SL_EUSART_SPINCP_PERIPHERAL_NO           1
 
 // EUSART1 TX on PD07
-#define SL_EUSART_SPINCP_TX_PORT                 gpioPortD
+#define SL_EUSART_SPINCP_TX_PORT                 SL_GPIO_PORT_D
 #define SL_EUSART_SPINCP_TX_PIN                  7
 
 // EUSART1 RX on PD08
-#define SL_EUSART_SPINCP_RX_PORT                 gpioPortD
+#define SL_EUSART_SPINCP_RX_PORT                 SL_GPIO_PORT_D
 #define SL_EUSART_SPINCP_RX_PIN                  8
 
 // EUSART1 CS on PD10
-#define SL_EUSART_SPINCP_CS_PORT                 gpioPortD
+#define SL_EUSART_SPINCP_CS_PORT                 SL_GPIO_PORT_D
 #define SL_EUSART_SPINCP_CS_PIN                  10
 
 // EUSART1 SCLK on PD09
-#define SL_EUSART_SPINCP_SCLK_PORT               gpioPortD
+#define SL_EUSART_SPINCP_SCLK_PORT               SL_GPIO_PORT_D
 #define SL_EUSART_SPINCP_SCLK_PIN                9
 
 // [EUSART_SL_EUSART_SPINCP]$

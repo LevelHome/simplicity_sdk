@@ -79,7 +79,7 @@
 
 // <gpio optional=true> IOT_I2C_CFG_EXP_ENABLE
 // $[GPIO_IOT_I2C_CFG_EXP_ENABLE]
-#define IOT_I2C_CFG_EXP_ENABLE_PORT              gpioPortB
+#define IOT_I2C_CFG_EXP_ENABLE_PORT              SL_GPIO_PORT_B
 #define IOT_I2C_CFG_EXP_ENABLE_PIN               0
 
 // [GPIO_IOT_I2C_CFG_EXP_ENABLE]$
@@ -90,11 +90,11 @@
 #define IOT_I2C_CFG_EXP_PERIPHERAL_NO            0
 
 // I2C0 SCL on PB02
-#define IOT_I2C_CFG_EXP_SCL_PORT                 gpioPortB
+#define IOT_I2C_CFG_EXP_SCL_PORT                 SL_GPIO_PORT_B
 #define IOT_I2C_CFG_EXP_SCL_PIN                  2
 
 // I2C0 SDA on PB03
-#define IOT_I2C_CFG_EXP_SDA_PORT                 gpioPortB
+#define IOT_I2C_CFG_EXP_SDA_PORT                 SL_GPIO_PORT_B
 #define IOT_I2C_CFG_EXP_SDA_PIN                  3
 
 // [I2C_IOT_I2C_CFG_EXP]$

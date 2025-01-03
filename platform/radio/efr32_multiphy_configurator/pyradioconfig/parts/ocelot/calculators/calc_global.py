@@ -80,6 +80,8 @@ class CALC_Global_ocelot(CALC_Global_lynx):
         self._add_AGC_LNABOOST_reg(model)
         self._add_ADCPLL_regs(model)
 
+    def _add_common_regs(self, model):
+        super()._add_common_regs(model)
         self._addModelRegister(model, 'MODEM.BCRDEMODCTRL.BCRDEMODEN', int, ModelVariableFormat.HEX)
         self._addModelRegister(model, 'MODEM.BCRDEMODCTRL.RAWSYN', int, ModelVariableFormat.HEX)
         self._addModelRegister(model, 'MODEM.BCRDEMODCTRL.PH0SIZE', int, ModelVariableFormat.HEX)

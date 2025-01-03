@@ -741,16 +741,6 @@ enum {
 #define SL_ZIGBEE_EZSP_ZLL_NETWORK_OPERATION_MAX  0x01
 
 //------------------------------------------------------------------------------
-// Validates Source Route Overhead Information cached
-typedef uint8_t sl_zigbee_ezsp_source_route_overhead_information_t;
-
-enum {
-  // Ezsp source route overhead unknown
-  SL_ZIGBEE_EZSP_SOURCE_ROUTE_OVERHEAD_UNKNOWN  = 0xFF
-};
-#define SL_ZIGBEE_EZSP_SOURCE_ROUTE_OVERHEAD_INFORMATION_MAX  0xFF
-
-//------------------------------------------------------------------------------
 // Frame IDs
 
 enum {

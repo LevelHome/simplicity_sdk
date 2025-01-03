@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_wisun_cli_util.h
+ * @brief Wi-SUN CLI utility functions
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef WISUN_CLI_UTIL_H
-#define WISUN_CLI_UTIL_H
+#ifndef SL_WISUN_CLI_UTIL_H
+#define SL_WISUN_CLI_UTIL_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,18 +40,18 @@ extern "C" {
 // -----------------------------------------------------------------------------
 #include <stdint.h>
 #include <stddef.h>
+
 #include "sl_status.h"
 #include "sl_wisun_types.h"
 #include "sl_wisun_api.h"
 #include "sl_wisun_trace_util.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
 /**************************************************************************//**
  * @brief Maximum length of printable data
  *****************************************************************************/
-#define APP_UTIL_PRINTABLE_DATA_MAX_LENGTH 64
+#define APP_UTIL_PRINTABLE_DATA_MAX_LENGTH  (64)
 
 /**************************************************************************//**
  * @brief Printable data CTX structure type
@@ -110,8 +110,8 @@ sl_status_t app_util_get_integer(uint32_t *const value,
  * @param[in] value Value string
  * @return const app_enum_t* result ptr or NULL on error
  *****************************************************************************/
-const app_enum_t* app_util_get_enum_by_string(const app_enum_t *value_enum_list,
-                                              const char *const value);
+const app_enum_t * app_util_get_enum_by_string(const app_enum_t *value_enum_list,
+                                               const char *const value);
 
 /**************************************************************************//**
  * @brief App util get enum by integer.
@@ -120,8 +120,8 @@ const app_enum_t* app_util_get_enum_by_string(const app_enum_t *value_enum_list,
  * @param[in] value Integer value
  * @return const app_enum_t* result ptr or NULL on error
  *****************************************************************************/
-const app_enum_t* app_util_get_enum_by_integer(const app_enum_t *value_enum_list,
-                                               uint32_t value);
+const app_enum_t * app_util_get_enum_by_integer(const app_enum_t *value_enum_list,
+                                                uint32_t value);
 
 /**************************************************************************//**
  * @brief App util get MAC address.
@@ -153,11 +153,11 @@ sl_status_t app_util_get_mac_address_string(char *value_str,
  * @param[in] line_length Line length
  * @return char* Printable data ptr
  *****************************************************************************/
-char *app_util_printable_data_init(app_printable_data_ctx_t *const ctx,
-                                   const uint8_t *const data,
-                                   const uint16_t data_length,
-                                   uint8_t is_hex,
-                                   uint8_t line_length);
+char * app_util_printable_data_init(app_printable_data_ctx_t *const ctx,
+                                    const uint8_t *const data,
+                                    const uint16_t data_length,
+                                    uint8_t is_hex,
+                                    uint8_t line_length);
 
 /**************************************************************************//**
  * @brief App util get next printable data.
@@ -165,10 +165,10 @@ char *app_util_printable_data_init(app_printable_data_ctx_t *const ctx,
  * @param[in] ctx app_printable_data_ctx_t stucture ptr
  * @return char* Printable data ptr
  *****************************************************************************/
-char *app_util_printable_data_next(app_printable_data_ctx_t *const ctx);
+char * app_util_printable_data_next(app_printable_data_ctx_t *const ctx);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // WISUN_CLI_UTIL_H
+#endif // SL_WISUN_CLI_UTIL_H

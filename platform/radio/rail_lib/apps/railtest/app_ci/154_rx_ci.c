@@ -440,6 +440,20 @@ void ieee802154Config2MbpsRxTimeout(sl_cli_command_arg_t *args)
   }
 }
 
+void ieee802154Config2MbpsRxChannel(sl_cli_command_arg_t *args)
+{
+  CHECK_RAIL_HANDLE(sl_cli_get_command_string(args, 0));
+  uint16_t channel = sl_cli_get_argument_uint16(args, 0);
+
+  RAIL_Status_t status = RAIL_IEEE802154_Config2MbpsRxChannel(railHandle, channel);
+  if (status != RAIL_STATUS_NO_ERROR) {
+    responsePrintError(sl_cli_get_command_string(args, 0), 0x24, "Failed to configure 2Mbps RX channel.");
+  } else {
+    responsePrint(sl_cli_get_command_string(args, 0), "2MbpsRxChannel:%u",
+                  channel);
+  }
+}
+
 void ieee802154SetPromiscuousMode(sl_cli_command_arg_t *args)
 {
   CHECK_RAIL_HANDLE(sl_cli_get_command_string(args, 0));
@@ -1019,6 +1033,7 @@ void RAILCb_IEEE802154_DataRequestCommand(RAIL_Handle_t railHandle)
     uint8_t pkt[MaxExpectedBytes];
     uint8_t pktOffset = ieee802154PhrLen; // No need to parse the PHR byte(s)
     RAIL_GetRxIncomingPacketInfo(railHandle, &packetInfo);
+    int8_t rssi = RAIL_GetRxIncomingPacketRssi(railHandle);
     if (packetInfo.packetBytes < (pktOffset + 2U)) {
       counters.ackTxFpAddrFail++;
       return;
@@ -1128,7 +1143,7 @@ void RAILCb_IEEE802154_DataRequestCommand(RAIL_Handle_t railHandle)
 
       // Reuse pkt[] buffer for outgoing Enhanced ACK, unless can
       // write directly to TX ACK FIFO.
-      // Phr1 Phr2 FcfL FcfH [Seq#] [DstPan] [DstAdr] [SrcPan] [SrcAdr]
+      // Phr1 Phr2 FcfL FcfH [Seq#] [DstPan] [DstAdr] [SrcPan] [SrcAdr] [RSSI_IncomingRx]
       // Will fill in PHR later.
       // MAC Fcf:
       // - Frame Type = ACK
@@ -1219,6 +1234,9 @@ void RAILCb_IEEE802154_DataRequestCommand(RAIL_Handle_t railHandle)
           pPkt[pktOffset++] = dstAdr[i];
         }
       }
+
+      // Fill in RSSI associated with incoming packet
+      pPkt[pktOffset++] = (uint8_t)rssi;
 
       // Fill in PHR now that we know Enh-ACK's length
       if (ieee802154PhrLen == 2U) {

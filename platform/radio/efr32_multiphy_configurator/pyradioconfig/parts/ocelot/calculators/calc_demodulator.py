@@ -38,15 +38,6 @@ class CALC_Demodulator_ocelot(ICalculator):
             ])
         self._addModelActual(model, 'adc_clock_mode', Enum, ModelVariableFormat.DECIMAL)
         model.vars.adc_clock_mode_actual.var_enum = model.vars.adc_clock_mode.var_enum
-        self._addModelVariable(model, 'adc_rate_mode', Enum, ModelVariableFormat.DECIMAL)
-        model.vars.adc_rate_mode.var_enum = CreateModelVariableEnum(
-            enum_name='AdcRateModeEnum',
-            enum_desc='ADC Clock Rate Mode',
-            member_data=[
-                ['FULLRATE', 0, 'Full rate mode'],
-                ['HALFRATE', 1, 'Half rate mode'],
-                ['EIGHTHRATE',2,'Eighth rate mode']
-            ])
         self._addModelVariable(model, 'adc_xo_mult', int, ModelVariableFormat.DECIMAL)
         self._addModelVariable(model, 'enable_high_mod_trecs', int, ModelVariableFormat.DECIMAL)
         self._addModelActual(model, 'adc_xo_mult', int, ModelVariableFormat.DECIMAL)
@@ -89,8 +80,30 @@ class CALC_Demodulator_ocelot(ICalculator):
 
         self._addModelVariable(model, 'maximize_bwsel_range', bool, ModelVariableFormat.DECIMAL)
 
+        member_data = [
+            ['NONE', 0, 'None'],
+            ['STANDARD', 1, 'Standard'],
+            ['LEGACY', 2, 'Legacy Demod'],
+            ['COHERENT', 3, 'Coherent Demod'],
+            ['ANTDIV', 4, 'Antenna Diversity'],
+            ['FEM', 5, 'External LNA'],
+            ['ANTDIV_FEM', 6, 'Antenna Diversity with External LNA'],
+            ['FCS', 7, 'Fast channel switch'],
+            ['GB868_863', 8, 'UK Metering 863 MHz Band'],
+            ['GB868_915', 9, 'UK Metering 915 MHz Band'],
+            ['NA915_R23', 10, 'NA R23 915 MHz Band'],
+        ]
+        model.vars.zigbee_feature.var_enum = CreateModelVariableEnum(
+            'ZigbeeFeatureEnum',
+            'List of supported zigbee PHY features',
+            member_data)
+
+    def calc_default_feature_mode(self, model):
+        model.vars.zigbee_feature.value = model.vars.zigbee_feature.var_enum.NONE
+        model.vars.ble_feature.value = model.vars.ble_feature.var_enum.NONE
+
     def _add_demod_rate_variable(self, model):
-        self._addModelActual(model, 'demod_rate', int, ModelVariableFormat.DECIMAL)
+        self._addModelActual(model, 'demod_rate', float, ModelVariableFormat.DECIMAL)
 
     def _add_demod_select_variable(self, model):
         model.vars.demod_select.var_enum = CreateModelVariableEnum(
@@ -733,7 +746,7 @@ class CALC_Demodulator_ocelot(ICalculator):
         #Calculate the required BWSEL from the adc rate, decimators, and required bandwidth
         bwsel = float(bandwidth * 8 * dec0_actual * dec1_actual) / adc_freq
         lock_bwsel = float(lock_bandwidth * 8 * dec0_actual * dec1_actual) / adc_freq
-
+        # print(f"BWSEL = {bwsel}, LOCK_BWSEL = {lock_bwsel}")
         if (lock_bwsel < min_bwsel) and ((afc_run_mode == model.vars.afc_run_mode.var_enum.ONE_SHOT) or softmodem_narrowing):
             lock_bwsel = min_bwsel
 
@@ -1171,7 +1184,7 @@ class CALC_Demodulator_ocelot(ICalculator):
     def calc_iq_rate_actual(self, model):
         demod_rate_actual = model.vars.demod_rate_actual.value
         dec2_actual = model.vars.dec2_actual.value
-        model.vars.iq_rate_actual.value = demod_rate_actual / dec2_actual
+        model.vars.iq_rate_actual.value = demod_rate_actual * dec2_actual
 
     def calc_digmixfreq_val(self,model):
         digmix_res = model.vars.digmix_res_actual.value
@@ -1235,7 +1248,7 @@ class CALC_Demodulator_ocelot(ICalculator):
         dec2_actual = model.vars.dec2_actual.value
         src2_actual = model.vars.src2_ratio_actual.value
 
-        demod_rate_actual = int(adc_freq_actual * src2_actual / (8 * dec0_actual * dec1_actual * dec2_actual))
+        demod_rate_actual = adc_freq_actual * src2_actual / (8 * dec0_actual * dec1_actual * dec2_actual)
 
         #Load local variables back into model variables
         model.vars.demod_rate_actual.value = demod_rate_actual
@@ -1814,6 +1827,7 @@ class CALC_Demodulator_ocelot(ICalculator):
 
         # : channel filter
         chf_filter_taps = del_chflt = 29.0 - chflatency * 6.0
+        # print(f"Channel Filter number of taps = {chf_filter_taps}")
         chf_filter_rate = dec1_filter_rate
         # : channel filter is odd (taps+1)/2.
         # : -1 term comes from CHF input goes directly into the combinational logic and does not pass into the delay line before multiplier.

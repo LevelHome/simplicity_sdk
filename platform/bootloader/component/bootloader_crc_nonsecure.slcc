@@ -22,3 +22,6 @@ include:
 provides:
   - name: bootloader_crc
   - name: bootloader_crc_nonsecure
+metadata:
+  sbom:
+    license: MSLA

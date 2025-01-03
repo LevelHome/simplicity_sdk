@@ -298,7 +298,7 @@ sl_status_t esl_lib_ap_control_init(void)
 
   // System ID
   // Extract unique ID from BT Address.
-  sc = sl_bt_system_get_identity_address(&address, &address_type);
+  sc = sl_bt_gap_get_identity_address(&address, &address_type);
   CHECK_IN_SESSION(sc, ap_control.cp_storage);
 
   // Pad and reverse unique ID to get System ID.

@@ -39,5 +39,5 @@ template_contribution:
       include: sl_cli_instances.h
       handler: sl_cli_instances_is_ok_to_sleep
 documentation:
-    docset: gecko-platform
-    document: platform-service-cli-overview
+  docset: gecko-platform
+  document: platform-service-cli-overview

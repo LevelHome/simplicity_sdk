@@ -13,9 +13,9 @@ metadata:
 root_path: platform/service/iostream
 provides:
   - name: iostream_vuart
-  - name: iostream_transport_core
-    allow_multiple: true
   - name: iostream_transport
+    allow_multiple: true
+  - name: iostream_console_support
     allow_multiple: true
 requires:
   - name: iostream

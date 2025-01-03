@@ -115,7 +115,7 @@ bool reset_resetCounterEnabled(void)
 #else
   uint32_t resetReasonBase = SRAM_BASE;
 #endif
-  BootloaderResetCause_t *cause = (BootloaderResetCause_t *) (resetReasonBase);
+  const BootloaderResetCause_t *cause = (BootloaderResetCause_t *) (resetReasonBase);
 
   if ((cause->signature & BOOTLOADER_RESET_COUNTER_SIGNATURE_MASK)
       == BOOTLOADER_RESET_COUNTER_SIGNATURE) {
@@ -136,7 +136,7 @@ uint8_t reset_getResetCounter(void)
 #else
   uint32_t resetReasonBase = SRAM_BASE;
 #endif
-  BootloaderResetCause_t *cause = (BootloaderResetCause_t *) (resetReasonBase);
+  const BootloaderResetCause_t *cause = (BootloaderResetCause_t *) (resetReasonBase);
 
   // Return 0 if the reset counter is not enabled
   return (uint8_t)(reset_resetCounterEnabled() ? cause->signature & 0xFu : 0u);
@@ -189,7 +189,7 @@ uint16_t reset_classifyReset(void)
 #else
   uint32_t resetReasonBase = SRAM_BASE;
 #endif
-  BootloaderResetCause_t* cause = (BootloaderResetCause_t*) (resetReasonBase);
+  const BootloaderResetCause_t* cause = (BootloaderResetCause_t*) (resetReasonBase);
 
   if (cause->signature == BOOTLOADER_RESET_SIGNATURE_VALID) {
     return reset_getResetReason();
@@ -213,6 +213,6 @@ uint16_t reset_getResetReason(void)
 #else
   uint32_t resetReasonBase = SRAM_BASE;
 #endif
-  BootloaderResetCause_t* cause = (BootloaderResetCause_t*) (resetReasonBase);
+  const BootloaderResetCause_t* cause = (BootloaderResetCause_t*) (resetReasonBase);
   return cause->reason;
 }

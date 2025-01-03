@@ -1,15 +1,24 @@
 id: "connect_aes_security_library"
-label: "AES Security (Library)"
-package: "Flex"
+label: "AES Security (Library) | Legacy"
+package: "Connect"
 category: "Connect"
-quality: "production"
-ui_hints:
-  visibility: never
-description: "Provides the Connect AES Security library."
+quality: "deprecated"
+description: >
+  Provides the Connect AES Security library. This library is deprecated and connect_psa_security_library should be used instead.
+  The difference between the two libraries is the CCM* implementation used. This library uses Connect's custom implementation,
+  while the other uses PSA's. The main difference in usage is the algorithm that you define the PSA crypto key with. This library
+  uses the alg PSA_ALG_ECB_NO_PADDING while the other uses PSA_ALG_AEAD_WITH_SHORTENED_TAG(PSA_ALG_CCM, 4).
+  You can link with both libraries at once, they are fully compatible. In this case, the implementation used will be resolved
+  during runtime based on the PSA crypto key's algorithm.
 provides:
   - name: "connect_aes_security_implementation"
+    allow_multiple: true
+  - name: "ccm_implementation"
+    allow_multiple: true
 requires:
   - name: "connect_aes_security"
+recommends:
+  - id: "connect_aes_security"
 library:
   - path: "protocol/flex/libs/libconnect-aes-security-library-efr32xg2x-iar.a"
     condition:
@@ -19,6 +28,9 @@ library:
     condition:
       - "toolchain_gcc"
       - device_series_2
+template_contribution:
+  - name: component_catalog
+    value: connect_legacy_encryption
 
 metadata:
   sbom:

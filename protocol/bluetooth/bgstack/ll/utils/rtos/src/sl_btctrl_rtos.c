@@ -32,7 +32,7 @@
 #include <string.h>
 #include <cmsis_os2.h>
 #include "sl_status.h"
-#include "em_core.h"
+#include "sl_core.h"
 #include "sl_cmsis_os2_common.h"
 #include "sl_btctrl_rtos_config.h"
 #include "sl_btctrl_rtos.h"

@@ -129,7 +129,6 @@ sl_status_t sl_keyscan_driver_start_scan(void)
 sl_status_t sl_keyscan_driver_stop_scan(void)
 {
   bool is_running;
-  uint8_t i;
 
   // Check if scan is in progress, return if already not running
   is_running = sli_keyscan_driver_hal_is_scan_running();
@@ -141,7 +140,7 @@ sl_status_t sl_keyscan_driver_stop_scan(void)
   sli_keyscan_driver_hal_stop_scan();
 
   // Clear keyscan matrix
-  for (i = 0; i < SL_KEYSCAN_DRIVER_COLUMN_NUMBER; i++) {
+  for (uint8_t i = 0; i < SL_KEYSCAN_DRIVER_COLUMN_NUMBER; i++) {
     keyscan_matrix[i] = 0;
   }
 

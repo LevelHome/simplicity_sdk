@@ -93,6 +93,32 @@ class CalcModulatorRainier(Calc_Modulator_Bobcat):
         model.vars.br2m.value = br2m
         self._reg_write(model.vars.MODEM_TXCTRL_BR2M, int(br2m))
 
+    def get_mod_sample_rate_factor(self, model):
+        """
+        Return modulator sample multiplier factor based on modulator data path selection
+
+        :param modulator_select:
+        :return:
+        """
+        modulator_select = model.vars.modulator_select.value
+        br2m = model.vars.br2m.value
+
+        # If IQMOD data path is selected
+        if modulator_select == model.vars.modulator_select.var_enum.IQ_MOD:
+            if br2m:
+                # modulation multiplier is running at (f_xo/2)
+                mod_samp_rate_factor = 2
+            else:
+                # modulation multiplier is running at (f_xo/4)
+                mod_samp_rate_factor = 4
+
+        # If PHMOD data path is selected
+        else:
+            # modulation multiplier is running at f_xo
+            mod_samp_rate_factor = 1
+
+        return mod_samp_rate_factor
+
     def calc_modindex_value(self, model):
         """
         calculate MODINDEX value
@@ -108,24 +134,11 @@ class CalcModulatorRainier(Calc_Modulator_Bobcat):
         modformat = model.vars.modulation_type.value
         freq_dev_hz = model.vars.deviation.value * 1.0
         shaping_filter_gain = model.vars.shaping_filter_gain_iqmod_actual.value
-        modulator_select = model.vars.modulator_select.value
         br2m = model.vars.br2m.value
         baudrate = model.vars.baudrate.value
 
         # setup inputs for modindex calculations
-        # If IQMOD data path is selected
-        if modulator_select == model.vars.modulator_select.var_enum.IQ_MOD:
-            if br2m:
-                # modulation multiplier is running at (f_xo/2)
-                mod_samp_rate_factor = 2
-            else:
-                # modulation multiplier is running at (f_xo/4)
-                mod_samp_rate_factor = 4
-
-        # If PHMOD data path is selected
-        else:
-            # modulation multiplier is running at f_xo
-            mod_samp_rate_factor = 1
+        mod_samp_rate_factor = self.get_mod_sample_rate_factor(model)
 
         # calculate modindex
         if modformat == model.vars.modulation_type.var_enum.OQPSK:
@@ -190,6 +203,17 @@ class CalcModulatorRainier(Calc_Modulator_Bobcat):
         self._reg_write(model.vars.MODEM_MODINDEX_MODINDEXM, int(m))
         self._reg_write(model.vars.MODEM_MODINDEX_MODINDEXE, int(e))
 
+    def calc_modindex_virtual_reg_field(self, model):
+        modindex_e = model.vars.MODEM_MODINDEX_MODINDEXE.value
+        modindex_m = model.vars.MODEM_MODINDEX_MODINDEXM.value
+        self._reg_write(model.vars.SEQ_MODINDEX_CALC_MODINDEXE, int(modindex_e))
+        if model.target.upper() == 'IC':
+            self._reg_write(model.vars.SEQ_MODINDEX_CALC_MODINDEXE_DOUBLED_MODINDEXE, int(modindex_e+1))
+        else:
+            self._reg_write(model.vars.SEQ_MODINDEX_CALC_MODINDEXE_DOUBLED_MODINDEXE, int(modindex_e))
+        self._reg_write(model.vars.SEQ_MODINDEX_CALC_MODINDEXM, int(modindex_m))
+        self._reg_write(model.vars.SEQ_MODINDEX_CALC_MODINDEXE_DOUBLED_MODINDEXM, int(modindex_m))
+
     def calc_modindex_actual(self, model):
         """
         given register settings return actual MODINDEX as fraction
@@ -209,6 +233,18 @@ class CalcModulatorRainier(Calc_Modulator_Bobcat):
         e = e - 8
         model.vars.modindex_actual.value = 1.0 * m * 2**e
 
+    def get_modulator_sample_rate(self, model):
+        fxo = model.vars.xtal_frequency.value * 1.0
+        br2m = model.vars.br2m.value
+        modulator_select = model.vars.modulator_select.value
+
+        if modulator_select == model.vars.modulator_select.var_enum.IQ_MOD:
+            mod_samp_rate = fxo / 2 if br2m else fxo / 4  # IQMOD
+        else:
+            mod_samp_rate = fxo  # PHMOD
+
+        return mod_samp_rate
+
     def calc_tx_freq_dev_actual(self, model):
         """
         given register setting return actual frequency deviation used in the modulator
@@ -217,17 +253,11 @@ class CalcModulatorRainier(Calc_Modulator_Bobcat):
         Args:
             model (ModelRoot) : Data model to read and write variables from
         """
-        fxo = model.vars.xtal_frequency.value * 1.0
         modformat = model.vars.modulation_type.value
         modindex = model.vars.modindex_actual.value
         shaping_filter_gain = model.vars.shaping_filter_gain_iqmod_actual.value
-        br2m = model.vars.br2m.value
-        modulator_select = model.vars.modulator_select.value
 
-        if modulator_select == model.vars.modulator_select.var_enum.IQ_MOD:
-            mod_samp_rate = fxo / 2 if br2m else fxo / 4  # IQMOD
-        else:
-            mod_samp_rate = fxo  # PHMOD
+        mod_samp_rate = self.get_modulator_sample_rate(model)
 
         if modformat == model.vars.modulation_type.var_enum.FSK2 or \
                 modformat == model.vars.modulation_type.var_enum.FSK4:

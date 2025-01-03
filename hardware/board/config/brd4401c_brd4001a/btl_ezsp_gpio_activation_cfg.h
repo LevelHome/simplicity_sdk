@@ -35,14 +35,14 @@
 // <<< sl:start pin_tool >>>
 // <gpio> SL_EZSPSPI_HOST_INT
 // $[GPIO_SL_EZSPSPI_HOST_INT]
-#define SL_EZSPSPI_HOST_INT_PORT                 gpioPortA
+#define SL_EZSPSPI_HOST_INT_PORT                 SL_GPIO_PORT_A
 #define SL_EZSPSPI_HOST_INT_PIN                  13
 
 // [GPIO_SL_EZSPSPI_HOST_INT]$
 
 // <gpio> SL_EZSPSPI_WAKE_INT
 // $[GPIO_SL_EZSPSPI_WAKE_INT]
-#define SL_EZSPSPI_WAKE_INT_PORT                 gpioPortA
+#define SL_EZSPSPI_WAKE_INT_PORT                 SL_GPIO_PORT_A
 #define SL_EZSPSPI_WAKE_INT_PIN                  14
 
 // [GPIO_SL_EZSPSPI_WAKE_INT]$

@@ -28,17 +28,17 @@
 #endif
 #include "zap-cluster-command-parser.h"
 
-bool sl_zigbee_af_events_cluster_publish_event_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_events_cluster_publish_event_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
 #ifdef SL_CATALOG_ZIGBEE_DEBUG_PRINT_PRESENT
   sl_zcl_events_cluster_publish_event_command_t cmd_data;
 
   if (zcl_decode_events_cluster_publish_event_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_events_cluster_print("RX: PublishEvent 0x%x, 0x%2x, 0x%4x, 0x%x, 0x%x",
+  sl_zigbee_af_events_cluster_print("RX: PublishEvent 0x%02X, 0x%04X, 0x%08X, 0x%02X, 0x%02X",
                                     cmd_data.logId,
                                     cmd_data.eventId,
                                     cmd_data.eventTime,
@@ -53,21 +53,20 @@ bool sl_zigbee_af_events_cluster_publish_event_cb(sl_zigbee_af_cluster_command_t
   sl_zigbee_af_events_cluster_println("");
 #endif // SL_CATALOG_ZIGBEE_DEBUG_PRINT_PRESENT
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
-bool sl_zigbee_af_events_cluster_publish_event_log_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_events_cluster_publish_event_log_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
 #ifdef SL_CATALOG_ZIGBEE_DEBUG_PRINT_PRESENT
   sl_zcl_events_cluster_publish_event_log_command_t cmd_data;
 
   if (zcl_decode_events_cluster_publish_event_log_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_events_cluster_print("RX: PublishEventLog 0x%2x, 0x%x, 0x%x, 0x%x",
+  sl_zigbee_af_events_cluster_print("RX: PublishEventLog 0x%04X, 0x%02X, 0x%02X, 0x%02X",
                                     cmd_data.totalNumberOfEvents,
                                     cmd_data.commandIndex,
                                     cmd_data.totalCommands,
@@ -98,7 +97,7 @@ bool sl_zigbee_af_events_cluster_publish_event_log_cb(sl_zigbee_af_cluster_comma
       eventDataLen = sl_zigbee_af_get_int8u(cmd_data.logPayload, logPayloadIndex, logPayloadLen);
       logPayloadIndex += (1 + eventDataLen);
       sl_zigbee_af_events_cluster_print(" [");
-      sl_zigbee_af_events_cluster_print("0x%x, 0x%2x, 0x%4x, 0x%x", logId, eventId, eventTime, eventDataLen);
+      sl_zigbee_af_events_cluster_print("0x%02X, 0x%04X, 0x%08X, 0x%02X", logId, eventId, eventTime, eventDataLen);
       if (eventDataLen > 0) {
         sl_zigbee_af_events_cluster_print(", ");
         sl_zigbee_af_events_cluster_print_string(eventData);
@@ -109,26 +108,24 @@ bool sl_zigbee_af_events_cluster_publish_event_log_cb(sl_zigbee_af_cluster_comma
   sl_zigbee_af_events_cluster_println("");
 #endif // SL_CATALOG_ZIGBEE_DEBUG_PRINT_PRESENT
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
-bool sl_zigbee_af_events_cluster_clear_event_log_response_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_events_cluster_clear_event_log_response_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
 #ifdef SL_CATALOG_ZIGBEE_DEBUG_PRINT_PRESENT
   sl_zcl_events_cluster_clear_event_log_response_command_t cmd_data;
 
   if (zcl_decode_events_cluster_clear_event_log_response_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_events_cluster_println("RX: ClearEventLogResponse 0x%x",
+  sl_zigbee_af_events_cluster_println("RX: ClearEventLogResponse 0x%02X",
                                       cmd_data.clearedEventsLogs);
 #endif // SL_CATALOG_ZIGBEE_DEBUG_PRINT_PRESENT
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
 uint32_t sl_zigbee_af_events_cluster_client_command_parse(sl_service_opcode_t opcode,
@@ -137,29 +134,27 @@ uint32_t sl_zigbee_af_events_cluster_client_command_parse(sl_service_opcode_t op
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_PUBLISH_EVENT_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_events_cluster_publish_event_cb(cmd);
+        status = sl_zigbee_af_events_cluster_publish_event_cb(cmd);
         break;
       }
       case ZCL_PUBLISH_EVENT_LOG_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_events_cluster_publish_event_log_cb(cmd);
+        status = sl_zigbee_af_events_cluster_publish_event_log_cb(cmd);
         break;
       }
       case ZCL_CLEAR_EVENT_LOG_RESPONSE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_events_cluster_clear_event_log_response_cb(cmd);
+        status = sl_zigbee_af_events_cluster_clear_event_log_response_cb(cmd);
         break;
       }
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

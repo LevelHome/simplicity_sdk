@@ -99,12 +99,12 @@ class CALC_Misc_panther(CALC_Misc_nixi):
         self._reg_write(model.vars.MODEM_DSATHD4_ARRTOLERTHD0LO, 2)
         self._reg_write(model.vars.MODEM_DSATHD4_ARRTOLERTHD1LO, 4)
         self._reg_write(model.vars.MODEM_DSATHD4_SWTHD, 0)
-        if model.part_family.lower() not in ["lynx", "leopard"]:
+        if model.part_family.lower() not in ["lynx", "leopard", "lion"]:
             self._reg_write(model.vars.MODEM_VTBLETIMING_VTBLETIMINGSEL, 0)
             self._reg_write(model.vars.MODEM_VTBLETIMING_TIMINGDELAY, 0)
             self._reg_write(model.vars.MODEM_VTBLETIMING_FLENOFF, 0)
         # Panther-specific. Not in Ocelot.
-        if model.part_family.lower() in ["panther", "lynx", "leopard"]:
+        if model.part_family.lower() in ["panther", "lynx", "leopard", "lion"]:
             self._reg_write(model.vars.MODEM_MIXCTRL_ANAMIXMODE, 0)
             self._reg_write(model.vars.MODEM_BLEIQDSA_BLEIQDSAEN, 0)
             self._reg_write(model.vars.MODEM_BLEIQDSA_BLEIQDSATH, 0)
@@ -159,3 +159,20 @@ class CALC_Misc_panther(CALC_Misc_nixi):
     def calc_dynamic_slicer_values(self, model):
         # Removed as we will not use dynamic slicing with series 2
         pass
+
+    def calc_stack_info(self, model):
+        protocol_id = model.vars.protocol_id.value
+        ble_feature = model.vars.ble_feature.value
+        zigbee_feature = model.vars.zigbee_feature.value
+
+        if protocol_id == model.vars.protocol_id.var_enum.BLE:
+            phy_mode_id = ble_feature
+        elif protocol_id == model.vars.protocol_id.var_enum.Zigbee:
+            phy_mode_id = zigbee_feature
+        else:
+            phy_mode_id = 0
+
+        if protocol_id in [model.vars.protocol_id.var_enum.BLE, model.vars.protocol_id.var_enum.Zigbee]:
+            model.vars.stack_info.value = [int(protocol_id), int(phy_mode_id)]
+        else:
+            super().calc_stack_info(model)

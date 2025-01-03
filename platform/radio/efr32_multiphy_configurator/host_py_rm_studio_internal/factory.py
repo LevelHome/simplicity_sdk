@@ -26,6 +26,7 @@ _RM_PART_FAMILY_MAP = {
     'VIPER':     'efr32xg31',
     'RAINIER':   'sixg301',
     'CHEETAH':   'efr32xg20',
+    'LION':      'efr32xg29',
 }
 
 RM_S1_PART_FAMILY_NAMES = [
@@ -46,6 +47,7 @@ RM_S2_PART_FAMILY_NAMES = [
     'CARACAL',
     'VIPER',
     'CHEETAH',
+    'LION',
 ]
 
 RM_S3_PART_FAMILY_NAMES = [

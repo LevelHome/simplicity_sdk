@@ -7,7 +7,7 @@ class PHYS_Studio_Base_Sigfox_Ocelot(IPhy):
 
     # Owner: Olivier Souloumiac
     # JIRA Link: https://jira.silabs.com/browse/MCUW_RADIO_CFG-2413
-    def PHY_Sigfox_915MHz_2GFSK_600bps(self, model,phy_name=None):
+    def PHY_Sigfox_915MHz_2GFSK_600bps_RXOnly(self, model,phy_name=None):
         '''
         Sigfox downlink (Rx):
         The sigfox Radio specification requires to meet -126dBm 10% PER spec, current measurement is around -133dBm.
@@ -20,7 +20,7 @@ class PHYS_Studio_Base_Sigfox_Ocelot(IPhy):
         be configured.
         '''
         phy = PHYS_Studio_Base_Ocelot().PHY_Studio_868M_2GFSK_600bps_800(model,
-                                                                             phy_name='PHY_Sigfox_915MHz_2GFSK_600bps')
+                                                                             phy_name='PHY_Sigfox_915MHz_2GFSK_600bps_RXOnly')
 
         phy.profile_inputs.rx_xtal_error_ppm.value = 0
         phy.profile_inputs.tx_xtal_error_ppm.value = 0
@@ -80,7 +80,7 @@ class PHYS_Studio_Base_Sigfox_Ocelot(IPhy):
 
     # Owner: Olivier Souloumiac
     # JIRA Link: https://jira.silabs.com/browse/MCUW_RADIO_CFG-2413
-    def PHY_Sigfox_868MHz_2GFSK_600bps(self, model,phy_name=None):
+    def PHY_Sigfox_868MHz_2GFSK_600bps_RXOnly(self, model,phy_name=None):
         '''
         Sigfox downlink (Rx):
         The sigfox Radio specification requires to meet -126dBm 10% PER spec, current measurement is around -133dBm.
@@ -93,7 +93,7 @@ class PHYS_Studio_Base_Sigfox_Ocelot(IPhy):
         be configured.
         '''
         phy = PHYS_Studio_Base_Ocelot().PHY_Studio_868M_2GFSK_600bps_800(model,
-                                                                             phy_name='PHY_Sigfox_868MHz_2GFSK_600bps')
+                                                                             phy_name='PHY_Sigfox_868MHz_2GFSK_600bps_RXOnly')
 
         phy.profile_inputs.rx_xtal_error_ppm.value = 0
         phy.profile_inputs.tx_xtal_error_ppm.value = 0

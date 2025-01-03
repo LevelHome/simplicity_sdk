@@ -57,7 +57,7 @@ void interpanPluginSetMacMatchFilterEnable(bool enable)
 
   sl_status_t status = sl_zigbee_set_mac_filter_match_list(matchData, sizeof(filters) / sizeof(sl_zigbee_mac_filter_match_data_t));
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_app_println("ERR: failed %s inter-PAN MAC filter (0x%x)",
+    sl_zigbee_af_app_println("ERR: failed %s inter-PAN MAC filter (0x%02X)",
                              enable ? "enabling" : "disabling",
                              status);
   }

@@ -79,7 +79,7 @@ void interpanPluginSetMacMatchFilterEnable(bool enable)
   sl_status_t status = sl_zigbee_ezsp_set_value(SL_ZIGBEE_EZSP_VALUE_MAC_FILTER_LIST,
                                                 sizeof(value), value);
   if (status != SL_ZIGBEE_EZSP_SUCCESS) {
-    sl_zigbee_af_app_println("ERR: failed %s inter-PAN MAC filter (0x%x)",
+    sl_zigbee_af_app_println("ERR: failed %s inter-PAN MAC filter (0x%02X)",
                              enable ? "enabling" : "disabling",
                              status);
   }

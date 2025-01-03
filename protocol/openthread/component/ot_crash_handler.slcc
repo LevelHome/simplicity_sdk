@@ -14,6 +14,9 @@ requires:
   - name: component_catalog
   - name: device
   - name: emlib_rmu
+    condition: [device_series_2]
+  - name: hal_emu
+    condition: [device_series_3]
   - name: event_handler
 include:
   - path: protocol/openthread/src/legacy_hal/include

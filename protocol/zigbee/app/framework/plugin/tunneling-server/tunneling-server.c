@@ -91,7 +91,7 @@ void sl_zigbee_af_tunneling_cluster_server_init_cb(uint8_t endpoint)
                                                (uint8_t *)&closeTunnelTimeout,
                                                ZCL_INT16U_ATTRIBUTE_TYPE);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_tunneling_cluster_println("ERR: writing close tunnel timeout 0x%x",
+    sl_zigbee_af_tunneling_cluster_println("ERR: writing close tunnel timeout 0x%02X",
                                            status);
   }
 }
@@ -125,7 +125,7 @@ void sl_zigbee_af_tunneling_cluster_server_attribute_changed_cb(uint8_t endpoint
 //-----------------------
 // ZCL commands callbacks
 
-bool sl_zigbee_af_tunneling_cluster_request_tunnel_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_tunneling_cluster_request_tunnel_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_tunneling_cluster_request_tunnel_command_t cmd_data;
   uint16_t tunnelIndex = ZCL_TUNNELING_CLUSTER_INVALID_TUNNEL_ID;
@@ -133,10 +133,10 @@ bool sl_zigbee_af_tunneling_cluster_request_tunnel_cb(sl_zigbee_af_cluster_comma
 
   if (zcl_decode_tunneling_cluster_request_tunnel_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_tunneling_cluster_println("RX: RequestTunnel 0x%x, 0x%2x, 0x%x, 0x%2x",
+  sl_zigbee_af_tunneling_cluster_println("RX: RequestTunnel 0x%02X, 0x%04X, 0x%02X, 0x%04X",
                                          cmd_data.protocolId,
                                          cmd_data.manufacturerCode,
                                          cmd_data.flowControlSupport,
@@ -205,11 +205,11 @@ bool sl_zigbee_af_tunneling_cluster_request_tunnel_cb(sl_zigbee_af_cluster_comma
               closeInactiveTunnels(cmd->apsFrame->destinationEndpoint);
             } else {
               sl_zigbee_af_tunneling_cluster_println("ERR: Could not create address"
-                                                     " table entry for node 0x%2x",
+                                                     " table entry for node 0x%04X",
                                                      client);
             }
           } else {
-            sl_zigbee_af_tunneling_cluster_println("ERR: EUI64 for node 0x%2x"
+            sl_zigbee_af_tunneling_cluster_println("ERR: EUI64 for node 0x%04X"
                                                    " is unknown",
                                                    client);
           }
@@ -230,10 +230,10 @@ bool sl_zigbee_af_tunneling_cluster_request_tunnel_cb(sl_zigbee_af_cluster_comma
                                                                       SL_ZIGBEE_AF_PLUGIN_TUNNELING_SERVER_MAXIMUM_INCOMING_TRANSFER_SIZE);
   sl_zigbee_af_get_command_aps_frame()->options |= SL_ZIGBEE_APS_OPTION_SOURCE_EUI64;
   sl_zigbee_af_send_response();
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_tunneling_cluster_close_tunnel_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_tunneling_cluster_close_tunnel_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_tunneling_cluster_close_tunnel_command_t cmd_data;
   sli_zigbee_af_tunneling_server_tunnel *tunnel;
@@ -241,10 +241,10 @@ bool sl_zigbee_af_tunneling_cluster_close_tunnel_cb(sl_zigbee_af_cluster_command
 
   if (zcl_decode_tunneling_cluster_close_tunnel_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_tunneling_cluster_println("RX: CloseTunnel 0x%2x", cmd_data.tunnelId);
+  sl_zigbee_af_tunneling_cluster_println("RX: CloseTunnel 0x%04X", cmd_data.tunnelId);
 
   status = serverFindTunnel(cmd_data.tunnelId,
                             sli_zigbee_af_get_address_index(),
@@ -264,11 +264,10 @@ bool sl_zigbee_af_tunneling_cluster_close_tunnel_cb(sl_zigbee_af_cluster_command
                                                    CLOSE_INITIATED_BY_CLIENT);
   }
 
-  sl_zigbee_af_send_immediate_default_response(status);
-  return true;
+  return status;
 }
 
-bool sl_zigbee_af_tunneling_cluster_transfer_data_client_to_server_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_tunneling_cluster_transfer_data_client_to_server_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_tunneling_cluster_transfer_data_client_to_server_command_t cmd_data;
   sli_zigbee_af_tunneling_server_tunnel *tunnel;
@@ -276,7 +275,7 @@ bool sl_zigbee_af_tunneling_cluster_transfer_data_client_to_server_cb(sl_zigbee_
 
   if (zcl_decode_tunneling_cluster_transfer_data_client_to_server_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   uint16_t dataLen = (cmd->bufLen
@@ -284,7 +283,7 @@ bool sl_zigbee_af_tunneling_cluster_transfer_data_client_to_server_cb(sl_zigbee_
                          + sizeof(cmd_data.tunnelId)));
   sl_zigbee_af_tunneling_transfer_data_status_t tunnelError = SL_ZIGBEE_ZCL_TUNNELING_TRANSFER_DATA_STATUS_DATA_OVERFLOW;
 
-  sl_zigbee_af_tunneling_cluster_print("RX: TransferData 0x%2x, [", cmd_data.tunnelId);
+  sl_zigbee_af_tunneling_cluster_print("RX: TransferData 0x%04X, [", cmd_data.tunnelId);
   sl_zigbee_af_tunneling_cluster_print_buffer(cmd_data.data, dataLen, false);
   sl_zigbee_af_tunneling_cluster_println("]");
 
@@ -306,8 +305,7 @@ bool sl_zigbee_af_tunneling_cluster_transfer_data_client_to_server_cb(sl_zigbee_
       } else {
         sl_zigbee_af_tunneling_server_data_received_cb(cmd_data.tunnelId, cmd_data.data, dataLen);
       }
-      sl_zigbee_af_send_immediate_default_response(status);
-      return true;
+      return status;
     }
     // else
     //  tunnelError code already set (overflow)
@@ -322,10 +320,10 @@ bool sl_zigbee_af_tunneling_cluster_transfer_data_client_to_server_cb(sl_zigbee_
                                                                                    tunnelError);
   sl_zigbee_af_get_command_aps_frame()->options |= SL_ZIGBEE_APS_OPTION_SOURCE_EUI64;
   sl_zigbee_af_send_response();
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_tunneling_cluster_transfer_data_error_client_to_server_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_tunneling_cluster_transfer_data_error_client_to_server_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_tunneling_cluster_transfer_data_error_client_to_server_command_t cmd_data;
   sli_zigbee_af_tunneling_server_tunnel *tunnel;
@@ -333,10 +331,10 @@ bool sl_zigbee_af_tunneling_cluster_transfer_data_error_client_to_server_cb(sl_z
 
   if (zcl_decode_tunneling_cluster_transfer_data_error_client_to_server_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_tunneling_cluster_println("RX: TransferDataError 0x%2x, 0x%x",
+  sl_zigbee_af_tunneling_cluster_println("RX: TransferDataError 0x%04X, 0x%02X",
                                          cmd_data.tunnelId,
                                          cmd_data.transferDataStatus);
 
@@ -350,8 +348,7 @@ bool sl_zigbee_af_tunneling_cluster_transfer_data_error_client_to_server_cb(sl_z
                                                 (sl_zigbee_af_tunneling_transfer_data_status_t)cmd_data.transferDataStatus);
   }
 
-  sl_zigbee_af_send_immediate_default_response(status);
-  return true;
+  return status;
 }
 
 sl_zigbee_af_status_t sl_zigbee_af_tunneling_server_transfer_data(uint16_t tunnelIndex,
@@ -424,7 +421,7 @@ static void closeInactiveTunnels(uint8_t endpoint)
                                               (uint8_t *)&closeTunnelTimeout,
                                               sizeof(closeTunnelTimeout));
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_tunneling_cluster_println("ERR: reading close tunnel timeout 0x%x",
+    sl_zigbee_af_tunneling_cluster_println("ERR: reading close tunnel timeout 0x%02X",
                                            status);
     return;
   }
@@ -506,17 +503,17 @@ void sli_zigbee_af_tunneling_server_cli_print(void)
   sl_zigbee_af_tunneling_cluster_println("#   client              cep  sep  tid    pid  mfg    age");
   sl_zigbee_af_tunneling_cluster_flush();
   for (i = 0; i < SL_ZIGBEE_AF_PLUGIN_TUNNELING_SERVER_TUNNEL_LIMIT; i++) {
-    sl_zigbee_af_tunneling_cluster_print("%x: ", i);
+    sl_zigbee_af_tunneling_cluster_print("%02X: ", i);
     if (tunnels[i].clientEndpoint != UNUSED_ENDPOINT_ID) {
       sl_802154_long_addr_t eui64;
       sl_zigbee_af_address_table_lookup_by_index(tunnels[i].addressIndex, eui64);
       sl_zigbee_af_tunneling_cluster_debug_exec(sl_zigbee_af_print_big_endian_eui64(eui64));
-      sl_zigbee_af_tunneling_cluster_print(" 0x%x 0x%x 0x%2x",
+      sl_zigbee_af_tunneling_cluster_print(" 0x%02X 0x%02X 0x%04X",
                                            tunnels[i].clientEndpoint,
                                            tunnels[i].serverEndpoint,
                                            i);
       sl_zigbee_af_tunneling_cluster_flush();
-      sl_zigbee_af_tunneling_cluster_print(" 0x%x 0x%2x 0x%4x",
+      sl_zigbee_af_tunneling_cluster_print(" 0x%02X 0x%04X 0x%08X",
                                            tunnels[i].protocolId,
                                            tunnels[i].manufacturerCode,
                                            currentTime - tunnels[i].lastActive);
@@ -532,34 +529,32 @@ uint32_t sl_zigbee_af_tunneling_cluster_server_command_parse(sl_service_opcode_t
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_REQUEST_TUNNEL_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_tunneling_cluster_request_tunnel_cb(cmd);
+        status = sl_zigbee_af_tunneling_cluster_request_tunnel_cb(cmd);
         break;
       }
       case ZCL_CLOSE_TUNNEL_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_tunneling_cluster_close_tunnel_cb(cmd);
+        status = sl_zigbee_af_tunneling_cluster_close_tunnel_cb(cmd);
         break;
       }
       case ZCL_TRANSFER_DATA_CLIENT_TO_SERVER_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_tunneling_cluster_transfer_data_client_to_server_cb(cmd);
+        status = sl_zigbee_af_tunneling_cluster_transfer_data_client_to_server_cb(cmd);
         break;
       }
       case ZCL_TRANSFER_DATA_ERROR_CLIENT_TO_SERVER_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_tunneling_cluster_transfer_data_error_client_to_server_cb(cmd);
+        status = sl_zigbee_af_tunneling_cluster_transfer_data_error_client_to_server_cb(cmd);
         break;
       }
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

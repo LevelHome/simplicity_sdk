@@ -7,6 +7,10 @@ description: OpenThread configuration for applications that will be used as refe
 provides:
   - name: ot_reference_device
   - name: ot_stack_configuration
+requires:
+  - name: ot_diags_implementation
+recommends:
+  - id: ot_diags
 metadata:
   sbom:
     license: Zlib

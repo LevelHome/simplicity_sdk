@@ -2,7 +2,9 @@ id: zw_release
 label: Z-Wave Release
 category: Z-Wave
 description: >
-  This component switches off the debug print functionality through the NO_DEBUGPRINT definition.
+  This component disables the debug print functionality by defining the NO_DEBUGPRINT and NDEBUG macros.
+  It is used to optimize the code for production by removing unnecessary debug output. 
+  By reducing the code size and eliminating debug statements, it helps improve performance and shrink memory usage.
 package: Z-Wave
 quality: production
 metadata:

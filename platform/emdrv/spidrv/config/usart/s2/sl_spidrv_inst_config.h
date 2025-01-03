@@ -81,16 +81,16 @@
 // #define SL_SPIDRV_INSTANCE_PERIPHERAL        USART0
 // #define SL_SPIDRV_INSTANCE_PERIPHERAL_NO     0
 
-// #define SL_SPIDRV_INSTANCE_TX_PORT           gpioPortA
+// #define SL_SPIDRV_INSTANCE_TX_PORT           SL_GPIO_PORT_A
 // #define SL_SPIDRV_INSTANCE_TX_PIN            0
 
-// #define SL_SPIDRV_INSTANCE_RX_PORT           gpioPortA
+// #define SL_SPIDRV_INSTANCE_RX_PORT           SL_GPIO_PORT_A
 // #define SL_SPIDRV_INSTANCE_RX_PIN            1
 
-// #define SL_SPIDRV_INSTANCE_CLK_PORT          gpioPortA
+// #define SL_SPIDRV_INSTANCE_CLK_PORT          SL_GPIO_PORT_A
 // #define SL_SPIDRV_INSTANCE_CLK_PIN           2
 
-// #define SL_SPIDRV_INSTANCE_CS_PORT           gpioPortA
+// #define SL_SPIDRV_INSTANCE_CS_PORT           SL_GPIO_PORT_A
 // #define SL_SPIDRV_INSTANCE_CS_PIN            3
 // [USART_SL_SPIDRV_INSTANCE]$
 // <<< sl:end pin_tool >>>

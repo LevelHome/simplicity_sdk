@@ -107,11 +107,15 @@ void sl_mbedtls_init(void)
   if (!mbedtls_psa_slots_mutex_inited) {
     int32_t kernel_lock_state = lock_task_switches();
     if (!mbedtls_psa_slots_mutex_inited) {
-      mbedtls_mutex_init(&mbedtls_psa_slots_mutex);
+      mbedtls_mutex_init(&mbedtls_threading_key_slot_mutex);
       mbedtls_psa_slots_mutex_inited = true;
     }
     restore_lock_state(kernel_lock_state);
   }
   #endif // #if defined(MBEDTLS_PSA_CRYPTO_C)
+  #if defined(MBEDTLS_THREADING_TEST)
+  mbedtls_test_thread_set_alt(&THREADING_ThreadCreate,
+                              &THREADING_ThreadJoin);
+  #endif //MBEDTLS_THREADING_TEST
 #endif // #if defined(MBEDTLS_THREADING_ALT) && defined(MBEDTLS_THREADING_C)
 }

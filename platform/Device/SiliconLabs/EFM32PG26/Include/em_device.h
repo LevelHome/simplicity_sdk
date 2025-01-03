@@ -41,29 +41,41 @@
 
 #ifndef EM_DEVICE_H
 #define EM_DEVICE_H
-#if defined(EFM32PG26B100F512IL136)
-#include "efm32pg26b100f512il136.h"
+#if defined(EFM32PG26B101F512IL136)
+#include "efm32pg26b101f512il136.h"
 
-#elif defined(EFM32PG26B100F512IM68)
-#include "efm32pg26b100f512im68.h"
+#elif defined(EFM32PG26B101F512IM68)
+#include "efm32pg26b101f512im68.h"
 
-#elif defined(EFM32PG26B300F1024IL136)
-#include "efm32pg26b300f1024il136.h"
+#elif defined(EFM32PG26B301F1024IL136)
+#include "efm32pg26b301f1024il136.h"
 
-#elif defined(EFM32PG26B300F1024IM68)
-#include "efm32pg26b300f1024im68.h"
+#elif defined(EFM32PG26B301F1024IM68)
+#include "efm32pg26b301f1024im68.h"
 
-#elif defined(EFM32PG26B300F2048IL136)
-#include "efm32pg26b300f2048il136.h"
+#elif defined(EFM32PG26B301F2048IL136)
+#include "efm32pg26b301f2048il136.h"
 
-#elif defined(EFM32PG26B300F2048IM68)
-#include "efm32pg26b300f2048im68.h"
+#elif defined(EFM32PG26B301F2048IM68)
+#include "efm32pg26b301f2048im68.h"
 
 #elif defined(EFM32PG26B500F3200IL136)
 #include "efm32pg26b500f3200il136.h"
 
+#elif defined(EFM32PG26B500F3200IM48)
+#include "efm32pg26b500f3200im48.h"
+
 #elif defined(EFM32PG26B500F3200IM68)
 #include "efm32pg26b500f3200im68.h"
+
+#elif defined(EFM32PG26B501F3200IL136)
+#include "efm32pg26b501f3200il136.h"
+
+#elif defined(EFM32PG26B501F3200IM48)
+#include "efm32pg26b501f3200im48.h"
+
+#elif defined(EFM32PG26B501F3200IM68)
+#include "efm32pg26b501f3200im68.h"
 
 #else
 #error "em_device.h: PART NUMBER undefined"

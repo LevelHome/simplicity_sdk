@@ -15,7 +15,6 @@ component:
   - id: zw_role_type_always_on
   - id: zaf_soc
   - id: zw_core
-  - id: zw_appshw_ledbulb
   - id: zw_zaf
   - id: zw_true_status
   - id: zw_ota
@@ -35,24 +34,47 @@ component:
   - id: zw_cc_supervision
   - id: zw_cc_version
   - id: zw_cc_zwaveplusinfo
+  - id: zw_appshw
   - id: sl_system
   - id: device_init
   - id: mpu # disable execution from RAM
   - id: simple_rgb_pwm_led
-    instance: [led]
+    instance: [rgb_led0]
+    condition: [hardware_board_has_rgb]
   - id: pwm
     instance: [led1]
   - id: ZW_MIGRATION_TO_7_19
   - id: zw_cli_common
     condition: [zw_production]
+  - id: app_button_press
+  - id: app_assert
+  - id: simple_button
+    instance: [btn0, btn1]
+  - id: simple_led
+    instance: [led0]
+  
 source:
   - path: app.c
   - path: main.c
+  - path: app_cli.c
+    condition: [zw_cli_common]
+  - path: app_btn_handler.c
+    condition: [simple_button]
+  - path: app_cc_color_switch_switch_callbacks.c
+  - path: app_cc_multilevel_switch_callbacks.c
+  - path: app_rgb_led.c
+
 include:
   - path: .
     file_list:
       - path: events.h
+      - path: app_rgb_led.h
+
 configuration:
+  - name: SHORT_BUTTON_PRESS_DURATION
+    value: (400)
+  - name: MEDIUM_BUTTON_PRESS_DURATION
+    value: (1500)
   - name: ZAF_CONFIG_REQUEST_KEY_S0
     value: 1
   - name: ZAF_CONFIG_REQUEST_KEY_S2_UNAUTHENTICATED
@@ -134,21 +156,28 @@ define:
     value: "0x00000" # Range: 0x00000 - 0x0FFFF
 
 config_file:
-  # Override LED config
-  - path: ../../platform/SiliconLabs/AppsHw/src/LEDBulb/config/sl_simple_rgb_pwm_led_led_config.h
-    override:
-      file_id: simple_rgb_pwm_led_config
-      component: simple_rgb_pwm_led
-      instance: led
-    condition: ["device_series_2"]
   - path: LEDBulb.cc_config
     directory: cc_config
+  # Sample keys for signing
+  - path: ../../platform/SiliconLabs/PAL/BootLoader/sample-keys/sample_encrypt.key
+    directory: sample_keys
+  - path: ../../platform/SiliconLabs/PAL/BootLoader/sample-keys/sample_sign.key
+    directory: sample_keys
 
-other_file:
-  - path: ../../DevTools/postbuild.sh
+template_contribution:
+  - name: component_catalog
+    condition: [hardware_board_has_rgb]
+    value: RGB_LED
+#------------------ CLI commands ---------------------
+  - name: cli_command
+    condition: [zw_cli_common]
+    value:
+      name: get_rgb_values
+      handler: cli_get_rgb_values
+      help: Get RGB LED values. The range is 0-65535
 
 post_build:
-  profile: zwave_soc_led_bulb
+  profile: zwave_application
 
 tag:
   - prebuilt_demo

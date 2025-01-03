@@ -215,7 +215,7 @@ sli_zigbee_af_page_request_client_status sli_zigbee_af_note_received_block_for_p
     return EM_AF_PAGE_REQUEST_ERROR;
   }
   if (offset < pageRequestOffset) {
-    //    otaPrintln("Received offset 0x%4X is less than current page request offset 0x%4X, ignoring.",
+    //    otaPrintln("Received offset 0x%08X is less than current page request offset 0x%08X, ignoring.",
     //               offset,
     //               pageRequestOffset);
     // We ignore this because we may receive blocks out of order, from other retries, etc.

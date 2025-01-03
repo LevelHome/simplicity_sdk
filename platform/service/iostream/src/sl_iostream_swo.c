@@ -32,6 +32,7 @@
 #include "sl_status.h"
 #include "sl_debug_swo.h"
 #include "sl_iostream_swo_config.h"
+#include "sl_code_classification.h"
 
 #if defined(SL_CATALOG_POWER_MANAGER_PRESENT)
 #include "sl_power_manager.h"
@@ -63,6 +64,7 @@ static sl_status_t swo_write(void  *context,
                              size_t buffer_length);
 
 #if defined(SL_CATALOG_POWER_MANAGER_PRESENT)
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_IOSTREAM_SWO, SL_CODE_CLASS_TIME_CRITICAL)
 static void sli_iosteam_swo_em_transition(sl_power_manager_em_t from,
                                           sl_power_manager_em_t to);
 #endif

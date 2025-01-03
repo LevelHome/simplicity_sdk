@@ -111,4 +111,7 @@
 #define SL_UARTDRV_EUSART_INSTANCE_RTS_PIN           3
 
 //#warning "UARTDRV EUSART peripheral not configured"
+
+// [EUSART_SL_UARTDRV_EUSART_INSTANCE]$
+// <<< sl:end pin_tool >>>
 #endif // SL_UARTDRV_EUSART_INSTANCE_CONFIG_H

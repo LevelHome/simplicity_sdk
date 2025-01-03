@@ -23,32 +23,49 @@ ESL AP configuration.
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 # Common constants used both by the BLE and ESL threads
+from ap_constants import TAG_SYNC_TIMEOUT
 
-# alternates GATT Write With or Without Response requests and enables other dirty hacks if set to True
+# Alternates between GATT Write With- or Without Response requests, and allows skipping some value range validation
+# and other sanity checks when set to True, so that IOP edge case tests can run properly.
 IOP_TEST = False
 
-# Tag synchronization timeout in seconds
-TAG_SYNC_TIMEOUT = 3600 # one hour according to ESLP spec.
-TAG_UNASSOCIATE_TIMEOUT = 2 * TAG_SYNC_TIMEOUT # one hour more after sync timeout according to ESLP spec.
-TAG_SYNC_KEEPING_INTERVAL = TAG_SYNC_TIMEOUT / 2 # send NOP commands in every 30 minutes
+# Reusing encryption keys may be bad security practice, but resynchronisation by scanning cannot work without it.
+KEY_MATERIAL_REUSE_ENABLED = False
+
+# AP will send NOP commands in every 30 minutes by default
+TAG_SYNC_KEEPING_INTERVAL = TAG_SYNC_TIMEOUT / 2
+
+# PAwR train initial extended advertising enabled when AP is started in auto mode (any PAwR train restart still requires explicit 'sync start --advertise' command).
+INITIAL_AUTO_ADVERTISE_PAWR_TRAIN = False
 
 # Max number of images to upload automatically
 IMAGE_MAX_AUTO_UPLOAD_COUNT = 2
-
-# Connection timeout
-CONNECTION_TIMEOUT_SEC = 10
 
 # Retry count for ESL command opcodes re-sending
 ESL_CMD_MAX_RETRY_COUNT = 3
 
 # Pending count for connection requests: 1 is the minmum ad also the safest value, but auto provisioning will be the slowest
-ESL_CMD_MAX_PENDING_CONNECTION_REQUEST_COUNT = 2
+ESL_CMD_MAX_PENDING_CONNECTION_REQUEST_COUNT = 4096 # Best if aligned with elw.ESL_LIB_SKIPLIST_MAX_LEVEL_LIB macro value
 
 # Tags in a group in automated mode addressing
-ESL_MAX_TAGS_IN_AUTO_GROUP = 32
+ESL_MAX_TAGS_IN_AUTO_GROUP = 46 # enough for 1196 nodes with current PAwR defaults
 
 # Default RSSI threshold in dBm
-RSSI_THRESHOLD = -60
+RSSI_THRESHOLD = -80
+
+# Scanning parameters
+SCAN_INTERVAL_DEFAULT_MS = 15.0
+SCAN_WINDOW_DEFAULT_MS = 13.75
+
+# The maximum number of threads can be limited by the system - it is better to avoid creating too many
+MAX_ADVERTISER_TIMEOUT_THREADS = 750 # If there are more ESLs advertising at the same time, this will be the upper limit of the reported count!
+
+# Advertising timeout [s]
+ADVERTISING_TIMEOUT = 60
+
+# (Re)connecting timeout [s]
+# Allow enough time for the ESL C library for the re-connection attempts, which may be delayed by other queued connections
+CONNECTING_TIMEOUT = 3600 # Filter Accept List based auto connect requires huge grace period
 
 # The timeout is needed to get the KeyboardInterrupt.
 # The timeout value is a tradeoff between CPU load and KeyboardInterrupt response time.

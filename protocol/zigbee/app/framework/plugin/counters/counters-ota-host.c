@@ -16,7 +16,6 @@
  ******************************************************************************/
 
 #include "app/framework/include/af.h"
-#include "app/util/serial/sl_zigbee_command_interpreter.h"
 #include "app/util/common/common.h"
 #include "app/util/ezsp/ezsp-protocol.h"
 #include "app/util/ezsp/ezsp.h"

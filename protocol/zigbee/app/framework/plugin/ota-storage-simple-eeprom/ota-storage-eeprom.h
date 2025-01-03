@@ -177,8 +177,6 @@
 #define DO_NOT_USE_SLOTS  3
 #define SLOT_STRATEGY SL_ZIGBEE_AF_PLUGIN_OTA_STORAGE_SIMPLE_EEPROM_GECKO_BOOTLOADER_STORAGE_SUPPORT
 
-#define MAX_IMAGE_INFO_AND_OTA_HEADER_SIZE  2048 // bytes
-
 #define MAX_WORD_SIZE 4
 
 // The following indexes are all relative to the start of the Image Info section
@@ -229,9 +227,16 @@
 //     = 256 bytes * 4-byte word size = 1024
 // Most other parts use a 2048 or 4096 page size and are not 2-byte word sizes,
 // so we are don't need this many bytes.
+// Series 3 has a massive storage space, so we need a larger bytemask
+#ifdef _SILICON_LABS_32B_SERIES_3
+#define MAX_BYTEMASK_LENGTH 2048
+#else // _SILICON_LABS_32B_SERIES_3
 #define MAX_BYTEMASK_LENGTH 1024
+#endif // _SILICON_LABS_32B_SERIES_3
 
 #define OTA_HEADER_INDEX (SAVED_DOWNLOAD_OFFSET_INDEX + MAX_BYTEMASK_LENGTH)
+
+#define MAX_IMAGE_INFO_AND_OTA_HEADER_SIZE  (MAX_BYTEMASK_LENGTH + 1024) // bytes
 
 // The minimum offset we will write that determines if we store the current
 // download offset persistently.  This is equal to the minimum OTA header size.

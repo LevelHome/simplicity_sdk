@@ -43,6 +43,10 @@
 #ifndef SL_RAM_INTERRUPT_VECTOR_INIT_H
 #define SL_RAM_INTERRUPT_VECTOR_INIT_H
 
+#ifndef SL_SUPPRESS_DEPRECATION_WARNINGS_SDK_2024_6
+#warning "This file is deprecated as of Simplicity SDK 2024.6. It is replaced by the public API of sl_interrupt_manager.h"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

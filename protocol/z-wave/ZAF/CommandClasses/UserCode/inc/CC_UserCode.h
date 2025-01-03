@@ -140,7 +140,7 @@ CC_UserCode_Set_handler(
   uint16_t modifierNodeId);
 
 /**
- * @brief The User Code Get ID.
+ * @brief Determines the status of a User ID
  * @param[in] identifier User Identifier.
  * @param[out] pId pointer to return Id.
  * @param[in] endpoint is the destination endpoint

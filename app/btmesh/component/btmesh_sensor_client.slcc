@@ -54,8 +54,10 @@ requires:
   - name: "app_assert"
   - name: "app_btmesh_util"
   - name: "btmesh_role_init"
+  - name: "app_btmesh_rta"
   - name: "btmesh_stack_node"
   - name: "btmesh_stack_sensor_client"
+  - name: "sl_common"
 recommends:
   - id: "btmesh_provisionee"
 

@@ -50,13 +50,58 @@
 
 // <q SL_STATUS_STRING_ENABLE_COMPUTE> Enable Compute (MVP Driver & MVP Math) string components
 // <i> Enable (1) or disable (0) MVP Driver/MVP Math string components.
-// <i> Default: 0
+// <i> Default: 1
 #define  SL_STATUS_STRING_ENABLE_COMPUTE                             1
 
 // <q SL_STATUS_STRING_ENABLE_ZIGBEE> Enable Zigbee status string components
 // <i> Enable (1) or disable (0) Zigbee string components.
 // <i> Default: 1
 #define  SL_STATUS_STRING_ENABLE_ZIGBEE                              1
+
+// <q SL_STATUS_STRING_ENABLE_PLATFORM> Enable Platform status string components
+// <i> Enable (1) or disable (0) Platform string components.
+// <i> Default: 0
+#define  SL_STATUS_STRING_ENABLE_PLATFORM                            0
+
+// <q SL_STATUS_STRING_ENABLE_HARDWARE> Enable Hardware status string components
+// <i> Enable (1) or disable (0) Hardware string components.
+// <i> Default: 0
+#define  SL_STATUS_STRING_ENABLE_HARDWARE                            0
+
+// <q SL_STATUS_STRING_ENABLE_CAN_CANOPEN> Enable CAN & CANopen status string components
+// <i> Enable (1) or disable (0) CAN & CANopen string components.
+// <i> Default: 0
+#define  SL_STATUS_STRING_ENABLE_CAN_CANOPEN                         0
+
+// <q SL_STATUS_STRING_ENABLE_CONNECT> Enable Connect status string components
+// <i> Enable (1) or disable (0) Connect string components.
+// <i> Default: 0
+#define  SL_STATUS_STRING_ENABLE_CONNECT                             0
+
+// <q SL_STATUS_STRING_ENABLE_NET_SUITE> Enable Net Suite status string components
+// <i> Enable (1) or disable (0) Net Suite string components.
+// <i> Default: 0
+#define  SL_STATUS_STRING_ENABLE_NET_SUITE                           0
+
+// <q SL_STATUS_STRING_ENABLE_THREAD> Enable Thread status string components
+// <i> Enable (1) or disable (0) Thread string components.
+// <i> Default: 0
+#define  SL_STATUS_STRING_ENABLE_THREAD                              0
+
+// <q SL_STATUS_STRING_ENABLE_USB> Enable USB status string components
+// <i> Enable (1) or disable (0) USB string components.
+// <i> Default: 0
+#define  SL_STATUS_STRING_ENABLE_USB                                 0
+
+// <q SL_STATUS_STRING_ENABLE_Z_WAVE> Enable Z-Wave status string components
+// <i> Enable (1) or disable (0) Z-Wave string components.
+// <i> Default: 0
+#define  SL_STATUS_STRING_ENABLE_Z_WAVE                              0
+
+// <q SL_STATUS_STRING_ENABLE_GECKO_OS> Enable Gecko OS status string components
+// <i> Enable (1) or disable (0) Gecko OS string components.
+// <i> Default: 0
+#define  SL_STATUS_STRING_ENABLE_GECKO_OS                            0
 
 // </h>
 

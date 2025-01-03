@@ -144,14 +144,29 @@ void sli_zigbee_af_load_attribute_defaults(uint8_t endpoint, bool writeTokens);
 // are defined to be stored in tokens.
 void sli_zigbee_af_load_attributes_from_tokens(uint8_t endpoint);
 
-// After the RAM value has changed, code should call this
-// function. If this attribute has been
-// tagged as stored-to-token, then code will store
-// the attribute to token.
+// This function is called to update attributes in NVM after the RAM
+// counterpart has been written. This function updates NVM immediately,
+// as opposed to defer_attribute_write_to_token, which updates NVM after a delay.
+// If the attribute is not stored in NVM, then this function does nothing
 void sli_zigbee_af_save_attribute_to_token(uint8_t *data,
                                            uint8_t endpoint,
                                            sl_zigbee_af_cluster_id_t clusterId,
                                            sl_zigbee_af_attribute_metadata_t *metadata);
+
+// This function is called to update attributes in NVM after the RAM
+// counterpart has been written. This function updates NVM after a delay,
+// as opposed to sli_zigbee_af_save_attribute_to_token, which updates NVM immediately.
+// If the attribute is changed before the deferred write has occurred, then the
+// deferral will be delayed again by the original delay amount.
+// If the attribute is not stored in NVM, then this function does nothing
+void defer_attribute_write_to_token(uint8_t *data,
+                                    uint8_t endpoint,
+                                    sl_zigbee_af_cluster_id_t clusterId,
+                                    sl_zigbee_af_attribute_metadata_t *metadata,
+                                    sl_zigbee_af_cluster_mask_t clusterMask,
+                                    uint16_t manufacturerCode);
+
+void sli_zigbee_af_init_attribute_storage(void);
 
 // Calls the attribute changed callback
 void sli_zigbee_af_cluster_attribute_changed_callback(uint8_t endpoint,

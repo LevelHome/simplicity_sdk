@@ -9,6 +9,7 @@ provides:
 requires:
   - name: gpiointerrupt
   - name: emlib_ldma
+    condition: [device_series_2]
   - name: spidrv_core
   - name: clock_manager_runtime
   - name: ot_headers

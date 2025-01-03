@@ -231,3 +231,7 @@ template_contribution:
       func: sli_tz_se_get_tamper_reset_cause
     condition: [trustzone_nonsecure, device_security_vault]
     unless: [device_sdid_200]
+
+metadata:
+  sbom:
+    license: Zlib

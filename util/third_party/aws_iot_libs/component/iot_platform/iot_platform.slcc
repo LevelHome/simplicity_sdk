@@ -6,7 +6,9 @@ description: Platform Iot modules which provide platform-level APIs for AWS modu
 
 package: amazon_platform
 quality: experimental
-
+metadata:
+  sbom:
+    license: MIT
 provides:
   - name: iot_platform
 

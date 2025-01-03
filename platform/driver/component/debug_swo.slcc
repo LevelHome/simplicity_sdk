@@ -31,7 +31,8 @@ provides:
 requires:
   - name: status
   - name: clock_manager_runtime
-  - name: hal_generic_gpio
+  - name: hal_gpio
+  - name: gpio
   - name: cmsis_core
   - name: component_catalog
 config_file:

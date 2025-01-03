@@ -586,7 +586,7 @@ static void em_EM4_LfrcoBURTC(void)
   em4Init.retainLfxo = true;
   em4Init.pinRetentionMode = emuPinRetentionLatch;
   EMU_EM4Init(&em4Init);
-  EMU_EnterEM4();
+  EMU_EnterEM4Wait();
 }
 #elif defined(_SILICON_LABS_32B_SERIES_1)
 /***************************************************************************//**
@@ -627,7 +627,7 @@ static void em_EM4H_LfxoRTCC(void)
   em4Init.retainLfxo = true;
   em4Init.pinRetentionMode = emuPinRetentionLatch;
   EMU_EM4Init(&em4Init);
-  EMU_EnterEM4();
+  EMU_EnterEM4Wait();
 }
 #endif
 
@@ -656,7 +656,7 @@ static void em_EM4_UlfrcoBURTC(void)
   em4Init.em4State = emuEM4Hibernate;
   em4Init.pinRetentionMode = emuPinRetentionLatch;
   EMU_EM4Init(&em4Init);
-  EMU_EnterEM4();
+  EMU_EnterEM4Wait();
 }
 #endif // _SILICON_LABS_32B_SERIES_2
 
@@ -694,7 +694,7 @@ static void em_EM4H_UlfrcoCRYO(void)
   em4Init.em4State = emuEM4Hibernate;
   em4Init.pinRetentionMode = emuPinRetentionLatch;
   EMU_EM4Init(&em4Init);
-  EMU_EnterEM4();
+  EMU_EnterEM4Wait();
 }
 #endif // CRYOTIMER_PRESENT
 
@@ -723,7 +723,7 @@ static void em_EM4_none(void)
   em4Init.pinRetentionMode = emuPinRetentionLatch;
   EMU_EM4Init(&em4Init);
   // Enter EM4.
-  EMU_EnterEM4();
+  EMU_EnterEM4Wait();
 }
 #endif // ! _SILICON_LABS_32B_SERIES_0
 
@@ -751,7 +751,7 @@ static void em_EM4S(void)
   //Gpio pins must be retained to avoid kit power issues - applies for kit v8.
   em4Init.pinRetentionMode = emuPinRetentionLatch;
   EMU_EM4Init(&em4Init);
-  EMU_EnterEM4();
+  EMU_EnterEM4Wait();
 }
 #endif  // ! _SILICON_LABS_32B_SERIES_0
 
@@ -801,7 +801,6 @@ static void disable_HF_clocks(void)
   CMU_ClockEnable(cmuClock_USART0, false);
 #endif
   CMU_ClockEnable(cmuClock_PRS, false);
-  CMU_ClockEnable(cmuClock_GPIO, false);
   CMU_ClockEnable(cmuClock_HFXO, false);
   CMU_ClockEnable(cmuClock_DPLL0, false);
   CMU_ClockEnable(cmuClock_HFRCO0, false);
@@ -1320,6 +1319,12 @@ static void em_EM3(energy_mode_t *mode)
  ******************************************************************************/
 static void em_EM4(energy_mode_t *mode)
 {
+  // Check if the device has Boost DC-DC parts at runtime
+  if (_SILICON_LABS_DCDC_FEATURE == _SILICON_LABS_DCDC_FEATURE_DCDC_BOOST) {
+    //  DCDC Boost devices will not enter EM4 mode.
+    return;
+  }
+
   switch ((em4h_oscillator_enum_t)mode->osc) {
     case NONE:
       // 128b RAM
@@ -1417,7 +1422,7 @@ void start_emode_test(energy_mode_t *mode)
     case EM4:
 #if defined(_SILICON_LABS_32B_SERIES_0)
       // Enter EM4.
-      EMU_EnterEM4();
+      EMU_EnterEM4Wait();
 #else
       em_EM4(mode);
 #endif

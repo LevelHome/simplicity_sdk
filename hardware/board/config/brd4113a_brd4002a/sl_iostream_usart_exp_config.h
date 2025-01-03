@@ -88,11 +88,11 @@
 #define SL_IOSTREAM_USART_EXP_PERIPHERAL_NO      1
 
 // USART1 TX on PA00
-#define SL_IOSTREAM_USART_EXP_TX_PORT            gpioPortA
+#define SL_IOSTREAM_USART_EXP_TX_PORT            SL_GPIO_PORT_A
 #define SL_IOSTREAM_USART_EXP_TX_PIN             0
 
 // USART1 RX on PA04
-#define SL_IOSTREAM_USART_EXP_RX_PORT            gpioPortA
+#define SL_IOSTREAM_USART_EXP_RX_PORT            SL_GPIO_PORT_A
 #define SL_IOSTREAM_USART_EXP_RX_PIN             4
 
 

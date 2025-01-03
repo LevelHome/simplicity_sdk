@@ -91,6 +91,7 @@ void halInternalIncrementCounterToken(uint8_t token)
   (void) sl_token_increment_counter(token);
 }
 
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_LEGACY_HAL, SL_CODE_CLASS_TIME_CRITICAL)
 void halInternalGetMfgTokenData(void *data, uint16_t token, uint8_t index, uint32_t len)
 {
   (void) sl_token_get_manufacturing_data(token, index, data, len);

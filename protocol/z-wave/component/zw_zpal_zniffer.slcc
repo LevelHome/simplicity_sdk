@@ -1,9 +1,11 @@
 id: zw_zpal_zniffer
-label: Z-Wave ZPAL Zniffer
+label: Z-Wave ZPAL Zniffer PTI
 category: Z-Wave
 description: >
-  This component contains ZPAL libraries used for the Z-wave Zniffer build. The contents are
-  different depending on the type of the build (i.e. production or development).
+  This component contains ZPAL libraries used for the Z-Wave Zniffer PTI build.
+  Z-Wave Zniffer PTI provides functionality for capturing and analyzing Z-Wave network traffic and send it
+  with SiliconLabs PTI (Packet Trace Interface) over Ethernet. Z-Wave PTI appliction is supported
+  in PC Zniffer application out of the box.
 package: Z-Wave
 quality: production
 metadata:

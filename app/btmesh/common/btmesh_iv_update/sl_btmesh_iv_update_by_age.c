@@ -28,7 +28,7 @@
  *
  ******************************************************************************/
 
-#include "em_common.h"
+#include "sl_common.h"
 #include "sl_status.h"
 
 #include "sl_bt_api.h"

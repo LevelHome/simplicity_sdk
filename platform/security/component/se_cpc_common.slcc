@@ -14,3 +14,6 @@ include:
       - path: sli_se_cpc.h
 provides:
   - name: se_cpc_common
+metadata:
+ sbom:
+    license: Zlib

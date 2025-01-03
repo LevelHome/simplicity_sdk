@@ -33,6 +33,7 @@ provides:
 requires:
   - name: "app_assert"
   - name: "app_btmesh_util"
+  - name: "app_btmesh_rta"
   - name: "btmesh_stack_generic_client"
   - name: "btmesh_stack_node"
   - name: "btmesh_generic_client"

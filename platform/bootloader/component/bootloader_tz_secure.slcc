@@ -12,3 +12,6 @@ provides:
   - name: bootloader_tz_secure
 requires:
   - name: trustzone_secure
+metadata:
+  sbom:
+    license: MSLA

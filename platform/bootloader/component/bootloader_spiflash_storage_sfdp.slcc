@@ -29,4 +29,7 @@ requires:
   - name: bootloader_crc
   - name: bootloader_spi_controller_driver
   - name: bootloader_storage_slots
+metadata:
+  sbom:
+    license: MSLA
 

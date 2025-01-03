@@ -50,6 +50,7 @@ typedef enum {
 #define KEY_SIZE_MAX            (2)
 #define MSG_SIZE_MAX            (2)
 
+#define KEY_STORAGE_PLAIN_MAX   PERSISTENT_PLAIN_KEY
 /// Default key usage is none
 #define DEFAULT_KEY_USAGE       (0)
 

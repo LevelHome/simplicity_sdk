@@ -16,3 +16,6 @@ include:
 provides:
   - name: bootloader_serial_driver
   - name: bootloader_serial_driver_nonsecure
+metadata:
+  sbom:
+    license: MSLA

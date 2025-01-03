@@ -22,3 +22,6 @@ define:
 provides:
   - name: bootloader_ezsp_spi
   - name: bootloader_ezsp_spi_nonsecure
+metadata:
+  sbom:
+    license: MSLA

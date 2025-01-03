@@ -187,7 +187,9 @@ class sw_profile_outputs_common_ocelot(object):
         if not hasattr(profile.outputs, "rx_eof_delay_ns"):
             profile.outputs.append(ModelOutput(model.vars.rx_eof_delay_ns, '', ModelOutputType.RAIL_CONFIG,
                                            readable_name='Time from end of frame on-air to RX EOF timestamp'))
-        profile.outputs.append(ModelOutput(model.vars.tx_sync_delay_ns, '', ModelOutputType.RAIL_CONFIG,
-                                           readable_name='Time needed from TXEN to start of preamble on-air'))
-        profile.outputs.append(ModelOutput(model.vars.tx_eof_delay_ns, '', ModelOutputType.RAIL_CONFIG,
-                                           readable_name='Time from TX EOF timestamp to end of frame on-air'))
+        if not hasattr(profile.outputs, "tx_sync_delay_ns"):
+            profile.outputs.append(ModelOutput(model.vars.tx_sync_delay_ns, '', ModelOutputType.RAIL_CONFIG,
+                                               readable_name='Time needed from TXEN to start of preamble on-air'))
+        if not hasattr(profile.outputs, "tx_eof_delay_ns"):
+            profile.outputs.append(ModelOutput(model.vars.tx_eof_delay_ns, '', ModelOutputType.RAIL_CONFIG,
+                                               readable_name='Time from TX EOF timestamp to end of frame on-air'))

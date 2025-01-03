@@ -39,17 +39,17 @@
 #include "esl_tag_core.h"
 
 /// ESL Display Type Assigned Numbers
-#define ESL_DISPLAY_TYPE_BLACK_WHITE            0x01
-#define ESL_DISPLAY_TYPE_3_GRAY_SCALE           0x02
-#define ESL_DISPLAY_TYPE_4_GRAY_SCALE           0x03
-#define ESL_DISPLAY_TYPE_8_GRAY_SCALE           0x04
-#define ESL_DISPLAY_TYPE_16_GRAY_SCALE          0x05
-#define ESL_DISPLAY_TYPE_RED_BLACK_WHITE        0x06
-#define ESL_DISPLAY_TYPE_YELLOW_BLACK_WHITE     0x07
-#define ESL_DISPLAY_TYPE_RED_YELLOW_BLACK_WHITE 0x08
-#define ESL_DISPLAY_TYPE_7_COLOR                0x09
-#define ESL_DISPLAY_TYPE_16_COLOR               0x0A
-#define ESL_DISPLAY_TYPE_FULL_RGB               0x0B
+#define ESL_DISPLAY_TYPE_BLACK_WHITE            0x01 ///< Black & white displays
+#define ESL_DISPLAY_TYPE_3_GRAY_SCALE           0x02 ///< 3 gray scale displays
+#define ESL_DISPLAY_TYPE_4_GRAY_SCALE           0x03 ///< 4 gray scale displays
+#define ESL_DISPLAY_TYPE_8_GRAY_SCALE           0x04 ///< 8 gray scale displays
+#define ESL_DISPLAY_TYPE_16_GRAY_SCALE          0x05 ///< 16 gray scale displays
+#define ESL_DISPLAY_TYPE_RED_BLACK_WHITE        0x06 ///< Red, black, white displays
+#define ESL_DISPLAY_TYPE_YELLOW_BLACK_WHITE     0x07 ///< Yellow, black, white displays
+#define ESL_DISPLAY_TYPE_RED_YELLOW_BLACK_WHITE 0x08 ///< Red, yellow, black, white displays
+#define ESL_DISPLAY_TYPE_7_COLOR                0x09 ///< 7 color displays
+#define ESL_DISPLAY_TYPE_16_COLOR               0x0A ///< 16 color displays
+#define ESL_DISPLAY_TYPE_FULL_RGB               0x0B ///< Full RGB color space displays
 
 /// ESL Display Info Display Type
 typedef uint8_t                                 esl_display_type_t;

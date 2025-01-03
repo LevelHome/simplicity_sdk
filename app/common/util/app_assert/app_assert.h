@@ -39,6 +39,13 @@
 #ifdef SL_CATALOG_APP_LOG_PRESENT
 #include "app_log.h"
 #endif
+#ifdef SL_CATALOG_FREERTOS_KERNEL_PRESENT
+#include "FreeRTOS.h"
+#include "task.h"
+#endif
+#ifdef SL_CATALOG_MICRIUMOS_KERNEL_PRESENT
+#include "os.h"
+#endif
 
 #define APP_ASSERT_SEPARATOR   ": "
 #define APP_ASSERT_FORMAT      "Assertion '%s' failed"
@@ -46,11 +53,43 @@
 
 #if defined(APP_ASSERT_ENABLE) && APP_ASSERT_ENABLE
 
-#ifdef HOST_TOOLCHAIN
+#if APP_ASSERT_BREAKPOINT
+#if !(defined (__arm__) || defined (__ICCARM__))
+#error "The breakpoint feature of app_assert is only supported on ARM"
+#endif // !(defined (__arm__) || defined (__ICCARM__))
+// Workaround for compiler specific instruction
+#if defined(__ICCARM__)
+#define _app_assert_breakpoint() __asm("BKPT 0x01")
+#elif defined(__GNUC__)
+#define _app_assert_breakpoint() __asm("BKPT")
+#else
+  #error "Unsupported toolchain"
+#endif // defined(__ICCARM__)
+#else
+#define _app_assert_breakpoint()
+#endif // APP_ASSERT_BREAKPOINT
+
+#if APP_ASSERT_SCHEDULE_LOCK && defined(SL_CATALOG_FREERTOS_KERNEL_PRESENT)
+#define _app_assert_sched_lock() vTaskSuspendAll()
+#elif APP_ASSERT_SCHEDULE_LOCK && defined(SL_CATALOG_MICRIUMOS_KERNEL_PRESENT)
+#define _app_assert_sched_lock() \
+  do {                           \
+    RTOS_ERR p_err;              \
+    OSSchedLock(&p_err);         \
+  } while (0)
+#else
+#define _app_assert_sched_lock()
+#endif // APP_ASSERT_SCHEDULE_LOCK
+
+#if defined(HOST_TOOLCHAIN)
 #include <stdlib.h>
 #define _app_assert_abort() abort()
 #else
-#define _app_assert_abort() while (1)
+#define _app_assert_abort()   \
+  do {                        \
+    _app_assert_breakpoint(); \
+    _app_assert_sched_lock(); \
+  } while (1)
 #endif // HOST_TOOLCHAIN
 
 #if defined(APP_ASSERT_TRACE_ENABLE) && APP_ASSERT_TRACE_ENABLE

@@ -25,6 +25,7 @@
 #ifdef SL_COMPONENT_CATALOG_PRESENT
 #include "sl_component_catalog.h"
 #endif
+#include "sl_code_classification.h"
 
 #if (defined(SL_CATALOG_ZIGBEE_ZCL_FRAMEWORK_CORE_PRESENT) || (defined(SL_ZIGBEE_SCRIPTED_TEST))) \
   || (defined(SL_ZIGBEE_AF_NCP) && defined(SL_CATALOG_ZIGBEE_AF_SUPPORT_PRESENT))
@@ -102,21 +103,24 @@ void sli_zigbee_app_framework_init_callback(void)
 
 #if defined(EXTENDED_RESET_INFO)
   #ifndef SL_CATALOG_ZIGBEE_ZCL_FRAMEWORK_CORE_PRESENT
-  sl_zigbee_app_debug_println("Reset info: 0x%x (%s)",
+  sl_zigbee_app_debug_println("Reset info: 0x%02X (%s)",
                               halGetResetInfo(),
                               halGetResetString());
   #endif //SL_CATALOG_ZIGBEE_ZCL_FRAMEWORK_CORE_PRESENT
 
-  sl_zigbee_app_debug_println("Extended Reset info: 0x%2X (%s)",
+  sl_zigbee_app_debug_println("Extended Reset info: 0x%04X (%s)",
                               halGetExtendedResetInfo(),
                               halGetExtendedResetString());
 
   if (halResetWasCrash()) {
+#if defined(SL_CATALOG_IOSTREAM_UART_COMMON_PRESENT)
+    // The crash printing is implemented for IOSTREAM UART in diagnostic module.
     // We pass port 0 here though this parameter is unused in the legacy HAL
     // version of the diagnostic code.
     halPrintCrashSummary(0);
     halPrintCrashDetails(0);
     halPrintCrashData(0);
+#endif
   }
 #endif // EXTENDED_RESET_INFO
 }
@@ -254,11 +258,14 @@ sl_zigbee_af_event_t* sli_zigbee_af_event_get_event_ptr(sl_zigbee_af_event_t *ev
 }
 
 #ifndef SL_CATALOG_KERNEL_PRESENT
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_ZIGBEE_STACK, SL_CODE_CLASS_TIME_CRITICAL)
 WEAK(void sl_zigbee_wakeup_common_task(void))
 {
 }
 #endif
 void sl_zigbee_wakeup_common_task(void);
+
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_ZIGBEE_STACK, SL_CODE_CLASS_TIME_CRITICAL)
 void sli_zigbee_stack_rtos_stack_wakeup_isr_handler(void)
 {
   sl_zigbee_wakeup_common_task();
@@ -316,6 +323,7 @@ void sli_zigbee_af_run_events()
 //------------------------------------------------------------------------------
 // Callbacks stubs
 
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_ZIGBEE_STACK, SL_CODE_CLASS_TIME_CRITICAL)
 WEAK(void sl_zigbee_rtos_stack_wakeup_isr_handler(void))
 {
 }

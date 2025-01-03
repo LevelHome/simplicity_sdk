@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_iperf_log.h
+ * @brief iPerf log
  *******************************************************************************
  * # License
  * <b>Copyright 2022 Silicon Laboratories Inc. www.silabs.com</b>
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __SL_IPERF_LOG_H__
-#define __SL_IPERF_LOG_H__
+#ifndef SL_IPERF_LOG_H
+#define SL_IPERF_LOG_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,10 +38,10 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
+
 #include "sl_iperf_types.h"
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
@@ -129,4 +129,5 @@ bool sl_iperf_log_buff_is_full(sl_iperf_log_t * const log);
 #ifdef __cplusplus
 }
 #endif
-#endif
+
+#endif // SL_IPERF_LOG_H

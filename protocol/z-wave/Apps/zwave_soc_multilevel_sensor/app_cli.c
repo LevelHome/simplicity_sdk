@@ -39,10 +39,8 @@
 #include <stdint.h>
 #include "sl_cli.h"
 #include "app_log.h"
-#include "app_cli.h"
 #include "ev_man.h"
 #include "events.h"
-#include "zpal_power_manager.h"
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -66,38 +64,11 @@
 /******************************************************************************
  * CLI - send_battery_and_sensor_report: Send battery and sensor report
  *****************************************************************************/
-void cli_send_battery_and_sensor_report(sl_cli_command_arg_t *arguments)
+void cli_send_reports(sl_cli_command_arg_t *arguments)
 {
   (void) arguments;
   app_log_info("Sending battery and sensor report\r\n");
   zaf_event_distributor_enqueue_app_event(EVENT_APP_SEND_BATTERY_LEVEL_AND_SENSOR_REPORT);
-}
-
-/******************************************************************************
- * CLI - enable_sleeping: Enabling the device to go into sleep mode
- *****************************************************************************/
-void cli_enable_sleeping(sl_cli_command_arg_t *arguments)
-{
-  (void) arguments;
-  app_log_info("Enable sleeping\r\n");
-  cli_util_prevent_sleeping(false);
-}
-
-/******************************************************************************
- * CLI - Util Preventing the application to go into sleep mode to keep
- * the CLI alive
- *****************************************************************************/
-void cli_util_prevent_sleeping(bool is_prevent)
-{
-  static zpal_pm_handle_t pm_handle = NULL;
-
-  if ((true == is_prevent) && (pm_handle == NULL)) {
-    pm_handle  = zpal_pm_register(ZPAL_PM_TYPE_USE_RADIO);
-    zpal_pm_stay_awake(pm_handle, 0);
-  } else {
-    zpal_pm_cancel(pm_handle);
-    pm_handle = NULL;
-  }
 }
 
 #endif // SL_CATALOG_ZW_CLI_COMMON_PRESENT

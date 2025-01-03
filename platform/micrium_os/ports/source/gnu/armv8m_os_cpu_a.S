@@ -286,7 +286,7 @@ PendSV_Handler:
 
     CMP    R3, #0                                               @ if current TCB == idle, we are going to idle...
     BEQ   .update_msp_idle                                      @ Skip normal context restore and set idle context
-    
+
     LDR     R0, [R3]                                            @ R0 is new process SP; SP = OSTCBHighRdyPtr->StkPtr;
     LDMFD   R0!, {R4-R11, R14}                                  @ Restore r4-11, R14 from new process stack
 

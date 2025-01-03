@@ -10,7 +10,7 @@ description: >
   map to address the interference. AFH is a requirement for using TX power over
   +10 dBm. It may also provide performance improvement by avoiding congested
   channels.
-category: Bluetooth|Bluetooth Host (Stack)|Additional Features
+category: Bluetooth|Bluetooth LE Controller (Link Layer)|Additional Features
 quality: "production"
 root_path: "protocol/bluetooth"
 requires:

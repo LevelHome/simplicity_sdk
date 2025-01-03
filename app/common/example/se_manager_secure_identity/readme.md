@@ -1,6 +1,6 @@
 # SE Manager Secure Identity
 
-This example uses the SE Manager API and Mbed TLS to perform the secure identity operation on the supported Series 2 Secure Vault High device.
+This example uses the SE Manager API and Mbed TLS to perform the secure identity operation on the supported Secure Vault High device.
 
 This example uses the CRYPTO engine in the SE to accelerate the X.509 API functions of Mbed TLS. The Private Device Key in the Secure Key Storage on the chip is used to sign the challenge from the remote device.
 

@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_wisun_event_mgr.c
+ * @brief Wi-SUN event manager
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -34,12 +34,12 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <assert.h>
+
 #include "cmsis_os2.h"
 #include "sl_cmsis_os2_common.h"
 #include "sl_wisun_api.h"
 #include "sl_wisun_event_mgr.h"
 #include "sl_wisun_trace_util.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -515,7 +515,7 @@ SL_WEAK void sl_wisun_socket_data_sent_event_hnd(sl_wisun_evt_t *evt)
 }
 
 /**************************************************************************//**
- * @brief Wi-SUN error occured event handler
+ * @brief Wi-SUN error occurred event handler
  * @details
  * @param[in] evt event ptr
  *****************************************************************************/

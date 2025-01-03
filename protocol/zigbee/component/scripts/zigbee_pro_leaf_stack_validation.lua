@@ -29,3 +29,12 @@ elseif rfd_device_list_val[device_type_primary_val] == nil or rfd_device_list_va
         "Select Zigbee Pro Stack component if one of the device types to be a coordinator or router.",
         nil)
 end
+
+--- An end device neighbor table can not be sized greater than 1.
+local neighbor_table_size = tonumber(slc.config("SL_ZIGBEE_NEIGHBOR_TABLE_SIZE").value)
+if neighbor_table_size > 1 then
+    validation.error("An end device neighbor table can not be sized greater than 1.",
+        validation.target_for_defines({"SL_ZIGBEE_NEIGHBOR_TABLE_SIZE"}),
+        nil,
+        nil)
+end

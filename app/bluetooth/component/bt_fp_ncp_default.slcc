@@ -4,6 +4,9 @@ package: Bluetooth
 description: >
   Includes selection of Bluetooth stack default NCP features.
 category: Bluetooth|Application|Miscellaneous
+metadata:
+  sbom:
+    license: Zlib
 quality: deprecated
 root_path: app/bluetooth
 requires:

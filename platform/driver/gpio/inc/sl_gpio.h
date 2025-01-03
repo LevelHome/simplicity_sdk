@@ -39,6 +39,20 @@ extern "C" {
 #include "sl_status.h"
 #include "sl_device_gpio.h"
 
+#ifndef EM_GPIO_H
+#define     gpioPortA  0
+#define     gpioPortB  1
+#define     gpioPortC  2
+#define     gpioPortD  3
+#define     gpioPortE  4
+#define     gpioPortF  5
+#define     gpioPortG  6
+#define     gpioPortH  7
+#define     gpioPortI  8
+#define     gpioPortJ  9
+#define     gpioPortK  10
+#endif
+
 /* *INDENT-OFF* */
 // *****************************************************************************
 /// @addtogroup gpio GPIO - General Purpose Input Output
@@ -58,22 +72,6 @@ extern "C" {
 /*******************************************************************************
  ********************************   ENUMS   ************************************
  ******************************************************************************/
-
-/// GPIO Pin Modes.
-SL_ENUM(sl_gpio_mode_t) {
-  /// Disabled. Output value determines pull direction.
-  SL_GPIO_MODE_DISABLED = 0,
-  /// Input enabled. Output value determines filter enable or not.
-  SL_GPIO_MODE_INPUT,
-  /// Input enabled. Output value determines pull direction.
-  SL_GPIO_MODE_INPUT_PULL,
-  /// Push-pull output.
-  SL_GPIO_MODE_PUSH_PULL,
-  /// Open-drain output.
-  SL_GPIO_MODE_OPEN_DRAIN,
-  /// Open-drain output with pull-up
-  SL_GPIO_MODE_OPEN_DRAIN_PULLUP
-};
 
 /// GPIO Pin directions.
 SL_ENUM(sl_gpio_pin_direction_t) {

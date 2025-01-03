@@ -32,12 +32,7 @@
 #define SL_SIMPLE_LED_H
 
 #include "sl_led.h"
-
-#if defined(SL_CATALOG_GPIO_PRESENT)
 #include "sl_gpio.h"
-#else
-#include "em_gpio.h"
-#endif
 
 #include <stdint.h>
 
@@ -73,12 +68,7 @@ typedef uint8_t sl_led_polarity_t;    ///< LED GPIO polarities (active high/low)
 
 /// A Simple LED instance
 typedef struct {
-#if defined(SL_CATALOG_GPIO_PRESENT)
   sl_gpio_port_t    port;             ///< LED port
-#else
-  GPIO_Port_TypeDef port;             ///< LED port
-#endif
-
   uint8_t           pin;              ///< LED pin
   sl_led_polarity_t polarity;         ///< Initial state of LED
 } sl_simple_led_context_t;
@@ -161,7 +151,7 @@ sl_led_state_t sl_simple_led_get_state(void *led_handle);
 ///// sl_simple_led_instances.c
 ///
 ///#include "sl_simple_led.h"
-///#include "em_gpio.h"
+///#include "sl_gpio.h"
 ///#include "sl_simple_led_inst0_config.h"
 ///
 ///sl_simple_led_context_t simple_inst0_context = {

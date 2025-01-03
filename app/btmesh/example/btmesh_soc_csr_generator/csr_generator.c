@@ -39,7 +39,6 @@
 #include "app_log.h"
 
 #include "ecode.h"
-#include "em_common.h"
 #include "em_system.h"
 #include "nvm3.h"
 

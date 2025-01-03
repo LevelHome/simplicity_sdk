@@ -18,6 +18,7 @@ provides:
   - name: "gpiointerrupt"
 requires:
   - name: "emlib_gpio"
+  - name: "gpio"
   - name: "ecode"
   - name: "interrupt_manager"
 template_contribution:
@@ -26,6 +27,8 @@ template_contribution:
       event: driver_init
       include: "gpiointerrupt.h"
       handler: "GPIOINT_Init"
+  - name: component_catalog
+    value: gpiointerrupt
 documentation:
     docset: gecko-platform
     document: platform-driver/gpioint

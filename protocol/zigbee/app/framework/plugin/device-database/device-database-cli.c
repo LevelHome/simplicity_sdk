@@ -67,7 +67,7 @@ void sli_zigbee_af_device_database_print_all(sl_cli_command_arg_t *arguments)
     deviceCount++;
 
     sl_zigbee_af_print_big_endian_eui64(device->eui64);
-    sl_zigbee_af_core_println(" - Capabilities: 0x%X - EPs: %d - Status: %p - Failures:%d - Stack Revision: %d",
+    sl_zigbee_af_core_println(" - Capabilities: 0x%02X - EPs: %d - Status: %s - Failures:%d - Stack Revision: %d",
                               device->capabilities,
                               device->endpointCount,
                               sl_zigbee_af_device_database_get_status_string(device->status),
@@ -89,14 +89,14 @@ void sli_zigbee_af_device_database_print_device(sl_cli_command_arg_t *arguments)
 
   uint8_t i;
   for (i = 0; i < device->endpointCount; i++) {
-    sl_zigbee_af_core_println("EP: %d - Profile ID: 0x%2X - Device ID: 0x%2X - Clusters: %d",
+    sl_zigbee_af_core_println("EP: %d - Profile ID: 0x%04X - Device ID: 0x%04X - Clusters: %d",
                               device->endpoints[i].endpoint,
                               device->endpoints[i].profileId,
                               device->endpoints[i].deviceId,
                               device->endpoints[i].clusterCount);
     uint8_t j;
     for (j = 0; j < device->endpoints[i].clusterCount; j++) {
-      sl_zigbee_af_core_println("  Cluster: 0x%2X %p",
+      sl_zigbee_af_core_println("  Cluster: 0x%04X %s",
                                 device->endpoints[i].clusters[j].clusterId,
                                 (device->endpoints[i].clusters[j].server
                                  ? "Server"
@@ -138,7 +138,7 @@ void sli_zigbee_af_device_database_add_dummy_device(sl_cli_command_arg_t *argume
     return;
   }
   if ((uint32_t)clusterCount + (uint32_t)DUMMY_BASE_CLUSTER_ID >= 65535) {
-    sl_zigbee_af_core_println("Error: Base cluster ID 0x%2X + number of clusters %d would exceed 65534",
+    sl_zigbee_af_core_println("Error: Base cluster ID 0x%04X + number of clusters %d would exceed 65534",
                               DUMMY_BASE_CLUSTER_ID,
                               clusterCount);
     return;

@@ -161,7 +161,7 @@ void app_process_action(void)
   switch (app_state) {
     case SE_MANAGER_INIT:
       printf("\n%s - Core running at %" PRIu32 " kHz.\n", example_string,
-             CMU_ClockFreqGet(cmuClock_CORE) / 1000);
+             SystemHCLKGet() / 1000);
       printf("  . SE manager initialization... ");
       if (init_se_manager() == SL_STATUS_OK) {
         if (!fill_buf_with_random_number()) {
@@ -437,7 +437,7 @@ void app_process_action(void)
              hash_algo_string[hash_algo_select],
              plain_msg_size[plain_msg_size_select], get_symmetric_key_len());
       if (generate_hmac(hash_algo[hash_algo_select]) == SL_STATUS_OK) {
-#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT)
+#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT) && !defined(_SILICON_LABS_32B_SERIES_3_CONFIG_301)
         app_state = CHACHA20_POLY1305_TEST;
 #else
         print_key_type();
@@ -447,7 +447,7 @@ void app_process_action(void)
       }
       break;
 
-#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT)
+#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT) && !defined(_SILICON_LABS_32B_SERIES_3_CONFIG_301)
     case CHACHA20_POLY1305_TEST:
       printf("\n  . ChaCha20-Poly1305 test\n");
 

@@ -23,3 +23,6 @@ provides:
   - name: bootloader_gbl_compression_lz4
   - name: bootloader_nonsecure_incompatible
     condition: [bootloader_core_nonsecure]
+metadata:
+  sbom:
+    license: MSLA

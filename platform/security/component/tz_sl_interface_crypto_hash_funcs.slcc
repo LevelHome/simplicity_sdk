@@ -37,3 +37,7 @@ template_contribution:
 
   - name: tfm_interface_func
     value: tfm_crypto_hash_clone
+
+metadata:
+  sbom:
+    license: Zlib

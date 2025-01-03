@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief Wi-SUN Network measurement component
+ * @file sl_wisun_network_measurement.h
+ * @brief Wi-SUN Network Measurement
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __SL_WISUN_NETWORK_MEASUREMENT_H__
-#define __SL_WISUN_NETWORK_MEASUREMENT_H__
+#ifndef SL_WISUN_NETWORK_MEASUREMENT_H
+#define SL_WISUN_NETWORK_MEASUREMENT_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,8 +38,8 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <inttypes.h>
+
 #include "socket/socket.h"
 #include "sl_wisun_ping.h"
 #include "sl_wisun_network_measurement_stat.h"
@@ -112,4 +112,4 @@ void sl_wisun_nwm_measure(const sockaddr_in6_t * const remote_address,
 }
 #endif
 
-#endif // __SL_WISUN_NETWORK_MEASUREMENT_H__
+#endif // SL_WISUN_NETWORK_MEASUREMENT_H

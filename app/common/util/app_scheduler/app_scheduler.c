@@ -33,7 +33,7 @@
 #include "app_scheduler_memory.h"
 #include "app_timer.h"
 #include "sl_slist.h"
-#include "em_core.h"
+#include "sl_core.h"
 #include "app_scheduler_internal.h"
 
 #if defined(SL_CATALOG_KERNEL_PRESENT)

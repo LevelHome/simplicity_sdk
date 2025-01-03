@@ -4,7 +4,7 @@ The **Bluetooth Mesh - NLC Dimming Control** example is a working example applic
 
 The example is an out-of-the-box Software Demo optimized for user experience where the device acts as a Dimming Control in an NLC network. Button presses on the mainboard or CLI commands can dim a remote device implementing the Basic Lightness Controller NLC profile (e.g. **Bluetooth Mesh - NLC Basic Lightness Controller**). The example also acts as a Low Power Node and tries to establish friendship. The example implements the Bluetooth Mesh Dimming Control NLC profile and is based on the Generic Level Client Model. This example requires one of the Internal Storage Bootloader (single image) variants, depending on device memory.
 
-There are 2 variants of the NLC Dimming Control example. In typical cases, where power consumption is not the most important factor, we recommend using the **Bluetooth Mesh - NLC Dimming Control** example, as it is easier to get feedback about the current state and operations. If you want to have optimized power consumption, use the **Bluetooth Mesh - NLC Dimming Control Low Power** example, which also reduces power by disabling LCD, CLI and logging.
+There are 2 variants of the NLC Dimming Control example. In typical cases, where power consumption is not the most important factor, we recommend using one of the **Bluetooth Mesh - NLC Dimming Control** examples, as it is easier to get feedback about the current state and operations. If you want to have optimized power consumption, use one of the **Bluetooth Mesh - NLC Dimming Control Low Power** examples, which also reduce power by disabling LCD, CLI and logging.
 
 The example requires a friend node to function properly.
 

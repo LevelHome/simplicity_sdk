@@ -1,5 +1,5 @@
 /***************************************************************************//**
- * @file
+ * @file app.c
  * @brief Application code
  *******************************************************************************
  * # License
@@ -33,10 +33,10 @@
 // -----------------------------------------------------------------------------
 #include <stdio.h>
 #include <assert.h>
+
 #include "app.h"
 #include "sl_wisun_app_core_util.h"
 #include "sl_status.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -57,7 +57,33 @@
 //                          Public Function Definitions
 // -----------------------------------------------------------------------------
 
-/*App task function*/
+////////////////////////////////////////////////////////
+//      CoAP Collector Application task function
+////////////////////////////////////////////////////////
+#if defined(SL_CATALOG_WISUN_COAP_PRESENT)
+/* App task function */
+void app_task(void *args)
+{
+  (void) args;
+
+  // Connect to the wisun network
+  sl_wisun_app_core_util_connect_and_wait();
+
+  while (1) {
+    ///////////////////////////////////////////////////////////////////////////
+    // Put your application code here!                                       //
+    ///////////////////////////////////////////////////////////////////////////
+    sl_wisun_app_core_util_dispatch_thread();
+  }
+}
+
+////////////////////////////////////////////////////////
+//    Simple UDP Collector Application task function
+////////////////////////////////////////////////////////
+#else
+
+#include "sl_wisun_collector.h"
+
 void app_task(void *args)
 {
   (void) args;
@@ -65,10 +91,10 @@ void app_task(void *args)
   // connect to the wisun network
   sl_wisun_app_core_util_connect_and_wait();
 
-  while (1) {
-    sl_wisun_app_core_util_dispatch_thread();
-  }
+  // Simple Collector loop
+  sl_wisun_collector_loop();
 }
+#endif
 
 // -----------------------------------------------------------------------------
 //                          Static Function Definitions

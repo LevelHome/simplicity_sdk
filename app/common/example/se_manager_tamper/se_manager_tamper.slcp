@@ -38,24 +38,24 @@ component:
   - id: se_manager
   - id: sl_system
   - id: device_init
-  - id: device_init_hfrco
+  - id: clock_manager
   - id: printf
   - id: iostream_retarget_stdio
   - id: iostream_recommended_stream
-  - id: emlib_prs
   - id: simple_button
     instance:
       - btn0
       - btn1
 requires:
   - name: device_security_vault
+  - name: hal_generic_prs
 configuration:
   - name: SL_STATUS_STRING_ENABLE_BLUETOOTH
     value: 0
   - name: SL_STATUS_STRING_ENABLE_WIFI
     value: 0
-  - name: SL_DEVICE_INIT_HFRCO_BAND
-    value: cmuHFRCODPLLFreq_38M0Hz
+  - name: SL_CLOCK_MANAGER_HFRCO_BAND
+    value: 38000000
   - name: SL_BOARD_ENABLE_VCOM
     value: 1
 define:

@@ -1,6 +1,6 @@
 # SE Manager Key Derivation (HKDF and PBKDF2)
 
-This example uses the SE Manager API to perform the key derivation (HKDF and PBKDF2) on the supported Series 2 Secure Vault High device.
+This example uses the SE Manager API to perform the key derivation (HKDF and PBKDF2) on the supported Secure Vault High device.
 
 In cryptography, a [key derivation function](https://en.wikipedia.org/wiki/Key_derivation_function) (KDF) is a cryptographic hash function that derives one or more secret keys from a secret value such as a master key, a password, or a passphrase using a pseudo-random function. KDFs can be used to stretch keys into longer keys or to obtain keys of a required format, such as converting a group element that is the result of a Diffie–Hellman key exchange into a symmetric key for use with AES.
 

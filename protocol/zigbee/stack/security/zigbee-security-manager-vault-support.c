@@ -24,9 +24,16 @@
 #include "zigbee-security-manager-vault-support.h"
 #include "security_manager.h"
 #include "hal.h"
-#include "em_system.h"
+#include "em_device.h"
+#include "sl_psa_values.h"
+#include "sl_psa_crypto.h"
 
 #include "stack/internal/inc/internal-defs-patch.h"
+
+// Extended key table
+extern void sli_zigbee_stack_fetch_key_table_entry_at_index(uint8_t index, tokTypeStackKeyTable *tok);
+extern void sli_zigbee_stack_set_key_table_entry_at_index(uint8_t index, tokTypeStackKeyTable* tok);
+
 // Externs
 extern bool sli_zigbee_is_null_key(sl_zigbee_key_data_t * key);
 extern void sli_zigbee_stack_token_primitive(bool tokenRead,
@@ -67,8 +74,9 @@ static bool zb_sec_is_key_present(uint32_t key_id);
 // This bit indicates if entry in the key table is a Symmetric Passphrase
 #define KEY_TABLE_SYMMETRIC_PASSPHRASE      (BIT(7))
 
-//forward declaration
+#ifndef _SILICON_LABS_32B_SERIES_3
 static void zb_sec_man_validate_psa_key_attributes(sl_zigbee_sec_man_context_t *context, psa_key_id_t key_id, psa_key_attributes_t *attributes);
+#endif // _SILICON_LABS_32B_SERIES_3
 
 void sli_zigbee_security_hardware_init(void)
 {
@@ -205,9 +213,12 @@ sl_status_t sli_zigbee_stack_sec_man_load_key_context(sl_zigbee_sec_man_context_
 
   if (test_status != PSA_SUCCESS) {
     return SL_STATUS_NOT_FOUND;
+#ifndef _SILICON_LABS_32B_SERIES_3
+    // Series 3 devices never stored keys improperly, so no need to update
   } else if (zb_sm_context_psa_key_id >= ZB_PSA_KEY_ID_MIN
              && zb_sm_context_psa_key_id <= ZB_PSA_KEY_ID_MAX) {
     zb_sec_man_validate_psa_key_attributes(context, zb_sm_context_psa_key_id, &test_key_attributes);
+#endif // _SILICON_LABS_32B_SERIES_3
   }
 
   if (context->derived_type != SL_ZB_SEC_MAN_DERIVED_KEY_TYPE_NONE) {
@@ -239,8 +250,10 @@ sl_status_t sli_zigbee_stack_sec_man_load_key_context(sl_zigbee_sec_man_context_
   return status;
 }
 
+#ifndef _SILICON_LABS_32B_SERIES_3
 //Ensure that a persistent key's attributes are consistent with the expectations of current stack version.
 //Re-import them with updated attributes if they are not.
+// Series 3 devices never stored keys improperly, so no need to update
 void zb_sec_man_validate_psa_key_attributes(sl_zigbee_sec_man_context_t *context, psa_key_id_t key_id, psa_key_attributes_t *attributes)
 {
   psa_key_location_t current_location = PSA_KEY_LIFETIME_GET_LOCATION(psa_get_key_lifetime(attributes));
@@ -252,17 +265,20 @@ void zb_sec_man_validate_psa_key_attributes(sl_zigbee_sec_man_context_t *context
     (void) sli_zigbee_stack_sec_man_import_key(context, &plaintext_key);
     reimported = true;
   }
-#if defined (SEMAILBOX_PRESENT)
-  if (SYSTEM_GetSecurityCapability() == securityCapabilityVault && current_location == PSA_KEY_LOCATION_LOCAL_STORAGE && !reimported) {
+
+  psa_key_location_t default_key_location = sl_psa_get_most_secure_key_location();
+  if (default_key_location == SL_PSA_KEY_LOCATION_WRAPPED
+      && current_location == PSA_KEY_LOCATION_LOCAL_STORAGE
+      && !reimported) {
     //This API is not called on volatile keys so new persistence will always be default/persistent.
-    psa_key_lifetime_t new_lifetime = PSA_KEY_LIFETIME_FROM_PERSISTENCE_AND_LOCATION(PSA_KEY_PERSISTENCE_DEFAULT, PSA_KEY_LOCATION_SLI_SE_OPAQUE);
+    psa_key_lifetime_t new_lifetime = PSA_KEY_LIFETIME_FROM_PERSISTENCE_AND_LOCATION(PSA_KEY_PERSISTENCE_DEFAULT, SL_PSA_KEY_LOCATION_WRAPPED);
     psa_set_key_lifetime(attributes, new_lifetime);
     //Used so sl_sec_man_copy_key doesn't change the context key ID
     psa_key_id_t key_id_copy = key_id;
     (void) sl_sec_man_copy_key(key_id, attributes, &key_id_copy);
     reimported = true;
   }
-#endif // defined (SEMAILBOX_PRESENT)
+
   if (reimported) {
     uint8_t current_version = 0;
     zb_sec_man_fetch_version_key(&current_version);
@@ -271,6 +287,7 @@ void zb_sec_man_validate_psa_key_attributes(sl_zigbee_sec_man_context_t *context
     }
   }
 }
+#endif // _SILICON_LABS_32B_SERIES_3
 
 void zb_sec_man_backup_key_context(bool direction)
 {
@@ -357,9 +374,13 @@ sl_status_t zb_sec_man_store_nwk_key(sl_zigbee_sec_man_context_t* context,
     key_id = ZB_PSA_KEY_ID_ALTERNATE_NWK_KEY;
   }
   (void)sl_sec_man_destroy_key(key_id);
-  status = sl_sec_man_import_key(&key_id, ZB_PSA_KEY_TYPE, context->psa_key_alg_permission,
+  status = sl_sec_man_import_key(&key_id,
+                                 ZB_PSA_KEY_TYPE,
+                                 context->psa_key_alg_permission,
                                  ZB_PSA_KEY_USAGE,
-                                 PSA_KEY_PERSISTENCE_DEFAULT, plaintext_key->key, SL_ZIGBEE_ENCRYPTION_KEY_SIZE);
+                                 PSA_KEY_PERSISTENCE_DEFAULT,
+                                 plaintext_key->key,
+                                 SL_ZIGBEE_ENCRYPTION_KEY_SIZE);
 
   return status;
 }
@@ -656,7 +677,7 @@ sl_status_t zb_sec_man_store_in_link_key_table(sl_zigbee_sec_man_context_t* cont
     // Write a bit in the token to tell code that this token
     // points to a PSA ID
     tokTypeStackKeyTable tok;
-    halCommonGetIndexedToken(&tok, TOKEN_STACK_KEY_TABLE, context->key_index);
+    sli_zigbee_stack_fetch_key_table_entry_at_index(context->key_index, &tok);
     if ((tok[KEY_ENTRY_INFO_OFFSET] & KEY_TABLE_ENTRY_HAS_PSA_ID) == 0) {
       sl_util_store_high_low_int32u(&tok[KEY_ENTRY_KEY_DATA_OFFSET], key_id);
       tok[KEY_ENTRY_INFO_OFFSET] |= KEY_TABLE_ENTRY_HAS_PSA_ID;
@@ -664,7 +685,7 @@ sl_status_t zb_sec_man_store_in_link_key_table(sl_zigbee_sec_man_context_t* cont
     if (context->flags & ZB_SEC_MAN_FLAG_SYMMETRIC_PASSPHRASE) {
       tok[KEY_ENTRY_INFO_OFFSET] |= KEY_TABLE_SYMMETRIC_PASSPHRASE;
     }
-    halCommonSetIndexedToken(TOKEN_STACK_KEY_TABLE, context->key_index, (void*)&tok);
+    sli_zigbee_stack_set_key_table_entry_at_index(context->key_index, &tok);
   }
 
   return status;

@@ -520,7 +520,7 @@ static sl_status_t speke_generate_keypair(sl_zigbee_sec_man_dlk_ecc_context_t *d
 
 // shared secret components
 #define EUI64_SIZE 8
-#define SESSION_ID_COMPONENT_LENGTH (EUI64_SIZE + DLK_ECC_COORDINATE_SIZE)
+#define SESSION_ID_COMPONENT_LENGTH (EUI64_SIZE + 2 * DLK_ECC_COORDINATE_SIZE)
 #define SESSION_IDENTITY_LENGTH (2 * SESSION_ID_COMPONENT_LENGTH)
 #define SECRET_HASH_INPUT_LENGTH (2 * DLK_ECC_COORDINATE_SIZE + SESSION_IDENTITY_LENGTH)
 
@@ -604,15 +604,17 @@ sl_status_t sli_zigbee_stack_sec_man_speke_expand_shared_secret(sl_zigbee_sec_ma
   if (status != SL_STATUS_OK) {
     return status;
   }
+  identity_cursor += public_key_len;
+  size_t identity_len = (size_t)(identity_cursor - hash_input);
   // hash the entirety of I
   // NOTE due to a restriction on 'sli_zigbee_stack_aes_mmo_hash_update' input must align with a 16-byte block
   if (dlk_ecc_ctx->config.hash_id == DLK_ECC_HASH_SHA_256) {
-    crypto_ret = mbedtls_sha256_update(&hash_ctx.sha, hash_input, SESSION_IDENTITY_LENGTH);
+    crypto_ret = mbedtls_sha256_update(&hash_ctx.sha, hash_input, identity_len);
     if (crypto_ret != 0) {
       return SL_STATUS_FAIL;
     }
   } else if (dlk_ecc_ctx->config.hash_id == DLK_ECC_HASH_AES_MMO_128) {
-    status = sli_zigbee_stack_aes_mmo_hash_update(&hash_ctx.aes_mmo, SESSION_IDENTITY_LENGTH, hash_input);
+    status = sli_zigbee_stack_aes_mmo_hash_update(&hash_ctx.aes_mmo, (uint32_t)identity_len, hash_input);
     if (status != SL_STATUS_OK) {
       return status;
     }
@@ -687,7 +689,7 @@ static void sli_hmac_sha_256_impl(mbedtls_sha256_context *sha_ctx,
                                   uint8_t *result)
 {
   uint8_t buffer[HMAC_SHA_256_BLOCK_SIZE];
-  uint8_t keyp[HMAC_SHA_256_BLOCK_SIZE];
+  uint8_t keyp[HMAC_SHA_256_BLOCK_SIZE] = { 0 }; // Zero padding
   uint8_t run;
 
   if (keyLength > HMAC_SHA_256_BLOCK_SIZE) {
@@ -695,11 +697,8 @@ static void sli_hmac_sha_256_impl(mbedtls_sha256_context *sha_ctx,
     mbedtls_sha256_starts(sha_ctx, 0);
     mbedtls_sha256_update(sha_ctx, key, keyLength);
     mbedtls_sha256_finish(sha_ctx, keyp);
-  }
-  if (keyLength < HMAC_SHA_256_BLOCK_SIZE) {
-    // pad short keys with 0
+  } else {
     memcpy(keyp, key, keyLength);
-    memset(keyp + keyLength, 0, HMAC_SHA_256_BLOCK_SIZE - keyLength);
   }
 
   for (run = 0; run < 2; run++) {

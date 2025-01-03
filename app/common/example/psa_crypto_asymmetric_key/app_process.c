@@ -331,7 +331,7 @@ void app_process_action(void)
   switch (app_state) {
     case PSA_CRYPTO_INIT:
       printf("\n%s - Core running at %" PRIu32 " kHz.\n", example_string,
-             CMU_ClockFreqGet(cmuClock_CORE) / 1000);
+             SystemHCLKGet() / 1000);
       printf("  . PSA Crypto initialization... ");
       if (init_psa_crypto() == PSA_SUCCESS) {
         print_key_storage();
@@ -440,6 +440,13 @@ void app_process_action(void)
         if (secpr1_key_size_select > SECPR1_SIZE_MAX) {
           secpr1_key_size_select = 0;
         }
+#if defined(_SILICON_LABS_32B_SERIES_3)
+        if (asymmetric_key_storage_select > KEY_STORAGE_PLAIN_MAX) {
+          if (secpr1_key_size_select > SECPR1_256_SIZE) {
+            secpr1_key_size_select = 0;
+          }
+        }
+#endif
         printf("  + Current %s key length is %d-bit (%s).\n",
                asymmetric_key_curve_string[asymmetric_key_curve_select],
                secpr1_key_size[secpr1_key_size_select],
@@ -861,24 +868,50 @@ static void print_key_size_option(void)
            asymmetric_key_curve_string[asymmetric_key_curve_select],
            secpr1_key_size[secpr1_key_size_select],
            secpr1_key_size_string[secpr1_key_size_select]);
-    printf("  + Press SPACE to select %s key length (%d or %d or %d or %d), "
-           "press ENTER to next option.\n",
-           asymmetric_key_curve_string[asymmetric_key_curve_select],
-           secpr1_key_size[0], secpr1_key_size[1], secpr1_key_size[2],
-           secpr1_key_size[3]);
-    app_state = SELECT_SECPR1_SIZE;
+#if defined(_SILICON_LABS_32B_SERIES_3_CONFIG_301)
+    if (asymmetric_key_storage_select > KEY_STORAGE_PLAIN_MAX) {
+      printf("  + Press SPACE to select %s key length (%d or %d), "
+             "press ENTER to next option.\n",
+             asymmetric_key_curve_string[asymmetric_key_curve_select],
+             secpr1_key_size[0], secpr1_key_size[1]);
+      app_state = SELECT_SECPR1_SIZE;
+    } else
+#endif
+    {
+      printf("  + Press SPACE to select %s key length (%d or %d or %d or %d), "
+             "press ENTER to next option.\n",
+             asymmetric_key_curve_string[asymmetric_key_curve_select],
+             secpr1_key_size[0], secpr1_key_size[1], secpr1_key_size[2],
+             secpr1_key_size[3]);
+      app_state = SELECT_SECPR1_SIZE;
+    }
   } else if (asymmetric_key_curve_select == 1) {
 #if defined(SEMAILBOX_PRESENT) && (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT)
     key_algo = PSA_ALG_ECDH;
-    printf("\n  . Current %s key length is %d-bit (%s).\n",
-           asymmetric_key_curve_string[asymmetric_key_curve_select],
-           montgomery_key_size[montgomery_key_size_select],
-           montgomery_key_size_string[montgomery_key_size_select]);
-    printf("  + Press SPACE to select %s key length (%d or %d), press ENTER to "
-           "next option.\n",
-           asymmetric_key_curve_string[asymmetric_key_curve_select],
-           montgomery_key_size[0], montgomery_key_size[1]);
-    app_state = SELECT_MONTGOMERY_SIZE;
+#if defined(_SILICON_LABS_32B_SERIES_3_CONFIG_301)
+    if (asymmetric_key_storage_select > KEY_STORAGE_PLAIN_MAX) {
+      selected_key_size = 255;
+      selected_key_string = asymmetric_key_curve_string[asymmetric_key_curve_select];
+      key_algo = PSA_ALG_ECDH;
+      printf("\n  . Current asymmetric key usage is %s.\n",
+             asymmetric_key_usage_string[asymmetric_key_usage_select]);
+      printf("  + Press SPACE to select key usage (%s or %s or %s), press "
+             "ENTER to run.\n", asymmetric_key_usage_string[0],
+             asymmetric_key_usage_string[1], asymmetric_key_usage_string[2]);
+      app_state = SELECT_KEY_USAGE;
+    } else
+#endif
+    {
+      printf("\n  . Current %s key length is %d-bit (%s).\n",
+             asymmetric_key_curve_string[asymmetric_key_curve_select],
+             montgomery_key_size[montgomery_key_size_select],
+             montgomery_key_size_string[montgomery_key_size_select]);
+      printf("  + Press SPACE to select %s key length (%d or %d), press ENTER to "
+             "next option.\n",
+             asymmetric_key_curve_string[asymmetric_key_curve_select],
+             montgomery_key_size[0], montgomery_key_size[1]);
+      app_state = SELECT_MONTGOMERY_SIZE;
+    }
 #else
     // No software fallback on X448, only X25519 is available
     selected_key_size = 255;

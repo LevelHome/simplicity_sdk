@@ -14,7 +14,6 @@
 #include <ZAF_CmdPublisher.h>
 #include "ZAF_CC_Invoker.h"
 #include "AppTimer.h"
-#include "board_init.h"
 #include "board_indicator.h"
 #include <ZAF_nvm_app.h>
 #include <ZAF_nvm.h>
@@ -85,9 +84,6 @@ void ZAF_Init(TaskHandle_t AppTaskHandle, SApplicationHandles *pAppHandles)
   zaf_transport_init();
 
   AppTimerInit(EAPPLICATIONEVENT_TIMER, AppTaskHandle);
-
-  /* hardware initialization */
-  Board_Init();
 
   /* board led initialiaztion */
   Board_IndicatorInit();

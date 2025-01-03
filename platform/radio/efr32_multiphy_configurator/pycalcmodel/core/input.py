@@ -29,6 +29,7 @@ class ModelInputType(Enum):
     #: An optional input automatically calculated and shown in GUI, use checkbox to explicitly set,
     #:   show "auto" in the absence of a calculated value.
     LINKED_IO = 3
+    METADATA = 4
 
 class ModelInputDefaultVisibilityType(Enum):
     #: This profile input is visible by default, in a GUI

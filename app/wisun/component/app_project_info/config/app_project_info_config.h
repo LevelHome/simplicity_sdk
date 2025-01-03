@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file app_project_info_config.h
+ * @brief Wi-SUN Application Project Information configuration
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>

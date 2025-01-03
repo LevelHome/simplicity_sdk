@@ -50,7 +50,7 @@ sl_zigbee_af_status_t sl_zigbee_af_find_and_bind_target_start(uint8_t endpoint)
                                                  ZCL_INT16U_ATTRIBUTE_TYPE);
   }
 
-  sl_zigbee_af_core_println("%p: %p: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             SL_ZIGBEE_AF_PLUGIN_FIND_AND_BIND_TARGET_PLUGIN_NAME,
                             "Start target",
                             status);

@@ -151,10 +151,16 @@ void ashPendingCallbacks(bool pending);
 // non-portability to future revisions of the manufacturing tokens.
 
 #if defined(CORTEXM3)
+#ifdef USERDATA_BASE
   #define ashConfigAddr (USERDATA_BASE | (MFG_ASH_CONFIG_LOCATION & 0x0FFF))
   #define ashReadConfig(member) (((const AshNcpConfig *)ashConfigAddr)->member)
   #define ashReadConfigOrDefault(member, defVal) \
   ((ashReadConfig(member) != 0xFFFF) ? ashReadConfig(member) : defVal)
+#else
+// EMZIGBEE-13500: No Manufacturing token avaiable yet
+  #define ashReadConfig(member) (0xFFFF)
+  #define ashReadConfigOrDefault(member, defVal) (defVal)
+#endif // USERDATA_BASE
 #else // for simulation, always return default value
   #define ashReadConfigOrDefault(member, defaultValue) \
   (defaultValue)

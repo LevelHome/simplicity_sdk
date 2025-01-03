@@ -1,6 +1,6 @@
 id: "connect_mac_queue"
 label: "MAC Queue"
-package: "Flex"
+package: "Connect"
 category: "Connect"
 quality: "production"
 description: "Provides MAC queue functionality. If this plugin is enabled, the application is able to send multiple packets in bursts, whereas if this plugin is not included, only one packet at the time can be submitted to the Connect Stack."

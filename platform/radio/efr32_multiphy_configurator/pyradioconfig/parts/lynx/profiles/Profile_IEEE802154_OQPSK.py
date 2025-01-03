@@ -18,37 +18,16 @@ class ProfileIEEE802154OQPSKLynx(ProfileIEEE802154OQPSKPanther):
         build_modem_regs_lynx(model, profile)
 
     def _build_feature_settings(self, model):
-        if model.profile.inputs.zigbee_feature.var_value == model.vars.zigbee_feature.var_enum.STANDARD:
-            # : Default demod is Legacy for this device
-            model.vars.demod_select.value_forced = model.vars.demod_select.var_enum.LEGACY
-        else:
-            super()._build_feature_settings(model)
+        zigbee_feature = model.profile.inputs.zigbee_feature.var_value
 
-    def _build_legacy_settings(self, model):
-        model.vars.bandwidth_hz.value_forced = 2524800
-        model.vars.if_frequency_hz.value_forced = 1370000
-        model.vars.baudrate_tol_ppm.value_forced = 4000
-        model.vars.tx_xtal_error_ppm.value_forced = 0
-        model.vars.rx_xtal_error_ppm.value_forced = 0
+        if zigbee_feature == model.vars.zigbee_feature.var_enum.LEGACY:
+            self._copy_model_variables_from_phy(model, 'PHY_IEEE802154_2p4GHz')
 
-        model.vars.frequency_comp_mode.value_forced = model.vars.frequency_comp_mode.var_enum.INTERNAL_ALWAYS_ON
-        model.vars.pll_bandwidth_tx.value_forced = model.vars.pll_bandwidth_tx.var_enum.BW_1500KHz
-        model.vars.pll_bandwidth_rx.value_forced = model.vars.pll_bandwidth_rx.var_enum.BW_250KHz
+    def _build_delay_settings(self, model):
+        zigbee_feature = model.profile.inputs.zigbee_feature.var_value
 
-        model.vars.timing_detection_threshold.value_forced = 75
-        model.vars.timing_resync_period.value_forced = 2
-        model.vars.timing_sample_threshold.value_forced = 0
-
-        model.vars.FRC_AUTOCG_AUTOCGEN.value_forced = 7
-        model.vars.MODEM_CGCLKSTOP_FORCEOFF.value_forced = 0x1003  # 0, 1, 12
-        model.vars.RAC_SYNTHCTRL_MMDPOWERBALANCEDISABLE.value_forced = 1
-        model.vars.SYNTH_LPFCTRL1CAL_OP1BWCAL.value_forced = 11
-        model.vars.SYNTH_LPFCTRL1CAL_OP1COMPCAL.value_forced = 14
-        model.vars.SYNTH_LPFCTRL1CAL_RFBVALCAL.value_forced = 0
-        model.vars.SYNTH_LPFCTRL1CAL_RPVALCAL.value_forced = 0
-        model.vars.SYNTH_LPFCTRL1CAL_RZVALCAL.value_forced = 9
-
-    def _build_agc_fastloop_settings(self, model):
-        model.vars.AGC_CTRL2_DISRFPKD.value_forced = 1
-        model.vars.AGC_CTRL4_RFPKDCNTEN.value_forced = 0
-        model.vars.AGC_CTRL1_RSSIPERIOD.value_forced = 8
+        if zigbee_feature == model.vars.zigbee_feature.var_enum.LEGACY:
+            model.vars.rx_sync_delay_ns.value_forced = 6125
+            model.vars.rx_eof_delay_ns.value_forced = 6125
+            model.vars.tx_sync_delay_ns.value_forced = 0
+            model.vars.tx_eof_delay_ns.value_forced = 0

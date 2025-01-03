@@ -1,0 +1,18 @@
+id: ot_stack_features_config
+label: Stack Features Config
+package: OpenThread
+category: OpenThread
+quality: experimental
+description: This component provides the OpenThread stack features configuration
+provides:
+  - name: ot_stack_features_config
+config_file:
+  - path: src/mcu/config/sl_openthread_features_config.h
+    file_id: openthread_features
+define:
+  - name: SL_OPENTHREAD_STACK_FEATURES_CONFIG_FILE
+    value: "\"sl_openthread_features_config.h\""
+    unless: [ot_reference_device]
+metadata:
+  sbom:
+    license: Zlib AND MSLA

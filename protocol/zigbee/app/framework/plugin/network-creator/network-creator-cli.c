@@ -29,7 +29,7 @@ void sl_zigbee_af_network_creator_start_command(sl_cli_command_arg_t *args)
   bool centralizedSecurity = sl_cli_get_argument_uint8(args, 0);
   sl_status_t status = sl_zigbee_af_network_creator_start(centralizedSecurity);
 
-  sl_zigbee_af_core_println("%p: %p: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             SL_ZIGBEE_AF_PLUGIN_NETWORK_CREATOR_PLUGIN_NAME,
                             "Form",
                             status);
@@ -48,7 +48,7 @@ void sl_zigbee_af_network_creator_form_command(sl_cli_command_arg_t *args)
                                                                  radioTxPower,
                                                                  channel);
 
-  sl_zigbee_af_core_println("%p: %p: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             SL_ZIGBEE_AF_PLUGIN_NETWORK_CREATOR_PLUGIN_NAME,
                             "Form",
                             status);
@@ -69,7 +69,7 @@ void sl_zigbee_af_network_creator_channel_mask_command(sl_cli_command_arg_t *arg
   if (memcmp(args->argv[args->arg_ofs - 1], "set", strlen("set")) != 0) {
     if (channelOrNewMask < SL_ZIGBEE_MIN_802_15_4_CHANNEL_NUMBER
         || channelOrNewMask > SL_ZIGBEE_MAX_802_15_4_CHANNEL_NUMBER) {
-      sl_zigbee_af_core_println("%p: %p: 0x%X",
+      sl_zigbee_af_core_println("%s: %s: 0x%02X",
                                 SL_ZIGBEE_AF_PLUGIN_NETWORK_CREATOR_PLUGIN_NAME,
                                 "Illegal 802.15.4 channel",
                                 channelOrNewMask);
@@ -82,7 +82,7 @@ void sl_zigbee_af_network_creator_channel_mask_command(sl_cli_command_arg_t *arg
     *channelMask = channelOrNewMask;
   }
 
-  sl_zigbee_af_core_print("%p channel mask now: 0x%4X [",
+  sl_zigbee_af_core_print("%s channel mask now: 0x%08X [",
                           (channelMaskIsPrimary ? "Primary" : "Secondary"),
                           *channelMask);
   sl_zigbee_af_print_channel_list_from_mask(*channelMask);
@@ -97,14 +97,21 @@ void sl_zigbee_af_network_creator_status_command(sl_cli_command_arg_t *args)
                        sli_zigbee_af_network_creator_primary_channel_mask,
                        sli_zigbee_af_network_creator_secondary_channel_mask };
 
-  sl_zigbee_af_core_println("%p: %p:",
+  sl_zigbee_af_core_println("%s: %s:",
                             SL_ZIGBEE_AF_PLUGIN_NETWORK_CREATOR_PLUGIN_NAME,
                             "Channel mask");
   for (i = 1; i <= 2; i++) {
-    sl_zigbee_af_core_print("    (%d) 0x%4X [",
+    sl_zigbee_af_core_print("    (%d) 0x%08X [",
                             i,
                             masks[i]);
     sl_zigbee_af_print_channel_list_from_mask(masks[i]);
     sl_zigbee_af_core_println("]");
   }
+}
+
+// plugin network-creator stop
+void sl_zigbee_af_network_creator_stop_command(sl_cli_command_arg_t *args)
+{
+  (void) args;
+  sl_zigbee_af_network_creator_stop();
 }

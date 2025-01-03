@@ -30,13 +30,35 @@
 #ifndef APP_BUTTON_PRESS_CONFIG_H
 #define APP_BUTTON_PRESS_CONFIG_H
 
+#define APP_BUTTON_PRESS_DETECT_RELEASE (0U)
+#define APP_BUTTON_PRESS_DETECT_PRESS_AND_RELEASE (1U)
+
 // <<< Use Configuration Wizard in Context Menu >>>
+
+// <h> Edge Detection
+
+// <o APP_BUTTON_PRESS_DETECTION> Button events to detect by the component
+// <APP_BUTTON_PRESS_DETECT_RELEASE=> Button release detection
+// <APP_BUTTON_PRESS_DETECT_PRESS_AND_RELEASE=> Button press and release detection
+// <i> Default: Button release detection
+// <i> By changing this configuration to detect press and release it is necessary to
+// increase the command queue size of this component, since more events need to be handled.
+#define APP_BUTTON_PRESS_DETECTION      APP_BUTTON_PRESS_DETECT_RELEASE
+
+// </h>
 
 // <h> Threshold values
 
+// <o MIN_VALID_BUTTON_PRESS_DURATION> Minimum duration of valid button presses
+// <i> Default: 40
+// <i> Any button press shorter than this value will not be considered as a valid button
+// press.
+#define MIN_VALID_BUTTON_PRESS_DURATION    (40)
+
 // <o SHORT_BUTTON_PRESS_DURATION> Duration of Short button presses
 // <i> Default: 250
-// <i> Any button press shorter than this value will be considered SHORT_BUTTON_PRESS.
+// <i> Any button press shorter than this value and longer than MIN_VALID_BUTTON_PRESS_DURATION
+// will be considered SHORT_BUTTON_PRESS.
 #define SHORT_BUTTON_PRESS_DURATION   (250)
 
 // <o MEDIUM_BUTTON_PRESS_DURATION> Duration of MEDIUM button presses
@@ -77,9 +99,9 @@
 #define APP_BUTTON_PRESS_CONFIG_WAIT_FOR_GUARD     (5)
 
 // <o APP_BUTTON_PRESS_CONFIG_QUEUE_SIZE> Queue size
-// <i> Default: 2
+// <i> Default: 4
 // <i> Queue size for all (bare-metal and RTOS) adaptations.
-#define APP_BUTTON_PRESS_CONFIG_QUEUE_SIZE         (2)
+#define APP_BUTTON_PRESS_CONFIG_QUEUE_SIZE         (4)
 
 // </h>
 

@@ -194,7 +194,7 @@ int32_t storage_setBootloadList(int32_t slotIds[], size_t length)
 
 int32_t storage_appendBootloadList(int32_t slotId)
 {
-  int32_t slotIds[BTL_STORAGE_BOOTLOAD_LIST_MAX_LENGTH];
+  int32_t slotIds[BTL_STORAGE_BOOTLOAD_LIST_MAX_LENGTH] = { -1 };
   int32_t ret;
   bool inserted = false;
 

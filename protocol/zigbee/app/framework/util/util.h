@@ -273,6 +273,13 @@ uint8_t sl_zigbee_af_append_characters(uint8_t * zclString,
 
 extern uint8_t sli_zigbee_af_extended_pan_id[];
 
+// A boolean utility flag to indicate if a command response created and submitted during
+// a message handling (by global or cluster specific command handlers) within sl_zigbee_af_process_message.
+// This is cleared at the start of the sl_zigbee_af_process_message function and is set by the
+// command response call sl_zigbee_af_send_response_with_cb. This flag is checked in function
+// sli_zigbee_af_process_cluster_specific_command as a qualifier to call sl_zigbee_af_send_response_with_cb.
+extern bool sli_command_or_default_response_submitted;
+
 sl_status_t sli_zigbee_af_validate_channel_pages(uint8_t page, uint8_t channel);
 
 /* @brief A Silicon Labs assert function

@@ -32,12 +32,15 @@ template_contribution:
     value: zw_protocol_cmd_handlers
   - name: rodata_sections # Ensure memory section define by Z-Wave stack are placed in the rodata section
     value: zw_protocol_cmd_handlers_lr
+  - name: component_catalog
+    value: SILICON_LABS_ZWAVE_APPLICATION
+  - name: component_catalog
+    value: ZW_CORE
 requires:
   # Z-Wave
   - name: zw_build_mode
   - name: zw_quality_mode
   - name: zw_versions
-  - name: zw_target_boards
   - name: zaf_protocol_config
   - name: sleeptimer
   # Platform
@@ -49,6 +52,7 @@ requires:
   - name: nvm3_default
   - name: rail_lib
   - name: rail_util_pa
+  - name: component_catalog
 recommends:
   - id: zw_production
   - id: zw_release
@@ -143,6 +147,7 @@ define:
     value: exitPowerDown
   - name: SL_IOSTREAM_UART_FLUSH_TX_BUFFER
   - name: CONFIG_MBEDTLS_USE_FREERTOS_PVCALLOC
+  - name: _GNU_SOURCE
 
 toolchain_settings:
   - option: gcc_compiler_option

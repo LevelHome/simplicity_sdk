@@ -25,13 +25,13 @@ template_contribution:
   - name: code_classification_standard_selections
     condition: [device_series_3]
     value: timecritical
-  - name: third_party_ram_objects
+  - name: gcc_ram_objects
+    condition: [device_series_3]
+    value: memset
+  - name: iar_ram_objects
     condition: [device_series_3]
     value: memset
   - name: libgcc_ram_objects
     condition: [device_series_3]
     value: _*
-define:
-  - name: SL_CODE_CLASSIFY
-    condition: [device_series_3]
 

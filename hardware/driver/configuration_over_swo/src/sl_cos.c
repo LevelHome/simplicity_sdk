@@ -44,6 +44,7 @@
 
 #include "sl_status.h"
 #include "sl_debug_swo.h"
+#include "sl_common.h"
 
 /*******************************************************************************
  *******************************   DEFINES   ***********************************
@@ -170,10 +171,10 @@ void sl_cos_send_config(void)
     sli_cos_pti_write();
   }
 #endif // SL_CATALOG_RAIL_UTIL_PTI_PRESENT
-  
+
   // Disable SWO stimulus 8
   sl_debug_swo_disable_itm(SWO_VCOM_PTI_DATA_STRUCTURED_CHANNEL);
-  
+
   return;
 }
 
@@ -242,7 +243,16 @@ static void sli_cos_vcom_write(void)
 
 #ifdef SL_CATALOG_UARTDRV_EUSART_PRESENT
   if (uartdrv_handle->type == (UARTDRV_UartType_t)uartdrvUartTypeEuart) {
+  #if defined(_SILICON_LABS_32B_SERIES_2)
     baudrate = EUSART_BaudrateGet(uartdrv_handle->peripheral.euart);
+  #else
+    uint32_t freq;
+    sl_clock_branch_t clock_branch = sl_device_peripheral_get_clock_branch(uartdrv_handle->usartPeripheral);
+    sl_clock_manager_get_clock_branch_frequency(clock_branch, &freq);
+    uint32_t div = sl_hal_eusart_uart_get_clock_div(uartdrv_handle->peripheral.euart);
+    sl_hal_eusart_ovs_t ovs = sl_hal_eusart_uart_get_oversampling(uartdrv_handle->peripheral.euart);
+    baudrate = sl_hal_eusart_uart_calculate_baudrate(div, ovs, freq);
+  #endif
   }
 #endif // SL_CATALOG_UARTDRV_EUSART_PRESENT
 

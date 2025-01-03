@@ -81,6 +81,7 @@ class Profile_Long_Range_Jumbo(IProfile):
         buildModemInfoOutputs(model, profile)
 
     def profile_calculate(self, model):
+        model.vars.protocol_id.value_forced = model.vars.protocol_id.var_enum.Longrange
         self._fixed_longrange_vars(model)
         self._lookup_from_longrange_mode(model)
         self._disable_dynamic_BBSS(model)

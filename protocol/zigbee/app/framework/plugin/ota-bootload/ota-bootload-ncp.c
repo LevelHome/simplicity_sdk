@@ -83,7 +83,7 @@ uint8_t sl_zigbee_af_ota_bootload_cb(const sl_zigbee_af_ota_image_id_t* id,
   status =
     sl_zigbee_ezsp_launch_standalone_bootloader(true);
   if (status != SL_STATUS_OK) {
-    bootloadPrintln("Launch failed: 0x%X", status);
+    bootloadPrintln("Launch failed: 0x%02X", status);
     return 1;
   }
   sl_zigbee_ezsp_close();
@@ -134,7 +134,7 @@ static bool transferFile(const sl_zigbee_af_ota_image_id_t* id,
                                                              ncpUpgradeTagId,
                                                              &offsetPtr,
                                                              &endOffsetPtr)) {
-    bootloadPrintln("Failed to get offset and size for tag 0x%2X inside OTA file.",
+    bootloadPrintln("Failed to get offset and size for tag 0x%04X inside OTA file.",
                     ncpUpgradeTagId);
     return false;
   }
@@ -150,7 +150,7 @@ static bool transferFile(const sl_zigbee_af_ota_image_id_t* id,
       endOffset[i] += offset[i];
 
       sli_zigbee_af_print_percentage_set_start_and_end(offset[i], endOffset[i]);
-      bootloadPrintln("EBL data start: 0x%4X, end: 0x%4X, size: %d bytes",
+      bootloadPrintln("EBL data start: 0x%08X, end: 0x%08X, size: %d bytes",
                       offset[i],
                       endOffset[i],
                       endOffset[i] - offset[i]);
@@ -177,7 +177,7 @@ static bool transferFile(const sl_zigbee_af_ota_image_id_t* id,
                                                            block,
                                                            &returnedLength)
             || returnedLength != readSize) {
-          bootloadPrintln("Failed to read image data at offset 0x%4X", offset[i]);
+          bootloadPrintln("Failed to read image data at offset 0x%08X", offset[i]);
           return false;
         }
 

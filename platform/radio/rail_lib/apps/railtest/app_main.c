@@ -51,9 +51,6 @@
 #ifdef _SILICON_LABS_32B_SERIES_2
 #include "em_chip.h"
 #include "em_rmu.h"
-#include "gpiointerrupt.h"
-#else
-#warning "gpiointerrupt to be included once suppported."
 #endif
 
 #include "response_print.h"
@@ -128,6 +125,7 @@ RAIL_RadioState_t rxSuccessTransition = SL_RAIL_UTIL_INIT_TRANSITION_INST0_RX_SU
 #else
 RAIL_RadioState_t rxSuccessTransition = RAIL_RF_STATE_IDLE;
 #endif
+bool fillTxPacketOnRx = true;
 uint8_t logLevel = PERIPHERAL_ENABLE | ASYNC_RESPONSE;
 int32_t txCount = 0;
 int32_t txRepeatCount = 0;
@@ -397,7 +395,9 @@ void sl_rail_test_internal_app_init(void)
     // Always turn off RfSense when waking back up from EM4
     (void) RAIL_StartRfSense(railHandle, RAIL_RFSENSE_OFF, 0, NULL);
   }
-#elif ((_SILICON_LABS_32B_SERIES_2_CONFIG == 2) || (_SILICON_LABS_32B_SERIES_2_CONFIG == 7))
+#elif ((_SILICON_LABS_32B_SERIES_2_CONFIG == 2) \
+  || (_SILICON_LABS_32B_SERIES_2_CONFIG == 7)   \
+  || (_SILICON_LABS_32B_SERIES_2_CONFIG == 9))
   if (resetCause & EMU_RSTCAUSE_EM4) {
     responsePrint("sleepWoke", "EM:4s,SerialWakeup:No,RfSensed:%s",
                   RAIL_IsRfSensed(railHandle) ? "Yes" : "No");
@@ -1492,7 +1492,7 @@ void printPacket(char *cmdName,
     }
     RAILTEST_PRINTF("}");
   }
-  RAILTEST_PRINTF("}\n");
+  responsePrintEnd("}");
 }
 
 void enqueueEvents(RAIL_Events_t events)

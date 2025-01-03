@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_wisun_tcp_client.h
+ * @brief Wi-SUN TCP client
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __SL_WISUN_TCP_CLIENT_H__
-#define __SL_WISUN_TCP_CLIENT_H__
+#ifndef SL_WISUN_TCP_CLIENT_H
+#define SL_WISUN_TCP_CLIENT_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,7 +39,6 @@ extern "C" {
 //                                   Includes
 // -----------------------------------------------------------------------------
 #include <stdint.h>
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -57,8 +56,9 @@ extern "C" {
  * @details Client is connected automatically to the server
  * @param[in] ip_address Server IP address
  * @param[in] port Server port
+ * @return Socket ID
  *****************************************************************************/
-void sl_wisun_tcp_client_create(const char *ip_address, uint16_t port);
+int32_t sl_wisun_tcp_client_create(const char *ip_address, uint16_t port);
 
 /**************************************************************************//**
  * @brief Close TCP client socket.
@@ -87,4 +87,4 @@ void sl_wisun_tcp_client_read(const int32_t sockid, const uint16_t size);
 }
 #endif
 
-#endif
+#endif // SL_WISUN_TCP_CLIENT_H

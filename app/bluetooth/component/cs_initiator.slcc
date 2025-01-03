@@ -7,6 +7,9 @@ description: >
   Once all initiator and reflector results collected correctly it is forwarded to the RTL lib that shall
   produce the high-level measurement values e.g. distance, likeliness of the current distance, etc.
 category: Bluetooth|Application|Miscellaneous
+metadata:
+  sbom:
+    license: Zlib
 quality: evaluation
 root_path: app/bluetooth/common/cs_initiator
 
@@ -14,14 +17,15 @@ include:
   - path: ./inc
     file_list:
       - path: cs_initiator.h
-      - path: cs_initiator_configurator.h
+      - path: cs_initiator_client.h
+      - path: cs_initiator_log.h
 
 config_file:
   - path: config/cs_initiator_config.h
 
 source:
   - path: src/cs_initiator.c
-  - path: src/cs_initiator_configurator.c
+  - path: src/cs_initiator_client.c
 
 requires:
   - name: app_assert
@@ -40,6 +44,7 @@ requires:
   - name: rtllib
   - name: printf
   - name: sleeptimer
+  - name: sl_common
 
 provides:
   - name: cs_initiator
@@ -47,6 +52,8 @@ provides:
 template_contribution:
   - name: component_catalog
     value: cs_initiator
+  - name: component_catalog
+    value: cs_initiator_client
   - name: ncp_local_evt_process
     value:
       include: cs_initiator.h
@@ -59,6 +66,11 @@ template_contribution:
       function: cs_initiator_on_event
     unless:
       - ncp
+  - name: event_handler
+    value:
+      event: internal_app_init
+      include: cs_initiator.h
+      handler: cs_initiator_init
 documentation:
   docset: bluetooth
   document: bluetooth-service-api/cs-initiator

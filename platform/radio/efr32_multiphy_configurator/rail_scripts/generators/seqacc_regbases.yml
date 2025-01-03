@@ -8,7 +8,7 @@ Version: 0.01
 # All config must end with 0xFFFFFFFF: 0xFFFFFFFF
 
 #sixg301
-rainier:
+RAINIER:
   BaseAddrCfgDefault:
     Define: SEQACC_BASE_ADDR_CFG_DFLT_ARRAY_SZ
     BasePos: 24
@@ -17,5 +17,34 @@ rainier:
       0xA0210000: 1
       0xA0220000: 2
       0xA0000000: 3
-      0xA0300000: 4
+      0xB0000000: 4
+      0x40860000: 5
+      0xFFFFFFFF: 0xFFFFFFFF
+
+LPWH72000:
+  BaseAddrCfgDefault:
+    BasePos: 24
+    BaseAddr:
+      0xB0200000: 0
+      0xB0210000: 1
+      0xB0220000: 2
+      0xB0260000: 3
+      0xB0270000: 4
+      0xB0280000: 5
+      0xB0000000: 6
+      0xB0010000: 7
+      0xA0000000: 8
+      0xFFFFFFFF: 0xFFFFFFFF
+
+LPWH74000:
+  BaseAddrCfgDefault:
+    BasePos: 24
+    BaseAddr:
+      0xB0200000: 0
+      0xB0210000: 1
+      0xB0220000: 2
+      0xB0270000: 3
+      0xB0280000: 4
+      0xB0000000: 5
+      0xB0300000: 6
       0xFFFFFFFF: 0xFFFFFFFF

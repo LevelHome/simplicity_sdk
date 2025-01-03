@@ -1,6 +1,6 @@
 id: "connect_radio_stream_cli"
 label: "Radio Stream (Cli)"
-package: "Flex"
+package: "Connect"
 category: "Connect"
 quality: "production"
 description: "This component provides Radio Stream CLI commands."

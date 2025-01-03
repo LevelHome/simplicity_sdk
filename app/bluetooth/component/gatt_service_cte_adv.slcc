@@ -6,6 +6,9 @@ description: >
   This component is shared between the connectionless and Silabs proprietary CTE components
   and is not intended to be used in its own.
 category: Bluetooth|Application|GATT Services
+metadata:
+  sbom:
+    license: Zlib
 quality: production
 root_path: app/bluetooth/common/gatt_service_cte_adv
 source:

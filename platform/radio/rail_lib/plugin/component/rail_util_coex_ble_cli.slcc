@@ -4,6 +4,11 @@ description: Bluetooth Coexistence CLI
 package: platform
 category: Platform|Radio
 quality: production
+metadata:
+  sbom:
+    id: rail_util_coex_ble_cli
+    name: RAIL Utility, Bluetooth Coexistence CLI
+    license: Zlib
 requires:
   - name: cli
   - name: rail_util_coex

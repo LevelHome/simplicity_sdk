@@ -28,7 +28,7 @@
  *
  ******************************************************************************/
 #include <stdbool.h>
-#include "em_common.h"
+#include "sl_common.h"
 #include "app_log.h"
 #include "app_assert.h"
 #include "sl_bluetooth.h"
@@ -38,9 +38,6 @@
 #include "sl_simple_button_instances.h"
 #include "sl_simple_led_instances.h"
 #include "sl_component_catalog.h"
-#ifdef SL_CATALOG_SIMPLE_COM_PRESENT
-#include "sl_simple_com.h"
-#endif // SL_CATALOG_SIMPLE_COM_PRESENT
 #ifdef SL_CATALOG_CLI_PRESENT
 #include "sl_cli.h"
 #endif // SL_CATALOG_CLI_PRESENT
@@ -137,12 +134,11 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
       app_assert_status(sc);
 
       // Set advertising interval to 100ms.
-      sc = sl_bt_advertiser_set_timing(
-        advertising_set_handle,
-        160, // min. adv. interval (milliseconds * 1.6)
-        160, // max. adv. interval (milliseconds * 1.6)
-        0,   // adv. duration
-        0);  // max. num. adv. events
+      sc = sl_bt_advertiser_set_timing(advertising_set_handle,
+                                       160, // min. adv. interval (milliseconds * 1.6)
+                                       160, // max. adv. interval (milliseconds * 1.6)
+                                       0,   // adv. duration
+                                       0);  // max. num. adv. events
       app_assert_status(sc);
       // Start general advertising and enable connections.
       sc = sl_bt_legacy_advertiser_start(advertising_set_handle,
@@ -177,6 +173,22 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
       app_log_info("Start advertising\n");
       break;
 
+    //--------------------------------
+    // Indicates either that a local Client Characteristic Configuration descriptor was changed by the remote GATT
+    // client, or that a confirmation from the remote GATT client was received upon a successful reception of the
+    // indication
+    case sl_bt_evt_gatt_server_characteristic_status_id:
+      if (sl_bt_gatt_server_client_config == (sl_bt_gatt_server_characteristic_status_flag_t)evt->data.evt_gatt_server_characteristic_status.status_flags) {
+        if (gattdb_audio_data == evt->data.evt_gatt_server_characteristic_status.characteristic) {
+          // client characteristic configuration changed by remote GATT client
+          app_log_info("Audio Data characteristic has changed\n");
+        } else if (gattdb_transfer_status == evt->data.evt_gatt_server_characteristic_status.characteristic) {
+          // client characteristic configuration changed by remote GATT client
+          app_log_info("Transfer Status characteristic has changed\n");
+        }
+      }
+      break;
+
     // -------------------------------
     // Handle Voice configuration characteristics.
     case sl_bt_evt_gatt_server_user_write_request_id:
@@ -202,10 +214,9 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
           return;
       }
       // Send write response.
-      sc = sl_bt_gatt_server_send_user_write_response(
-        evt->data.evt_gatt_server_user_write_request.connection,
-        evt->data.evt_gatt_server_user_write_request.characteristic,
-        0);    // no error
+      sc = sl_bt_gatt_server_send_user_write_response(evt->data.evt_gatt_server_user_write_request.connection,
+                                                      evt->data.evt_gatt_server_user_write_request.characteristic,
+                                                      0);    // no error
       app_assert_status(sc);
       break;
 
@@ -219,11 +230,11 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
 static void app_notify_client(uint8_t transfer_status)
 {
   if (INVALID_HANDLE != ble_connection) {
-    (void)sl_bt_gatt_server_send_notification(
-      ble_connection,
-      gattdb_transfer_status,
-      sizeof(transfer_status),
-      &transfer_status);
+    sl_status_t sc = sl_bt_gatt_server_send_notification(ble_connection,
+                                                         gattdb_transfer_status,
+                                                         sizeof(transfer_status),
+                                                         &transfer_status);
+    app_assert_status_f(sc, "Failed to send notification.");
   }
 }
 
@@ -231,15 +242,12 @@ void voice_transmit(uint8_t *buffer, uint32_t size)
 {
   if (INVALID_HANDLE != ble_connection) {
     // Write data to characteristic
-    (void)sl_bt_gatt_server_send_notification(
-      ble_connection,
-      gattdb_audio_data,
-      size,
-      buffer);
+    sl_status_t sc = sl_bt_gatt_server_send_notification(ble_connection,
+                                                         gattdb_audio_data,
+                                                         size,
+                                                         buffer);
+    app_assert_status_f(sc, "Failed to transmit audio data.");
   }
-#ifdef SL_CATALOG_SIMPLE_COM_PRESENT
-  sl_simple_com_transmit(size, buffer);
-#endif // SL_CATALOG_SIMPLE_COM_PRESENT
 }
 
 /***************************************************************************//**

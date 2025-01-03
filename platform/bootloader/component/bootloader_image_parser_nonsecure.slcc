@@ -11,3 +11,6 @@ source:
 provides:
   - name: bootloader_image_parser
   - name: bootloader_image_parser_nonsecure
+metadata:
+  sbom:
+    license: MSLA

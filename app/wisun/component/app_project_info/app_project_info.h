@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file app_project_info.h
+ * @brief Application project information
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __APP_PROJECT_INFO_H__
-#define __APP_PROJECT_INFO_H__
+#ifndef APP_PROJECT_INFO_H
+#define APP_PROJECT_INFO_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,14 +38,12 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
+
 #include "sl_common.h"
-
 #include "app_project_info_config.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -215,7 +213,9 @@ void app_project_info_print_pretty(const app_project_info_t * const info,
  *****************************************************************************/
 void app_project_info_print_json(const app_project_info_t * const info,
                                  app_project_info_printer_t printer);
+
 #ifdef __cplusplus
 }
 #endif
-#endif
+
+#endif // APP_PROJECT_INFO_H

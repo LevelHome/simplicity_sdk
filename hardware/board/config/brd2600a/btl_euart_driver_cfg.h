@@ -56,11 +56,11 @@
 #define SL_SERIAL_EUART_PERIPHERAL_NO            0
 
 // EUSART0 TX on PA09
-#define SL_SERIAL_EUART_TX_PORT                  gpioPortA
+#define SL_SERIAL_EUART_TX_PORT                  SL_GPIO_PORT_A
 #define SL_SERIAL_EUART_TX_PIN                   9
 
 // EUSART0 RX on PA10
-#define SL_SERIAL_EUART_RX_PORT                  gpioPortA
+#define SL_SERIAL_EUART_RX_PORT                  SL_GPIO_PORT_A
 #define SL_SERIAL_EUART_RX_PIN                   10
 
 

@@ -1,0 +1,95 @@
+id: ot_mcu_platform_abstraction_core
+label: Platform Abstraction (Core)
+package: OpenThread
+category: OpenThread
+quality: experimental
+description: This component provides the abstraction layer between the OpenThread stack on host MCU and Silicon Labs platform
+provides:
+  - name: ot_mcu_platform_abstraction_core
+requires:
+  - name: ot_mcu_headers
+  - name: ot_sbom_openthread
+  - name: sleeptimer_si91x
+  - name: sl_ulp_timer
+  - name: ot_posix_reuse
+  - name: memory_manager
+  - name: memory_manager_pool
+ui_hints:
+  visibility: never
+include:
+  - path: src/mcu/si91x
+    file_list:
+      - path: openthread-core-si91x-config.h
+      - path: openthread-core-si91x-config-check.h
+      - path: platform-si91x.h
+      - path: alarm.h
+      - path: sl_alarm_timers.h
+      - path: sl_uart.h
+      - path: board_config.h
+      - path: syscalls.h
+  - path: src/mcu/inc
+    file_list:
+      - path: ip6_utils.hpp
+source:
+  - path: src/mcu/si91x/syscalls.c
+  - path: src/mcu/si91x/misc.c
+  - path: src/mcu/si91x/flash.c
+  - path: src/mcu/si91x/startup-gcc.c
+  - path: src/mcu/si91x/alarm.c
+  - path: src/mcu/si91x/system.cpp
+  - path: src/mcu/si91x/sl_uart.c
+  - path: src/mcu/si91x/ringbufs.c
+  - path: src/mcu/si91x/debug_uart.c
+  - path: src/mcu/si91x/uartdrv_uart.c
+  - path: src/mcu/si91x/entropy.c
+  - path: src/mcu/si91x/hdlc_implement.c
+  - path: src/mcu/hdlc_interface.cpp
+  - path: src/mcu/mcu_netif.cpp
+  - path: src/mcu/memory.c
+  - path: src/mcu/mcu_cli_stdio.cpp
+  - path: src/mcu/udp.cpp
+define:
+  - name: OPENTHREAD_PROJECT_CORE_CONFIG_FILE
+    value: "\"openthread-core-si91x-config.h\""
+  - name: SL_CODE_COMPONENT_OT_PLATFORM_ABSTRACTION
+    value: ot_platform_abstraction
+  - name: SUPPORT_CPLUSPLUS
+    value: 1
+template_file:
+  - path: ../src/template/sl_ot_init.c.jinja
+  - path: ../include/template/sl_ot_init.h.jinja
+template_contribution:
+  - name: power_manager_handler
+    value:
+      event: is_ok_to_sleep
+      include: sleep.h
+      handler: sl_ot_is_ok_to_sleep
+    condition:
+      - power_manager
+    unless:
+      - kernel
+  - name: event_handler
+    value:
+      event: stack_init
+      include: platform-si91x.h
+      handler: sl_ot_sys_init
+    priority: -10
+    unless: [otbr_test]
+  - name: event_handler
+    value:
+      event: internal_app_init
+      include: sl_ot_init.h
+      handler: sl_ot_init
+    unless:
+      - kernel
+      - otbr_test
+  - name: ot_init
+    value: sl_ot_sleep_init
+    priority: 10
+    condition:
+      - power_manager
+  - name: code_classification_components
+    value: ot_platform_abstraction
+metadata:
+  sbom:
+    license: Zlib AND MSLA

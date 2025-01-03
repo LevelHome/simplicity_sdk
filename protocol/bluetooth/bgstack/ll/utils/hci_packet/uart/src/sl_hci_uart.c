@@ -224,6 +224,10 @@ static uint16_t readable_bytes(uint16_t read_idx, uint16_t write_idx, uint16_t s
 
 int sl_hci_uart_read(uint8_t *data, uint16_t len)
 {
+  if (sl_hci_uart_rx_buffered_length() <= 0) {
+    return 0;
+  }
+
   uint16_t bytes_left;
   CORE_DECLARE_IRQ_STATE;
   CORE_ENTER_ATOMIC();

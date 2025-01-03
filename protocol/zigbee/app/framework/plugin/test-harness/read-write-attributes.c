@@ -16,7 +16,6 @@
  ******************************************************************************/
 
 #include "app/framework/include/af.h"
-#include "app/util/serial/sl_zigbee_command_interpreter.h"
 
 #include "test-harness.h"
 
@@ -229,7 +228,7 @@ void setOptionsCommand(SL_CLI_COMMAND_ARG)
     uint8_t i;
     sl_zigbee_af_core_println("Error: Invalid test type number.  Valid numbers are:");
     for (i = 0; i <= TEST_TYPE_MAX; i++) {
-      sl_zigbee_af_core_println("%d: %p", i, testTypeStrings[i]);
+      sl_zigbee_af_core_println("%d: %s", i, testTypeStrings[i]);
     }
     return;
   }
@@ -257,7 +256,7 @@ static void readWriteAttributeTest(void)
          UNKNOWN_RESULT,
          sizeof(sli_zigbee_single_attribute_test_results_t) * MAX_ATTRIBUTE_IDS);
   currentIndex = 0;
-  sl_zigbee_af_core_println("Testing cluster 0x%2X, attributes 0x%2X -> 0x%2X",
+  sl_zigbee_af_core_println("Testing cluster 0x%04X, attributes 0x%04X -> 0x%04X",
                             testClusterId,
                             attributeIdStart,
                             attributeIdEnd);
@@ -314,11 +313,11 @@ static void printResults(void)
 {
   uint16_t i;
   uint16_t index = 0;
-  sl_zigbee_af_core_println("Cluster: 0x%2X\n", testClusterId);
+  sl_zigbee_af_core_println("Cluster: 0x%04X\n", testClusterId);
   sl_zigbee_af_core_println("Attr    Read                     Type                    Write");
   sl_zigbee_af_core_println("-------------------------------------------------------------------------------");
   for (i = attributeIdStart; i <= attributeIdEnd; i++) {
-    sl_zigbee_af_core_println("0x%2X: 0x%X [%p]  0x%X [%p]  0x%X [%p]",
+    sl_zigbee_af_core_println("0x%04X: 0x%02X [%s]  0x%02X [%s]  0x%02X [%s]",
                               i,
                               attributeResults[index].readResult,
                               getErrorString(attributeResults[index].readResult),
@@ -345,7 +344,7 @@ static void sendCommand(bool read)
 {
   sl_zigbee_af_set_command_endpoints(sourceEndpoint, destEndpoint);
   sl_status_t status = sl_zigbee_af_send_command_unicast(SL_ZIGBEE_OUTGOING_DIRECT, destAddress);
-  sl_zigbee_af_core_println("%p Attr 0x%2X",
+  sl_zigbee_af_core_println("%s Attr 0x%04X",
                             (read
                              ? "Read "
                              : "Write"),
@@ -354,7 +353,7 @@ static void sendCommand(bool read)
     sl_zigbee_af_event_set_delay_qs(readWriteAttributesTimeoutEventControl,
                                     timeoutSeconds << 2);
   } else {
-    sl_zigbee_af_core_println("Error: Failed to send command (0x%X)", status);
+    sl_zigbee_af_core_println("Error: Failed to send command (0x%02X)", status);
   }
 }
 
@@ -469,7 +468,7 @@ void sl_zigbee_af_test_harness_read_write_attributes_timeout_event_handler(sl_zi
 {
   if (readWriteState == READ_WRITE_TEST_STATE_WRITE_SENT
       || readWriteState == READ_WRITE_TEST_STATE_READ_SENT) {
-    sl_zigbee_af_core_println("Timeout %p attribute",
+    sl_zigbee_af_core_println("Timeout %s attribute",
                               (readWriteState == READ_WRITE_TEST_STATE_WRITE_SENT
                                ? "writing"
                                : "reading"));
@@ -520,7 +519,7 @@ static void bigReadCommand(void)
   sl_zigbee_af_set_command_endpoints(SOURCE_ENDPOINT, destEndpoint);
   status = sl_zigbee_af_send_command_unicast(SL_ZIGBEE_OUTGOING_DIRECT,
                                              destAddress);
-  sl_zigbee_af_core_println("Sent read attributes for cluster 0x%2X, attributes: %d, status: 0x%X",
+  sl_zigbee_af_core_println("Sent read attributes for cluster 0x%04X, attributes: %d, status: 0x%02X",
                             testClusterId,
                             attributeIdEnd - attributeIdStart,
                             status);

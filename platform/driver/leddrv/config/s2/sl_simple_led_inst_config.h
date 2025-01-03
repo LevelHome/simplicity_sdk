@@ -48,7 +48,7 @@
 // <gpio> SL_SIMPLE_LED_INSTANCE
 // $[GPIO_SL_SIMPLE_LED_INSTANCE]
 #warning "Simple LED Driver GPIO pin not configured"
-// #define SL_SIMPLE_LED_INSTANCE_PORT            gpioPortA
+// #define SL_SIMPLE_LED_INSTANCE_PORT            SL_GPIO_PORT_A
 // #define SL_SIMPLE_LED_INSTANCE_PIN             1
 // [GPIO_SL_SIMPLE_LED_INSTANCE]$
 

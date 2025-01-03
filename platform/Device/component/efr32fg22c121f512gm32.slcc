@@ -8,6 +8,10 @@
   - name: EFR32FG22C121F512GM32
     unless:
     - device_content_override
+  - name: SL_CODE_COMPONENT_SYSTEM
+    unless:
+    - device_content_override
+    value: system
 - source:
   - path: platform/Device/SiliconLabs/EFR32FG22/Source/system_efr32fg22.c
     unless:
@@ -142,6 +146,8 @@
   - id: trustzone_unaware
 - requires:
   - name: cmsis_core
+  - name: code_classification
+  - name: component_catalog
 - template_contribution:
   - name: device_opn
     value: EFR32FG22C121F512GM32
@@ -191,6 +197,8 @@
       count: '2'
       mask: '0x0003'
       name: gpio_port_d
+  - name: code_classification_components
+    value: system
 - tag:
   - device:opn:efr32fg22c121f512gm32
 - toolchain_settings:

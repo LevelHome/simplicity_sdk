@@ -33,7 +33,7 @@ requires:
   - name: status
   - name: emlib_usart
   - name: clock_manager_runtime
-  - name: emlib_gpio
+  - name: gpio
   - name: memlcd_screen
 provides:
   - name: memlcd_usart

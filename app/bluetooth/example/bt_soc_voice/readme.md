@@ -1,6 +1,12 @@
 # SoC - Voice
 
-This is a Voice over Bluetooth Low Energy example. It is supported by a Thunderboard Sense 2 board and demonstrates how to send voice data over GATT, which is acquired from the on-board microphone.
+This is a Voice over Bluetooth Low Energy example. It demonstrates how to send voice data over GATT. The example can be used with any board that supports bluetooth and has an on-board microphone (listed below).
+
+Boards which have an on-board microphone and capable of transmitting voice data:
+  * xG24 Dev Kit
+  * xG26 Dev Kit
+  * xG27 Dev Kit
+  * Thunderboard EFR32BG22
 
 > Note: this example expects a specific Gecko Bootloader to be present on your device. For details see the Troubleshooting section.
 
@@ -8,7 +14,7 @@ This is a Voice over Bluetooth Low Energy example. It is supported by a Thunderb
 
 To get started with Silicon Labs Bluetooth and Simplicity Studio, see [QSG169: Bluetooth SDK v3.x Quick Start Guide](https://www.silabs.com/documents/public/quick-start-guides/qsg169-bluetooth-sdk-v3x-quick-start-guide.pdf).
 
-To rune the example you need a Thunderboard Sense 2 and another board, capable of running an NCP application. [AN1259: Using the v3.x Silicon Labs Bluetooth Stack in Network CoProcessor Mode](https://www.silabs.com/documents/public/application-notes/an1259-bt-ncp-mode-sdk-v3x.pdf) provides a detailed description of how NCP works and how to configure it.
+To run the example you need two boards, one for running the SoC Voice example, and another which is able to run an NCP application. [AN1259: Using the v3.x Silicon Labs Bluetooth Stack in Network CoProcessor Mode](https://www.silabs.com/documents/public/application-notes/an1259-bt-ncp-mode-sdk-v3x.pdf) provides a detailed description of how NCP works and how to configure it.
 
 One part of the example, the SoC Voice, runs on the Thunderboard Sense. It provides the Voice-Over-Bluetooth Low Energy GATT service. It uses the microphone of the board to record and transmit voice.
 
@@ -19,16 +25,16 @@ The other part of the project runs on a PC. It connects to a board which is runn
 The whole project setup:
 ![](image/readme_img1.png)
 
-### Thunderboard part
-Build and flash the provided code example. The device advertises itself after startup with the name "VoBLE Ex". If you have multiple devices, you need to determine the Bluetooth address of the device. This can be done either with the EFR Connect app, or through Simplicity Commander.
+### SoC part
+Build and flash the provided code example. The device advertises itself after startup with the name "VoBLE Ex". If you have multiple devices, you need to determine the Bluetooth address of the device. This can be done either with the Simplicity Connect app, or through Simplicity Commander.
 
-The EFR32 on the TB Sense samples the analog microphone using the ADC with the sampling rate and resolution configured by the GATT client. The sampled data is then run through a digital filter (if the filter usage is enabled) and coded using ADPCM codec before being sent via the Bluetooth link to the GATT client using notifications.
+The EFR32 on the samples the analog microphone using the ADC with the sampling rate and resolution configured by the GATT client. The sampled data is then run through a digital filter (if the filter usage is enabled) and coded using ADPCM codec before being sent via the Bluetooth link to the GATT client using notifications.
 
 ![](image/readme_img2.png)
 
 
 ### NCP Host part
-The PC part of the example can be found under *<SDK-installation-location>\app\bluetooth\example_host\voice*. 
+The PC part of the example can be found under *<SDK-installation-location>\app\bluetooth\example_host\bt_host_voice*. 
 To build the project into an executable, you also need a make-tool, which is part of GNU developer tools. On Windows MinGW is recommended. More details can be found in [AN1259: Using the v3.x Silicon Labs Bluetooth Stack in Network CoProcessor Mode](https://www.silabs.com/documents/public/application-notes/an1259-bt-ncp-mode-sdk-v3x.pdf).
 
 To compile the NCP application:
@@ -38,17 +44,18 @@ To compile the NCP application:
 3. The build output is created in a new "exe" folder
 
 Running the exe without any parameters will give you this help response:
+
 ![](image/readme_img3.png)
+
 The program can be configured using the flags shown in the above image. When giving the parameters to the program, all units must be omitted.
 
 Some notes about the parameters:
 1. **COM Port**: This is the serial port to be used. It should point to the port used by the NCP target. You can check the correct port number with BGTool or Device Manager, the mainboard lists as a “JLink CDC UART Port”. (If you are having problems identifying the port, you should unplug all WSTKs except the one you wish to use as the NCP.)
 2. **Baud Rate**: The baud rate used for communication, default: 115200
 3. **Output file name**: Filename for the audio data output (without the file extension).
-4. **Bluetooth address**: Bluetooth address of the TB Sense board that you want to connect to. If left out, the application tries to search devices that match the default UUID of the TB Sense application.
+4. **Bluetooth address**: Bluetooth address of the board that you want to connect to. If left out, the application tries to search devices that match the default UUID of the application.
 5. **Enable/Disable filtering**: Toggles whether filtering is used. See filter types in the previous section for options. The filter is disabled by default.
 6. **Enable/Disable encoding**: Toggles whether the audio data should be encoded, enabled by default. If encoding is disabled, the output filetype will be either “.s8” or “.s16” depending on the sample rate. Encoded filetype is always “.ima” (Dialogic ADPCM -format).
-7. **Verbose**: If this switch is added, the application prints out status messages.
 
 #### Saving the audio to a file
 To record audio into an audio file using this ncp-host-application, you must provide at least the following parameters (examples in parenthesis):
@@ -60,11 +67,11 @@ The following example uses the verbose mode with the default settings for both s
 
 ![](image/readme_img4.png)
 
-If you have activated the verbose mode, as in the above image, you will get status messages from the GATT client application. The application will stop printing status messages after is has written all the configurations, which in the above image happens after transfer status has successfully been enabled. When the initialization is done, the GATT client (ncp-host) is ready to receive data from the TB Sense.
+If you have selected debug log level (-l4), as in the above image, you will get status messages from the GATT client application. The application will stop printing status messages after is has written all the configurations, which in the above image happens after transfer status has successfully been enabled. When the initialization is done, the GATT client (ncp-host) is ready to receive data from the board.
 
-To start recording and streaming audio data over the BLE link, press and hold TB Sense BTN0 (left button). Once the button is pressed, you should see activity on the terminal window that summarizes the transmission progress. All the audio data will be saved to a file defined by the output filename -parameter ( audio_file.ima in this example ). If a file with a same name already exists, the audio data is appended to the end of that file.
+To start recording and streaming audio data over the BLE link, press and hold BTN0. Once the button is pressed, you should see activity on the terminal window that summarizes the transmission progress. All the audio data will be saved to a file defined by the output filename -parameter (audio_file.ima in this example). If a file with a same name already exists, the audio data is appended to the end of that file.
 
-To end the transmission in progress, send a interrupt signal to the application. On a Windows keyboard, the interrupt signal can be sent with CTRL+C key combination.
+When BTN0 is released, the transmission is paused and can be resumed by pressing BTN0 again. If the SoC board is reset, the connection will be terminated and the application will be closed. Without resetting the SoC board the application can be terminated with an interrupt signal on the keyboard.
 
 ## SoC project structure
 The example project contains the GATT database with the necessary Voice-over-Bluetooth Low Energy Service. GATT definitions can be extended using the GATT Configurator, which can be found under Advanced Configurators in the Software Components tab of the Project Configurator. To open the Project Configurator open the .slcp file of the project.
@@ -75,11 +82,10 @@ To learn how to use the GATT Configurator, see [UG438: GATT Configurator User’
 
 The Bluetooth event handling is implemented in the *app.c* file, in the function sl_bt_on_event. This handles the advertising, accepts the configuration parameters, and sends out the data.
 The button handling logic is also implemented in this file.
-The handling of the microphone, the encoding, buffering and filtering can be found in their respective files:
+The handling of the microphone, the encoding and filtering can be found in their respective files:
 * adpcm.c
 * filter.c
 * voice.c
-* circular_buffer.c
 
 ## Troubleshooting
 

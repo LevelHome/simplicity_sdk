@@ -539,6 +539,19 @@ enum
 /** @brief An identifier for a task */
 typedef uint8_t EmberTaskId;
 
+/**
+ * @brief Struct used to specify priorities for Connect's radio operations
+ * in multiprotocol
+ */
+typedef struct sl_connect_radio_priority {
+  /** RX priority. */
+  uint8_t rx;
+  /** Starting TX priority - First try of Tx will use this priority */
+  uint8_t starting_tx;
+  /** TX priority will decrement by this value at every retry */
+  uint8_t tx_step;
+} sl_connect_radio_priority_t;
+
 //----------------------------------------------------------------
 // Events and event queues.
 

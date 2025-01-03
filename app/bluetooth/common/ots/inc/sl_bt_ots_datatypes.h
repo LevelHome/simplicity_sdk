@@ -267,8 +267,8 @@ typedef PACKSTRUCT (struct {
 
 /// Object type variants
 typedef union {
-  sl_bt_uuid_16_t *sig;    ///< 16 bit UUID object type
-  uuid_128        *custom; ///< 128 bit UUID object type
+  sl_bt_uuid_16_t *sig;    ///< Standard 16 bit UUID object type
+  uuid_128        *custom; ///< Generic 128 bit UUID object type
 } sl_bt_object_type_variant_t;
 
 /// Object type

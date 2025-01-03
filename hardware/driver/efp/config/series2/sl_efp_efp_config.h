@@ -75,7 +75,7 @@ extern "C" {
 
 // <gpio> SL_EFP_INSTANCE_IRQ
 // $[GPIO_SL_EFP_INSTANCE_IRQ]
-// #define SL_EFP_INSTANCE_IRQ_PORT           gpioPortA
+// #define SL_EFP_INSTANCE_IRQ_PORT           SL_GPIO_PORT_A
 // #define SL_EFP_INSTANCE_IRQ_PIN            0
 // [GPIO_SL_EFP_INSTANCE_IRQ]$
 
@@ -85,10 +85,10 @@ extern "C" {
 // #define SL_EFP_INSTANCE_I2C_PERIPHERAL     I2C0
 // #define SL_EFP_INSTANCE_I2C_PERIPHERAL_NO  0
 
-// #define SL_EFP_INSTANCE_I2C_SDA_PORT       gpioPortC
+// #define SL_EFP_INSTANCE_I2C_SDA_PORT       SL_GPIO_PORT_C
 // #define SL_EFP_INSTANCE_I2C_SDA_PIN        1
 
-// #define SL_EFP_INSTANCE_I2C_SCL_PORT       gpioPortC
+// #define SL_EFP_INSTANCE_I2C_SCL_PORT       SL_GPIO_PORT_C
 // #define SL_EFP_INSTANCE_I2C_SCL_PIN        0
 // [I2C_SL_EFP_INSTANCE_I2C]$
 // <<< sl:end pin_tool >>>

@@ -4,6 +4,11 @@ description: Libraries containing radio configurations for RF modules created by
 package: platform
 category: Platform|Radio
 quality: production
+metadata:
+  sbom:
+    id: rail_lib_config_module
+    name: RAIL Library, Radio Configurations for Modules
+    license: MSLA
 ui_hints:
   visibility: never
 requires:
@@ -271,6 +276,18 @@ library:
     condition:
       - toolchain_iar
       - mgm240sd22vna
+  - path: platform/radio/rail_lib/autogen/librail_release/librail_config_mgm260pb22vna_iar.a
+    condition:
+      - toolchain_iar
+      - mgm260pb22vna
+  - path: platform/radio/rail_lib/autogen/librail_release/librail_config_mgm260pb32vna_iar.a
+    condition:
+      - toolchain_iar
+      - mgm260pb32vna
+  - path: platform/radio/rail_lib/autogen/librail_release/librail_config_mgm260pb32vnn_iar.a
+    condition:
+      - toolchain_iar
+      - mgm260pb32vnn
 
   - path: platform/radio/rail_lib/autogen/librail_release/librail_config_bgm210l022jif_gcc.a
     condition:
@@ -532,3 +549,15 @@ library:
     condition:
       - toolchain_gcc
       - mgm240sd22vna
+  - path: platform/radio/rail_lib/autogen/librail_release/librail_config_mgm260pb22vna_gcc.a
+    condition:
+      - toolchain_gcc
+      - mgm260pb22vna
+  - path: platform/radio/rail_lib/autogen/librail_release/librail_config_mgm260pb32vna_gcc.a
+    condition:
+      - toolchain_gcc
+      - mgm260pb32vna
+  - path: platform/radio/rail_lib/autogen/librail_release/librail_config_mgm260pb32vnn_gcc.a
+    condition:
+      - toolchain_gcc
+      - mgm260pb32vnn

@@ -14,31 +14,37 @@
 /****************************************************************************/
 
 #include "CC_UserCode.h"
-#include "cc_user_code_io.h"
+#include "CC_UserCredential.h"
 #include "cc_user_credential_io.h"
+#include "cc_user_credential_config.h"
 #include "cc_user_credential_config_api.h"
 #include "cc_user_credential_io_config.h"
+#include "cc_user_credential_validation.h"
+#include "cc_user_credential_operations.h"
 #include <string.h>
 #include "assert.h"
+//#define DEBUGPRINT
+#include "DebugPrint.h"
+
+/****************************************************************************/
+/*                           STATIC PARAMETER CHECK                         */
+/****************************************************************************/
+
+// Ensure PIN slots are less or equal to 255 if User Code v1 is supported, CC:0083.01.00.21.015
+_Static_assert(CC_USER_CREDENTIAL_MAX_CREDENTIAL_SLOTS_PIN_CODE <= 255,
+               "PIN slots must be less or equal to 255 if User Code v1 is supported");
+
+// Ensure Duress and Disposable User Types must not be enabled if User Code v1 is supported, CC:0083.01.00.21.017
+_Static_assert(CC_USER_CREDENTIAL_USER_TYPE_SUPPORTED_DISPOSABLE == 0,
+               "Disposable User Type must not be enabled if User Code v1 is supported");
+_Static_assert(CC_USER_CREDENTIAL_USER_TYPE_SUPPORTED_DURESS == 0,
+               "Disposable User Type must not be enabled if User Code v1 is supported");
 
 /****************************************************************************/
 /*                           FORWARD DECLARATIONS                           */
 /****************************************************************************/
 
-extern void delete_all_credentials_of_type(
-  uint16_t uuid, u3c_credential_type filter_type);
-
-extern bool find_existing_credential(
-  const u3c_credential * const p_credential,
-  u3c_credential_metadata * p_existing_metadata);
-
 extern void set_default_name(uint8_t * pName, u3c_user * pUser);
-
-extern bool validate_new_credential_metadata(
-  const u3c_credential_metadata * const p_metadata);
-
-extern bool validate_new_credential_data(
-  u3c_credential * p_credential, RECEIVE_OPTIONS_TYPE_EX * p_rx_options);
 
 /****************************************************************************/
 /*                                CONSTANTS                                 */
@@ -62,15 +68,33 @@ static bool is_valid_user_identifier(uint8_t user_identifier)
 /**
  * Add or modify a User Code
  *
+ * @param[in] user_identifier  The User Identifier.
+ * @param[in] pUserCode        Pointer to the new user code.
+ * @param[in] len              The length of the new user code.
+ * @param[in] status           The new status of the user code.
+ *                             Set to USER_ID_NO_STATUS to keep it unchanged.
+ * @param[in] modifier_node_id The ID of the node that modified the user code.
+ *                             Set to 0 if modifying locally.
+ * @param[in] assigned_uuid    The UUID which this credential is assigned to.
+ *                             0 indicates that the credential does not exist in
+ *                             the database.
+ *
  * @return true if the operation was successful
  */
 static bool set_user_code(
-  uint8_t user_identifier,
-  uint8_t * pUserCode,
-  uint8_t len,
-  uint16_t modifier_node_id,
-  bool credential_found)
+  const uint8_t user_identifier,
+  uint8_t * const pUserCode,
+  const uint8_t len,
+  const user_id_status_t status,
+  const uint16_t modifier_node_id,
+  const uint16_t assigned_uuid)
 {
+  if (status == USER_ID_AVAILABLE || status == USER_ID_NO_STATUS) {
+    DPRINTF("The status 0x%X is invalid!", status);
+    assert(false);
+    return false;
+  }
+
   // Ensure that the length of the data is correct
   if (len < cc_user_credential_get_min_length_of_data(
         CREDENTIAL_TYPE_PIN_CODE)
@@ -79,20 +103,29 @@ static bool set_user_code(
     return false;
   }
 
-  bool user_found = credential_found;
+  u3c_modifier_type modifier_type = (modifier_node_id == 0)
+                                    ? MODIFIER_TYPE_LOCALLY
+                                    : MODIFIER_TYPE_Z_WAVE;
+  bool user_active = (status == USER_ID_OCCUPIED);
+  // The UUID to associate the new/modified credential with
+  uint16_t uuid = (assigned_uuid != 0)
+                  ? assigned_uuid
+                  : user_identifier;
   u3c_user existing_user = { 0 };
-  user_found = CC_UserCredential_get_user(user_identifier, &existing_user, NULL)
-               == U3C_DB_OPERATION_RESULT_SUCCESS;
-  if (!credential_found && !user_found) {
+  // True if the associated user was found in the database
+  bool user_found = CC_UserCredential_get_user(uuid, &existing_user, NULL)
+                    == U3C_DB_OPERATION_RESULT_SUCCESS;
+
+  if (!user_found) {
     // Add a new User with the same UUID as the User Identifier
     uint8_t name[U3C_BUFFER_SIZE_USER_NAME];
     u3c_user user = {
       .unique_identifier = user_identifier,
       .type = USER_TYPE_GENERAL,
-      .modifier_type = MODIFIER_TYPE_Z_WAVE,
+      .modifier_type = modifier_type,
       .modifier_node_id = modifier_node_id,
       .credential_rule = CREDENTIAL_RULE_SINGLE,
-      .active = true,
+      .active = user_active,
       .name_encoding = USER_NAME_ENCODING_STANDARD_ASCII,
       .name_length = 0
     };
@@ -101,15 +134,19 @@ static bool set_user_code(
         != U3C_DB_OPERATION_RESULT_SUCCESS) {
       return false;
     }
+  } else if (existing_user.active != user_active) {
+    // Modify the user's active state
+    existing_user.active = user_active;
+    CC_UserCredential_modify_user(&existing_user, NULL);
   }
 
   u3c_credential credential = {
     .data = pUserCode,
     .metadata = {
       .length = len,
-      .modifier_type = MODIFIER_TYPE_Z_WAVE,
+      .modifier_type = modifier_type,
       .modifier_node_id = modifier_node_id,
-      .uuid = user_found ? existing_user.unique_identifier : user_identifier,
+      .uuid = uuid,
       .type = CREDENTIAL_TYPE_PIN_CODE,
       .slot = user_identifier
     }
@@ -121,7 +158,7 @@ static bool set_user_code(
   }
 
   u3c_db_operation_result credential_set_result =
-    credential_found
+    (assigned_uuid != 0)
     ? CC_UserCredential_modify_credential(&credential)
     : CC_UserCredential_add_credential(&credential);
 
@@ -154,18 +191,39 @@ bool CC_UserCode_getId_handler(
     return false;
   }
 
+  // Determine the User ID Status according to CC:0083.01.00.21.021
   *pUserIdStatus = USER_ID_NO_STATUS;
+  u3c_credential_metadata credential_metadata = { 0 };
   switch (CC_UserCredential_get_credential(
-            0, CREDENTIAL_TYPE_PIN_CODE, user_identifier, NULL, NULL)
+            0, CREDENTIAL_TYPE_PIN_CODE, user_identifier, &credential_metadata,
+            NULL)
           ) {
-    case U3C_DB_OPERATION_RESULT_SUCCESS:
-      *pUserIdStatus = USER_ID_OCCUPIED;
+    case U3C_DB_OPERATION_RESULT_SUCCESS: {
+      // The credential exists
+      u3c_user user = { 0 };
+      if (CC_UserCredential_get_user(credential_metadata.uuid, &user, NULL)
+          == U3C_DB_OPERATION_RESULT_SUCCESS) {
+        // The associated user exists
+        *pUserIdStatus = (!user.active || (user.type == USER_TYPE_NON_ACCESS))
+                         ? USER_ID_RESERVED
+                         : USER_ID_OCCUPIED;
+      } else {
+        // The associated user does not exist!
+        assert(false);
+        return false;
+      }
       break;
-    case U3C_DB_OPERATION_RESULT_FAIL_DNE:
+    }
+    case U3C_DB_OPERATION_RESULT_FAIL_DNE: {
+      // The credential does not exist
       *pUserIdStatus = USER_ID_AVAILABLE;
       break;
-    default:
+    }
+    default: {
+      // Error reading the credential from the database!
+      assert(false);
       return false;
+    }
   }
 
   return true;
@@ -198,14 +256,24 @@ bool CC_UserCode_Report_handler(
 
   /**
    * If the constant length fields of the report + the PIN Code data do not fit
-   * in the outgoing frame abort.
+   * in the outgoing frame, abort.
    */
   if (metadata.length > USER_CODE_REPORT_DATA_MAX_LENGTH) {
+    assert(false);
     return false;
   }
 
-  *pLen = metadata.length;
-  memcpy(pUserCode, credential_data, metadata.length);
+  if (result_credential_get == U3C_DB_OPERATION_RESULT_FAIL_DNE) {
+    /**
+     * CC:0063.01.01.11.009: If the User Code does not exist,
+     * the User Code field must be set to 0x00000000 (4 bytes).
+     */
+    *pLen = 4;
+    memset(pUserCode, 0x00, *pLen);
+  } else {
+    *pLen = metadata.length;
+    memcpy(pUserCode, credential_data, metadata.length);
+  }
   return true;
 }
 
@@ -222,27 +290,18 @@ e_cmd_handler_return_code_t CC_UserCode_Set_handler(
   }
 
   if (!is_valid_user_identifier(user_identifier)
-      || user_id_status == USER_ID_RESERVED
       || user_id_status == USER_ID_NO_STATUS) {
     return E_CMD_HANDLER_RETURN_CODE_FAIL;
   }
 
   e_cmd_handler_return_code_t status = E_CMD_HANDLER_RETURN_CODE_FAIL;
-
-  // Bulk deletion
-  if (user_identifier == 0) {
-    if (user_id_status == USER_ID_AVAILABLE) {
-      delete_all_credentials_of_type(0, CREDENTIAL_TYPE_PIN_CODE);
-      status = E_CMD_HANDLER_RETURN_CODE_HANDLED;
-    }
-    return status;
-  }
-
-  // Single operation
   bool credential_found = false;
-  switch (CC_UserCredential_get_credential(
-            0, CREDENTIAL_TYPE_PIN_CODE, user_identifier, NULL, NULL)
-          ) {
+  u3c_credential_metadata credential_metadata = { 0 };
+  u3c_db_operation_result get_result =
+    CC_UserCredential_get_credential(0, CREDENTIAL_TYPE_PIN_CODE,
+                                     user_identifier, &credential_metadata,
+                                     NULL);
+  switch (get_result) {
     case U3C_DB_OPERATION_RESULT_SUCCESS:
       credential_found = true;
       break;
@@ -251,20 +310,30 @@ e_cmd_handler_return_code_t CC_UserCode_Set_handler(
       break;
     default:
       // I/O error
+      DPRINT("Credential retrieval failed!");
+      assert(false);
       return E_CMD_HANDLER_RETURN_CODE_FAIL;
   }
 
   if (user_id_status == USER_ID_AVAILABLE) {
-    // Delete User Code
-    if (credential_found
-        && (CC_UserCredential_delete_credential(
-              0, CREDENTIAL_TYPE_PIN_CODE, user_identifier)
-            == U3C_DB_OPERATION_RESULT_SUCCESS)) {
+    if (credential_found) {
+      // Delete User Code
+      u3c_db_operation_result delete_result =
+        CC_UserCredential_delete_credential(CREDENTIAL_TYPE_PIN_CODE,
+                                            user_identifier);
+      if (delete_result == U3C_DB_OPERATION_RESULT_SUCCESS) {
+        status = E_CMD_HANDLER_RETURN_CODE_HANDLED;
+      } else {
+        DPRINT("Credential deletion failed!");
+        assert(false);
+      }
+    } else {
+      // No PIN code to delete, database is already in requested state
       status = E_CMD_HANDLER_RETURN_CODE_HANDLED;
     }
   } else {
-    if (set_user_code(
-          user_identifier, pUserCode, len, modifier_node_id, credential_found)
+    if (set_user_code(user_identifier, pUserCode, len, user_id_status,
+                      modifier_node_id, credential_metadata.uuid)
         ) {
       status = E_CMD_HANDLER_RETURN_CODE_HANDLED;
     }
@@ -275,6 +344,29 @@ e_cmd_handler_return_code_t CC_UserCode_Set_handler(
 void CC_UserCode_reset_data(void)
 {
   // The database is handled by the User Credential Command Class.
+}
+
+/**
+ * @brief Set the default user code to a new value.
+ *
+ * @param[in] new_user_code The new user code.
+ */
+void CC_UserCode_set_usercode(char * new_user_code)
+{
+  const uint16_t user_identifier = 1;
+  u3c_credential_metadata credential_metadata = { 0 };
+  CC_UserCredential_get_credential(0, CREDENTIAL_TYPE_PIN_CODE, user_identifier,
+                                   &credential_metadata, NULL);
+  uint8_t length = (uint8_t)strnlen(new_user_code,
+                                    cc_user_credential_get_max_length_of_data(
+                                      CREDENTIAL_TYPE_PIN_CODE));
+
+  if (!set_user_code(user_identifier, (uint8_t *)new_user_code, length,
+                     USER_ID_NO_STATUS, 0, credential_metadata.uuid)
+      ) {
+    // Could not set the new user code
+    assert(false);
+  }
 }
 
 bool CC_UserCode_Validate(uint8_t identifier, const uint8_t *pCode, uint8_t len)

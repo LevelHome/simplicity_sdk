@@ -1,7 +1,7 @@
 id: usb_device_driver_dwc_otg_fs
 
-category:    Protocol|USB|Device
-label:       USB Device Driver - DWC OTG FS
+category: Protocol|USB|Device
+label: USB Device Driver - DWC OTG FS
 description: >
   USB Device Driver for DWC OTG FS controller.
 
@@ -38,8 +38,7 @@ requires:
   - name: device_has_usb
   - name: udelay
   - name: clock_manager_runtime
-  - name: emlib_gpio
-    condition: [device_series_2]
+  - name: gpio
 
 template_contribution:
   - name: component_catalog

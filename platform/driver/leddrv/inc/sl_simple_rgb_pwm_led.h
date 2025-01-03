@@ -33,12 +33,7 @@
 
 #include "sl_led.h"
 #include "sl_pwm_led.h"
-
-#if defined(SL_CATALOG_GPIO_PRESENT)
 #include "sl_gpio.h"
-#else
-#include "em_gpio.h"
-#endif
 
 #include <stdint.h>
 
@@ -226,7 +221,7 @@ void sl_led_get_rgb_color(const sl_led_rgb_pwm_t *rgb,    ///< LED Instance hand
 ///   @code{.c}
 ///// sl_simple_rgb_pwm_led_instances.c
 ///
-///#include "em_gpio.h"
+///#include "sl_gpio.h"
 ///#include "sl_simple_rgb_pwm_led.h"
 ///
 ///#include "sl_simple_rgb_pwm_led_inst0_config.h"

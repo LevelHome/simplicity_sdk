@@ -66,7 +66,7 @@ extern "C" {
  * ```c
  *
  * #include "sl_pwm.h"
- * #include "em_gpio.h"
+ * #include "sl_gpio.h"
  *
  * int main( void )
  * {
@@ -76,7 +76,7 @@ extern "C" {
  *   sl_pwm_instance_t sl_pwm_led0 = {
  *     .timer    = TIMER0,
  *     .channel  = 0,
- *     .port     = gpioPortA,
+ *     .port     = SL_GPIO_PORT_A,
  *     .pin      = 0,
  *     .location = 0,
  *   };

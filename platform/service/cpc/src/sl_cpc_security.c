@@ -38,11 +38,13 @@
 
 #include "sl_cpc.h"
 #include "sli_cpc.h"
+#include "sli_cpc_assert.h"
 #include "sli_cpc_hdlc.h"
 #include "sli_cpc_security.h"
 
-#include "sl_assert.h"
-
+#if defined(SLI_SI917) && (SL_CPC_ENDPOINT_SECURITY_ENABLED >= 1)
+  #include "sl_si91x_cpc_security.h"
+#endif
 /*******************************************************************************
  *********************************   DEFINES   *********************************
  ******************************************************************************/
@@ -171,11 +173,30 @@ sl_status_t sli_cpc_security_init(sli_cpc_on_security_state_change_t state_chang
   uint16_t key_size = 0;
 #endif
 
+#if defined(SLI_SI917)
+  // Wait for the sl_net_init() function to be done.
+  // Since sl_net_init() initializes the TA, and we need TA to initialize the TRNG.
+  sl_si91x_cpc_crypto_init_semaphore_status = osSemaphoreAcquire(sl_si91x_cpc_crypto_init_semaphore_id, osWaitForever);
+  if (sl_si91x_cpc_crypto_init_semaphore_status != osOK) {
+    SLI_CPC_ASSERT(0);
+    return sl_cmsis_os_convert_status(sl_si91x_cpc_crypto_init_semaphore_status);
+  }
+#endif // SLI_SI917
+
   psa_status_t psa_status =  psa_crypto_init();
   if (psa_status != PSA_SUCCESS) {
-    EFM_ASSERT(false);
+    SLI_CPC_ASSERT(0);
     return SL_STATUS_FAIL;
   }
+
+#if defined(SLI_SI917)
+  // Release semaphore after psa_crypto_init() is completed.
+  sl_si91x_cpc_crypto_init_semaphore_status = osSemaphoreRelease(sl_si91x_cpc_crypto_init_semaphore_id);
+  if (sl_si91x_cpc_crypto_init_semaphore_status != osOK) {
+    SLI_CPC_ASSERT(0);
+    return sl_cmsis_os_convert_status(sl_si91x_cpc_crypto_init_semaphore_status);
+  }
+#endif // SLI_SI917
 
   if (psa_is_key_present_in_storage(binding_key_id)) {
     is_bound = true;
@@ -183,17 +204,17 @@ sl_status_t sli_cpc_security_init(sli_cpc_on_security_state_change_t state_chang
 #if (SL_CPC_SECURITY_BINDING_KEY_METHOD == SL_CPC_SECURITY_BINDING_KEY_CUSTOMER_SPECIFIC)
     sl_cpc_security_fetch_user_specified_binding_key(&key, &key_size);
     if (key == NULL) {
-      EFM_ASSERT(false);
+      SLI_CPC_ASSERT(0);
       return SL_STATUS_INVALID_CONFIGURATION;
     }
     if (key_size != 16) {
-      EFM_ASSERT(false);
+      SLI_CPC_ASSERT(0);
       return SL_STATUS_INVALID_CONFIGURATION;
     }
 
     status = store_binding_key(key, key_size);
     if (status != SL_STATUS_OK) {
-      EFM_ASSERT(false);
+      SLI_CPC_ASSERT(0);
       return status;
     }
 #else
@@ -234,7 +255,7 @@ SL_WEAK void sl_cpc_security_fetch_user_specified_binding_key(uint8_t **key, uin
 {
   (void)key;
   (void)key_size_in_bytes;
-  EFM_ASSERT(false); // User must provide the binding key by overriding this function
+  SLI_CPC_ASSERT(0); // User must provide the binding key by overriding this function
 }
 
 /***************************************************************************//**
@@ -295,7 +316,7 @@ sl_status_t sl_cpc_security_unbind(void)
   sl_cpc_unbind_notification_handle_t *handle;
 
   SL_SLIST_FOR_EACH_ENTRY(unbind_observers, handle, sl_cpc_unbind_notification_handle_t, node) {
-    EFM_ASSERT(handle->fnct != NULL);
+    SLI_CPC_ASSERT(handle->fnct != NULL);
     handle->fnct(handle->data);
   }
 
@@ -408,7 +429,7 @@ static void on_security_error(uint8_t endpoint_id, void *arg)
 {
   (void)arg;
 
-  EFM_ASSERT(endpoint_id == SL_CPC_ENDPOINT_SECURITY);
+  SLI_CPC_ASSERT(endpoint_id == SL_CPC_ENDPOINT_SECURITY);
 
   if (sl_cpc_get_endpoint_state(&security_ep) != SL_CPC_STATE_CONNECTED) {
     security_endpoint_in_error = true;
@@ -426,7 +447,7 @@ static void on_security_write_completed(sl_cpc_user_endpoint_id_t endpoint_id,
   (void) arg;
   (void) buffer;
 
-  EFM_ASSERT(endpoint_id == SL_CPC_ENDPOINT_SECURITY);
+  SLI_CPC_ASSERT(endpoint_id == SL_CPC_ENDPOINT_SECURITY);
 
   if (status != SL_STATUS_OK) {
     security_endpoint_in_error = true;
@@ -458,14 +479,14 @@ static void send_request(sli_cpc_security_protocol_cmd_t *request)
 {
   sl_status_t status;
 
-  EFM_ASSERT(security_write_completed == true);
+  SLI_CPC_ASSERT(security_write_completed == true);
   security_write_completed = false;
 
   status = sl_cpc_write(&security_ep, request,
                         request->len + SLI_SECURITY_PROTOCOL_HEADER_LENGTH,
                         SL_CPC_FLAG_NO_BLOCK,
                         (void *)on_security_write_completed);
-  EFM_ASSERT(status == SL_STATUS_OK); // Should not happen
+  SLI_CPC_ASSERT(status == SL_STATUS_OK); // Should not happen
   (void)status;
 }
 
@@ -476,14 +497,14 @@ static void send_response(sli_cpc_security_protocol_cmd_t *response)
 {
   sl_status_t status;
 
-  EFM_ASSERT(security_write_completed == true);
+  SLI_CPC_ASSERT(security_write_completed == true);
   security_write_completed = false;
 
   status = sl_cpc_write(&security_ep, response,
                         response->len + SLI_SECURITY_PROTOCOL_HEADER_LENGTH,
                         SL_CPC_FLAG_NO_BLOCK,
                         (void *)on_security_write_completed);
-  EFM_ASSERT(status == SL_STATUS_OK); // Should not happen
+  SLI_CPC_ASSERT(status == SL_STATUS_OK); // Should not happen
   (void)status;
 }
 
@@ -575,13 +596,13 @@ static sl_status_t ecdh_exchange(uint8_t* peer_key, size_t peer_key_len)
 
   sha256_output = malloc(SLI_SECURITY_PUBLIC_KEY_LENGTH_BYTES);
   if (sha256_output == NULL) {
-    EFM_ASSERT(false);
+    SLI_CPC_ASSERT(0);
     status = SL_STATUS_ALLOCATION_FAILED;
     goto exit;
   }
   shared_secret = malloc(SLI_SECURITY_PUBLIC_KEY_LENGTH_BYTES);
   if (shared_secret == NULL) {
-    EFM_ASSERT(false);
+    SLI_CPC_ASSERT(0);
     status = SL_STATUS_ALLOCATION_FAILED;
     goto clean_sha256;
   }
@@ -604,7 +625,7 @@ static sl_status_t ecdh_exchange(uint8_t* peer_key, size_t peer_key_len)
                                      our_public_key, SLI_SECURITY_PUBLIC_KEY_LENGTH_BYTES,
                                      &our_public_key_len);
   if (psa_status != PSA_SUCCESS) {
-    EFM_ASSERT(psa_destroy_key(private_key) == PSA_SUCCESS);
+    SLI_CPC_ASSERT(psa_destroy_key(private_key) == PSA_SUCCESS);
     private_key = MBEDTLS_SVC_KEY_ID_INIT;
     status = psa_status_to_sl_status(psa_status);
     goto cleanup;
@@ -626,7 +647,7 @@ static sl_status_t ecdh_exchange(uint8_t* peer_key, size_t peer_key_len)
                                      SLI_SECURITY_PUBLIC_KEY_LENGTH_BYTES,
                                      &shared_secret_len);
   if (psa_status != PSA_SUCCESS) {
-    EFM_ASSERT(psa_destroy_key(private_key) == PSA_SUCCESS);
+    SLI_CPC_ASSERT(psa_destroy_key(private_key) == PSA_SUCCESS);
     private_key = MBEDTLS_SVC_KEY_ID_INIT;
     status = psa_status_to_sl_status(psa_status);
     goto cleanup;
@@ -639,7 +660,7 @@ static sl_status_t ecdh_exchange(uint8_t* peer_key, size_t peer_key_len)
                                 sha256_output, SLI_SECURITY_PUBLIC_KEY_LENGTH_BYTES,
                                 &hash_out_len);
   if (psa_status != PSA_SUCCESS || hash_out_len != SLI_SECURITY_PUBLIC_KEY_LENGTH_BYTES) {
-    EFM_ASSERT(psa_destroy_key(private_key) == PSA_SUCCESS);
+    SLI_CPC_ASSERT(psa_destroy_key(private_key) == PSA_SUCCESS);
     private_key = MBEDTLS_SVC_KEY_ID_INIT;
     status = psa_status_to_sl_status(psa_status);
     goto cleanup;
@@ -744,17 +765,17 @@ static void on_unbind_cmd(sli_cpc_security_protocol_cmd_t *cmd)
 static void process_security_command_rx(sli_cpc_security_protocol_cmd_t *cmd)
 {
   if (cmd_is_a_response(cmd)) {
-    EFM_ASSERT(false); // Should not receive a response, only requests are allowed
+    SLI_CPC_ASSERT(0); // Should not receive a response, only requests are allowed
     return; // Drop packet
   }
 
   if (!(cmd->command_id >= BINDING_REQUEST_ID && cmd->command_id <= UNBIND_REQUEST_ID)) {
-    EFM_ASSERT(false);
+    SLI_CPC_ASSERT(0);
     return; // Drop packet
   }
 
   if (cmd->len != sli_cpc_security_command[cmd->command_id].request_len) {
-    EFM_ASSERT(false);
+    SLI_CPC_ASSERT(0);
     return;   // Drop packet
   }
 
@@ -776,7 +797,7 @@ static void process_security_command_rx(sli_cpc_security_protocol_cmd_t *cmd)
       on_unbind_cmd(cmd);
       break;
     default:
-      EFM_ASSERT(false); // Unknown command
+      SLI_CPC_ASSERT(0); // Unknown command
       return; // Drop packet
   }
 }
@@ -791,7 +812,7 @@ static bool security_open_endpoint(void)
   status = sli_cpc_open_service_endpoint(&security_ep, SL_CPC_ENDPOINT_SECURITY, 0, 1);
   if (status != SL_STATUS_OK) {
     if (status != SL_STATUS_BUSY) {
-      EFM_ASSERT(false);
+      SLI_CPC_ASSERT(0);
     }
     return false;
   }
@@ -800,13 +821,13 @@ static bool security_open_endpoint(void)
                                       SL_CPC_ENDPOINT_ON_IFRAME_WRITE_COMPLETED,
                                       (void *)on_security_write_completed);
   if (status != SL_STATUS_OK) {
-    EFM_ASSERT(false);
+    SLI_CPC_ASSERT(0);
     return false;
   }
 
   status = sl_cpc_set_endpoint_option(&security_ep, SL_CPC_ENDPOINT_ON_ERROR, (void *)on_security_error);
   if (status != SL_STATUS_OK) {
-    EFM_ASSERT(false);
+    SLI_CPC_ASSERT(0);
     return false;
   }
 
@@ -818,7 +839,7 @@ static bool security_open_endpoint(void)
  ******************************************************************************/
 static void security_recover_endpoint(void)
 {
-  EFM_ASSERT(SL_STATUS_OK == sl_cpc_close_endpoint(&security_ep));
+  SLI_CPC_ASSERT(SL_STATUS_OK == sl_cpc_close_endpoint(&security_ep));
 
   if (security_open_endpoint()) {
     security_write_completed = true;
@@ -870,13 +891,13 @@ static sl_status_t store_binding_key(uint8_t *key, uint16_t key_size)
 #endif
 
   //Big logic corruption with is_bound flash if the key already exists
-  EFM_ASSERT(psa_status != PSA_ERROR_ALREADY_EXISTS);
+  SLI_CPC_ASSERT(psa_status != PSA_ERROR_ALREADY_EXISTS);
 
   // Output result.
   if (psa_status == PSA_SUCCESS) {
     // When registering a persistent key, the returned key_id should be equal to
     // the one set with psa_set_key_id. Something is terribly wrong if it isn't
-    EFM_ASSERT(key_id == binding_key_id);
+    SLI_CPC_ASSERT(key_id == binding_key_id);
     is_bound = true;
     return SL_STATUS_OK;
   } else {
@@ -892,7 +913,7 @@ sl_status_t erase_binding_key(void)
   //Check if the key is already erased
   if (psa_is_key_present_in_storage(binding_key_id) == 0) {
     //Just a sanity check to make sure 'is_bound' flag is consistent with the key status
-    EFM_ASSERT(is_bound == false);
+    SLI_CPC_ASSERT(is_bound == false);
     return (sl_status_t) SL_STATUS_NOT_INITIALIZED;
   }
 
@@ -961,7 +982,7 @@ sl_status_t initialize_session(uint8_t *random1, uint8_t *random2)
                                     sizeof(sha256_random3),
                                     &hash_length);
 
-      EFM_ASSERT(hash_length == sizeof(sha256_random3));
+      SLI_CPC_ASSERT(hash_length == sizeof(sha256_random3));
 
       if (psa_status != PSA_SUCCESS) {
         return SL_STATUS_FAIL;
@@ -1002,7 +1023,7 @@ sl_status_t initialize_session(uint8_t *random1, uint8_t *random2)
 
       // Something terribly wrong if the retrived binding key length is not the
       // same as the one when it was stored
-      EFM_ASSERT(key_length == SLI_SECURITY_BINDING_KEY_LENGTH_BYTES);
+      SLI_CPC_ASSERT(key_length == SLI_SECURITY_BINDING_KEY_LENGTH_BYTES);
 
       if (psa_status != PSA_SUCCESS) {
         // If for whatever reason the export failed, squash random4 anyway
@@ -1027,7 +1048,7 @@ sl_status_t initialize_session(uint8_t *random1, uint8_t *random2)
       mbedtls_platform_zeroize(random4, sizeof(random4));
 
       // Something is terribly wrong if sha256 doesn't give a 256 length (session key length)
-      EFM_ASSERT(hash_length == SLI_SECURITY_SESSION_KEY_LENGTH_BYTES);
+      SLI_CPC_ASSERT(hash_length == SLI_SECURITY_SESSION_KEY_LENGTH_BYTES);
 
       if (psa_status != PSA_SUCCESS) {
         // If for whatever reason the hash failed, squash tmp_session_key anyway
@@ -1175,7 +1196,7 @@ static size_t __sli_cpc_security_get_tag_length(void)
   psa_status_t ret;
 
   ret = psa_get_key_attributes(session_key_id, &attributes);
-  EFM_ASSERT(ret == PSA_SUCCESS);
+  SLI_CPC_ASSERT(ret == PSA_SUCCESS);
 
   return PSA_AEAD_TAG_LENGTH(
     psa_get_key_type(&attributes),
@@ -1244,8 +1265,8 @@ static psa_status_t encrypt(const uint8_t *header,
   }
 
   // We expect the encrypted text to be the same length as the input buffer
-  EFM_ASSERT(out_len + out_cypher_len == payload_len);
-  EFM_ASSERT(out_tag_len == __sli_cpc_security_get_tag_length());
+  SLI_CPC_ASSERT(out_len + out_cypher_len == payload_len);
+  SLI_CPC_ASSERT(out_tag_len == __sli_cpc_security_get_tag_length());
 
   return ret;
 }
@@ -1272,7 +1293,7 @@ static psa_status_t decrypt(const uint8_t *header,
                          output_len);
 
   if (ret == PSA_SUCCESS) {
-    EFM_ASSERT(*output_len + __sli_cpc_security_get_tag_length() == payload_len);
+    SLI_CPC_ASSERT(*output_len + __sli_cpc_security_get_tag_length() == payload_len);
   }
 
   return ret;

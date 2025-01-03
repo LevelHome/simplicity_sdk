@@ -4,6 +4,11 @@ description: Utility to aid with RAIL Coexistence Support
 package: platform
 category: Platform|Radio
 quality: production
+metadata:
+  sbom:
+    id: rail_util_coex
+    name: RAIL Utility, Coexistence
+    license: MSLA
 requires:
   - name: device
   - name: rail_lib

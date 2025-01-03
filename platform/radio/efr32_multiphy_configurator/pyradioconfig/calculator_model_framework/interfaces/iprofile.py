@@ -17,6 +17,7 @@ class IProfile(object):
     _default = False
     _readable_name = ""
     _activation_logic = ""
+    _skip_target_calculation = False
 
     """
     Returns profile readable and searchable nmae
@@ -41,7 +42,7 @@ class IProfile(object):
     """
     @abstractmethod
     def _makeProfile(self, modem_model, category=None, description=None,
-                     default=None, readable_name=None, activation_logic=None):
+                     default=None, readable_name=None, activation_logic=None, skip_target_calculation=None):
         # Build profile from name, category, and description
         if category is None:
             category = self._category
@@ -53,8 +54,11 @@ class IProfile(object):
             readable_name = self._readable_name
         if activation_logic is None:
             activation_logic = self._activation_logic
+        if skip_target_calculation is None:
+            skip_target_calculation = self._skip_target_calculation
         profile_model = ModelProfile(self.getName(), category, description,
-                                     default=default, readable_name=readable_name, act_logic=activation_logic)
+                                     default=default, readable_name=readable_name, act_logic=activation_logic,
+                                     skip_target_calc=skip_target_calculation)
         modem_model.profiles.append(profile_model)
         return profile_model
 
@@ -200,4 +204,25 @@ class IProfile(object):
         profile.inputs.append(profile_input)
 
 
+    @staticmethod
+    def make_metadata_input(profile, var, category=None, readable_name=None,
+                          value_limit_min=None, value_limit_max=None,
+                          fractional_digits = None, units_multiplier = None):
 
+        if category is None:
+            raise Exception("Category not defined for profile input %s" % var._name)
+
+        if readable_name is None:
+            raise Exception("Readable name not defined for profile input %s" % var._name)
+
+        if var.var_type == int or var.var_type == long or var.var_type == int:
+            if value_limit_min is None or value_limit_max is None:
+                raise Exception("Min/max values not defined for profile input %s" % var._name)
+
+        profile_input = ModelInput(var, category=category, input_type=ModelInputType.METADATA, default=None,
+                        readable_name=readable_name, var_value=None,
+                        value_limit_min=value_limit_min, value_limit_max=value_limit_max,
+                        fractional_digits=fractional_digits, deprecated=False,
+                        default_visibility=ModelInputDefaultVisibilityType.HIDDEN,
+                        units_multiplier=units_multiplier)
+        profile.inputs.append(profile_input)

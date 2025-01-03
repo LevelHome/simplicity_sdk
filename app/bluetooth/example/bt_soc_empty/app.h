@@ -1,9 +1,9 @@
 /***************************************************************************//**
  * @file
- * @brief Application interface provided to main().
+ * @brief Application interface.
  *******************************************************************************
  * # License
- * <b>Copyright 2020 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -31,14 +31,33 @@
 #ifndef APP_H
 #define APP_H
 
+#include <stdbool.h>
+
 /**************************************************************************//**
  * Application Init.
  *****************************************************************************/
 void app_init(void);
 
 /**************************************************************************//**
+ * Initialize Runtime Environment.
+ *****************************************************************************/
+void app_init_runtime(void);
+
+/**************************************************************************//**
  * Application Process Action.
  *****************************************************************************/
 void app_process_action(void);
+
+/**************************************************************************//**
+ * Proceed with execution. (Indicate that it is required to run the application
+ * process action.)
+ *****************************************************************************/
+void app_proceed(void);
+
+/**************************************************************************//**
+ * Check if it is required to process with execution.
+ * @return true if required, false otherwise.
+ *****************************************************************************/
+bool app_is_process_required(void);
 
 #endif // APP_H

@@ -43,40 +43,37 @@ void sl_zigbee_af_prepayment_client_change_payment_mode(sl_802154_short_addr_t n
   sl_zigbee_af_set_command_endpoints(srcEndpoint, dstEndpoint);
   sl_zigbee_af_get_command_aps_frame()->options |= SL_ZIGBEE_APS_OPTION_SOURCE_EUI64;
   status = sl_zigbee_af_send_command_unicast(SL_ZIGBEE_OUTGOING_DIRECT, nodeId);
-  sl_zigbee_af_app_println("=====   SEND PAYMENT MODE stat=0x%x", status);
+  sl_zigbee_af_app_println("=====   SEND PAYMENT MODE stat=0x%02X", status);
 }
 
 //-----------------------
 // ZCL commands callbacks
 
-bool sl_zigbee_zcl_prepayment_cluster_change_payment_mode_response_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_zcl_prepayment_cluster_change_payment_mode_response_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   (void)cmd;
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
   sl_zigbee_af_app_println("RX: Change Payment Mode Response Callback");
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
-bool sl_zigbee_af_prepayment_cluster_publish_prepay_snapshot_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_prepayment_cluster_publish_prepay_snapshot_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   (void)cmd;
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
   sl_zigbee_af_app_println("RX: Publish Prepay Snapshot Callback");
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
-bool sl_zigbee_af_prepayment_cluster_publish_top_up_log_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_prepayment_cluster_publish_top_up_log_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   (void)cmd;
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
   sl_zigbee_af_app_println("RX: Publish TopUp Log Callback");
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
-bool sl_zigbee_af_prepayment_cluster_publish_debt_log_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_prepayment_cluster_publish_debt_log_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   (void)cmd;
 
@@ -85,7 +82,7 @@ bool sl_zigbee_af_prepayment_cluster_publish_debt_log_cb(sl_zigbee_af_cluster_co
 
   if (zcl_decode_prepayment_cluster_publish_debt_log_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   sl_zigbee_af_app_println("RX: Publish Debt Log Callback");
@@ -93,8 +90,7 @@ bool sl_zigbee_af_prepayment_cluster_publish_debt_log_cb(sl_zigbee_af_cluster_co
   sl_zigbee_af_prepayment_cluster_println("  totalNumberOfCommands=%d", cmd_data.totalNumberOfCommands);
 #endif // SL_CATALOG_ZIGBEE_DEBUG_PRINT_PRESENT
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
 uint32_t sl_zigbee_af_prepayment_cluster_client_command_parse(sl_service_opcode_t opcode,
@@ -103,34 +99,32 @@ uint32_t sl_zigbee_af_prepayment_cluster_client_command_parse(sl_service_opcode_
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_PUBLISH_PREPAY_SNAPSHOT_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_prepayment_cluster_publish_prepay_snapshot_cb(cmd);
+        status = sl_zigbee_af_prepayment_cluster_publish_prepay_snapshot_cb(cmd);
         break;
       }
       case ZCL_CHANGE_PAYMENT_MODE_RESPONSE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_zcl_prepayment_cluster_change_payment_mode_response_cb(cmd);
+        status = sl_zigbee_zcl_prepayment_cluster_change_payment_mode_response_cb(cmd);
         break;
       }
       case ZCL_PUBLISH_TOP_UP_LOG_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_prepayment_cluster_publish_top_up_log_cb(cmd);
+        status = sl_zigbee_af_prepayment_cluster_publish_top_up_log_cb(cmd);
         break;
       }
       case ZCL_PUBLISH_DEBT_LOG_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_prepayment_cluster_publish_debt_log_cb(cmd);
+        status = sl_zigbee_af_prepayment_cluster_publish_debt_log_cb(cmd);
         break;
       }
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

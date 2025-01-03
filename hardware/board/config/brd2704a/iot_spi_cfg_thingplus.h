@@ -103,15 +103,15 @@
 #define IOT_SPI_CFG_THINGPLUS_PERIPHERAL_NO      0
 
 // USART0 TX on PC03
-#define IOT_SPI_CFG_THINGPLUS_TX_PORT            gpioPortC
+#define IOT_SPI_CFG_THINGPLUS_TX_PORT            SL_GPIO_PORT_C
 #define IOT_SPI_CFG_THINGPLUS_TX_PIN             3
 
 // USART0 RX on PC06
-#define IOT_SPI_CFG_THINGPLUS_RX_PORT            gpioPortC
+#define IOT_SPI_CFG_THINGPLUS_RX_PORT            SL_GPIO_PORT_C
 #define IOT_SPI_CFG_THINGPLUS_RX_PIN             6
 
 // USART0 CLK on PC02
-#define IOT_SPI_CFG_THINGPLUS_CLK_PORT           gpioPortC
+#define IOT_SPI_CFG_THINGPLUS_CLK_PORT           SL_GPIO_PORT_C
 #define IOT_SPI_CFG_THINGPLUS_CLK_PIN            2
 
 

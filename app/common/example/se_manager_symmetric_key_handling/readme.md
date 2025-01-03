@@ -1,6 +1,6 @@
 # SE Manager Symmetric Key Handling
 
-This example uses the SE Manager API to perform symmetric key handling on the supported Series 2 device.
+This example uses the SE Manager API to perform symmetric key handling on the supported device.
 
 In this example, SE Manager is used to generate a custom size symmetric key or a standard symmetric key for use with AES.
 

@@ -460,6 +460,9 @@ RAIL_Status_t sl_rail_mux_StartTxStreamAlt(RAIL_Handle_t railHandle,
                                            uint16_t channel,
                                            RAIL_StreamMode_t mode,
                                            RAIL_TxOptions_t options);
+RAIL_Status_t sl_rail_mux_GetRxTimeFrameEnd(RAIL_Handle_t railHandle,
+                                            uint16_t totalPacketBytes,
+                                            RAIL_Time_t *pPacketTime);
 //------------------------------------------------------------------------------
 // Internals
 
@@ -476,7 +479,7 @@ RAIL_Status_t sl_rail_mux_StartTxStreamAlt(RAIL_Handle_t railHandle,
 #define RAIL_MUX_ENTER_CRITICAL()
 #define RAIL_MUX_EXIT_CRITICAL()
 #else // !SL_ZIGBEE_TEST
-#include "em_core.h"
+#include "sl_core.h"
 #define RAIL_MUX_DECLARE_IRQ_STATE CORE_DECLARE_IRQ_STATE
 #define RAIL_MUX_ENTER_CRITICAL() CORE_ENTER_CRITICAL()
 #define RAIL_MUX_EXIT_CRITICAL() CORE_EXIT_CRITICAL()

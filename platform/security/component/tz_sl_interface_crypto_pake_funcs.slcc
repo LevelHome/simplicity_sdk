@@ -41,3 +41,7 @@ template_contribution:
 
   - name: tfm_interface_func
     value: tfm_crypto_pake_abort
+
+metadata:
+  sbom:
+    license: Zlib

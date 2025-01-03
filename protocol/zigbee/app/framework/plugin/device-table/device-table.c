@@ -32,7 +32,6 @@
 #include "app/framework/util/attribute-storage.h"
 #include "app/util/common/common.h"
 #include "hal/hal.h"
-#include "app/util/serial/sl_zigbee_command_interpreter.h"
 
 #include "app/framework/plugin/device-table/device-table.h"
 #include "app/framework/plugin/device-table/device-table-internal.h"
@@ -460,15 +459,15 @@ void sli_zigbee_af_device_table_save(void)
        i++) {
     if (deviceTable[i].nodeId != SL_ZIGBEE_AF_PLUGIN_DEVICE_TABLE_NULL_NODE_ID) {
       fprintf(fp,
-              "%x %x %x ",
+              "%02X %02X %02X ",
               deviceTable[i].nodeId,
               deviceTable[i].endpoint,
               deviceTable[i].deviceId);
       for (j = 0; j < 8; j++) {
-        fprintf(fp, "%x ", deviceTable[i].eui64[j]);
+        fprintf(fp, "%02X ", deviceTable[i].eui64[j]);
       }
       for (j = 0; j < SL_ZIGBEE_AF_PLUGIN_DEVICE_TABLE_CLUSTER_SIZE; j++) {
-        fprintf(fp, "%x ", deviceTable[i].clusterIds[j]);
+        fprintf(fp, "%02X ", deviceTable[i].clusterIds[j]);
       }
       fprintf(fp, "%d ", deviceTable[i].clusterOutStartPosition);
     }
@@ -499,18 +498,18 @@ void sli_zigbee_af_device_table_load(void)
   for (i = 0;
        i < SL_ZIGBEE_AF_PLUGIN_DEVICE_TABLE_DEVICE_TABLE_SIZE && feof(fp) == false;
        i++) {
-    fscanf(fp, "%x %x %x", &data2, &data, &data3);
+    fscanf(fp, "%02X %02X %02X", &data2, &data, &data3);
     deviceTable[i].endpoint = (uint8_t) data;
     deviceTable[i].nodeId = (uint16_t) data2;
     deviceTable[i].deviceId = (uint16_t) data3;
 
     if (deviceTable[i].nodeId != SL_ZIGBEE_AF_PLUGIN_DEVICE_TABLE_NULL_NODE_ID) {
       for (j = 0; j < 8; j++) {
-        fscanf(fp, "%x", &data);
+        fscanf(fp, "%02X", &data);
         deviceTable[i].eui64[j] = (uint8_t) data;
       }
       for (j = 0; j < SL_ZIGBEE_AF_PLUGIN_DEVICE_TABLE_CLUSTER_SIZE; j++) {
-        fscanf(fp, "%x", &data);
+        fscanf(fp, "%02X", &data);
         deviceTable[i].clusterIds[j] = (uint16_t) data;
       }
       fscanf(fp, "%d", &data);
@@ -611,7 +610,7 @@ void sl_zigbee_af_device_table_command_index_send_with_endpoint(uint16_t index,
   }
 
   sli_zigbee_af_command_aps_frame->destinationEndpoint = endpoint;
-  sl_zigbee_af_core_println("device table send with ep: 0x%2X, %d",
+  sl_zigbee_af_core_println("device table send with ep: 0x%04X, %d",
                             nodeId,
                             endpoint);
   (void)sl_zigbee_af_send_command_unicast(SL_ZIGBEE_OUTGOING_DIRECT, nodeId);

@@ -31,7 +31,7 @@
 #include <string.h>
 #include "em_emu.h"
 #include "gatt_db.h"
-#include "em_common.h"
+#include "sl_common.h"
 #include "sl_sleeptimer.h"
 #include "esl_tag_log.h"
 #include "esl_tag_sensor.h"

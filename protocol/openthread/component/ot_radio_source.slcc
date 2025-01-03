@@ -15,6 +15,7 @@ ui_hints:
 root_path: util/third_party/openthread/src/core
 source:
       - path: api/diags_api.cpp
+        unless: ["ot_diags_stubs"]
       - path: api/error_api.cpp
       - path: api/instance_api.cpp
       - path: api/link_raw_api.cpp
@@ -35,12 +36,15 @@ source:
       - path: crypto/crypto_platform.cpp
       - path: crypto/storage.cpp
       - path: diags/factory_diags.cpp
+        unless: ["ot_diags_stubs"]
       - path: instance/instance.cpp
       - path: mac/link_raw.cpp
       - path: mac/mac_frame.cpp
+      - path: mac/mac_header_ie.cpp
       - path: mac/mac_types.cpp
       - path: mac/sub_mac.cpp
       - path: mac/sub_mac_callbacks.cpp
+      - path: mac/sub_mac_csl_receiver.cpp
       - path: radio/radio.cpp
       - path: radio/radio_callbacks.cpp
       - path: radio/radio_platform.cpp

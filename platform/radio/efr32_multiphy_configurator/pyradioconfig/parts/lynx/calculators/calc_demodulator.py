@@ -1,6 +1,6 @@
-from pyradioconfig.calculator_model_framework.Utils.CustomExceptions import CalculationException
 from pyradioconfig.parts.panther.calculators.calc_demodulator import CALC_Demodulator_panther
 from pyradioconfig.parts.lynx.calculators.calc_shaping import CALC_Shaping_lynx
+from enum import Enum
 import math
 import numpy as np
 import numpy.matlib
@@ -33,9 +33,37 @@ class CALC_Demodulator_lynx(CALC_Demodulator_panther):
         self._addModelVariable(model, 'rx_grp_delay_us', float, ModelVariableFormat.DECIMAL,
                                desc='RX group delay in us from adc to demod')
 
+        self._addModelVariable(model, 'adc_rate_mode', Enum, ModelVariableFormat.DECIMAL)
+        model.vars.adc_rate_mode.var_enum = CreateModelVariableEnum(
+            enum_name='AdcRateModeEnum',
+            enum_desc='ADC Clock Rate Mode',
+            member_data=[
+                ['FULLRATE', 0, 'Full rate mode'],
+                ['HALFRATE', 1, 'Half rate mode'],
+                ['EIGHTHRATE', 2, 'Eighth rate mode']
+            ])
+
+        self._addModelActual(model, 'adc_rate_mode', Enum, ModelVariableFormat.DECIMAL)
+        model.vars.adc_rate_mode_actual.var_enum = model.vars.adc_rate_mode.var_enum
+
         self._addModelActual(model, 'timing_detection_threshold_gain', int, ModelVariableFormat.DECIMAL)
         self._addModelActual(model, 'digmix_res', float, ModelVariableFormat.DECIMAL)
         self._addModelActual(model, 'digmixfreq', int, ModelVariableFormat.DECIMAL)
+
+        member_data = [
+            ['NONE', 0, 'None'],
+            ['LE_1M', 1, 'Bluetooth LE 1Mbps'],
+            ['LE_2M', 2, 'Bluetooth LE 2Mbps'],
+            ['CODED_500K', 3, 'Bluetooth LE Coded 500Kbps'],
+            ['CODED_125K', 4, 'Bluetooth LE Coded 125Kbps'],
+            ['AOX_1M', 5, 'Bluetooth LE AoX 1Mbps'],
+            ['AOX_2M', 6, 'Bluetooth LE AoX 2Mbps'],
+            ['CONCURRENT', 7, 'Bluetooth Concurrent'],
+        ]
+        model.vars.ble_feature.var_enum = CreateModelVariableEnum(
+            'BleFeatureEnum',
+            'List of supported Bluetooth LE PHY features',
+            member_data)
 
     def calc_init_advanced(self, model):
         trecs_enabled = model.vars.trecs_enabled.value
@@ -133,7 +161,7 @@ class CALC_Demodulator_lynx(CALC_Demodulator_panther):
         return alpha
 
     def _add_demod_rate_variable(self, model):
-        self._addModelActual(model, 'demod_rate', int, ModelVariableFormat.DECIMAL)
+        self._addModelActual(model, 'demod_rate', float, ModelVariableFormat.DECIMAL)
 
     def calc_fxo_or_fdec8(self, model):
         # We can not use rx_synth_freq_actual in these calculations due to circular dependency
@@ -282,7 +310,7 @@ class CALC_Demodulator_lynx(CALC_Demodulator_panther):
         src1_actual = model.vars.src1_ratio_actual.value
         src2_actual = model.vars.src2_ratio_actual.value
 
-        demod_rate_actual = int(adc_freq_actual * src1_actual * src2_actual / (8 * dec0_actual * dec1_actual * dec2_actual))
+        demod_rate_actual = adc_freq_actual * src1_actual * src2_actual / (8 * dec0_actual * dec1_actual * dec2_actual)
 
         #Load local variables back into model variables
         model.vars.demod_rate_actual.value = demod_rate_actual

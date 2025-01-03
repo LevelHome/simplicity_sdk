@@ -27,7 +27,7 @@ sl_zigbee_af_status_t sl_zigbee_af_zll_level_control_server_move_to_level_with_o
                                                                      (uint8_t *)&globalSceneControl,
                                                                      ZCL_BOOLEAN_ATTRIBUTE_TYPE);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_level_control_cluster_println("ERR: writing global scene control %x", status);
+    sl_zigbee_af_level_control_cluster_println("ERR: writing global scene control %02X", status);
   }
   return status;
 }
@@ -50,7 +50,7 @@ bool sl_zigbee_af_zll_level_control_server_ignore_move_to_level_move_step_stop(u
                                                                       (uint8_t *)&onOff,
                                                                       sizeof(onOff));
     if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-      sl_zigbee_af_level_control_cluster_println("ERR: reading on/off %x", status);
+      sl_zigbee_af_level_control_cluster_println("ERR: reading on/off %02X", status);
     }
   }
 #endif

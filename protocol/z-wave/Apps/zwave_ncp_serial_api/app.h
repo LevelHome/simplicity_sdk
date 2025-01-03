@@ -27,6 +27,9 @@
 #ifdef ZW_SLAVE
 #include <ZW_slave_api.h>
 #endif
+#ifdef ZW_SECURITY_PROTOCOL
+#include <ZW_TransportSecProtocol.h>
+#endif
 
 #ifdef ZW_CONTROLLER
 #include <ZW_controller_api.h>
@@ -43,9 +46,6 @@
 
 /* Max number of nodes in a multi cast (group) */
 #define MAX_GROUP_NODES 64
-
-/* Macro for accessing the byte in byte_array at the index indx */
-#define BYTE_IN_AR(byte_array, indx) (*(byte_array + indx))
 
 /* Macro for getting HIGH uint8_t in wVar uint16_t variable */
 #define BYTE_GET_HIGH_BYTE_IN_WORD(wVar) *((uint8_t*)&wVar)
@@ -78,7 +78,6 @@ typedef enum
   NVMBackupRestoreOperationClose
 } eNVMBackupRestoreOperation;
 
-
 /* Return values for FUNC_ID_NVM_BACKUP_RESTORE operation */
 typedef enum
 {
@@ -89,8 +88,10 @@ typedef enum
   NVMBackupRestoreReturnValueEOF = EOF                  /* Not really an error. Just an indication of EndOfFile */
 } eNVMBackupRestoreReturnValue;
 
+#ifndef ZW_SECURITY_PROTOCOL
 /* params used by ApplicationNodeInformation */
 #define APPL_NODEPARM_MAX       35
+#endif
 #define APPL_SLAVENODEPARM_MAX  APPL_NODEPARM_MAX
 
 
@@ -107,7 +108,7 @@ typedef enum _E_SERIALAPI_SET_LEARN_MODE_
 
 } E_SERIALAPI_SET_LEARN_MODE;
 
-#ifdef ZW_SLAVE_ROUTING
+#ifdef ZW_SLAVE
 /* SerialAPI only used state - used when ZW_RequestNodeInfo transmit fails */
 /* It is then assumed that the destination node did not receive the request. */
 #define UPDATE_STATE_NODE_INFO_REQ_FAILED   0x81
@@ -122,14 +123,32 @@ typedef enum
   SERIALAPI_CONFIG_UNDEFINED = 0xFE
 } SERIALAPI_CONFIG_T;
 
+#ifdef PORT_STATUS
+#define SUPPORT_ZW_PORT_STATUS                          1
+#else
+#define SUPPORT_ZW_PORT_STATUS                          0
+#endif
 #define SUPPORT_ZW_SET_SECURITY_S0_NETWORK_KEY          0  /*deprecated*/
 /* Enable support for SerialAPI Startup Notification */
 #define SUPPORT_SERIAL_API_STARTUP_NOTIFICATION         1
 
 /* Security in Protocol SerialAPI functionality support definitions */
+#ifdef ZW_SECURITY_PROTOCOL
+#define SUPPORT_APPLICATION_SECURITY_EVENT              0
+#define SUPPORT_SERIAL_API_APPL_NODE_INFORMATION_CMD_CLASSES  1
+#if (SUPPORT_ZW_GET_SECURITY_KEYS | \
+     SUPPORT_ZW_SET_SECURITY_S0_NETWORK_KEY | \
+     SUPPORT_ZW_GET_SECURITY_S2_PUBLIC_DSK | \
+     SUPPORT_ZW_SET_SECURITY_S2_CRITICAL_NODE_ID)
+#define SUPPORT_ZW_SECURITY_SETUP                       1
+#else
+#define SUPPORT_ZW_SECURITY_SETUP                       0
+#endif
+#else  /*#ifdef ZW_SECURITY_PROTOCOL*/
 #define SUPPORT_SERIAL_API_APPL_NODE_INFORMATION_CMD_CLASSES  0
 #define SUPPORT_ZW_SECURITY_SETUP                       0
 #define SUPPORT_APPLICATION_SECURITY_EVENT              0
+#endif
 
 /* Common SerialAPI functionality support definitions */
 #define SUPPORT_SERIAL_API_APPL_NODE_INFORMATION        1
@@ -137,11 +156,13 @@ typedef enum
 #define SUPPORT_SERIAL_API_GET_CAPABILITIES             1
 #define SUPPORT_SERIAL_API_SOFT_RESET                   1
 
-#define SUPPORT_SERIAL_API_POWER_MANAGEMENT             0
-#define SUPPORT_SERIAL_API_READY                        0
-
 #define SUPPORT_SERIAL_API_EXT                          1
+#ifdef ZW_SECURITY_PROTOCOL
+/* Only libraries with SECURITY buildin should supports this (slave_enhanced_232) */
+#define SUPPORT_SERIAL_API_APPL_NODE_INFORMATION_CMD_CLASSES  1
+#else
 #define SUPPORT_SERIAL_API_APPL_NODE_INFORMATION_CMD_CLASSES  0
+#endif
 
 #ifdef ZW_ENABLE_RTC
 #define SUPPORT_CLOCK_SET                               1
@@ -175,26 +196,14 @@ typedef enum
 #define SUPPORT_TIMER_CALL                              0
 #endif
 
+#ifdef PORT_STATUS
+#define SUPPORT_ZW_PORT_STATUS                          1
+#else
+#define SUPPORT_ZW_PORT_STATUS                          0
+#endif
 /* ZW_EnableSUC() no longer exists in the library */
 
 /* */
-#define SUPPORT_SERIAL_API_GET_APPL_HOST_MEMORY_OFFSET  0
-
-#if SUPPORT_SERIAL_API_READY
-enum
-{
-  /* SERIAL_LINK_IDLE = Ready for incomming Serial communication, but */
-  /* do not transmit anything via the serial link even if application */
-  /* frames is received on the RF, which normally should be transmitted */
-  /* to the HOST. */
-  SERIAL_LINK_DETACHED = 0,
-  /* SERIAL_LINK_CONNECTED = There exists a HOST so transmit on serial */
-  /* link if needed. */
-  SERIAL_LINK_CONNECTED = 1
-};
-
-extern uint8_t serialLinkState;
-#endif /* SUPPORT_SERIAL_API_READY */
 
 extern void DoRespond_workbuf(
   uint8_t cnt);
@@ -233,32 +242,6 @@ extern void PopCommandQueue(void);
 extern uint8_t GetCallbackCnt(void);
 
 extern void ZW_GetMfgTokenDataCountryFreq(void *data);
-
-#if SUPPORT_SERIAL_API_POWER_MANAGEMENT
-extern void
-ZCB_PowerManagementWakeUpOnExternalActive(void);
-
-extern void
-ZCB_PowerManagementWakeUpOnTimerHandler(void);
-
-extern void
-ZCB_powerManagementPoweredUpPinActive(void);
-
-extern void
-PowerManagementSetPowerDown(void);
-
-extern void
-PowerManagementSetPowerUp(void);
-
-extern void
-PowerManagementCheck(void);
-
-extern void
-PurgeCallbackQueue(void);
-
-extern void
-PurgeCommandQueue(void);
-#endif /* SUPPORT_SERIAL_API_POWER_MANAGEMENT */
 
 // Prioritized events that can wakeup protocol thread.
 typedef enum EApplicationEvent

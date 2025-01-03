@@ -201,6 +201,7 @@ typedef struct {
     sli_mac_stack_lower_mac_set_high_datarate_csma_params_ipc_msg_t lower_mac_set_high_datarate_csma_params;
     sli_mac_stack_lower_mac_set_high_datarate_phy_radio_priorities_ipc_msg_t lower_mac_set_high_datarate_phy_radio_priorities;
     sli_mac_stack_send_raw_high_datarate_phy_message_ipc_msg_t send_raw_high_datarate_phy_message;
+    sli_mac_stack_send_raw_high_datarate_phy_scheduled_message_ipc_msg_t send_raw_high_datarate_phy_scheduled_message;
     sli_mac_stack_set_mode_switch_sync_detect_ipc_msg_t set_mode_switch_sync_detect;
     #endif
     sli_zigbee_stack_get_library_status_ipc_msg_t get_library_status;
@@ -229,11 +230,13 @@ typedef struct {
     slxi_zigbee_stack_add_to_incoming_network_queue_ipc_msg_t add_to_incoming_network_queue;
     mfglibInternalEnd_ipc_msg_t mfgEnd;
     mfglibInternalGetChannel_ipc_msg_t mfgGetChannel;
+    mfglibInternalGetCtune_ipc_msg_t mfgGetCtune;
     mfglibInternalGetOptions_ipc_msg_t mfgGetOptions;
     mfglibInternalGetPower_ipc_msg_t mfgGetPower;
     mfglibInternalGetSynOffset_ipc_msg_t mfgGetSynOffset;
     mfglibInternalSendPacket_ipc_msg_t mfgSendPacket;
     mfglibInternalSetChannel_ipc_msg_t mfgSetChannel;
+    mfglibInternalSetCtune_ipc_msg_t mfgSetCtune;
     mfglibInternalSetOptions_ipc_msg_t mfgSetOptions;
     mfglibInternalSetPower_ipc_msg_t mfgSetPower;
     mfglibInternalSetSynOffset_ipc_msg_t mfgSetSynOffset;

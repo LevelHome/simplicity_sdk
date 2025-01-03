@@ -26,6 +26,8 @@
 #endif // SL_CATALOG_ZIGBEE_DEBUG_PRINT_PRESENT
 #ifdef SL_CATALOG_ZIGBEE_DISPLAY_PRESENT
 #include "app/framework/plugin/dmp-ui-demo/sl_dmp_ui.h"
+#else // SL_CATALOG_ZIGBEE_DISPLAY_PRESENT
+#include "sl_dmp_ui_stub.h"
 #endif // SL_CATALOG_ZIGBEE_DISPLAY_PRESENT
 #ifdef SL_CATALOG_ZIGBEE_DIRECT_TUNNELING_PRESENT
 #include "zigbee_direct_tunneling.h"
@@ -100,8 +102,8 @@ bool form_in_process = false;
 bool sli_zd_admin_key_provided_when_joining = false;
 bool advertisements_enabled = false;
 uint8_t admin_key[16];
-extern uint8_t  appResponseData[SL_ZIGBEE_AF_RESPONSE_BUFFER_LEN];
 extern uint8_t sl_zigbee_get_nwk_update_id(void);
+sl_802154_long_addr_t zdd_eui;
 
 // to convert hex number to its ascii character
 uint8_t ascii_lut[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
@@ -375,10 +377,6 @@ void bleConnectionInfoTablePrintEntry(uint8_t index)
 void enableBleAdvertisements(void)
 {
   sl_status_t status;
-  int16_t min_tx_power_set_value = 100;
-  int16_t min_tx_power_get_value = 0xFF;
-  int16_t max_tx_power_set_value = 100;
-  int16_t max_tx_power_get_value = 0xFF;
 
   advertisements_enabled = true;
 
@@ -389,14 +387,6 @@ void enableBleAdvertisements(void)
   uint8_t type;
   bd_addr ble_address;
   static char devName[DEVNAME_LEN];
-
-  /* Set transmit power to 0 dBm */
-  status = sl_bt_system_set_tx_power(min_tx_power_set_value, max_tx_power_set_value, &min_tx_power_get_value, &max_tx_power_get_value);
-  if ( status != SL_STATUS_OK ) {
-    sl_zigbee_core_debug_println("Unable to set min Tx Power to %d, max power to %d. Error code: %02X", min_tx_power_get_value, max_tx_power_get_value, status);
-    return;
-  }
-  sl_zigbee_core_debug_println("Set Min Tx Power to %d.", min_tx_power_get_value);
 
   status = sl_bt_system_get_identity_address(&ble_address, &type);
   if ( status != SL_STATUS_OK ) {
@@ -462,8 +452,13 @@ void enableBleAdvertisements(void)
     return;
   }
   /* Start advertising in user mode and enable connections*/
-  status = sl_bt_legacy_advertiser_start(adv_handle[HANDLE_ZIGBEE_DIRECT],
-                                         sl_bt_advertiser_connectable_scannable);
+  if (bleConnectionTable[0].inUse == false) { //todo support more than a single global BLE connection
+    status = sl_bt_legacy_advertiser_start(adv_handle[HANDLE_ZIGBEE_DIRECT],
+                                           sl_bt_advertiser_connectable_scannable);
+  } else {
+    status = sl_bt_legacy_advertiser_start(adv_handle[HANDLE_ZIGBEE_DIRECT],
+                                           sl_bt_legacy_advertiser_non_connectable);
+  }
   if ( status ) {
     sl_zigbee_core_debug_println("sl_bt_legacy_advertiser_start ERROR : status = 0x%0X", status);
   } else {
@@ -514,16 +509,13 @@ void sl_bt_on_event(sl_bt_msg_t* evt)
       bd_addr ble_address;
       uint8_t type;
       sl_status_t status = sl_bt_system_hello();
-      sl_zigbee_core_debug_println("BLE hello: %s",
+      sl_zigbee_core_debug_println("BLE: %s",
                                    (status == SL_STATUS_OK) ? "success" : "error");
 
       status = sl_bt_system_get_identity_address(&ble_address, &type);
       zb_ble_dmp_print_ble_address(ble_address.addr);
 
-      status = sl_bt_advertiser_create_set(&adv_handle[HANDLE_ZIGBEE_DIRECT]);
-      if (status) {
-        sl_zigbee_core_debug_println("sl_bt_advertiser_create_set status 0x%02X", status);
-      }
+      sl_bt_advertiser_create_set(&adv_handle[HANDLE_ZIGBEE_DIRECT]);
 
       enableBleAdvertisements();
     }
@@ -545,6 +537,8 @@ void sl_bt_on_event(sl_bt_msg_t* evt)
                       conn_evt->address.addr, 6);
 
         activeBleConnections++;
+        uint16_t max_mtu_out;
+        sl_bt_gatt_server_set_max_mtu(250, &max_mtu_out);
         //preferred phy 1: 1M phy, 2: 2M phy, 4: 125k coded phy, 8: 500k coded phy
         //accepted phy 1: 1M phy, 2: 2M phy, 4: coded phy, ff: any
         sl_bt_connection_set_preferred_phy(conn_evt->connection, sl_bt_gap_phy_1m, 0xff);
@@ -568,10 +562,11 @@ void sl_bt_on_event(sl_bt_msg_t* evt)
       sl_bt_evt_connection_phy_status_t *conn_evt =
         (sl_bt_evt_connection_phy_status_t *)&(evt->data);
       // indicate the PHY that has been selected
-      sl_zigbee_core_debug_println("Now using the %d PHY",
+      sl_zigbee_core_debug_println("Now using the %d MBit PHY",
                                    conn_evt->phy);
     }
     break;
+
     case sl_bt_evt_connection_closed_id: {
       sl_bt_evt_connection_closed_t *conn_evt =
         (sl_bt_evt_connection_closed_t*) &(evt->data);
@@ -596,13 +591,12 @@ void sl_bt_on_event(sl_bt_msg_t* evt)
       sl_bt_evt_connection_parameters_t* param_evt =
         (sl_bt_evt_connection_parameters_t*) &(evt->data);
       sl_zigbee_core_debug_println(
-        "BLE connection parameters are updated, handle=0x%02x, interval=0x%04x, latency=0x%04x, timeout=0x%04x, security=0x%02x, txsize=0x%04x",
+        "BLE connection parameters are updated, handle=0x%02x, interval=0x%04x, latency=0x%04x, timeout=0x%04x, security=0x%02x",
         param_evt->connection,
         param_evt->interval,
         param_evt->latency,
         param_evt->timeout,
-        param_evt->security_mode,
-        param_evt->txsize);
+        param_evt->security_mode);
       sl_dmp_ui_bluetooth_connected(true);
     }
     break;
@@ -951,6 +945,7 @@ void sli_zigbee_af_zdd_application_init(uint8_t init_level)
     {
       sl_zigbee_af_event_init(&zb_stack_event, zb_stack_event_handler);
       sl_zigbee_af_event_set_inactive(&zb_stack_event);
+      memcpy(zdd_eui, sl_zigbee_get_eui64(), EUI64_SIZE);
       break;
     }
 
@@ -1002,10 +997,10 @@ static uint8_t sl_generate_commissioning_status(uint8_t *data)
   status = sl_zigbee_get_current_security_state(&securityState);
   sl_zigbee_core_debug_println("Reading security state with %02X", status);
   if (status == SL_STATUS_OK) {
-    sl_zigbee_core_debug_println("SECURITY STATE IS %2X", securityState.bitmask);
+    sl_zigbee_core_debug_println("SECURITY STATE IS %04X", securityState.bitmask);
     if ((securityState.bitmask & SL_ZIGBEE_DISTRIBUTED_TRUST_CENTER_MODE) == 0x00) {
       temp = securityState.bitmask & SL_ZIGBEE_DISTRIBUTED_TRUST_CENTER_MODE;
-      sl_zigbee_core_debug_println("Setting bit %2X", temp);
+      sl_zigbee_core_debug_println("Setting bit %04X", temp);
       data[counter] |= 0x10;
     }
   }
@@ -1196,11 +1191,12 @@ static void send_network_status_notification(uint8_t connection)
 
   sl_zigbee_app_debug_print("Preparing to send Notification to gattdb_commissioning_Status");
   for (uint8_t i = 4; i < sl_length_of_network_status + 4; i++) {
-    sl_zigbee_app_debug_print(" %02X ", sl_response[i]);
+    sl_zigbee_app_debug_print(" %02X", sl_response[i]);
   }
   sl_zigbee_app_debug_println("");
 
   status = sl_zigbee_direct_security_encrypt_packet(sl_zigbee_get_eui64(), &sl_response[4], sl_length_of_network_status, gattdb_commissioning_status);
+
   if (status != SL_STATUS_OK) {
     return;
   }
@@ -1361,10 +1357,10 @@ static void sli_zigbee_direct_extract_data_from_tlvs_buf(uint8_t* buffer_ptr, ui
 
   if (sl_zigbee_tlv_search_buffer_payload_for_id(len, buffer_ptr, 0, SL_ZIGBEE_DIRECT_TLV_PAN_ID_TAG_ID, (sl_zigbee_tlv_t *) &sl_tlv_pointer1, len) == SL_STATUS_OK) {
     sl_zigbee_direct_network_params.panId = sl_util_fetch_low_high_int16u(&sl_tlv_pointer1.value[0]);
-    sl_zigbee_app_debug_println("Found PAN ID: %2X", sl_zigbee_direct_network_params.panId);
+    sl_zigbee_app_debug_println("Found PAN ID: %04X", sl_zigbee_direct_network_params.panId);
   } else {
     sl_zigbee_direct_network_params.panId = sl_zigbee_get_pseudo_random_number();
-    sl_zigbee_app_debug_println("Set random PAN ID: %2X", sl_zigbee_direct_network_params.panId);
+    sl_zigbee_app_debug_println("Set random PAN ID: %04X", sl_zigbee_direct_network_params.panId);
   }
 
   if (sl_zigbee_tlv_search_buffer_payload_for_id(len, buffer_ptr, 0, SL_ZIGBEE_DIRECT_TLV_EXTENDED_PAN_ID_TAG_ID, (sl_zigbee_tlv_t *) &sl_tlv_pointer1, len) == SL_STATUS_OK) {
@@ -1500,7 +1496,7 @@ static uint8_t sli_zigbee_direct_form_network(sl_zigbee_tlv_tag_list* tlvs_for_f
         uint16_t my_node_id;
         my_node_id = sl_util_fetch_low_high_int16u(&sl_tlv_pointer1.value[0]);
         sl_zigbee_set_node_id(my_node_id);
-        sl_zigbee_app_debug_println("found nwk address %2X", my_node_id);
+        sl_zigbee_app_debug_println("found nwk address %04X", my_node_id);
       }
     } else {  //centralized security
               //error out in case we received non-Wildcard TC Address TLV
@@ -1509,9 +1505,8 @@ static uint8_t sli_zigbee_direct_form_network(sl_zigbee_tlv_tag_list* tlvs_for_f
         return SL_ZIGBEE_DIRECT_STATUS_CODE_ERROR;
       }
     }
-
     memmove(sli_zigbee_af_extended_pan_id, sl_zigbee_direct_network_params.extendedPanId, EXTENDED_PAN_ID_SIZE);
-    sli_zigbee_af_network_creator_primary_channel_mask = sl_my_channelMask;
+    sli_zigbee_af_network_creator_primary_channel_mask = sl_my_channelMask;  // 0x00001000;
     sli_zigbee_af_network_creator_secondary_channel_mask = 0;
     sl_zigbee_set_nwk_update_id(sl_zigbee_direct_network_params.nwkUpdateId, FALSE);
 
@@ -1716,7 +1711,7 @@ uint32_t sl_zigbee_af_zigbee_direct_cluster_server_command_parse(sl_service_opco
   // in centralized nwk we need APs crypto and unicast from COO
   if (!(my_security_state.bitmask & SL_ZIGBEE_DISTRIBUTED_TRUST_CENTER_MODE)) {
     if (!((cmd->apsFrame->options & SL_ZIGBEE_APS_OPTION_ENCRYPTION) && (cmd->source == 0x00))) {
-      sl_zigbee_app_debug_println("Centralized network and not unicast or not from COO, but %2X with %2X", cmd->source, cmd->apsFrame->options);
+      sl_zigbee_app_debug_println("Centralized network and not unicast or not from COO, but %04X with %04X", cmd->source, cmd->apsFrame->options);
       sl_zigbee_af_send_default_response(cmd, SL_ZIGBEE_ZCL_STATUS_NOT_AUTHORIZED);
       return SL_ZIGBEE_ZCL_STATUS_NOT_AUTHORIZED;
     }
@@ -1845,7 +1840,7 @@ bool sl_zigbee_af_pre_command_received_callback_z_d_d(sl_zigbee_af_cluster_comma
       //must be unicast from TC and APS encrypted
       if (!((cmd->apsFrame->options & SL_ZIGBEE_APS_OPTION_ENCRYPTION) && (cmd->source == 0x0000))) {
         sl_zigbee_af_send_default_response(cmd, SL_ZIGBEE_ZCL_STATUS_NOT_AUTHORIZED);
-        sl_zigbee_app_debug_println("Dropping message because no aps encryption and no TC, but %2X %2X", cmd->source, cmd->apsFrame->options);
+        sl_zigbee_app_debug_println("Dropping message because no aps encryption and no TC, but %04X %04X", cmd->source, cmd->apsFrame->options);
         authorized_read = false;
         return false;
       }
@@ -1943,6 +1938,7 @@ void sli_zigbee_af_plugin_zdd_stack_status_callback(sl_status_t status)
       break;
 
     default:
+      return;
       break;
   }
 
@@ -1952,9 +1948,9 @@ void sli_zigbee_af_plugin_zdd_stack_status_callback(sl_status_t status)
                                    0,  //advertising packets
                                    sizeof(sli_zigbee_direct_ad_data),
                                    (uint8_t*) &sli_zigbee_direct_ad_data);
+
   send_network_status_notification(0xFF); //send to all connected devices
 
-  sl_zigbee_app_debug_println("Un-Setting Form in Process");
   form_in_process = false;
   sli_zd_admin_key_provided_when_joining = false;
   return;

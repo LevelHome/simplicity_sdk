@@ -21,3 +21,6 @@ requires:
   - name: bootloader_aes_sha_ecdsa
   - name: bootloader_token_management
   - name: bootloader_include_parser
+metadata:
+  sbom:
+    license: MSLA

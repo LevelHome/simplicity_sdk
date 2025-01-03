@@ -32,6 +32,7 @@ requires:
   - name: slist
   - name: memory_manager
   - name: power_manager
+  - name: sl_core
 root_path: app/common/util/app_rta
 include:
   - path: inc

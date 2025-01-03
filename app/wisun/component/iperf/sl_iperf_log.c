@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_iperf_log.c
+ * @brief Iperf log
  *******************************************************************************
  * # License
  * <b>Copyright 2022 Silicon Laboratories Inc. www.silabs.com</b>
@@ -31,7 +31,6 @@
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
-
 #include <stdio.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -42,7 +41,6 @@
 #include "sl_iperf_types.h"
 #include "sl_iperf_log.h"
 #include "sl_iperf_config.h"
-
 // -----------------------------------------------------------------------------
 //                          Static Function Declarations
 // -----------------------------------------------------------------------------
@@ -146,6 +144,10 @@ bool sl_iperf_log_buff_is_full(sl_iperf_log_t * const log)
   return log == NULL ? false : (bool)(log->buff.pos >= (log->buff.buff + log->buff.size));
 }
 
+// -----------------------------------------------------------------------------
+//                          Static Function Definitions
+// -----------------------------------------------------------------------------
+
 static int32_t _def_log_print(sl_iperf_log_t * const log, const char * format, ...)
 {
   va_list args;
@@ -175,10 +177,6 @@ static int32_t _def_log_print(sl_iperf_log_t * const log, const char * format, .
   va_end(args);
   return res;
 }
-
-// -----------------------------------------------------------------------------
-//                          Static Function Definitions
-// -----------------------------------------------------------------------------
 
 __STATIC_INLINE void _set_log_buff(sl_iperf_log_t * const log, char * const buff, const size_t size)
 {

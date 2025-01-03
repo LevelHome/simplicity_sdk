@@ -33,6 +33,14 @@ from PIL import Image, ImageOps, ImageDraw, ImageFont
 import io
 import os
 from sys import exit as sys_exit
+from air_compressor import AirCompressor
+from ap_constants import (
+    ESL_IMAGE_FLAGS_FORMAT_LZJB,
+    ESL_DISPLAY_TYPE_BLACK_WHITE,
+    ESL_DISPLAY_TYPE_RED_BLACK_WHITE,
+    ESL_DISPLAY_TYPE_YELLOW_BLACK_WHITE,
+    ESL_DISPLAY_TYPE_FULL_RGB,
+)
 
 # default configuration
 CONF_EPD_DISPLAY_SIZE = (416, 240)
@@ -177,8 +185,8 @@ class XbmConverter:
 
     def convert(
         self,
+        esl_display_type=ESL_DISPLAY_TYPE_BLACK_WHITE,
         display_size=CONF_WSTK_DISPLAY_SIZE,
-        bw=True,
         bitflip=None,
         rotation=CONF_ROTATION,
         cropfit=False,
@@ -186,23 +194,24 @@ class XbmConverter:
         label=None,
         fontsize=CONF_DEFAULT_FONTSIZE,
         write_raw=False,
+        img_fmt=None,
     ):
         """Convert image to byte stream of adjacent frames with 1bit/pixel representation for each output color"""
-        if bw:
+        if esl_display_type == ESL_DISPLAY_TYPE_BLACK_WHITE:
             image_palette = self.DISPLAY_WSTK_PALETTE
             if display_size == CONF_WSTK_DISPLAY_SIZE and bitflip is None:
                 bitflip = True  # only WSTK memory LCD needs bit flipping
-        else:
+        elif esl_display_type == ESL_DISPLAY_TYPE_RED_BLACK_WHITE:
             image_palette = self.DISPLAY_EPD_PALETTE
+        elif esl_display_type == ESL_DISPLAY_TYPE_YELLOW_BLACK_WHITE:
+            image_palette = self.DISPLAY_EPD_4_PALETTE
 
         color_count = int(len(image_palette) // 3)
         color_max_index = color_count - 1
 
         # create the quantizer base object
         pal_image = Image.new("P", (1, len(image_palette) // 3))
-        pal_image.putpalette(
-            image_palette + image_palette[0:3] * (256 - color_count)
-        )
+        pal_image.putpalette(image_palette + image_palette[0:3] * (256 - color_count))
 
         # get a font
         fnt = ImageFont.truetype(
@@ -214,7 +223,21 @@ class XbmConverter:
             return bytearray()
 
         if rotation is not None:
-            self.image = self.image.transpose(rotation)
+            rotation = rotation % 360
+            if rotation != 0:
+                if rotation == 90:
+                    rotation = Image.ROTATE_90
+                elif rotation == 180:
+                    rotation = Image.ROTATE_180
+                elif rotation == 270:
+                    rotation = Image.ROTATE_270
+                else:
+                    rotation = 0
+                    self.log.warning(
+                        "Unsupported rotation request ignored: %d!", rotation
+                    )
+            if rotation:
+                self.image = self.image.transpose(rotation)
 
         # do some auto adjustment for normalized results
         display_image = Image.new("RGBA", self.image.size, image_palette[0:3])
@@ -264,7 +287,9 @@ class XbmConverter:
             display_image.putpalette(temp_palette)
             frames.append(display_image.convert("1"))
 
-        if not bw:
+        if (
+            esl_display_type != ESL_DISPLAY_TYPE_BLACK_WHITE
+        ):  # if not a simple, black and white target
             image_size = tuple(map(mul, display_size, (1, color_max_index)))
         else:
             image_size = display_size
@@ -276,7 +301,10 @@ class XbmConverter:
         for i, frame in enumerate(frames):
             self.image_out.paste(frame, (0, i * frame.height))
 
-        if display_size != CONF_WSTK_DISPLAY_SIZE or bw is not True:
+        if (
+            display_size != CONF_WSTK_DISPLAY_SIZE
+            or esl_display_type != ESL_DISPLAY_TYPE_BLACK_WHITE
+        ):
             self.image_out = ImageOps.invert(self.image_out)
 
         self.image_out = self.image_out.convert("1")
@@ -285,7 +313,11 @@ class XbmConverter:
             rawimage = self.reverse_bits(self.image_out.tobytes())
             self.image_out.frombytes(rawimage, decoder_name="raw")
 
-        self.raw_image = self.pixel_list_to_bytes(list(self.image_out.getdata()))
+        if img_fmt == ESL_IMAGE_FLAGS_FORMAT_LZJB:
+            image_bytes = self.pixel_list_to_bytes(list(self.image_out.getdata()))
+            self.raw_image = bytes(AirCompressor.shrink(bytearray(image_bytes)))
+        else:
+            self.raw_image = self.pixel_list_to_bytes(list(self.image_out.getdata()))
 
         if write_raw:
             self.save_to_raw(self.file_name)
@@ -312,12 +344,14 @@ class checked_range(object):
 
 
 def readable_file(path_str):
-  if not os.path.isfile(path_str):
-    raise argparse.ArgumentTypeError("'{0}' is not a valid file!".format(path_str))
-  if os.access(path_str, os.R_OK):
-    return path_str
-  else:
-    raise argparse.ArgumentTypeError("'{0}' is not a readable file!".format(prospective_dir))
+    if not os.path.isfile(path_str):
+        raise argparse.ArgumentTypeError("'{0}' is not a valid file!".format(path_str))
+    if os.access(path_str, os.R_OK):
+        return path_str
+    else:
+        raise argparse.ArgumentTypeError(
+            "'{0}' is not a readable file!".format(prospective_dir)
+        )
 
 
 def main():
@@ -400,15 +434,18 @@ Supports the most popular image formats as input images.
         help="Caption to be written over the image. Use quotation marks if it includes spaces or line breaks.",
     )
     parser.add_argument(
-        "--blackwhite",
-        "-bw",
-        action="store_true",
-        help="Converts to black and white (default: B/W + red).",
+        "--displaytype",
+        "-t",
+        metavar="<8>",
+        choices=checked_range(ESL_DISPLAY_TYPE_BLACK_WHITE, ESL_DISPLAY_TYPE_FULL_RGB),
+        type=int,
+        default=ESL_DISPLAY_TYPE_BLACK_WHITE,
+        help="Converts to the target display_type (default: B/W, ESL Assigned Number: 0x01).",
     )
     parser.add_argument(
         "--bitflip",
         "-br",
-        action="store_true",
+        action=argparse.BooleanOptionalAction,
         help="Do bit order reversal within the data bytes for e.g. WSTK B/W images.",
     )
     parser.add_argument(
@@ -417,13 +454,20 @@ Supports the most popular image formats as input images.
         action="store_true",
         help="Fit the image to the display proportions by cropping.",
     )
+    parser.add_argument(
+        "--compressed",
+        "-lz",
+        action="store_const",
+        const=ESL_IMAGE_FLAGS_FORMAT_LZJB,
+        help="Turn on custom LZ image compression for Silabs ESL image target.",
+    )
     # Add mutually exclusive optional arguments for rotation
     parser_image_rotator_group = parser.add_mutually_exclusive_group()
     parser_image_rotator_group.add_argument(
         "--cw",
         "-rr",
         action="store_const",
-        const=Image.ROTATE_270,
+        const=270,
         dest="rotation",
         help="Clockwise (right) rotation.",
     )
@@ -431,7 +475,7 @@ Supports the most popular image formats as input images.
         "--ccw",
         "-rl",
         action="store_const",
-        const=Image.ROTATE_90,
+        const=90,
         dest="rotation",
         help="Counter clockwise (left) rotation.",
     )
@@ -439,22 +483,21 @@ Supports the most popular image formats as input images.
         "--flip",
         "-f",
         action="store_const",
-        const=Image.ROTATE_180,
+        const=180,
         dest="rotation",
         help="Turn the image upside down.",
     )
-
     args = parser.parse_args()
     img = XbmConverter()
     # Open image file
-    file = args.imagefile_path # create a shorter alias
+    file = args.imagefile_path  # create a shorter alias
     img.open(file)
     # Convert into a byte stream of adjacent frames with 1bit/pixel representation for each color
     log.info("Converting image: " + file)
     print(args)
     xbm = img.convert(
+        args.displaytype,
         (args.width, args.height),
-        args.blackwhite,
         args.bitflip,
         args.rotation,
         args.cropfit,
@@ -462,6 +505,7 @@ Supports the most popular image formats as input images.
         args.label,
         args.fontsize,
         False,
+        args.compressed,
     )
     log.info("The conversion is done. Now save in different formats:")
     img.save_to_png(file)

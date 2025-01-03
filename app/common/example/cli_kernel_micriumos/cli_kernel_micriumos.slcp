@@ -19,8 +19,8 @@ source:
 include:
   - path: .
     file_list:
-    - path: app.h
-    - path: cli.h
+      - path: app.h
+      - path: cli.h
 component:
   - id: sl_system
   - id: device_init
@@ -28,14 +28,11 @@ component:
   - id: micriumos_kernel
   - id: cli
     instance: [inst]
-  - id: simple_led
-    instance:
-        - led0
-        - led1
+  - id: simple_led_recommended_instance
   - id: sleeptimer
   - id: iostream_stdlib_config
   - id: iostream_retarget_stdio
-  - id: iostream_recommended_stream
+  - id: iostream_recommended_console
 define:
   - name: DEBUG_EFM
 readme:
@@ -43,7 +40,6 @@ readme:
 ui_hints:
   highlight: readme.md
 tag:
-  - hardware:component:led:2+
   - hardware:device:ram:20
 configuration:
   - name: SL_BOARD_ENABLE_VCOM

@@ -110,7 +110,7 @@ void sli_zigbee_af_ota_server_dynamic_block_period_tick()
                         - downloadingNodes[nodeIndex].msTickWhenLastSeen)
                        / MILLISECOND_TICKS_PER_SECOND;
       if (secondsElapsed >= SL_ZIGBEE_AF_PLUGIN_OTA_SERVER_DYNAMIC_CLIENT_TIMEOUT_SEC) {
-        debugPrintln("OTA: purging 0x%2X from active downloads due to "
+        debugPrintln("OTA: purging 0x%04X from active downloads due to "
                      "inactivity",
                      downloadingNodes[nodeIndex].nodeId);
         downloadingNodes[nodeIndex].nodeId = SL_ZIGBEE_NULL_NODE_ID;
@@ -148,11 +148,11 @@ uint8_t sli_zigbee_af_ota_server_check_dynamic_block_period_download(sl_zigbee_a
                          / MILLISECOND_TICKS_PER_SECOND;
         if (secondsElapsed > threshold) {
           downloadingNodes[nodeIndex].unitDiscoveryState = STATE_USES_SECONDS;
-          debugPrintln("OTA client 0x%2X uses seconds",
+          debugPrintln("OTA client 0x%04X uses seconds",
                        downloadingNodes[nodeIndex].nodeId);
         } else {
           downloadingNodes[nodeIndex].unitDiscoveryState = STATE_USES_MS;
-          debugPrintln("OTA client 0x%2X uses milliseconds",
+          debugPrintln("OTA client 0x%04X uses milliseconds",
                        downloadingNodes[nodeIndex].nodeId);
         }
       }

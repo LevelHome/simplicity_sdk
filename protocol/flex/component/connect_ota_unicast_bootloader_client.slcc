@@ -1,6 +1,6 @@
 id: "connect_ota_unicast_bootloader_client"
 label: "OTA Unicast Bootloader Client"
-package: "Flex"
+package: "Connect"
 category: "Connect|OTA"
 quality: "production"
 description: "Implements the client side of the Connect OTA Unicast Bootloader protocol. The OTA Unicast Bootloader Client component should be used to receive an image from an OTA Unicast Bootloader server, to be instructed by a server to perform a bootload at a certain time in the future."

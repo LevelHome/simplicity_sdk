@@ -28,9 +28,10 @@
  *
  ******************************************************************************/
 #include <stdbool.h>
-#include "em_core.h"
+#include "sl_core.h"
 #include "sl_bt_ncp_host.h"
-#include "sl_simple_com.h"
+#include "sl_bt_ncp_transport.h"
+#include "sli_bt_ncp_transport.h"
 #include "sl_ncp_host_com.h"
 #include "app_assert.h"
 #include "sl_component_catalog.h"
@@ -38,7 +39,7 @@
 #include "sl_wake_lock.h"
 #endif // SL_CATALOG_WAKE_LOCK_PRESENT
 
-// Uart reception buffer
+// Reception buffer
 typedef struct {
   uint16_t len;
   uint8_t buf[SL_NCP_HOST_COM_BUF_SIZE];
@@ -66,9 +67,9 @@ void sl_ncp_host_com_init(void)
 /**************************************************************************//**
  * Transmit function
  *
- * Transmits len bytes of data from adaptation layer through Uart interface.
+ * Transmits len bytes of data from adaptation layer through transport layer.
  *
- * @param[out] len Message lenght
+ * @param[out] len Message length
  * @param[out] data Message data
  *
  * @note After transmit the reception is automatically started.
@@ -80,20 +81,22 @@ void sl_ncp_host_com_write(uint32_t len, uint8_t *data)
   // Wake up other controller
   sl_wake_lock_set_remote_req();
   #endif // SL_CATALOG_WAKE_LOCK_PRESENT
-  sl_simple_com_transmit(len, data);
+  sl_bt_ncp_transport_transmit(len, data);
   while (!write_completed) {
-    sl_simple_com_step();
+    sli_bt_ncp_transport_step();
   }
   // Start to receive the response as soon as the transmit is completed
-  sl_simple_com_receive();
+  sl_bt_ncp_transport_receive();
+  // Execute receive request
+  sli_bt_ncp_transport_step();
 }
 
 /**************************************************************************//**
  * Receive function
  *
- * Copies received data from Uart interface to adaptation layer
+ * Copies received data from transport layer to adaptation layer
  *
- * @param[out] len Message lenght
+ * @param[out] len Message length
  * @param[out] data Message data
  *
  * @return Received message length
@@ -101,9 +104,11 @@ void sl_ncp_host_com_write(uint32_t len, uint8_t *data)
 int32_t sl_ncp_host_com_read(uint32_t len, uint8_t *data)
 {
   (void)data;
+  // Handle receive
+  sli_bt_ncp_transport_step();
   CORE_DECLARE_IRQ_STATE;
   CORE_ENTER_ATOMIC();
-  // Check if there is data in the buffer from Uart
+  // Check if there is data in the buffer from transport layer
   if (len <= buf.len) {
     // Copy data to adaptation layer
     memcpy((void *)data, (void *)buf.buf, (size_t)len);
@@ -119,27 +124,29 @@ int32_t sl_ncp_host_com_read(uint32_t len, uint8_t *data)
 /**************************************************************************//**
  * Gives back already received message length.
  *
- * This function checks if data arrived from Uart interface. This way the calls
+ * This function checks if data arrived from transport layer. This way the calls
  * can be non blocking.
  *
- * @param[out] len Message lenght
+ * @param[out] len Message length
  * @param[out] data Message data
  *
  * @return Buffer length
  *****************************************************************************/
 int32_t sl_ncp_host_com_peek(void)
 {
+  // Handle receive
+  sli_bt_ncp_transport_step();
   return buf.len;
 }
 
 /**************************************************************************//**
- * Uart transmit completed callback
+ * Transmit completed callback
  *
- * Called after Uart transmit is finished.
+ * Called after transmission is finished.
  *
  * @param[in] status Status of the transmission
  *****************************************************************************/
-void sl_simple_com_transmit_cb(sl_status_t status)
+void sl_bt_ncp_transport_on_transmit(sl_status_t status)
 {
   (void)status;
 
@@ -152,18 +159,18 @@ void sl_simple_com_transmit_cb(sl_status_t status)
 }
 
 /**************************************************************************//**
- * Uart receive completed callback
+ * Receive completed callback
  *
- * Called after Uart receive is finished. Puts the message to the reception
+ * Called after reception is finished. Puts the message to the reception
  * buffer.
  *
  * @param[in] status Status of the reception
  * @param[in] len Received message length
  * @param[in] data Data received
  *****************************************************************************/
-void sl_simple_com_receive_cb(sl_status_t status,
-                              uint32_t len,
-                              uint8_t *data)
+void sl_bt_ncp_transport_on_receive(sl_status_t status,
+                                    uint32_t len,
+                                    uint8_t *data)
 {
   (void)status;
   CORE_DECLARE_IRQ_STATE;

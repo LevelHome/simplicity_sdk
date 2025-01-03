@@ -105,11 +105,11 @@
 #define IOT_UART_CFG_LOOPBACK_PERIPHERAL_NO      0
 
 // USART0 TX on PD07
-#define IOT_UART_CFG_LOOPBACK_TX_PORT            gpioPortD
+#define IOT_UART_CFG_LOOPBACK_TX_PORT            SL_GPIO_PORT_D
 #define IOT_UART_CFG_LOOPBACK_TX_PIN             7
 
 // USART0 RX on PD08
-#define IOT_UART_CFG_LOOPBACK_RX_PORT            gpioPortD
+#define IOT_UART_CFG_LOOPBACK_RX_PORT            SL_GPIO_PORT_D
 #define IOT_UART_CFG_LOOPBACK_RX_PIN             8
 
 

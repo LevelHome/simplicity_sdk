@@ -4,6 +4,11 @@ description: Radio Abstraction Interface Library (RAIL) Supported Features
 package: platform
 category: Platform|Radio
 quality: production
+metadata:
+  sbom:
+    id: rail_util_features
+    name: RAIL Library Features, Core
+    license: MSLA
 ui_hints:
   visibility: never
 provides:
@@ -359,10 +364,13 @@ provides:
  
   - name: rail_ieee802154_supports_rx_channel_switching
     condition:
-      - device_sdid_200 
+      - device_sdid_200
   - name: rail_ieee802154_supports_rx_channel_switching
     condition:
       - device_sdid_215
+  - name: rail_ieee802154_supports_rx_channel_switching
+    condition:
+      - device_sdid_225
  
   - name: rail_ieee802154_supports_fem_phy
     condition:

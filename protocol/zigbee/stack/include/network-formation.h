@@ -34,7 +34,9 @@
  * Device configuration functions must be called before ::sl_zigbee_init()
  * is called.
  *
- * @note The application must check the return value of this function. If the
+ * @note Users do not normally need to call this API, as the Applicaton Framework
+ * code automatically calls this routine upon startup.
+ * The application must check the return value of this function. If the
  * initialization fails, normal messaging functions will not be available.
  * Some failure modes are not fatal, but the application must follow certain
  * procedures to permit recovery.
@@ -50,6 +52,9 @@ sl_status_t sl_zigbee_init(void);
  * - in the application's main event loop,
  * - as soon as possible after any radio interrupts, and
  * - after ::sl_zigbee_init().
+ *
+ * @note Users do not normally need to call this API, as the Applicaton Framework
+ * code automatically calls this routine upon startup.
  */
 void sl_zigbee_tick(void);
 

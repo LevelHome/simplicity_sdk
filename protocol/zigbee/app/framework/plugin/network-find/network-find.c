@@ -177,7 +177,7 @@ void sli_zigbee_af_network_find_unused_pan_id_found_callback(sl_802154_pan_id_t 
 
   status = sl_zigbee_af_form_network(&networkParams);
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_app_println("%s error 0x%X %s", "Form",
+    sl_zigbee_af_app_println("%s error 0x%02X %s", "Form",
                              status,
                              "aborting");
     sl_zigbee_af_app_flush();
@@ -210,7 +210,7 @@ void sl_zigbee_af_joinable_network_found_cb(sl_zigbee_zigbee_network_t *networkF
     networkParams.radioChannel = networkFound->channel;
     networkParams.radioTxPower = GET_RADIO_TX_POWER(networkFound->channel);
 
-    sl_zigbee_af_app_println("Nwk found, ch %d, panId 0x%2X, joining",
+    sl_zigbee_af_app_println("Nwk found, ch %d, panId 0x%04X, joining",
                              networkFound->channel,
                              networkFound->panId);
 
@@ -222,7 +222,7 @@ void sl_zigbee_af_joinable_network_found_cb(sl_zigbee_zigbee_network_t *networkF
   // sl_zigbee_scan_for_next_joinable_network) because that's the function that called
   // this handler in the first place, and we don't want to recurse.
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_app_println("%s error 0x%X, %s",
+    sl_zigbee_af_app_println("%s error 0x%02X, %s",
                              "Join",
                              status,
                              "aborting");
@@ -359,7 +359,7 @@ void sli_zigbee_af_network_find_scan_error_callback(sl_status_t status)
 #endif
     // default case to print out error
     default:
-      sl_zigbee_af_core_println("%s error 0x%X", "Scan", status);
+      sl_zigbee_af_core_println("%s error 0x%02X", "Scan", status);
   }
   sl_zigbee_af_core_flush();
   state = NETWORK_FIND_NONE;

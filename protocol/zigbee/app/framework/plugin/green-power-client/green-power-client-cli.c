@@ -127,12 +127,12 @@ void sl_zigbee_af_green_power_client_print_proxy_table(SL_CLI_COMMAND_ARG)
   sl_zigbee_af_green_power_cluster_print("Proxy Table:\n");
   for (i = 0; i < sli_zigbee_gp_proxy_table_size; i++) {
     if (sli_zigbee_gp_proxy_table_entry_in_use(i)) {
-      sl_zigbee_af_core_print("%d opt:%4x seco:%x srcID:%4x ", i, sli_zigbee_gp_proxy_table[i].options, sli_zigbee_gp_proxy_table[i].securityOptions, sli_zigbee_gp_proxy_table[i].gpd.id.sourceId);
+      sl_zigbee_af_core_print("%d opt:%08X seco:%02X srcID:%08X ", i, sli_zigbee_gp_proxy_table[i].options, sli_zigbee_gp_proxy_table[i].securityOptions, sli_zigbee_gp_proxy_table[i].gpd.id.sourceId);
       for (j = 0; j < 2; j++) {
         if (sli_zigbee_gp_proxy_table[i].sinkList[j].type == SL_ZIGBEE_GP_SINK_TYPE_UNUSED) {
           sl_zigbee_af_core_print("unused");
         } else if (sli_zigbee_gp_proxy_table[i].sinkList[j].type == SL_ZIGBEE_GP_SINK_TYPE_GROUPCAST) {
-          sl_zigbee_af_core_print("GC %2x", sli_zigbee_gp_proxy_table[i].sinkList[j].target.groupcast.groupID);
+          sl_zigbee_af_core_print("GC %04X", sli_zigbee_gp_proxy_table[i].sinkList[j].target.groupcast.groupID);
         } else if (sli_zigbee_gp_proxy_table[i].sinkList[j].type == SL_ZIGBEE_GP_SINK_TYPE_LW_UNICAST) {
           sl_zigbee_af_core_print("LU:");
           sl_zigbee_af_print_big_endian_eui64(sli_zigbee_gp_proxy_table[i].sinkList[j].target.unicast.sinkEUI);
@@ -141,10 +141,10 @@ void sl_zigbee_af_green_power_client_print_proxy_table(SL_CLI_COMMAND_ARG)
       }
       sl_zigbee_af_core_print(" ");
       for (j = 0; j < SL_ZIGBEE_ENCRYPTION_KEY_SIZE; j++) {
-        sl_zigbee_af_core_print("%x", sli_zigbee_gp_proxy_table[i].gpdKey.contents[j]);
+        sl_zigbee_af_core_print("%02X", sli_zigbee_gp_proxy_table[i].gpdKey.contents[j]);
       }
       sl_zigbee_af_core_print(" ");
-      sl_zigbee_af_core_print("%x", sli_zigbee_gp_proxy_table[i].gpdSecurityFrameCounter);
+      sl_zigbee_af_core_print("%02X", sli_zigbee_gp_proxy_table[i].gpdSecurityFrameCounter);
       sl_zigbee_af_core_print("\n");
     } else {
       cleared++;
@@ -158,7 +158,7 @@ void sl_zigbee_af_green_power_client_print_proxy_table(SL_CLI_COMMAND_ARG)
   sl_zigbee_gp_proxy_table_entry_t entry;
   sl_status_t status = sl_zigbee_ezsp_get_configuration_value(SL_ZIGBEE_EZSP_CONFIG_GP_PROXY_TABLE_SIZE, (uint16_t*)&proxyTableSize);
   if (status != SL_ZIGBEE_EZSP_SUCCESS) {
-    sl_zigbee_af_green_power_cluster_println("ERR: Cannot get the proxy table size from GP stack, error code: %x", status);
+    sl_zigbee_af_green_power_cluster_println("ERR: Cannot get the proxy table size from GP stack, error code: %02X", status);
     return;
   }
   uint8_t i, j;
@@ -166,12 +166,12 @@ void sl_zigbee_af_green_power_client_print_proxy_table(SL_CLI_COMMAND_ARG)
   for (i = 0; i < proxyTableSize; i++) {
     sl_zigbee_gp_proxy_table_get_entry(i, &entry);
     if (entry.status == SL_ZIGBEE_GP_PROXY_TABLE_ENTRY_STATUS_ACTIVE) {
-      sl_zigbee_af_core_print("%d opt:%4x seco:%x srcID:%4x ", i, entry.options, entry.securityOptions, entry.gpd.id.sourceId);
+      sl_zigbee_af_core_print("%d opt:%08X seco:%02X srcID:%08X ", i, entry.options, entry.securityOptions, entry.gpd.id.sourceId);
       for (j = 0; j < 2; j++) {
         if (entry.sinkList[j].type == SL_ZIGBEE_GP_SINK_TYPE_UNUSED) {
           sl_zigbee_af_core_print("unused");
         } else if (entry.sinkList[j].type == SL_ZIGBEE_GP_SINK_TYPE_GROUPCAST) {
-          sl_zigbee_af_core_print("GC %2x", entry.sinkList[j].target.groupcast.groupID);
+          sl_zigbee_af_core_print("GC %04X", entry.sinkList[j].target.groupcast.groupID);
         } else if (entry.sinkList[j].type == SL_ZIGBEE_GP_SINK_TYPE_LW_UNICAST) {
           sl_zigbee_af_core_print("LU:");
           sl_zigbee_af_print_big_endian_eui64(entry.sinkList[j].target.unicast.sinkEUI);
@@ -180,10 +180,10 @@ void sl_zigbee_af_green_power_client_print_proxy_table(SL_CLI_COMMAND_ARG)
       }
       sl_zigbee_af_core_print(" ");
       for (j = 0; j < SL_ZIGBEE_ENCRYPTION_KEY_SIZE; j++) {
-        sl_zigbee_af_core_print("%x", entry.gpdKey.contents[j]);
+        sl_zigbee_af_core_print("%02X", entry.gpdKey.contents[j]);
       }
       sl_zigbee_af_core_print(" ");
-      sl_zigbee_af_core_print("%x", entry.gpdSecurityFrameCounter);
+      sl_zigbee_af_core_print("%02X", entry.gpdSecurityFrameCounter);
       sl_zigbee_af_core_print("\n");
     }
   }
@@ -228,4 +228,9 @@ void sl_zigbee_af_green_power_client_spoof_dev_annce(SL_CLI_COMMAND_ARG)
   sli_zigbee_af_gp_spoof_device_annce(nodeId,
                                       eui64,
                                       capabilities);
+}
+void sl_zigbee_af_green_power_client_clear_proxy_table_command(SL_CLI_COMMAND_ARG)
+{
+  (void) arguments;
+  sl_zigbee_af_green_power_client_clear_proxy_table();
 }

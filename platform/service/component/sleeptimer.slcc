@@ -47,6 +47,8 @@ requires:
   - name: status
   - name: sl_assert
   - name: sl_common
+  - name: interrupt_manager
+    condition: [device_efx]
   - name: clock_manager_runtime
     condition: [device_efx]
   - name: device_manager

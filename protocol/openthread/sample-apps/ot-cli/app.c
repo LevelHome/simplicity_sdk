@@ -1,4 +1,4 @@
-/***************************************************************************//**
+/*******************************************************************************
  * @file
  * @brief Core application logic.
  *******************************************************************************
@@ -29,7 +29,7 @@
  ******************************************************************************/
 
 // Define module name for Power Manager debuging feature.
-#define CURRENT_MODULE_NAME    "OPENTHREAD_SAMPLE_APP"
+#define CURRENT_MODULE_NAME "OPENTHREAD_SAMPLE_APP"
 
 #include <assert.h>
 #include <openthread-core-config.h>
@@ -39,16 +39,13 @@
 #include <openthread/diag.h>
 #include <openthread/tasklet.h>
 
-#include "openthread-system.h"
 #include "app.h"
+#include "openthread-system.h"
 
 #include "reset_util.h"
 
 #include "sl_component_catalog.h"
 #include "sl_memory_manager.h"
-#ifdef SL_CATALOG_POWER_MANAGER_PRESENT
-#include "sl_power_manager.h"
-#endif
 
 #ifdef SL_CATALOG_KERNEL_PRESENT
 #include "sl_ot_rtos_adaptation.h"
@@ -70,13 +67,17 @@ extern void otAppCliInit(otInstance *aInstance);
 #if OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_ENABLE
 static uint8_t *sOtInstanceBuffer = NULL;
 #endif
-static otInstance *    sInstance       = NULL;
-static bool            sButtonPressed  = false;
-static bool            sStayAwake      = true;
+static otInstance *sInstance  = NULL;
+static bool        sStayAwake = true;
 
 otInstance *otGetInstance(void)
 {
     return sInstance;
+}
+
+bool efr32AllowSleepCallback(void)
+{
+    return !sStayAwake;
 }
 
 #if (defined(SL_CATALOG_BTN0_PRESENT) || defined(SL_CATALOG_BTN1_PRESENT))
@@ -84,7 +85,7 @@ void sl_button_on_change(const sl_button_t *handle)
 {
     if (sl_button_get_state(handle) == SL_SIMPLE_BUTTON_PRESSED)
     {
-        sButtonPressed = true;
+        sStayAwake = !sStayAwake;
 #ifdef SL_CATALOG_KERNEL_PRESENT
         sl_ot_rtos_set_pending_event(SL_OT_RTOS_EVENT_APP);
 #endif
@@ -92,27 +93,6 @@ void sl_button_on_change(const sl_button_t *handle)
     }
 }
 #endif
-
-void sl_ot_rtos_application_tick(void)
-{
-    if (sButtonPressed)
-    {
-        sButtonPressed = false;
-        sStayAwake     = !sStayAwake;
-        if (sStayAwake)
-        {
-#ifdef SL_CATALOG_POWER_MANAGER_PRESENT
-            sl_power_manager_add_em_requirement(SL_POWER_MANAGER_EM1);
-#endif
-        }
-        else
-        {
-#ifdef SL_CATALOG_POWER_MANAGER_PRESENT
-            sl_power_manager_remove_em_requirement(SL_POWER_MANAGER_EM1);
-#endif
-        }
-    }
-}
 
 /*
  * Provide, if required an "otPlatLog()" function
@@ -134,7 +114,7 @@ void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const char *aFormat
 void sl_ot_create_instance(void)
 {
 #if OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_ENABLE
-    size_t   otInstanceBufferLength = 0;
+    size_t otInstanceBufferLength = 0;
 
     // Call to query the buffer size
     (void)otInstanceInit(NULL, &otInstanceBufferLength);
@@ -156,7 +136,7 @@ void sl_ot_cli_init(void)
     otAppCliInit(sInstance);
 }
 
-/**************************************************************************//**
+/******************************************************************************
  * Application Init.
  *****************************************************************************/
 
@@ -165,7 +145,7 @@ void app_init(void)
     OT_SETUP_RESET_JUMP(argv);
 }
 
-/**************************************************************************//**
+/******************************************************************************
  * Application Process Action.
  *****************************************************************************/
 void app_process_action(void)
@@ -174,7 +154,7 @@ void app_process_action(void)
     otSysProcessDrivers(sInstance);
 }
 
-/**************************************************************************//**
+/******************************************************************************
  * Application Exit.
  *****************************************************************************/
 void app_exit(void)

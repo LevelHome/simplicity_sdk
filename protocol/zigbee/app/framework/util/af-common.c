@@ -130,7 +130,7 @@ void sli_zigbee_af_incoming_message_handler(sl_zigbee_incoming_message_type_t ty
                                                    current_sender,
                                                    &message,
                                                    &messageLength)) {
-    sl_zigbee_af_debug_println("%pfragment processed.", "Fragmentation:");
+    sl_zigbee_af_debug_println("%sfragment processed.", "Fragmentation:");
     return;
   }
 #endif // SL_CATALOG_ZIGBEE_FRAGMENTATION_PRESENT
@@ -146,7 +146,7 @@ void sli_zigbee_af_incoming_message_handler(sl_zigbee_incoming_message_type_t ty
   }
 #endif // SL_CATALOG_ZIGBEE_SUB_GHZ_SERVER_PRESENT
 
-  sl_zigbee_af_debug_println("Processing message: len=%d profile=%2x cluster=%2x",
+  sl_zigbee_af_debug_println("Processing message: len=%d profile=%04X cluster=%04X",
                              messageLength,
                              apsFrame->profileId,
                              apsFrame->clusterId);
@@ -209,7 +209,7 @@ void sli_zigbee_af_message_sent_handler(sl_status_t status,
 {
   sl_zigbee_af_message_sent_function_t callback;
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_app_print("%ptx 0x%4X, ", "ERROR: ", status); // status
+    sl_zigbee_af_app_print("%stx 0x%08X, ", "ERROR: ", status); // status
     printMessage(type, apsFrame, messageLength, messageContents);
   }
 #ifdef SL_CATALOG_ZIGBEE_TEST_HARNESS_Z3_PRESENT
@@ -290,7 +290,7 @@ WEAK(void sli_zigbee_af_stack_status_callback(sl_status_t status))
       sl_zigbee_set_extended_security_bitmask(newExtended);
 #endif // SL_ZIGBEE_AF_HAS_SECURITY_PROFILE_Z3
 
-      sl_zigbee_af_app_println("SL_STATUS_NETWORK_UP 0x%2X", sl_zigbee_af_get_node_id());
+      sl_zigbee_af_app_println("SL_STATUS_NETWORK_UP 0x%04X", sl_zigbee_af_get_node_id());
       sl_zigbee_af_app_flush();
 #if defined(SL_ZIGBEE_TEST)
       simulatedTimePasses();
@@ -345,7 +345,7 @@ WEAK(void sli_zigbee_af_stack_status_callback(sl_status_t status))
       return;
 
     default:
-      sl_zigbee_af_debug_println("EVENT: stackStatus 0x%4x", status);
+      sl_zigbee_af_debug_println("EVENT: stackStatus 0x%08X", status);
   }
 
   sl_zigbee_af_app_flush();
@@ -615,7 +615,7 @@ sl_status_t sl_zigbee_af_send_inter_pan(sl_802154_pan_id_t panId,
 void sl_zigbee_af_print_message_data(uint8_t* data, uint16_t length)
 {
 #ifdef SL_ZIGBEE_AF_PRINT_APP
-  sl_zigbee_af_app_print(" payload (len %2x) [", length);
+  sl_zigbee_af_app_print(" payload (len %04X) [", length);
   sl_zigbee_af_app_print_buffer(data, length, true);
   sl_zigbee_af_app_println("]");
 #endif // SL_ZIGBEE_AF_PRINT_APP
@@ -626,12 +626,12 @@ void sli_zigbee_af_print_status(const char * task,
 {
   if (status == SL_STATUS_OK) {
     sl_zigbee_af_print(sl_zigbee_af_print_active_area,
-                       "%p: %p",
+                       "%s: %s",
                        "Success",
                        task);
   } else {
     sl_zigbee_af_print(sl_zigbee_af_print_active_area,
-                       "%p: %p: 0x%x",
+                       "%s: %s: 0x%02X",
                        "Error",
                        task,
                        status);
@@ -686,7 +686,7 @@ sl_status_t sl_zigbee_af_form_network(sl_zigbee_network_parameters_t *parameters
   sl_status_t status = SL_STATUS_INVALID_STATE;
   sl_zigbee_current_security_state_t securityState;
   if (sli_zigbee_af_pro_is_current_network()) {
-    sl_zigbee_af_core_println("%ping on ch %d, panId 0x%2X",
+    sl_zigbee_af_core_println("%sing on ch %d, panId 0x%04X",
                               "Form",
                               parameters->radioChannel,
                               parameters->panId);
@@ -717,7 +717,7 @@ sl_status_t sl_zigbee_af_join_network(sl_zigbee_network_parameters_t *parameters
       nodeType = SL_ZIGBEE_ROUTER;
     }
     zaNodeSecurityInit(true);   // centralized network
-    sl_zigbee_af_core_println("%ping on ch %d, panId 0x%2X",
+    sl_zigbee_af_core_println("%sing on ch %d, panId 0x%04X",
                               "Join",
                               parameters->radioChannel,
                               parameters->panId);
@@ -843,7 +843,7 @@ void sli_zigbee_af_network_security_init(void)
           securityLevel = SL_ZIGBEE_SECURITY_LEVEL_Z3;
           break;
         default:
-          sl_zigbee_af_core_println("Invalid Security Profile: 0x%X",
+          sl_zigbee_af_core_println("Invalid Security Profile: 0x%02X",
                                     sli_zigbee_af_current_zigbee_pro_network->securityProfile);
           SL_ZIGBEE_TEST_ASSERT(false);
           (void) sl_zigbee_af_pop_network_index();
@@ -917,7 +917,7 @@ sl_status_t sli_zigbee_af_permit_join(uint8_t duration,
                                       bool broadcastMgmtPermitJoin)
 {
   sl_status_t status = sl_zigbee_permit_joining(duration);
-  sl_zigbee_af_app_println("pJoin for %d sec: 0x%x", duration, status);
+  sl_zigbee_af_app_println("pJoin for %d sec: 0x%02X", duration, status);
   if (broadcastMgmtPermitJoin) {
     status = broadcastPermitJoin(duration);
   }
@@ -937,7 +937,7 @@ bool sli_zigbee_af_process_zdo(sl_802154_short_addr_t sender,
   // have a status of 0x00.  Request messages have no status value in them
   // but saying 'success' (0x00) seems appropriate.
   // Response messages will have their status value printed appropriately.
-  sl_zigbee_af_zdo_println("RX: ZDO, command 0x%2x, status: 0x%X",
+  sl_zigbee_af_zdo_println("RX: ZDO, command 0x%04X, status: 0x%02X",
                            apsFrame->clusterId,
                            (apsFrame->clusterId >= CLUSTER_ID_RESPONSE_MINIMUM
                             ? message[1]
@@ -945,14 +945,14 @@ bool sli_zigbee_af_process_zdo(sl_802154_short_addr_t sender,
 
   switch (apsFrame->clusterId) {
     case SIMPLE_DESCRIPTOR_RESPONSE:
-      sl_zigbee_af_zdo_println("RX: %p Desc Resp", "Simple");
+      sl_zigbee_af_zdo_println("RX: %s Desc Resp", "Simple");
       break;
     case MATCH_DESCRIPTORS_RESPONSE:
-      sl_zigbee_af_zdo_print("RX: %p Desc Resp", "Match");
+      sl_zigbee_af_zdo_print("RX: %s Desc Resp", "Match");
       sl_zigbee_af_zdo_println(", Matches: %d", message[4]);
       break;
     case END_DEVICE_ANNOUNCE:
-      sl_zigbee_af_zdo_println("Device Announce: 0x%2x",
+      sl_zigbee_af_zdo_println("Device Announce: 0x%04X",
                                (uint16_t)(message[1]) + (uint16_t)(message[2] << 8));
       break;
     case IEEE_ADDRESS_RESPONSE:
@@ -962,8 +962,8 @@ bool sli_zigbee_af_process_zdo(sl_802154_short_addr_t sender,
       sl_zigbee_af_zdo_println("RX: Active EP Response, Count: %d", message[4]);
       break;
     case NODE_DESCRIPTOR_RESPONSE:
-      sl_zigbee_af_zdo_print("RX: %p Desc Resp", "Node");
-      sl_zigbee_af_zdo_println(", Matches: 0x%2x",
+      sl_zigbee_af_zdo_print("RX: %s Desc Resp", "Node");
+      sl_zigbee_af_zdo_println(", Matches: 0x%04X",
                                (uint16_t)(message[1]) + (uint16_t)(message[2] << 8));
       break;
     default:
@@ -1018,7 +1018,7 @@ void sli_zigbee_af_parse_and_print_version(sl_zigbee_version_t versionStruct)
                            versionStruct.special);
   }
   UNUSED_VAR(typeText);
-  sl_zigbee_af_app_println(" %p build %d]",
+  sl_zigbee_af_app_println(" %s build %d]",
                            (typeText == NULL
                             ? "???"
                             : typeText),
@@ -1190,7 +1190,7 @@ static sl_status_t send(sl_zigbee_outgoing_message_type_t type,
                                                       message,
                                                       messageLength,
                                                       &messageTag);
-    sl_zigbee_af_debug_println("%pstart:len=%d.", "Fragmentation:", messageLength);
+    sl_zigbee_af_debug_println("%sstart:len=%d.", "Fragmentation:", messageLength);
 #endif // SL_CATALOG_ZIGBEE_FRAGMENTATION_PRESENT
   } else {
     status = SL_STATUS_MESSAGE_TOO_LONG;
@@ -1256,7 +1256,7 @@ static void printMessage(sl_zigbee_incoming_message_type_t type,
                          uint16_t messageLength,
                          uint8_t* messageContents)
 {
-  sl_zigbee_af_app_print("Profile: %p (0x%2X), Cluster: 0x%2X, %d bytes,",
+  sl_zigbee_af_app_print("Profile: %s (0x%04X), Cluster: 0x%04X, %d bytes,",
                          (apsFrame->profileId == SL_ZIGBEE_ZDO_PROFILE_ID
                           ? "ZDO"
                           : (apsFrame->profileId == SE_PROFILE_ID
@@ -1269,7 +1269,7 @@ static void printMessage(sl_zigbee_incoming_message_type_t type,
                          messageLength);
   if (apsFrame->profileId != SL_ZIGBEE_ZDO_PROFILE_ID
       && messageLength >= 3) {
-    sl_zigbee_af_app_print(" ZCL %p Cmd ID: %d",
+    sl_zigbee_af_app_print(" ZCL %s Cmd ID: %d",
                            (messageContents[0] & ZCL_CLUSTER_SPECIFIC_COMMAND
                             ? "Cluster"
                             : "Global"),

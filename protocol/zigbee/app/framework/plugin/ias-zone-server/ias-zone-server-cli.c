@@ -149,15 +149,15 @@ void sl_zigbee_af_ias_zone_server_info_command(sl_cli_command_arg_t *arguments)
   sl_zigbee_af_ias_zone_cluster_print("CIE Address: ");
   sl_zigbee_af_print_big_endian_eui64(cieAddress);
   sl_zigbee_af_ias_zone_cluster_println("");
-  sl_zigbee_af_ias_zone_cluster_println("Zone Type:   0x%2X (%p)",
+  sl_zigbee_af_ias_zone_cluster_println("Zone Type:   0x%04X (%s)",
                                         zoneType,
                                         getZoneTypeString(zoneType));
-  sl_zigbee_af_ias_zone_cluster_println("Zone State:  0x%X   (%p)",
+  sl_zigbee_af_ias_zone_cluster_println("Zone State:  0x%02X   (%s)",
                                         zoneState,
                                         getZoneStateString(zoneState));
-  sl_zigbee_af_ias_zone_cluster_println("Zone Status: 0x%2X",
+  sl_zigbee_af_ias_zone_cluster_println("Zone Status: 0x%04X",
                                         zoneStatus);
-  sl_zigbee_af_ias_zone_cluster_println("Zone ID:     0x%2X",
+  sl_zigbee_af_ias_zone_cluster_println("Zone ID:     0x%04X",
                                         sl_zigbee_af_ias_zone_server_get_zone_id(endpoint));
 }
 

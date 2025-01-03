@@ -93,11 +93,11 @@
 #define SL_UARTDRV_USART_EXP_PERIPHERAL_NO       0
 
 // USART0 TX on PC02
-#define SL_UARTDRV_USART_EXP_TX_PORT             gpioPortC
+#define SL_UARTDRV_USART_EXP_TX_PORT             SL_GPIO_PORT_C
 #define SL_UARTDRV_USART_EXP_TX_PIN              2
 
 // USART0 RX on PC03
-#define SL_UARTDRV_USART_EXP_RX_PORT             gpioPortC
+#define SL_UARTDRV_USART_EXP_RX_PORT             SL_GPIO_PORT_C
 #define SL_UARTDRV_USART_EXP_RX_PIN              3
 
 

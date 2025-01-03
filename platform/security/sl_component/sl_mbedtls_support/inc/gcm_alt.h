@@ -54,12 +54,10 @@
 /* SiliconLabs CRYPTO hardware acceleration implementation */
 
 #include "em_device.h"
+#include <stdbool.h>
 
 #if defined(CRYPTO_PRESENT)
 #include "em_crypto.h"
-#elif defined(SEMAILBOX_PRESENT) && defined(_SILICON_LABS_32B_SERIES_2)
-// "em_se.h" not used in module, but remains to support backwards compatibility
-#include "em_se.h"
 #elif defined(CRYPTOACC_PRESENT)
 #include "sx_aes.h"
 #include "sl_enum.h"

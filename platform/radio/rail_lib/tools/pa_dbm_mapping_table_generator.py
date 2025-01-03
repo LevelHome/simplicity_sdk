@@ -38,7 +38,8 @@ import csv
 from pprint import pprint
 
 API_INCREMENT_DEFAULT = 1
-
+SUBMODE_MASK = 0x3
+SUBMODE_SHIFT = 14
 
 def decomment(csvfile):
     """
@@ -241,13 +242,15 @@ def GenerateDbmToPowerSettingTableCommonInterface(
     Generates the power setting table for the sixg301 chip, adjusted for the specified variant.
     """
     ramplev = GetCommonInterfaceData(File)
-
+    submode = 0
+    if variant == "10dbm":
+        submode = 1
     assert ramplev.__len__() == (abs(maxpwr - minpwr) / increment) + 1, \
         "Expected number of power levels {} does not match actual number of power levels {}".format(
             abs(maxpwr - minpwr) / increment + 1, ramplev.__len__()
         )
 
-    powerSettings = [hex(lev) for lev in ramplev]
+    powerSettings = [hex(lev | (submode << SUBMODE_SHIFT)) for lev in ramplev]
     pprint(powerSettings)
     cStr = "#define RAIL_PA_CURVES_COMMON_INTERFACE_{}_NUM_VALUES  ({}U)\n".format(
         variant.upper(), int(powerSettings.__len__())

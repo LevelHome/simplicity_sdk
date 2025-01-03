@@ -23,7 +23,6 @@
 #include "ZAF_network_management.h"
 #include "events.h"
 #include "zpal_watchdog.h"
-#include "app_hw.h"
 #include "board_indicator.h"
 #include "SensorPIR_UserTask_DataAcquisition.h"
 #include "ZAF_ApplicationEvents.h"
@@ -33,13 +32,19 @@
 #include "zaf_protocol_config.h"
 #include "ZW_TransportEndpoint.h"
 #include "zpal_power_manager.h"
+#include "app_hw.h"
 
-#ifdef SL_CATALOG_ZW_CLI_COMMON_PRESENT
-#include "app_cli.h"
+#ifdef SL_CATALOG_ZW_CLI_SLEEPING_PRESENT
+#include "zw_cli_sleeping.h"
+#include "zw_cli_sleeping_config.h"
 #endif
 
 #ifdef DEBUGPRINT
 #include "ZAF_PrintAppInfo.h"
+#endif
+
+#if (!defined(SL_CATALOG_SILICON_LABS_ZWAVE_APPLICATION_PRESENT) && !defined(UNIT_TEST))
+#include "app_hw.h"
 #endif
 
 /*****************************************************
@@ -183,6 +188,7 @@ ApplicationInit(__attribute__((unused)) zpal_reset_reason_t eResetReason)
 void
 ApplicationTask(SApplicationHandles* pAppHandles)
 {
+  uint32_t unhandledEvents = 0;
   zpal_reset_reason_t resetReason;
 
   DPRINT("\r\nSensorPIR Main App/Task started! \n");
@@ -193,7 +199,10 @@ ApplicationTask(SApplicationHandles* pAppHandles)
   ZAF_PrintAppInfo();
 #endif
 
+#if (!defined(SL_CATALOG_SILICON_LABS_ZWAVE_APPLICATION_PRESENT) && !defined(UNIT_TEST))
+  /* This preprocessor statement can be deleted from the source code */
   app_hw_init();
+#endif
 
   /* Make sure to call AppTimerDeepSleepPersistentRegister() _after_ ZAF_Init().
    * It will access the app handles */
@@ -239,8 +248,11 @@ ApplicationTask(SApplicationHandles* pAppHandles)
   DPRINTF("\r\nIsWakeupCausedByRtccTimeout=%s", (IsWakeupCausedByRtccTimeout()) ? "true" : "false");
   DPRINTF("\r\nCompletedSleepDurationMs   =%u", GetCompletedSleepDurationMs());
 
-#ifdef SL_CATALOG_ZW_CLI_COMMON_PRESENT
-  cli_util_prevent_sleeping(true);
+#ifdef SL_CATALOG_ZW_CLI_SLEEPING_PRESENT
+  // Stay awake to allow user to send the prevent sleeping command through the CLI
+  if (GetResetReason() == ZPAL_RESET_REASON_PIN) {
+    zw_cli_sleeping_util_prevent_sleeping_timeout(ZW_CLI_SLEEPING_WAKEUP_TIME_AFTER_RESET);
+  }
 #endif
 
   zpal_pm_set_device_type(ZPAL_PM_DEVICE_NOT_LISTENING);
@@ -248,8 +260,12 @@ ApplicationTask(SApplicationHandles* pAppHandles)
   // Wait for and process events
   DPRINT("\r\nSensorPIR Event processor Started\n");
   for (;; ) {
-    if (false == zaf_event_distributor_distribute()) {
+    unhandledEvents = zaf_event_distributor_distribute();
+    if (0 != unhandledEvents) {
+      DPRINTF("Unhandled Events: 0x%08lx\n", unhandledEvents);
+#ifdef UNIT_TEST
       return;
+#endif
     }
   }
 }
@@ -271,28 +287,27 @@ zaf_event_distributor_app_event_manager(const uint8_t event)
       (void) CC_Battery_LevelReport_tx(NULL, ENDPOINT_ROOT, NULL);
       break;
     case EVENT_APP_TRANSITION_TO_ACTIVE:
-      DPRINT("\r\n");
-      DPRINT("\r\n      *!*!**!*!**!*!**!*!**!*!**!*!**!*!**!*!*");
-      DPRINT("\r\n      *!*!*       PIR EVENT ACTIVE       *!*!*");
-      DPRINT("\r\n      *!*!**!*!**!*!**!*!**!*!**!*!**!*!**!*!*");
-      DPRINT("\r\n");
+      if (!TimerIsActive(&EventJobsTimer)) {
+        DPRINT("\r\n");
+        DPRINT("\r\n      *!*!**!*!**!*!**!*!**!*!**!*!**!*!**!*!*");
+        DPRINT("\r\n      *!*!*       PIR EVENT ACTIVE       *!*!*");
+        DPRINT("\r\n      *!*!**!*!**!*!**!*!**!*!**!*!**!*!**!*!*");
+        DPRINT("\r\n");
 
-      (void) CC_Notification_TriggerAndTransmit(0,
-                                                NOTIFICATION_EVENT_HOME_SECURITY_MOTION_DETECTION_UNKNOWN_LOCATION,
-                                                &supportedEvents,
-                                                0,
-                                                NULL,
-                                                false);
-      (void) CC_Basic_Set_tx(&agiTableRootDeviceGroups[0].profile, ENDPOINT_ROOT, BASIC_SET_TRIGGER_VALUE, true, NULL);
+        (void) CC_Notification_TriggerAndTransmit(0,
+                                                  NOTIFICATION_EVENT_HOME_SECURITY_MOTION_DETECTION_UNKNOWN_LOCATION,
+                                                  &supportedEvents,
+                                                  0,
+                                                  NULL,
+                                                  false);
+        (void) CC_Basic_Set_tx(&agiTableRootDeviceGroups[0].profile, ENDPOINT_ROOT, BASIC_SET_TRIGGER_VALUE, true, NULL);
 
-      (void) AppTimerDeepSleepPersistentStart(&EventJobsTimer, BASIC_SET_TIMEOUT);
+        (void) AppTimerDeepSleepPersistentStart(&EventJobsTimer, BASIC_SET_TIMEOUT);
+      }
       break;
     case EVENT_APP_TRANSITION_TO_DEACTIVE:
-      DPRINT("\r\n");
-      DPRINT("\r\n      *!*!**!*!**!*!**!*!**!*!**!*!**!*!**!*!*");
-      DPRINT("\r\n      *!*!*      PIR EVENT INACTIVE      *!*!*");
-      DPRINT("\r\n      *!*!**!*!**!*!**!*!**!*!**!*!**!*!**!*!*");
-      DPRINT("\r\n");
+      AppTimerDeepSleepPersistentStop(&EventJobsTimer);
+      ZCB_EventJobsTimer(&EventJobsTimer);
       break;
     case EVENT_APP_USERTASK_DATA_ACQUISITION_READY:
       DPRINT("\r\nMainApp: Data Acquisition UserTask started and ready!");
@@ -326,6 +341,11 @@ ZCB_EventJobsTimer(__attribute__((unused)) SSwTimer *pTimer)
   cc_agi_group_t const * const agiTableRootDeviceGroups = cc_agi_get_rootdevice_groups();
 
   DPRINTF("\r\nTimer callback: ZCB_EventJobsTimer() pTimer->Id=%d", pTimer->Id);
+  DPRINT("\r\n");
+  DPRINT("\r\n      *!*!**!*!**!*!**!*!**!*!**!*!**!*!**!*!*");
+  DPRINT("\r\n      *!*!*      PIR EVENT INACTIVE      *!*!*");
+  DPRINT("\r\n      *!*!**!*!**!*!**!*!**!*!**!*!**!*!**!*!*");
+  DPRINT("\r\n");
 
   /* If the node has been woken up from Deep Sleep because the event job timer timed out
    * the app will now be in the state STATE_APP_STARTUP. Need to switch to

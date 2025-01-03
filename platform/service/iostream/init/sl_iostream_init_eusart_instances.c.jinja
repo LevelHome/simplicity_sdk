@@ -114,7 +114,8 @@
 
 {% if "power_manager" in component_catalog %}
 // EM Events
-#define SLEEP_EM_EVENT_MASK      (SL_POWER_MANAGER_EVENT_TRANSITION_LEAVING_EM0)
+#define SLEEP_EM_EVENT_MASK      (SL_POWER_MANAGER_EVENT_TRANSITION_ENTERING_EM0 \
+                                  | SL_POWER_MANAGER_EVENT_TRANSITION_LEAVING_EM0)
 static void events_handler(sl_power_manager_em_t from,
                            sl_power_manager_em_t to);
 static sl_power_manager_em_transition_event_info_t events_info =
@@ -262,8 +263,14 @@ static void events_handler(sl_power_manager_em_t from,
                            sl_power_manager_em_t to)
 {
   (void) from;
-  if (to < SL_POWER_MANAGER_EM3){
-    // Only prepare for wakeup from EM2 or less, since EUSART doesn't run in EM3
+  if (to == SL_POWER_MANAGER_EM0) {
+    {% for instance in iostream_eusart_instances %}
+    if (sl_iostream_uart_{{ instance }}_handle->stream.context != NULL) {
+      sl_iostream_uart_wakeup(sl_iostream_uart_{{ instance }}_handle);
+    }
+    {% endfor %}
+  } else if (to < SL_POWER_MANAGER_EM3){
+    // Only prepare for sleep to EM2 or less, since EUSART doesn't run in EM3
     {% for instance in iostream_eusart_instances %}
     if (sl_iostream_uart_{{ instance }}_handle->stream.context != NULL) {
       sl_iostream_uart_prepare_for_sleep(sl_iostream_uart_{{ instance }}_handle);

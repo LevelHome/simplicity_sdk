@@ -10,9 +10,9 @@ from pyradioconfig.calculator_model_framework.Utils.CustomExceptions import Calc
 from pyradioconfig.calculator_model_framework.Utils.LogMgr import LogMgr
 
 try:
-  from host_py_rm_studio_internal import RM_Factory
+  from host_py_rm_studio_internal import RM_Factory, RM_S1_PART_FAMILY_NAMES, RM_S2_PART_FAMILY_NAMES
 except ImportError:
-  from host_py_rm_pdb_internal import RM_Factory
+  from host_py_rm_pdb_internal import RM_Factory, RM_S1_PART_FAMILY_NAMES, RM_S2_PART_FAMILY_NAMES
 
 from py_2_and_3_compatibility import *
 
@@ -49,7 +49,10 @@ class ModelDiff(object):
                     channel_config_entry_registers = dict()  # Init dictionary
 
                     # Create default register model for the part_family
-                    register_model = RM_Factory(multi_phy_model.part_family.upper())()
+                    if multi_phy_model.part_revision == 'ANY' or multi_phy_model.part_family.upper() in RM_S1_PART_FAMILY_NAMES or multi_phy_model.part_family.upper() in RM_S2_PART_FAMILY_NAMES:
+                        register_model = RM_Factory(multi_phy_model.part_family.upper())()
+                    else:
+                        register_model = RM_Factory(multi_phy_model.part_family.upper(), multi_phy_model.part_revision)()
                     # channel_config_entry.full_register_model = register_model
 
                     # Run radio configurator for this channel config entry

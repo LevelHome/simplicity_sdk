@@ -25,7 +25,7 @@ void setRegistrationDelayPeriod(sl_cli_command_arg_t *arguments)
   sli_zigbee_af_smart_energy_registration_discovery_period =
     sl_cli_get_argument_uint32(arguments, 0) * MILLISECOND_TICKS_PER_SECOND;
 
-  sl_zigbee_af_app_println("Smart energy registration discovery period set to 0x%4x",
+  sl_zigbee_af_app_println("Smart energy registration discovery period set to 0x%08X",
                            sli_zigbee_af_smart_energy_registration_discovery_period);
 #else
   sl_zigbee_af_app_println("Not supported.");

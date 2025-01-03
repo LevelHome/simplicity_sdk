@@ -51,6 +51,10 @@ extern sl_status_t sli_zigbee_get_link_key(sl_802154_long_addr_t partner,
 #define sli_zigbee_get_security_state(item) ((sli_zigbee_security_state_bitmask & (item)) == (item))
 extern void sli_legacy_mfg_security_config_modify_key(sl_zigbee_key_data_t* key);
 
+// Extended key table
+void sli_zigbee_stack_fetch_key_table_entry_at_index(uint8_t index, tokTypeStackKeyTable *tok);
+void sli_zigbee_stack_set_key_table_entry_at_index(uint8_t index, tokTypeStackKeyTable* tok);
+
 sl_status_t sli_zigbee_stack_sec_man_import_key(sl_zigbee_sec_man_context_t* context,
                                                 const sl_zigbee_sec_man_key_t* plaintext_key)
 {
@@ -511,11 +515,11 @@ sl_status_t sli_zigbee_stack_sec_man_update_symmetric_passphrase_eui(sl_802154_l
     return SL_STATUS_NOT_FOUND;
   }
   tokTypeStackKeyTable tok;
-  halCommonGetIndexedToken(&tok, TOKEN_STACK_KEY_TABLE, index);
+  sli_zigbee_stack_fetch_key_table_entry_at_index(index, &tok);
   memmove(&(tok[KEY_ENTRY_IEEE_OFFSET]),
           new_eui64,
           EUI64_SIZE);
-  halCommonSetIndexedToken(TOKEN_STACK_KEY_TABLE, index, (void*)&tok);
+  sli_zigbee_stack_set_key_table_entry_at_index(index, &tok);
   return SL_STATUS_OK;
 }
 
@@ -556,4 +560,34 @@ bool sli_zigbee_stack_sec_man_link_key_slot_available(sl_802154_long_addr_t eui6
     return true;
   }
   return false;
+}
+
+// NOTE we support an additional 127 link keys by allocating a second indexed token
+// and redirecting key table access to the second key table when the index exceeds
+// the boundaries of the original token.
+// main benefits to this approach is being able to leave original tokens and keys
+// 'in place' simplifying the requirements for upgrade
+
+#define STACK_KEY_TABLE_MAX_COMBINED_ENTRIES 254
+#define ORIGINAL_TOKEN_STACK_KEY_TABLE_MAX_INDEX 0x7F
+#define STACK_KEY_TABLE_EXTENDED_MAX_LENGTH (STACK_KEY_TABLE_MAX_COMBINED_LENGTH - ORIGINAL_TOKEN_STACK_KEY_TABLE_MAX_INDEX)
+
+void sli_zigbee_stack_fetch_key_table_entry_at_index(uint8_t index, tokTypeStackKeyTable *tok)
+{
+  // Set token to some invalid initial value
+  memset(tok, 0xFF, sizeof(tokTypeStackKeyTable));
+  if (index < ORIGINAL_TOKEN_STACK_KEY_TABLE_MAX_INDEX) {
+    halCommonGetIndexedToken(tok, TOKEN_STACK_KEY_TABLE, index);
+  } else {
+    halCommonGetIndexedToken(tok, TOKEN_STACK_KEY_TABLE_EXTENDED, index - ORIGINAL_TOKEN_STACK_KEY_TABLE_MAX_INDEX);
+  }
+}
+
+void sli_zigbee_stack_set_key_table_entry_at_index(uint8_t index, tokTypeStackKeyTable *tok)
+{
+  if (index < ORIGINAL_TOKEN_STACK_KEY_TABLE_MAX_INDEX) {
+    halCommonSetIndexedToken(TOKEN_STACK_KEY_TABLE, index, tok);
+  } else {
+    halCommonSetIndexedToken(TOKEN_STACK_KEY_TABLE_EXTENDED, index - ORIGINAL_TOKEN_STACK_KEY_TABLE_MAX_INDEX, tok);
+  }
 }

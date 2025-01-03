@@ -93,7 +93,7 @@ static const char *ecc_montgomery_key_string[] = {
 
 static const sl_se_key_type_t ecc_montgomery_key[] = {
   SL_SE_KEY_TYPE_ECC_X25519,
-#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT)
+#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT) && !defined(_SILICON_LABS_32B_SERIES_3_CONFIG_301)
   SL_SE_KEY_TYPE_ECC_X448
 #endif
 };
@@ -109,7 +109,7 @@ static uint8_t ecc_weierstrass_prime_key_select;
 static const char *ecc_weierstrass_prime_key_string[] = {
   "ECC P192",
   "ECC P256",
-#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT)
+#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT) && !defined(_SILICON_LABS_32B_SERIES_3_CONFIG_301)
   "ECC P384",
   "ECC P521",
   "ECC Custom (secp256k1 in this example)"
@@ -119,7 +119,7 @@ static const char *ecc_weierstrass_prime_key_string[] = {
 static const sl_se_key_type_t ecc_weierstrass_prime_key[] = {
   SL_SE_KEY_TYPE_ECC_P192,
   SL_SE_KEY_TYPE_ECC_P256,
-#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT)
+#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT) && !defined(_SILICON_LABS_32B_SERIES_3_CONFIG_301)
   SL_SE_KEY_TYPE_ECC_P384,
   SL_SE_KEY_TYPE_ECC_P521,
   SL_SE_KEY_TYPE_ECC_WEIERSTRASS_PRIME_CUSTOM
@@ -144,7 +144,7 @@ void app_process_action(void)
   switch (app_state) {
     case SE_MANAGER_INIT:
       printf("\n%s - Core running at %" PRIu32 " kHz.\n", example_string,
-             CMU_ClockFreqGet(cmuClock_CORE) / 1000);
+             SystemHCLKGet() / 1000);
       printf("  . SE manager initialization... ");
       if (init_se_manager() == SL_STATUS_OK) {
         print_startup();
@@ -160,7 +160,7 @@ void app_process_action(void)
         if (asymmetric_key_algo_select == 3) {
           asymmetric_key_algo_select = 0;
         }
-#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT)
+#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT) && !defined(_SILICON_LABS_32B_SERIES_3_CONFIG_301)
         printf("  + Current asymmetric key algorithm is %s.\n",
                asymmetric_key_algo_string[asymmetric_key_algo_select]);
 #else
@@ -179,7 +179,7 @@ void app_process_action(void)
       }
       break;
 
-#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT)
+#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT) && !defined(_SILICON_LABS_32B_SERIES_3_CONFIG_301)
     case SELECT_MONTGOMERY_KEY:
       if (space_press) {
         space_press = false;
@@ -202,7 +202,7 @@ void app_process_action(void)
       if (space_press) {
         space_press = false;
         ecc_weierstrass_prime_key_select++;
-#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT)
+#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT) && !defined(_SILICON_LABS_32B_SERIES_3_CONFIG_301)
         if (ecc_weierstrass_prime_key_select == 5) {
 #else
         if (ecc_weierstrass_prime_key_select == 2) {
@@ -243,7 +243,7 @@ void app_process_action(void)
     case EXPORT_PLAIN_PUBLIC_KEY:
       printf("  + Export an asymmetric public key from plain asymmetric "
              "key... ");
-#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT)
+#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT) && !defined(_SILICON_LABS_32B_SERIES_3_CONFIG_301)
       // For compare public key after exporting and transferring key
       memset(get_asymmetric_pubkey_buf_ptr(), 0, ECC_PUBKEY_SIZE);
       memset(get_asymmetric_custom_pubkey_buf_ptr(), 0, sizeof(copy_buf));
@@ -430,7 +430,7 @@ static void print_startup(void)
 {
   printf("\n  . Current asymmetric key algorithm is %s.\n",
          asymmetric_key_algo_string[asymmetric_key_algo_select]);
-#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT)
+#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT) && !defined(_SILICON_LABS_32B_SERIES_3_CONFIG_301)
   printf("  + Press SPACE to select asymmetric key algorithm (%s/%s/%s), press"
          " ENTER to next option or run if %s is selected.\n",
          asymmetric_key_algo_string[0],
@@ -457,7 +457,7 @@ static void print_key_algo_option(void)
   if (asymmetric_key_algo_select == 0) {
     printf("\n  . Current ECC Weierstrass Prime key is %s.\n",
            ecc_weierstrass_prime_key_string[ecc_weierstrass_prime_key_select]);
-#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT)
+#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT) && !defined(_SILICON_LABS_32B_SERIES_3_CONFIG_301)
     printf("  + Press SPACE to select ECC Weierstrass Prime key (%s/%s/%s/%s/%s),"
            " press ENTER to run.\n",
            ecc_weierstrass_prime_key_string[0],
@@ -473,7 +473,7 @@ static void print_key_algo_option(void)
 #endif
     app_state = SELECT_WEIERSTRASS_KEY;
   } else if (asymmetric_key_algo_select == 1) {
-#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT)
+#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT) && !defined(_SILICON_LABS_32B_SERIES_3_CONFIG_301)
     printf("\n  . Current ECC Montgomery key is %s.\n",
            ecc_montgomery_key_string[ecc_montgomery_key_select]);
     printf("  + Press SPACE to select ECC Montgomery key (%s/%s), press ENTER to "

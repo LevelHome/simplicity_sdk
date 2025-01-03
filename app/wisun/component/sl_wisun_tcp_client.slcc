@@ -1,10 +1,10 @@
 id: "sl_wisun_tcp_client"
-label: "TCP Client"
+label: "Wi-SUN TCP Client"
 package: "wisun"
 description: >
   This component contains functions of Wi-SUN TCP Client apps.
-  The functions are used as CLI callbacks for TCP socket creation, close, read, and write.
-category: "Wi-SUN|Application"
+  The functions are used as CLI callbacks for TCP socket creation, close, read and write.
+category: "Wi-SUN|Wi-SUN Services"
 quality: "production"
 metadata:
   sbom:

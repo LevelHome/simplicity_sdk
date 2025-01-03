@@ -8,8 +8,10 @@
 #include "seqacc_shared.h"
 
 {% for baseAddrName, baseAddrCfg in RegBases.items() -%}
-#define {{"{}".format(baseAddrCfg['Define'])}} {{ baseAddrCfg['BaseAddr'] | length }}
-extern uint32_t {{baseAddrName}}Array[{{"{}".format(baseAddrCfg['Define'])}}];
+#define {{"{}".format(baseAddrCfg['Define'])}} ({{ baseAddrCfg['BaseAddr'] | length }}U)
+#define REG_BASES_MASK  ({{ "0x{0:08X}UL".format(baseAddrCfg['RegBasesMask']) }})
+#define REG_BASE_BITOP_MASK ({{ "0x{0:02X}U".format(baseAddrCfg['BitOpMask']) }})
+extern uint16_t {{baseAddrName}}Array[{{"{}".format(baseAddrCfg['Define'])}}];
 
 {% endfor -%}
 {% for baseAddrName, baseAddrCfg in RegBases.items() -%}

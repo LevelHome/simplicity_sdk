@@ -17,7 +17,6 @@
 
 #include "app/framework/include/af.h"
 #include "app/framework/security/af-security.h"
-#include "app/util/serial/sl_zigbee_command_interpreter.h"
 #include "app/framework/cli/security-cli.h"
 #ifdef SL_COMPONENT_CATALOG_PRESENT
 #include "sl_component_catalog.h"
@@ -62,12 +61,10 @@ void getNetworkKeyFromCli(sl_zigbee_key_data_t* returnData)
 
 void sli_zigbee_af_clear_link_key_table(void)
 {
-#if SL_ZIGBEE_KEY_TABLE_SIZE
   if (sl_zigbee_af_clear_link_key_table_upon_forming_or_joining) {
     sl_zigbee_clear_key_table();
   }
   sl_zigbee_af_clear_link_key_table_upon_forming_or_joining = true;
-#endif
 }
 
 const sl_zigbee_af_security_profile_data_t *sli_zigbee_af_get_current_security_profile_data(void)

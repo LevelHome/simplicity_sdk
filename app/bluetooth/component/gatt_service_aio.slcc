@@ -5,6 +5,9 @@ description: >
   Provides the LEDs and buttons in GATT characteristics.
   Designed for the Thunderboard smartphone app.
 category: Bluetooth|Application|GATT Services
+metadata:
+  sbom:
+    license: Zlib
 quality: production
 root_path: app/bluetooth/common/gatt_service_aio
 tag:
@@ -32,6 +35,7 @@ requires:
   - name: gatt_configuration
   - name: bluetooth_feature_gatt_server
   - name: app_assert
+  - name: sl_common
 template_contribution:
   - name: bluetooth_on_event
     value:

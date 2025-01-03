@@ -27,10 +27,9 @@ provides:
   - name: simple_led_core
 requires:
   - name: status
-  - name: emlib_gpio
-    condition: [device_series_2]
   - name: gpio
-    condition: [device_series_3]
+    condition:
+      - device_cortexm
   - name: hal_generic_common
   - name: clock_manager_runtime
   - name: led
@@ -45,5 +44,5 @@ template_contribution:
       include: "sl_simple_led_instances.h"
       handler: sl_simple_led_init_instances
 documentation:
-    docset: gecko-platform
-    document: platform-driver/simple-led
+  docset: gecko-platform
+  document: platform-driver/simple-led

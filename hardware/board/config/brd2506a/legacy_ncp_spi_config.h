@@ -25,33 +25,33 @@
 #define LEGACY_NCP_SPI_PERIPHERAL_NO             0
 
 // USART0 TX on PD11
-#define LEGACY_NCP_SPI_TX_PORT                   gpioPortD
+#define LEGACY_NCP_SPI_TX_PORT                   SL_GPIO_PORT_D
 #define LEGACY_NCP_SPI_TX_PIN                    11
 
 // USART0 RX on PD12
-#define LEGACY_NCP_SPI_RX_PORT                   gpioPortD
+#define LEGACY_NCP_SPI_RX_PORT                   SL_GPIO_PORT_D
 #define LEGACY_NCP_SPI_RX_PIN                    12
 
 // USART0 CLK on PD13
-#define LEGACY_NCP_SPI_CLK_PORT                  gpioPortD
+#define LEGACY_NCP_SPI_CLK_PORT                  SL_GPIO_PORT_D
 #define LEGACY_NCP_SPI_CLK_PIN                   13
 
 // USART0 CS on PD14
-#define LEGACY_NCP_SPI_CS_PORT                   gpioPortD
+#define LEGACY_NCP_SPI_CS_PORT                   SL_GPIO_PORT_D
 #define LEGACY_NCP_SPI_CS_PIN                    14
 
 // [USART_LEGACY_NCP_SPI]$
 
 // <gpio> LEGACY_NCP_SPI_HOST_INT
 // $[GPIO_LEGACY_NCP_SPI_HOST_INT]
-#define LEGACY_NCP_SPI_HOST_INT_PORT             gpioPortB
+#define LEGACY_NCP_SPI_HOST_INT_PORT             SL_GPIO_PORT_B
 #define LEGACY_NCP_SPI_HOST_INT_PIN              7
 
 // [GPIO_LEGACY_NCP_SPI_HOST_INT]$
 
 // <gpio> LEGACY_NCP_SPI_WAKE_INT
 // $[GPIO_LEGACY_NCP_SPI_WAKE_INT]
-#define LEGACY_NCP_SPI_WAKE_INT_PORT             gpioPortB
+#define LEGACY_NCP_SPI_WAKE_INT_PORT             SL_GPIO_PORT_B
 #define LEGACY_NCP_SPI_WAKE_INT_PIN              1
 
 // [GPIO_LEGACY_NCP_SPI_WAKE_INT]$

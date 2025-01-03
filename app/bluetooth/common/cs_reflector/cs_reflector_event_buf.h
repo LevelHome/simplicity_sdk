@@ -47,6 +47,8 @@ typedef struct {
   uint8_t data_len;                         // Length of the raw CS result data
   uint16_t procedure_index;                 // Procedure index of the CS measurement data
   uint16_t subevent_index;                  // Subevent index of the CS measurement data
+  uint8_t procedure_done;                   // Procedure done status of the CS measurement data
+  uint8_t subevent_done;                    // Subevent done status of the CS measurement data
   bool empty;                               // Show whether it's an occupied ot free slot which can be overwritten
   bool indication_sent;                     // Shows whether we sent an indication to the initiator about this result
   uint8_t conn_handle;                      // Handle of the connection which initiated the CS procedure

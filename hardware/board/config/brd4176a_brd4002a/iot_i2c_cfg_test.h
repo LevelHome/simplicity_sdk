@@ -79,7 +79,7 @@
 
 // <gpio optional=true> IOT_I2C_CFG_TEST_ENABLE
 // $[GPIO_IOT_I2C_CFG_TEST_ENABLE]
-#define IOT_I2C_CFG_TEST_ENABLE_PORT             gpioPortD
+#define IOT_I2C_CFG_TEST_ENABLE_PORT             SL_GPIO_PORT_D
 #define IOT_I2C_CFG_TEST_ENABLE_PIN              2
 
 // [GPIO_IOT_I2C_CFG_TEST_ENABLE]$
@@ -90,11 +90,11 @@
 #define IOT_I2C_CFG_TEST_PERIPHERAL_NO           1
 
 // I2C1 SCL on PC04
-#define IOT_I2C_CFG_TEST_SCL_PORT                gpioPortC
+#define IOT_I2C_CFG_TEST_SCL_PORT                SL_GPIO_PORT_C
 #define IOT_I2C_CFG_TEST_SCL_PIN                 4
 
 // I2C1 SDA on PC05
-#define IOT_I2C_CFG_TEST_SDA_PORT                gpioPortC
+#define IOT_I2C_CFG_TEST_SDA_PORT                SL_GPIO_PORT_C
 #define IOT_I2C_CFG_TEST_SDA_PIN                 5
 
 // [I2C_IOT_I2C_CFG_TEST]$

@@ -17,7 +17,6 @@
 
 #include "security_manager.h"
 #include "em_device.h"
-#include "em_system.h"
 #include "psa/crypto.h"
 #include "sl_psa_crypto.h"
 #include "sli_psa_crypto.h"
@@ -57,26 +56,24 @@ static void sl_sec_man_set_key_attributes(psa_key_id_t *        sl_psa_key_id,
                                           psa_key_persistence_t sl_psa_key_persistence,
                                           size_t                sl_psa_key_len)
 {
-  psa_key_location_t sl_psa_key_location = PSA_KEY_LOCATION_LOCAL_STORAGE;
-
-#if defined(SEMAILBOX_PRESENT)
-  if (SYSTEM_GetSecurityCapability() == securityCapabilityVault) {
-    sl_psa_key_location = SL_PSA_KEY_LOCATION_WRAPPED;
-  }
+  // By default, prefer to wrap (encrypt) keys in storage
+  psa_key_location_t sl_psa_key_location = sl_psa_get_most_secure_key_location();
 
   // Dont wrap volatile keys used for HMAC operation, as opaque keys cannot be used for multi-part HMAC.
   if (sl_psa_key_type == PSA_KEY_TYPE_HMAC && sl_psa_key_persistence == PSA_KEY_PERSISTENCE_VOLATILE) {
     sl_psa_key_location = PSA_KEY_LOCATION_LOCAL_STORAGE;
   }
-#endif
-  psa_key_lifetime_t sl_psa_key_lifetime =
-    PSA_KEY_LIFETIME_FROM_PERSISTENCE_AND_LOCATION(sl_psa_key_persistence, sl_psa_key_location);
+
+  // This next function gives us our preferred location if the chip supports it,
+  // else, we get PSA_KEY_LOCATION_LOCAL_STORAGE
+  sl_psa_set_key_lifetime_with_location_preference(sl_psa_key_attr,
+                                                   sl_psa_key_persistence,
+                                                   sl_psa_key_location);  // preferred location
 
   if (sl_psa_key_persistence == PSA_KEY_PERSISTENCE_DEFAULT) {
     psa_set_key_id(sl_psa_key_attr, *sl_psa_key_id);
   }
 
-  psa_set_key_lifetime(sl_psa_key_attr, sl_psa_key_lifetime);
   psa_set_key_usage_flags(sl_psa_key_attr, sl_psa_key_usage);
   psa_set_key_algorithm(sl_psa_key_attr, sl_psa_key_algorithm);
   psa_set_key_type(sl_psa_key_attr, sl_psa_key_type);
@@ -208,7 +205,7 @@ psa_status_t sl_sec_man_copy_key(psa_key_id_t          sl_psa_source_key_id,
     goto exit;
   }
 
-#ifndef SL_TRUSTZONE_NONSECURE
+#if !defined(SL_TRUSTZONE_NONSECURE) && defined(MBEDTLS_PSA_CRYPTO_STORAGE_C)
   if (overwrite_original) {
     // After making a copy, if we need to replace the old key,
     // first destroy the original key.

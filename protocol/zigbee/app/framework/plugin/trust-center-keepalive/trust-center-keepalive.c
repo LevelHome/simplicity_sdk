@@ -377,7 +377,7 @@ static void serviceDiscoveryCallback(const sl_zigbee_af_service_discovery_result
     // the channel. Count it as an error. We also classify this as a failure of
     // the keepalive.
     sl_zigbee_af_security_println("Failed to discover Keep-Alive service on "
-                                  "Trust Center (0x%X)", result->status);
+                                  "Trust Center (0x%02X)", result->status);
     messageTimeout();
   }
 }
@@ -395,7 +395,7 @@ static void discoveryKeepaliveEndpoint(void)
     // more robust in the belief that if we do trigger a trust center search due to
     // internal failure it is better than never triggering one due to internal failure.
     sl_zigbee_af_security_println("Failed to initiate Keep-Alive service discovery "
-                                  "(0x%X)", status);
+                                  "(0x%02X)", status);
     messageTimeout();
     return;
   } // else
@@ -466,7 +466,7 @@ void sli_zigbee_af_send_keepalive_signal(void)
                                              SL_ZIGBEE_TRUST_CENTER_NODE_ID);
   if (status != SL_STATUS_OK) {
     sl_zigbee_af_security_println("Failed to send keep-alive signal to trust "
-                                  "center endpoint 0x%x (0x%x)",
+                                  "center endpoint 0x%02X (0x%02X)",
                                   currentStatusStruct->destinationEndpoint,
                                   status);
     // Consider it a failure of the timeout. We can't island ourself.
@@ -512,7 +512,7 @@ void sli_zigbee_af_trust_center_keepalive_read_attributes_response_callback(uint
           index += sizeof(currentStatusStruct->jitterTimeSeconds);
         } else {
           sl_zigbee_af_security_println("Keep-Alive readAttribute: unexpected "
-                                        "attribute ID 0x%2X", attributeId);
+                                        "attribute ID 0x%04X", attributeId);
           goto keepaliveReadAttributeFailure;
         }
       } else if (currentStatusStruct->lastResponseZclStatus > SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
@@ -588,7 +588,7 @@ static void initiateSearchForNewNetworkWithTrustCenter(void)
   if (status == SL_STATUS_OK) {
     currentStatusStruct->state = STATE_INITIATE_NETWORK_SEARCH;
   } else {
-    sl_zigbee_af_security_println("Could not initiate TC search (0x%x)", status);
+    sl_zigbee_af_security_println("Could not initiate TC search (0x%02X)", status);
     sl_zigbee_start_writing_stack_tokens();
   }
 }

@@ -203,7 +203,7 @@ template_contribution:
     value:
       group: zll-commissioning
       name: reset
-      handler: sl_zigbee_af_zll_reset_to_factory_new
+      handler: resetToFactoryNew
       help: Resets the local device to factory new.
   - name: cli_command
     value:

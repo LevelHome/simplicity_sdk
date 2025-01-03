@@ -6,6 +6,9 @@ description: >
   BGAPI user messages, responses and events. Can be used as a starting point
   for creating custom commands or for testing purposes.
 category: Bluetooth|NCP Interface
+metadata:
+  sbom:
+    license: Zlib
 quality: production
 root_path: app/bluetooth/common/ncp_user_cmd
 source:

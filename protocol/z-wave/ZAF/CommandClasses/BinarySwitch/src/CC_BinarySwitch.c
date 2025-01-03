@@ -14,6 +14,7 @@
 #include <assert.h>
 #include "ZAF_TSE.h"
 #include "zaf_config_api.h"
+#include "zaf_event_distributor_soc.h"
 
 //#define DEBUGPRINT
 #include "DebugPrint.h"
@@ -134,6 +135,8 @@ static void actuator_callback(s_Actuator * p_actuator)
                                     0); // durationRemaining should always be 0 at this point
       DPRINTF("\n%s: TX Supervision Report", __func__);
     }
+    zaf_event_distributor_enqueue_cc_event(
+      COMMAND_CLASS_SWITCH_BINARY, CC_BINARY_SWITCH_EVENT_REACHED_FINAL_VALUE, p_switch);
   }
 }
 
@@ -290,6 +293,9 @@ e_cmd_handler_return_code_t cc_binary_switch_set_handler(uint8_t value,
                                                    value,
                                                    duration);
 
+  zaf_event_distributor_enqueue_cc_event(
+    COMMAND_CLASS_SWITCH_BINARY, CC_BINARY_SWITCH_EVENT_START_LEVEL_CHANGE, p_switch);
+
   if (EACTUATOR_CHANGING == actuator_state) {
     return E_CMD_HANDLER_RETURN_CODE_WORKING;
   } else if (EACTUATOR_NOT_CHANGING == actuator_state) {
@@ -322,6 +328,9 @@ void cc_binary_switch_set(cc_binary_switch_t * p_switch, uint8_t value)
   ZAF_Actuator_Set(&p_switch->actuator,
                    value,
                    p_switch->default_duration);
+
+  zaf_event_distributor_enqueue_cc_event(
+    COMMAND_CLASS_SWITCH_BINARY, CC_BINARY_SWITCH_EVENT_START_LEVEL_CHANGE, p_switch);
 }
 
 uint8_t cc_binary_switch_get_current_value(cc_binary_switch_t * p_switch)

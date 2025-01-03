@@ -32,11 +32,19 @@
 #include "sl_sleeptimer.h"
 #include "sl_udelay.h"
 #include "sl_clock_manager.h"
+#include "sl_gpio.h"
+
+#if defined(_SILICON_LABS_32B_SERIES_3)
+#define eusartClockMode0    SL_HAL_EUSART_CLOCK_MODE_0
+#endif
+
+#if defined(SL_COMPONENT_CATALOG_PRESENT)
+#include "sl_component_catalog.h"
+#endif
+
 #if defined(SL_CATALOG_POWER_MANAGER_PRESENT) && defined(SL_MEMLCD_USE_EUSART)
 #include "sl_power_manager.h"
 #endif
-
-#include "em_gpio.h"
 
 #include <string.h>
 
@@ -116,6 +124,11 @@ static sl_power_manager_em_transition_event_info_t on_power_manager_event_info =
 
 sl_status_t sl_memlcd_configure(struct sl_memlcd_t *device)
 {
+  sl_gpio_t memlcd_spi_cs_gpio = {
+    .port = SL_MEMLCD_SPI_CS_PORT,
+    .pin = SL_MEMLCD_SPI_CS_PIN,
+  };
+
   sl_clock_manager_enable_bus_clock(SL_BUS_CLOCK_GPIO);
 
   /* Initialize the SPI bus. */
@@ -126,9 +139,14 @@ sl_status_t sl_memlcd_configure(struct sl_memlcd_t *device)
 #endif
 
   /* Setup GPIOs */
-  GPIO_PinModeSet(SL_MEMLCD_SPI_CS_PORT, SL_MEMLCD_SPI_CS_PIN, gpioModePushPull, 0);
+  sl_gpio_set_pin_mode(&memlcd_spi_cs_gpio, SL_GPIO_MODE_PUSH_PULL, 0);
+
 #if defined(SL_MEMLCD_EXTCOMIN_PORT)
-  GPIO_PinModeSet(SL_MEMLCD_EXTCOMIN_PORT, SL_MEMLCD_EXTCOMIN_PIN, gpioModePushPull, 0);
+  sl_gpio_t memlcd_extcomin_gpio = {
+    .port = SL_MEMLCD_EXTCOMIN_PORT,
+    .pin = SL_MEMLCD_EXTCOMIN_PIN,
+  };
+  sl_gpio_set_pin_mode(&memlcd_extcomin_gpio, SL_GPIO_MODE_PUSH_PULL, 0);
 #endif
 
   memlcd_instance = *device;
@@ -181,9 +199,13 @@ sl_status_t sl_memlcd_power_on(const struct sl_memlcd_t *device, bool on)
 sl_status_t sl_memlcd_clear(const struct sl_memlcd_t *device)
 {
   uint16_t cmd;
+  sl_gpio_t memlcd_spi_cs_gpio = {
+    .port = SL_MEMLCD_SPI_CS_PORT,
+    .pin = SL_MEMLCD_SPI_CS_PIN,
+  };
 
   /* Set SCS */
-  GPIO_PinOutSet(SL_MEMLCD_SPI_CS_PORT, SL_MEMLCD_SPI_CS_PIN);
+  sl_gpio_set_pin(&memlcd_spi_cs_gpio);
 
   /* SCS setup time */
   sl_udelay_wait(device->setup_us);
@@ -197,7 +219,7 @@ sl_status_t sl_memlcd_clear(const struct sl_memlcd_t *device)
   sl_udelay_wait(device->hold_us);
 
   /* Clear SCS */
-  GPIO_PinOutClear(SL_MEMLCD_SPI_CS_PORT, SL_MEMLCD_SPI_CS_PIN);
+  sl_gpio_clear_pin(&memlcd_spi_cs_gpio);
 
   return SL_STATUS_OK;
 }
@@ -212,11 +234,16 @@ sl_status_t sl_memlcd_draw(const struct sl_memlcd_t *device, const void *data, u
   uint16_t reversed_row;
 #endif
 
+  sl_gpio_t memlcd_spi_cs_gpio = {
+    .port = SL_MEMLCD_SPI_CS_PORT,
+    .pin = SL_MEMLCD_SPI_CS_PIN,
+  };
+
   row_len = (device->width * device->bpp) / 8;
   row_start++;
 
   /* Assert SCS */
-  GPIO_PinOutSet(SL_MEMLCD_SPI_CS_PORT, SL_MEMLCD_SPI_CS_PIN);
+  sl_gpio_set_pin(&memlcd_spi_cs_gpio);
 
   /* SCS setup time */
   sl_udelay_wait(device->setup_us);
@@ -266,7 +293,7 @@ sl_status_t sl_memlcd_draw(const struct sl_memlcd_t *device, const void *data, u
   sl_udelay_wait(device->hold_us);
 
   /* De-assert SCS */
-  GPIO_PinOutClear(SL_MEMLCD_SPI_CS_PORT, SL_MEMLCD_SPI_CS_PIN);
+  sl_gpio_clear_pin(&memlcd_spi_cs_gpio);
 
   /* Clean up garbage RX data */
   /* This is important when paired with others slaves */
@@ -320,6 +347,11 @@ static void extcomin_toggle(sl_sleeptimer_timer_handle_t *handle, void *data)
   (void) handle;
   (void) data;
 
-  GPIO_PinOutToggle(SL_MEMLCD_EXTCOMIN_PORT, SL_MEMLCD_EXTCOMIN_PIN);
+  sl_gpio_t memlcd_extcomin_gpio = {
+    .port = SL_MEMLCD_EXTCOMIN_PORT,
+    .pin = SL_MEMLCD_EXTCOMIN_PIN,
+  };
+
+  sl_gpio_toggle_pin(&memlcd_extcomin_gpio);
 }
 #endif

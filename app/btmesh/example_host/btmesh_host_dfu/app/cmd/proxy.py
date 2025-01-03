@@ -344,7 +344,10 @@ class BtmeshProxyCmd(BtmeshCmd):
             conn_latency = "?"
             conn_timeout_ms = "?"
             conn_security_mode_str = "?"
-            conn_txsize = "?"
+            conn_tx_len = "?"
+            conn_rx_len = "?"
+            conn_tx_time_us = "?"
+            conn_rx_time_us = "?"
             conn_mtu = "?"
             conn_step_str = "?"
             if conn_info:
@@ -358,7 +361,11 @@ class BtmeshProxyCmd(BtmeshCmd):
                 conn_latency = conn_params.latency
                 conn_timeout_ms = conn_params.timeout_ms
                 conn_security_mode_str = conn_params.security_mode.pretty_name
-                conn_txsize = conn_params.txsize
+            if conn_info.conn_data_len:
+                conn_tx_len = conn_info.conn_data_len.tx_data_len
+                conn_rx_len = conn_info.conn_data_len.rx_data_len
+                conn_tx_time_us = conn_info.conn_data_len.tx_time_us
+                conn_rx_time_us = conn_info.conn_data_len.rx_time_us
             if conn_info.mtu:
                 conn_mtu = conn_info.mtu
             app_ui.info(f"  - Proxy handle: {proxy_handle}")
@@ -371,7 +378,10 @@ class BtmeshProxyCmd(BtmeshCmd):
             app_ui.info(f"    - Latency: {conn_latency}")
             app_ui.info(f"    - Timeout: {conn_timeout_ms} ms")
             app_ui.info(f"    - Security Mode: {conn_security_mode_str}")
-            app_ui.info(f"    - TxSize: {conn_txsize}")
+            app_ui.info(f"    - Tx Data Length: {conn_tx_len}")
+            app_ui.info(f"    - Rx Data Length: {conn_rx_len}")
+            app_ui.info(f"    - Tx Time: {conn_tx_time_us} us")
+            app_ui.info(f"    - Rx Time: {conn_rx_time_us} us")
             app_ui.info(f"    - MTU: {conn_mtu}")
             app_ui.info(f"    - State: {conn_step_str}")
 

@@ -354,3 +354,15 @@ class CALC_Synth_lynx(CALC_Synth_panther):
         self.retime_print("calculating 2x HFXO freq")
         model.vars.lut_table_index.value.append(0)
         self.retime_main(model, model.vars.xtal_frequency_hz.value * 2, 1, model.vars.lut_table_index.value[0])
+
+    def calc_adc_rate_mode_actual(self, model):
+        #This function calculates the actual value of the adc rate mode based on the reg value used
+        ifadcenhalfmode = model.vars.RAC_IFADCTRIM0_IFADCENHALFMODE.value
+
+        if ifadcenhalfmode == 1:
+            adc_rate_mode_actual = model.vars.adc_rate_mode.var_enum.HALFRATE
+        else:
+            adc_rate_mode_actual = model.vars.adc_rate_mode.var_enum.FULLRATE
+
+        #Write the variable
+        model.vars.adc_rate_mode_actual.value = adc_rate_mode_actual

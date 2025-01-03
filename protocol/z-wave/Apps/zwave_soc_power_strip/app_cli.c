@@ -42,6 +42,12 @@
 #include "ev_man.h"
 #include "events.h"
 #include "CC_MultilevelSwitch_Support.h"
+#include "CC_BinarySwitch.h"
+#include <sl_pwm_instances.h>
+#ifdef SL_CATALOG_RGB_LED_PRESENT
+#include <sl_simple_rgb_pwm_led.h>
+#include <sl_simple_rgb_pwm_led_instances.h>
+#endif
 
 #define DIMMING_TRANSITION_PERIOD_SEC 1 //Time [s] required for transition between 2 values, 0 means instant transition
 // -----------------------------------------------------------------------------
@@ -82,7 +88,7 @@ void cli_toggle_endpoint(sl_cli_command_arg_t *arguments)
 }
 
 /******************************************************************************
- * CLI - dim_endpoint: Dimm the endpoint 2
+ * CLI - dim_endpoint: Dim the endpoint 2
  *****************************************************************************/
 void cli_dim_endpoint(sl_cli_command_arg_t *arguments)
 {
@@ -114,5 +120,92 @@ void cli_toggle_notification_sending(sl_cli_command_arg_t *arguments)
   }
   zaf_event_distributor_enqueue_app_event(EVENT_APP_NOTIFICATION_TOGGLE);
 }
+
+/******************************************************************************
+ * CLI - get_led_state: Get the state of the LED1
+ *****************************************************************************/
+void cli_get_led_state(sl_cli_command_arg_t *arguments)
+{
+  (void) arguments;
+  app_log_info("Get the state of the LED1\r\n");
+  cc_binary_switch_t * p_switches = cc_binary_switch_get_config();
+  char* state = cc_binary_switch_get_current_value(&p_switches[0]) > 0 ? "on" : "off";
+  app_log_info("LED1 state: %s\r\n", state);
+}
+
+/******************************************************************************
+ * CLI - get_rgb_values: Get the RGB values of the RGB LED
+ *****************************************************************************/
+void cli_get_rgb_values(__attribute__((unused)) sl_cli_command_arg_t *arguments)
+{
+  app_log_info("Get rgb LED values\r\n");
+#ifdef SL_CATALOG_RGB_LED_PRESENT
+  uint16_t color_switch_red_value, color_switch_green_value, color_switch_blue_value;
+  sl_led_get_rgb_color(&sl_simple_rgb_pwm_led_rgb_led0, &color_switch_red_value, &color_switch_green_value, &color_switch_blue_value);
+  app_log_info("Red: %d, Green: %d, Blue: %d\r\n", color_switch_red_value, color_switch_green_value, color_switch_blue_value);
+#else
+  uint8_t monochrome_value =
+    cc_multilevel_switch_get_current_value(&cc_multilevel_switch_support_config_get_switches()[0])
+    / cc_multilevel_switch_get_max_value();
+  app_log_info("Monochrome: %d%%\r\n", monochrome_value);
+#endif
+}
+
+void cli_log_cc_binary_switch_events(const uint8_t event, const void * const data)
+{
+  cc_binary_switch_t * p_switch = (cc_binary_switch_t *)data;
+  if (p_switch->endpoint != cc_binary_switch_get_config()[0].endpoint) {
+    return;
+  }
+  const char message_common[] = "Binary switch";
+  switch (event) {
+    case CC_BINARY_SWITCH_EVENT_START_LEVEL_CHANGE:
+      if (p_switch->actuator.valueCurrent != p_switch->actuator.valueTarget) {
+        app_log_info("%s is turning %s\r\n", message_common,
+                     p_switch->actuator.valueTarget == 0 ? "off" : "on");
+      }
+      break;
+    case CC_BINARY_SWITCH_EVENT_REACHED_FINAL_VALUE:
+      app_log_info("%s turned %s\r\n", message_common,
+                   p_switch->actuator.valueCurrent == 0 ? "off" : "on");
+      break;
+    default:
+      break;
+  }
+}
+
+ZAF_EVENT_DISTRIBUTOR_REGISTER_CC_EVENT_HANDLER(
+  COMMAND_CLASS_SWITCH_BINARY, cli_log_cc_binary_switch_events);
+
+void cli_log_cc_multilevel_switch_events(const uint8_t event, const void * const data)
+{
+  cc_multilevel_switch_t * p_switch = (cc_multilevel_switch_t *)data;
+  if (p_switch->endpoint != cc_multilevel_switch_support_config_get_switches()[0].endpoint) {
+    return;
+  }
+  const char message_common[] = "Multilevel switch";
+  switch (event) {
+    case CC_MULTILEVEL_SWITCH_EVENT_START_LEVEL_CHANGE:
+      app_log_info("%s level change started: %d -> %d\r\n", message_common,
+                   p_switch->actuator.valueCurrent / 10,
+                   p_switch->actuator.valueTarget / 10);
+      break;
+    case CC_MULTILEVEL_SWITCH_EVENT_STOP_LEVEL_CHANGE:
+      app_log_info("%s level change stopped at %d\r\n", message_common,
+                   p_switch->actuator.valueCurrent / 10);
+      break;
+    case CC_MULTILEVEL_SWITCH_EVENT_REACHED_FINAL_VALUE:
+      if (p_switch->actuator.valueCurrent % 10 == 0) { // Avoid logging intermediate states
+        app_log_info("%s level is now at %d\r\n", message_common,
+                     p_switch->actuator.valueCurrent / 10);
+      }
+      break;
+    default:
+      break;
+  }
+}
+
+ZAF_EVENT_DISTRIBUTOR_REGISTER_CC_EVENT_HANDLER(
+  COMMAND_CLASS_SWITCH_MULTILEVEL, cli_log_cc_multilevel_switch_events);
 
 #endif // SL_CATALOG_ZW_CLI_COMMON_PRESENT

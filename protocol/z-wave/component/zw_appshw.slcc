@@ -16,19 +16,26 @@ include:
     file_list:
       - path: "app_hw.h"
       - path: "board_indicator.h"
-      - path: "board_init.h"
   - path: "protocol/z-wave/platform/SiliconLabs/AppsHw/inc"
     file_list:
       - path: "ADC.h"
-      - path: "board.h"
+      - path: "app_button_handler.h"
+        condition: [simple_button]
 
 source:
   - path: "protocol/z-wave/platform/SiliconLabs/AppsHw/src/common/IADC.c"
     condition: [device_has_iadc]    
-  - path: "protocol/z-wave/platform/SiliconLabs/AppsHw/src/common/board.c"
   - path: "protocol/z-wave/platform/SiliconLabs/AppsHw/src/common/board_indicator.c"
-  - path: "protocol/z-wave/platform/SiliconLabs/AppsHw/src/common/board_init.c"
-requires: 
-  - name: zw_target_boards
+    condition: [simple_led]
+  - path: "protocol/z-wave/platform/SiliconLabs/AppsHw/src/common/app_button_handler.c"
+    condition: [simple_button]
 provides:
   - name: zw_appshw
+
+template_contribution:
+  - name: event_handler
+    condition: [app_button_press]
+    value:
+      event: internal_app_init
+      include: app_button_press.h
+      handler: app_button_press_enable

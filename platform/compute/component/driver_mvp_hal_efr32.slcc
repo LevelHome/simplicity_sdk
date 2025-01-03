@@ -9,6 +9,9 @@ description: >
 category: Platform|Compute
 quality: production
 root_path: platform/compute/driver/mvp
+metadata:
+  sbom:
+    license: Zlib
 source:
   - path: src/sl_mvp_hal_efr32.c
 include:

@@ -77,11 +77,6 @@
   #include "cmsis_os2.h"
   #include "mbedtls/threading.h"
 
-#ifndef SL_THREADING_ALT
-#define MUTEX_INIT = { 0 }
-#define THREADING_SetRecursive(x)
-#endif
-
 // Mutex for protecting access to the ITS instance
 SLI_STATIC mbedtls_threading_mutex_t its_mutex MUTEX_INIT;
 static volatile bool its_mutex_inited = false;

@@ -2,7 +2,7 @@
  * @brief RAIL Configuration
  * @details
  *   WARNING: Auto-Generated Radio Config  -  DO NOT EDIT
- *   Radio Configurator Version: 2304.4.2
+ *   Radio Configurator Version: 2404.4.4
  *   RAIL Adapter Version: 2.4.33
  *   RAIL Compatibility: 2.x
  *******************************************************************************
@@ -39,11 +39,11 @@ static const uint8_t irCalConfig[] = {
 };
 
 static const int32_t timingConfig_0[] = {
-  6125, 6125, 500
+  6125, 6125, 500, 0
 };
 
 static const int32_t timingConfig_1[] = {
-  6625, 6625, 500
+  6625, 6625, 500, 0
 };
 
 static const uint8_t hfxoRetimingConfigEntries[] = {
@@ -51,7 +51,11 @@ static const uint8_t hfxoRetimingConfigEntries[] = {
 };
 
 #ifdef RADIO_CONFIG_ENABLE_STACK_INFO
-static const uint8_t stackInfo_0[2] = { 0x05, 0x00 };
+static const uint8_t stackInfo_0[2] = { 0x05, 0x03 };
+static const uint8_t stackInfo_1[2] = { 0x05, 0x00 };
+static const uint8_t stackInfo_2[2] = { 0x05, 0x04 };
+static const uint8_t stackInfo_3[2] = { 0x05, 0x06 };
+static const uint8_t stackInfo_4[2] = { 0x05, 0x05 };
 #endif // RADIO_CONFIG_ENABLE_STACK_INFO
 
 static RAIL_ChannelConfigEntryAttr_t channelConfigEntryAttr = {
@@ -74,7 +78,7 @@ static RAIL_ChannelConfigEntryAttr_t channelConfigEntryAttr = {
 };
 
 static const uint32_t phyInfo_0[] = {
-  16UL,
+  18UL,
   0x00666666UL, // 102.39999999999999
   (uint32_t) NULL,
   (uint32_t) irCalConfig,
@@ -90,14 +94,14 @@ static const uint32_t phyInfo_0[] = {
   (uint32_t) NULL,
   0UL,
   0UL,
-  1999969UL,
+  1999970UL,
   (uint32_t) NULL,
   (uint32_t) NULL,
   (uint32_t) NULL,
 };
 
 static const uint32_t phyInfo_1[] = {
-  16UL,
+  18UL,
   0x00666666UL, // 102.39999999999999
   (uint32_t) NULL,
   (uint32_t) irCalConfig,
@@ -113,14 +117,14 @@ static const uint32_t phyInfo_1[] = {
   (uint32_t) NULL,
   0UL,
   0UL,
-  1999969UL,
+  1999970UL,
   (uint32_t) NULL,
   (uint32_t) NULL,
   (uint32_t) NULL,
 };
 
 static const uint32_t phyInfo_2[] = {
-  16UL,
+  18UL,
   0x00666666UL, // 102.39999999999999
   (uint32_t) NULL,
   (uint32_t) irCalConfig,
@@ -136,7 +140,7 @@ static const uint32_t phyInfo_2[] = {
   (uint32_t) NULL,
   0UL,
   0UL,
-  1999969UL,
+  1999970UL,
   (uint32_t) NULL,
   (uint32_t) NULL,
   (uint32_t) NULL,
@@ -358,7 +362,7 @@ const uint32_t sl_rail_ieee802154_phy_2G4Hz_fast_switch_40MHz_modemConfigBase[] 
   /*    C040 */ 0x00000000UL,
   /*    C044 */ 0x00000000UL,
   0x0010C054UL, 0x00303151UL,
-  /*    C058 */ 0xE60E0007UL,
+  /*    C058 */ 0xE6070007UL,
   /*    C05C */ 0x00000015UL,
   /*    C060 */ 0x07060604UL,
   /*    C064 */ 0x00000007UL,
@@ -764,7 +768,7 @@ const RAIL_ChannelConfigEntry_t sl_rail_ieee802154_phy_2G4Hz_fast_switch_40MHz_c
     .entryType = 0,
 #endif
 #ifdef RADIO_CONFIG_ENABLE_STACK_INFO
-    .stackInfo = stackInfo_0,
+    .stackInfo = stackInfo_1,
 #endif
     .alternatePhy = NULL,
   },
@@ -784,7 +788,7 @@ const RAIL_ChannelConfigEntry_t sl_rail_ieee802154_phy_2G4Hz_antdiv_40MHz_channe
     .entryType = 0,
 #endif
 #ifdef RADIO_CONFIG_ENABLE_STACK_INFO
-    .stackInfo = stackInfo_0,
+    .stackInfo = stackInfo_2,
 #endif
     .alternatePhy = NULL,
   },
@@ -804,7 +808,7 @@ const RAIL_ChannelConfigEntry_t sl_rail_ieee802154_phy_2G4Hz_antdiv_fem_40MHz_ch
     .entryType = 0,
 #endif
 #ifdef RADIO_CONFIG_ENABLE_STACK_INFO
-    .stackInfo = stackInfo_0,
+    .stackInfo = stackInfo_3,
 #endif
     .alternatePhy = NULL,
   },
@@ -824,7 +828,7 @@ const RAIL_ChannelConfigEntry_t sl_rail_ieee802154_phy_2G4Hz_fem_40MHz_channels[
     .entryType = 0,
 #endif
 #ifdef RADIO_CONFIG_ENABLE_STACK_INFO
-    .stackInfo = stackInfo_0,
+    .stackInfo = stackInfo_4,
 #endif
     .alternatePhy = NULL,
   },

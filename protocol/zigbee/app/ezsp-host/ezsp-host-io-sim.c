@@ -22,12 +22,7 @@
 #include "ash-protocol.h"
 #include "app/ezsp-host/ezsp-host-io.h"
 
-// TODO: try to remove once EMZIGBEE-11229 is complete
-#ifndef UC_BUILD
-#include "plugin/serial/serial.h"
-#else
 #include "serial/serial.h"
-#endif
 
 // Disabling the Random Byte corruption to circumvent EMHAL-1626 which causes wwah-silabs.bsh to fail
 #ifndef NO_RD_WR_BAD_RANDOM

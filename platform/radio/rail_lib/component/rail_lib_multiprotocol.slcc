@@ -4,6 +4,11 @@ description: Multiprotocol RAIL Library Support
 package: platform
 category: Platform|Radio
 quality: production
+metadata:
+  sbom:
+    id: rail_lib_multiprotocol
+    name: RAIL Library, Multiprotocol
+    license: MSLA
 requires:
   - name: rail_lib
   - name: rail_util_built_in_phys
@@ -110,6 +115,7 @@ library:
       - toolchain_gcc
       - device_sdid_215
       - device_is_module
+
   - path: platform/radio/rail_lib/autogen/librail_release/librail_multiprotocol_efr32xg25_iar_release.a
     condition:
       - toolchain_iar
@@ -178,6 +184,7 @@ library:
       - toolchain_gcc
       - device_sdid_230
       - device_is_module
+
   - path: platform/radio/rail_lib/autogen/librail_release/librail_multiprotocol_efr32xg28_iar_release.a
     condition:
       - toolchain_iar
@@ -199,4 +206,50 @@ library:
     condition:
       - toolchain_gcc
       - device_sdid_235
+      - device_is_module
+
+  - path: platform/radio/rail_lib/autogen/librail_release/librail_multiprotocol_efr32xg29_iar_release.a
+    condition:
+      - toolchain_iar
+      - device_sdid_240
+    unless:
+      - device_is_module
+  - path: platform/radio/rail_lib/autogen/librail_release/librail_multiprotocol_efr32xg29_gcc_release.a
+    condition:
+      - toolchain_gcc
+      - device_sdid_240
+    unless:
+      - device_is_module
+  - path: platform/radio/rail_lib/autogen/librail_release/librail_multiprotocol_module_efr32xg29_iar_release.a
+    condition:
+      - toolchain_iar
+      - device_sdid_240
+      - device_is_module
+  - path: platform/radio/rail_lib/autogen/librail_release/librail_multiprotocol_module_efr32xg29_gcc_release.a
+    condition:
+      - toolchain_gcc
+      - device_sdid_240
+      - device_is_module
+
+  - path: platform/radio/rail_lib/autogen/librail_release/librail_multiprotocol_sixg301_iar_release.a
+    condition:
+      - toolchain_iar
+      - device_generic_family_sixx301
+    unless:
+      - device_is_module
+  - path: platform/radio/rail_lib/autogen/librail_release/librail_multiprotocol_sixg301_gcc_release.a
+    condition:
+      - toolchain_gcc
+      - device_generic_family_sixx301
+    unless:
+      - device_is_module
+  - path: platform/radio/rail_lib/autogen/librail_release/librail_multiprotocol_module_sixg301_iar_release.a
+    condition:
+      - toolchain_iar
+      - device_generic_family_sixx301
+      - device_is_module
+  - path: platform/radio/rail_lib/autogen/librail_release/librail_multiprotocol_module_sixg301_gcc_release.a
+    condition:
+      - toolchain_gcc
+      - device_generic_family_sixx301
       - device_is_module

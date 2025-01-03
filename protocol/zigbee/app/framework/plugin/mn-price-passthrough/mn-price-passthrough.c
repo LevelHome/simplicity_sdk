@@ -88,7 +88,7 @@ static void pollAndForwardEsiEventHandler(sl_zigbee_af_event_t * event)
   if (forwardingId == SL_ZIGBEE_NULL_NODE_ID
       || forwardingEndpoint == 0xFF
       || proxyEsiEndpoint == 0xFF) {
-    sl_zigbee_af_price_cluster_println("Routing parameters not properly established: node %x forwarding %x proxy %x",
+    sl_zigbee_af_price_cluster_println("Routing parameters not properly established: node %02X forwarding %02X proxy %02X",
                                        forwardingId,
                                        forwardingEndpoint,
                                        proxyEsiEndpoint);
@@ -100,7 +100,7 @@ static void pollAndForwardEsiEventHandler(sl_zigbee_af_event_t * event)
   sl_zigbee_af_set_command_endpoints(forwardingEndpoint, proxyEsiEndpoint);
   status = sl_zigbee_af_send_command_unicast(SL_ZIGBEE_OUTGOING_DIRECT, forwardingId);
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_price_cluster_println("Error in poll and forward event handler %x", status);
+    sl_zigbee_af_price_cluster_println("Error in poll and forward event handler %02X", status);
   }
 
   reschedule:
@@ -128,7 +128,7 @@ void sl_zigbee_af_mn_price_passthrough_init_cb(uint8_t init_level)
   }
 }
 
-bool sl_zigbee_af_price_cluster_publish_price_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_price_cluster_publish_price_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_price_cluster_publish_price_command_t cmd_data;
   uint8_t endpoint = sl_zigbee_af_current_endpoint();
@@ -137,14 +137,14 @@ bool sl_zigbee_af_price_cluster_publish_price_cb(sl_zigbee_af_cluster_command_t 
   if ((zcl_decode_price_cluster_publish_price_command(cmd, &cmd_data)
        != SL_ZIGBEE_ZCL_STATUS_SUCCESS)
       || ep == 0xFF) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_price_cluster_print("RX: PublishPrice 0x%4x, \"", cmd_data.providerId);
+  sl_zigbee_af_price_cluster_print("RX: PublishPrice 0x%08X, \"", cmd_data.providerId);
   sl_zigbee_af_price_cluster_print_string(cmd_data.rateLabel);
   sl_zigbee_af_price_cluster_print("\"");
   sl_zigbee_af_price_cluster_flush();
-  sl_zigbee_af_price_cluster_print(", 0x%4x, 0x%4x, 0x%x, 0x%2x, 0x%x, 0x%x, 0x%4x",
+  sl_zigbee_af_price_cluster_print(", 0x%08X, 0x%08X, 0x%02X, 0x%04X, 0x%02X, 0x%02X, 0x%08X",
                                    cmd_data.issuerEventId,
                                    cmd_data.currentTime,
                                    cmd_data.unitOfMeasure,
@@ -153,7 +153,7 @@ bool sl_zigbee_af_price_cluster_publish_price_cb(sl_zigbee_af_cluster_command_t 
                                    cmd_data.numberOfPriceTiersAndRegisterTier,
                                    cmd_data.startTime);
   sl_zigbee_af_price_cluster_flush();
-  sl_zigbee_af_price_cluster_print(", 0x%2x, 0x%4x, 0x%x, 0x%4x, 0x%x, 0x%4x, 0x%x",
+  sl_zigbee_af_price_cluster_print(", 0x%04X, 0x%08X, 0x%02X, 0x%08X, 0x%02X, 0x%08X, 0x%02X",
                                    cmd_data.durationInMinutes,
                                    cmd_data.price,
                                    cmd_data.priceRatio,
@@ -162,7 +162,7 @@ bool sl_zigbee_af_price_cluster_publish_price_cb(sl_zigbee_af_cluster_command_t 
                                    cmd_data.alternateCostDelivered,
                                    cmd_data.alternateCostUnit);
   sl_zigbee_af_price_cluster_flush();
-  sl_zigbee_af_price_cluster_println(", 0x%x, 0x%x, 0x%x",
+  sl_zigbee_af_price_cluster_println(", 0x%02X, 0x%02X, 0x%02X",
                                      cmd_data.alternateCostTrailingDigit,
                                      cmd_data.numberOfBlockThresholds,
                                      cmd_data.priceControl);
@@ -187,8 +187,7 @@ bool sl_zigbee_af_price_cluster_publish_price_cb(sl_zigbee_af_cluster_command_t 
   currentPrice.alternateCostTrailingDigit = cmd_data.alternateCostTrailingDigit;
   currentPrice.numberOfBlockThresholds = cmd_data.numberOfBlockThresholds;
   currentPrice.priceControl = cmd_data.priceControl;
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
 uint32_t sl_zigbee_af_price_cluster_client_command_parse(sl_service_opcode_t opcode,
@@ -197,21 +196,19 @@ uint32_t sl_zigbee_af_price_cluster_client_command_parse(sl_service_opcode_t opc
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_PUBLISH_PRICE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_price_cluster_publish_price_cb(cmd);
+        status = sl_zigbee_af_price_cluster_publish_price_cb(cmd);
         break;
       }
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }
 
 void sli_zigbee_af_mn_price_passthrough_routing_setup(sl_802154_short_addr_t fwdId,
@@ -225,20 +222,20 @@ void sli_zigbee_af_mn_price_passthrough_routing_setup(sl_802154_short_addr_t fwd
 
 void sli_zigbee_af_mn_price_passthrough_start_poll_and_forward(void)
 {
-  sl_zigbee_af_price_cluster_println("Starting %p", "poll and forward");
+  sl_zigbee_af_price_cluster_println("Starting %s", "poll and forward");
   sl_zigbee_af_event_set_delay_ms(&pollAndForwardEsiEvent,
                                   MILLISECOND_TICKS_PER_SECOND);
 }
 
 void sli_zigbee_af_mn_price_passthrough_stop_poll_and_forward(void)
 {
-  sl_zigbee_af_price_cluster_println("Stopping %p", "poll and forward");
+  sl_zigbee_af_price_cluster_println("Stopping %s", "poll and forward");
   sl_zigbee_af_event_set_inactive(&pollAndForwardEsiEvent);
 }
 
 bool sl_zigbee_af_price_cluster_get_current_price_cb(uint8_t commandOptions)
 {
-  sl_zigbee_af_price_cluster_println("RX: GetCurrentPrice 0x%x", commandOptions);
+  sl_zigbee_af_price_cluster_println("RX: GetCurrentPrice 0x%02X", commandOptions);
   if (currentPrice.priceControl & VALID) {
     sl_zigbee_af_price_cluster_println("no valid price to return!");
     sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_NOT_FOUND);
@@ -258,9 +255,9 @@ void sli_zigbee_af_mn_price_passthrough_print_current_price(void)
   sl_zigbee_af_price_cluster_print("  label: ");
   sl_zigbee_af_price_cluster_print_string(currentPrice.rateLabel);
 
-  sl_zigbee_af_price_cluster_print("(%x)\r\n  uom/cur: 0x%x/0x%2x"
-                                   "\r\n  pid/eid: 0x%4x/0x%4x"
-                                   "\r\n  ct/st/dur: 0x%4x/0x%4x/",
+  sl_zigbee_af_price_cluster_print("(%02X)\r\n  uom/cur: 0x%02X/0x%04X"
+                                   "\r\n  pid/eid: 0x%08X/0x%08X"
+                                   "\r\n  ct/st/dur: 0x%08X/0x%08X/",
                                    sl_zigbee_af_string_length(currentPrice.rateLabel),
                                    currentPrice.unitOfMeasure,
                                    currentPrice.currency,
@@ -271,12 +268,12 @@ void sli_zigbee_af_mn_price_passthrough_print_current_price(void)
   if (currentPrice.duration == ZCL_PRICE_CLUSTER_DURATION_UNTIL_CHANGED) {
     sl_zigbee_af_price_cluster_print("INF");
   } else {
-    sl_zigbee_af_price_cluster_print("0x%2x", currentPrice.duration);
+    sl_zigbee_af_price_cluster_print("0x%04X", currentPrice.duration);
   }
-  sl_zigbee_af_price_cluster_println("\r\n  ptdt/ptrt: 0x%x/0x%x"
-                                     "\r\n  p/pr: 0x%4x/0x%x"
-                                     "\r\n  gp/gpr: 0x%4x/0x%x"
-                                     "\r\n  acd/acu/actd: 0x%4x/0x%x/0x%x",
+  sl_zigbee_af_price_cluster_println("\r\n  ptdt/ptrt: 0x%02X/0x%02X"
+                                     "\r\n  p/pr: 0x%08X/0x%02X"
+                                     "\r\n  gp/gpr: 0x%08X/0x%02X"
+                                     "\r\n  acd/acu/actd: 0x%08X/0x%02X/0x%02X",
                                      currentPrice.priceTrailingDigitAndTier,
                                      currentPrice.numberOfPriceTiersAndTier,
                                      currentPrice.price,
@@ -286,16 +283,16 @@ void sli_zigbee_af_mn_price_passthrough_print_current_price(void)
                                      currentPrice.alternateCostDelivered,
                                      currentPrice.alternateCostUnit,
                                      currentPrice.alternateCostTrailingDigit);
-  sl_zigbee_af_price_cluster_println("  nobt: 0x%x", currentPrice.numberOfBlockThresholds);
-  sl_zigbee_af_price_cluster_println("  pc: 0x%x",
+  sl_zigbee_af_price_cluster_println("  nobt: 0x%02X", currentPrice.numberOfBlockThresholds);
+  sl_zigbee_af_price_cluster_println("  pc: 0x%02X",
                                      (currentPrice.priceControl
                                       & ZCL_PRICE_CLUSTER_RESERVED_MASK));
-  sl_zigbee_af_price_cluster_print("  price is valid from time 0x%4x until ",
+  sl_zigbee_af_price_cluster_print("  price is valid from time 0x%08X until ",
                                    currentPrice.startTime);
   if (currentPrice.duration == ZCL_PRICE_CLUSTER_DURATION_UNTIL_CHANGED) {
     sl_zigbee_af_price_cluster_println("eternity");
   } else {
-    sl_zigbee_af_price_cluster_println("0x%4x",
+    sl_zigbee_af_price_cluster_println("0x%08X",
                                        (currentPrice.startTime + (currentPrice.duration * 60)));
   }
 }

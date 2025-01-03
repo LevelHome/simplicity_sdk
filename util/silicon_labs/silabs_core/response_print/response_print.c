@@ -326,15 +326,15 @@ bool responsePrintEnd(char *formatString, ...)
 {
   RESPONSE_PRINT_RETURN_IF_DISABLED;
   va_list ap;
-
+  bool success = true;
   va_start(ap, formatString);
-  if (responsePrintInternal(STRIP_NONE, formatString, ap, true) != 0) {
-    va_end(ap);
-    return false;
+  if (formatString[0] == '}') {
+    printf("%s\n", formatString);
+  } else {
+    success = (responsePrintInternal(STRIP_NONE, formatString, ap, true) == 0);
   }
   va_end(ap);
-
-  return true;
+  return success;
 }
 
 bool responsePrintError(char *command, uint8_t code, char *formatString, ...)
@@ -386,9 +386,9 @@ int sprintfFloat(char *buffer, int8_t len, float f, uint8_t precision)
 
   int a;
   if (isNegative != 0) {
-    a = -(int)(f - 0.5); // Round toward negative infinity
+    a = -(int)(f - 0.5F); // Round toward negative infinity
   } else {
-    a = (int)(f + 0.5); // Round toward positive infinity
+    a = (int)(f + 0.5F); // Round toward positive infinity
   }
   if (a < 0) { // Sign changed, float too large!
     return 0;

@@ -399,6 +399,37 @@ Ecode_t DMADRV_LdmaStartTransfer(int                channelId,
 
   return ECODE_EMDRV_DMADRV_OK;
 }
+#elif defined(EMDRV_DMADRV_LDMA_S3)
+Ecode_t DMADRV_LdmaStartTransfer(int                            channelId,
+                                 sl_hal_ldma_transfer_config_t  *transfer,
+                                 sl_hal_ldma_descriptor_t       *descriptor,
+                                 DMADRV_Callback_t              callback,
+                                 void                           *cbUserParam)
+{
+  ChTable_t *ch;
+
+  if ( !initialized ) {
+    return ECODE_EMDRV_DMADRV_NOT_INITIALIZED;
+  }
+
+  if ( channelId >= (int)EMDRV_DMADRV_DMA_CH_COUNT ) {
+    return ECODE_EMDRV_DMADRV_PARAM_ERROR;
+  }
+
+  ch = &chTable[channelId];
+  if ( ch->allocated == false ) {
+    return ECODE_EMDRV_DMADRV_CH_NOT_ALLOCATED;
+  }
+
+  ch->callback      = callback;
+  ch->userParam     = cbUserParam;
+  ch->callbackCount = 0;
+  sl_hal_ldma_init_transfer(LDMA0, channelId, transfer, descriptor);
+  sl_hal_ldma_enable_interrupts(LDMA0, (1 << channelId));
+  sl_hal_ldma_start_transfer(LDMA0, channelId);
+
+  return ECODE_EMDRV_DMADRV_OK;
+}
 #endif
 
 /***************************************************************************//**
@@ -850,7 +881,7 @@ Ecode_t DMADRV_TransferCompletePending(unsigned int channelId, bool *pending)
 #elif defined(EMDRV_DMADRV_LDMA)
   if ( LDMA->IF & (1 << channelId) )
 #elif defined(EMDRV_DMADRV_LDMA_S3)
-  if ( sl_hal_ldma_get_interrupts(LDMA0) & (1 << channelId) )
+  if ( sl_hal_ldma_get_pending_interrupts(LDMA0) & (1 << channelId) )
 #endif
   {
     *pending = true;
@@ -1053,7 +1084,7 @@ static void LDMA_IRQHandlerDefault(uint8_t chnum)
   uint32_t chmask;
 
   /* Get all pending and enabled interrupts. */
-  pending = sl_hal_ldma_get_enabled_interrupts(LDMA0);
+  pending = sl_hal_ldma_get_enabled_pending_interrupts(LDMA0);
 
   /* Check for LDMA error. */
   if ( pending & (LDMA_IF_ERROR0 << chnum) ) {

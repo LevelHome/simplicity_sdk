@@ -26,6 +26,20 @@ library:
       - zigbee_aarch64_cortex_a72_gcc_12_3_0_musl
     unless:
       - zigbee_x86_64
+  - path: protocol/zigbee/build/gcc/aarch64_tizen-0.1-13.1_gcc-9.2-softfp/zigbee-multi-network/release/libzigbee-multi-network.a
+    condition:
+      - toolchain_gcc
+      - aarch64_tizen-0.1-13.1_gcc-9.2-softfp
+      - zigbee_stack_unix
+      - zigbee_multi_network
+    unless: []
+  - path: protocol/zigbee/build/gcc/armv7l_tizen-0.1-13.1_gcc-9.2-softfp/zigbee-multi-network/release/libzigbee-multi-network.a
+    condition:
+      - toolchain_gcc
+      - armv7l_tizen-0.1-13.1_gcc-9.2-softfp
+      - zigbee_stack_unix
+      - zigbee_multi_network
+    unless: []
   - path: protocol/zigbee/build/gcc/arm32v7/zigbee-multi-network/release/libzigbee-multi-network.a
     condition:
       - toolchain_gcc
@@ -90,6 +104,13 @@ library:
     unless:
       - zigbee_phy_2_4_subghz_selection_end_device
       - zigbee_phy_2_4_subghz_switch_coordinator
+  - path: protocol/zigbee/build/llvm/aarch64-android-ndk-r25c/zigbee-multi-network/release/libzigbee-multi-network.a
+    condition:
+      - toolchain_gcc
+      - aarch64-android-ndk-r25c
+      - zigbee_stack_unix
+      - zigbee_multi_network
+    unless: []
 metadata:
   sbom:
     license: MSLA

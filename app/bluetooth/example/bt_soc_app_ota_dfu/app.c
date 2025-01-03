@@ -28,7 +28,7 @@
  *
  ******************************************************************************/
 #include <stdbool.h>
-#include "em_common.h"
+#include "sl_common.h"
 #include "app_log.h"
 #include "app_assert.h"
 
@@ -41,9 +41,6 @@
 #include "sl_bt_app_ota_dfu.h"
 #include "app_timer.h"
 
-// Bootloader information
-static uint8_t btl_type;
-static uint32_t btl_version;
 // Storage information
 static uint32_t slot_startaddr;
 static uint32_t slot_size;
@@ -410,7 +407,7 @@ static void app_ota_dfu_on_status_change(sl_bt_app_ota_dfu_status_t curr_sts,
       app_assert_status(sc);
       app_log_info("Download finished. Received %lu bytes." APP_LOG_NL,
                    write_position);
-      app_log_info("Press END button in EFR Connect app!" APP_LOG_NL);
+      app_log_info("Press END button in Simplicity Connect app!" APP_LOG_NL);
       break;
 
     case SL_BT_APP_OTA_DFU_VERIFY:
@@ -454,6 +451,9 @@ static void app_ota_dfu_on_status_change(sl_bt_app_ota_dfu_status_t curr_sts,
  *****************************************************************************/
 void sl_bt_app_ota_dfu_on_status_event(sl_bt_app_ota_dfu_status_evt_t* evt)
 {
+  // Bootloader information
+  BootloaderType_t btl_type = NO_BOOTLOADER;
+  uint32_t btl_version = 0;
   // Get information that is up-to-date at every trigger
   app_ota_dfu_error_code = evt->ota_error_code;
   bootloader_api_error_code = evt->btl_api_retval;

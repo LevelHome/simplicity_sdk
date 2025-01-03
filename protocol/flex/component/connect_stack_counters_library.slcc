@@ -1,6 +1,6 @@
 id: "connect_stack_counters_library"
 label: "Stack Counters (Library)"
-package: "Flex"
+package: "Connect"
 category: "Connect"
 quality: "production"
 ui_hints:

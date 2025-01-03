@@ -28,19 +28,21 @@ import esl_lib
 import esl_tag
 from ap_constants import BROADCAST_ADDRESS
 
+
 class TagDB:
-    """ ESL tag database """
+    """ESL tag database"""
+
     def __init__(self):
         self.tags: list[esl_tag.Tag] = []
 
-    def add(self, lib:esl_lib.Lib, address: esl_lib.Address, dummy=False):
+    def add(self, lib: esl_lib.Lib, address: esl_lib.Address, dummy=False):
         tag = self.find(address)
         if tag is None:
             tag = esl_tag.Tag(lib, address, dummy=dummy)
             self.tags.append(tag)
         return tag
 
-    def remove(self, tag:esl_tag.Tag=None, address: esl_lib.Address=None):
+    def remove(self, tag: esl_tag.Tag = None, address: esl_lib.Address = None):
         if address is not None:
             tag = self.find(address)
         if tag is not None:
@@ -49,28 +51,32 @@ class TagDB:
     def find(self, node_id):
         value = node_id
         if isinstance(node_id, (esl_lib.Address, str)):
-            attr = 'ble_address'
+            attr = "ble_address"
         elif isinstance(node_id, esl_lib.ConnectionHandle):
-            attr = 'connection_handle'
+            attr = "connection_handle"
         elif isinstance(node_id, (tuple, list)):
             esl_id, group_id = node_id
             if esl_id == BROADCAST_ADDRESS:
                 # Invalid ESL ID
                 return None
             value = esl_id | (group_id << 8)
-            attr = 'esl_address'
+            attr = "esl_address"
         else:
-            return None # Unknown node ID type
+            return None  # Unknown node ID type
         for tag in self.tags:
             if getattr(tag, attr) == value:
                 return tag
-        return None # Tag not found
+        return None  # Tag not found
 
+    @property
+    def device_count(self):
+        return len(self.tags)
+ 
     def all(self):
         return self.tags
 
     def list_group(self, group_id):
-        return [tag for tag in self.tags if tag.group_id == group_id ]
+        return [tag for tag in self.tags if tag.group_id == group_id]
 
     def list_state(self, state):
         if not isinstance(state, (list, tuple)):
@@ -87,3 +93,11 @@ class TagDB:
 
     def list_blocked(self):
         return [tag for tag in self.tags if tag.blocked]
+
+    def list_all_groups(self):
+        groups = {}
+        for tag in self.tags:
+            if tag.associated:
+                groups.setdefault(tag.group_id, []).append(tag.esl_id)
+        
+        return dict(sorted(groups.items()))

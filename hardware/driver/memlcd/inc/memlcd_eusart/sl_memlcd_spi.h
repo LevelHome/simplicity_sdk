@@ -31,7 +31,14 @@
 #define __SL_MEMLCD_SPI_H_
 
 #include "sl_status.h"
+#include "em_device.h"
+#if defined(_SILICON_LABS_32B_SERIES_2)
 #include "em_eusart.h"
+#define eusart_ClockMode     EUSART_ClockMode_TypeDef
+#else
+#include "sl_hal_eusart.h"
+#define eusart_ClockMode     sl_hal_eusart_clock_mode_t
+#endif
 #include "sl_clock_manager.h"
 
 #ifdef __cplusplus
@@ -78,7 +85,7 @@ typedef struct {
  *   If all operations completed sucessfully SL_STATUS_OK is returned. On
  *   failure a different status code is returned specifying the error.
  *****************************************************************************/
-sl_status_t sli_memlcd_spi_init(sli_memlcd_spi_handle_t *handle, int bitrate, EUSART_ClockMode_TypeDef mode);
+sl_status_t sli_memlcd_spi_init(sli_memlcd_spi_handle_t *handle, int bitrate, eusart_ClockMode mode);
 
 /***************************************************************************//**
  * @brief

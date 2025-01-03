@@ -1,5 +1,5 @@
 /***************************************************************************//**
- * @file
+ * @file app_os_stat.h
  * @brief OS memory debug for application
  *******************************************************************************
  * # License
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef SL_APP_OS_STAT_H
-#define SL_APP_OS_STAT_H
+#ifndef APP_OS_STAT_H
+#define APP_OS_STAT_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,7 +38,6 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include "cmsis_os2.h"
 #include "sl_cmsis_os2_common.h"
 #include "sl_status.h"
@@ -47,6 +46,15 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
+/// Thread loop definition
+#ifndef APP_OS_STAT_THREAD_LOOP
+  #define APP_OS_STAT_THREAD_LOOP while (1)
+#endif
+
+/**************************************************************************//**
+ * @ingroup APP_OS_STAT
+ * @{
+ *****************************************************************************/
 
 // -----------------------------------------------------------------------------
 //                                Global Variables
@@ -80,7 +88,10 @@ sl_status_t app_os_stat_register_thread(const osThreadId_t thr_id);
 sl_status_t app_os_stat_remove_thread(const osThreadId_t thr_id);
 #endif
 
+/** @}*/
+
 #ifdef __cplusplus
 }
 #endif
-#endif /* SL_APP_OS_STAT_H */
+
+#endif // APP_OS_STAT_H

@@ -34,6 +34,8 @@
 extern "C" {
 #endif // __cplusplus
 
+#include "sl_btmesh_api.h"
+
 /***************************************************************************//**
  * @addtogroup mesh_blob_transfer_server BT Mesh BLOB Transfer Server
  * @{

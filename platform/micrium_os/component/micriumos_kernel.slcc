@@ -43,7 +43,9 @@ provides:
   - name: micriumos
   - name: micriumos_kernel
   - name: cmsis_rtos2
+    condition: [device_cortexm]
   - name: cmsis_rtos2_port
+    condition: [device_cortexm]
 requires:
   - name: code_classification
   - name: sleeptimer
@@ -58,21 +60,7 @@ requires:
   - name: cpu
   - name: common_core
   - name: slist
-  - name: kernel_port_armv6m
-    condition:
-      - cortexm0plus
-  - name: kernel_port_armv7m
-    condition:
-      - cortexm3
-  - name: kernel_port_armv7m
-    condition:
-      - cortexm4
-  - name: kernel_port_armv8m
-    condition:
-      - cortexm33
-  - name: kernel_port_win32
-    condition:
-      - win32
+  - name: kernel_port
 validation_helper:
   - path: kernel_sleeptimer_enable_validation.lua
 template_contribution:

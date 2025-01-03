@@ -62,7 +62,7 @@ int sli_cli_io_printf(const char *format, ...)
   va_list argptr;
 
   va_start(argptr, format);
-  vprintf(format, argptr);
+  sl_iostream_vprintf(SL_IOSTREAM_STDOUT, format, argptr);
   va_end(argptr);
 
   return 0;

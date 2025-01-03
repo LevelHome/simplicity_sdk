@@ -1,6 +1,6 @@
 # SE Manager Asymmetric Key Handling
 
-This example uses the SE Manager API to perform asymmetric key handling on the supported Series 2 device.
+This example uses the SE Manager API to perform asymmetric key handling on the supported device.
 
 In this example, SE Manager is used first to generate a public/private asymmetric key pair (plaintext, wrapped, and volatile) using a given Elliptic Curve Cryptography (ECC) curve. The public key is then exported from the key pair. It can be used to verify the public key after exporting or transferring a key in the Secure Vault device.
 

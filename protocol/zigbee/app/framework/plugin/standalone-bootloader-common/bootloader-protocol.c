@@ -54,7 +54,7 @@ sl_status_t sl_zigbee_af_standalone_bootloader_common_send_message(bool isBroadc
                                                            length,
                                                            message);
   if (SL_STATUS_OK != status) {
-    bootloadPrintln("Failed to send bootload message type: 0x%X, status: 0x%X",
+    bootloadPrintln("Failed to send bootload message type: 0x%02X, status: 0x%02X",
                     message[1],
                     status);
   }

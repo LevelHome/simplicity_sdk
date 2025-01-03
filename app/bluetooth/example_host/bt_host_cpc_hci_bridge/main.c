@@ -131,7 +131,11 @@ int main(int argc, char *argv[])
 void signal_handler(int sig)
 {
   (void)sig;
-  is_running = false;
+  if (is_running) {
+    is_running = false;
+  } else {
+    exit(EXIT_FAILURE);
+  }
 }
 
 /**************************************************************************//**

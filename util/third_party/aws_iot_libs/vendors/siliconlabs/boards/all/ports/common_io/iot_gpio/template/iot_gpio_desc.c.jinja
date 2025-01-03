@@ -54,8 +54,7 @@ IotGpioDescriptor iot_gpio_desc[] = {
   {
     .is_open = false,
     .instance_id = IOT_GPIO_CFG_{{ instance | upper }}_INST_NUM,
-    .port = IOT_GPIO_CFG_{{ instance | upper }}_PORT,
-    .pin = IOT_GPIO_CFG_{{ instance | upper }}_PIN,
+    .gpio = {.port = IOT_GPIO_CFG_{{ instance | upper }}_PORT, .pin = IOT_GPIO_CFG_{{ instance | upper }}_PIN},
     .direction = IOT_GPIO_CFG_{{ instance | upper }}_DIRECTION,
     .out_mode = IOT_GPIO_CFG_{{ instance | upper }}_OUTPUT,
     .pull = IOT_GPIO_CFG_{{ instance | upper }}_PULL,

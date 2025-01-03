@@ -70,7 +70,7 @@
     #define APP_SETTINGS_WISUN_DEFAULT_ALLOWED_CHANNELS  WISUN_CONFIG_ALLOWED_CHANNELS
   #endif
   #ifdef WISUN_CONFIG_TX_POWER
-    #define APP_SETTINGS_WISUN_DEFAULT_TX_POWER  WISUN_CONFIG_TX_POWER
+    #define APP_SETTINGS_WISUN_DEFAULT_TX_POWER_DDBM  (WISUN_CONFIG_TX_POWER * 10)
   #endif
   #ifdef WISUN_CONFIG_DEVICE_TYPE
     #define APP_SETTINGS_WISUN_DEFAULT_DEVICE_TYPE  WISUN_CONFIG_DEVICE_TYPE
@@ -119,8 +119,8 @@
 #ifndef APP_SETTINGS_WISUN_DEFAULT_ALLOWED_CHANNELS
   #define APP_SETTINGS_WISUN_DEFAULT_ALLOWED_CHANNELS  "0-255"
 #endif
-#ifndef APP_SETTINGS_WISUN_DEFAULT_TX_POWER
-  #define APP_SETTINGS_WISUN_DEFAULT_TX_POWER  20
+#ifndef APP_SETTINGS_WISUN_DEFAULT_TX_POWER_DDBM
+  #define APP_SETTINGS_WISUN_DEFAULT_TX_POWER_DDBM  200
 #endif
 #ifndef APP_SETTINGS_WISUN_DEFAULT_DEVICE_TYPE
   #define APP_SETTINGS_WISUN_DEFAULT_DEVICE_TYPE  DEFAULT_DEVICE_TYPE
@@ -213,7 +213,7 @@ static const app_settings_wisun_t app_settings_wisun_default = {
   .operating_class = APP_SETTINGS_WISUN_DEFAULT_OPERATING_CLASS,
   .operating_mode = APP_SETTINGS_WISUN_DEFAULT_OPERATING_MODE,
   .network_size = APP_SETTINGS_WISUN_DEFAULT_NETWORK_SIZE,
-  .tx_power = APP_SETTINGS_WISUN_DEFAULT_TX_POWER,
+  .tx_power_ddbm = APP_SETTINGS_WISUN_DEFAULT_TX_POWER_DDBM,
   .uc_dwell_interval_ms = APP_SETTINGS_WISUN_DEFAULT_UC_DWELL_INTERVAL,
   .number_of_channels = APP_SETTINGS_WISUN_DEFAULT_NUMBER_OF_CHANNELS,
   .ch0_frequency = APP_SETTINGS_WISUN_DEFAULT_CH0_FREQUENCY,
@@ -235,6 +235,8 @@ static const app_settings_wisun_t app_settings_wisun_default = {
   .neighbor_table_size = APP_SETTINGS_WISUN_NEIGHBOR_TABLE_SIZE,
   .keychain = APP_SETTINGS_WISUN_DEFAULT_KEYCHAIN,
   .keychain_index = APP_SETTINGS_WISUN_DEFAULT_KEYCHAIN_INDEX,
+  .direct_connect_pmk = { 0x34, 0xba, 0x32, 0x26, 0xa0, 0xb2, 0xad, 0x66, 0x7c, 0x9f, 0x66, 0x02, 0xe5, 0xdb, 0x75, 0x77,
+                          0xdd, 0xbd, 0x5d, 0x2b, 0x34, 0x3a, 0x93, 0x06, 0x2b, 0x90, 0xc0, 0x7b, 0xe2, 0x8e, 0x4e, 0x54 },
 };
 
 static const app_settings_ping_t app_settings_ping_default = {
@@ -530,6 +532,19 @@ static sl_status_t app_settings_get_rpl_info(char *value_str,
                                              const char *key_str,
                                              const app_settings_entry_t *entry);
 
+static sl_status_t app_settings_set_direct_connect_pmk(const char *value_str,
+                                                       const char *key_str,
+                                                       const app_settings_entry_t *entry);
+static sl_status_t app_settings_get_direct_connect_pmk(char *value_str,
+                                                       const char *key_str,
+                                                       const app_settings_entry_t *entry);
+static sl_status_t app_settings_set_tx_power(const char *value_str,
+                                             const char *key_str,
+                                             const app_settings_entry_t *entry);
+static sl_status_t app_settings_get_tx_power(char *value_str,
+                                             const char *key_str,
+                                             const app_settings_entry_t *entry);
+
 const app_settings_entry_t app_settings_entries[] =
 {
   {
@@ -772,12 +787,25 @@ const app_settings_entry_t app_settings_entries[] =
     .value_size = APP_SETTINGS_VALUE_SIZE_UINT8,
     .input = APP_SETTINGS_INPUT_FLAG_DEFAULT | APP_SETTINGS_INPUT_FLAG_SIGNED,
     .output = APP_SETTINGS_OUTPUT_FLAG_DEFAULT | APP_SETTINGS_OUTPUT_FLAG_SIGNED,
-    .value = &app_settings_wisun.tx_power,
+    .value = &app_settings_wisun.tx_power_ddbm,
     .input_enum_list = NULL,
     .output_enum_list = NULL,
-    .set_handler = app_settings_set_integer,
-    .get_handler = app_settings_get_integer,
-    .description = "TX power in dBm [uint8]"
+    .set_handler = app_settings_set_tx_power,
+    .get_handler = app_settings_get_tx_power,
+    .description = "TX power in dBm [int8]"
+  },
+  {
+    .key = "tx_power_ddbm",
+    .domain = app_settings_domain_wisun,
+    .value_size = APP_SETTINGS_VALUE_SIZE_UINT16,
+    .input = APP_SETTINGS_INPUT_FLAG_DEFAULT | APP_SETTINGS_INPUT_FLAG_SIGNED,
+    .output = APP_SETTINGS_OUTPUT_FLAG_DEFAULT | APP_SETTINGS_OUTPUT_FLAG_SIGNED,
+    .value = &app_settings_wisun.tx_power_ddbm,
+    .input_enum_list = NULL,
+    .output_enum_list = NULL,
+    .set_handler = app_settings_set_tx_power,
+    .get_handler = app_settings_get_tx_power,
+    .description = "TX power in ddBm [int16]"
   },
   {
     .key = "unicast_dwell_interval",
@@ -1315,6 +1343,19 @@ const app_settings_entry_t app_settings_entries[] =
     .set_handler = app_settings_set_integer,
     .get_handler = app_settings_get_integer,
     .description = "Built-in keychain index [uint8]"
+  },
+  {
+    .key = "direct_connect_pmk",
+    .domain = app_settings_domain_wisun,
+    .value_size = APP_SETTINGS_VALUE_SIZE_NONE,
+    .input = APP_SETTINGS_INPUT_FLAG_DEFAULT,
+    .output = APP_SETTINGS_OUTPUT_FLAG_DEFAULT,
+    .value = &app_settings_wisun.direct_connect_pmk,
+    .input_enum_list = NULL,
+    .output_enum_list = NULL,
+    .set_handler = app_settings_set_direct_connect_pmk,
+    .get_handler = app_settings_get_direct_connect_pmk,
+    .description = "Set Direct Connect PMK [string]"
   },
   {
     .key = NULL,
@@ -3235,4 +3276,78 @@ static sl_status_t app_settings_get_rpl_info(char *value_str,
 
   // Prevent parent from printing anything
   return SL_STATUS_FAIL;
+}
+
+static sl_status_t app_settings_set_direct_connect_pmk(const char *value_str,
+                                                       const char *key_str,
+                                                       const app_settings_entry_t *entry)
+{
+  (void)key_str;
+
+  return app_util_get_byte_array(value_str, entry->value, SL_WISUN_PMK_LEN);
+}
+
+static sl_status_t app_settings_get_direct_connect_pmk(char *value_str,
+                                                       const char *key_str,
+                                                       const app_settings_entry_t *entry)
+{
+  (void) key_str;
+
+  const uint8_t *pmk = (uint8_t *) entry->value;
+  int offset = 0;
+
+  for (int i = 0; i < SL_WISUN_PMK_LEN; i++) {
+    offset += sprintf(value_str + offset, "%02x", pmk[i]);
+    if (i + 1 < SL_WISUN_PMK_LEN) {
+      offset += sprintf(value_str + offset, ":");
+    }
+  }
+  return SL_STATUS_OK;
+}
+
+static sl_status_t app_settings_set_tx_power(const char *value_str,
+                                             const char *key_str,
+                                             const app_settings_entry_t *entry)
+{
+  (void)key_str;
+  sl_status_t ret;
+  uint32_t value;
+
+  ret = app_util_get_integer(&value,
+                             value_str,
+                             entry->input_enum_list,
+                             entry->input & APP_SETTINGS_INPUT_FLAG_SIGNED);
+
+  if (ret == SL_STATUS_OK) {
+    // If entry is in dBm, multiply by 10 to have ddBm
+    if (entry->value_size == APP_SETTINGS_VALUE_SIZE_UINT8) {
+      value = value * 10;
+    }
+    app_settings_wisun.tx_power_ddbm = (int16_t)value;
+  }
+
+  return ret;
+}
+
+static sl_status_t app_settings_get_tx_power(char *value_str,
+                                             const char *key_str,
+                                             const app_settings_entry_t *entry)
+{
+  sl_status_t status = SL_STATUS_OK;
+  int16_t tx_power_ddbm;
+  (void)key_str;
+
+  tx_power_ddbm = app_settings_wisun.tx_power_ddbm;
+  if (entry->value_size == APP_SETTINGS_VALUE_SIZE_UINT8) {
+    // If entry is in dBm, print in float format
+    sprintf(value_str, "%d.%d",
+            tx_power_ddbm / 10,
+            abs(tx_power_ddbm % 10));
+  } else if (entry->value_size == APP_SETTINGS_VALUE_SIZE_UINT16) {
+    sprintf(value_str, "%d", tx_power_ddbm);
+  } else {
+    status = SL_STATUS_FAIL;
+  }
+
+  return status;
 }

@@ -1,9 +1,9 @@
 /***************************************************************************//**
- * @file
+ * @file app_init.c
  * @brief Application init
  *******************************************************************************
  * # License
- * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -32,15 +32,20 @@
 //                                   Includes
 // -----------------------------------------------------------------------------
 #include <assert.h>
+
 #include "app_init.h"
 #include "sl_cmsis_os2_common.h"
 #include "sl_wisun_event_mgr.h"
-#include "sl_wisun_coap_collector.h"
 #include "sl_wisun_app_core_util.h"
 #include "sl_wisun_app_core_config.h"
 #include "app.h"
 #include "app_custom_callback.h"
 
+#if defined(SL_CATALOG_WISUN_COAP_PRESENT)
+#include "sl_wisun_coap_collector.h"
+#else
+#include "sl_wisun_collector.h"
+#endif
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -63,36 +68,34 @@
 void app_init(void)
 {
   /* Init project info */
+#if defined(SL_CATALOG_WISUN_COAP_PRESENT)
   sl_wisun_app_core_util_project_info_init("Wi-SUN CoAP Collector Application");
-
   /* Init CoAP collector */
   sl_wisun_coap_collector_init();
+#else
+  sl_wisun_app_core_util_project_info_init("Wi-SUN Collector Application");
+#endif
 
   /* Register callbacks */
-  app_wisun_em_custom_callback_register(SL_WISUN_MSG_CONNECTED_IND_ID,
-                                        app_custom_connected_callback);
-  app_wisun_em_custom_callback_register(SL_WISUN_MSG_SOCKET_DATA_IND_ID,
-                                        app_custom_socket_data_callback);
-  app_wisun_em_custom_callback_register(SL_WISUN_MSG_SOCKET_DATA_SENT_IND_ID,
-                                        app_custom_socket_data_sent_callback);
+  app_wisun_em_custom_callback_register(SL_WISUN_MSG_CONNECTED_IND_ID, app_custom_connected_callback);
+  app_wisun_em_custom_callback_register(SL_WISUN_MSG_SOCKET_DATA_IND_ID, app_custom_socket_data_callback);
+  app_wisun_em_custom_callback_register(SL_WISUN_MSG_SOCKET_DATA_SENT_IND_ID, app_custom_socket_data_sent_callback);
 
   /* Creating App main thread */
   const osThreadAttr_t app_task_attr = {
-    .name        = "AppMain",
-    .attr_bits   = osThreadDetached,
-    .cb_mem      = NULL,
-    .cb_size     = 0,
-    .stack_mem   = NULL,
-    .stack_size  = app_stack_size_word_to_byte(SL_WISUN_APP_CORE_MAIN_STACK_SIZE_WORD),
-    .priority    = osPriorityNormal,
-    .tz_module   = 0
+    .name       = "AppMain",
+    .attr_bits  = osThreadDetached,
+    .cb_mem     = NULL,
+    .cb_size    = 0,
+    .stack_mem  = NULL,
+    .stack_size = app_stack_size_word_to_byte(SL_WISUN_APP_CORE_MAIN_STACK_SIZE_WORD),
+    .priority   = osPriorityNormal,
+    .tz_module  = 0
   };
-  osThreadId_t app_thr_id = osThreadNew(app_task,
-                                        NULL,
-                                        &app_task_attr);
+
+  osThreadId_t app_thr_id = osThreadNew(app_task, NULL, &app_task_attr);
   assert(app_thr_id != NULL);
 }
-
 // -----------------------------------------------------------------------------
 //                          Static Function Definitions
 // -----------------------------------------------------------------------------

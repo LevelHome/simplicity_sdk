@@ -43,7 +43,7 @@ component:
   - id: psa_crypto_ecc_curve25519
   - id: sl_system
   - id: device_init
-  - id: device_init_hfrco
+  - id: clock_manager
   - id: printf
   - id: iostream_retarget_stdio
   - id: iostream_recommended_stream
@@ -52,8 +52,8 @@ requires:
     condition: [device_security_vault]
   - name: armv8m.main
 configuration:
-  - name: SL_DEVICE_INIT_HFRCO_BAND
-    value: cmuHFRCODPLLFreq_38M0Hz
+  - name: SL_CLOCK_MANAGER_HFRCO_BAND
+    value: 38000000
   - name: SL_BOARD_ENABLE_VCOM
     value: 1
 define:

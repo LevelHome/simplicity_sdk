@@ -2,8 +2,8 @@ id: interrupt_manager_vector_table_in_ram
 label: "interrupt Manager: Set interrupt vector in RAM."
 package: platform
 description: |
-  Specify that interrupt manager copy the interrupt vector in flash to RAM during initialization
-category: Services|Interrupt manager
+  Specify that Interrupt Manager copy the interrupt vector in flash to RAM during initialization
+category: Services|Interrupt Manager
 quality: production
 metadata:
   sbom:

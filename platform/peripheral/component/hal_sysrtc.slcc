@@ -16,6 +16,8 @@ include:
     file_list:
     - path: "sl_hal_sysrtc.h"
     - path: "sl_hal_sysrtc_compat.h"
+    - path: "peripheral_sysrtc.h"
+    - path: "peripheral_sysrtc_compat.h"
 provides:
   - name: hal_sysrtc
 requires:
@@ -29,7 +31,7 @@ template_contribution:
   - name: code_classification_components
     value: hal_sysrtc
 define:
-  - name: SL_CODE_COMPONENT_PERIPHERAL_SYSRTC
+  - name: SL_CODE_COMPONENT_HAL_SYSRTC
     value: hal_sysrtc
 documentation:
   docset: gecko-platform

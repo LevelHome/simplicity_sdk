@@ -1,5 +1,5 @@
 id: "sl_wisun_coap"
-label: "CoAP"
+label: "Wi-SUN CoAP"
 package: "wisun"
 description: >
   The Wi-SUN CoAP component offers an application layer implementation built on
@@ -16,11 +16,14 @@ description: >
   to retrieve information about available resources. These resources have
   additional attributes beyond the URI (Uniform Resource Identifier) path, which
   can be selectively filtered using specific Resource Discovery requests.
-  Furthermore, the CoAP Notification service allows you to create and schedule
-  notifications for the remote host. You can customize the schedule time and
-  send conditions based on your application requirements.
-  To incorporate the CoAP component into your application, simply add it to your
+  Furthermore, the CoAP Notification service allows the creation and schedule 
+  of notifications for the remote host. 
+  The schedule time and send conditions can be customized based on the application requirements.
+  To incorporate the CoAP component into the application, simply add it to the
   project and initialize it using sl_wisun_coap_init().
+  The CoAP component is compatible with third-party implementations, such as the 
+  [libcoap](https://libcoap.net) server and client binaries.
+
 category: "Wi-SUN|Wi-SUN Services"
 quality: "production"
 metadata:
@@ -35,8 +38,8 @@ metadata:
 root_path: "app/wisun/component/coap"
 
 requires:
-  - name: sl_wisun_ns_list
   - name: sl_mempool
+  - name: sl_wisun_trace_util
 provides:
   - name: sl_wisun_coap
 
@@ -64,6 +67,7 @@ include:
     - "path": "sn_config.h"
     - "path": "sn_coap_protocol.h"
     - "path": "sn_coap_header.h"
+    - "path": "ns_list.h"
   - path: "./mbed-trace"
     file_list:
     - "path": "mbed_trace.h"

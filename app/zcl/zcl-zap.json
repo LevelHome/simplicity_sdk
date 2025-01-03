@@ -62,5 +62,15 @@
     "NUMBER",
     "STRING",
     "STRUCT"
-  ]
+  ],
+  "zcl": {
+    "multiProtocol": {
+      "category": ["zigbee", "matter"],
+      "type": "boolean",
+      "configurability": "hidden",
+      "globalDefault": false,
+      "label": "List of clusters and attributes associated across protocols",
+      "defaults": "multi-protocol.json"
+    }
+  }
 }

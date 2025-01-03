@@ -491,7 +491,7 @@ void sli_zigbee_af_ota_client_signature_verify_print_signers(void)
 #if defined DEBUG_DIGEST_PRINT
 static void debugDigestPrint(const sl_zigbee_aes_mmo_hash_context_t* context)
 {
-  sl_zigbee_af_ota_bootload_cluster_print("Current Digest for length 0x%4X: ",
+  sl_zigbee_af_ota_bootload_cluster_print("Current Digest for length 0x%08X: ",
                                           context->length);
   sl_zigbee_af_print_zigbee_key(context->result);
 }
@@ -499,7 +499,7 @@ static void debugDigestPrint(const sl_zigbee_aes_mmo_hash_context_t* context)
 
 static void dsaVerifyHandler(sl_status_t status)
 {
-  otaPrintln("DSA Verify returned: 0x%x (%p)",
+  otaPrintln("DSA Verify returned: 0x%02X (%s)",
              status,
              (status == SL_STATUS_OK
               ? "Success"

@@ -88,11 +88,11 @@
 #define IOT_I2C_CFG_SENSOR_PERIPHERAL_NO         1
 
 // I2C1 SCL on PD10
-#define IOT_I2C_CFG_SENSOR_SCL_PORT              gpioPortD
+#define IOT_I2C_CFG_SENSOR_SCL_PORT              SL_GPIO_PORT_D
 #define IOT_I2C_CFG_SENSOR_SCL_PIN               10
 
 // I2C1 SDA on PD09
-#define IOT_I2C_CFG_SENSOR_SDA_PORT              gpioPortD
+#define IOT_I2C_CFG_SENSOR_SDA_PORT              SL_GPIO_PORT_D
 #define IOT_I2C_CFG_SENSOR_SDA_PIN               9
 
 // [I2C_IOT_I2C_CFG_SENSOR]$

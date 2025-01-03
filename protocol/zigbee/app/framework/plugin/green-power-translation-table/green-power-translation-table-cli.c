@@ -33,7 +33,7 @@ static void print_additional_info_block(uint8_t gpdCommand, uint8_t addInfoOffse
   sl_zigbee_gp_translation_table_additional_info_block_field_t *additionalInfoTable = sli_zigbee_af_gp_get_additional_info_table();
   sl_zigbee_gp_translation_table_additional_info_block_option_record_field_t * addInfo = &(additionalInfoTable->additionalInfoBlock[addInfoOffset]);
   if (gpdCommand == SL_ZIGBEE_ZCL_GP_GPDF_COMPACT_ATTRIBUTE_REPORTING) {
-    sl_zigbee_af_core_println("%d %d %d %d 0x%2X 0x%2X %d %d 0x%2X",
+    sl_zigbee_af_core_println("%d %d %d %d 0x%04X 0x%04X %d %d 0x%04X",
                               addInfo->totalLengthOfAddInfoBlock,
                               addInfo->optionSelector,
                               addInfo->optionData.compactAttr.reportIdentifier,
@@ -44,7 +44,7 @@ static void print_additional_info_block(uint8_t gpdCommand, uint8_t addInfoOffse
                               addInfo->optionData.compactAttr.attributeOptions,
                               addInfo->optionData.compactAttr.manufacturerID);
   } else {
-    sl_zigbee_af_core_println("%d %d 0x%2X 0x%2X",
+    sl_zigbee_af_core_println("%d %d 0x%04X 0x%04X",
                               addInfo->totalLengthOfAddInfoBlock,
                               addInfo->optionSelector,
                               addInfo->optionData.genericSwitch.contactBitmask,
@@ -279,13 +279,13 @@ void sl_zigbee_af_green_power_server_cli_customized_table_print(SL_CLI_COMMAND_A
   sl_zigbee_af_green_power_server_gpd_sub_translation_table_entry_t* customizedTable = sli_zigbee_af_gp_get_customized_table();
   for (index = 0; index < SL_ZIGBEE_AF_PLUGIN_GREEN_POWER_TRANSLATION_TABLE_CUSTOMIZED_GPD_TRANSLATION_TABLE_SIZE; index++) {
     entry = &customizedTable[index];
-    sl_zigbee_af_core_print("%d  0x%X\t\t  0x%2X\t  0x%2X\t  0x%X\t",
+    sl_zigbee_af_core_print("%d  0x%02X\t\t  0x%04X\t  0x%04X\t  0x%02X\t",
                             entry->endpoint,
                             entry->gpdCommand,
                             entry->zigbeeProfile,
                             entry->zigbeeCluster,
                             entry->zigbeeCommandId);
-    sl_zigbee_af_core_print("0x%X", entry->payloadSrc);
+    sl_zigbee_af_core_print("0x%02X", entry->payloadSrc);
 
     len = sl_zigbee_af_string_length(entry->zclPayloadDefault);
     if (len >= SL_ZIGBEE_AF_GREEN_POWER_SERVER_TRANSLATION_TABLE_ENTRY_ZCL_PAYLOAD_LEN) {
@@ -313,25 +313,25 @@ void sl_zigbee_af_green_power_server_cli_translation_table_print(SL_CLI_COMMAND_
       }
       status = sli_zigbee_af_gp_trans_table_get_translation_table_entry(entryIndex, &TranslationTableEntry);
       if (status == GP_TRANSLATION_TABLE_STATUS_SUCCESS) {
-        sl_zigbee_af_core_print("%x    ", entryIndex);
-        sl_zigbee_af_core_print("%x    ", TranslationTableEntry.validEntry);
-        sl_zigbee_af_core_print("%x    ", sli_zigbee_gp_translation_table->TableEntry[entryIndex].gpAddr.applicationId);
+        sl_zigbee_af_core_print("%02X    ", entryIndex);
+        sl_zigbee_af_core_print("%02X    ", TranslationTableEntry.validEntry);
+        sl_zigbee_af_core_print("%02X    ", sli_zigbee_gp_translation_table->TableEntry[entryIndex].gpAddr.applicationId);
         if ((sli_zigbee_gp_translation_table->TableEntry[entryIndex].gpAddr.applicationId & SL_ZIGBEE_AF_GP_NOTIFICATION_OPTION_APPLICATION_ID) == SL_ZIGBEE_GP_APPLICATION_IEEE_ADDRESS) {
           sl_zigbee_af_print_big_endian_eui64(sli_zigbee_gp_translation_table->TableEntry[entryIndex].gpAddr.id.gpdIeeeAddress);
           sl_zigbee_af_core_print(" ");
-          sl_zigbee_af_core_print("%x ", sli_zigbee_gp_translation_table->TableEntry[entryIndex].gpAddr.endpoint);
+          sl_zigbee_af_core_print("%02X ", sli_zigbee_gp_translation_table->TableEntry[entryIndex].gpAddr.endpoint);
           sl_zigbee_af_core_print("         ");
         } else {
           sl_zigbee_af_core_print("                       ");
-          sl_zigbee_af_core_print("%4x ", sli_zigbee_gp_translation_table->TableEntry[entryIndex].gpAddr.id.sourceId);
+          sl_zigbee_af_core_print("%08X ", sli_zigbee_gp_translation_table->TableEntry[entryIndex].gpAddr.id.sourceId);
         }
-        sl_zigbee_af_core_print("%x     ", TranslationTableEntry.gpdCommand);
-        sl_zigbee_af_core_print("%x  ", TranslationTableEntry.endpoint);
-        sl_zigbee_af_core_print("%2x  ", TranslationTableEntry.zigbeeProfile);
-        sl_zigbee_af_core_print("%2x     ", TranslationTableEntry.zigbeeCluster);
-        sl_zigbee_af_core_print("%x   ", TranslationTableEntry.zigbeeCommandId);
-        sl_zigbee_af_core_print("%x    ", sli_zigbee_gp_translation_table->TableEntry[entryIndex].entry);
-        sl_zigbee_af_core_print("%x   ", sli_zigbee_gp_translation_table->TableEntry[entryIndex].infoBlockPresent);
+        sl_zigbee_af_core_print("%02X     ", TranslationTableEntry.gpdCommand);
+        sl_zigbee_af_core_print("%02X  ", TranslationTableEntry.endpoint);
+        sl_zigbee_af_core_print("%04X  ", TranslationTableEntry.zigbeeProfile);
+        sl_zigbee_af_core_print("%04X     ", TranslationTableEntry.zigbeeCluster);
+        sl_zigbee_af_core_print("%02X   ", TranslationTableEntry.zigbeeCommandId);
+        sl_zigbee_af_core_print("%02X    ", sli_zigbee_gp_translation_table->TableEntry[entryIndex].entry);
+        sl_zigbee_af_core_print("%02X   ", sli_zigbee_gp_translation_table->TableEntry[entryIndex].infoBlockPresent);
         if (sli_zigbee_gp_translation_table->TableEntry[entryIndex].infoBlockPresent == true) {
           print_additional_info_block(TranslationTableEntry.gpdCommand, sli_zigbee_gp_translation_table->TableEntry[entryIndex].additionalInfoOffset);
         }
@@ -365,16 +365,16 @@ void sl_zigbee_af_green_power_server_cli_remove_gpd_endpoint(SL_CLI_COMMAND_ARG)
     sl_zigbee_af_green_power_cluster_println("GPD addr Error");
     return;
   }
-  sl_zigbee_af_green_power_cluster_print("%x    ", gpApplicationId);
+  sl_zigbee_af_green_power_cluster_print("%02X    ", gpApplicationId);
   if ((gpApplicationId & SL_ZIGBEE_AF_GP_NOTIFICATION_OPTION_APPLICATION_ID) == SL_ZIGBEE_GP_APPLICATION_IEEE_ADDRESS) {
     sl_zigbee_af_print_big_endian_eui64(gpdAddr.id.gpdIeeeAddress);
     sl_zigbee_af_green_power_cluster_print(" ");
-    sl_zigbee_af_green_power_cluster_print("%x ", gpdAddr.endpoint);
+    sl_zigbee_af_green_power_cluster_print("%02X ", gpdAddr.endpoint);
     sl_zigbee_af_green_power_cluster_print("         ");
   } else {
     sl_zigbee_af_green_power_cluster_print("                       ");
-    sl_zigbee_af_green_power_cluster_print("%4x ", gpdAddr.id.sourceId);
+    sl_zigbee_af_green_power_cluster_print("%08X ", gpdAddr.id.sourceId);
   }
-  sl_zigbee_af_green_power_cluster_println("%x  ", zbEndpoint);
+  sl_zigbee_af_green_power_cluster_println("%02X  ", zbEndpoint);
   sli_zigbee_af_gp_remove_gpd_endpoint_from_translation_table(&gpdAddr, zbEndpoint);
 }

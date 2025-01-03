@@ -1,9 +1,9 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_wisun_coap_meter.c
+ * @brief Wi-SUN CoAP Meter
  *******************************************************************************
  * # License
- * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -31,46 +31,38 @@
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
+#include <stdint.h>
+#include <stddef.h>
+#include <stdbool.h>
+#include <stdio.h>
 #include <string.h>
-#include "em_device.h"
-#include "sl_wisun_coap_meter.h"
-#include "sl_wisun_meter_config.h"
-#include "sl_component_catalog.h"
+#include <stdlib.h>
+#include <assert.h>
+
+#include "sl_status.h"
+#include "sl_mempool.h"
 #include "sl_string.h"
+#include "sl_wisun_event_mgr.h"
 #include "sl_wisun_app_core.h"
+#include "sl_wisun_coap.h"
 #include "sl_wisun_coap_rhnd.h"
-#include "sli_wisun_coap_rd.h"
+#include "sl_wisun_coap_notify.h"
+#include "sl_wisun_config.h"
 #include "sl_wisun_trace_util.h"
+#include "sl_wisun_coap_meter.h"
+#include "sli_wisun_meter_collector.h"
+#include "sl_wisun_meter_collector_config.h"
 
 #if !defined(SL_CATALOG_POWER_MANAGER_PRESENT)
-  #include "sl_wisun_led_driver.h"
+#include "sl_wisun_led_driver.h"
 #endif
 
 #if defined(SL_CATALOG_TEMP_SENSOR_PRESENT)
-  #include "sl_wisun_rht_measurement.h"
+#include "sl_wisun_rht_measurement.h"
 #endif
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
-
-/// JSON formated measurement data maximum size
-#define JSON_MEASUREMENT_DATA_SIZE                (350U)
-
-#define JSON_MEASUREMENT_FORMAT_STR \
-  "  {\n"                           \
-  "    \"%s\" :\n"                  \
-  "    {\n"                         \
-  "      \"id\": %u,\n"             \
-  "      \"temp\": %lu.%lu,\n"      \
-  "      \"hum\": %lu.%lu,\n"       \
-  "      \"lx\": %u\n"              \
-  "    }\n"                         \
-  "  }"
-
-/// Measurement plain text buffer size
-#define RHT_AND_LIGHT_MEAS_PLAIN_TXT_DATA_SIZE    (32U)
 
 /// Print to buff macro function
 #define __print_to_buff(__r, __pkt, __buf, __buf_len, __format, ...) \
@@ -86,64 +78,150 @@
     }                                                                \
   } while (0)
 
-#define JSON_MEASUREMENT_RESP_BEGIN_FORMAT_STR \
+/// Json measurement begin format string
+#define SL_WISUN_COAP_METER_JSON_MEAS_RESP_BEGIN_FORMAT_STR \
   "{\"%s\" : \n["
-#define JSON_MEASUREMENT_RESP_LINE_FORMAT_STR \
+
+/// Json measurement line format string
+#define SL_WISUN_COAP_METER_JSON_MEAS_RESP_LINE_FORMAT_STR \
   "\n\"#%u: %lu.%luC %lu.%lu%% %ulux\""
 
-#define JSON_MEASUREMENT_RESP_END_FORMAT_STR \
+/// Json measurement end format string
+#define SL_WISUN_COAP_JSON_MEAS_RESP_END_FORMAT_STR \
   "\n]}"
 
-/// Measurement type enumeration
-typedef enum measurement_type {
-  /// Measure All
-  COAP_METER_MEASUREMENT_ALL,
-  /// Measure temperature
-  COAP_METER_MEASUREMENT_TEMPERATURE,
-  /// Measure humidity
-  COAP_METER_MEASUREMENT_HUMIDITY,
-  /// Measure light
-  COAP_METER_MEASUREMENT_LIGHT
-} measurement_type_t;
-
-#define JSON_REQUIRED_PAYALOAD_SIZE \
+/// JSON formated measurement data maximum size
+#define SL_WISUN_COAP_METER_JSON_REQUIRED_PAYALOAD_SIZE \
   (SL_WISUN_METER_MEASUREMENT_BUFFER_SIZE * 36 + 64)
+
+#if (SL_WISUN_COAP_METER_JSON_REQUIRED_PAYALOAD_SIZE > (SL_WISUN_COAP_NOTIFY_SOCK_BUFF_SIZE - 32U))
+#define SL_WISUN_COAP_METER_JOSN_PAYLOAD_SIZE (SL_WISUN_COAP_NOTIFY_SOCK_BUFF_SIZE - 32U)
+#else
+#define SL_WISUN_COAP_METER_JOSN_PAYLOAD_SIZE SL_WISUN_COAP_METER_JSON_REQUIRED_PAYALOAD_SIZE
+#endif
+
+/// JSON formated measurement data maximum size
+#define SL_WISUN_COAP_METER_JSON_MEAS_DATA_SIZE         350U
+
+/// JSON format string for measurement
+#define SL_WISUN_COAP_METER_JSON_MEAS_FORMAT_STR \
+  "  {\n"                                        \
+  "    \"%s\" :\n"                               \
+  "    {\n"                                      \
+  "      \"id\": %u,\n"                          \
+  "      \"temp\": %lu.%lu,\n"                   \
+  "      \"hum\": %lu.%lu,\n"                    \
+  "      \"lx\": %u\n"                           \
+  "    }\n"                                      \
+  "  }"
+
+/// Measurement plain text buffer size
+#define SL_WISUN_COAP_METER_MEAS_PLAIN_TXT_DATA_SIZE    32U
+
+/// CoAP Meter measurement resource type ALL
+#define SL_WISUN_COAP_METER_RESOURCE_RT_ALL             "all"
+
+/// CoAP Meter measurement resource type temperature
+#define SL_WISUN_COAP_METER_RESOURCE_RT_TEMPERATURE     "temperature"
+
+/// CoAP Meter measurement resource type humidity
+#define SL_WISUN_COAP_METER_RESOURCE_RT_HUMIDITY        "humidity"
+
+/// CoAP Meter measurement resource type light
+#define SL_WISUN_COAP_METER_RESOURCE_RT_LIGHT           "light"
+
+/// CoAP Meter measurement interface sensor
+#define SL_WISUN_COAP_METER_RESOURCE_IF_SENSOR          "sensor"
+
+/// CoAP Meter gpio resource type LED
+#define SL_WISUN_COAP_METER_RESOURCE_RT_LED             "led"
+
+/// CoAP Meter gpio interface
+#define SL_WISUN_COAP_METER_RESOURCE_IF_LED             "gpio"
+
+/// CoAP Meter resource type help
+#define SL_WISUN_COAP_METER_RESOURCE_RT_HELP            "help"
+
+/// CoAP Meter help interface
+#define SL_WISUN_COAP_METER_RESOURCE_IF_HELP            "meter"
+
+/// Not valid help request response string
+#define SL_WISUN_COAP_METER_NOT_VALID_HELP_RESP         "[Not valid help request]"
+
+/// Measurement failed response string
+#define SL_WISUN_COAP_METER_MEASUREMENT_FAILED_RESP     "[Measurement failed]"
+
+/// Not valid measurement request response string
+#define SL_WISUN_COAP_METER_NOT_VALID_MEAS_RESP         "[Not valid measurement request]"
+
+/// Parsing payload failed response string
+#define SL_WISUN_COAP_METER_PARSE_PAYLOAD_FAILED_RESP   "[Parsing payload failed]"
+
+/// Invalid source address response string
+#define SL_WISUN_COAP_METER_INVALID_SRC_ADDR_RESP       "[Invalid source address]"
+
+/// Registering collector failed response string
+#define SL_WISUN_COAP_METER_REG_COLLECTOR_FAILED_RESP   "[Registering collector failed]"
+
+/// Collector registered response string
+#define SL_WISUN_COAP_METER_COLLECTOR_REGISTERED_RESP   "[Collector registered]"
+
+/// Getting collector failed response string
+#define SL_WISUN_COAP_METER_GET_COLLECTOR_FAILED_RESP   "[Getting collector failed]"
+
+///Removing collector failed response string
+#define SL_WISUN_COAP_METER_RM_COLLECTOR_FAILED_RESP    "[Removing collector failed]"
+
+/// Collector removed response string
+#define SL_WISUN_COAP_METER_COLLECTOR_REMOVED_RESP      "[Collector removed]"
+
+/// Temperature measurement failed response string
+#define SL_WISUN_COAP_METER_TEMP_MEAS_FAILED_RESP       "[Temperature measurement failed]"
+
+/// Humidity measurement failed response string
+#define SL_WISUN_COAP_METER_HUM_MEAS_FAILED_RESP        "[Humidity measurement failed]"
+
+/// Light measurement failed response string
+#define SL_WISUN_COAP_METER_LIGHT_MEAS_FAILED_RESP      "[Light measurement failed]"
+
+/// Not valid LED ID response string
+#define SL_WISUN_COAP_METER_NOT_VALID_LED_ID_RESP       "[Not valid LED ID]"
+
+/// LED toggle failed response string
+#define SL_WISUN_COAP_METER_LED_TOGGLE_FAILED_RESP      "[LED toggle failed]"
+
+/// LED toggled response string
+#define SL_WISUN_COAP_METER_LED_TOGGLED_RESP            "[LED toggled]"
+
+/// Help response string
+#define SL_WISUN_COAP_METER_HELP_RESP                                                                \
+  "Command example:\n"                                                                               \
+  "coap-client -m get -N -B 10 -t text coap://[$METER_IPV6_ADDR]:5683/$URI_PATH -e \"$PAYLOAD\"\n\n" \
+  "Requests:\n"                                                                                      \
+  "  [PUT/POST/GET] sensor/all:\n"                                                                   \
+  "    - no payload or \"async\": GET request to get measurement data\n"                             \
+  "    - \"register\": POST/PUT request to register collector\n"                                     \
+  "    - \"remove\": POST/PUT request to remove collector\n"                                         \
+  "  [GET]       sensor/temperature: Request to get temperature\n"                                   \
+  "  [GET]       sensor/humidity: Request to get humidity\n"                                         \
+  "  [GET]       sensor/light: Request to get light\n"                                               \
+  "  [PUT/POST]  gpio/led: Toggle LED0/LED1. Payload is index of the LED: \"0\" or \"1\"\n"
+
+/// Measurement type enumeration
+typedef enum sl_wisun_coap_meter_measurement_type {
+  /// Measure All
+  SL_WISUN_COAP_METER_MEASUREMENT_TYPE_ALL,
+  /// Measure temperature
+  SL_WISUN_COAP_METER_MEASUREMENT_TYPE_TEMPERATURE,
+  /// Measure humidity
+  SL_WISUN_COAP_METER_MEASUREMENT_TYPE_HUMIDITY,
+  /// Measure light
+  SL_WISUN_COAP_METER_MEASUREMENT_TYPE_LIGHT
+} sl_wisun_coap_meter_measurement_type_t;
 
 // -----------------------------------------------------------------------------
 //                          Static Function Declarations
 // -----------------------------------------------------------------------------
-
-#if SL_WISUN_COAP_MC_OPTIMIZED_MODE_ENABLE
-/**************************************************************************//**
- * @brief CoAP meter parse
- * @details Handler function
- * @param[in] raw Received data buffer
- * @param[in] packet_data_len Length of the received packet
- * @param[out] req NULL
- * @return SL_STATUS_OK On success
- * @return SL_STATUS_FAIL On failure
- *****************************************************************************/
-static sl_status_t _coap_meter_parse_request(const void * const raw,
-                                             int32_t packet_data_len,
-                                             sl_wisun_request_type_t * const req);
-
-/**************************************************************************//**
- * @brief Coap meter build
- * @details Handler function
- * @param[in] req Request type
- * @param[in] packets Pointer to the packet buffer
- * @param[in] nr_of_packets Number of packets to build
- * @param[in, out] buf Buffer to store packed data
- * @param[out] len Length of the buffer
- * @return SL_STATUS_OK On success
- * @return SL_STATUS_FAIL On failure
- *****************************************************************************/
-static sl_status_t _coap_meter_build_packets(const sl_wisun_request_type_t req,
-                                             const sl_wisun_meter_packet_t * const packets,
-                                             const uint8_t nr_of_packets,
-                                             uint8_t * const buf,
-                                             uint32_t * const len);
-#else
 
 /**************************************************************************//**
  * @brief Create formated json string from measurement packet
@@ -156,6 +234,57 @@ static const char *_meter_packet2json(const sl_wisun_meter_packet_t * const pack
                                       const char *ip_str_global);
 
 /**************************************************************************//**
+ * @brief Prepare help response packet
+ * @details Callback for CoAP Resource Handler Service. It should be registered.
+ * @param[in] req_packet Request packet
+ * @return sl_wisun_coap_packet_t * Response packet ptr
+ *****************************************************************************/
+static sl_wisun_coap_packet_t *_help_response_cb(const sl_wisun_coap_packet_t * const req_packet);
+
+/**************************************************************************//**
+ * @brief Prepare measurement response packet from all sensor values
+ * @details Callback for CoAP Resource Handler Service. It should be registered.
+ * @param[in] req_packet Request packet
+ * @return sl_wisun_coap_packet_t * Response packet ptr
+ *****************************************************************************/
+static sl_wisun_coap_packet_t *_measurement_response_cb(const sockaddr_in6_t * const src_addr,
+                                                        const sl_wisun_coap_packet_t * const req_packet);
+
+/**************************************************************************//**
+ * @brief Prepare Temperature measurement response packet
+ * @details Callback for CoAP Resource Handler Service. It should be registered.
+ * @param[in] req_packet Request packet
+ * @return sl_wisun_coap_packet_t * Response packet ptr
+ *****************************************************************************/
+static sl_wisun_coap_packet_t *_temperature_response_cb(const sl_wisun_coap_packet_t * const req_packet);
+
+/**************************************************************************//**
+ * @brief Prepare Humidity measurement response packet
+ * @details Callback for CoAP Resource Handler Service. It should be registered.
+ * @param[in] req_packet Request packet
+ * @return sl_wisun_coap_packet_t * Response packet ptr
+ *****************************************************************************/
+static sl_wisun_coap_packet_t *_humidity_response_cb(const sl_wisun_coap_packet_t * const req_packet);
+
+/**************************************************************************//**
+ * @brief Prepare Light measurement response packet
+ * @details Callback for CoAP Resource Handler Service. It should be registered.
+ * @param[in] req_packet Request packet
+ * @return sl_wisun_coap_packet_t * Response packet ptr
+ *****************************************************************************/
+static sl_wisun_coap_packet_t *_light_response_cb(const sl_wisun_coap_packet_t * const req_packet);
+
+#if !defined(SL_CATALOG_POWER_MANAGER_PRESENT)
+/**************************************************************************//**
+ * @brief Prepare measurement response packet
+ * @details Callback for CoAP Resource Handler Service. It should be registered.
+ * @param[in] req_packet Request packet
+ * @return sl_wisun_coap_packet_t * Response packet ptr
+ *****************************************************************************/
+static sl_wisun_coap_packet_t *_led_toggle_response_cb(const sl_wisun_coap_packet_t * const req_packet);
+#endif
+
+/**************************************************************************//**
  * @brief Prepare measurement by measurement type
  * @details Helper function
  * @param[in] req_packet Request packet
@@ -163,18 +292,53 @@ static const char *_meter_packet2json(const sl_wisun_meter_packet_t * const pack
  * @return sl_wisun_coap_packet_t * Response packet ptr
  *****************************************************************************/
 static sl_wisun_coap_packet_t *_prepare_measurement_resp(const sl_wisun_coap_packet_t * const req_packet,
-                                                         const measurement_type_t measurement);
+                                                         const sl_wisun_coap_meter_measurement_type_t measurement);
 
-#if !defined(SL_CATALOG_POWER_MANAGER_PRESENT)
 /**************************************************************************//**
- * @brief Convert LED ID.
- * @details Helper function to convert uint8_t LED ID to sl_wisun_led_id_t
- * @param[in] led_id LED ID raw value
- * @return sl_wisun_led_id_t converted LED ID
+ * @brief Redirect response to new address
+ * @details Callback function for notification service
+ * @param[out] new_addr New address
+ * @param[in] req_packet Request packet
  *****************************************************************************/
-static sl_wisun_led_id_t _coap_meter_convert_led_id(const uint8_t led_id);
-#endif
-#endif
+static void _redirect_resp(sockaddr_in6_t * const new_addr,
+                           const sl_wisun_coap_packet_t * const req_packet);
+
+/**************************************************************************//**
+ * @brief Handle LFN wakeup event
+ * @details Callback for custom event handling.
+ *          The callback triggers notification service for LFN devices.
+ * @param[in] evt Event
+ *****************************************************************************/
+static void _lfn_wakeup_evt_cb(sl_wisun_evt_t * evt);
+
+/**************************************************************************//**
+ * @brief Handle notification event
+ * @details Callback for CoAP Notification Service.
+ *          It builds the response packet with the measurement data.
+ * @param[in] notify Notification
+ * @return sl_wisun_coap_packet_t * Response packet ptr
+ *****************************************************************************/
+static sl_wisun_coap_packet_t * _notify_hnd_cb(const sl_wisun_coap_notify_t *notify);
+
+/**************************************************************************//**
+ * @brief Check notification condition
+ * @details Callback for CoAP Notification Service. It returns always true
+ * @param[in] notify Notification
+ * @return bool true: send, false: not send
+ *****************************************************************************/
+static bool _notify_condition_cb(const sl_wisun_coap_notify_t *notify);
+
+/**************************************************************************//**
+ * @brief Build constant response packet
+ * @details Build response packet with constant string and with given response code
+ * @param[in] req_packet Request packet
+ * @param[in] resp_str Response string
+ * @param[in] code Response code
+ * @return sl_wisun_coap_packet_t * Response packet ptr
+ *****************************************************************************/
+static sl_wisun_coap_packet_t * _build_const_resp(const sl_wisun_coap_packet_t * const req_packet,
+                                                  const char * const resp_str,
+                                                  const sn_coap_msg_code_e code);
 
 // -----------------------------------------------------------------------------
 //                                Global Variables
@@ -183,306 +347,134 @@ static sl_wisun_led_id_t _coap_meter_convert_led_id(const uint8_t led_id);
 // -----------------------------------------------------------------------------
 //                                Static Variables
 // -----------------------------------------------------------------------------
-/// Internal CoAP Meter handler
-static sl_wisun_meter_hnd_t _coap_meter_hnd = { 0 };
 
-/// Dummy request packet
-static sl_wisun_coap_packet_t dummy_req_pkt = {
-  .token_len = 0,
-  .coap_status = COAP_STATUS_OK,
-  .msg_code = COAP_MSG_CODE_REQUEST_GET,
-  .msg_type = COAP_MSG_TYPE_NON_CONFIRMABLE,
-  .content_format = COAP_CT_TEXT_PLAIN,
-  .msg_id = SL_WISUN_COAP_METER_COLLECTOR_DEFAULT_MESSAGE_ID,
-  .payload_len = 0,
-  .payload_ptr = NULL,
-  .uri_path_ptr = (uint8_t *)SLI_WISUN_COAP_RD_CORE_STR,
-  .uri_path_len = 0,
-  .options_list_ptr = NULL
+/// Metrics counter
+static sl_wisun_meter_metrics_cnt_t _metrics_cnt = {
+  .tot_cnt = 0UL,
+  .curr_cnt = 0UL,
+  .err_cnt = 0UL,
+  .fire_cnt = SL_WISUN_METER_MEASUREMENT_BUFFER_SIZE,
+  .reg_coll_cnt = 0UL,
+  .max_reg_coll_cnt = SL_WISUN_METER_MAX_REG_COLLECTOR
 };
+
+/// Metrics storage mempool
+static sl_mempool_t _metrics_mpool = { 0 };
+
+/// Metrics storage buffer
+static uint8_t _metrics_buff[SL_WISUN_METER_MEASUREMENT_BUFFER_SIZE * sizeof(sl_wisun_meter_packet_t)] = { 0 };
+
+/// Notification payload buffer
+static uint8_t _payload_buff[SL_WISUN_COAP_METER_JOSN_PAYLOAD_SIZE] = { 0 };
 
 // -----------------------------------------------------------------------------
 //                          Public Function Definitions
 // -----------------------------------------------------------------------------
+
 void sl_wisun_coap_meter_init(void)
 {
-#if SL_WISUN_COAP_MC_OPTIMIZED_MODE_ENABLE
-  // init meter for having proper meter content
-  sl_wisun_meter_init();
-#endif
-
-  // Init meter-collector common component
-#if !defined(SL_CATALOG_TEMP_SENSOR_PRESENT)
-  sl_wisun_meter_set_initializer(&_coap_meter_hnd, NULL);
+  static sl_wisun_coap_rhnd_resource_t coap_resource = { 0 };
+#if defined(WISUN_CONFIG_DEVICE_TYPE)
+  uint8_t device_type = WISUN_CONFIG_DEVICE_TYPE;
 #else
-  sl_wisun_meter_set_initializer(&_coap_meter_hnd, sl_wisun_rht_init);
+  uint8_t device_type = SL_WISUN_ROUTER;
 #endif
 
-#if SL_WISUN_COAP_MC_OPTIMIZED_MODE_ENABLE
-  sl_wisun_meter_init_common_resources(_coap_meter_parse_request,
-                                       _coap_meter_build_packets);
-  sl_wisun_meter_set_handler(&_coap_meter_hnd, NULL, NULL, NULL, NULL);
+#if defined(SL_CATALOG_TEMP_SENSOR_PRESENT)
+  sl_wisun_rht_init();
 #endif
-  sl_wisun_meter_init_hnd(&_coap_meter_hnd);
 
-  dummy_req_pkt.uri_path_len = strlen((char *)dummy_req_pkt.uri_path_ptr);
-}
+  // Init meter help
+  sl_wisun_coap_rhnd_resource_init(&coap_resource);
+  coap_resource.data.uri_path = SL_WISUN_COAP_METER_COLLECTOR_HELP_URI_PATH;
+  coap_resource.data.resource_type = SL_WISUN_COAP_METER_RESOURCE_RT_HELP;
+  coap_resource.data.interface = SL_WISUN_COAP_METER_RESOURCE_IF_HELP;
+  coap_resource.auto_response = _help_response_cb;
+  coap_resource.redirect_response = _redirect_resp;
+  coap_resource.discoverable = true;
+  assert(sl_wisun_coap_rhnd_resource_add(&coap_resource) == SL_STATUS_OK);
 
-#if !SL_WISUN_COAP_MC_OPTIMIZED_MODE_ENABLE
-sl_wisun_coap_packet_t *sl_wisun_coap_meter_measurement_response_cb(const sl_wisun_coap_packet_t * const req_packet)
-{
-  return _prepare_measurement_resp(req_packet, COAP_METER_MEASUREMENT_ALL);
-}
+  // Init sensor all
+  sl_wisun_coap_rhnd_resource_init(&coap_resource);
+  coap_resource.data.uri_path = SL_WISUN_COAP_METER_COLLECTOR_MEASUREMENT_URI_PATH;
+  coap_resource.data.resource_type = SL_WISUN_COAP_METER_RESOURCE_RT_ALL;
+  coap_resource.data.interface = SL_WISUN_COAP_METER_RESOURCE_IF_SENSOR;
+  coap_resource.auto_response_ext = _measurement_response_cb;
+  coap_resource.redirect_response = _redirect_resp;
+  coap_resource.discoverable = true;
+  assert(sl_wisun_coap_rhnd_resource_add(&coap_resource) == SL_STATUS_OK);
 
-sl_wisun_coap_packet_t *sl_wisun_coap_meter_temperature_response_cb(const sl_wisun_coap_packet_t * const req_packet)
-{
-  return _prepare_measurement_resp(req_packet, COAP_METER_MEASUREMENT_TEMPERATURE);
-}
+  // Init sensor temperature
+  sl_wisun_coap_rhnd_resource_init(&coap_resource);
+  coap_resource.data.uri_path = SL_WISUN_COAP_METER_COLLECTOR_TEMPERATURE_SENSOR_URI_PATH;
+  coap_resource.data.resource_type = SL_WISUN_COAP_METER_RESOURCE_RT_TEMPERATURE;
+  coap_resource.data.interface = SL_WISUN_COAP_METER_RESOURCE_IF_SENSOR;
+  coap_resource.auto_response = _temperature_response_cb;
+  coap_resource.redirect_response = _redirect_resp;
+  coap_resource.discoverable = true;
+  assert(sl_wisun_coap_rhnd_resource_add(&coap_resource) == SL_STATUS_OK);
 
-sl_wisun_coap_packet_t *sl_wisun_coap_meter_humidity_response_cb(const sl_wisun_coap_packet_t * const req_packet)
-{
-  return _prepare_measurement_resp(req_packet, COAP_METER_MEASUREMENT_HUMIDITY);
-}
+  // Init sensor humidity
+  sl_wisun_coap_rhnd_resource_init(&coap_resource);
+  coap_resource.data.uri_path = SL_WISUN_COAP_METER_COLLECTOR_HUMIDITY_SENSOR_URI_PATH;
+  coap_resource.data.resource_type = SL_WISUN_COAP_METER_RESOURCE_RT_HUMIDITY;
+  coap_resource.data.interface = SL_WISUN_COAP_METER_RESOURCE_IF_SENSOR;
+  coap_resource.auto_response = _humidity_response_cb;
+  coap_resource.redirect_response = _redirect_resp;
+  coap_resource.discoverable = true;
+  assert(sl_wisun_coap_rhnd_resource_add(&coap_resource) == SL_STATUS_OK);
 
-sl_wisun_coap_packet_t *sl_wisun_coap_meter_light_response_cb(const sl_wisun_coap_packet_t * const req_packet)
-{
-  return _prepare_measurement_resp(req_packet, COAP_METER_MEASUREMENT_LIGHT);
-}
-
+  // Init sensor light
+  sl_wisun_coap_rhnd_resource_init(&coap_resource);
+  coap_resource.data.uri_path = SL_WISUN_COAP_METER_COLLECTOR_LIGHT_SENSOR_URI_PATH;
+  coap_resource.data.resource_type = SL_WISUN_COAP_METER_RESOURCE_RT_LIGHT;
+  coap_resource.data.interface = SL_WISUN_COAP_METER_RESOURCE_IF_SENSOR;
+  coap_resource.auto_response = _light_response_cb;
+  coap_resource.redirect_response = _redirect_resp;
+  coap_resource.discoverable = true;
+  assert(sl_wisun_coap_rhnd_resource_add(&coap_resource) == SL_STATUS_OK);
 #if !defined(SL_CATALOG_POWER_MANAGER_PRESENT)
-sl_wisun_coap_packet_t *sl_wisun_coap_meter_led_toggle_response_cb(const sl_wisun_coap_packet_t * const req_packet)
-{
-  sl_wisun_coap_packet_t *resp_packet = NULL;
-  int8_t led_id = 0;
+  // Init led resource
+  sl_wisun_coap_rhnd_resource_init(&coap_resource);
+  coap_resource.data.uri_path  = SL_WISUN_COAP_METER_COLLECTOR_LED_TOGGLE_URI_PATH;
+  coap_resource.data.resource_type = SL_WISUN_COAP_METER_RESOURCE_RT_LED;
+  coap_resource.data.interface = SL_WISUN_COAP_METER_RESOURCE_IF_LED;
+  coap_resource.auto_response = _led_toggle_response_cb;
+  coap_resource.redirect_response = _redirect_resp;
+  coap_resource.discoverable = true;
+  assert(sl_wisun_coap_rhnd_resource_add(&coap_resource) == SL_STATUS_OK);
+#endif
 
-  // Init packet
-  resp_packet = sl_wisun_coap_build_response(req_packet, COAP_MSG_CODE_RESPONSE_BAD_REQUEST);
-  if (resp_packet == NULL) {
-    return NULL;
-  }
-  // Check request packet
-  if (req_packet->msg_code != COAP_MSG_CODE_REQUEST_PUT) {
-    printf("[Not valid measurement request]\n");
-    return resp_packet;
-  }
-
-  // Toggle LEDn
-  led_id = (int8_t)sl_wisun_mc_get_led_id_from_payload((const char *)req_packet->payload_ptr);
-  if (sl_wisun_led_toggle(_coap_meter_convert_led_id(led_id)) == SL_STATUS_FAIL) {
-    printf("[LED Toggle failed: %d]\n", led_id);
-    resp_packet->msg_code = COAP_MSG_CODE_RESPONSE_NOT_ACCEPTABLE;
-  } else {
-    resp_packet->msg_code = COAP_MSG_CODE_RESPONSE_CHANGED;
+  // For LFN devices, tick event should be enabled
+  if (device_type == SL_WISUN_LFN) {
+    sl_wisun_coap_notify_tick_evt_enable(true);
+    assert(app_wisun_em_custom_callback_register(SL_WISUN_MSG_LFN_WAKE_UP_IND_ID,
+                                                 _lfn_wakeup_evt_cb) == SL_STATUS_OK);
   }
 
-  return resp_packet;
+  // Init metrics mempool
+  assert(sl_mempool_create(&_metrics_mpool,
+                           SL_WISUN_METER_MEASUREMENT_BUFFER_SIZE,
+                           sizeof(sl_wisun_meter_packet_t),
+                           _metrics_buff,
+                           sizeof(_metrics_buff)) == SL_STATUS_OK);
+
+#if (SL_WISUN_COAP_METER_JSON_REQUIRED_PAYALOAD_SIZE > SL_WISUN_COAP_METER_JOSN_PAYLOAD_SIZE)
+  printf("[Warning: Payload buffer is truncated to %lu bytes]\n", SL_WISUN_COAP_METER_JOSN_PAYLOAD_SIZE);
+#endif
 }
-#endif
-#endif
 
 // -----------------------------------------------------------------------------
 //                          Static Function Definitions
 // -----------------------------------------------------------------------------
-#if SL_WISUN_COAP_MC_OPTIMIZED_MODE_ENABLE
-static sl_status_t _coap_meter_parse_request(const void * const raw,
-                                             int32_t packet_data_len,
-                                             sl_wisun_request_type_t * const req)
-{
-  const sl_wisun_coap_packet_t *parsed  = NULL;
-  char *raw_ptr                         = NULL;
-
-  if ((raw == NULL) || (packet_data_len == 0) || (req == NULL)) {
-    return SL_STATUS_FAIL;
-  }
-
-  parsed = sl_wisun_coap_parser(packet_data_len, (uint8_t *)raw);
-  if (parsed == NULL) {
-    printf("[CoAP Parser failure]\n");
-    return SL_STATUS_FAIL;
-  }
-  sl_wisun_coap_print_packet(parsed, false);
-
-  // Handling response and empty packets
-  if (!sl_wisun_coap_rhnd_is_request_packet(parsed)) {
-    *req = SL_WISUN_MC_REQ_UNKNOWN;
-    return SL_STATUS_FAIL;
-  }
-
-  if ((strncmp((char *)parsed->uri_path_ptr,
-               (char *)&SLI_WISUN_COAP_RD_CORE_STR[1],
-               parsed->uri_path_len) == 0)
-      && parsed->msg_code == COAP_MSG_CODE_REQUEST_GET) {
-    *req = SL_WISUN_MC_REQ_RD;
-    return SL_STATUS_OK;
-  }
-
-  if (strncmp((char *)parsed->uri_path_ptr,
-              (char *)&SL_WISUN_COAP_METER_COLLECTOR_MEASUREMENT_URI_PATH[1],
-              parsed->uri_path_len) != 0) {
-    *req = SL_WISUN_MC_REQ_UNKNOWN;
-    return SL_STATUS_FAIL;
-  }
-
-  raw_ptr = (char *)parsed->payload_ptr;
-
-  // Parse request
-  if (parsed->payload_len == 0) {
-    *req = SL_WISUN_MC_REQ_ASYNC;
-  } else if (strncmp(raw_ptr,
-                     SL_WISUN_METER_REQUEST_TYPE_STR_REGISTER,
-                     parsed->payload_len) == 0) {
-    *req = SL_WISUN_MC_REQ_REGISTER;
-  } else if (strncmp(raw_ptr,
-                     SL_WISUN_METER_REQUEST_TYPE_STR_ASYNC,
-                     parsed->payload_len) == 0) {
-    *req = SL_WISUN_MC_REQ_ASYNC;
-  } else if (strncmp(raw_ptr,
-                     SL_WISUN_METER_REQUEST_TYPE_STR_REMOVE,
-                     parsed->payload_len) == 0) {
-    *req = SL_WISUN_MC_REQ_REMOVE;
-  } else {
-    *req = SL_WISUN_MC_REQ_UNKNOWN;
-  }
-
-  return SL_STATUS_OK;
-}
-
-static sl_status_t _coap_meter_build_packets(const sl_wisun_request_type_t req,
-                                             const sl_wisun_meter_packet_t * const packets,
-                                             const uint8_t nr_of_packets,
-                                             uint8_t * const buf,
-                                             uint32_t * const len)
-{
-  sl_wisun_coap_packet_t *packet = NULL;
-  static sl_wisun_app_core_current_addr_t addresses = { 0 };
-  const char *ip_str_global = NULL;
-  int32_t res = -1;
-  const sl_wisun_coap_rhnd_resource_t *resource = NULL;
-  char *discovery_payload = NULL;
-  char *tmp_buff = NULL;
-  int32_t payload_max_len = JSON_REQUIRED_PAYALOAD_SIZE;
-  int32_t payload_len = JSON_REQUIRED_PAYALOAD_SIZE;
-
-  if ((packets == NULL)
-      || (nr_of_packets == 0)
-      || (buf == NULL)
-      || (len == NULL)) {
-    return SL_STATUS_FAIL;
-  }
-
-  if (payload_len > (int32_t)(SL_WISUN_METER_TX_BUFFER_LEN - sizeof(sl_wisun_coap_packet_t))) {
-    payload_len = SL_WISUN_METER_TX_BUFFER_LEN - sizeof(sl_wisun_coap_packet_t);
-    payload_max_len = payload_len;
-    printf("[Warning: Payload buffer is truncated to %lu bytes]\n", payload_len);
-  }
-
-  sl_wisun_mc_mutex_acquire(_coap_meter_hnd);
-  if (req == SL_WISUN_MC_REQ_RD) {
-    // send rd resp
-    resource = sl_wisun_coap_rhnd_get_resources();
-    discovery_payload = sli_wisun_coap_rd_parser(resource, &dummy_req_pkt, (uint16_t *) &payload_len);
-    packet = sli_wisun_coap_rd_build_response(discovery_payload, (uint16_t) payload_len, &dummy_req_pkt);
-  } else {
-    packet = (sl_wisun_coap_packet_t *)sl_wisun_coap_malloc(sizeof(sl_wisun_coap_packet_t));
-
-    if (packet == NULL) {
-      printf("[Coap packet buffer cannot be allocated]\n");
-      sl_wisun_mc_mutex_release(_coap_meter_hnd);
-      return SL_STATUS_FAIL;
-    }
-
-    // Init request for meters
-    memset(packet, 0, sizeof(sl_wisun_coap_packet_t));
-    packet->uri_path_ptr      = (uint8_t *) SL_WISUN_COAP_METER_COLLECTOR_MEASUREMENT_URI_PATH;
-    packet->uri_path_len      = strlen(SL_WISUN_COAP_METER_COLLECTOR_MEASUREMENT_URI_PATH);
-    packet->msg_code          = COAP_MSG_CODE_RESPONSE_CONTENT;
-    packet->content_format    = COAP_CT_JSON;
-    packet->payload_len       = 0;
-    packet->payload_ptr       = sl_wisun_coap_malloc((uint16_t) payload_max_len);
-    packet->options_list_ptr  = NULL;
-    packet->msg_id            = SL_WISUN_COAP_METER_COLLECTOR_DEFAULT_MESSAGE_ID;
-    packet->msg_type          = COAP_MSG_TYPE_NON_CONFIRMABLE;
-
-    sl_wisun_app_core_get_current_addresses(&addresses);
-    ip_str_global = app_wisun_trace_util_get_ip_str(&addresses.global);
-
-    if (packet->payload_ptr == NULL || ip_str_global == NULL) {
-      printf("[Coap packet payload buffer cannot be allocated]\n");
-      sl_wisun_coap_destroy_packet(packet);
-      app_wisun_trace_util_destroy_ip_str(ip_str_global);
-      sl_wisun_mc_mutex_release(_coap_meter_hnd);
-      return SL_STATUS_FAIL;
-    }
-
-    // Build payload
-    tmp_buff = (char *) packet->payload_ptr;
-    __print_to_buff(res, packet, tmp_buff, payload_len,
-                    JSON_MEASUREMENT_RESP_BEGIN_FORMAT_STR, ip_str_global);
-    app_wisun_trace_util_destroy_ip_str(ip_str_global);
-
-    for (uint8_t i = 0; i < nr_of_packets; i++) {
-      __print_to_buff(res, packet, tmp_buff, payload_len,
-                      i != (nr_of_packets - 1)
-                      ? JSON_MEASUREMENT_RESP_LINE_FORMAT_STR ","
-                      : JSON_MEASUREMENT_RESP_LINE_FORMAT_STR,
-                      packets[i].id,
-                      packets[i].temperature / 1000,
-                      (packets[i].temperature % 1000) / 10,
-                      packets[i].humidity / 1000,
-                      (packets[i].humidity % 1000) / 10,
-                      packets[i].light);
-    }
-    __print_to_buff(res, packet, tmp_buff, payload_len,
-                    JSON_MEASUREMENT_RESP_END_FORMAT_STR);
-
-    packet->payload_len = sl_strnlen((char *)packet->payload_ptr, payload_max_len);
-    if (payload_len < 0) {
-      snprintf((char *)(packet->payload_ptr + (packet->payload_len - 4)), 4, "...");
-      packet->content_format = COAP_CT_TEXT_PLAIN;
-    }
-
-    *len = sl_wisun_coap_builder_calc_size(packet);
-
-    if (*len > SL_WISUN_METER_TX_BUFFER_LEN) {
-      packet->payload_len -= (*len - SL_WISUN_METER_TX_BUFFER_LEN);
-      *len = sl_wisun_coap_builder_calc_size(packet);
-    }
-
-    // Terminate packet payload
-    if (packet->payload_len < payload_max_len) {
-      packet->payload_ptr[packet->payload_len] = '\0';
-    } else {
-      packet->payload_ptr[payload_max_len - 1] = '\0';
-    }
-  }
-
-  res = sl_wisun_coap_builder(buf, packet);
-  if (res < 0) {
-    printf("[Coap builder error: %s]\n",
-           res == -1 ? "Message Header structure" : "NULL ptr arg");
-    sl_wisun_coap_destroy_packet(packet);
-    sl_wisun_mc_mutex_release(_coap_meter_hnd);
-    return SL_STATUS_FAIL;
-  } else {
-    *len = (uint32_t) res;
-  }
-
-  sl_wisun_coap_destroy_packet(packet);
-
-  sl_wisun_mc_mutex_release(_coap_meter_hnd);
-
-  return SL_STATUS_OK;
-}
-
-#else
 
 static const char *_meter_packet2json(const sl_wisun_meter_packet_t * const packet,
                                       const char *ip_str_global)
 {
-  static char buff[JSON_MEASUREMENT_DATA_SIZE] = { 0 };
+  static char buff[SL_WISUN_COAP_METER_JSON_MEAS_DATA_SIZE] = { 0 };
   snprintf(buff,
-           JSON_MEASUREMENT_DATA_SIZE,
-           JSON_MEASUREMENT_FORMAT_STR,
+           SL_WISUN_COAP_METER_JSON_MEAS_DATA_SIZE,
+           SL_WISUN_COAP_METER_JSON_MEAS_FORMAT_STR,
            ip_str_global,
            packet->id,
            packet->temperature / 1000,
@@ -493,15 +485,253 @@ static const char *_meter_packet2json(const sl_wisun_meter_packet_t * const pack
   return buff;
 }
 
-static sl_wisun_coap_packet_t *_prepare_measurement_resp(const sl_wisun_coap_packet_t * const req_packet,
-                                                         const measurement_type_t measurement)
+static sl_wisun_coap_packet_t *_measurement_response_cb(const sockaddr_in6_t * const src_addr,
+                                                        const sl_wisun_coap_packet_t * const req_packet)
 {
-  sl_wisun_coap_packet_t * resp_packet  = NULL;
-  sn_coap_content_format_e ct_format    = COAP_CT_JSON;
-  size_t max_content_size               = 0U;
-  static sl_wisun_app_core_current_addr_t addresses       = { 0 };
-  const char *ip_str_global             = NULL;
-  char *content                         = NULL;
+  sl_wisun_coap_packet_t *resp_packet = NULL;
+  static sl_wisun_coap_notify_t notify = { 0 };
+  const sl_wisun_coap_notify_t *tmp_notify = NULL;
+  char *payload_str = NULL;
+  const char *addr_str = NULL;
+
+  payload_str = sl_wisun_coap_get_payload_str(req_packet);
+
+  // Handle async request
+  if (req_packet->msg_code == COAP_MSG_CODE_REQUEST_GET) {
+    if (payload_str == NULL
+        || !strncmp(payload_str, SL_WISUN_METER_REQUEST_TYPE_STR_ASYNC, SL_WISUN_METER_REQUEST_RESPONSE_STR_MAX_LEN)) {
+      resp_packet = _prepare_measurement_resp(req_packet, SL_WISUN_COAP_METER_MEASUREMENT_TYPE_ALL);
+      if (resp_packet == NULL) {
+        _metrics_cnt.err_cnt++;
+        resp_packet = _build_const_resp(req_packet,
+                                        SL_WISUN_COAP_METER_MEASUREMENT_FAILED_RESP,
+                                        COAP_MSG_CODE_RESPONSE_BAD_REQUEST);
+      }
+      return resp_packet;
+    }
+  }
+
+  if (!(req_packet->msg_code == COAP_MSG_CODE_REQUEST_POST
+        || req_packet->msg_code == COAP_MSG_CODE_REQUEST_PUT)) {
+    return _build_const_resp(req_packet,
+                             SL_WISUN_COAP_METER_NOT_VALID_MEAS_RESP,
+                             COAP_MSG_CODE_RESPONSE_BAD_REQUEST);
+  }
+
+  // Parse payload: payload is required for registration and remove request
+  if (payload_str == NULL) {
+    return _build_const_resp(req_packet,
+                             SL_WISUN_COAP_METER_PARSE_PAYLOAD_FAILED_RESP,
+                             COAP_MSG_CODE_RESPONSE_BAD_REQUEST);
+  }
+
+  // Register request handling
+  if (!strncmp(payload_str, SL_WISUN_METER_REQUEST_TYPE_STR_REGISTER,
+               SL_WISUN_METER_REQUEST_RESPONSE_STR_MAX_LEN)) {
+    // Create notification entry
+    // Set remote address
+    memcpy(&notify.remote_addr, src_addr, sizeof(sockaddr_in6_t));
+    notify.remote_addr.sin6_port = htons(SL_WISUN_METER_COLLECTOR_PORT);
+
+    // Set notification id to IPv6 address
+    notify.id = app_wisun_trace_util_get_ip_str(&notify.remote_addr.sin6_addr);
+    if (notify.id == NULL) {
+      sl_wisun_coap_destroy_payload_str(payload_str);
+      return _build_const_resp(req_packet,
+                               SL_WISUN_COAP_METER_INVALID_SRC_ADDR_RESP,
+                               COAP_MSG_CODE_RESPONSE_BAD_REQUEST);
+    }
+
+    // Set notification callback
+    notify.hnd_cb = _notify_hnd_cb;
+    notify.condition_cb = _notify_condition_cb;
+    notify.schedule_time_ms = SL_WISUN_METER_SCHEDULE_TIME;
+    notify.tick_ms = 0;
+
+    if (sl_wisun_coap_notify_add(&notify) != SL_STATUS_OK) {
+      sl_wisun_coap_destroy_payload_str(payload_str);
+      app_wisun_trace_util_destroy_ip_str(notify.id);
+      return _build_const_resp(req_packet,
+                               SL_WISUN_COAP_METER_REG_COLLECTOR_FAILED_RESP,
+                               COAP_MSG_CODE_RESPONSE_BAD_REQUEST);
+    }
+
+    _metrics_cnt.reg_coll_cnt++;
+
+    resp_packet = _build_const_resp(req_packet,
+                                    SL_WISUN_COAP_METER_COLLECTOR_REGISTERED_RESP,
+                                    COAP_MSG_CODE_RESPONSE_CREATED);
+
+    // Remove request handling
+  } else if (!strncmp(payload_str, SL_WISUN_METER_REQUEST_TYPE_STR_REMOVE,
+                      SL_WISUN_METER_REQUEST_RESPONSE_STR_MAX_LEN)) {
+    // Free notification id
+    addr_str = app_wisun_trace_util_get_ip_str(&src_addr->sin6_addr);
+    tmp_notify = sl_wisun_coap_notify_get_by_id(addr_str);
+    if (tmp_notify == NULL || addr_str == NULL) {
+      app_wisun_trace_util_destroy_ip_str(addr_str);
+      sl_wisun_coap_destroy_payload_str(payload_str);
+      return _build_const_resp(req_packet,
+                               SL_WISUN_COAP_METER_GET_COLLECTOR_FAILED_RESP,
+                               COAP_MSG_CODE_RESPONSE_BAD_REQUEST);
+    }
+    app_wisun_free((void *) tmp_notify->id);
+
+    // Remove meter
+    if (sl_wisun_coap_notify_remove_by_id(addr_str) != SL_STATUS_OK) {
+      app_wisun_trace_util_destroy_ip_str(addr_str);
+      sl_wisun_coap_destroy_payload_str(payload_str);
+      return _build_const_resp(req_packet,
+                               SL_WISUN_COAP_METER_RM_COLLECTOR_FAILED_RESP,
+                               COAP_MSG_CODE_RESPONSE_BAD_REQUEST);
+    }
+    _metrics_cnt.reg_coll_cnt--;
+    app_wisun_trace_util_destroy_ip_str(addr_str);
+
+    resp_packet = _build_const_resp(req_packet,
+                                    SL_WISUN_COAP_METER_COLLECTOR_REMOVED_RESP,
+                                    COAP_MSG_CODE_RESPONSE_CREATED);
+  }
+
+  // Free payload string
+  sl_wisun_coap_destroy_payload_str(payload_str);
+
+  return resp_packet;
+}
+
+static sl_wisun_coap_packet_t *_temperature_response_cb(const sl_wisun_coap_packet_t * const req_packet)
+{
+  sl_wisun_coap_packet_t *resp_packet = NULL;
+
+  if (req_packet->msg_code != COAP_MSG_CODE_REQUEST_GET) {
+    return _build_const_resp(req_packet,
+                             SL_WISUN_COAP_METER_NOT_VALID_MEAS_RESP,
+                             COAP_MSG_CODE_RESPONSE_BAD_REQUEST);
+  }
+
+  resp_packet = _prepare_measurement_resp(req_packet, SL_WISUN_COAP_METER_MEASUREMENT_TYPE_TEMPERATURE);
+  if (resp_packet == NULL) {
+    _metrics_cnt.err_cnt++;
+    resp_packet = _build_const_resp(req_packet,
+                                    SL_WISUN_COAP_METER_TEMP_MEAS_FAILED_RESP,
+                                    COAP_MSG_CODE_RESPONSE_BAD_REQUEST);
+  }
+  return resp_packet;
+}
+
+static sl_wisun_coap_packet_t *_humidity_response_cb(const sl_wisun_coap_packet_t * const req_packet)
+{
+  sl_wisun_coap_packet_t *resp_packet = NULL;
+
+  if (req_packet->msg_code != COAP_MSG_CODE_REQUEST_GET) {
+    return _build_const_resp(req_packet,
+                             SL_WISUN_COAP_METER_NOT_VALID_MEAS_RESP,
+                             COAP_MSG_CODE_RESPONSE_BAD_REQUEST);
+  }
+
+  resp_packet = _prepare_measurement_resp(req_packet, SL_WISUN_COAP_METER_MEASUREMENT_TYPE_HUMIDITY);
+  if (resp_packet == NULL) {
+    _metrics_cnt.err_cnt++;
+    resp_packet = _build_const_resp(req_packet,
+                                    SL_WISUN_COAP_METER_HUM_MEAS_FAILED_RESP,
+                                    COAP_MSG_CODE_RESPONSE_BAD_REQUEST);
+  }
+  return resp_packet;
+}
+
+static sl_wisun_coap_packet_t *_light_response_cb(const sl_wisun_coap_packet_t * const req_packet)
+{
+  sl_wisun_coap_packet_t *resp_packet = NULL;
+
+  if (req_packet->msg_code != COAP_MSG_CODE_REQUEST_GET) {
+    return _build_const_resp(req_packet,
+                             SL_WISUN_COAP_METER_NOT_VALID_MEAS_RESP,
+                             COAP_MSG_CODE_RESPONSE_BAD_REQUEST);
+  }
+
+  resp_packet = _prepare_measurement_resp(req_packet, SL_WISUN_COAP_METER_MEASUREMENT_TYPE_LIGHT);
+  if (resp_packet == NULL) {
+    _metrics_cnt.err_cnt++;
+    resp_packet = _build_const_resp(req_packet,
+                                    SL_WISUN_COAP_METER_LIGHT_MEAS_FAILED_RESP,
+                                    COAP_MSG_CODE_RESPONSE_BAD_REQUEST);
+  }
+  return resp_packet;
+}
+
+static sl_wisun_coap_packet_t *_help_response_cb(const sl_wisun_coap_packet_t * const req_packet)
+{
+  if (req_packet->msg_code != COAP_MSG_CODE_REQUEST_GET) {
+    return _build_const_resp(req_packet, SL_WISUN_COAP_METER_NOT_VALID_HELP_RESP, COAP_MSG_CODE_RESPONSE_BAD_REQUEST);
+  }
+
+  return _build_const_resp(req_packet, SL_WISUN_COAP_METER_HELP_RESP, COAP_MSG_CODE_RESPONSE_CREATED);
+}
+
+#if !defined(SL_CATALOG_POWER_MANAGER_PRESENT)
+static sl_wisun_coap_packet_t *_led_toggle_response_cb(const sl_wisun_coap_packet_t * const req_packet)
+{
+  sl_wisun_coap_packet_t *resp_packet = NULL;
+  int32_t led_num = 0;
+  sl_wisun_led_id_t led_id = SL_WISUN_LED_UNKNOW_ID;
+  char *payload_str = NULL;
+
+  // Check request packet
+  if (!(req_packet->msg_code == COAP_MSG_CODE_REQUEST_POST
+        || req_packet->msg_code == COAP_MSG_CODE_REQUEST_PUT)) {
+    resp_packet = _build_const_resp(req_packet,
+                                    SL_WISUN_COAP_METER_NOT_VALID_MEAS_RESP,
+                                    COAP_MSG_CODE_RESPONSE_BAD_REQUEST);
+    return resp_packet;
+  }
+
+  // Toggle LEDn
+  payload_str = sl_wisun_coap_get_payload_str(req_packet);
+
+  if (payload_str == NULL) {
+    return resp_packet;
+  }
+
+  led_num = atoi(payload_str);
+  sl_wisun_coap_destroy_payload_str(payload_str);
+
+  switch (led_num) {
+    case 0L:
+      led_id = SL_WISUN_LED0_ID;
+      break;
+    case 1L:
+      led_id = SL_WISUN_LED1_ID;
+      break;
+    default:
+      resp_packet = _build_const_resp(req_packet,
+                                      SL_WISUN_COAP_METER_NOT_VALID_LED_ID_RESP,
+                                      COAP_MSG_CODE_RESPONSE_BAD_REQUEST);
+      return resp_packet;
+  }
+
+  if (sl_wisun_led_toggle(led_id) == SL_STATUS_FAIL) {
+    resp_packet = _build_const_resp(req_packet,
+                                    SL_WISUN_COAP_METER_LED_TOGGLE_FAILED_RESP,
+                                    COAP_MSG_CODE_RESPONSE_BAD_REQUEST);
+  } else {
+    resp_packet = _build_const_resp(req_packet,
+                                    SL_WISUN_COAP_METER_LED_TOGGLED_RESP,
+                                    COAP_MSG_CODE_RESPONSE_CHANGED);
+  }
+
+  return resp_packet;
+}
+#endif
+
+static sl_wisun_coap_packet_t *_prepare_measurement_resp(const sl_wisun_coap_packet_t * const req_packet,
+                                                         const sl_wisun_coap_meter_measurement_type_t measurement)
+{
+  sl_wisun_coap_packet_t * resp_packet = NULL;
+  sn_coap_content_format_e ct_format = COAP_CT_JSON;
+  size_t max_content_size = 0U;
+  static sl_wisun_app_core_current_addr_t addresses = { 0 };
+  const char *ip_str_global = NULL;
+  char *content = NULL;
   static sl_wisun_meter_packet_t packet = { 0 };
 
   // Init packet
@@ -510,65 +740,196 @@ static sl_wisun_coap_packet_t *_prepare_measurement_resp(const sl_wisun_coap_pac
     return NULL;
   }
 
-  if (measurement == COAP_METER_MEASUREMENT_ALL) {
+  if (measurement == SL_WISUN_COAP_METER_MEASUREMENT_TYPE_ALL) {
     ct_format = COAP_CT_JSON;
-    max_content_size = JSON_MEASUREMENT_DATA_SIZE;
+    max_content_size = SL_WISUN_COAP_METER_JSON_MEAS_DATA_SIZE;
 
     // Get IP address
     sl_wisun_app_core_get_current_addresses(&addresses);
     ip_str_global = app_wisun_trace_util_get_ip_str(&addresses.global);
   } else {
     ct_format = COAP_CT_TEXT_PLAIN;
-    max_content_size = RHT_AND_LIGHT_MEAS_PLAIN_TXT_DATA_SIZE;
+    max_content_size = SL_WISUN_COAP_METER_MEAS_PLAIN_TXT_DATA_SIZE;
     // Allocate string buffer for particular sensor measurement
-    content = sl_wisun_coap_malloc(RHT_AND_LIGHT_MEAS_PLAIN_TXT_DATA_SIZE);
+    content = sl_wisun_coap_malloc(SL_WISUN_COAP_METER_MEAS_PLAIN_TXT_DATA_SIZE);
   }
 
   // Measure all parameters
-  if (measurement == COAP_METER_MEASUREMENT_ALL) {
-    sl_wisun_meter_gen_packet_id(&packet);
-    sl_wisun_meter_get_temperature(&packet);
-    sl_wisun_meter_get_humidity(&packet);
-    sl_wisun_meter_get_light(&packet);
+  if (measurement == SL_WISUN_COAP_METER_MEASUREMENT_TYPE_ALL) {
+    sli_wisun_meter_gen_packet_id(&packet);
+    sli_wisun_meter_get_temperature(&packet);
+    sli_wisun_meter_get_humidity(&packet);
+    sli_wisun_meter_get_light(&packet);
     content = (char *)_meter_packet2json(&packet, ip_str_global);
 
     // Temperature measurement
-  } else if (measurement == COAP_METER_MEASUREMENT_TEMPERATURE) {
-    sl_wisun_meter_get_temperature(&packet);
+  } else if (measurement == SL_WISUN_COAP_METER_MEASUREMENT_TYPE_TEMPERATURE) {
+    sli_wisun_meter_get_temperature(&packet);
     snprintf(content,
              max_content_size,
              "%lu.%lu Cdeg", packet.temperature / 1000,
              (packet.temperature % 1000) / 10);
 
     // Humidity measurement
-  } else if (measurement == COAP_METER_MEASUREMENT_HUMIDITY) {
-    sl_wisun_meter_get_humidity(&packet);
+  } else if (measurement == SL_WISUN_COAP_METER_MEASUREMENT_TYPE_HUMIDITY) {
+    sli_wisun_meter_get_humidity(&packet);
     snprintf(content,
              max_content_size,
              "%lu.%lu %%", packet.humidity / 1000,
              (packet.humidity % 1000) / 10);
 
     // Light measurement
-  } else if (measurement == COAP_METER_MEASUREMENT_LIGHT) {
-    sl_wisun_meter_get_light(&packet);
+  } else if (measurement == SL_WISUN_COAP_METER_MEASUREMENT_TYPE_LIGHT) {
+    sli_wisun_meter_get_light(&packet);
     snprintf(content,
              max_content_size,
              "%u lux", packet.light);
   }
 
-  resp_packet->msg_code       = COAP_MSG_CODE_RESPONSE_CONTENT;
+  resp_packet->msg_code = COAP_MSG_CODE_RESPONSE_CONTENT;
   resp_packet->content_format = ct_format;
-  resp_packet->payload_ptr    = (uint8_t *) content;
-  resp_packet->payload_len    = (uint16_t) sl_strnlen(content, max_content_size);
+  resp_packet->payload_ptr = (uint8_t *) content;
+  resp_packet->payload_len = (uint16_t) sl_strnlen(content, max_content_size);
   return resp_packet;
 }
 
-static sl_wisun_led_id_t _coap_meter_convert_led_id(const uint8_t led_id)
+static void _redirect_resp(sockaddr_in6_t * const new_addr,
+                           const sl_wisun_coap_packet_t * const req_packet)
 {
-  switch (led_id) {
-    case SL_WISUN_METER_LED0: return SL_WISUN_LED0_ID;
-    case SL_WISUN_METER_LED1: return SL_WISUN_LED1_ID;
-    default:                  return SL_WISUN_LED_UNKNOW_ID;
+  (void) req_packet;
+  // Redirect to resource handler service if the message comes from  Wi-SUN CoAP Collector
+  if (req_packet->msg_id == SL_WISUN_COAP_METER_COLLECTOR_DEFAULT_MESSAGE_ID) {
+    new_addr->sin6_port = htons(SL_WISUN_METER_COLLECTOR_PORT);
   }
 }
-#endif
+
+static void _lfn_wakeup_evt_cb(sl_wisun_evt_t * evt)
+{
+  (void) evt;
+  (void) sl_wisun_coap_notify_tick();
+}
+
+static sl_wisun_coap_packet_t * _notify_hnd_cb(const sl_wisun_coap_notify_t *notify)
+{
+  sl_wisun_meter_packet_t *meas_pkt = NULL;
+  sl_wisun_coap_packet_t *pkt_ptr = NULL;
+  char *tmp_buff = NULL;
+  int32_t res = 0L;
+  int32_t payload_len = SL_WISUN_COAP_METER_JOSN_PAYLOAD_SIZE;
+  const char *ip_str_global = NULL;
+  uint32_t cnt = 0U;
+
+  static sl_wisun_app_core_current_addr_t addresses = { 0 };
+  static sl_wisun_coap_packet_t notify_coap_pkt = {
+    .msg_code = COAP_MSG_CODE_REQUEST_PUT,
+    .msg_id = SL_WISUN_COAP_METER_COLLECTOR_DEFAULT_MESSAGE_ID,
+    .msg_type = COAP_MSG_TYPE_NON_CONFIRMABLE,
+    .content_format = COAP_CT_JSON,
+    .uri_path_ptr = (uint8_t *)SL_WISUN_COAP_METER_COLLECTOR_MEASUREMENT_URI_PATH,
+    .uri_path_len = sizeof(SL_WISUN_COAP_METER_COLLECTOR_MEASUREMENT_URI_PATH) - 1,
+    .payload_ptr = _payload_buff,
+    .payload_len = 0U,
+    .token_ptr = NULL,
+    .token_len = 0U,
+    .options_list_ptr = NULL
+  };
+
+  (void) notify;
+
+  meas_pkt = (sl_wisun_meter_packet_t *)sl_mempool_alloc(&_metrics_mpool);
+  if (meas_pkt == NULL) {
+    return NULL;
+  }
+
+  sli_wisun_meter_gen_packet_id(meas_pkt);
+  sli_wisun_meter_get_temperature(meas_pkt);
+  sli_wisun_meter_get_humidity(meas_pkt);
+  sli_wisun_meter_get_light(meas_pkt);
+
+  _metrics_cnt.curr_cnt++;
+  _metrics_cnt.tot_cnt++;
+
+  // Check metrics count, if the current count is equal to the fire count,
+  // send the packet
+  if (_metrics_cnt.curr_cnt < _metrics_cnt.fire_cnt) {
+    return &notify_coap_pkt;
+  }
+
+  // Build JSON payload
+  tmp_buff = (char *) notify_coap_pkt.payload_ptr;
+  pkt_ptr = &notify_coap_pkt;
+  sl_wisun_app_core_get_current_addresses(&addresses);
+  ip_str_global = app_wisun_trace_util_get_ip_str(&addresses.global);
+  if (ip_str_global == NULL) {
+    return NULL;
+  }
+
+  __print_to_buff(res, pkt_ptr, tmp_buff, payload_len,
+                  SL_WISUN_COAP_METER_JSON_MEAS_RESP_BEGIN_FORMAT_STR,
+                  ip_str_global);
+  app_wisun_trace_util_destroy_ip_str(ip_str_global);
+
+  cnt = 0U;
+  for (sl_mempool_block_hnd_t *block = _metrics_mpool.blocks;
+       block != NULL;
+       block = block->next) {
+    meas_pkt = (sl_wisun_meter_packet_t *)block->start_addr;
+
+    __print_to_buff(res, pkt_ptr, tmp_buff, payload_len,
+                    cnt != (_metrics_mpool.used_block_count - 1)
+                    ? SL_WISUN_COAP_METER_JSON_MEAS_RESP_LINE_FORMAT_STR ","
+                    : SL_WISUN_COAP_METER_JSON_MEAS_RESP_LINE_FORMAT_STR,
+                    meas_pkt->id,
+                    meas_pkt->temperature / 1000,
+                    (meas_pkt->temperature % 1000) / 10,
+                    meas_pkt->humidity / 1000,
+                    (meas_pkt->humidity % 1000) / 10,
+                    meas_pkt->light);
+    ++cnt;
+  }
+
+  __print_to_buff(res, pkt_ptr, tmp_buff, payload_len,
+                  SL_WISUN_COAP_JSON_MEAS_RESP_END_FORMAT_STR);
+
+  // Calculate packet payload length
+  pkt_ptr->payload_len = sl_strnlen((char *)pkt_ptr->payload_ptr, SL_WISUN_COAP_METER_JOSN_PAYLOAD_SIZE);
+
+  if (payload_len < 0) {
+    snprintf((char *)(pkt_ptr->payload_ptr + (pkt_ptr->payload_len - 4)), 4, "...");
+    pkt_ptr->content_format = COAP_CT_TEXT_PLAIN;
+  }
+
+  // Free the metrics table
+  for (sl_mempool_block_hnd_t *block = _metrics_mpool.blocks;
+       block != NULL;
+       block = block->next) {
+    sl_mempool_free(&_metrics_mpool, block->start_addr);
+  }
+
+  return &notify_coap_pkt;
+}
+
+static bool _notify_condition_cb(const sl_wisun_coap_notify_t *notify)
+{
+  (void) notify;
+  if (_metrics_cnt.curr_cnt == _metrics_cnt.fire_cnt) {
+    _metrics_cnt.curr_cnt = 0;
+    return true;
+  } else {
+    return false;
+  }
+}
+
+static sl_wisun_coap_packet_t * _build_const_resp(const sl_wisun_coap_packet_t * const req_packet,
+                                                  const char * const resp_str,
+                                                  const sn_coap_msg_code_e code)
+{
+  sl_wisun_coap_packet_t *resp_packet = NULL;
+  resp_packet = sl_wisun_coap_build_response(req_packet, code);
+  if (resp_packet == NULL) {
+    return NULL;
+  }
+  resp_packet->payload_ptr = (uint8_t *)resp_str;
+  resp_packet->payload_len = (uint16_t)sl_strnlen((char *)resp_str, SL_WISUN_METER_REQUEST_RESPONSE_STR_MAX_LEN);
+  return resp_packet;
+}

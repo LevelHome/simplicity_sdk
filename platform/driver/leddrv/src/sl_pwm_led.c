@@ -114,6 +114,24 @@ void sl_pwm_led_start(void *led_handler)
 #endif
 #elif defined(_GPIO_TIMER_ROUTEEN_MASK)
   GPIO->TIMERROUTE_SET[TIMER_NUM(led->timer)].ROUTEEN = 1 << (led->channel + _GPIO_TIMER_ROUTEEN_CC0PEN_SHIFT);
+#elif defined(_GPIO_TIMER0_ROUTEEN_MASK)
+  switch (TIMER_NUM(led->timer)) {
+    case 0:
+      GPIO->TIMER0ROUTE_SET[0].ROUTEEN = 1 << (led->channel + _GPIO_TIMER0_ROUTEEN_CC0PEN_SHIFT);
+      break;
+    case 1:
+      GPIO->TIMER1ROUTE_SET[0].ROUTEEN = 1 << (led->channel + _GPIO_TIMER1_ROUTEEN_CC0PEN_SHIFT);
+      break;
+    case 2:
+      GPIO->TIMER2ROUTE_SET[0].ROUTEEN = 1 << (led->channel + _GPIO_TIMER2_ROUTEEN_CC0PEN_SHIFT);
+      break;
+    case 3:
+      GPIO->TIMER3ROUTE_SET[0].ROUTEEN = 1 << (led->channel + _GPIO_TIMER3_ROUTEEN_CC0PEN_SHIFT);
+      break;
+    default:
+      EFM_ASSERT(0);
+      break;
+  }
 #else
 #error "Unknown route setting"
 #endif
@@ -141,6 +159,24 @@ void sl_pwm_led_stop(void *led_handler)
 #endif
 #elif defined(_GPIO_TIMER_ROUTEEN_MASK)
   GPIO->TIMERROUTE_CLR[TIMER_NUM(led->timer)].ROUTEEN = 1 << (led->channel + _GPIO_TIMER_ROUTEEN_CC0PEN_SHIFT);
+#elif defined(_GPIO_TIMER0_ROUTEEN_MASK)
+  switch (TIMER_NUM(led->timer)) {
+    case 0:
+      GPIO->TIMER0ROUTE_CLR[0].ROUTEEN = 1 << (led->channel + _GPIO_TIMER0_ROUTEEN_CC0PEN_SHIFT);
+      break;
+    case 1:
+      GPIO->TIMER1ROUTE_CLR[0].ROUTEEN = 1 << (led->channel + _GPIO_TIMER1_ROUTEEN_CC0PEN_SHIFT);
+      break;
+    case 2:
+      GPIO->TIMER2ROUTE_CLR[0].ROUTEEN = 1 << (led->channel + _GPIO_TIMER2_ROUTEEN_CC0PEN_SHIFT);
+      break;
+    case 3:
+      GPIO->TIMER3ROUTE_CLR[0].ROUTEEN = 1 << (led->channel + _GPIO_TIMER3_ROUTEEN_CC0PEN_SHIFT);
+      break;
+    default:
+      EFM_ASSERT(0);
+      break;
+  }
 #else
 #error "Unknown route setting"
 #endif
@@ -205,19 +241,12 @@ sl_status_t sl_pwm_led_init(void *led_handler)
   // Set PWM pin as output
   sl_clock_manager_enable_bus_clock(SL_BUS_CLOCK_GPIO);
 
-#if defined(SL_CATALOG_GPIO_PRESENT)
   sl_gpio_t gpio;
   gpio.port = (sl_gpio_port_t)led->port;
   gpio.pin = led->pin;
   sl_gpio_set_pin_mode(&gpio,
                        SL_GPIO_MODE_PUSH_PULL,
                        led->polarity);
-#else
-  GPIO_PinModeSet((GPIO_Port_TypeDef)led->port,
-                  led->pin,
-                  gpioModePushPull,
-                  led->polarity);
-#endif
 
   // Configure CC channel pinout
 #if defined(_TIMER_ROUTE_MASK)
@@ -244,6 +273,33 @@ sl_status_t sl_pwm_led_init(void *led_handler)
   volatile uint32_t * route_register = &GPIO->TIMERROUTE[TIMER_NUM(led->timer)].CC0ROUTE;
   *(route_register + led->channel) = (led->port << _GPIO_TIMER_CC0ROUTE_PORT_SHIFT)
                                      | (led->pin << _GPIO_TIMER_CC0ROUTE_PIN_SHIFT);
+#elif defined(_GPIO_TIMER0_ROUTEEN_MASK)
+  switch (TIMER_NUM(led->timer)) {
+    volatile uint32_t * route_register;
+    case 0:
+      route_register = &GPIO->TIMER0ROUTE[0].CC0ROUTE;
+      *(route_register + led->channel) = (led->port << _GPIO_TIMER0_CC0ROUTE_PORT_SHIFT)
+                                         | (led->pin << _GPIO_TIMER0_CC0ROUTE_PIN_SHIFT);
+      break;
+    case 1:
+      route_register = &GPIO->TIMER1ROUTE[0].CC0ROUTE;
+      *(route_register + led->channel) = (led->port << _GPIO_TIMER1_CC0ROUTE_PORT_SHIFT)
+                                         | (led->pin << _GPIO_TIMER1_CC0ROUTE_PIN_SHIFT);
+      break;
+    case 2:
+      route_register = &GPIO->TIMER2ROUTE[0].CC0ROUTE;
+      *(route_register + led->channel) = (led->port << _GPIO_TIMER2_CC0ROUTE_PORT_SHIFT)
+                                         | (led->pin << _GPIO_TIMER2_CC0ROUTE_PIN_SHIFT);
+      break;
+    case 3:
+      route_register = &GPIO->TIMER3ROUTE[0].CC0ROUTE;
+      *(route_register + led->channel) = (led->port << _GPIO_TIMER3_CC0ROUTE_PORT_SHIFT)
+                                         | (led->pin << _GPIO_TIMER3_CC0ROUTE_PIN_SHIFT);
+      break;
+    default:
+      EFM_ASSERT(0);
+      return SL_STATUS_FAIL;
+  }
 #else
 #error "Unknown route setting"
 #endif

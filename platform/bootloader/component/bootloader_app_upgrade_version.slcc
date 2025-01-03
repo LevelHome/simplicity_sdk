@@ -21,3 +21,6 @@ provides:
     condition: [bootloader_core_nonsecure]
 requires:
   - name: bootloader_image_parser
+metadata:
+  sbom:
+    license: MSLA

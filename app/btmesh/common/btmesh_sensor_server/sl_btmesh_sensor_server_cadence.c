@@ -3,7 +3,7 @@
  * @brief BT Mesh Sensor Server cadence handler
  *******************************************************************************
  * # License
- * <b>Copyright 2020 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -33,10 +33,10 @@
 #include "sl_status.h"
 // Bluetooth stack headers
 #include "sl_btmesh_api.h"
+#include "app_btmesh_rta.h"
 #include "sl_btmesh_sensor.h"
 
 #include "app_assert.h"
-#include "em_common.h"
 
 #include "sl_board_control_config.h"
 
@@ -51,7 +51,7 @@
 #endif // SL_CATALOG_BTMESH_SENSOR_PEOPLE_COUNT_PRESENT
 
 #include "sl_btmesh_sensor_server.h"
-#include "sl_btmesh_sensor_server_cadence.h"
+#include "sli_btmesh_sensor_server_cadence.h"
 
 // Warning! The app_btmesh_util shall be included after the component configuration
 // header file in order to provide the component specific logging macro.
@@ -125,7 +125,7 @@ static bool sensor_thermometer_delta_cadence(temperature_8_t current_temperature
 
 #if SENSOR_PEOPLE_COUNT_CADENCE
 
-void sl_btmesh_sensor_people_count_cadence_init(count16_t people_count)
+void sli_btmesh_sensor_people_count_cadence_init(count16_t people_count)
 {
   static uint16_t delta_down =  SL_BTMESH_SENSOR_PEOPLE_COUNT_STATUS_TRIGGER_DELTA_DOWN_CFG_VAL;
   static uint16_t delta_up =  SL_BTMESH_SENSOR_PEOPLE_COUNT_STATUS_TRIGGER_DELTA_UP_CFG_VAL;
@@ -149,7 +149,7 @@ void sl_btmesh_sensor_people_count_cadence_init(count16_t people_count)
   prev_people_count_data = people_count;
 }
 
-uint32_t sl_btmesh_sensor_people_count_handle_cadence(count16_t people_count, sl_btmesh_evt_sensor_server_publish_t publish_period)
+uint32_t sli_btmesh_sensor_people_count_handle_cadence(count16_t people_count, sl_btmesh_evt_sensor_server_publish_t publish_period)
 {
   uint32_t ret_timer_value = publish_period.period_ms;
 
@@ -167,20 +167,24 @@ uint32_t sl_btmesh_sensor_people_count_handle_cadence(count16_t people_count, sl
   return ret_timer_value;
 }
 
-bool sl_btmesh_sensor_people_count_set_cadence(sl_btmesh_evt_sensor_setup_server_set_cadence_request_t* evt)
+sl_status_t sli_btmesh_sensor_people_count_set_cadence(sl_btmesh_evt_sensor_setup_server_set_cadence_request_t* evt)
 {
-  bool ret_val = false;
+  sl_status_t sc = SL_STATUS_FAIL;
 
   // Check if the received parameters are in valid range
   if ((SENSOR_PEOPLE_COUNT_CADENCE_PARAM_LEN == evt->params.len)
       && (MAX_PERIOD_DIVISOR >= evt->period_divisor)
       && (MAX_TRIGGER_TYPE >= evt->trigger_type)
       && (MAX_PUBLISHING_MIN_INTERVAL >= evt->params.data[4])) {
-    ret_val = true;
+    sc = SL_STATUS_OK;
   }
 
   // Store incoming people count sensor cadence parameters
-  if (true == ret_val) {
+  if (sc == SL_STATUS_OK) {
+    sc = app_btmesh_rta_acquire();
+    if (sc != SL_STATUS_OK) {
+      return sc;
+    }
     cadences[SENSOR_PEOPLE_COUNT_INDEX].period_divisor = evt->period_divisor;
     cadences[SENSOR_PEOPLE_COUNT_INDEX].status_trigger_type = evt->trigger_type;
     cadences[SENSOR_PEOPLE_COUNT_INDEX].status_trigger_delta_down.value[0] = evt->params.data[0];
@@ -192,16 +196,19 @@ bool sl_btmesh_sensor_people_count_set_cadence(sl_btmesh_evt_sensor_setup_server
     cadences[SENSOR_PEOPLE_COUNT_INDEX].fast_cadence_low.value[1] = evt->params.data[6];
     cadences[SENSOR_PEOPLE_COUNT_INDEX].fast_cadence_high.value[0] = evt->params.data[7];
     cadences[SENSOR_PEOPLE_COUNT_INDEX].fast_cadence_high.value[1] = evt->params.data[8];
+    (void) app_btmesh_rta_release();
   }
-
-  return ret_val;
+  return sc;
 }
 
-uint16_t sl_btmesh_sensor_people_count_get_cadence(uint8_t length, uint8_t* get_cadence_buffer)
+sl_status_t sli_btmesh_sensor_people_count_get_cadence(uint8_t length, uint8_t* get_cadence_buffer, uint16_t* buffer_len)
 {
-  uint16_t buffer_len = 0;
-
   if (SENSOR_PEOPLE_COUNT_GET_CADENCE_BUF_LEN <= length) {
+    sl_status_t sc;
+    sc = app_btmesh_rta_acquire();
+    if (sc != SL_STATUS_OK) {
+      return sc;
+    }
     get_cadence_buffer[0] = cadences[SENSOR_PEOPLE_COUNT_INDEX].period_divisor
                             | (cadences[SENSOR_PEOPLE_COUNT_INDEX].status_trigger_type << STATUS_TRIGGER_TYPE_SHIFT);
     get_cadence_buffer[1] = cadences[SENSOR_PEOPLE_COUNT_INDEX].status_trigger_delta_down.value[0];
@@ -213,10 +220,11 @@ uint16_t sl_btmesh_sensor_people_count_get_cadence(uint8_t length, uint8_t* get_
     get_cadence_buffer[7] = cadences[SENSOR_PEOPLE_COUNT_INDEX].fast_cadence_low.value[1];
     get_cadence_buffer[8] = cadences[SENSOR_PEOPLE_COUNT_INDEX].fast_cadence_high.value[0];
     get_cadence_buffer[9] = cadences[SENSOR_PEOPLE_COUNT_INDEX].fast_cadence_high.value[1];
-    buffer_len = SENSOR_PEOPLE_COUNT_GET_CADENCE_BUF_LEN;
+    (void) app_btmesh_rta_release();
+    *buffer_len = SENSOR_PEOPLE_COUNT_GET_CADENCE_BUF_LEN;
   }
 
-  return buffer_len;
+  return SL_STATUS_OK;
 }
 
 /***************************************************************************//**
@@ -315,7 +323,7 @@ static bool sensor_people_count_delta_cadence(count16_t people_count)
 
 #if SENSOR_THERMOMETER_CADENCE
 
-void sl_btmesh_sensor_thermometer_cadence_init(temperature_8_t temperature)
+void sli_btmesh_sensor_thermometer_cadence_init(temperature_8_t temperature)
 {
   static uint16_t delta_down =  SENSOR_THERMOMETER_STATUS_TRIGGER_DELTA_DOWN;
   static uint16_t delta_up =  SENSOR_THERMOMETER_STATUS_TRIGGER_DELTA_UP;
@@ -345,7 +353,7 @@ void sl_btmesh_sensor_thermometer_cadence_init(temperature_8_t temperature)
   prev_temp_data = temperature;
 }
 
-uint32_t sl_btmesh_sensor_thermometer_handle_cadence(temperature_8_t temperature, sl_btmesh_evt_sensor_server_publish_t publish_period)
+uint32_t sli_btmesh_sensor_thermometer_handle_cadence(temperature_8_t temperature, sl_btmesh_evt_sensor_server_publish_t publish_period)
 {
   uint32_t ret_timer_value = publish_period.period_ms;
 
@@ -363,9 +371,9 @@ uint32_t sl_btmesh_sensor_thermometer_handle_cadence(temperature_8_t temperature
   return ret_timer_value;
 }
 
-bool sl_btmesh_sensor_thermometer_set_cadence(sl_btmesh_evt_sensor_setup_server_set_cadence_request_t* evt)
+sl_status_t sli_btmesh_sensor_thermometer_set_cadence(sl_btmesh_evt_sensor_setup_server_set_cadence_request_t* evt)
 {
-  bool ret_val = false;
+  sl_status_t sc = SL_STATUS_FAIL;
 
   // Check if the received parameters are in valid range
   if ((MAX_PERIOD_DIVISOR >= evt->period_divisor)
@@ -373,17 +381,21 @@ bool sl_btmesh_sensor_thermometer_set_cadence(sl_btmesh_evt_sensor_setup_server_
     if ((SENSOR_THERMOMETER_STATUS_TRIGGER_TYPE_PERCENTAGE == evt->trigger_type)
         && (SENSOR_THERMOMETER_CADENCE_PERCENTAGE_PARAM_LEN == evt->params.len)
         && (MAX_PUBLISHING_MIN_INTERVAL >= evt->params.data[4])) {
-      ret_val = true;
+      sc = SL_STATUS_OK;
     } else if ((SENSOR_THERMOMETER_STATUS_TRIGGER_TYPE_DISCRETE_VALUE == evt->trigger_type)
                && (SENSOR_THERMOMETER_CADENCE_DISCRETE_PARAM_LEN == evt->params.len)
                && (MAX_PUBLISHING_MIN_INTERVAL >= evt->params.data[2])) {
-      ret_val = true;
+      sc = SL_STATUS_OK;
     } else {
     }
   }
 
-  // store incoming thermometer sensor cadence parameters
-  if (true == ret_val) {
+  if (sc == SL_STATUS_OK) {
+    sc = app_btmesh_rta_acquire();
+    if (sc != SL_STATUS_OK) {
+      return sc;
+    }
+    // store incoming thermometer sensor cadence parameters
     if ( SENSOR_THERMOMETER_STATUS_TRIGGER_TYPE_PERCENTAGE == evt->trigger_type) {
       cadences[SENSOR_RHT_INDEX].period_divisor = evt->period_divisor;
       cadences[SENSOR_RHT_INDEX].status_trigger_type = evt->trigger_type;
@@ -404,15 +416,19 @@ bool sl_btmesh_sensor_thermometer_set_cadence(sl_btmesh_evt_sensor_setup_server_
       cadences[SENSOR_RHT_INDEX].fast_cadence_low.value[0] = evt->params.data[3];
       cadences[SENSOR_RHT_INDEX].fast_cadence_high.value[0] = evt->params.data[4];
     }
+    (void) app_btmesh_rta_release();
   }
 
-  return ret_val;
+  return sc;
 }
 
-uint16_t sl_btmesh_sensor_thermometer_get_cadence(uint8_t length, uint8_t* get_cadence_buffer)
+sl_status_t sli_btmesh_sensor_thermometer_get_cadence(uint8_t length, uint8_t* get_cadence_buffer, uint16_t* buffer_len)
 {
-  uint16_t buffer_len = 0;
-
+  sl_status_t sc;
+  sc = app_btmesh_rta_acquire();
+  if (sc != SL_STATUS_OK) {
+    return sc;
+  }
   if ((SENSOR_THERMOMETER_STATUS_TRIGGER_TYPE_PERCENTAGE == cadences[SENSOR_RHT_INDEX].status_trigger_type)
       && (SENSOR_THERMOMETER_PERCENTAGE_GET_CADENCE_BUF_LEN <= length)) {
     get_cadence_buffer[0] = cadences[SENSOR_RHT_INDEX].period_divisor
@@ -424,7 +440,7 @@ uint16_t sl_btmesh_sensor_thermometer_get_cadence(uint8_t length, uint8_t* get_c
     get_cadence_buffer[5] = cadences[SENSOR_RHT_INDEX].min_interval;
     get_cadence_buffer[6] = cadences[SENSOR_RHT_INDEX].fast_cadence_low.value[0];
     get_cadence_buffer[7] = cadences[SENSOR_RHT_INDEX].fast_cadence_high.value[0];
-    buffer_len = SENSOR_THERMOMETER_PERCENTAGE_GET_CADENCE_BUF_LEN;
+    *buffer_len = SENSOR_THERMOMETER_PERCENTAGE_GET_CADENCE_BUF_LEN;
   } else if ((SENSOR_THERMOMETER_STATUS_TRIGGER_TYPE_DISCRETE_VALUE == cadences[SENSOR_RHT_INDEX].status_trigger_type)
              && (SENSOR_THERMOMETER_DISCRETE_GET_CADENCE_BUF_LEN <= length)) {
     get_cadence_buffer[0] = cadences[SENSOR_RHT_INDEX].period_divisor
@@ -434,11 +450,12 @@ uint16_t sl_btmesh_sensor_thermometer_get_cadence(uint8_t length, uint8_t* get_c
     get_cadence_buffer[3] = cadences[SENSOR_RHT_INDEX].min_interval;
     get_cadence_buffer[4] = cadences[SENSOR_RHT_INDEX].fast_cadence_low.value[0];
     get_cadence_buffer[5] = cadences[SENSOR_RHT_INDEX].fast_cadence_high.value[0];
-    buffer_len = SENSOR_THERMOMETER_DISCRETE_GET_CADENCE_BUF_LEN;
+    *buffer_len = SENSOR_THERMOMETER_DISCRETE_GET_CADENCE_BUF_LEN;
   } else {
   }
+  (void) app_btmesh_rta_release();
 
-  return buffer_len;
+  return SL_STATUS_OK;
 }
 
 /***************************************************************************//**

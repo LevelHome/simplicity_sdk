@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_wisun_trace_util.h
+ * @brief Wi-SUN Trace Utility
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __SL_WISUN_TRACE_UTIL_H__
-#define __SL_WISUN_TRACE_UTIL_H__
+#ifndef SL_WISUN_TRACE_UTIL_H
+#define SL_WISUN_TRACE_UTIL_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,14 +41,16 @@ extern "C" {
 #include <stdint.h>
 #include <stddef.h>
 #include <stdio.h>
+
 #include "cmsis_os2.h"
 #include "sl_cmsis_os2_common.h"
 #include "sl_component_catalog.h"
 #include "sl_status.h"
 #include "sl_wisun_ip6string.h"
 #include "sl_wisun_types.h"
+
 #if !defined(SL_CATALOG_WISUN_NCP_PRESENT)
-  #include "sl_wisun_connection_params_api.h"
+#include "sl_wisun_connection_params_api.h"
 #endif
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
@@ -87,7 +89,7 @@ typedef struct {
 typedef struct app_wisun_phy_list {
   /// String representation of the PHY
   const char *name;
-  /// PHY configration
+  /// PHY configuration
   sl_wisun_phy_config_t phy_cfg;
   /// Next ptr
   struct app_wisun_phy_list *next;
@@ -98,8 +100,8 @@ typedef bool (*app_wisun_phy_filter_t)(sl_wisun_phy_config_t *phy_cfg);
 
 /// Time structure definition
 typedef struct sl_wisun_trace_util_time {
-  /// Time stamp in milisec
-  uint64_t tot_milisecs;
+  /// Time stamp in millisec
+  uint64_t tot_millisecs;
   /// Days
   uint16_t days;
   /// Hours
@@ -124,7 +126,7 @@ typedef struct app_wisun_trace_util_evt_notify {
 //                                Global Variables
 // -----------------------------------------------------------------------------
 
-/// PHY configration type enum
+/// PHY configuration type enum
 extern const app_enum_t app_wisun_phy_config_type_enum[];
 
 /// Connection status enum
@@ -147,6 +149,12 @@ extern const app_enum_t app_wisun_device_type_enum[];
 
 /// LFN profile
 extern const app_enum_t app_wisun_lfn_profile_enum[];
+
+///MAC address enum
+extern const app_enum_t app_mac_enum[];
+
+/// Broadcast MAC address
+extern const sl_wisun_mac_address_t APP_BROADCAST_MAC;
 
 // -----------------------------------------------------------------------------
 //                          Public Function Declarations
@@ -420,4 +428,4 @@ sl_status_t app_wisun_trace_util_evt_notify_wait(const app_wisun_trace_util_evt_
 }
 #endif
 
-#endif /* __SL_WISUN_APP_UTIL_H__ */
+#endif // SL_WISUN_TRACE_UTIL_H

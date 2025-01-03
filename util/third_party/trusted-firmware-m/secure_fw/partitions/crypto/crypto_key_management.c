@@ -479,3 +479,114 @@ psa_status_t tfm_crypto_generate_key(psa_invec in_vec[],
     return status;
 #endif /* TFM_CRYPTO_KEY_MODULE_DISABLED */
 }
+
+psa_status_t tfm_crypto_generate_key_custom(psa_invec in_vec[],
+                                     size_t in_len,
+                                     psa_outvec out_vec[],
+                                     size_t out_len)
+{
+#ifdef TFM_CRYPTO_KEY_MODULE_DISABLED
+    SUPPRESS_UNUSED_IOVEC_PARAM_WARNING();
+    return PSA_ERROR_NOT_SUPPORTED;
+#else
+
+    CRYPTO_IN_OUT_LEN_VALIDATE(in_len, 3, 4, out_len, 1, 1);
+
+    if ((in_vec[0].len != sizeof(struct tfm_crypto_pack_iovec)) ||
+        (in_vec[1].len != sizeof(struct psa_client_key_attributes_s)) ||
+        (out_vec[0].len != sizeof(psa_key_id_t))) {
+        return PSA_ERROR_PROGRAMMER_ERROR;
+    }
+
+    psa_key_id_t *key_handle = out_vec[0].base;
+    const struct psa_client_key_attributes_s *client_key_attr = in_vec[1].base;
+    const psa_custom_key_parameters_t *params = in_vec[2].base;
+    const uint8_t *custom_data = in_vec[3].base;
+    size_t custom_data_length = in_vec[3].len;
+
+    psa_status_t status;
+    psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
+    int32_t partition_id = 0;
+    mbedtls_svc_key_id_t encoded_key;
+
+    status = tfm_crypto_get_caller_id(&partition_id);
+    if (status != PSA_SUCCESS) {
+        return status;
+    }
+
+    status = tfm_crypto_key_attributes_from_client(client_key_attr,
+                                                   partition_id,
+                                                   &key_attributes);
+    if (status != PSA_SUCCESS) {
+        return status;
+    }
+
+    status = psa_generate_key_custom(&key_attributes, params, custom_data, custom_data_length, &encoded_key);
+    if (status != PSA_SUCCESS) {
+        return status;
+    }
+
+#if defined(MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER)
+    *key_handle = encoded_key.MBEDTLS_PRIVATE(key_id);
+#else
+    *key_handle = encoded_key;
+#endif
+
+    return status;
+#endif /* TFM_CRYPTO_KEY_MODULE_DISABLED */
+}
+
+psa_status_t tfm_crypto_generate_key_ext(psa_invec in_vec[],
+                                     size_t in_len,
+                                     psa_outvec out_vec[],
+                                     size_t out_len)
+{
+#ifdef TFM_CRYPTO_KEY_MODULE_DISABLED
+    SUPPRESS_UNUSED_IOVEC_PARAM_WARNING();
+    return PSA_ERROR_NOT_SUPPORTED;
+#else
+
+    CRYPTO_IN_OUT_LEN_VALIDATE(in_len, 3, 3, out_len, 1, 1); // verify this.
+
+    if ((in_vec[0].len != sizeof(struct tfm_crypto_pack_iovec)) ||
+        (in_vec[1].len != sizeof(struct psa_client_key_attributes_s)) ||
+        (out_vec[0].len != sizeof(psa_key_id_t))) {
+        return PSA_ERROR_PROGRAMMER_ERROR;
+    }
+
+    psa_key_id_t *key_handle = out_vec[0].base;
+    const struct psa_client_key_attributes_s *client_key_attr = in_vec[1].base;
+    const psa_key_production_parameters_t *params = in_vec[2].base;
+    size_t params_data_length = in_vec[2].len - sizeof(uint32_t);
+
+    psa_status_t status;
+    psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
+    int32_t partition_id = 0;
+    mbedtls_svc_key_id_t encoded_key;
+
+    status = tfm_crypto_get_caller_id(&partition_id);
+    if (status != PSA_SUCCESS) {
+        return status;
+    }
+
+    status = tfm_crypto_key_attributes_from_client(client_key_attr,
+                                                   partition_id,
+                                                   &key_attributes);
+    if (status != PSA_SUCCESS) {
+        return status;
+    }
+
+    status = psa_generate_key_ext(&key_attributes, params, params_data_length, &encoded_key);
+    if (status != PSA_SUCCESS) {
+        return status;
+    }
+
+#if defined(MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER)
+    *key_handle = encoded_key.MBEDTLS_PRIVATE(key_id);
+#else
+    *key_handle = encoded_key;
+#endif
+
+    return status;
+#endif /* TFM_CRYPTO_KEY_MODULE_DISABLED */
+}

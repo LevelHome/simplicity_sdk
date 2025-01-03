@@ -1,5 +1,5 @@
 /***************************************************************************//**
- * @file
+ * @file app.c
  * @brief Application code
  *******************************************************************************
  * # License
@@ -34,12 +34,13 @@
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
-#include "app.h"
-#include "sl_wisun_app_core_util.h"
-#if !SL_WISUN_COAP_RESOURCE_HND_SERVICE_ENABLE
-  #include "sl_wisun_meter.h"
-#endif
 
+#include "app.h"
+#include "sl_wisun_app_core.h"
+#include "sl_wisun_app_core_util.h"
+#include "sl_component_catalog.h"
+#include "sl_wisun_event_mgr.h"
+#include "sl_wisun_config.h"
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -60,7 +61,41 @@
 //                          Public Function Definitions
 // -----------------------------------------------------------------------------
 
-/*App task function*/
+////////////////////////////////////////////////////////
+//        CoAP Meter Application task function
+////////////////////////////////////////////////////////
+#if defined(SL_CATALOG_WISUN_COAP_PRESENT)
+void app_task(void *args)
+{
+  (void) args;
+
+  uint8_t lfn_evt_ch = 0U;
+  sl_wisun_device_type_t dev_type = sl_wisun_app_core_get_device_type();
+
+  if (dev_type == SL_WISUN_LFN) {
+    assert(app_wisun_em_subscribe_evt_notification(SL_WISUN_MSG_LFN_WAKE_UP_IND_ID,
+                                                   &lfn_evt_ch) != SL_STATUS_FAIL);
+  }
+
+  // connect to the wisun network
+  sl_wisun_app_core_util_connect_and_wait();
+
+  while (1) {
+    if (dev_type == SL_WISUN_LFN) {
+      app_wisun_em_wait_evt_notification(SL_WISUN_MSG_LFN_WAKE_UP_IND_ID, lfn_evt_ch);
+    } else {
+      sl_wisun_app_core_util_dispatch_thread();
+    }
+  }
+}
+
+////////////////////////////////////////////////////////
+//        Simple UDP Meter Application task function
+////////////////////////////////////////////////////////
+#else
+
+#include "sl_wisun_meter.h"
+
 void app_task(void *args)
 {
   (void) args;
@@ -68,13 +103,10 @@ void app_task(void *args)
   // connect to the wisun network
   sl_wisun_app_core_util_connect_and_wait();
 
-  while (1) {
-#if !SL_WISUN_COAP_RESOURCE_HND_SERVICE_ENABLE
-    sl_wisun_meter_process();
-#endif
-    sl_wisun_app_core_util_dispatch_thread();
-  }
+  // Simple Meter loop
+  sl_wisun_meter_loop();
 }
+#endif
 
 // -----------------------------------------------------------------------------
 //                          Static Function Definitions

@@ -7,6 +7,9 @@ description: >
 
   This is a No-Code component.
 category: Bluetooth|Application|NCP Host Demo
+metadata:
+  sbom:
+    license: Zlib
 quality: production
 root_path: app/bluetooth/common/ncp_host_com
 tag:
@@ -24,9 +27,16 @@ provides:
 requires:
   - name: bluetooth_api_ncp_host
   - name: component_catalog
-  - name: simple_com
-  - name: emlib_core
+  - name: bluetooth_ncp_transport
+  - name: sl_core
   - name: app_assert
+recommends:
+  - id: bluetooth_ncp_transport_usart
+    condition:
+      - device_series_2
+  - id: bluetooth_ncp_transport_iostream
+    condition:
+      - device_series_3
 template_contribution:
   - name: event_handler
     value:

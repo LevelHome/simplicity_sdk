@@ -17,6 +17,7 @@ requires:
   - name: "bluetooth_controller"
   - name: "bluetooth_feature_sync"
   - name: "bluetooth_feature_periodic_sync"
+  - name: "bluetooth_feature_extended_scanner"
 provides:
   - name: "bluetooth_feature_sync_scanner"
 template_contribution:

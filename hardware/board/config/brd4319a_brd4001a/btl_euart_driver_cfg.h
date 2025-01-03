@@ -56,19 +56,19 @@
 #define SL_SERIAL_EUART_PERIPHERAL_NO            1
 
 // EUSART1 TX on PD01
-#define SL_SERIAL_EUART_TX_PORT                  gpioPortD
+#define SL_SERIAL_EUART_TX_PORT                  SL_GPIO_PORT_D
 #define SL_SERIAL_EUART_TX_PIN                   1
 
 // EUSART1 RX on PD00
-#define SL_SERIAL_EUART_RX_PORT                  gpioPortD
+#define SL_SERIAL_EUART_RX_PORT                  SL_GPIO_PORT_D
 #define SL_SERIAL_EUART_RX_PIN                   0
 
 // EUSART1 CTS on PC03
-#define SL_SERIAL_EUART_CTS_PORT                 gpioPortC
+#define SL_SERIAL_EUART_CTS_PORT                 SL_GPIO_PORT_C
 #define SL_SERIAL_EUART_CTS_PIN                  3
 
 // EUSART1 RTS on PC02
-#define SL_SERIAL_EUART_RTS_PORT                 gpioPortC
+#define SL_SERIAL_EUART_RTS_PORT                 SL_GPIO_PORT_C
 #define SL_SERIAL_EUART_RTS_PIN                  2
 
 // [EUSART_SL_SERIAL_EUART]$
@@ -76,7 +76,7 @@
 // <gpio optional=true> SL_VCOM_ENABLE
 
 // $[GPIO_SL_VCOM_ENABLE]
-#define SL_VCOM_ENABLE_PORT                      gpioPortC
+#define SL_VCOM_ENABLE_PORT                      SL_GPIO_PORT_C
 #define SL_VCOM_ENABLE_PIN                       1
 
 // [GPIO_SL_VCOM_ENABLE]$

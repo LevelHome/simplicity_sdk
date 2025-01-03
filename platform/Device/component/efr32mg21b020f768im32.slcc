@@ -8,6 +8,10 @@
   - name: EFR32MG21B020F768IM32
     unless:
     - device_content_override
+  - name: SL_CODE_COMPONENT_SYSTEM
+    unless:
+    - device_content_override
+    value: system
 - source:
   - path: platform/Device/SiliconLabs/EFR32MG21/Source/system_efr32mg21.c
     unless:
@@ -151,6 +155,8 @@
   - id: trustzone_unaware
 - requires:
   - name: cmsis_core
+  - name: code_classification
+  - name: component_catalog
 - template_contribution:
   - name: device_opn
     value: EFR32MG21B020F768IM32
@@ -200,6 +206,8 @@
       count: '5'
       mask: '0x001F'
       name: gpio_port_d
+  - name: code_classification_components
+    value: system
 - tag:
   - device:opn:efr32mg21b020f768im32
 - toolchain_settings:

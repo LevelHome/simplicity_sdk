@@ -34,7 +34,6 @@ class TargetSimRainier(Target_Sim_Bobcat):
         model.vars.SYNTH_DSMCTRLRX_GLMSOVERRIDEVALRX.value_forced = 2048
         model.vars.SYNTH_DSMCTRLTX_GLMSOVERRIDEVALTX.value_forced = 2048
         model.vars.SYNTH_LMSOVERRIDE_PLMSOVERRIDEEN.value_forced = 1
-        model.vars.SYNTH_LMSOVERRIDE_PLMSOVERRIDEVAL.value_forced = 0
 
         model.vars.SYNTH_HOPPING_HOPHCAPDELAY.value_forced = 0
         model.vars.SYNTH_DSMCTRLRX_QNCMODERX.value_forced = 1

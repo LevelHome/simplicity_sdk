@@ -28,13 +28,14 @@
  *
  ******************************************************************************/
 #include <stdbool.h>
-#include "em_common.h"
+#include "sl_common.h"
 #include "sl_bluetooth.h"
 #include "esl_tag_log.h"
 #include "esl_tag_core.h"
 #include "esl_tag_image.h"
 #include "sl_bt_ots_server.h"
 #include "esl_tag_image_core.h"
+#include "esl_tag_display_core.h"
 #include "esl_tag_ots_server.h"
 #include "sl_bt_ots_server_instances.h"
 
@@ -46,14 +47,9 @@
 
 #define IMAGE_NAME_FULL_STR IMAGE_NAME_PREFIX IMAGE_NAME_POSTFIX
 
-const sl_bt_ots_object_type_t esl_image_type_1b = {
+const sl_bt_ots_object_type_t esl_image_type_base = {
   false,
-  (uint8_t[SL_BT_OTS_UUID_SIZE_128]){ 0xe5, 0x10, 0x00, 0x01, 0x4b, 0x1d, 0xb1, 0x9b, 0x00, 0xb1, 0xe5, 0x01, 0x8b, 0xad, 0xf0, 0x0d }
-};
-
-const sl_bt_ots_object_type_t esl_image_type_2b = {
-  false,
-  (uint8_t[SL_BT_OTS_UUID_SIZE_128]){ 0xe5, 0x10, 0x00, 0x06, 0x4b, 0x1d, 0xb1, 0x9b, 0x00, 0xb1, 0xe5, 0x01, 0x8b, 0xad, 0xf0, 0x0d }
+  (uint8_t[SL_BT_OTS_UUID_SIZE_128]){ 0xe5, 0x10, 0x00, 0x00, 0x4b, 0x1d, 0xb1, 0x9b, 0x00, 0xb1, 0xe5, 0x01, 0x8b, 0xad, 0xf0, 0x0d }
 };
 
 // Image default name type
@@ -428,6 +424,31 @@ void esl_tag_ots_server_bt_on_event(sl_bt_msg_t *evt)
     default:
       break;
   }
+}
+
+sl_status_t esl_tag_ots_prepare_object_type(esl_display_type_t display_type,
+                                            esl_image_ots_flags_t ots_flags,
+                                            sl_bt_ots_object_type_t *type)
+{
+  sl_status_t status = SL_STATUS_INVALID_PARAMETER;
+
+  if (type == NULL || type->uuid_data == NULL) {
+    return SL_STATUS_NULL_POINTER;
+  } else if (!type->uuid_is_sig
+             && display_type >= ESL_DISPLAY_TYPE_BLACK_WHITE
+             && display_type <= ESL_DISPLAY_TYPE_FULL_RGB) {
+    sl_bt_esl_image_ots_uuid_t *uid = (sl_bt_esl_image_ots_uuid_t *)(type->uuid_data);
+
+    memcpy(type->uuid_data,
+           esl_image_type_base.uuid_data,
+           sizeof(sl_bt_esl_image_ots_uuid_t));
+    uid->custom_flags = ots_flags;
+    uid->display_type = display_type;
+
+    status = SL_STATUS_OK;
+  }
+
+  return status;
 }
 
 sl_status_t esl_tag_ots_add_object(const sl_bt_ots_object_type_t* type,

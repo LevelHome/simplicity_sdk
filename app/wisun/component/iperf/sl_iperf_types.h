@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_iperf_types.h
+ * @brief iPerf types
  *******************************************************************************
  * # License
  * <b>Copyright 2022 Silicon Laboratories Inc. www.silabs.com</b>
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __SL_IPERF_TYPES_H__
-#define __SL_IPERF_TYPES_H__
+#ifndef SL_IPERF_TYPES_H
+#define SL_IPERF_TYPES_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,12 +38,10 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <stddef.h>
 #include <stdint.h>
 
 #include "sl_iperf_network_interface.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -56,12 +54,12 @@ extern "C" {
 #endif
 
 /**************************************************************************//**
- * @addtogroup SL_IPERF_TYPES iPerf type definitions
+ * @addtogroup SL_IPERF_TYPES Type definitions
  * @ingroup SL_IPERF
  * @{
  *****************************************************************************/
 
-/// Iperf mode
+/// iPerf mode
 typedef enum sl_iperf_mode {
   /// Server mode
   SL_IPERF_MODE_SERVER,
@@ -473,4 +471,5 @@ SL_PACK_END()
 #ifdef __cplusplus
 }
 #endif
-#endif
+
+#endif // SL_IPERF_TYPES_H

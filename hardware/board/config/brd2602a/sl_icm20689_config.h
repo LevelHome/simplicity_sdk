@@ -38,26 +38,26 @@
 #define SL_ICM20689_SPI_EUSART_PERIPHERAL_NO     0
 
 // EUSART0 TX on PC00
-#define SL_ICM20689_SPI_EUSART_TX_PORT           gpioPortC
+#define SL_ICM20689_SPI_EUSART_TX_PORT           SL_GPIO_PORT_C
 #define SL_ICM20689_SPI_EUSART_TX_PIN            0
 
 // EUSART0 RX on PC01
-#define SL_ICM20689_SPI_EUSART_RX_PORT           gpioPortC
+#define SL_ICM20689_SPI_EUSART_RX_PORT           SL_GPIO_PORT_C
 #define SL_ICM20689_SPI_EUSART_RX_PIN            1
 
 // EUSART0 SCLK on PC02
-#define SL_ICM20689_SPI_EUSART_SCLK_PORT         gpioPortC
+#define SL_ICM20689_SPI_EUSART_SCLK_PORT         SL_GPIO_PORT_C
 #define SL_ICM20689_SPI_EUSART_SCLK_PIN          2
 
 // EUSART0 CS on PB02
-#define SL_ICM20689_SPI_EUSART_CS_PORT           gpioPortB
+#define SL_ICM20689_SPI_EUSART_CS_PORT           SL_GPIO_PORT_B
 #define SL_ICM20689_SPI_EUSART_CS_PIN            2
 
 // [EUSART_SL_ICM20689_SPI_EUSART]$
 
 // <gpio optional=true> SL_ICM20689_INT
 // $[GPIO_SL_ICM20689_INT]
-#define SL_ICM20689_INT_PORT                     gpioPortA
+#define SL_ICM20689_INT_PORT                     SL_GPIO_PORT_A
 #define SL_ICM20689_INT_PIN                      0
 
 // [GPIO_SL_ICM20689_INT]$

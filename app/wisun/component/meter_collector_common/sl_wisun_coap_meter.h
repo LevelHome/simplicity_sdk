@@ -1,9 +1,9 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_wisun_coap_meter.h
+ * @brief Wi-SUN CoAP Meter
  *******************************************************************************
  * # License
- * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -27,8 +27,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  *
  ******************************************************************************/
-#ifndef __SL_WISUN_COAP_METER_H__
-#define __SL_WISUN_COAP_METER_H__
+#ifndef SL_WISUN_COAP_METER_H
+#define SL_WISUN_COAP_METER_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,12 +37,6 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
-#include "sl_wisun_app_core.h"
-#include "sl_wisun_coap.h"
-#include "sli_wisun_meter_collector.h"
-#include "sl_wisun_meter.h"
-#include "sl_wisun_coap_meter_collector_config.h"
 
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
@@ -58,56 +52,12 @@ extern "C" {
 
 /**************************************************************************//**
  * @brief Init CoAP meter component.
- * @details Init common collector meter component and rht measurement
+ * @details Init CoAP Meter component resources
  *****************************************************************************/
 void sl_wisun_coap_meter_init(void);
-
-#if !SL_WISUN_COAP_MC_OPTIMIZED_MODE_ENABLE
-/**************************************************************************//**
- * @brief Prepare measurement response packet from all sensor values
- * @details Callback for CoAP Resource Handler Service. It should be registered.
- * @param[in] req_packet Request packet
- * @return sl_wisun_coap_packet_t * Response packet ptr
- *****************************************************************************/
-sl_wisun_coap_packet_t *sl_wisun_coap_meter_measurement_response_cb(const sl_wisun_coap_packet_t * const req_packet);
-
-/**************************************************************************//**
- * @brief Prepare Temperature measurement response packet
- * @details Callback for CoAP Resource Handler Service. It should be registered.
- * @param[in] req_packet Request packet
- * @return sl_wisun_coap_packet_t * Response packet ptr
- *****************************************************************************/
-sl_wisun_coap_packet_t *sl_wisun_coap_meter_temperature_response_cb(const sl_wisun_coap_packet_t * const req_packet);
-
-/**************************************************************************//**
- * @brief Prepare Humidity measurement response packet
- * @details Callback for CoAP Resource Handler Service. It should be registered.
- * @param[in] req_packet Request packet
- * @return sl_wisun_coap_packet_t * Response packet ptr
- *****************************************************************************/
-sl_wisun_coap_packet_t *sl_wisun_coap_meter_humidity_response_cb(const sl_wisun_coap_packet_t * const req_packet);
-
-/**************************************************************************//**
- * @brief Prepare Light measurement response packet
- * @details Callback for CoAP Resource Handler Service. It should be registered.
- * @param[in] req_packet Request packet
- * @return sl_wisun_coap_packet_t * Response packet ptr
- *****************************************************************************/
-sl_wisun_coap_packet_t *sl_wisun_coap_meter_light_response_cb(const sl_wisun_coap_packet_t * const req_packet);
-
-#if !defined(SL_CATALOG_POWER_MANAGER_PRESENT)
-/**************************************************************************//**
- * @brief Prepare measurement response packet
- * @details Callback for CoAP Resource Handler Service. It should be registered.
- * @param[in] req_packet Request packet
- * @return sl_wisun_coap_packet_t * Response packet ptr
- *****************************************************************************/
-sl_wisun_coap_packet_t *sl_wisun_coap_meter_led_toggle_response_cb(const sl_wisun_coap_packet_t * const req_packet);
-#endif
-#endif
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif // SL_WISUN_COAP_METER_H

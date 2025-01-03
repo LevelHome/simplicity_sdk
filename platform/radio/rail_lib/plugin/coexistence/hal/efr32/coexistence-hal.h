@@ -29,13 +29,12 @@
 #endif //TEST_COEX_HAL_CONFIG
 #include "coexistence.h"
 
+#include "sl_gpio.h"
 #ifdef _SILICON_LABS_32B_SERIES_2
-#include "em_gpio.h"
 #include "em_prs.h"
 #include "gpiointerrupt.h"
 #include "em_cmu.h"
 #else
-#include "sl_gpio.h"
 #include "sl_hal_prs.h"
 #warning "gpiointerrupt to be included once suppported."
 #warning "coex needs to be adapted for the clock manager"

@@ -65,7 +65,7 @@ static void enableSendPinOverTheAir(void)
                                           (uint8_t *)&troo,
                                           ZCL_BOOLEAN_ATTRIBUTE_TYPE);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_door_lock_cluster_println("Failed to write SendPinOverTheAir attribute: 0x%X",
+    sl_zigbee_af_door_lock_cluster_println("Failed to write SendPinOverTheAir attribute: 0x%02X",
                                            status);
   }
 #endif
@@ -110,7 +110,7 @@ void sli_zigbee_af_door_lock_server_init_user(void)
 static void printPin(uint8_t *pin)
 {
   uint8_t pinLength = sl_zigbee_af_string_length(pin);
-  sl_zigbee_af_door_lock_cluster_print("(%x)", pinLength);
+  sl_zigbee_af_door_lock_cluster_print("(%02X)", pinLength);
   for (uint8_t i = 0; i < pinLength; i++) {
     sl_zigbee_af_door_lock_cluster_print(" %c", pin[i + 1]);
   }
@@ -123,14 +123,14 @@ static void printUserTables(void)
   sl_zigbee_af_door_lock_cluster_println("PIN:");
   for (i = 0; i < SL_ZIGBEE_AF_PLUGIN_DOOR_LOCK_SERVER_PIN_USER_TABLE_SIZE; i++) {
     sl_zigbee_af_plugin_door_lock_server_user_t *user = &pinUserTable[i];
-    sl_zigbee_af_door_lock_cluster_print("%2x %x %x ", i, user->status, user->type);
+    sl_zigbee_af_door_lock_cluster_print("%04X %02X %02X ", i, user->status, user->type);
     printPin(user->code.pin);
     sl_zigbee_af_door_lock_cluster_println("");
   }
   sl_zigbee_af_door_lock_cluster_println("RFID:");
   for (i = 0; i < SL_ZIGBEE_AF_PLUGIN_DOOR_LOCK_SERVER_RFID_USER_TABLE_SIZE; i++) {
     sl_zigbee_af_plugin_door_lock_server_user_t *user = &rfidUserTable[i];
-    sl_zigbee_af_door_lock_cluster_print("%2x %x %x ", i, user->status, user->type);
+    sl_zigbee_af_door_lock_cluster_print("%04X %02X %02X ", i, user->status, user->type);
     printPin(user->code.rfid);
     sl_zigbee_af_door_lock_cluster_println("");
   }
@@ -229,7 +229,7 @@ static bool getSendPinOverTheAir(void)
                                          (uint8_t *)&sendPinOverTheAir,
                                          sizeof(sendPinOverTheAir));
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_door_lock_cluster_println("Failed to read SendPinOverTheAir attribute: 0x%X",
+    sl_zigbee_af_door_lock_cluster_println("Failed to read SendPinOverTheAir attribute: 0x%02X",
                                            status);
   }
 #endif
@@ -294,7 +294,7 @@ static uint8_t getWrongCodeEntryLimit(void)
                                          &limit,
                                          sizeof(limit));
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_door_lock_cluster_println("Failed to read WrongCodeEntryLimitAttribute: 0x%X",
+    sl_zigbee_af_door_lock_cluster_println("Failed to read WrongCodeEntryLimitAttribute: 0x%02X",
                                            status);
   }
 #endif
@@ -312,7 +312,7 @@ static uint8_t getUserCodeTemporaryDisableTime(void)
                                          &timeS,
                                          sizeof(timeS));
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_door_lock_cluster_println("Failed to read UserCodeTemporaryDisableTime: 0x%X",
+    sl_zigbee_af_door_lock_cluster_println("Failed to read UserCodeTemporaryDisableTime: 0x%02X",
                                            status);
   }
 #endif
@@ -399,7 +399,7 @@ static void scheduleAutoRelock(uint32_t autoRelockTimeS)
                                            (uint8_t *)&autoRelockTimeS,
                                            sizeof(autoRelockTimeS));
     if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-      sl_zigbee_af_door_lock_cluster_println("Failed to read AutoRelockTime attribute: 0x%X",
+      sl_zigbee_af_door_lock_cluster_println("Failed to read AutoRelockTime attribute: 0x%02X",
                                              status);
       return;
     }
@@ -422,7 +422,7 @@ void sl_zigbee_af_door_lock_server_relock_event_handler(sl_zigbee_af_event_t * e
                                            0,
                                            pinUserTable,
                                            SL_ZIGBEE_AF_PLUGIN_DOOR_LOCK_SERVER_PIN_USER_TABLE_SIZE);
-  sl_zigbee_af_door_lock_cluster_println("Door automatically relocked: 0x%X", status);
+  sl_zigbee_af_door_lock_cluster_println("Door automatically relocked: 0x%02X", status);
 }
 
 void sl_zigbee_af_door_lock_cluster_server_attribute_changed_cb(uint8_t endpoint,
@@ -437,7 +437,7 @@ void sl_zigbee_af_door_lock_cluster_server_attribute_changed_cb(uint8_t endpoint
                                                                       &lockState,
                                                                       sizeof(lockState));
     if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-      sl_zigbee_af_door_lock_cluster_println("Failed to read LockState attribute: 0x%X",
+      sl_zigbee_af_door_lock_cluster_println("Failed to read LockState attribute: 0x%02X",
                                              status);
     } else if (lockState == SL_ZIGBEE_ZCL_DOOR_LOCK_STATE_UNLOCKED) {
       scheduleAutoRelock(UINT32_MAX);
@@ -448,7 +448,7 @@ void sl_zigbee_af_door_lock_cluster_server_attribute_changed_cb(uint8_t endpoint
 // --------------------------------------
 // Command callbacks
 
-bool sl_zigbee_af_door_lock_cluster_lock_door_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_lock_door_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_door_lock_cluster_lock_door_command_t cmd_data;
   uint8_t userId = 0;
@@ -459,7 +459,7 @@ bool sl_zigbee_af_door_lock_cluster_lock_door_cb(sl_zigbee_af_cluster_command_t 
 
   if (zcl_decode_door_lock_cluster_lock_door_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   pinVerified = verifyPin(cmd_data.PIN, &userId);
@@ -505,10 +505,10 @@ bool sl_zigbee_af_door_lock_cluster_lock_door_cb(sl_zigbee_af_cluster_command_t 
   }
   SEND_COMMAND_UNICAST_TO_BINDINGS();
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_door_lock_cluster_unlock_door_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_unlock_door_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_door_lock_cluster_unlock_door_command_t cmd_data;
   uint8_t userId = 0;
@@ -519,7 +519,7 @@ bool sl_zigbee_af_door_lock_cluster_unlock_door_cb(sl_zigbee_af_cluster_command_
 
   if (zcl_decode_door_lock_cluster_unlock_door_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   pinVerified = verifyPin(cmd_data.PIN, &userId);
@@ -562,10 +562,10 @@ bool sl_zigbee_af_door_lock_cluster_unlock_door_cb(sl_zigbee_af_cluster_command_
     SEND_COMMAND_UNICAST_TO_BINDINGS();
   }
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_door_lock_cluster_unlock_with_timeout_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_unlock_with_timeout_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_door_lock_cluster_unlock_with_timeout_command_t cmd_data;
   uint8_t userId;
@@ -573,7 +573,7 @@ bool sl_zigbee_af_door_lock_cluster_unlock_with_timeout_cb(sl_zigbee_af_cluster_
 
   if (zcl_decode_door_lock_cluster_unlock_with_timeout_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   if (verifyPin(cmd_data.pin, &userId)) {
@@ -585,7 +585,7 @@ bool sl_zigbee_af_door_lock_cluster_unlock_with_timeout_cb(sl_zigbee_af_cluster_
                                             &lockState,
                                             ZCL_ENUM8_ATTRIBUTE_TYPE);
     if (readStatus != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-      sl_zigbee_af_door_lock_cluster_println("Failed to write LockState attribute: 0x%X",
+      sl_zigbee_af_door_lock_cluster_println("Failed to write LockState attribute: 0x%02X",
                                              readStatus);
     }
 
@@ -598,21 +598,21 @@ bool sl_zigbee_af_door_lock_cluster_unlock_with_timeout_cb(sl_zigbee_af_cluster_
   sl_zigbee_af_fill_command_door_lock_cluster_unlock_with_timeout_response(status);
   sl_status_t sl_zigbee_status = sl_zigbee_af_send_response();
   if (sl_zigbee_status != SL_STATUS_OK) {
-    sl_zigbee_af_door_lock_cluster_println("Failed to send UnlockWithTimeoutResponse: 0x%X",
+    sl_zigbee_af_door_lock_cluster_println("Failed to send UnlockWithTimeoutResponse: 0x%02X",
                                            status);
   }
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_door_lock_cluster_set_pin_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_set_pin_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_door_lock_cluster_set_pin_command_t cmd_data;
   uint8_t status;
 
   if (zcl_decode_door_lock_cluster_set_pin_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   //send response
@@ -644,10 +644,10 @@ bool sl_zigbee_af_door_lock_cluster_set_pin_cb(sl_zigbee_af_cluster_command_t *c
     SEND_COMMAND_UNICAST_TO_BINDINGS();
   }
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_door_lock_cluster_get_pin_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_get_pin_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_door_lock_cluster_get_pin_command_t cmd_data;
   sl_zigbee_af_plugin_door_lock_server_user_t user;
@@ -655,7 +655,7 @@ bool sl_zigbee_af_door_lock_cluster_get_pin_cb(sl_zigbee_af_cluster_command_t *c
 
   if (zcl_decode_door_lock_cluster_get_pin_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   if (getUser(cmd_data.userId,
@@ -671,25 +671,24 @@ bool sl_zigbee_af_door_lock_cluster_get_pin_cb(sl_zigbee_af_cluster_command_t *c
                                                                   : &fakePin));
     status = sl_zigbee_af_send_response();
   } else {
-    status = sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_INVALID_VALUE);
+    return SL_ZIGBEE_ZCL_STATUS_INVALID_VALUE;
   }
 
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_door_lock_cluster_println("Failed to send response to GetPin: 0x%X",
+    sl_zigbee_af_door_lock_cluster_println("Failed to send response to GetPin: 0x%02X",
                                            status);
   }
-
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_door_lock_cluster_clear_pin_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_clear_pin_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_door_lock_cluster_clear_pin_command_t cmd_data;
   uint8_t status;
 
   if (zcl_decode_door_lock_cluster_clear_pin_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   status = clearUserPinOrRfid(cmd_data.userId,
@@ -700,7 +699,7 @@ bool sl_zigbee_af_door_lock_cluster_clear_pin_cb(sl_zigbee_af_cluster_command_t 
 
   sl_status_t sl_zigbee_status = sl_zigbee_af_send_response();
   if (sl_zigbee_status != SL_STATUS_OK) {
-    sl_zigbee_af_door_lock_cluster_println("Failed to send ClearPinResponse: 0x%X",
+    sl_zigbee_af_door_lock_cluster_println("Failed to send ClearPinResponse: 0x%02X",
                                            sl_zigbee_status);
   }
 
@@ -720,10 +719,10 @@ bool sl_zigbee_af_door_lock_cluster_clear_pin_cb(sl_zigbee_af_cluster_command_t 
     SEND_COMMAND_UNICAST_TO_BINDINGS();
   }
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_door_lock_cluster_set_user_type_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_set_user_type_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_door_lock_cluster_set_user_type_command_t cmd_data;
   uint8_t status;
@@ -731,7 +730,7 @@ bool sl_zigbee_af_door_lock_cluster_set_user_type_cb(sl_zigbee_af_cluster_comman
 
   if (zcl_decode_door_lock_cluster_set_user_type_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   status = (sli_zigbee_af_door_lock_server_set_pin_user_type(cmd_data.userId, cmd_data.userType)
@@ -741,19 +740,19 @@ bool sl_zigbee_af_door_lock_cluster_set_user_type_cb(sl_zigbee_af_cluster_comman
 
   sl_zigbee_status = sl_zigbee_af_send_response();
   if (sl_zigbee_status != SL_STATUS_OK) {
-    sl_zigbee_af_door_lock_cluster_println("Failed to send SetUserTypeResponse: 0x%X",
+    sl_zigbee_af_door_lock_cluster_println("Failed to send SetUserTypeResponse: 0x%02X",
                                            sl_zigbee_status);
   }
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_door_lock_cluster_get_user_type_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_get_user_type_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_door_lock_cluster_get_user_type_command_t cmd_data;
 
   if (zcl_decode_door_lock_cluster_get_user_type_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   if (sli_zigbee_af_door_lock_server_check_for_sufficient_space(cmd_data.userId,
@@ -762,21 +761,22 @@ bool sl_zigbee_af_door_lock_cluster_get_user_type_cb(sl_zigbee_af_cluster_comman
     sl_zigbee_af_fill_command_door_lock_cluster_get_user_type_response(cmd_data.userId, user->type);
     sl_status_t status = sl_zigbee_af_send_response();
     if (status != SL_STATUS_OK) {
-      sl_zigbee_af_door_lock_cluster_println("Failed to send GetUserTypeResponse: 0x%X",
+      sl_zigbee_af_door_lock_cluster_println("Failed to send GetUserTypeResponse: 0x%02X",
                                              status);
     }
+    return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
   }
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INSUFFICIENT_SPACE;
 }
 
-bool sl_zigbee_af_door_lock_cluster_set_rfid_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_set_rfid_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_door_lock_cluster_set_rfid_command_t cmd_data;
   uint8_t status;
 
   if (zcl_decode_door_lock_cluster_set_rfid_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   status = setUser(cmd_data.userId,
@@ -789,13 +789,13 @@ bool sl_zigbee_af_door_lock_cluster_set_rfid_cb(sl_zigbee_af_cluster_command_t *
 
   sl_status_t sl_zigbee_status = sl_zigbee_af_send_response();
   if (sl_zigbee_status != SL_STATUS_OK) {
-    sl_zigbee_af_door_lock_cluster_println("Failed to send SetRfidResponse: 0x%X",
+    sl_zigbee_af_door_lock_cluster_println("Failed to send SetRfidResponse: 0x%02X",
                                            sl_zigbee_status);
   }
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_door_lock_cluster_get_rfid_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_get_rfid_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_door_lock_cluster_get_rfid_command_t cmd_data;
   sl_zigbee_af_plugin_door_lock_server_user_t user;
@@ -803,7 +803,7 @@ bool sl_zigbee_af_door_lock_cluster_get_rfid_cb(sl_zigbee_af_cluster_command_t *
 
   if (zcl_decode_door_lock_cluster_get_rfid_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   if (getUser(cmd_data.userId,
@@ -815,26 +815,25 @@ bool sl_zigbee_af_door_lock_cluster_get_rfid_cb(sl_zigbee_af_cluster_command_t *
                                                                   user.type,
                                                                   user.code.pin);
     status = sl_zigbee_af_send_response();
+    if (status != SL_STATUS_OK) {
+      sl_zigbee_af_door_lock_cluster_println("Failed to send response to GetRfid: 0x%02X",
+                                             status);
+    }
   } else {
-    status = sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_INVALID_VALUE);
+    return SL_ZIGBEE_ZCL_STATUS_INVALID_VALUE;
   }
 
-  if (status != SL_STATUS_OK) {
-    sl_zigbee_af_door_lock_cluster_println("Failed to send response to GetRfid: 0x%X",
-                                           status);
-  }
-
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_door_lock_cluster_clear_rfid_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_clear_rfid_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_door_lock_cluster_clear_rfid_command_t cmd_data;
   uint8_t status;
 
   if (zcl_decode_door_lock_cluster_clear_rfid_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   status = clearUserPinOrRfid(cmd_data.userId,
@@ -844,13 +843,13 @@ bool sl_zigbee_af_door_lock_cluster_clear_rfid_cb(sl_zigbee_af_cluster_command_t
 
   sl_status_t sl_zigbee_status = sl_zigbee_af_send_response();
   if (sl_zigbee_status != SL_STATUS_OK) {
-    sl_zigbee_af_door_lock_cluster_println("Failed to send ClearRfidResponse: 0x%X",
+    sl_zigbee_af_door_lock_cluster_println("Failed to send ClearRfidResponse: 0x%02X",
                                            sl_zigbee_status);
   }
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_door_lock_cluster_clear_biometric_credential_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_clear_biometric_credential_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   (void)cmd;
 
@@ -860,13 +859,13 @@ bool sl_zigbee_af_door_lock_cluster_clear_biometric_credential_cb(sl_zigbee_af_c
   sl_zigbee_af_fill_command_door_lock_cluster_clear_biometric_credential_response(0x00);
   sl_status_t status = sl_zigbee_af_send_response();
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_door_lock_cluster_println("Failed to send ClearBiometricCredentialResponse: 0x%X",
+    sl_zigbee_af_door_lock_cluster_println("Failed to send ClearBiometricCredentialResponse: 0x%02X",
                                            status);
   }
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_door_lock_cluster_clear_all_pins_cb(void)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_clear_all_pins_cb(void)
 {
   uint8_t i;
   for (i = 0; i < SL_ZIGBEE_AF_PLUGIN_DOOR_LOCK_SERVER_PIN_USER_TABLE_SIZE; i++) {
@@ -879,12 +878,12 @@ bool sl_zigbee_af_door_lock_cluster_clear_all_pins_cb(void)
   sl_zigbee_af_fill_command_door_lock_cluster_clear_all_pins_response(0x00);
   sl_status_t status = sl_zigbee_af_send_response();
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_door_lock_cluster_println("Failed to send ClearAllPins: 0x%X", status);
+    sl_zigbee_af_door_lock_cluster_println("Failed to send ClearAllPins: 0x%02X", status);
   }
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_door_lock_cluster_clear_all_rfids_cb(void)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_clear_all_rfids_cb(void)
 {
   for (uint8_t i = 0;
        i < SL_ZIGBEE_AF_PLUGIN_DOOR_LOCK_SERVER_RFID_USER_TABLE_SIZE;
@@ -898,13 +897,13 @@ bool sl_zigbee_af_door_lock_cluster_clear_all_rfids_cb(void)
   sl_zigbee_af_fill_command_door_lock_cluster_clear_all_rfids_response(0x00);
   sl_status_t status = sl_zigbee_af_send_response();
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_door_lock_cluster_println("Failed to send ClearAllRfidsResponse: 0x%X",
+    sl_zigbee_af_door_lock_cluster_println("Failed to send ClearAllRfidsResponse: 0x%02X",
                                            status);
   }
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_door_lock_cluster_clear_all_biometric_credentials_cb(void)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_door_lock_cluster_clear_all_biometric_credentials_cb(void)
 {
   sl_zigbee_af_door_lock_cluster_println("Clear All Biometric Credentials ");
 
@@ -912,8 +911,8 @@ bool sl_zigbee_af_door_lock_cluster_clear_all_biometric_credentials_cb(void)
   sl_zigbee_af_fill_command_door_lock_cluster_clear_all_biometric_credentials_response(0x00);
   sl_status_t status = sl_zigbee_af_send_response();
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_door_lock_cluster_println("Failed to send ClearAllBiometricCredentialsResponse: 0x%X",
+    sl_zigbee_af_door_lock_cluster_println("Failed to send ClearAllBiometricCredentialsResponse: 0x%02X",
                                            status);
   }
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }

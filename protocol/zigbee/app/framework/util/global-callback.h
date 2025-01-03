@@ -51,7 +51,7 @@ void sl_zigbee_af_add_to_current_app_tasks_cb(sl_zigbee_af_application_task_t ta
  * on an Energy Services Interface (ESI) (formerly called Energy Service Portal
  * (ESP) in SE 1.0).), a mirrored simple meter needs to write read-only
  * attributes on its mirror. The-meter-mirror sample application, located in
- * app/framework/sample-apps, uses this callback to allow the mirrored device to
+ * app/projects/testing, uses this callback to allow the mirrored device to
  * write simple metering attributes on the mirror regardless of the fact that
  * most simple metering attributes are defined as read-only by the ZigBee
  * specification.
@@ -551,6 +551,7 @@ int16u sl_zigbee_af_get_short_poll_interval_qs_cb(void);
  * in the network frame for source routing to a particular destination.
  *
  * @param destination The node id of the destination  Ver.: always
+ * @return source route overhead or SL_ZIGBEE_SOURCE_ROUTE_OVERHEAD_UNKNOWN (no source route overhead)   Ver.: always
  */
 int8u sl_zigbee_af_get_source_route_overhead_cb(sl_802154_short_addr_t destination);
 /** @brief Get Wake Timeout Bitmask
@@ -872,7 +873,7 @@ bool sl_zigbee_af_ota_client_download_complete_cb(sl_zigbee_af_ota_download_resu
  * @param message A pointer to the structure containing the message buffer and
  * other information about it.  Ver.: always
  */
-bool sl_zigbee_af_ota_client_incoming_message_raw_cb(sl_zigbee_af_cluster_command_t *message);
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_ota_client_incoming_message_raw_cb(sl_zigbee_af_cluster_command_t *message);
 /** @brief Ota Client Start
  *
  * This callback should be called when the profile specific registration has
@@ -927,7 +928,7 @@ int8u sl_zigbee_af_ota_server_block_size_cb(sl_802154_short_addr_t clientNodeId)
  * @param message A pointer to the structure containing the message buffer and
  * other information about it.  Ver.: always
  */
-bool sl_zigbee_af_ota_server_incoming_message_raw_cb(sl_zigbee_af_cluster_command_t *message);
+sl_zigbee_af_zcl_request_status_t  sl_zigbee_af_ota_server_incoming_message_raw_cb(sl_zigbee_af_cluster_command_t *message);
 /** @brief Ota Server Query
  *
  * This callback is fired when the OTA server receives a query request by the

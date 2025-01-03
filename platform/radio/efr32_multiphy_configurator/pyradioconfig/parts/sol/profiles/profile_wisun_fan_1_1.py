@@ -74,6 +74,10 @@ class ProfileWisunFan1v1Sol(ProfileWisunFan1v1Ocelot):
         self.make_hidden_input(profile, model.vars.ofdm_stf_length, "Advanced",
                                readable_name="OFDM STF length (1 unit = 120us)",
                                value_limit_min=4, value_limit_max=25)
+        # Add additional inputs for Antenna diversity
+        self.make_hidden_input(profile, model.vars.antdivmode, 'Advanced', readable_name="Antenna diversity mode")
+        self.make_hidden_input(profile, model.vars.antdivrepeatdis, 'Advanced', readable_name="Diversity Select-Best repeat")
+        self.make_hidden_input(profile, model.vars.skip2ant, 'Advanced', 'Skip 2nd antenna check with phase demod antenna diversity')
 
     def build_variable_profile_outputs(self, model, profile):
         self._sw_profile_outputs_common.build_rail_outputs(model, profile)

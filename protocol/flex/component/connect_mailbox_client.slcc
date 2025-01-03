@@ -1,6 +1,6 @@
 id: "connect_mailbox_client"
 label: "Mailbox Client"
-package: "Flex"
+package: "Connect"
 category: "Connect|Mailbox"
 quality: "production"
 description: "Implements the client side of the Connect mailbox protocol. It provides APIs for submitting and retrieving messages to/from a mailbox server."

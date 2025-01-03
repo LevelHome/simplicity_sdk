@@ -18,6 +18,7 @@
 #include PLATFORM_HEADER
 #include "stack/include/sl_zigbee_types.h"
 #include "stack/include/library.h"
+#include "event_queue/event-queue.h"
 
 sl_status_t sli_zigbee_gp_init(void)
 {
@@ -100,8 +101,9 @@ void sli_zigbee_update_gp_proxy_table(uint8_t *longId, sl_802154_short_addr_t sh
   (void)shortId;
 }
 
-void sli_zigbee_gp_tx_event_handler(void)
+void sli_zigbee_gp_tx_event_handler(sli_zigbee_event_t *event)
 {
+  (void) event;
 }
 
 bool sli_zigbee_stack_gp_proxy_table_process_gp_pairing(uint32_t options,

@@ -28,7 +28,7 @@
  *
  ******************************************************************************/
 #include <stdbool.h>
-#include "em_common.h"
+#include "sl_common.h"
 #include "sl_status.h"
 #include "sl_simple_button_instances.h"
 #include "app_timer.h"
@@ -113,7 +113,7 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
                    evt->data.evt_system_boot.build);
 
       // Extract unique ID from BT Address.
-      sc = sl_bt_system_get_identity_address(&address, &address_type);
+      sc = sl_bt_gap_get_identity_address(&address, &address_type);
       app_assert_status(sc);
 
       app_log_info("Bluetooth %s address: %02X:%02X:%02X:%02X:%02X:%02X\n",
@@ -315,7 +315,7 @@ void hello(sl_cli_command_arg_t *arguments)
   (void) arguments;
   bd_addr address;
   uint8_t address_type;
-  sl_status_t sc = sl_bt_system_get_identity_address(&address, &address_type);
+  sl_status_t sc = sl_bt_gap_get_identity_address(&address, &address_type);
   app_assert_status(sc);
   app_log_info("Bluetooth %s address: %02X:%02X:%02X:%02X:%02X:%02X\n",
                address_type ? "static random" : "public device",

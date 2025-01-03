@@ -33,11 +33,13 @@
  ******************************************************************************/
 
 /* SDK emlib layer */
-#include "em_core.h"
+#include "sl_core.h"
 #include "em_device.h"
 #include "em_cmu.h"
-#include "em_gpio.h"
 #include "em_usart.h"
+
+/* SDK drivers */
+#include "sl_gpio.h"
 
 /* Simplicity SDK emdrv includes */
 #include "spidrv.h"
@@ -57,12 +59,12 @@
 
 /* SPI flash block size */
 #ifndef IOT_FLASH_DRV_SPI_BLOCK_SIZE
-#define IOT_FLASH_DRV_SPI_BLOCK_SIZE   (64*1024)
+#define IOT_FLASH_DRV_SPI_BLOCK_SIZE   (64 * 1024)
 #endif
 
 /* SPI flash sector size */
 #ifndef IOT_FLASH_DRV_SPI_SECTOR_SIZE
-#define IOT_FLASH_DRV_SPI_SECTOR_SIZE  (4*1024)
+#define IOT_FLASH_DRV_SPI_SECTOR_SIZE  (4 * 1024)
 #endif
 
 /* SPI flash page size */
@@ -129,10 +131,9 @@ StaticSemaphore_t iot_flash_drv_spi_driver_sembuf;
 /*******************************************************************************
  *                  iot_flash_drv_spi_driver_cb()
  ******************************************************************************/
-
 static void iot_flash_drv_spi_driver_cb(struct SPIDRV_HandleData *handle,
-                                 Ecode_t transferStatus,
-                                 int itemsTransferred)
+                                        Ecode_t transferStatus,
+                                        int itemsTransferred)
 {
   /* this is SPI callback; called one spi operation is finished */
   BaseType_t xHigherPriorityTaskWoken = pdTRUE;
@@ -149,95 +150,83 @@ static void iot_flash_drv_spi_driver_cb(struct SPIDRV_HandleData *handle,
 /*******************************************************************************
  *                 iot_flash_drv_spi_driver_setup_tx()
  ******************************************************************************/
-
 static void iot_flash_drv_spi_driver_setup_tx(void *pvHndl)
 {
   IotFlashDescriptor_t *pvDesc = pvHndl;
 
   /* set TX pin as output */
-  GPIO_PinModeSet(pvDesc->xTxPort,
-                  pvDesc->ucTxPin,
-                  gpioModePushPull,
-                  0);
+  sl_gpio_set_pin_mode(&pvDesc->gpio_tx,
+                       SL_GPIO_MODE_PUSH_PULL,
+                       0);
 }
 
 /*******************************************************************************
-*                  iot_flash_drv_spi_driver_setup_rx()
-******************************************************************************/
-
+ *                  iot_flash_drv_spi_driver_setup_rx()
+ ******************************************************************************/
 static void iot_flash_drv_spi_driver_setup_rx(void *pvHndl)
 {
   IotFlashDescriptor_t *pvDesc = pvHndl;
 
   /* set RX pin as input */
-  GPIO_PinModeSet(pvDesc->xRxPort,
-                  pvDesc->ucRxPin,
-                  gpioModeInput,
-                  0);
+  sl_gpio_set_pin_mode(&pvDesc->gpio_rx,
+                       SL_GPIO_MODE_INPUT,
+                       0);
 }
 
 /*******************************************************************************
-*                  iot_flash_drv_spi_driver_setup_clk()
-******************************************************************************/
-
+ *                  iot_flash_drv_spi_driver_setup_clk()
+ ******************************************************************************/
 static void iot_flash_drv_spi_driver_setup_clk(void *pvHndl)
 {
   IotFlashDescriptor_t *pvDesc = pvHndl;
 
   /* set CLK pin as output */
-  GPIO_PinModeSet(pvDesc->xClkPort,
-                  pvDesc->ucClkPin,
-                  gpioModePushPull,
-                  0);
+  sl_gpio_set_pin_mode(&pvDesc->gpio_clk,
+                       SL_GPIO_MODE_PUSH_PULL,
+                       0);
 }
 
 /*******************************************************************************
  *                 iot_flash_drv_spi_driver_setup_cs()
  ******************************************************************************/
-
 static void iot_flash_drv_spi_driver_setup_cs(void *pvHndl)
 {
   IotFlashDescriptor_t *pvDesc = pvHndl;
 
   /* set CS pin as output (active low) */
-  GPIO_PinModeSet(pvDesc->xCsPort,
-                  pvDesc->ucCsPin,
-                  gpioModePushPull,
-                  1);
+  sl_gpio_set_pin_mode(&pvDesc->gpio_cs,
+                       SL_GPIO_MODE_PUSH_PULL,
+                       1);
 }
 
 /*******************************************************************************
  *                 iot_flash_drv_spi_driver_cs_enable()
  ******************************************************************************/
-
 static void iot_flash_drv_spi_driver_cs_enable(void *pvHndl)
 {
   IotFlashDescriptor_t *pvDesc = pvHndl;
 
   /* enable CS (active low) */
-  GPIO_PinOutClear(pvDesc->xCsPort, pvDesc->ucCsPin);
+  sl_gpio_clear_pin(&pvDesc->gpio_cs);
 }
 
 /*******************************************************************************
  *                 iot_flash_drv_spi_driver_cs_disable()
  ******************************************************************************/
-
 static void iot_flash_drv_spi_driver_cs_disable(void *pvHndl)
 {
   IotFlashDescriptor_t *pvDesc = pvHndl;
 
   /* disable CS (active low) */
-  GPIO_PinOutSet(pvDesc->xCsPort, pvDesc->ucCsPin);
+  sl_gpio_set_pin(&pvDesc->gpio_cs);
 }
 
 /*******************************************************************************
  *                 iot_flash_drv_spi_driver_transfer_async()
  ******************************************************************************/
-
 static uint32_t iot_flash_drv_spi_driver_transfer_async(void *pvHndl,
-                                                  iot_flash_drv_spi_td_t *pxTd)
+                                                        iot_flash_drv_spi_td_t *pxTd)
 {
-	
   IotFlashDescriptor_t *pvDesc = pvHndl;
   Ecode_t  xEcode   = ECODE_EMDRV_SPIDRV_OK;
 
@@ -306,9 +295,8 @@ static uint32_t iot_flash_drv_spi_driver_transfer_async(void *pvHndl,
 /*******************************************************************************
  *                 iot_flash_drv_spi_driver_transfer_sync()
  ******************************************************************************/
-
 static uint32_t iot_flash_drv_spi_driver_transfer_sync(void *pvHndl,
-                                                  iot_flash_drv_spi_td_t *pxTd)
+                                                       iot_flash_drv_spi_td_t *pxTd)
 {
   IotFlashDescriptor_t *pvDesc = pvHndl;
 
@@ -356,7 +344,6 @@ static uint32_t iot_flash_drv_spi_driver_transfer_sync(void *pvHndl,
 /*******************************************************************************
  *                 iot_flash_drv_spi_driver_transfer()
  ******************************************************************************/
-
 static uint32_t iot_flash_drv_spi_driver_transfer(void *pvHndl,
                                                   iot_flash_drv_spi_td_t *pxTd)
 {
@@ -370,7 +357,6 @@ static uint32_t iot_flash_drv_spi_driver_transfer(void *pvHndl,
 /*******************************************************************************
  *                    iot_flash_drv_spi_cmd_pp()
  ******************************************************************************/
-
 static uint32_t iot_flash_drv_spi_cmd_pp(void *pvHndl,
                                          uint32_t ulAddress,
                                          void *pvTxBuf,
@@ -379,13 +365,13 @@ static uint32_t iot_flash_drv_spi_cmd_pp(void *pvHndl,
   IotFlashDescriptor_t *pvDesc = pvHndl;
 
   /* transfer buffers */
-  uint8_t pubCmdBuf[] = {IOT_FLASH_DRV_SPI_COMMAND_PP};
-  uint8_t pubAdrBuf[] = {(ulAddress>>16) & 0xFF,
-                         (ulAddress>> 8) & 0xFF,
-                         (ulAddress>> 0) & 0xFF};
+  uint8_t pubCmdBuf[] = { IOT_FLASH_DRV_SPI_COMMAND_PP };
+  uint8_t pubAdrBuf[] = { (ulAddress >> 16) & 0xFF,
+                          (ulAddress >> 8) & 0xFF,
+                          (ulAddress >> 0) & 0xFF };
 
   /* transfer descriptor */
-  iot_flash_drv_spi_td_t xTd = {0};
+  iot_flash_drv_spi_td_t xTd = { 0 };
 
   /* status variable */
   uint32_t ulStatus = 1;
@@ -410,7 +396,6 @@ static uint32_t iot_flash_drv_spi_cmd_pp(void *pvHndl,
 /*******************************************************************************
  *                    iot_flash_drv_spi_cmd_read()
  ******************************************************************************/
-
 static uint32_t iot_flash_drv_spi_cmd_read(void *pvHndl,
                                            uint32_t ulAddress,
                                            void *pvRxBuf,
@@ -419,13 +404,13 @@ static uint32_t iot_flash_drv_spi_cmd_read(void *pvHndl,
   IotFlashDescriptor_t *pvDesc = pvHndl;
 
   /* transfer buffers */
-  uint8_t pubCmdBuf[] = {IOT_FLASH_DRV_SPI_COMMAND_READ};
-  uint8_t pubAdrBuf[] = {(ulAddress>>16) & 0xFF,
-                         (ulAddress>> 8) & 0xFF,
-                         (ulAddress>> 0) & 0xFF};
+  uint8_t pubCmdBuf[] = { IOT_FLASH_DRV_SPI_COMMAND_READ };
+  uint8_t pubAdrBuf[] = { (ulAddress >> 16) & 0xFF,
+                          (ulAddress >> 8) & 0xFF,
+                          (ulAddress >> 0) & 0xFF };
 
   /* transfer descriptor */
-  iot_flash_drv_spi_td_t xTd = {0};
+  iot_flash_drv_spi_td_t xTd = { 0 };
 
   /* transfer status */
   uint32_t ulStatus = 1;
@@ -450,7 +435,6 @@ static uint32_t iot_flash_drv_spi_cmd_read(void *pvHndl,
 /*******************************************************************************
  *                    iot_flash_drv_spi_cmd_rdsr()
  ******************************************************************************/
-
 static uint32_t iot_flash_drv_spi_cmd_rdsr(void *pvHndl,
                                            void *pvRxBuf,
                                            uint32_t ulRxSize)
@@ -458,10 +442,10 @@ static uint32_t iot_flash_drv_spi_cmd_rdsr(void *pvHndl,
   IotFlashDescriptor_t *pvDesc = pvHndl;
 
   /* transfer buffers */
-  uint8_t  pubCmdBuf[] = {IOT_FLASH_DRV_SPI_COMMAND_RDSR};
+  uint8_t  pubCmdBuf[] = { IOT_FLASH_DRV_SPI_COMMAND_RDSR };
 
   /* transfer descriptor */
-  iot_flash_drv_spi_td_t xTd = {0};
+  iot_flash_drv_spi_td_t xTd = { 0 };
 
   /* transfer status */
   uint32_t ulStatus = 1;
@@ -486,16 +470,15 @@ static uint32_t iot_flash_drv_spi_cmd_rdsr(void *pvHndl,
 /*******************************************************************************
  *                    iot_flash_drv_spi_cmd_wren()
  ******************************************************************************/
-
 static uint32_t iot_flash_drv_spi_cmd_wren(void *pvHndl)
 {
   IotFlashDescriptor_t *pvDesc = pvHndl;
 
   /* transfer buffers */
-  uint8_t  pubCmdBuf[] = {IOT_FLASH_DRV_SPI_COMMAND_WREN};
+  uint8_t  pubCmdBuf[] = { IOT_FLASH_DRV_SPI_COMMAND_WREN };
 
   /* transfer descriptor */
-  iot_flash_drv_spi_td_t xTd = {0};
+  iot_flash_drv_spi_td_t xTd = { 0 };
 
   /* transfer status */
   uint32_t ulStatus = 1;
@@ -520,20 +503,19 @@ static uint32_t iot_flash_drv_spi_cmd_wren(void *pvHndl)
 /*******************************************************************************
  *                     iot_flash_drv_spi_cmd_se()
  ******************************************************************************/
-
 static uint32_t iot_flash_drv_spi_cmd_se(void *pvHndl,
                                          uint32_t ulAddress)
 {
   IotFlashDescriptor_t *pvDesc = pvHndl;
 
   /* transfer buffers */
-  uint8_t pubCmdBuf[] = {IOT_FLASH_DRV_SPI_COMMAND_SE};
-  uint8_t pubAdrBuf[] = {(ulAddress>>16) & 0xFF,
-                         (ulAddress>> 8) & 0xFF,
-                         (ulAddress>> 0) & 0xFF};
+  uint8_t pubCmdBuf[] = { IOT_FLASH_DRV_SPI_COMMAND_SE };
+  uint8_t pubAdrBuf[] = { (ulAddress >> 16) & 0xFF,
+                          (ulAddress >> 8) & 0xFF,
+                          (ulAddress >> 0) & 0xFF };
 
   /* transfer descriptor */
-  iot_flash_drv_spi_td_t xTd = {0};
+  iot_flash_drv_spi_td_t xTd = { 0 };
 
   /* transfer status */
   uint32_t ulStatus = 1;
@@ -558,16 +540,15 @@ static uint32_t iot_flash_drv_spi_cmd_se(void *pvHndl,
 /*******************************************************************************
  *                     iot_flash_drv_spi_cmd_ce()
  ******************************************************************************/
-
 static uint32_t iot_flash_drv_spi_cmd_ce(void *pvHndl)
 {
   IotFlashDescriptor_t *pvDesc = pvHndl;
 
   /* transfer buffers */
-  uint8_t  pubCmdBuf[] = {IOT_FLASH_DRV_SPI_COMMAND_CE};
+  uint8_t  pubCmdBuf[] = { IOT_FLASH_DRV_SPI_COMMAND_CE };
 
   /* transfer descriptor */
-  iot_flash_drv_spi_td_t xTd = {0};
+  iot_flash_drv_spi_td_t xTd = { 0 };
 
   /* transfer status */
   uint32_t ulStatus = 1;
@@ -592,7 +573,6 @@ static uint32_t iot_flash_drv_spi_cmd_ce(void *pvHndl)
 /*******************************************************************************
  *                    iot_flash_drv_spi_cmd_rdid()
  ******************************************************************************/
-
 static uint32_t iot_flash_drv_spi_cmd_rdid(void *pvHndl,
                                            void *pvRxBuf,
                                            uint32_t ulRxSize)
@@ -600,10 +580,10 @@ static uint32_t iot_flash_drv_spi_cmd_rdid(void *pvHndl,
   IotFlashDescriptor_t *pvDesc = pvHndl;
 
   /* transfer buffers */
-  uint8_t  pubCmdBuf[] = {IOT_FLASH_DRV_SPI_COMMAND_RDID};
+  uint8_t  pubCmdBuf[] = { IOT_FLASH_DRV_SPI_COMMAND_RDID };
 
   /* transfer descriptor */
-  iot_flash_drv_spi_td_t xTd = {0};
+  iot_flash_drv_spi_td_t xTd = { 0 };
 
   /* transfer status */
   uint32_t ulStatus = 1;
@@ -628,7 +608,6 @@ static uint32_t iot_flash_drv_spi_cmd_rdid(void *pvHndl,
 /*******************************************************************************
  *                     iot_flash_drv_spi_write_enable()
  ******************************************************************************/
-
 static uint32_t iot_flash_drv_spi_write_enable(void *pvHndl)
 {
   IotFlashDescriptor_t *pvDesc = pvHndl;
@@ -676,7 +655,6 @@ static uint32_t iot_flash_drv_spi_write_enable(void *pvHndl)
 /*******************************************************************************
  *                     iot_flash_drv_spi_write_wait()
  ******************************************************************************/
-
 static uint32_t iot_flash_drv_spi_write_wait(void *pvHndl)
 {
   IotFlashDescriptor_t *pvDesc = pvHndl;
@@ -719,7 +697,6 @@ static uint32_t iot_flash_drv_spi_write_wait(void *pvHndl)
 /*******************************************************************************
  *                    iot_flash_drv_spi_driver_init()
  ******************************************************************************/
-
 sl_status_t iot_flash_drv_spi_driver_init(void *pvHndl)
 {
   IotFlashDescriptor_t *pvDesc = pvHndl;
@@ -745,14 +722,14 @@ sl_status_t iot_flash_drv_spi_driver_init(void *pvHndl)
   pvDesc->xInit.portLocationClk = pvDesc->ucClkLoc;
   pvDesc->xInit.portLocationCs  = pvDesc->ucCsLoc;
 #else
-  pvDesc->xInit.portTx          = pvDesc->xTxPort;
-  pvDesc->xInit.portRx          = pvDesc->xRxPort;
-  pvDesc->xInit.portClk         = pvDesc->xClkPort;
-  pvDesc->xInit.portCs          = pvDesc->xCsPort;
-  pvDesc->xInit.pinTx           = pvDesc->ucTxPin;
-  pvDesc->xInit.pinRx           = pvDesc->ucRxPin;
-  pvDesc->xInit.pinClk          = pvDesc->ucClkPin;
-  pvDesc->xInit.pinCs           = pvDesc->ucCsPin;
+  pvDesc->xInit.portTx = pvDesc->gpio_tx.port;
+  pvDesc->xInit.pinTx = pvDesc->gpio_tx.pin;
+  pvDesc->xInit.portRx = pvDesc->gpio_rx.port;
+  pvDesc->xInit.pinRx = pvDesc->gpio_rx.pin;
+  pvDesc->xInit.portClk = pvDesc->gpio_clk.port;
+  pvDesc->xInit.pinClk = pvDesc->gpio_clk.pin;
+  pvDesc->xInit.portCs = pvDesc->gpio_cs.port;
+  pvDesc->xInit.pinCs = pvDesc->gpio_cs.pin;
 #endif
 
   /* apply default configs to xInit */
@@ -765,13 +742,12 @@ sl_status_t iot_flash_drv_spi_driver_init(void *pvHndl)
   pvDesc->xInit.csControl       = pvDesc->xDefaultCsControl;
   pvDesc->xInit.slaveStartMode  = pvDesc->xDefaultSlaveStart;
 
-
   /* enable hardware */
   xEcode = SPIDRV_Init(&pvDesc->xHandleData, &pvDesc->xInit);
-  
-    /* initialize semaphore */
+
+  /* initialize semaphore */
   iot_flash_drv_spi_driver_sem =
-       xSemaphoreCreateBinaryStatic(&iot_flash_drv_spi_driver_sembuf);
+    xSemaphoreCreateBinaryStatic(&iot_flash_drv_spi_driver_sembuf);
 
   /* done */
   return xEcode == ECODE_EMDRV_SPIDRV_OK ? SL_STATUS_OK : SL_STATUS_FAIL;
@@ -780,7 +756,6 @@ sl_status_t iot_flash_drv_spi_driver_init(void *pvHndl)
 /*******************************************************************************
  *                   iot_flash_drv_spi_driver_deinit()
  ******************************************************************************/
-
 sl_status_t iot_flash_drv_spi_driver_deinit(void *pvHndl)
 {
   IotFlashDescriptor_t *pvDesc = pvHndl;
@@ -798,8 +773,7 @@ sl_status_t iot_flash_drv_spi_driver_deinit(void *pvHndl)
 /*******************************************************************************
  *                   iot_flash_drv_spi_get_flash_base()
  ******************************************************************************/
-
-sl_status_t iot_flash_drv_spi_get_flash_base(uint32_t *ulFlashBase)                                            
+sl_status_t iot_flash_drv_spi_get_flash_base(uint32_t *ulFlashBase)
 {
   /* return flash base address */
   *ulFlashBase =  iot_flash_desc_get_external_flash_base();
@@ -811,14 +785,13 @@ sl_status_t iot_flash_drv_spi_get_flash_base(uint32_t *ulFlashBase)
 /*******************************************************************************
  *                   iot_flash_drv_spi_get_flash_size()
  ******************************************************************************/
-
 sl_status_t iot_flash_drv_spi_get_flash_size(void *pvHndl,
                                              uint32_t *ulFlashSize)
 {
   IotFlashDescriptor_t *pvDesc = pvHndl;
 
   /* local variables */
-  uint8_t pubDeviceId[3] = {0};
+  uint8_t pubDeviceId[3] = { 0 };
   Ecode_t ulStatus       = 0;
 
   /* issue RDID command */
@@ -828,7 +801,7 @@ sl_status_t iot_flash_drv_spi_get_flash_size(void *pvHndl,
 
   /* if successful, return memory size in bytes */
   if (ulStatus == 1) {
-    *ulFlashSize = 1<<pubDeviceId[2];
+    *ulFlashSize = 1 << pubDeviceId[2];
   }
 
   /* done */
@@ -838,7 +811,6 @@ sl_status_t iot_flash_drv_spi_get_flash_size(void *pvHndl,
 /*******************************************************************************
  *                   iot_flash_drv_spi_get_block_size()
  ******************************************************************************/
-
 sl_status_t iot_flash_drv_spi_get_block_size(void *pvHndl,
                                              uint32_t *ulBlockSize)
 {
@@ -855,7 +827,6 @@ sl_status_t iot_flash_drv_spi_get_block_size(void *pvHndl,
 /*******************************************************************************
  *                   iot_flash_drv_spi_get_sector_size()
  ******************************************************************************/
-
 sl_status_t iot_flash_drv_spi_get_sector_size(void *pvHndl,
                                               uint32_t *ulSectorSize)
 {
@@ -872,7 +843,6 @@ sl_status_t iot_flash_drv_spi_get_sector_size(void *pvHndl,
 /*******************************************************************************
  *                   iot_flash_drv_spi_get_page_size()
  ******************************************************************************/
-
 sl_status_t iot_flash_drv_spi_get_page_size(void *pvHndl,
                                             uint32_t *ulPageSize)
 {
@@ -889,7 +859,6 @@ sl_status_t iot_flash_drv_spi_get_page_size(void *pvHndl,
 /*******************************************************************************
  *                   iot_flash_drv_spi_get_lock_size()
  ******************************************************************************/
-
 sl_status_t iot_flash_drv_spi_get_lock_size(void *pvHndl,
                                             uint32_t *ulLockSize)
 {
@@ -906,7 +875,6 @@ sl_status_t iot_flash_drv_spi_get_lock_size(void *pvHndl,
 /*******************************************************************************
  *                  iot_flash_drv_spi_get_async_flag()
  ******************************************************************************/
-
 sl_status_t iot_flash_drv_spi_get_async_flag(void *pvHndl,
                                              uint8_t *ubAsyncSupport)
 {
@@ -923,14 +891,13 @@ sl_status_t iot_flash_drv_spi_get_async_flag(void *pvHndl,
 /*******************************************************************************
  *                   iot_flash_drv_spi_get_device_id()
  ******************************************************************************/
-
 sl_status_t iot_flash_drv_spi_get_device_id(void *pvHndl,
                                             uint32_t *ulDeviceId)
 {
   IotFlashDescriptor_t *pvDesc = pvHndl;
 
   /* local variables */
-  uint8_t pubDeviceId[3] = {0};
+  uint8_t pubDeviceId[3] = { 0 };
   Ecode_t ulStatus       = 0;
 
   /* issue RDID command */
@@ -940,9 +907,9 @@ sl_status_t iot_flash_drv_spi_get_device_id(void *pvHndl,
 
   /* if successful, return device identifier */
   if (ulStatus == 1) {
-    *ulDeviceId = (pubDeviceId[0]<<16) | /* manufacturer */
-                  (pubDeviceId[1]<< 8) | /* memory type */
-                  (pubDeviceId[2]<< 0);  /* memory density */
+    *ulDeviceId = (pubDeviceId[0] << 16) /* manufacturer */
+                  | (pubDeviceId[1] << 8) /* memory type */
+                  | (pubDeviceId[2] << 0); /* memory density */
   }
 
   /* done */
@@ -952,7 +919,6 @@ sl_status_t iot_flash_drv_spi_get_device_id(void *pvHndl,
 /*******************************************************************************
  *                   iot_flash_drv_spi_erase_sector()
  ******************************************************************************/
-
 sl_status_t iot_flash_drv_spi_erase_sector(void *pvHndl, uint32_t ulAddress)
 {
   IotFlashDescriptor_t *pvDesc = pvHndl;
@@ -982,7 +948,6 @@ sl_status_t iot_flash_drv_spi_erase_sector(void *pvHndl, uint32_t ulAddress)
 /*******************************************************************************
  *                    iot_flash_drv_spi_erase_chip()
  ******************************************************************************/
-
 sl_status_t iot_flash_drv_spi_erase_chip(void *pvHndl)
 {
   IotFlashDescriptor_t *pvDesc = pvHndl;
@@ -1012,7 +977,6 @@ sl_status_t iot_flash_drv_spi_erase_chip(void *pvHndl)
 /*******************************************************************************
  *                    iot_flash_drv_spi_data_write()
  ******************************************************************************/
-
 sl_status_t iot_flash_drv_spi_data_write(void *pvHndl,
                                          uint32_t ulAddress,
                                          uint8_t *pubBuffer,
@@ -1045,7 +1009,6 @@ sl_status_t iot_flash_drv_spi_data_write(void *pvHndl,
 /*******************************************************************************
  *                    iot_flash_drv_spi_data_read()
  ******************************************************************************/
-
 sl_status_t iot_flash_drv_spi_data_read(void *pvHndl,
                                         uint32_t ulAddress,
                                         uint8_t *pubBuffer,

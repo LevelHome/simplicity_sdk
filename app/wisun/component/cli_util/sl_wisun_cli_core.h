@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief Application commandline core
+ * @file sl_wisun_cli_core.h
+ * @brief Wi-SUN CLI core
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __SL_WISUN_CLI_CORE_H__
-#define __SL_WISUN_CLI_CORE_H__
+#ifndef SL_WISUN_CLI_CORE_H
+#define SL_WISUN_CLI_CORE_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,33 +39,9 @@ extern "C" {
 //                                   Includes
 // -----------------------------------------------------------------------------
 
-#include "sl_component_catalog.h"
-#include "sl_status.h"
-#include "sl_wisun_types.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
-
-#if defined(SL_CATALOG_WISUN_APP_CLI_PRESENT)
-/**************************************************************************//**
- * @brief Unlock th CLI mutex and return.
- *****************************************************************************/
-#define app_wisun_release_cli_mutex_and_return() \
-  do {                                           \
-    app_wisun_cli_mutex_unlock();                \
-    return;                                      \
-  } while (0)
-
-/**************************************************************************//**
- * @brief Unlock the CLI mutex and return with a value.
- *****************************************************************************/
-#define app_wisun_release_cli_mutex_and_return_val(__val) \
-  do {                                                    \
-    app_wisun_cli_mutex_unlock();                         \
-    return (__val);                                       \
-  } while (0)
-#endif
 
 // -----------------------------------------------------------------------------
 //                                Global Variables
@@ -76,25 +52,13 @@ extern "C" {
 // -----------------------------------------------------------------------------
 
 /**************************************************************************//**
- * @brief Initialize the CLI components mutex.
- * @details This function initializes the CLI mutex.
+ * @brief Initialize app settings
+ * @details This function initializes app settings
  *****************************************************************************/
 void app_wisun_cli_init(void);
-
-#if defined(SL_CATALOG_WISUN_APP_CLI_PRESENT)
-/**************************************************************************//**
- * @brief Lock by mutex.
- *****************************************************************************/
-void app_wisun_cli_mutex_lock(void);
-
-/**************************************************************************//**
- * @brief Unlock by mutex.
- *****************************************************************************/
-void app_wisun_cli_mutex_unlock(void);
-#endif
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif // SL_WISUN_CLI_CORE_H

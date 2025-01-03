@@ -49,19 +49,19 @@
 #define SL_USART_SPINCP_PERIPHERAL_NO            2
 
 // USART2 TX on PC00
-#define SL_USART_SPINCP_TX_PORT                  gpioPortC
+#define SL_USART_SPINCP_TX_PORT                  SL_GPIO_PORT_C
 #define SL_USART_SPINCP_TX_PIN                   0
 
 // USART2 RX on PC01
-#define SL_USART_SPINCP_RX_PORT                  gpioPortC
+#define SL_USART_SPINCP_RX_PORT                  SL_GPIO_PORT_C
 #define SL_USART_SPINCP_RX_PIN                   1
 
 // USART2 CS on PC03
-#define SL_USART_SPINCP_CS_PORT                  gpioPortC
+#define SL_USART_SPINCP_CS_PORT                  SL_GPIO_PORT_C
 #define SL_USART_SPINCP_CS_PIN                   3
 
 // USART2 CLK on PC02
-#define SL_USART_SPINCP_CLK_PORT                 gpioPortC
+#define SL_USART_SPINCP_CLK_PORT                 SL_GPIO_PORT_C
 #define SL_USART_SPINCP_CLK_PIN                  2
 
 // [USART_SL_USART_SPINCP]$

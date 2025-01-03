@@ -12,6 +12,8 @@ component_root_path: platform/security
 
 requires:
   - name: cmsis_rtos2_port
+  - name: sli_psec_osal
+    condition: [kernel]
 
 provides:
   - name: mbedtls_threading_alt
@@ -46,3 +48,7 @@ template_contribution:
   - name: mbedtls_config
     value: MBEDTLS_THREADING_ALT
     condition: [device_si91x]
+
+metadata:
+  sbom:
+    license: Zlib

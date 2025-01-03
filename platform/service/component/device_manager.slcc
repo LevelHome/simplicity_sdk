@@ -3,7 +3,7 @@ label: "Device Manager"
 package: platform
 description: >
   This component handles devices and technologies abstraction.
-category: Services
+category: Services|Device Manager
 quality: production
 metadata:
   sbom:
@@ -16,3 +16,4 @@ requires:
   - name: device
   - name: device_clock
   - name: device_peripheral
+  - name: device_gpio

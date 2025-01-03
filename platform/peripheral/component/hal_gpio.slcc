@@ -14,7 +14,7 @@ source:
 include:
   - path: "inc"
     file_list:
-    - path: "sl_hal_gpio.h"
+      - path: "sl_hal_gpio.h"
 provides:
   - name: hal_gpio
   - name: hal_generic_gpio
@@ -23,10 +23,15 @@ requires:
   - name: device
   - name: device_has_gpio
   - name: hal_common
-  - name: sl_core
   - name: device_gpio
   - name: cmsis_core
   - name: component_catalog
+  - name: code_classification
 template_contribution:
   - name: component_catalog
     value: gpio
+  - name: code_classification_components
+    value: hal_gpio
+define:
+  - name: SL_CODE_COMPONENT_HAL_GPIO
+    value: hal_gpio

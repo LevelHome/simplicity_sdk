@@ -1,6 +1,6 @@
 # SE Manager Block Cipher
 
-This example uses the SE Manager API to perform the block ciphers on the supported Series 2 device.
+This example uses the SE Manager API to perform the block ciphers on the supported device.
 
 The example redirects standard I/O to the virtual serial port (VCOM) of the kit. By default, the serial port setting is 115200 bps and 8-N-1 configuration.
 

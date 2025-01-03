@@ -1,6 +1,6 @@
 # SE Manager Key Agreement (ECJPAKE)
 
-This example uses the SE Manager API to perform the Elliptic Curve Password Authenticated Key Exchange by Juggling (ECJPAKE) on the supported Series 2 device.
+This example uses the SE Manager API to perform the Elliptic Curve Password Authenticated Key Exchange by Juggling (ECJPAKE) on the supported device.
 
 In ECJPAKE protocol, a shared secret is derived between two peers using a shared, known password.
 

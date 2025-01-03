@@ -171,7 +171,7 @@
   - condition:
     - brd4001a
     override:
-      component: rail_util_cs_antenna_offset
+      component: rail_util_ble_cs_antenna_offset
       file_id: rail_util_cs_antenna_offset_config
     path: brd4406a_brd4001a/sl_rail_util_cs_antenna_offset_config.h
   - condition:
@@ -343,7 +343,7 @@
   - condition:
     - brd4002a
     override:
-      component: rail_util_cs_antenna_offset
+      component: rail_util_ble_cs_antenna_offset
       file_id: rail_util_cs_antenna_offset_config
     path: brd4406a_brd4002a/sl_rail_util_cs_antenna_offset_config.h
   - condition:

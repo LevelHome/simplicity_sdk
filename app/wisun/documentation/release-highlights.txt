@@ -1,6 +1,9 @@
-Wi-SUN SDK 2.1.0
+Wi-SUN SDK 2.3.0
 - Wi-SUN Stack
-  - Targeted quality improvements and bug fixes.
+  - Direct Connect
+  - PAN Defect
 - Wi-SUN Applications
-  - Targeted quality improvements and bug fixes.
+  - Border Router CLI source code
+  - Border Router CLI with Wi-Fi Backhaul
+
 

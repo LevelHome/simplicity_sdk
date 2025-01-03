@@ -41,8 +41,10 @@
 // Example: user will set to false for SE 1.2 Comms Hub (GBCS)
 static bool gInterpanEnabled;
 
+#if defined(ALLOW_FRAGMENTATION)
 // Global timeout value in seconds
 static uint16_t gMessageTimeout;
+#endif // ALLOW_FRAGMENTATION
 
 // MAC frame control
 // Bits:
@@ -122,10 +124,6 @@ static bool isMessageAllowed(sl_zigbee_af_interpan_header_t *headerData,
 static void printMessage(sl_zigbee_af_interpan_header_t *headerData);
 #else
   #define printMessage(x)
-#endif
-
-#if !defined(ALLOW_APS_ENCRYPTED_MESSAGES)
-  #define handleApsSecurity(...) (SL_STATUS_NOT_AVAILABLE)
 #endif
 
 #if !defined SL_ZIGBEE_AF_PLUGIN_INTERPAN_CUSTOM_FILTER
@@ -292,9 +290,9 @@ void interpanPluginInit(uint8_t init_level)
     case SL_ZIGBEE_INIT_LEVEL_LOCAL_DATA:
     {
       gInterpanEnabled = true;
-      gMessageTimeout  = IPMF_MSG_TIMEOUT_MS;
 
 #if defined(ALLOW_FRAGMENTATION)
+      gMessageTimeout  = IPMF_MSG_TIMEOUT_MS;
       uint8_t i;
 
       // The following two loops need adjustment if more than one packet is desired
@@ -340,9 +338,9 @@ void interpanPluginSetFragmentMessageTimeout(uint16_t timeout)  // seconds
 static void printData(const char * name, uint8_t* message, uint8_t length)
 {
   uint8_t i;
-  sl_zigbee_af_app_print("\n%p: ", name);
+  sl_zigbee_af_app_print("\n%s: ", name);
   for (i = 0; i < length; i++) {
-    sl_zigbee_af_app_print("%X ", message[i]);
+    sl_zigbee_af_app_print("%02X ", message[i]);
     sl_zigbee_af_app_flush();
   }
   sl_zigbee_af_app_println("");
@@ -463,18 +461,15 @@ static sl_status_t makeInterPanMessage(sl_zigbee_af_interpan_header_t *headerDat
   finger = pushInt16u(finger, headerData->clusterId);
   finger = pushInt16u(finger, headerData->profileId);
 
-  uint8_t UNUSED apsHeaderLength = finger - apsFrame;
+  uint8_t apsHeaderLength = (uint8_t)(finger - apsFrame);
 
   memmove(finger, payload, *payloadLength);
   finger += *payloadLength;
 
   if (headerData->options & SL_ZIGBEE_AF_INTERPAN_OPTION_APS_ENCRYPT) {
-    sl_status_t status;
-    if (!APS_ENCRYPTION_ALLOWED) {
-      return SL_STATUS_INVALID_CONFIGURATION;
-    }
-    uint8_t apsEncryptLength = finger - apsFrame;
-
+    sl_status_t status = SL_STATUS_INVALID_CONFIGURATION;
+    uint8_t apsEncryptLength = apsHeaderLength + (uint8_t)(*payloadLength);
+    #if defined(ALLOW_APS_ENCRYPTED_MESSAGES)
     printData("Before Encryption", apsFrame, apsEncryptLength);
 
     status = handleApsSecurity(true,  // encrypt?
@@ -483,6 +478,7 @@ static sl_status_t makeInterPanMessage(sl_zigbee_af_interpan_header_t *headerDat
                                &apsEncryptLength,
                                maxLength - (uint8_t)(apsFrame - message),
                                headerData);
+    #endif // ALLOW_APS_ENCRYPTED_MESSAGES
     if (status != SL_STATUS_OK) {
       return status;
     }
@@ -557,7 +553,7 @@ static uint8_t parseInterpanMessage(uint8_t *message,
   if ((apsFrameControl & ~(INTERPAN_APS_FRAME_DELIVERY_MODE_MASK)
        &~INTERPAN_APS_FRAME_SECURITY)
       != INTERPAN_APS_FRAME_CONTROL_NO_DELIVERY_MODE) {
-    sl_zigbee_af_app_println("%pBad APS frame control 0x%X",
+    sl_zigbee_af_app_println("%sBad APS frame control 0x%02X",
                              "ERR: Inter-PAN ",
                              apsFrameControl);
     return 0;
@@ -581,7 +577,7 @@ static uint8_t parseInterpanMessage(uint8_t *message,
       finger += 2;
       break;
     default:
-      sl_zigbee_af_app_println("%pBad Delivery Mode 0x%X",
+      sl_zigbee_af_app_println("%sBad Delivery Mode 0x%02X",
                                "ERR: Inter-PAN ",
                                headerData->messageType);
       return 0;
@@ -593,24 +589,24 @@ static uint8_t parseInterpanMessage(uint8_t *message,
   finger += 2;
 
   if (apsFrameControl & INTERPAN_APS_FRAME_SECURITY) {
-    sl_status_t status;
+    sl_status_t status = SL_STATUS_NOT_AVAILABLE;
     uint8_t apsEncryptLength = *messageLength - apsHeaderIndex;
-    uint8_t UNUSED apsHeaderLength = (uint8_t)(finger - message) - apsHeaderIndex;
     headerData->options |= SL_ZIGBEE_AF_INTERPAN_OPTION_APS_ENCRYPT;
-
+    #if defined(ALLOW_APS_ENCRYPTED_MESSAGES)
+    uint8_t UNUSED apsHeaderLength = (uint8_t)(finger - message) - apsHeaderIndex;
     printData("Before Decryption",
               message + apsHeaderIndex,
               apsEncryptLength);
 
-    status = handleApsSecurity(false,   // encrypt?
+    status = handleApsSecurity(false, // encrypt?
                                message + apsHeaderIndex,
                                apsHeaderLength,
                                &apsEncryptLength,
-                               0,       // maxLengthForEncryption (ignored)
+                               0,    // maxLengthForEncryption (ignored)
                                headerData);
-
+    #endif // ALLOW_APS_ENCRYPTED_MESSAGES
     if (status != SL_STATUS_OK) {
-      sl_zigbee_af_app_println("%pAPS decryption failed (0x%X).",
+      sl_zigbee_af_app_println("%sAPS decryption failed (0x%02X).",
                                "ERR: Inter-PAN ",
                                status);
       return 0;
@@ -768,7 +764,7 @@ static bool isMessageAllowed(sl_zigbee_af_interpan_header_t *headerData,
   uint8_t i;
 
   if (messageLength < SL_ZIGBEE_AF_ZCL_OVERHEAD) {
-    sl_zigbee_af_app_println("%pmessage too short (%d < %d)!",
+    sl_zigbee_af_app_println("%smessage too short (%d < %d)!",
                              "ERR: Inter-PAN ",
                              messageLength,
                              SL_ZIGBEE_AF_ZCL_OVERHEAD);
@@ -781,7 +777,7 @@ static bool isMessageAllowed(sl_zigbee_af_interpan_header_t *headerData,
 
   // Only the first bit is used for ZCL Frame type
   if (messageContents[0] & BIT(1)) {
-    sl_zigbee_af_app_println("%pUnsupported ZCL frame type.",
+    sl_zigbee_af_app_println("%sUnsupported ZCL frame type.",
                              "ERR: Inter-PAN ");
     return false;
   }
@@ -799,7 +795,7 @@ static bool isMessageAllowed(sl_zigbee_af_interpan_header_t *headerData,
                              : SL_ZIGBEE_AF_INTERPAN_DIRECTION_CLIENT_TO_SERVER);
   if (messageContents[0] & ZCL_MANUFACTURER_SPECIFIC_MASK) {
     if (messageLength < SL_ZIGBEE_AF_ZCL_MANUFACTURER_SPECIFIC_OVERHEAD) {
-      sl_zigbee_af_app_println("%pmessage too short!", "ERR: Inter-PAN ");
+      sl_zigbee_af_app_println("%smessage too short!", "ERR: Inter-PAN ");
       return false;
     }
     commandId = messageContents[4];
@@ -828,7 +824,7 @@ static bool isMessageAllowed(sl_zigbee_af_interpan_header_t *headerData,
     i++;
   }
 
-  sl_zigbee_af_app_println("%pprofile 0x%2x, cluster 0x%2x, command 0x%x not permitted",
+  sl_zigbee_af_app_println("%sprofile 0x%04X, cluster 0x%04X, command 0x%02X not permitted",
                            "ERR: Inter-PAN ",
                            headerData->profileId,
                            headerData->clusterId,
@@ -850,21 +846,21 @@ static void printMessage(sl_zigbee_af_interpan_header_t *headerData)
   }
   sl_zigbee_af_app_println("cast):");
   sl_zigbee_af_app_flush();
-  sl_zigbee_af_app_println("  src pan id: 0x%2x", headerData->panId);
+  sl_zigbee_af_app_println("  src pan id: 0x%04X", headerData->panId);
   if (headerData->options & SL_ZIGBEE_AF_INTERPAN_OPTION_MAC_HAS_LONG_ADDRESS) {
     sl_zigbee_af_app_print("  src long id: ");
     sl_zigbee_af_print_big_endian_eui64(headerData->longAddress);
     sl_zigbee_af_app_println("");
   } else {
-    sl_zigbee_af_app_println("  src short id: 0x%2x", headerData->shortAddress);
+    sl_zigbee_af_app_println("  src short id: 0x%04X", headerData->shortAddress);
   }
   sl_zigbee_af_app_flush();
-  sl_zigbee_af_app_println("  profile id: 0x%2x", headerData->profileId);
-  sl_zigbee_af_app_print("  cluster id: 0x%2x ", headerData->clusterId);
+  sl_zigbee_af_app_println("  profile id: 0x%04X", headerData->profileId);
+  sl_zigbee_af_app_print("  cluster id: 0x%04X ", headerData->clusterId);
   sl_zigbee_af_app_debug_exec(sl_zigbee_af_decode_and_print_cluster_with_mfg_code(headerData->clusterId, sl_zigbee_af_get_mfg_code_from_current_command()));
   sl_zigbee_af_app_println("");
   if (headerData->messageType == SL_ZIGBEE_AF_INTER_PAN_MULTICAST) {
-    sl_zigbee_af_app_println("  group id: 0x%2x", headerData->groupId);
+    sl_zigbee_af_app_println("  group id: 0x%04X", headerData->groupId);
   }
   sl_zigbee_af_app_flush();
 }
@@ -917,11 +913,11 @@ sl_status_t sl_zigbee_af_interpan_send_message_cb(sl_zigbee_af_interpan_header_t
     return status;
   }
 
-  sl_zigbee_af_app_print("T%4x:Inter-PAN TX (%d) [",
+  sl_zigbee_af_app_print("T%08X:Inter-PAN TX (%d) [",
                          sl_zigbee_af_get_current_time(),
                          messageLength);
   sl_zigbee_af_app_print_buffer(messageBytes, messageLength, true);
-  sl_zigbee_af_app_println("], 0x%x", status);
+  sl_zigbee_af_app_println("], 0x%02X", status);
   sl_zigbee_af_app_flush();
 
   return status;
@@ -1264,14 +1260,14 @@ static sl_status_t interpanFragmentationProcessIpmf(sl_zigbee_af_interpan_header
 
   if (rxPacket->lastFragmentNumReceived == (rxPacket->numFragments - 1)) {
     // Full message received
-    sl_zigbee_af_app_print("T%4x:Inter-PAN RX (%d B, %d fragments) [",
+    sl_zigbee_af_app_print("T%08X:Inter-PAN RX (%d B, %d fragments) [",
                            sl_zigbee_af_get_current_time(),
                            rxPacket->bufLen - headerLen,
                            rxPacket->numFragments);
     sl_zigbee_af_app_print_buffer(rxPacket->buffer + headerLen,
                                   rxPacket->bufLen - headerLen,
                                   true);
-    sl_zigbee_af_app_println("], 0x%x", SL_STATUS_OK);
+    sl_zigbee_af_app_println("], 0x%02X", SL_STATUS_OK);
     sl_zigbee_af_app_flush();
 
     // User callback: all frags received, message reconstructed

@@ -38,6 +38,7 @@
 #include "esl_lib_event_list.h"
 #include "esl_lib_command_list.h"
 #include "esl_lib_image_transfer.h"
+#include "esl_lib_filter_accept_list.h"
 #include "esl_lib_pawr.h"
 #include "esl_lib_storage.h"
 #include "esl_lib_memory.h"
@@ -68,6 +69,7 @@
 
 #define PAWR_SERVICE_DATA            42
 
+#define SCAN_INIT_INTERVAL           28
 #define CONN_FMT                     ESL_LIB_LOG_HANDLE_FORMAT
 
 /// GATT Database handles
@@ -80,6 +82,11 @@ typedef struct {
   sl_bt_uuid_16_t esl_characteristics[ESL_LIB_CHARACTERISTIC_INDEX_SIZE];
   sl_bt_uuid_16_t dis_characteristics[ESL_LIB_CHARACTERISTIC_INDEX_DIS_SIZE];
 } esl_lib_connection_uuids_t;
+
+// for internal use, only
+extern sl_status_t esl_lib_resume_scanning(void);
+extern sl_status_t esl_lib_core_suspend_scan(uint16_t init_interval,
+                                             uint16_t init_window);
 
 // -----------------------------------------------------------------------------
 // Forward declaration of private functions
@@ -147,12 +154,26 @@ static sl_status_t write_next_config_value(esl_lib_connection_t *conn);
 static bool find_tlv(esl_lib_command_list_cmd_t  *cmd,
                      esl_lib_connect_data_type_t type,
                      esl_lib_connect_tlv_t       **tlv_out);
-static void close_broken_connection(esl_lib_connection_t **conn);
+static void *close_broken_connection(esl_lib_connection_t **conn, esl_lib_address_t *backup);
+static sl_status_t esl_lib_initiate_auto_connection(esl_lib_connection_t *handle);
+static void esl_lib_connection_emit_mass_errors(esl_lib_connection_t *conn);
 // -----------------------------------------------------------------------------
 // Private variables
 
 // List of connections
 static sl_slist_node_t *connection_list = NULL;
+
+// Level1 Filter Accept List for bookkeeping of all acceptable ESLs of the ESL library level (i.e., all requested)
+static filter_list_p auto_acceptance_list = NULL;
+
+// Level2 Filter Accept List for Stack-Level Initiator Filter Policy (i.e., those that are actively scanned)
+static filter_list_p auto_initiator_list = NULL;
+
+// Connection mode
+static esl_lib_connection_mode_t connection_mode = ESL_LIB_CONNECTION_MODE_SINGLE;
+
+// Foreign initiator identity
+static bool foreign_initiator_id = false;
 
 // Service UUIDs
 static const esl_lib_connection_uuids_t uuid_map = {
@@ -178,6 +199,72 @@ static const esl_lib_connection_uuids_t uuid_map = {
 
 // -----------------------------------------------------------------------------
 // Public functions
+
+esl_lib_connection_mode_t esl_lib_get_connection_mode_and_status(esl_lib_core_state_t *core_state,
+                                                                 uint8_t *connections,
+                                                                 bool *initiator_busy)
+{
+  esl_lib_core_state_t core_state_dummy;
+  uint8_t handle_count = 0;
+
+  if (core_state == NULL) {
+    (void)core_state_dummy;         // Suppress unused variable warning...
+    core_state = &core_state_dummy; // ...yet allow NULL input parameter for sore_state
+  }
+
+  *core_state = ESL_LIB_CORE_STATE_IDLE;
+
+  if (!sl_slist_is_empty(connection_list)) {
+    esl_lib_connection_t *entry;
+
+    // Stack is busy while initiating a connection
+    // Otherwise, the ESL library core is considered "idle" (i.e is ready to process requests)
+    SL_SLIST_FOR_EACH_ENTRY(connection_list, entry, esl_lib_connection_t, node) {
+      handle_count++;
+      if (entry->connection_handle != SL_BT_INVALID_CONNECTION_HANDLE && entry->state == ESL_LIB_CONNECTION_STATE_CONNECTING) {
+        *core_state = ESL_LIB_CORE_STATE_CONNECTING;
+      }
+    }
+  }
+
+  if (connections != NULL) {
+    *connections = handle_count;
+  }
+
+  if (initiator_busy != NULL) {
+    if (connection_mode == ESL_LIB_CONNECTION_MODE_SINGLE) {
+      *initiator_busy = false;
+    } else {
+      *initiator_busy = filter_accept_list_get_size(auto_initiator_list) < filter_accept_list_get_size(auto_acceptance_list);
+    }
+  }
+
+  return connection_mode;
+}
+
+sl_status_t esl_lib_change_connection_mode(esl_lib_connection_mode_t mode)
+{
+  sl_status_t sc = SL_STATUS_BUSY;
+  esl_lib_core_state_t core_status;
+
+  if (mode == esl_lib_get_connection_mode_and_status(&core_status, NULL, NULL)) {
+    // Do nothing if the requested mode is the same as the current mode.
+    return SL_STATUS_OK;  // Report as if it had just been set
+  } else if (core_status != ESL_LIB_CORE_STATE_CONNECTING) {
+    // Make sure we have a clean mode switch by clearing the Filter Acceptance list first.
+    sc = esl_lib_initiator_filter_cleanup();
+
+    if (sc == SL_STATUS_OK) {
+      connection_mode = mode;
+    }
+  }
+  return sc;
+}
+
+size_t esl_lib_get_initiator_filter_size(void)
+{
+  return filter_accept_list_get_size(auto_initiator_list);
+}
 
 sl_status_t esl_lib_connection_check_gattdb_handles(esl_lib_gattdb_handles_t *gattdb_handles)
 {
@@ -213,20 +300,20 @@ sl_status_t esl_lib_connection_check_gattdb_handles(esl_lib_gattdb_handles_t *ga
   return SL_STATUS_OK;
 }
 
-sl_status_t esl_lib_connection_open(esl_lib_command_list_cmd_t *cmd)
+sl_status_t esl_lib_initiate_connection(esl_lib_command_list_cmd_t *cmd)
 {
   sl_status_t             sc                = SL_STATUS_OK;
-  esl_lib_address_t       *identity         = NULL;
-  bd_addr                 *identity_addr    = NULL;
-  esl_lib_connection_t    *conn             = (esl_lib_connection_t *)cmd->data.cmd_connect.conn_hnd;
+  uint8_t                 address_type      = sl_bt_gap_public_address;
   uint8_t                 connection_handle = SL_BT_INVALID_CONNECTION_HANDLE;
+  uint8_t                 io_capabilities   = sl_bt_sm_io_capability_noinputnooutput;
+  uint8_t                 flags             = 0;
+  esl_lib_connection_t    *conn             = ESL_LIB_INVALID_HANDLE;
+  esl_lib_address_t       *identity         = NULL;
+  esl_lib_address_t       *address          = NULL;
+  bd_addr                 *identity_addr    = NULL;
   bd_addr                 *addr             = NULL;
-  uint8_t                 address_type      = 0;
   esl_lib_connect_tlv_t   *tlv              = NULL;
   esl_lib_pawr_t          *pawr             = NULL;
-  uint8_t                 flags             = 0;
-  uint8_t                 io_capabilities   = sl_bt_sm_io_capability_noinputnooutput;
-  esl_lib_address_t       *address;
 
   if (cmd == NULL) {
     return SL_STATUS_NULL_POINTER;
@@ -235,19 +322,18 @@ sl_status_t esl_lib_connection_open(esl_lib_command_list_cmd_t *cmd)
     return SL_STATUS_INVALID_PARAMETER;
   }
 
-  if (conn != ESL_LIB_INVALID_HANDLE) {
-    // it's a retry attempt
+  if (cmd->data.cmd_connect.retries_left <= ESL_LIB_CONNECTION_RETRY_COUNT_MAX) {
+    // it's a retry attempt if handle is not an invalid one
     uint8_t retry_count = 1 + ESL_LIB_CONNECTION_RETRY_COUNT_MAX - cmd->data.cmd_connect.retries_left;
 
     esl_lib_log_connection_warning("Retry %d / %d connect to " ESL_LIB_LOG_ADDR_FORMAT APP_LOG_NL,
                                    retry_count,
                                    ESL_LIB_CONNECTION_RETRY_COUNT_MAX,
                                    ESL_LIB_LOG_ADDR(cmd->data.cmd_connect.address));
-    conn->command = cmd; // re-assign command because retry timer cleared it
-    conn->command_complete = false;
   } else {
     esl_lib_log_connection_debug("Initiate new connection" APP_LOG_NL);
   }
+
   if (cmd->data.cmd_connect.retries_left) {
     // Set address
     address = &cmd->data.cmd_connect.address;
@@ -262,9 +348,25 @@ sl_status_t esl_lib_connection_open(esl_lib_command_list_cmd_t *cmd)
       identity_addr = (bd_addr *)identity;
       sc = sl_bt_gap_set_identity_address(*identity_addr, identity->address_type);
       if (sc != SL_STATUS_OK) {
-        esl_lib_log_connection_error("Failed to set identity address, sc = 0x%04x" APP_LOG_NL, sc);
+        esl_lib_log_connection_error("Failed to set foreign identity address, sc = 0x%04x" APP_LOG_NL, sc);
         return sc;
       }
+      foreign_initiator_id = true;
+    } else if (foreign_initiator_id) {
+      bd_addr default_identity;
+      uint8_t default_address_type;
+
+      sc = esl_lib_core_get_identity_address(&default_identity, &default_address_type);
+
+      if (sc == SL_STATUS_OK) {
+        sc = sl_bt_gap_set_identity_address(default_identity, default_address_type);
+      }
+
+      if (sc != SL_STATUS_OK) {
+        esl_lib_log_connection_error("Identity address recovery failed, sc = 0x%04x" APP_LOG_NL, sc);
+        return sc;
+      }
+      foreign_initiator_id = false;
     }
 
     // Check key specified
@@ -284,7 +386,7 @@ sl_status_t esl_lib_connection_open(esl_lib_command_list_cmd_t *cmd)
       esl_lib_log_connection_debug("Use LTK for connection with " ESL_LIB_LOG_ADDR_FORMAT APP_LOG_NL,
                                    ESL_LIB_LOG_ADDR(*address));
     } else {
-      esl_lib_log_connection_debug("Create new bond with " ESL_LIB_LOG_ADDR_FORMAT APP_LOG_NL,
+      esl_lib_log_connection_debug("Expect new bonding with " ESL_LIB_LOG_ADDR_FORMAT APP_LOG_NL,
                                    ESL_LIB_LOG_ADDR(*address));
     }
 
@@ -295,6 +397,10 @@ sl_status_t esl_lib_connection_open(esl_lib_command_list_cmd_t *cmd)
       return sc;
     }
 
+    // Search for re-usable esl_lib_connection_t type connection handle, ignore status
+    (void)esl_lib_connection_find(SL_BT_INVALID_CONNECTION_HANDLE, &conn);
+    // Adjust retry count on every actual connection request
+    --(cmd->data.cmd_connect.retries_left);
     // Check PAwR presense to decide connection method
     if (find_tlv(cmd, ESL_LIB_CONNECT_DATA_TYPE_PAWR, &tlv)) {
       // Connect using PAwR
@@ -309,77 +415,70 @@ sl_status_t esl_lib_connection_open(esl_lib_command_list_cmd_t *cmd)
                                                    *addr,
                                                    address_type,
                                                    &connection_handle);
-    } else {
+    } else if (connection_mode == ESL_LIB_CONNECTION_MODE_SINGLE
+               || io_capabilities == sl_bt_sm_io_capability_keyboardonly
+               || identity != NULL) {
       // Connect using the address only
       esl_lib_log_connection_debug("Opening connection to " ESL_LIB_LOG_ADDR_FORMAT APP_LOG_NL,
                                    ESL_LIB_LOG_ADDR(*address));
+      (void)esl_lib_core_suspend_scan(SCAN_INIT_INTERVAL, 0); // 0 has special meaning, see the implementation
       sc = sl_bt_connection_open(*addr,
                                  address_type,
                                  sl_bt_gap_phy_1m,
                                  &connection_handle);
+    } else {
+      // Defer connection by adding the request to the Filter Acccept List
+      esl_lib_log_connection_debug("Accept connection to " ESL_LIB_LOG_ADDR_FORMAT APP_LOG_NL,
+                                   ESL_LIB_LOG_ADDR(*address));
+      // Go to a different code path when requesting to connect in auto mode!
+      size_t accept_list_size = filter_accept_list_get_size(auto_acceptance_list);
+
+      if (accept_list_size < (1 << (ESL_LIB_SKIPLIST_MAX_LEVEL_LIB))) {
+        (void)filter_accept_list_insert_command(auto_acceptance_list, cmd);
+        esl_lib_core_connection_complete();
+        return esl_lib_initiate_auto_connection(conn);
+      } else {
+        sc = SL_STATUS_BT_CTRL_CONNECTION_LIMIT_EXCEEDED;
+      }
     }
 
     if (sc == SL_STATUS_OK) {
-      // If not retry, add a new connection
+      // If not retry (i.e., no reusable connection found), create a new connection
       if (conn == ESL_LIB_INVALID_HANDLE) {
         // Allocate and add the connection to the connection list.
         sc = esl_lib_connection_add(connection_handle, &conn);
         if (sc == SL_STATUS_OK) {
           // Move to connecting state with no error present.
           conn->state = ESL_LIB_CONNECTION_STATE_CONNECTING;
-          // Save address and type
-          memcpy(conn->address.addr,
-                 addr->addr,
-                 sizeof(conn->address.addr));
-          conn->address_type = address_type;
-          conn->gattdb_known = ESL_LIB_FALSE;
-          // Check for gattdb
-          if (find_tlv(cmd, ESL_LIB_CONNECT_DATA_TYPE_GATTDB_HANDLES, &tlv)) {
-            conn->gattdb_known = ESL_LIB_TRUE;
-            // Copy GATT database
-            memcpy(&conn->gattdb_handles,
-                   tlv->data.data,
-                   sizeof(conn->gattdb_handles));
-            for (uint8_t i = 0; i < sizeof(conn->gattdb_handles.esl_characteristics) / sizeof(uint16_t); i++) {
-              esl_lib_log_connection_debug(CONN_FMT "ESL %u characteristic handle = 0x%02x" APP_LOG_NL,
-                                           conn,
-                                           i,
-                                           conn->gattdb_handles.esl_characteristics[i]);
-            }
-            for (uint8_t i = 0; i < sizeof(conn->gattdb_handles.dis_characteristics) / sizeof(uint16_t); i++) {
-              esl_lib_log_connection_debug(CONN_FMT "DIS %u characteristic handle = 0x%02x" APP_LOG_NL,
-                                           conn,
-                                           i,
-                                           conn->gattdb_handles.dis_characteristics[i]);
-            }
-          } else {
-            // Clean handles if not specified
-            conn->gattdb_handles.services.dis = ESL_LIB_INVALID_SERVICE_HANDLE;
-            conn->gattdb_handles.services.esl = ESL_LIB_INVALID_SERVICE_HANDLE;
-            conn->gattdb_handles.services.ots = ESL_LIB_INVALID_SERVICE_HANDLE;
-            for (uint8_t i = 0; i < sizeof(conn->gattdb_handles.dis_characteristics) / sizeof(uint16_t); i++) {
-              conn->gattdb_handles.dis_characteristics[i] = ESL_LIB_INVALID_CHARACTERISTIC_HANDLE;
-            }
-            for (uint8_t i = 0; i < sizeof(conn->gattdb_handles.esl_characteristics) / sizeof(uint16_t); i++) {
-              conn->gattdb_handles.esl_characteristics[i] = ESL_LIB_INVALID_CHARACTERISTIC_HANDLE;
-            }
-            for (uint8_t i = 0; i < sizeof(conn->gattdb_handles.ots_characteristics) / sizeof(uint16_t); i++) {
-              conn->gattdb_handles.ots_characteristics[i] = ESL_LIB_INVALID_CHARACTERISTIC_HANDLE;
-            }
-          }
 
           // Pass the ownership of initial connect command to conn. handle on success - otherwise ap_core will free it
           conn->command = cmd;
-          conn->command->data.cmd_connect.conn_hnd = (esl_lib_connection_handle_t)conn;
+
+          // Set BLE address if available (for manual connection requests)
+          conn->address_type = address_type;
+          memcpy(conn->address.addr,
+                 addr->addr,
+                 sizeof(conn->address.addr));
+
           conn->command_complete = false;
           esl_lib_log_connection_debug(CONN_FMT "Pending new connection to " ESL_LIB_LOG_ADDR_FORMAT APP_LOG_NL,
-                                       conn,
+                                       ESL_LIB_LOG_PTR(conn),
+                                       ESL_LIB_LOG_ADDR(*address));
+        } else if (connection_handle == SL_BT_INVALID_CONNECTION_HANDLE) { // a.k.a this is an auto mode connect request
+          (void)sl_bt_accept_list_remove_device_by_address(*addr,
+                                                           address_type);
+          esl_lib_log_connection_error(CONN_FMT "Failed to make a pending new connection to " ESL_LIB_LOG_ADDR_FORMAT APP_LOG_NL,
+                                       ESL_LIB_LOG_PTR(conn),
                                        ESL_LIB_LOG_ADDR(*address));
         }
       } else {
-        --cmd->data.cmd_connect.retries_left;
-        conn->connection_handle = connection_handle;
-        conn->state = ESL_LIB_CONNECTION_STATE_RECONNECTING;
+        // Pass the connect command back to the existing conn. handle (link removed earlier by reconnect_timeout CB).
+        conn->command = cmd;
+        conn->command_complete = false;
+        conn->connection_handle = connection_handle; // Old conn->connection_handle is invalid at this point: replace!
+        conn->last_error = SL_STATUS_IN_PROGRESS; // Operation is in progress and not yet complete (pass or fail)
+        conn->state = ESL_LIB_CONNECTION_STATE_CONNECTING;
+        conn->established = false;
 
         sc = app_timer_start(&conn->timer,
                              CONNECTION_TIMEOUT_MS,
@@ -394,10 +493,11 @@ sl_status_t esl_lib_connection_open(esl_lib_command_list_cmd_t *cmd)
         }
       }
     } else {
-      esl_lib_log(((sc == SL_STATUS_BT_CTRL_CONNECTION_LIMIT_EXCEEDED) \
+      esl_lib_log(((sc == SL_STATUS_BT_CTRL_CONNECTION_LIMIT_EXCEEDED       // connection handle limit reached
+                    || sc == SL_STATUS_BT_CTRL_MEMORY_CAPACITY_EXCEEDED)    // filter accept list full result
                    ? ESL_LIB_LOG_LEVEL_WARNING : ESL_LIB_LOG_LEVEL_ERROR),
                   ESL_LIB_LOG_MODULE_CONNECTION,
-                  "Connection failed to " ESL_LIB_LOG_ADDR_FORMAT ", sc = 0x%02x" APP_LOG_NL,
+                  "Connection request failed to " ESL_LIB_LOG_ADDR_FORMAT ", sc = 0x%02x" APP_LOG_NL,
                   ESL_LIB_LOG_ADDR(*address),
                   sc);
       if (conn != NULL) {
@@ -406,25 +506,21 @@ sl_status_t esl_lib_connection_open(esl_lib_command_list_cmd_t *cmd)
           conn->command = NULL;
         }
         (void)esl_lib_connection_remove_ptr(conn);
-        cmd->data.cmd_connect.conn_hnd = ESL_LIB_INVALID_HANDLE;
       }
     }
+  } else if (conn == ESL_LIB_INVALID_HANDLE) {
+    // Just to avoid any NULL dereferencing below - otherwise this code path is implausible:
+    // cmd->data.cmd_connect.retries_left shall never be initialized to zero!
+    sc =  SL_STATUS_NOT_READY;
   } else {
-    if (conn == ESL_LIB_INVALID_HANDLE) {
-      // Just to avoid any NULL dereferencing below - otherwise this code path is implausible:
-      // cmd->data.cmd_connect.retries_left shall never be initialized to zero!
-      sc =  SL_STATUS_NOT_READY;
-    } else {
-      esl_lib_log_connection_error("Connection failure, no more retry attempts" APP_LOG_NL);
-      sc = SL_STATUS_BT_CTRL_CONNECTION_FAILED_TO_BE_ESTABLISHED;
-      // Let the caller free the command in case of error
-      if (conn->command == cmd) {
-        conn->command = NULL;
-      }
-      // Force removal of connection handle in case of no more retry
-      (void)esl_lib_connection_remove_ptr(conn);
-      cmd->data.cmd_connect.conn_hnd = ESL_LIB_INVALID_HANDLE;
+    esl_lib_log_connection_error("Connection failure, no more retry attempts" APP_LOG_NL);
+    sc = SL_STATUS_BT_CTRL_CONNECTION_FAILED_TO_BE_ESTABLISHED;
+    // Let the caller free the command in case of error
+    if (conn->command == cmd) {
+      conn->command = NULL;
     }
+    // Force removal of connection handle in case of no more retry
+    (void)esl_lib_connection_remove_ptr(conn);
   }
   return sc;
 }
@@ -462,7 +558,9 @@ sl_status_t esl_lib_connection_add(uint8_t                  conn,
                            ptr,
                            false);
       if (sc == SL_STATUS_OK) {
-        esl_lib_log_connection_debug("Added ESL library handle at 0x%p for connection handle = %u" APP_LOG_NL, ptr, conn);
+        esl_lib_log_connection_debug(CONN_FMT "Added ESL library handle for connection handle = %u" APP_LOG_NL,
+                                     ESL_LIB_LOG_PTR(ptr),
+                                     conn);
       }
     } else {
       sc = SL_STATUS_ALLOCATION_FAILED;
@@ -494,7 +592,7 @@ sl_status_t esl_lib_connection_find(uint8_t              conn,
     }
   }
 
-  *ptr_out = NULL;
+  *ptr_out = ESL_LIB_INVALID_HANDLE;
   return sc;
 }
 
@@ -503,7 +601,7 @@ sl_status_t esl_lib_connection_remove_ptr(esl_lib_connection_t *ptr)
   if (esl_lib_connection_contains(ptr)) {
     esl_lib_connection_safe_remove_ptr(ptr);
   } else {
-    esl_lib_log_connection_warning(CONN_FMT "Failed to remove the connection: handle not found" APP_LOG_NL, ptr);
+    esl_lib_log_connection_warning(CONN_FMT "Failed to remove the connection: handle not found" APP_LOG_NL, ESL_LIB_LOG_PTR(ptr));
   }
 
   return SL_STATUS_OK;
@@ -535,11 +633,34 @@ void esl_lib_connection_cleanup(void)
   esl_lib_log_connection_debug("Connection cleanup complete" APP_LOG_NL);
 }
 
+sl_status_t esl_lib_initiator_filter_cleanup(void)
+{
+  sl_status_t sc;
+  // Clean Filter Accept List local requests first
+  filter_accept_list_clear_list(auto_acceptance_list);
+  // Clean Filter Accept List local copy
+  filter_accept_list_clear_list(auto_initiator_list);
+  // Send appropriate clear command to NCP
+  sc = sl_bt_accept_list_remove_all_devices();
+  esl_lib_log(sc == SL_STATUS_OK ? ESL_LIB_LOG_LEVEL_DEBUG : ESL_LIB_LOG_LEVEL_ERROR,
+              ESL_LIB_LOG_MODULE_CONNECTION,
+              "Initiator Policy Filter Accept list cleanup complete with status 0x%04x" APP_LOG_NL,
+              sc);
+  return sc;
+}
+
+void esl_lib_auto_initiator_deinit(void)
+{
+  (void)esl_lib_initiator_filter_cleanup();
+  filter_accept_list_destroy_list(&auto_acceptance_list);
+  filter_accept_list_destroy_list(&auto_initiator_list);
+}
+
 sl_status_t esl_lib_connection_add_command(esl_lib_connection_t       *conn,
                                            esl_lib_command_list_cmd_t *cmd)
 {
   sl_status_t sc;
-  if (conn == NULL) {
+  if (conn == ESL_LIB_INVALID_HANDLE) {
     return SL_STATUS_NULL_POINTER;
   }
   if (!esl_lib_connection_contains(conn)) {
@@ -548,11 +669,11 @@ sl_status_t esl_lib_connection_add_command(esl_lib_connection_t       *conn,
   sc = esl_lib_command_list_put(&conn->command_list, cmd);
   if (sc == SL_STATUS_OK) {
     esl_lib_log_connection_debug(CONN_FMT "Added command %d" APP_LOG_NL,
-                                 conn,
+                                 ESL_LIB_LOG_PTR(conn),
                                  cmd->cmd_code);
   } else {
     esl_lib_log_connection_error(CONN_FMT "Add command %d failed, sc = 0x%04x" APP_LOG_NL,
-                                 conn,
+                                 ESL_LIB_LOG_PTR(conn),
                                  cmd->cmd_code,
                                  sc);
   }
@@ -576,7 +697,7 @@ void esl_lib_connection_step(void)
       cmd = esl_lib_command_list_get(&conn->command_list);
       if (cmd != NULL) {
         esl_lib_log_connection_debug(CONN_FMT "Running next command = %d" APP_LOG_NL,
-                                     conn,
+                                     ESL_LIB_LOG_PTR(conn),
                                      cmd->cmd_code);
         conn->command = cmd;
         conn->command_complete = false;
@@ -588,16 +709,32 @@ void esl_lib_connection_step(void)
 
 void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
 {
-  sl_status_t           sc               = SL_STATUS_OK;
   esl_lib_connection_t  *conn            = NULL;
   uint8_t               *bonding_data    = NULL;
-  uint8_t               bonding_data_len = 0;
-  esl_lib_status_t      lib_status       = ESL_LIB_STATUS_UNSPECIFIED_ERROR;
   esl_lib_address_t     *addr            = NULL;
   esl_lib_pawr_t        *pawr            = NULL;
   esl_lib_connect_tlv_t *tlv             = NULL;
+  esl_lib_status_t      lib_status       = ESL_LIB_STATUS_UNSPECIFIED_ERROR;
+  sl_status_t           sc               = SL_STATUS_OK;
+  uint8_t               bonding_data_len = 0;
+  esl_lib_address_t     addr_backup;
 
   switch (SL_BT_MSG_ID(evt->header)) {
+    // (Re)boot
+    case sl_bt_evt_system_boot_id:
+      // See esl_lib_core::esl_lib_core_internal_reset() called from its boot event handler for more connection related actions!
+      connection_mode = ESL_LIB_CONNECTION_MODE_SINGLE;
+      // Do lazy Filter Accept Lists creation
+      if (auto_acceptance_list == NULL) {
+        // Use "double buffering" to provide instant add / remove user experience.
+        auto_acceptance_list = filter_accept_list_create_list(ESL_LIB_SKIPLIST_MAX_LEVEL_LIB,
+                                                              filter_accept_list_compare);
+      }
+      if (auto_initiator_list == NULL) {
+        auto_initiator_list = filter_accept_list_create_list(ESL_LIB_SKIPLIST_MAX_LEVEL_STACK,
+                                                             filter_accept_list_compare);
+      }
+      break;
     // Connection
     case sl_bt_evt_connection_opened_id:
       // Filter for central role
@@ -607,19 +744,84 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
         sc = esl_lib_connection_find(evt->data.evt_connection_opened.connection,
                                      &conn);
         if (sc == SL_STATUS_OK) {
+          conn->last_error = esl_lib_resume_scanning();
           (void)app_timer_stop(&conn->timer);
           esl_lib_log_connection_debug(CONN_FMT "Connection found, connection handle = %u" APP_LOG_NL,
-                                       conn,
+                                       ESL_LIB_LOG_PTR(conn),
                                        conn->connection_handle);
-          conn->last_error   = sc;
+          // Set BLE address
           conn->address_type = evt->data.evt_connection_opened.address_type;
           memcpy(conn->address.addr,
                  evt->data.evt_connection_opened.address.addr,
                  sizeof(conn->address.addr));
+
+          // Check if the opened connection is an auto connect request
+          if (conn->command == NULL) {
+            // If it is, then get back its connect command from initiator list. Not only will it contain the data we
+            // need to secure the connection, but we will also temporarily pass command ownership to the connection handle.
+            conn->command = filter_accept_list_remove_command_by_address(auto_initiator_list,
+                                                                         &(conn->address),
+                                                                         conn->address_type);
+            // Also try to remove the address from the link layer accept list, ignoring the result.
+            // May return SL_STATUS_BT_CTRL_INVALID_COMMAND_PARAMETERS on try remove item not on the list, but its irrelevant.
+            (void)sl_bt_accept_list_remove_device_by_address(conn->address, conn->address_type);
+          }
+          // Verify again that the command was found (for auto initiator requests, only)
+          if (conn->command == NULL) {
+            // This happens if the application has withdrawn the request in the meantime, but it could not be done in
+            // the stack because it has already occupied the list
+            esl_lib_log_connection_debug(CONN_FMT "Connection request withdrawn, connection handle = %u will close" APP_LOG_NL,
+                                         ESL_LIB_LOG_PTR(conn),
+                                         conn->connection_handle);
+            close_connection(conn); // Overrides conn->last_error
+            esl_lib_core_connection_complete();
+            conn->connection_handle = SL_BT_INVALID_CONNECTION_HANDLE; // Ensure immediate handle re-use
+            conn->command_complete = true;
+            esl_lib_initiate_auto_connection(conn);
+            break;
+          }
+
           // Try to set PHY for the connection
           (void)sl_bt_connection_set_preferred_phy(conn->connection_handle,
                                                    PREFERRED_PHY,
                                                    ACCEPTED_PHY);
+
+          // Copy GATT database if present
+          if (find_tlv(conn->command, ESL_LIB_CONNECT_DATA_TYPE_GATTDB_HANDLES, &tlv)) {
+            conn->gattdb_known = ESL_LIB_TRUE;
+            memcpy(&conn->gattdb_handles,
+                   tlv->data.data,
+                   sizeof(conn->gattdb_handles));
+            for (uint8_t i = 0; i < sizeof(conn->gattdb_handles.esl_characteristics) / sizeof(uint16_t); i++) {
+              esl_lib_log_connection_debug(CONN_FMT "ESL %u characteristic handle = 0x%02x" APP_LOG_NL,
+                                           ESL_LIB_LOG_PTR(conn),
+                                           i,
+                                           conn->gattdb_handles.esl_characteristics[i]);
+            }
+            for (uint8_t i = 0; i < sizeof(conn->gattdb_handles.dis_characteristics) / sizeof(uint16_t); i++) {
+              esl_lib_log_connection_debug(CONN_FMT "DIS %u characteristic handle = 0x%02x" APP_LOG_NL,
+                                           ESL_LIB_LOG_PTR(conn),
+                                           i,
+                                           conn->gattdb_handles.dis_characteristics[i]);
+            }
+          } else {
+            conn->gattdb_known = ESL_LIB_FALSE;
+            // Clean handles if not specified
+            conn->gattdb_handles.services.dis = ESL_LIB_INVALID_SERVICE_HANDLE;
+            conn->gattdb_handles.services.esl = ESL_LIB_INVALID_SERVICE_HANDLE;
+            conn->gattdb_handles.services.ots = ESL_LIB_INVALID_SERVICE_HANDLE;
+            for (uint8_t i = 0; i < sizeof(conn->gattdb_handles.dis_characteristics) / sizeof(uint16_t); i++) {
+              conn->gattdb_handles.dis_characteristics[i] = ESL_LIB_INVALID_CHARACTERISTIC_HANDLE;
+            }
+            for (uint8_t i = 0; i < sizeof(conn->gattdb_handles.esl_characteristics) / sizeof(uint16_t); i++) {
+              conn->gattdb_handles.esl_characteristics[i] = ESL_LIB_INVALID_CHARACTERISTIC_HANDLE;
+            }
+            for (uint8_t i = 0; i < sizeof(conn->gattdb_handles.ots_characteristics) / sizeof(uint16_t); i++) {
+              conn->gattdb_handles.ots_characteristics[i] = ESL_LIB_INVALID_CHARACTERISTIC_HANDLE;
+            }
+            conn->ots_handle = ESL_LIB_INVALID_HANDLE;
+          }
+
           // Check OOB
           if (find_tlv(conn->command, ESL_LIB_CONNECT_DATA_TYPE_OOB_DATA, &tlv)) {
             aes_key_128 *remote_random = (aes_key_128 *)&tlv->data.data[0];
@@ -627,12 +829,12 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
             // Use remote OOB
             sc = sl_bt_sm_set_remote_oob(1, *remote_random, *remote_confirm);
             esl_lib_log_connection_debug(CONN_FMT "Entering OOB data, connection handle = %u" APP_LOG_NL,
-                                         conn,
+                                         ESL_LIB_LOG_PTR(conn),
                                          conn->connection_handle);
             if (sc != SL_STATUS_OK) {
               lib_status = ESL_LIB_STATUS_BONDING_FAILED;
               esl_lib_log_connection_error(CONN_FMT "Failed to set remote OOB data, connection handle = %u" APP_LOG_NL,
-                                           conn,
+                                           ESL_LIB_LOG_PTR(conn),
                                            conn->connection_handle);
             }
           }
@@ -642,24 +844,29 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
                                 connection_timeout,
                                 conn,
                                 false);
+          esl_lib_core_connection_complete();
+          // Connection state must be updated properly before calling esl_lib_initiate_auto_connection()
+          conn->state = ESL_LIB_CONNECTION_STATE_CONNECTION_OPENED;
         } else {
           // Suppress error event for unknown connections
           sc = SL_STATUS_OK;
         }
-        esl_lib_core_connection_complete();
-        conn->state = ESL_LIB_CONNECTION_STATE_CONNECTION_OPENED;
       }
       break;
     case sl_bt_evt_connection_remote_used_features_id:
       sc = esl_lib_connection_find(evt->data.evt_connection_remote_used_features.connection,
                                    &conn);
       if (sc == SL_STATUS_OK && !conn->established) {
+        esl_lib_connection_t *reuseable_handle = ESL_LIB_INVALID_HANDLE;
         conn->established = true;
         esl_lib_log_connection_debug(CONN_FMT "Connection established, connection handle = %u, features: %#018" PRIx64 APP_LOG_NL,
-                                     conn,
+                                     ESL_LIB_LOG_PTR(conn),
                                      conn->connection_handle,
                                      // Following parameter is 8 bytes in LE order according to in Bluetooth Core Vol 6, Part B, 4.6.
                                      *((uint64_t *)(evt->data.evt_connection_remote_used_features.features.data)));
+        // search for re-usable connection handle object
+        (void)esl_lib_connection_find(SL_BT_INVALID_CONNECTION_HANDLE, &reuseable_handle);
+        (void)esl_lib_initiate_auto_connection(reuseable_handle);
       } else {
         // Suppress error event for unknown connections
         sc = SL_STATUS_OK;
@@ -673,17 +880,18 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
                                    &conn);
       if (sc == SL_STATUS_OK) {
         sl_status_t reason = evt->data.evt_connection_closed.reason;
+        const bool pending_connect = (conn->state == ESL_LIB_CONNECTION_STATE_CONNECTING);
         // Stop connection / reconnection timer
         (void)app_timer_stop(&conn->timer);
         (void)app_timer_stop(&conn->gatt_timer);
         esl_lib_log_connection_debug(CONN_FMT "Connection closing, connection handle = %u" APP_LOG_NL,
-                                     conn,
+                                     ESL_LIB_LOG_PTR(conn),
                                      conn->connection_handle);
         if (is_eslp_ready(conn)) {
           esl_lib_log_connection_debug(CONN_FMT "Removing connection, connection handle = %u" APP_LOG_NL,
-                                       conn,
+                                       ESL_LIB_LOG_PTR(conn),
                                        conn->connection_handle);
-          // Send status if connected.
+          // Send disconnected status
           (void)send_connection_status(conn,
                                        ESL_LIB_FALSE,
                                        reason);
@@ -694,16 +902,15 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
           }
           // And also remove connection from the list.
           (void)esl_lib_connection_remove_ptr(conn);
-          conn = NULL;
+          conn = ESL_LIB_INVALID_HANDLE;
         } else if (conn->command != NULL) {
-          const bool pending_connect = (conn->state == ESL_LIB_CONNECTION_STATE_CONNECTING || conn->state == ESL_LIB_CONNECTION_STATE_RECONNECTING);
           // Not connected, check if a retry is required (link issue or bonding issue)
           if ((conn->command->cmd_code == ESL_LIB_CMD_CONNECT)
               && (conn->command->data.cmd_connect.retries_left)
               && ((reason == SL_STATUS_BT_CTRL_CONNECTION_FAILED_TO_BE_ESTABLISHED)
-                  || (conn->state == ESL_LIB_CONNECTION_STATE_BONDING_FAIL_RECONNECT))) {
+                  || (conn->state == ESL_LIB_CONNECTION_STATE_BONDING_RECOVERY))) {
             esl_lib_log_connection_debug(CONN_FMT "Connection retry scheduled, connection handle = %u" APP_LOG_NL,
-                                         conn,
+                                         ESL_LIB_LOG_PTR(conn),
                                          conn->connection_handle);
             uint32_t timeout = RECONNECT_TIMEOUT_MS;
             // Check for PAwR connect request to set correct timeout
@@ -731,7 +938,7 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
                                           evt->data.evt_connection_closed.reason,
                                           conn->state);
               esl_lib_log_connection_error(CONN_FMT "Failed to start retry timer, connection handle = %u" APP_LOG_NL,
-                                           conn,
+                                           ESL_LIB_LOG_PTR(conn),
                                            conn->connection_handle);
               conn->command_complete = true;
             } else {
@@ -744,13 +951,11 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
             if (conn->command->cmd_code == ESL_LIB_CMD_CONNECT && conn->command->data.cmd_connect.retries_left == 0) {
               reason = SL_STATUS_ABORT;
               esl_lib_log_connection_debug(CONN_FMT "No more connect retry for " ESL_LIB_LOG_ADDR_FORMAT ", last handle = %u" APP_LOG_NL,
-                                           conn,
+                                           ESL_LIB_LOG_PTR(conn),
                                            conn->address_type,
                                            (conn->address_type ? "random" : "public"),
                                            ESL_LIB_LOG_BD_ADDR(conn->address),
                                            conn->connection_handle);
-              // Decouple the handle mapping to the ESL_LIB_CMD_CONNECT command as the connection handle will be freed, soon
-              conn->command->data.cmd_connect.conn_hnd = ESL_LIB_INVALID_HANDLE;
             } else if (reason == SL_STATUS_OK && !conn->established && conn->state == ESL_LIB_CONNECTION_STATE_BONDING) {
               // Handle special edge case where the AP tries to create new bond with an ESL already bonded to other AP
               // in which case the Silabs' ESL immediately refuses the connection attempt with an SL_STATUS_OK not
@@ -770,10 +975,25 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
           }
           // And also remove connection from the list in the end.
           (void)esl_lib_connection_remove_ptr(conn);
-          conn = NULL;
+          conn = ESL_LIB_INVALID_HANDLE;
+        } else {
+          if (pending_connect && filter_accept_list_get_size(auto_initiator_list)) {
+            esl_lib_log_connection_debug(CONN_FMT "Mass timeout occured on closed handle = %u!" APP_LOG_NL,
+                                         ESL_LIB_LOG_PTR(conn),
+                                         conn->connection_handle);
+            (void)sl_bt_accept_list_remove_all_devices();
+            esl_lib_connection_emit_mass_errors(conn);
+          }
+          // Remove connection from the list if it has no associated command (e.g., in case of a canceled auto requests)
+          (void)esl_lib_connection_remove_ptr(conn);
+          conn = ESL_LIB_INVALID_HANDLE;
         }
+        // Try consuming a re-usable object
+        (void)esl_lib_connection_find(SL_BT_INVALID_CONNECTION_HANDLE, &conn);
+        (void)esl_lib_initiate_auto_connection(conn);
+        conn = ESL_LIB_INVALID_HANDLE;
       } else {
-        // Suppress error event for unknown connections
+        // Suppress error event for unknown / rejected connections
         sc = SL_STATUS_OK;
       }
       break;
@@ -782,12 +1002,10 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
                                    &conn);
       if (sc == SL_STATUS_OK) {
         conn->security    = evt->data.evt_connection_parameters.security_mode;
-        conn->max_payload = evt->data.evt_connection_parameters.txsize - GATT_OVERHEAD;
-        esl_lib_log_connection_debug(CONN_FMT "Connection parameters, connection handle = %u, security = %u, payload = %u" APP_LOG_NL,
-                                     conn,
+        esl_lib_log_connection_debug(CONN_FMT "Connection parameters, connection handle = %u, security = %u" APP_LOG_NL,
+                                     ESL_LIB_LOG_PTR(conn),
                                      conn->connection_handle,
-                                     conn->security,
-                                     conn->max_payload);
+                                     conn->security);
         // Bonding is considered finished when security has elevated.
         if (conn->security > sl_bt_connection_mode1_level1) {
           if (conn->state == ESL_LIB_CONNECTION_STATE_BONDING
@@ -796,13 +1014,13 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
             (void)send_bonding_finished(conn);
             if (conn->gattdb_known == ESL_LIB_TRUE) {
               esl_lib_log_connection_debug(CONN_FMT "GATTDB known, skipping discovery, connection handle = %u" APP_LOG_NL,
-                                           conn,
+                                           ESL_LIB_LOG_PTR(conn),
                                            conn->connection_handle);
               // Subscribe to characteristics
               if (conn->gattdb_handles.esl_characteristics[ESL_LIB_CHARACTERISTIC_INDEX_ESL_CONTROL_POINT]
                   != ESL_LIB_INVALID_CHARACTERISTIC_HANDLE) {
                 esl_lib_log_connection_debug(CONN_FMT "Subscribe to ESL CP notifications, connection handle = %u" APP_LOG_NL,
-                                             conn,
+                                             ESL_LIB_LOG_PTR(conn),
                                              conn->connection_handle);
                 sc = sl_bt_gatt_set_characteristic_notification(conn->connection_handle,
                                                                 conn->gattdb_handles.esl_characteristics[ESL_LIB_CHARACTERISTIC_INDEX_ESL_CONTROL_POINT],
@@ -820,16 +1038,16 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
                                      false);
               } else {
                 esl_lib_log_connection_error(CONN_FMT "ESL CP subscribe failed, connection handle = %u, sc = 0x%04x" APP_LOG_NL,
-                                             conn,
+                                             ESL_LIB_LOG_PTR(conn),
                                              conn->connection_handle,
                                              sc);
-                // Close connection
-                (void)(void)close_connection(conn);
+                // Close connection, save address just in case
+                addr = close_broken_connection(&conn, &addr_backup);
                 lib_status = ESL_LIB_STATUS_CONN_SUBSCRIBE_FAILED;
               }
             } else {
               esl_lib_log_connection_debug(CONN_FMT "Starting service discovery, connection handle = %u" APP_LOG_NL,
-                                           conn,
+                                           ESL_LIB_LOG_PTR(conn),
                                            conn->connection_handle);
 
               // No predefined GATT database, start service discovery
@@ -844,18 +1062,18 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
                                      false);
               } else {
                 esl_lib_log_connection_error(CONN_FMT "Error starting service discovery, connection handle = %u, sc = 0x%04x" APP_LOG_NL,
-                                             conn,
+                                             ESL_LIB_LOG_PTR(conn),
                                              conn->connection_handle,
                                              sc);
                 // Close connection
-                (void)close_connection(conn);
+                addr = close_broken_connection(&conn, &addr_backup);
                 lib_status = ESL_LIB_STATUS_CONN_DISCOVERY_FAILED;
               }
             }
           } else if (conn->state == ESL_LIB_CONNECTION_STATE_PAST_INIT) {
             (void)app_timer_stop(&conn->timer);
             esl_lib_log_connection_debug(CONN_FMT "PAST init, handle = %u" APP_LOG_NL,
-                                         conn,
+                                         ESL_LIB_LOG_PTR(conn),
                                          conn->connection_handle);
             pawr = (esl_lib_pawr_t *)conn->command->data.cmd_init_past.pawr_handle;
             if (esl_lib_pawr_contains(pawr)) {
@@ -864,7 +1082,7 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
                                                   PAWR_SERVICE_DATA,
                                                   pawr->pawr_handle);
               if (sc == SL_STATUS_OK) {
-                // calculate timeout as follows: tmeout_value_ms = 6 * (pawr->config.adv_interval.max * 1.25f) [ms]
+                // calculate timeout as follows: timeout_value_ms = 6 * (pawr->config.adv_interval.max * 1.25f) [ms]
                 uint32_t past_timeout = PAST_GRACE_INTERVAL_COUNT \
                                         * ((pawr->config.adv_interval.max) + (pawr->config.adv_interval.max >> 2));
                 conn->state = ESL_LIB_CONNECTION_STATE_PAST_CLOSE_CONNECTION;
@@ -884,17 +1102,38 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
 
             if (sc != SL_STATUS_OK) {
               esl_lib_log_connection_warning(CONN_FMT "PAST init unsuccesful, connection handle = %u, PAwR = [0x%p] sc = 0x%04x" APP_LOG_NL,
-                                             conn,
+                                             ESL_LIB_LOG_PTR(conn),
                                              conn->connection_handle,
                                              conn->command->data.cmd_init_past.pawr_handle,
                                              sc);
-              close_broken_connection(&conn);
+              addr = close_broken_connection(&conn, &addr_backup);
+            } else if (pawr->config.advertise == ESL_LIB_TRUE && pawr->state == ESL_LIB_PAWR_STATE_RUNNING) {
+              sc = sl_bt_extended_advertiser_start(pawr->pawr_handle,
+                                                   sl_bt_extended_advertiser_non_connectable,
+                                                   0);
+              if (sc == SL_STATUS_OK) {
+                esl_lib_log_connection_debug(CONN_FMT "Async PAwR status update requested for PAwR handle = %u" APP_LOG_NL,
+                                             ESL_LIB_LOG_PTR(conn),
+                                             pawr->pawr_handle);
+                pawr->state = ESL_LIB_PAWR_STATE_RUNNING_ADVERTISING;
+                esl_lib_get_pawr_status(pawr);
+              }
             }
           }
         }
       } else {
         // Suppress error event for unknown connections
         sc = SL_STATUS_OK;
+      }
+      break;
+    case sl_bt_evt_connection_data_length_id:
+      sc = esl_lib_connection_find(evt->data.evt_connection_data_length.connection,
+                                   &conn);
+      if (sc == SL_STATUS_OK) {
+        conn->max_payload = evt->data.evt_connection_data_length.tx_data_len - GATT_OVERHEAD;
+        esl_lib_log_connection_debug(CONN_FMT "Connection payload = %u" APP_LOG_NL,
+                                     ESL_LIB_LOG_PTR(conn),
+                                     conn->max_payload);
       }
       break;
     // Bonding
@@ -905,7 +1144,7 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
         if (evt->data.evt_external_bondingdb_data_request.type
             == sl_bt_external_bondingdb_data_remote_ltk) {
           esl_lib_log_connection_debug(CONN_FMT "Bonding LTK requested, connection handle = %u" APP_LOG_NL,
-                                       conn,
+                                       ESL_LIB_LOG_PTR(conn),
                                        conn->connection_handle);
           if (conn->state == ESL_LIB_CONNECTION_STATE_CONNECTION_OPENED) {
             // Check if LTK is set for the request
@@ -915,14 +1154,14 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
               conn->state = ESL_LIB_CONNECTION_STATE_APPLYING_LTK;
               lib_status = ESL_LIB_STATUS_CONN_FAILED;
               esl_lib_log_connection_debug(CONN_FMT "Applying LTK, connection handle = %u" APP_LOG_NL,
-                                           conn,
+                                           ESL_LIB_LOG_PTR(conn),
                                            conn->connection_handle);
             } else {
               // New bond require if we do not have the LTK.
               conn->state = ESL_LIB_CONNECTION_STATE_NEW_BOND_REQUIRED;
               lib_status = ESL_LIB_STATUS_BONDING_FAILED;
               esl_lib_log_connection_debug(CONN_FMT "Creating new bond, connection handle = %u" APP_LOG_NL,
-                                           conn,
+                                           ESL_LIB_LOG_PTR(conn),
                                            conn->connection_handle);
             }
           }
@@ -938,17 +1177,13 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
         esl_lib_log_level_t level = conn->established ? ESL_LIB_LOG_LEVEL_ERROR : ESL_LIB_LOG_LEVEL_ERROR;
         // Set library status accordingly.
         lib_status = ESL_LIB_STATUS_BONDING_FAILED;
-        conn->state = ESL_LIB_CONNECTION_STATE_BONDING_FAIL_RECONNECT;
+        conn->state = ESL_LIB_CONNECTION_STATE_BONDING_RECOVERY;
         // Defer forced close on error - normally the close event should come, this is just a watchdog
-        (void)app_timer_stop(&conn->timer);
-        (void)app_timer_start(&conn->timer,
-                              CLOSE_TIMEOUT_MS,
-                              connection_timeout,
-                              conn,
-                              false);
+        (void)close_connection(conn);
+        conn->last_error = sc; // Override last_error from close_connection
         esl_lib_log(level, ESL_LIB_LOG_MODULE_CONNECTION,
-                    CONN_FMT "Bonding %s, connection handle = %u, sc = 0x%04x" APP_LOG_NL,
-                    conn,
+                    CONN_FMT "Bonding %s, reconnecting, connection handle = %u, sc = 0x%04x" APP_LOG_NL,
+                    ESL_LIB_LOG_PTR(conn),
                     conn->established ? "procedure disrupted" : "is not possible",
                     conn->connection_handle,
                     sc);
@@ -959,26 +1194,26 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
                                    &conn);
       if (sc == SL_STATUS_OK) {
         esl_lib_log_connection_debug(CONN_FMT "Passkey requested, connection handle = %u" APP_LOG_NL,
-                                     conn,
+                                     ESL_LIB_LOG_PTR(conn),
                                      conn->connection_handle);
 
         if (find_tlv(conn->command, ESL_LIB_CONNECT_DATA_TYPE_PASSKEY, &tlv)) {
           sc = sl_bt_sm_enter_passkey(conn->connection_handle,
                                       *((uint32_t*)tlv->data.data));
           esl_lib_log_connection_debug(CONN_FMT "Entering passkey, connection handle = %u" APP_LOG_NL,
-                                       conn,
+                                       ESL_LIB_LOG_PTR(conn),
                                        conn->connection_handle);
           if (sc != SL_STATUS_OK) {
             lib_status = ESL_LIB_STATUS_BONDING_FAILED;
             esl_lib_log_connection_error(CONN_FMT "Failed to set passkey, connection handle = %u. Closing." APP_LOG_NL,
-                                         conn,
+                                         ESL_LIB_LOG_PTR(conn),
                                          conn->connection_handle);
-            // Close the connection in case of error.
-            (void)close_connection(conn);
+            // Close the connection in case of error, save address for later use
+            addr = close_broken_connection(&conn, &addr_backup);
           }
         } else {
           esl_lib_log_connection_error(CONN_FMT "No passkey available but requested, connection handle = %u" APP_LOG_NL,
-                                       conn,
+                                       ESL_LIB_LOG_PTR(conn),
                                        conn->connection_handle);
         }
       } else {
@@ -991,19 +1226,20 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
                                    &conn);
       if (sc == SL_STATUS_OK) {
         esl_lib_log_connection_debug(CONN_FMT "Bonding data ready, connection handle = %u" APP_LOG_NL,
-                                     conn,
+                                     ESL_LIB_LOG_PTR(conn),
                                      conn->connection_handle);
         sc = sl_bt_sm_increase_security(conn->connection_handle);
         if (sc == SL_STATUS_OK) {
           conn->state = ESL_LIB_CONNECTION_STATE_BONDING;
         } else {
-          esl_lib_log_level_t level = conn->established ? ESL_LIB_LOG_LEVEL_ERROR : ESL_LIB_LOG_LEVEL_ERROR;
+          esl_lib_log_level_t level = conn->established ? ESL_LIB_LOG_LEVEL_ERROR : ESL_LIB_LOG_LEVEL_WARNING;
           // Close the connection in case of error.
           (void)close_connection(conn);
+          conn->last_error = sc; // Override last_error from close_connection
           lib_status = ESL_LIB_STATUS_BONDING_FAILED;
           esl_lib_log(level, ESL_LIB_LOG_MODULE_CONNECTION,
                       CONN_FMT "Increase security %s, connection handle = %u, sc = 0x%04x" APP_LOG_NL,
-                      conn,
+                      ESL_LIB_LOG_PTR(conn),
                       conn->established ? "failed" : "is not possible",
                       conn->connection_handle,
                       sc);
@@ -1022,7 +1258,7 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
                                      &conn);
         if (sc == SL_STATUS_OK) {
           esl_lib_log_connection_debug(CONN_FMT "Bonding LTK arrived, connection handle = %u" APP_LOG_NL,
-                                       conn,
+                                       ESL_LIB_LOG_PTR(conn),
                                        conn->connection_handle);
 
           // Send LTK to the application.
@@ -1041,7 +1277,7 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
             && ((evt->data.evt_sm_bonding_failed.reason == SL_STATUS_BT_CTRL_PIN_OR_KEY_MISSING)
                 || (evt->data.evt_sm_bonding_failed.reason == SL_STATUS_BT_SMP_PAIRING_NOT_SUPPORTED))) {
           esl_lib_log_connection_warning(CONN_FMT "Bonding failed, reconnecting, connection handle = %u, reason = 0x%04x" APP_LOG_NL,
-                                         conn,
+                                         ESL_LIB_LOG_PTR(conn),
                                          conn->connection_handle,
                                          evt->data.evt_sm_bonding_failed.reason);
           if (evt->data.evt_sm_bonding_failed.reason == SL_STATUS_BT_CTRL_PIN_OR_KEY_MISSING) {
@@ -1050,18 +1286,18 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
             if (find_tlv(conn->command, ESL_LIB_CONNECT_DATA_TYPE_LTK, &tlv)) {
               tlv->type = ESL_LIB_CONNECT_DATA_TYPE_INVALID_TYPE;
               esl_lib_log_connection_warning(CONN_FMT "LTK dropped, connection handle = %u" APP_LOG_NL,
-                                             conn,
+                                             ESL_LIB_LOG_PTR(conn),
                                              conn->connection_handle);
             }
           }
           // Set connection state to match this
-          conn->state = ESL_LIB_CONNECTION_STATE_BONDING_FAIL_RECONNECT;
+          conn->state = ESL_LIB_CONNECTION_STATE_BONDING_RECOVERY;
           // Bypass event
           sc = SL_STATUS_OK;
           lib_status = ESL_LIB_STATUS_NO_ERROR;
         } else {
           esl_lib_log_connection_error(CONN_FMT "Bonding failed, disconnecting, connection handle = %u, reason = 0x%04x" APP_LOG_NL,
-                                       conn,
+                                       ESL_LIB_LOG_PTR(conn),
                                        conn->connection_handle,
                                        evt->data.evt_sm_bonding_failed.reason);
           // Set library status accordingly.
@@ -1071,6 +1307,7 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
         }
         // Try to close connection gently - it should be closing already
         (void)close_connection(conn);
+        conn->last_error = sc; // Override last_error from close_connection call
       } else {
         // Suppress error event for unknown connections
         sc = SL_STATUS_OK;
@@ -1086,27 +1323,27 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
           sc = SL_STATUS_INVALID_STATE;
           lib_status = ESL_LIB_STATUS_CONN_DISCOVERY_FAILED;
           esl_lib_log_connection_error(CONN_FMT "Service discovery failed, connection handle = %u, sc = 0x%04x" APP_LOG_NL,
-                                       conn,
+                                       ESL_LIB_LOG_PTR(conn),
                                        conn->connection_handle,
                                        sc);
-          (void)close_connection(conn);
+          addr = close_broken_connection(&conn, &addr_backup);
         } else if (evt->data.evt_gatt_service.uuid.len == sizeof(sl_bt_uuid_16_t)) {
           // Check for service UUIDs
           if (uuid_16_match(evt->data.evt_gatt_service.uuid.data, (uint8_t *)uuid_map.services.dis.data)) {
             esl_lib_log_connection_debug(CONN_FMT "DIS service found, connection handle = %u" APP_LOG_NL,
-                                         conn,
+                                         ESL_LIB_LOG_PTR(conn),
                                          conn->connection_handle);
             // Copy DIS handle
             conn->gattdb_handles.services.dis = evt->data.evt_gatt_service.service;
           } else if (uuid_16_match(evt->data.evt_gatt_service.uuid.data, (uint8_t *)uuid_map.services.esl.data)) {
             esl_lib_log_connection_debug(CONN_FMT "ESL service found, connection handle = %u" APP_LOG_NL,
-                                         conn,
+                                         ESL_LIB_LOG_PTR(conn),
                                          conn->connection_handle);
             // Copy ESL handle
             conn->gattdb_handles.services.esl = evt->data.evt_gatt_service.service;
           } else if (uuid_16_match(evt->data.evt_gatt_service.uuid.data, (uint8_t *)uuid_map.services.ots.data)) {
             esl_lib_log_connection_debug(CONN_FMT "OTS service found, connection handle = %u" APP_LOG_NL,
-                                         conn,
+                                         ESL_LIB_LOG_PTR(conn),
                                          conn->connection_handle);
 
             // Copy OTS handle
@@ -1128,7 +1365,7 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
           for (uint8_t i = 0; i < ESL_LIB_CHARACTERISTIC_INDEX_SIZE; i++) {
             if (uuid_16_match(evt->data.evt_gatt_characteristic.uuid.data, (uint8_t *)uuid_map.esl_characteristics[i].data)) {
               esl_lib_log_connection_debug(CONN_FMT "ESL characteristic %d found, connection handle = %u" APP_LOG_NL,
-                                           conn,
+                                           ESL_LIB_LOG_PTR(conn),
                                            i,
                                            conn->connection_handle);
 
@@ -1141,7 +1378,7 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
             if (uuid_16_match(evt->data.evt_gatt_characteristic.uuid.data,
                               (uint8_t *)uuid_map.dis_characteristics[i].data)) {
               esl_lib_log_connection_debug(CONN_FMT "DIS characteristic %u found, connection handle = %u" APP_LOG_NL,
-                                           conn,
+                                           ESL_LIB_LOG_PTR(conn),
                                            i,
                                            conn->connection_handle);
               conn->gattdb_handles.dis_characteristics[i] = evt->data.evt_gatt_characteristic.characteristic;
@@ -1160,7 +1397,7 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
       if (sc == SL_STATUS_OK) {
         if (evt->data.evt_gatt_characteristic_value.att_opcode == sl_bt_gatt_read_response) {
           esl_lib_log_connection_debug(CONN_FMT "Read response, connection handle = %u" APP_LOG_NL,
-                                       conn,
+                                       ESL_LIB_LOG_PTR(conn),
                                        conn->connection_handle);
           if (conn->state == ESL_LIB_CONNECTION_STATE_GET_TAG_INFO) {
             lib_status = ESL_LIB_STATUS_CONN_READ_FAILED;
@@ -1175,7 +1412,7 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
           if (evt->data.evt_gatt_characteristic_value.characteristic
               == conn->gattdb_handles.esl_characteristics[ESL_LIB_CHARACTERISTIC_INDEX_ESL_CONTROL_POINT]) {
             esl_lib_log_connection_debug(CONN_FMT "CP notification received, connection handle = %u" APP_LOG_NL,
-                                         conn,
+                                         ESL_LIB_LOG_PTR(conn),
                                          conn->connection_handle);
             (void)send_cp_notification_event(conn,
                                              evt->data.evt_gatt_characteristic_value.value.len,
@@ -1199,13 +1436,13 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
                                   evt->data.evt_gatt_procedure_completed.result);
           conn->command_complete = true;
           esl_lib_log_connection_debug(CONN_FMT "Control point written, result = 0x%04x, connection handle = %u" APP_LOG_NL,
-                                       conn,
+                                       ESL_LIB_LOG_PTR(conn),
                                        evt->data.evt_gatt_procedure_completed.result,
                                        conn->connection_handle);
         } else if (conn->state == ESL_LIB_CONNECTION_STATE_CONFIGURE_TAG) {
           // This state is active only if write with response requested
           esl_lib_log_connection_debug(CONN_FMT "Configure tag - Writing next value, connection handle = %u" APP_LOG_NL,
-                                       conn,
+                                       ESL_LIB_LOG_PTR(conn),
                                        conn->connection_handle);
           // Send response with the result
           (void)send_att_response(conn,
@@ -1217,20 +1454,21 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
           // Check result first for all other cases
           if (evt->data.evt_gatt_procedure_completed.result == SL_STATUS_OK) {
             esl_lib_log_connection_debug(CONN_FMT "Procedure completed, connection handle = %u" APP_LOG_NL,
-                                         conn,
+                                         ESL_LIB_LOG_PTR(conn),
                                          conn->connection_handle);
             switch (conn->state) {
               case ESL_LIB_CONNECTION_STATE_GET_TAG_INFO:
+                (void)app_timer_stop(&conn->gatt_timer);
                 lib_status = ESL_LIB_STATUS_CONN_READ_FAILED;
                 esl_lib_log_connection_debug(CONN_FMT "Tag info %u arrived, connection handle = %u" APP_LOG_NL,
-                                             conn,
+                                             ESL_LIB_LOG_PTR(conn),
                                              conn->tag_info_type,
                                              conn->connection_handle);
                 // Save tag info, completed
                 sc = save_tag_info(conn);
                 if (sc == SL_STATUS_OK) {
                   esl_lib_log_connection_debug(CONN_FMT "Read next tag info, connection handle = %u" APP_LOG_NL,
-                                               conn,
+                                               ESL_LIB_LOG_PTR(conn),
                                                conn->connection_handle);
                   // Move to next one
                   sc = get_next_tag_info(conn);
@@ -1246,7 +1484,7 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
                 // If DIS found
                 if (conn->gattdb_handles.services.dis != ESL_LIB_INVALID_SERVICE_HANDLE) {
                   esl_lib_log_connection_debug(CONN_FMT "Service discovery finished, start DIS discovery, connection handle = %u" APP_LOG_NL,
-                                               conn,
+                                               ESL_LIB_LOG_PTR(conn),
                                                conn->connection_handle);
                   // Discover Device Information Service service characteristics
                   sc = sl_bt_gatt_discover_characteristics(conn->connection_handle,
@@ -1260,17 +1498,15 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
                                          false);
                   }
                   if (sc != SL_STATUS_OK) {
-                    // Close connection
-                    (void)close_connection(conn);
                     lib_status = ESL_LIB_STATUS_CONN_DISCOVERY_FAILED;
                     esl_lib_log_connection_error(CONN_FMT "DIS discovery failed, connection handle = %u, sc = 0x%04x" APP_LOG_NL,
-                                                 conn,
+                                                 ESL_LIB_LOG_PTR(conn),
                                                  conn->connection_handle,
                                                  sc);
                   }
                 } else if (conn->gattdb_handles.services.esl != ESL_LIB_INVALID_SERVICE_HANDLE) {
                   esl_lib_log_connection_debug(CONN_FMT "Service discovery finished, start ESL discovery, connection handle = %u" APP_LOG_NL,
-                                               conn,
+                                               ESL_LIB_LOG_PTR(conn),
                                                conn->connection_handle);
                   // Discover ESL service characteristics
                   sc = sl_bt_gatt_discover_characteristics(conn->connection_handle,
@@ -1284,16 +1520,17 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
                                          false);
                   }
                 } else {
-                  sc = SL_STATUS_BT_ATT_REQUEST_NOT_SUPPORTED;
+                  // Special internal signal
+                  sc = SL_STATUS_BT_ATT_ATT_NOT_FOUND;
                 }
                 if (sc != SL_STATUS_OK) {
-                  // Close connection
-                  (void)close_connection(conn);
-                  lib_status = ESL_LIB_STATUS_CONN_DISCOVERY_FAILED;
+                  lib_status = sc == SL_STATUS_BT_ATT_ATT_NOT_FOUND ? ESL_LIB_STATUS_CONN_ESL_SERVICE_VIOLATION : ESL_LIB_STATUS_CONN_DISCOVERY_FAILED;
                   esl_lib_log_connection_error(CONN_FMT "Discovery failed, connection handle = %u, sc = 0x%04x" APP_LOG_NL,
-                                               conn,
+                                               ESL_LIB_LOG_PTR(conn),
                                                conn->connection_handle,
                                                sc);
+                  // Close connection
+                  addr = close_broken_connection(&conn, &addr_backup);
                 }
                 break;
               case ESL_LIB_CONNECTION_STATE_DIS_DISCOVERY:
@@ -1301,7 +1538,7 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
                 if (conn->gattdb_handles.services.esl != ESL_LIB_INVALID_SERVICE_HANDLE) {
                   // Discover ESL service characteristics
                   esl_lib_log_connection_debug(CONN_FMT "Device information discovery finished, start ESL discovery, connection handle = %u" APP_LOG_NL,
-                                               conn,
+                                               ESL_LIB_LOG_PTR(conn),
                                                conn->connection_handle);
 
                   sc = sl_bt_gatt_discover_characteristics(conn->connection_handle,
@@ -1315,24 +1552,24 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
                                          false);
                   }
                   if (sc != SL_STATUS_OK) {
-                    // Close connection
-                    (void)close_connection(conn);
                     lib_status = ESL_LIB_STATUS_CONN_DISCOVERY_FAILED;
                     esl_lib_log_connection_error(CONN_FMT "DIS discovery failed, connection handle = %u, sc = 0x%04x" APP_LOG_NL,
-                                                 conn,
+                                                 ESL_LIB_LOG_PTR(conn),
                                                  conn->connection_handle,
                                                  sc);
+                    // Close connection
+                    addr = close_broken_connection(&conn, &addr_backup);
                   }
                 } else {
                   // Set the cause of the error
                   sc = SL_STATUS_INVALID_HANDLE;
-                  // Close connection
-                  (void)close_connection(conn);
-                  lib_status = ESL_LIB_STATUS_CONN_DISCOVERY_FAILED;
+                  lib_status = ESL_LIB_STATUS_CONN_ESL_SERVICE_VIOLATION;
                   esl_lib_log_connection_error(CONN_FMT "ESL Service not found, connection handle = %u, sc = 0x%04x" APP_LOG_NL,
-                                               conn,
+                                               ESL_LIB_LOG_PTR(conn),
                                                conn->connection_handle,
                                                sc);
+                  // Close connection
+                  addr = close_broken_connection(&conn, &addr_backup);
                 }
                 break;
               case ESL_LIB_CONNECTION_STATE_ESL_DISCOVERY:
@@ -1341,7 +1578,7 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
                 if (conn->gattdb_handles.esl_characteristics[ESL_LIB_CHARACTERISTIC_INDEX_ESL_CONTROL_POINT]
                     != ESL_LIB_INVALID_CHARACTERISTIC_HANDLE) {
                   esl_lib_log_connection_debug(CONN_FMT "Feature discovery complete, subscribe to ESL CP notifications, connection handle = %u" APP_LOG_NL,
-                                               conn,
+                                               ESL_LIB_LOG_PTR(conn),
                                                conn->connection_handle);
                   // Check validity of the handles.
                   sc = esl_lib_connection_check_gattdb_handles(&(conn->gattdb_handles));
@@ -1362,24 +1599,28 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
                     sc = SL_STATUS_BT_ATT_CLIENT_CHARACTERISTIC_CONFIGURATION_DESCRIPTOR_IMPROPERLY_CONFIGURED; // ESL does not meet Profile / Service specification!
                   }
                   if (sc != SL_STATUS_OK) {
-                    // Close connection
-                    (void)close_connection(conn);
                     lib_status = ESL_LIB_STATUS_CONN_SUBSCRIBE_FAILED;
                     esl_lib_log_connection_error(CONN_FMT "Subscribe failed, connection handle = %u, sc = 0x%04x" APP_LOG_NL,
-                                                 conn,
+                                                 ESL_LIB_LOG_PTR(conn),
                                                  conn->connection_handle,
                                                  sc);
+                    // Close connection
+                    addr = close_broken_connection(&conn, &addr_backup);
                   }
                 } else {
                   // Set the cause of the error
                   sc = SL_STATUS_INVALID_HANDLE;
-                  // Close connection
-                  (void)close_connection(conn);
-                  lib_status = ESL_LIB_STATUS_CONN_SUBSCRIBE_FAILED;
+                  lib_status = ESL_LIB_STATUS_CONN_ESL_SERVICE_VIOLATION;
                   esl_lib_log_connection_error(CONN_FMT "ESL CP not found, connection handle = %u, sc = 0x%04x" APP_LOG_NL,
-                                               conn,
+                                               ESL_LIB_LOG_PTR(conn),
                                                conn->connection_handle,
                                                sc);
+                  // Close connection
+                  addr = close_broken_connection(&conn, &addr_backup);
+
+                  if (conn) {
+                    conn->last_error = sc; // Override last_error -only if the connection could be closed gracefully!
+                  }
                 }
                 break;
               case ESL_LIB_CONNECTION_STATE_ESL_SUBSCRIBE:
@@ -1387,7 +1628,7 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
                 // Check presense of OTS service
                 if (conn->gattdb_handles.services.ots != ESL_LIB_INVALID_SERVICE_HANDLE) {
                   esl_lib_log_connection_debug(CONN_FMT "Initializing Image Transfer - OTS, connection handle = %u" APP_LOG_NL,
-                                               conn,
+                                               ESL_LIB_LOG_PTR(conn),
                                                conn->connection_handle);
                   // Initialize Image transfer
                   sc = esl_lib_image_transfer_init(conn->connection_handle,
@@ -1400,13 +1641,13 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
                   if (sc == SL_STATUS_OK) {
                     conn->state = ESL_LIB_CONNECTION_STATE_OTS_INIT;
                   } else {
-                    // Close connection
-                    (void)close_connection(conn);
                     lib_status = ESL_LIB_STATUS_OTS_INIT_FAILED;
                     esl_lib_log_connection_error(CONN_FMT "Image Transfer - OTS init failed, connection handle = %u, sc = 0x%04x" APP_LOG_NL,
-                                                 conn,
+                                                 ESL_LIB_LOG_PTR(conn),
                                                  conn->connection_handle,
                                                  sc);
+                    // Close connection
+                    addr = close_broken_connection(&conn, &addr_backup);
                   }
                 } else {
                   // If no OTS present, consider complete
@@ -1419,14 +1660,14 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
           } else {
             // If not in image transfer, procedures handled by this module
             if (!check_image_transfer(conn)) {
-              // Close connection on procedure failure
-              (void)close_connection(conn);
               lib_status = ESL_LIB_STATUS_CONN_LOST;
               sc = evt->data.evt_gatt_procedure_completed.result;
               esl_lib_log_connection_error(CONN_FMT "Procedure failure, connection handle = %u, result = 0x%04x" APP_LOG_NL,
-                                           conn,
+                                           ESL_LIB_LOG_PTR(conn),
                                            conn->connection_handle,
                                            sc);
+              // Close connection on procedure failure
+              addr = close_broken_connection(&conn, &addr_backup);
             }
           }
         }
@@ -1456,7 +1697,7 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
         // Send address if present.
         node_id.type = ESL_LIB_NODE_ID_TYPE_ADDRESS;
         node_id.id.address.address_type = addr->address_type;
-        memcpy(node_id.id.address.addr, addr->addr, sizeof(bd_addr));
+        memcpy(node_id.id.address.addr, addr->addr, sizeof(node_id.id.address.addr));
       } else {
         node_id.type = ESL_LIB_NODE_ID_TYPE_NONE;
       }
@@ -1474,27 +1715,29 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt)
 // Private functions
 static void esl_lib_connection_safe_remove_ptr(esl_lib_connection_t *ptr)
 {
-  (void)app_timer_stop(&ptr->timer);
-  (void)app_timer_stop(&ptr->gatt_timer);
-  sl_slist_remove(&connection_list, &ptr->node);
-  esl_lib_command_list_cleanup(&ptr->command_list);
+  if (ptr != NULL) {
+    (void)app_timer_stop(&ptr->timer);
+    (void)app_timer_stop(&ptr->gatt_timer);
+    sl_slist_remove(&connection_list, &ptr->node);
+    esl_lib_command_list_cleanup(&ptr->command_list);
 
-  if (ptr->command != NULL) {
-    if (ptr->command->cmd_code == ESL_LIB_CMD_WRITE_IMAGE
-        && ptr->command->data.cmd_write_image.img_data_copied != NULL) {
-      esl_lib_memory_free(ptr->command->data.cmd_write_image.img_data_copied);
+    if (ptr->command != NULL) {
+      if (ptr->command->cmd_code == ESL_LIB_CMD_WRITE_IMAGE
+          && ptr->command->data.cmd_write_image.img_data_copied != NULL) {
+        esl_lib_memory_free(ptr->command->data.cmd_write_image.img_data_copied);
+      }
+      esl_lib_memory_free(ptr->command);
     }
-    esl_lib_memory_free(ptr->command);
+    clean_tag_info(ptr);
+    esl_lib_log_connection_debug(CONN_FMT "Removed connection handle = %u, last error: 0x%04x" APP_LOG_NL,
+                                 ESL_LIB_LOG_PTR(ptr),
+                                 ptr->connection_handle,
+                                 ptr->last_error);
+    // Sanitize handles in memory area to avoid possible corruption later due to garbage
+    ptr->connection_handle = SL_BT_INVALID_CONNECTION_HANDLE;
+    esl_lib_image_dump_transfer_by_handle(&ptr->ots_handle);
+    esl_lib_memory_free(ptr);
   }
-  clean_tag_info(ptr);
-  esl_lib_log_connection_debug(CONN_FMT "Removed connection handle = %u, last error: 0x%04x" APP_LOG_NL,
-                               ptr,
-                               ptr->connection_handle,
-                               ptr->last_error);
-  // Sanitize handles in memory area to avoid possible corruption later due to garbage
-  ptr->connection_handle = SL_BT_INVALID_CONNECTION_HANDLE;
-  esl_lib_image_dump_transfer_by_handle(&ptr->ots_handle);
-  esl_lib_memory_free(ptr);
 }
 
 static void run_command(esl_lib_command_list_cmd_t *cmd)
@@ -1508,11 +1751,11 @@ static void run_command(esl_lib_command_list_cmd_t *cmd)
       conn = (esl_lib_connection_t *)cmd->data.cmd_close_connection;
       if (esl_lib_connection_contains(conn)) {
         esl_lib_log_connection_debug(CONN_FMT "Close connection command, connection handle = %u" APP_LOG_NL,
-                                     conn,
+                                     ESL_LIB_LOG_PTR(conn),
                                      conn->connection_handle);
         sc = close_connection(conn);
         esl_lib_log_connection_debug(CONN_FMT "After Close connection command, connection handle = %u , sc = 0x%04x" APP_LOG_NL,
-                                     conn,
+                                     ESL_LIB_LOG_PTR(conn),
                                      conn->connection_handle,
                                      sc);
       } else {
@@ -1524,7 +1767,7 @@ static void run_command(esl_lib_command_list_cmd_t *cmd)
       lib_status = ESL_LIB_STATUS_CONN_READ_FAILED;
       if (esl_lib_connection_contains(conn)) {
         esl_lib_log_connection_debug(CONN_FMT "Get tag info command, connection handle = %u" APP_LOG_NL,
-                                     conn,
+                                     ESL_LIB_LOG_PTR(conn),
                                      conn->connection_handle);
         // Check OTS features
         if (conn->ots_handle != ESL_LIB_INVALID_HANDLE) {
@@ -1553,11 +1796,13 @@ static void run_command(esl_lib_command_list_cmd_t *cmd)
           }
           if (sc != SL_STATUS_OK) {
             esl_lib_log_connection_error(CONN_FMT "Failed to get OTS features %u, connection handle = %u" APP_LOG_NL,
-                                         conn,
+                                         ESL_LIB_LOG_PTR(conn),
                                          conn->tag_info_type,
                                          conn->connection_handle);
             (void)get_tag_info_finish(conn, sc);
           }
+        } else {
+          sc = SL_STATUS_OK; // Nothing to do so far if there's no OTS service, let's continue the GetInfo procedure
         }
         if (sc == SL_STATUS_OK) {
           sc = get_next_tag_info(conn);
@@ -1572,7 +1817,7 @@ static void run_command(esl_lib_command_list_cmd_t *cmd)
       conn = (esl_lib_connection_t *)cmd->data.cmd_configure_tag.connection_handle;
       if (esl_lib_connection_contains(conn)) {
         esl_lib_log_connection_debug(CONN_FMT "Configure tag command, connection handle = %u" APP_LOG_NL,
-                                     conn,
+                                     ESL_LIB_LOG_PTR(conn),
                                      conn->connection_handle);
         // Clear index and type
         conn->config_index = 0;
@@ -1588,7 +1833,7 @@ static void run_command(esl_lib_command_list_cmd_t *cmd)
       lib_status = ESL_LIB_STATUS_CONN_WRITE_CP_FAILED;
       if (esl_lib_connection_contains(conn) && conn->command != NULL) {
         esl_lib_log_connection_debug(CONN_FMT "Write control point command, connection handle = %u" APP_LOG_NL,
-                                     conn,
+                                     ESL_LIB_LOG_PTR(conn),
                                      conn->connection_handle);
         // Write characteristic value (with or without response)
         sc = write_value(conn,
@@ -1623,7 +1868,7 @@ static void run_command(esl_lib_command_list_cmd_t *cmd)
       if (esl_lib_connection_contains(conn)) {
         esl_lib_image_transfer_handle_t it_handle = conn->ots_handle;
         esl_lib_log_connection_debug(CONN_FMT "Write image command, connection handle = %u" APP_LOG_NL,
-                                     conn,
+                                     ESL_LIB_LOG_PTR(conn),
                                      conn->connection_handle);
         if (it_handle != ESL_LIB_INVALID_HANDLE) {
           sc = esl_lib_image_transfer_start(it_handle,
@@ -1648,7 +1893,7 @@ static void run_command(esl_lib_command_list_cmd_t *cmd)
       lib_status = ESL_LIB_STATUS_OTS_ERROR;
       if (esl_lib_connection_contains(conn)) {
         esl_lib_log_connection_debug(CONN_FMT "Get image type command, connection handle = %u" APP_LOG_NL,
-                                     conn,
+                                     ESL_LIB_LOG_PTR(conn),
                                      conn->connection_handle);
         esl_lib_image_transfer_handle_t it_handle = conn->ots_handle;
         if (it_handle != ESL_LIB_INVALID_HANDLE) {
@@ -1674,7 +1919,7 @@ static void run_command(esl_lib_command_list_cmd_t *cmd)
         uint16_t max_interval = PAST_CONN_INTERVAL_MAX;
         esl_lib_pawr_t *pawr = NULL;
         esl_lib_log_connection_debug(CONN_FMT "Initiate PAST command, connection handle = %u" APP_LOG_NL,
-                                     conn,
+                                     ESL_LIB_LOG_PTR(conn),
                                      conn->connection_handle);
         if (conn->command != NULL) {
           pawr = (esl_lib_pawr_t *)conn->command->data.cmd_init_past.pawr_handle;
@@ -1719,7 +1964,7 @@ static void run_command(esl_lib_command_list_cmd_t *cmd)
             // Ignore the warning if the connection is already closed by a remote node still in sync
             if (sc != SL_STATUS_BT_CTRL_COMMAND_DISALLOWED) {
               esl_lib_log_connection_warning(CONN_FMT "PAST init fail with connection interval[%u - %u] and timeout: %u, connection handle = %u, sc = 0x%04x" APP_LOG_NL,
-                                             conn,
+                                             ESL_LIB_LOG_PTR(conn),
                                              min_interval,
                                              max_interval,
                                              supervison_timeout,
@@ -1744,12 +1989,12 @@ static void run_command(esl_lib_command_list_cmd_t *cmd)
 
   if (sc == SL_STATUS_DELETED) {
     esl_lib_log_connection_warning(CONN_FMT "Command failure on command %d, sc = 0x%04x" APP_LOG_NL,
-                                   conn,
+                                   ESL_LIB_LOG_PTR(conn),
                                    cmd->cmd_code,
                                    sc);
   } else if (sc != SL_STATUS_OK && conn != NULL) {
     esl_lib_log_connection_error(CONN_FMT "Command failure, connection handle = %u, sc = 0x%04x" APP_LOG_NL,
-                                 conn,
+                                 ESL_LIB_LOG_PTR(conn),
                                  conn->connection_handle,
                                  sc);
     // Send connection error if connection is present.
@@ -1766,6 +2011,10 @@ static sl_status_t send_cp_notification_event(esl_lib_connection_t *conn,
 {
   sl_status_t   sc;
   esl_lib_evt_t *lib_evt;
+
+  if (conn == ESL_LIB_INVALID_HANDLE || data == NULL) {
+    return SL_STATUS_NULL_POINTER; // usage error, do nothing
+  }
 
   sc = esl_lib_event_list_allocate(ESL_LIB_EVT_CONTROL_POINT_NOTIFICATION,
                                    len,
@@ -1792,6 +2041,10 @@ static sl_status_t send_bonding_finished(esl_lib_connection_t *conn)
   sl_status_t   sc;
   esl_lib_evt_t *lib_evt;
 
+  if (conn == ESL_LIB_INVALID_HANDLE) {
+    return SL_STATUS_NULL_POINTER; // usage error, no event to send!
+  }
+
   sc = esl_lib_event_list_allocate(ESL_LIB_EVT_BONDING_FINISHED,
                                    0,
                                    &lib_evt);
@@ -1803,7 +2056,7 @@ static sl_status_t send_bonding_finished(esl_lib_connection_t *conn)
       = conn->address_type;
     memcpy(lib_evt->data.evt_bonding_finished.address.addr,
            conn->address.addr,
-           sizeof(conn->address.addr));
+           sizeof(lib_evt->data.evt_bonding_finished.address.addr));
     sc = esl_lib_event_list_push_back(lib_evt);
     if (sc != SL_STATUS_OK) {
       // Free up memory on failure
@@ -1819,6 +2072,10 @@ static sl_status_t send_bonding_data(esl_lib_connection_t *conn,
   sl_status_t   sc;
   esl_lib_evt_t *lib_evt;
 
+  if (conn == ESL_LIB_INVALID_HANDLE || data == NULL) {
+    return SL_STATUS_NULL_POINTER; // usage error, do nothing
+  }
+
   sc = esl_lib_event_list_allocate(ESL_LIB_EVT_BONDING_DATA,
                                    0,
                                    &lib_evt);
@@ -1830,10 +2087,10 @@ static sl_status_t send_bonding_data(esl_lib_connection_t *conn,
       = conn->address_type;
     memcpy(lib_evt->data.evt_bonding_data.address.addr,
            conn->address.addr,
-           sizeof(conn->address.addr));
+           sizeof(lib_evt->data.evt_bonding_data.address.addr));
     memcpy(lib_evt->data.evt_bonding_data.ltk,
            data,
-           ESL_LIB_LTK_SIZE);
+           sizeof(lib_evt->data.evt_bonding_data.ltk));
     sc = esl_lib_event_list_push_back(lib_evt);
     if (sc != SL_STATUS_OK) {
       // Free up memory on failure
@@ -1847,15 +2104,21 @@ static sl_status_t send_retry_event(esl_lib_connection_t *conn,
                                     sl_status_t          reason)
 {
   esl_lib_evt_t *lib_evt;
-  sl_status_t sc = esl_lib_event_list_allocate(ESL_LIB_EVT_CONNECTION_RETRY,
-                                               0,
-                                               &lib_evt);
+  sl_status_t sc;
+
+  if (conn == ESL_LIB_INVALID_HANDLE) {
+    return SL_STATUS_NULL_POINTER; // usage error, no event to send!
+  }
+
+  sc = esl_lib_event_list_allocate(ESL_LIB_EVT_CONNECTION_RETRY,
+                                   0,
+                                   &lib_evt);
   if (sc == SL_STATUS_OK) {
     lib_evt->data.evt_connection_retry.connection_handle = (esl_lib_connection_handle_t)conn;
     // Set last known connection state for the event
     lib_evt->data.evt_connection_retry.connection_state = conn->state;
     // Update the connection state
-    conn->state = ESL_LIB_CONNECTION_STATE_RECONNECTING;
+    conn->state = ESL_LIB_CONNECTION_STATE_OFF;
     // Set reason for disconnection event
     lib_evt->data.evt_connection_retry.reason = reason;
     // Copy address and set its type
@@ -1866,7 +2129,7 @@ static sl_status_t send_retry_event(esl_lib_connection_t *conn,
     }
     memcpy(lib_evt->data.evt_connection_retry.address.addr,
            conn->address.addr,
-           sizeof(conn->address.addr));
+           sizeof(lib_evt->data.evt_connection_retry.address.addr));
     sc = esl_lib_event_list_push_back(lib_evt);
 
     if (sc != SL_STATUS_OK) {
@@ -1884,6 +2147,10 @@ static sl_status_t send_connection_status(esl_lib_connection_t *conn,
   sl_status_t sc;
   esl_lib_evt_t *lib_evt;
   esl_lib_evt_type_t type = ESL_LIB_EVT_CONNECTION_CLOSED;
+
+  if (conn == ESL_LIB_INVALID_HANDLE) {
+    return SL_STATUS_NULL_POINTER; // usage error, no event to send!
+  }
 
   // Detect event type (extended if connected)
   if (status == ESL_LIB_TRUE) {
@@ -1905,20 +2172,20 @@ static sl_status_t send_connection_status(esl_lib_connection_t *conn,
       lib_evt->data.evt_connection_opened.address.address_type = conn->address_type;
       memcpy(lib_evt->data.evt_connection_opened.address.addr,
              conn->address.addr,
-             sizeof(conn->address.addr));
+             sizeof(lib_evt->data.evt_connection_opened.address.addr));
       // Copy GATT database handles
       memcpy(&lib_evt->data.evt_connection_opened.gattdb_handles,
              &conn->gattdb_handles,
-             sizeof(conn->gattdb_handles));
+             sizeof(lib_evt->data.evt_connection_opened.gattdb_handles));
       for (uint8_t i = 0; i < sizeof(conn->gattdb_handles.esl_characteristics) / sizeof(uint16_t); i++) {
         esl_lib_log_connection_debug(CONN_FMT "Sending ESL %u characteristic handle = 0x%02x" APP_LOG_NL,
-                                     conn,
+                                     ESL_LIB_LOG_PTR(conn),
                                      i,
                                      conn->gattdb_handles.esl_characteristics[i]);
       }
       for (uint8_t i = 0; i < sizeof(conn->gattdb_handles.dis_characteristics) / sizeof(uint16_t); i++) {
         esl_lib_log_connection_debug(CONN_FMT "Sending DIS %u characteristic handle = 0x%02x" APP_LOG_NL,
-                                     conn,
+                                     ESL_LIB_LOG_PTR(conn),
                                      i,
                                      conn->gattdb_handles.dis_characteristics[i]);
       }
@@ -1932,7 +2199,7 @@ static sl_status_t send_connection_status(esl_lib_connection_t *conn,
       lib_evt->data.evt_connection_closed.address.address_type = conn->address_type;
       memcpy(lib_evt->data.evt_connection_closed.address.addr,
              conn->address.addr,
-             sizeof(conn->address.addr));
+             sizeof(lib_evt->data.evt_connection_closed.address.addr));
     }
 
     sc = esl_lib_event_list_push_back(lib_evt);
@@ -1950,6 +2217,10 @@ static sl_status_t send_att_response(esl_lib_connection_t *conn,
 {
   sl_status_t sc = SL_STATUS_NULL_POINTER;
   esl_lib_evt_t *lib_evt;
+
+  if (conn == ESL_LIB_INVALID_HANDLE) {
+    return sc; // usage error, nothing to do!
+  }
 
   // Stop timer
   (void)app_timer_stop(&conn->gatt_timer);
@@ -2005,7 +2276,11 @@ static sl_status_t send_connection_error(esl_lib_connection_t        *conn,
   sl_status_t sc;
   esl_lib_node_id_t node_id;
 
-  if (is_eslp_ready(conn) && conn->state != ESL_LIB_CONNECTION_STATE_PAST_CLOSE_CONNECTION) {
+  if (conn == ESL_LIB_INVALID_HANDLE) {
+    return SL_STATUS_NULL_POINTER; // usage error, no error event to send!
+  }
+
+  if (conn->command == NULL || is_eslp_ready(conn)) {
     node_id.type = ESL_LIB_NODE_ID_TYPE_CONNECTION;
     node_id.id.connection_handle = (esl_lib_connection_handle_t)conn;
   } else {
@@ -2013,7 +2288,7 @@ static sl_status_t send_connection_error(esl_lib_connection_t        *conn,
     node_id.id.address.address_type = conn->address_type;
     memcpy(node_id.id.address.addr,
            conn->address.addr,
-           sizeof(conn->address.addr));
+           sizeof(node_id.id.address.addr));
   }
 
   sc = esl_lib_event_push_error(lib_status,
@@ -2027,11 +2302,31 @@ static sl_status_t close_connection(esl_lib_connection_t *conn)
 {
   sl_status_t sc = SL_STATUS_OK;
 
+  if (conn == ESL_LIB_INVALID_HANDLE) {
+    return SL_STATUS_NULL_POINTER; // usage error, nothing to do!
+  } else if (!esl_lib_connection_contains(conn)) {
+    return SL_STATUS_DELETED;
+  }
+
+  (void)app_timer_stop(&conn->gatt_timer);
+  (void)app_timer_stop(&conn->timer);
+
   if (conn->last_error != SL_STATUS_BT_CTRL_CONNECTION_TERMINATED_BY_LOCAL_HOST) {
     sc = sl_bt_connection_close(conn->connection_handle);
     // Invalidate to avoid later possible redundant close calls that would fail
     conn->last_error = SL_STATUS_BT_CTRL_CONNECTION_TERMINATED_BY_LOCAL_HOST;
+    // Prevent executing any future commands until the connection is closed
+    conn->command_complete = false;
+
+    if (sc == SL_STATUS_OK) {
+      (void)app_timer_start(&conn->timer,
+                            CLOSE_TIMEOUT_MS,
+                            connection_timeout,
+                            conn,
+                            false);
+    }
   }
+
   return sc;
 }
 
@@ -2042,13 +2337,15 @@ static bool uuid_16_match(uint8_t *uuid_a, uint8_t *uuid_b)
 
 static void connection_complete(esl_lib_connection_t *conn, sl_status_t result)
 {
-  (void)send_connection_status(conn, ESL_LIB_TRUE, result);
-  conn->state = ESL_LIB_CONNECTION_STATE_CONNECTED;
-  // Open command has been completed.
-  if (conn->command->cmd_code == ESL_LIB_CMD_CONNECT) {
-    esl_lib_memory_free(conn->command);
+  if (conn != NULL) {
+    (void)send_connection_status(conn, ESL_LIB_TRUE, result);
+    conn->state = ESL_LIB_CONNECTION_STATE_CONNECTED;
+    // Open command has been completed.
+    if (conn->command && conn->command->cmd_code == ESL_LIB_CMD_CONNECT) {
+      esl_lib_memory_free(conn->command);
+    }
+    conn->command_complete = true;
   }
-  conn->command_complete = true;
 }
 
 static bool check_image_transfer(esl_lib_connection_t *conn)
@@ -2066,16 +2363,19 @@ static bool check_image_transfer(esl_lib_connection_t *conn)
 
 static bool is_eslp_ready(esl_lib_connection_t *conn)
 {
+  if (conn == ESL_LIB_INVALID_HANDLE) {
+    return false;
+  }
+
   switch (conn->state) {
     // Not ready for Config / Update actions according to ESL Profile in connecting phases
     case ESL_LIB_CONNECTION_STATE_OFF:
     case ESL_LIB_CONNECTION_STATE_CONNECTING:
-    case ESL_LIB_CONNECTION_STATE_RECONNECTING:
     case ESL_LIB_CONNECTION_STATE_CONNECTION_OPENED:
     case ESL_LIB_CONNECTION_STATE_APPLYING_LTK:
     case ESL_LIB_CONNECTION_STATE_NEW_BOND_REQUIRED:
     case ESL_LIB_CONNECTION_STATE_BONDING:
-    case ESL_LIB_CONNECTION_STATE_BONDING_FAIL_RECONNECT:
+    case ESL_LIB_CONNECTION_STATE_BONDING_RECOVERY:
     case ESL_LIB_CONNECTION_STATE_SERVICE_DISCOVERY:
     case ESL_LIB_CONNECTION_STATE_DIS_DISCOVERY:
     case ESL_LIB_CONNECTION_STATE_ESL_DISCOVERY:
@@ -2095,10 +2395,10 @@ static void on_image_transfer_status(esl_lib_image_transfer_handle_t handle,
                                      esl_lib_ots_gattdb_handles_t    *gattdb_handles)
 {
   (void)handle;
-  esl_lib_connection_t *conn = NULL;
+  esl_lib_connection_t *conn = ESL_LIB_INVALID_HANDLE;
   sl_status_t sc = esl_lib_connection_find(connection, &conn);
   if (sc == SL_STATUS_OK) {
-    if (conn->state == ESL_LIB_CONNECTION_STATE_OTS_INIT) {
+    if (conn->state == ESL_LIB_CONNECTION_STATE_OTS_INIT && result == SL_STATUS_OK) {
       // Copy handles if present
       if (gattdb_handles != NULL) {
         memcpy(conn->gattdb_handles.ots_characteristics,
@@ -2109,7 +2409,6 @@ static void on_image_transfer_status(esl_lib_image_transfer_handle_t handle,
       if (state == ESL_LIB_IMAGE_TRANSFER_STATE_IDLE) {
         // init succeeded
         connection_complete(conn, result);
-        conn->command_complete = true;
       }
     }
 
@@ -2127,11 +2426,12 @@ static void on_image_transfer_status(esl_lib_image_transfer_handle_t handle,
                                     conn->state);
         // Close connection as OTS errors are mostly unrecoverable
         esl_lib_log_connection_debug(CONN_FMT "Close connection due image transfer status 0x%04x, connection handle = %u, state = %d" APP_LOG_NL,
-                                     conn,
+                                     ESL_LIB_LOG_PTR(conn),
                                      result,
                                      conn->connection_handle,
                                      state);
-        close_broken_connection(&conn);
+        // Close the connection and discard the address since it is no longer needed for the function
+        (void)close_broken_connection(&conn, NULL);
       } else if (state == ESL_LIB_IMAGE_TRANSFER_STATE_ERROR) {
         (void)send_connection_error(conn,
                                     ESL_LIB_STATUS_OTS_ERROR,
@@ -2153,13 +2453,13 @@ static void on_image_transfer_finished(esl_lib_image_transfer_handle_t handle,
                                        uint8_t                         image_index)
 {
   (void)handle;
-  esl_lib_connection_t *conn = NULL;
+  esl_lib_connection_t *conn = ESL_LIB_INVALID_HANDLE;
   esl_lib_evt_t        *lib_evt;
 
   sl_status_t sc = esl_lib_connection_find(connection, &conn);
   if (sc == SL_STATUS_OK) {
     esl_lib_log_connection_debug(CONN_FMT "Image %u transfer finished, result = %u, connection handle = %u" APP_LOG_NL,
-                                 conn,
+                                 ESL_LIB_LOG_PTR(conn),
                                  image_index,
                                  result,
                                  conn->connection_handle);
@@ -2191,11 +2491,11 @@ static void on_image_transfer_finished(esl_lib_image_transfer_handle_t handle,
           || result == SL_STATUS_NO_MORE_RESOURCE
           || result == SL_STATUS_BT_CTRL_CONNECTION_REJECTED_DUE_TO_NO_SUITABLE_CHANNEL_FOUND) {
         esl_lib_log_connection_debug(CONN_FMT "Close connection due image transfer finished result: 0x%04x, connection handle = %u" APP_LOG_NL,
-                                     conn,
+                                     ESL_LIB_LOG_PTR(conn),
                                      result,
                                      conn->connection_handle);
         // Close connection as some OTS errors are unrecoverable
-        close_broken_connection(&conn);
+        (void)close_broken_connection(&conn, NULL);
       }
     }
   }
@@ -2209,12 +2509,12 @@ static void on_image_transfer_type_arrived(esl_lib_image_transfer_handle_t handl
                                            uint8_t                         len)
 {
   (void)handle;
-  esl_lib_connection_t *conn = NULL;
+  esl_lib_connection_t *conn = ESL_LIB_INVALID_HANDLE;
   esl_lib_evt_t        *lib_evt;
   sl_status_t sc = esl_lib_connection_find(connection, &conn);
   if (sc == SL_STATUS_OK) {
     esl_lib_log_connection_debug(CONN_FMT "Read image %u type finished, result = %u, connection handle = %u" APP_LOG_NL,
-                                 conn,
+                                 ESL_LIB_LOG_PTR(conn),
                                  image_index,
                                  result,
                                  conn->connection_handle);
@@ -2239,7 +2539,7 @@ static void on_image_transfer_type_arrived(esl_lib_image_transfer_handle_t handl
                                   result,
                                   conn->state);
       esl_lib_log_connection_debug(CONN_FMT "OTS Image get type fail (0x%04x), image index: %u, connection handle = %u" APP_LOG_NL,
-                                   conn,
+                                   ESL_LIB_LOG_PTR(conn),
                                    result,
                                    image_index,
                                    conn->connection_handle);
@@ -2255,10 +2555,11 @@ static void gatt_timeout(app_timer_t *timer,
   // Check if it exists
   if (esl_lib_connection_contains(conn)) {
     esl_lib_log_connection_error(CONN_FMT "GATT timeout, connection handle = %u" APP_LOG_NL,
-                                 conn,
+                                 ESL_LIB_LOG_PTR(conn),
                                  conn->connection_handle);
     if (conn->command == NULL) {
-      esl_lib_log_connection_debug(CONN_FMT "Close connection due GATT timout during discovery phase!" APP_LOG_NL, conn);
+      esl_lib_log_connection_debug(CONN_FMT "Close connection due GATT timout during discovery phase!" APP_LOG_NL,
+                                   ESL_LIB_LOG_PTR(conn));
     } else if (conn->command->cmd_code == ESL_LIB_CMD_WRITE_CONTROL_POINT) {
       // Send event
       (void)send_att_response(conn,
@@ -2270,13 +2571,14 @@ static void gatt_timeout(app_timer_t *timer,
       (void)send_att_response(conn,
                               ESL_LIB_EVT_CONFIGURE_TAG_RESPONSE,
                               SL_STATUS_TIMEOUT);
-      esl_lib_log_connection_debug(CONN_FMT "Close connection due GATT timout during configuring phase!" APP_LOG_NL, conn);
+      esl_lib_log_connection_debug(CONN_FMT "Close connection due GATT timout during configuring phase!" APP_LOG_NL,
+                                   ESL_LIB_LOG_PTR(conn));
     }
     // Close connection as GATT errors during configuration phase are unrecoverable
-    close_broken_connection(&conn);
+    (void)close_broken_connection(&conn, NULL);
   } else {
     esl_lib_log_connection_warning(CONN_FMT "GATT timeout for unknown connection!" APP_LOG_NL,
-                                   data);
+                                   ESL_LIB_LOG_PTR(data));
   }
 }
 
@@ -2288,11 +2590,11 @@ static void reconnect_timeout(app_timer_t *timer,
   esl_lib_connection_t *conn = (esl_lib_connection_t *)data;
 
   esl_lib_log_connection_debug(CONN_FMT "Reconnect timer rised" APP_LOG_NL,
-                               conn);
+                               ESL_LIB_LOG_PTR(conn));
 
   if (esl_lib_connection_contains(conn)) {
     esl_lib_log_connection_debug(CONN_FMT "Connection retry to " ESL_LIB_LOG_ADDR_FORMAT ", expired handle = %u" APP_LOG_NL,
-                                 conn,
+                                 ESL_LIB_LOG_PTR(conn),
                                  ESL_LIB_LOG_ADDR(conn->command->data.cmd_connect.address),
                                  conn->connection_handle);
     if (conn->command && conn->command->cmd_code == ESL_LIB_CMD_CONNECT) {
@@ -2309,7 +2611,7 @@ static void reconnect_timeout(app_timer_t *timer,
                                   sc,
                                   conn->state);
       esl_lib_log_connection_error(CONN_FMT "Failed to reopen connection, connection handle = %u, sc = 0x%04x" APP_LOG_NL,
-                                   conn,
+                                   ESL_LIB_LOG_PTR(conn),
                                    conn->connection_handle,
                                    sc);
       // And also remove connection from the list.
@@ -2317,11 +2619,16 @@ static void reconnect_timeout(app_timer_t *timer,
     } else {
       // Decouple the connect command as it's been successfully queued again - we'll take ownership again, later.
       conn->command = NULL;
+      // Invalidate the handle already closed by ble_stack
+      conn->connection_handle = SL_BT_INVALID_CONNECTION_HANDLE;
+      // Signal command complete for last (whatever) command
       conn->command_complete = true;
+      // Update the connection state
+      conn->state = ESL_LIB_CONNECTION_STATE_OFF;
     }
   } else {
     esl_lib_log_connection_warning(CONN_FMT "Reconnect handle not found (possibly has already been removed)" APP_LOG_NL,
-                                   conn);
+                                   ESL_LIB_LOG_PTR(conn));
   }
 }
 
@@ -2334,24 +2641,33 @@ static void connection_timeout(app_timer_t *timer,
   esl_lib_connection_t *conn = (esl_lib_connection_t *)data;
   // Check if it exists
   if (esl_lib_connection_contains(conn)) {
-    esl_lib_log_connection_warning(CONN_FMT "Connection timeout, connection handle = %u" APP_LOG_NL,
-                                   conn,
-                                   conn->connection_handle);
+    (void)esl_lib_resume_scanning();
     if (conn->last_error == SL_STATUS_BT_CTRL_CONNECTION_TERMINATED_BY_LOCAL_HOST) {
       // This is the timeout for earlier local close request! Send error for closing because close event didn't arrive.
       status = ESL_LIB_STATUS_CONN_CLOSE_FAILED;
+      sc = sl_bt_connection_forcefully_close(conn->connection_handle);
+      esl_lib_log_connection_error(CONN_FMT "Timeout for closing the connection handle = %u, forcefully close result: 0x%04x" APP_LOG_NL,
+                                   ESL_LIB_LOG_PTR(conn),
+                                   conn->connection_handle,
+                                   sc);
     } else {
+      if (conn->state == ESL_LIB_CONNECTION_STATE_PAST_CLOSE_CONNECTION) {
+        esl_lib_log_connection_warning(CONN_FMT "Timeout for PAST close the connection handle = %u" APP_LOG_NL,
+                                       ESL_LIB_LOG_PTR(conn),
+                                       conn->connection_handle);
+      } else {
+        esl_lib_log_connection_warning(CONN_FMT "Timeout for opening the connection handle = %u" APP_LOG_NL,
+                                       ESL_LIB_LOG_PTR(conn),
+                                       conn->connection_handle);
+      }
       // Try to gentle close the connection in the first place
       sc = close_connection(conn);
       if (sc != SL_STATUS_OK) {
         status = ESL_LIB_STATUS_CONN_CLOSE_FAILED;
-      } else {
-        // Restart timer one last time as final watchdog
-        (void)app_timer_start(&conn->timer,
-                              CLOSE_TIMEOUT_MS,
-                              connection_timeout,
-                              conn,
-                              false);
+        esl_lib_log_connection_error(CONN_FMT "Connection close request failed in timeout handler, connection handle = %u, sc = 0x%04x" APP_LOG_NL,
+                                     ESL_LIB_LOG_PTR(conn),
+                                     conn->connection_handle,
+                                     sc);
       }
     }
 
@@ -2361,8 +2677,7 @@ static void connection_timeout(app_timer_t *timer,
                                 conn->state);
 
     if (status == ESL_LIB_STATUS_CONN_CLOSE_FAILED) {
-      if (conn->state == ESL_LIB_CONNECTION_STATE_CONNECTING
-          || conn->state == ESL_LIB_CONNECTION_STATE_RECONNECTING) {
+      if (conn->state == ESL_LIB_CONNECTION_STATE_CONNECTING) {
         // Report connection complete only if the connection opened event didn't arrive before the timeout
         esl_lib_core_connection_complete();
       }
@@ -2371,7 +2686,7 @@ static void connection_timeout(app_timer_t *timer,
     }
   } else {
     esl_lib_log_connection_warning(CONN_FMT "Connection timeout for unknown connection" APP_LOG_NL,
-                                   conn);
+                                   ESL_LIB_LOG_PTR(conn));
   }
 }
 
@@ -2456,7 +2771,7 @@ static sl_status_t get_tag_info_finish(esl_lib_connection_t *conn, sl_status_t s
   }
 
   esl_lib_log_connection_debug(CONN_FMT "Tag info TLV data size = %u , TLV header size= %u, connection handle = %u" APP_LOG_NL,
-                               conn,
+                               ESL_LIB_LOG_PTR(conn),
                                data_size,
                                (unsigned int)ESL_LIB_TLV_HEADER_LEN,
                                conn->connection_handle);
@@ -2495,7 +2810,7 @@ static sl_status_t get_tag_info_finish(esl_lib_connection_t *conn, sl_status_t s
     ptr += (current_size + ESL_LIB_TLV_HEADER_LEN);
 
     esl_lib_log_connection_debug(CONN_FMT "TLV type %u copied with data size = %u, connection handle = %u" APP_LOG_NL,
-                                 conn,
+                                 ESL_LIB_LOG_PTR(conn),
                                  tlv->type,
                                  tlv->data.len,
                                  conn->connection_handle);
@@ -2503,25 +2818,25 @@ static sl_status_t get_tag_info_finish(esl_lib_connection_t *conn, sl_status_t s
 
   if (sc != SL_STATUS_OK) {
     esl_lib_log_connection_error(CONN_FMT "Get tag info finished with error status: 0x%04x, connection handle = %u" APP_LOG_NL,
-                                 conn,
+                                 ESL_LIB_LOG_PTR(conn),
                                  sc,
                                  conn->connection_handle);
     // Force close as keeping connected would break the AP procedure flow
-    close_broken_connection(&conn);
+    (void)close_broken_connection(&conn, NULL);
   } else {
     // Send event
     sc = esl_lib_event_list_push_back(event);
 
     if (sc == SL_STATUS_OK) {
       esl_lib_log_connection_debug(CONN_FMT "Get tag info finished, connection handle = %u" APP_LOG_NL,
-                                   conn,
+                                   ESL_LIB_LOG_PTR(conn),
                                    conn->connection_handle);
     } else {
       esl_lib_log_connection_error(CONN_FMT "Get tag info finished but failed to send tag info, connection handle = %u." APP_LOG_NL,
-                                   conn,
+                                   ESL_LIB_LOG_PTR(conn),
                                    conn->connection_handle);
       // Force close as keeping connected would break the AP procedure flow
-      close_broken_connection(&conn);
+      (void)close_broken_connection(&conn, NULL);
     }
   }
 
@@ -2546,7 +2861,7 @@ static sl_status_t get_next_tag_info(esl_lib_connection_t *conn)
 
   (void)app_timer_stop(&conn->gatt_timer);
   esl_lib_log_connection_debug(CONN_FMT "Get next tag info, connection handle = %u" APP_LOG_NL,
-                               conn,
+                               ESL_LIB_LOG_PTR(conn),
                                conn->connection_handle);
 
   // Find a valid handle for next read
@@ -2555,7 +2870,7 @@ static sl_status_t get_next_tag_info(esl_lib_connection_t *conn)
     type = get_next_type(type);
     char_handle = get_handle_for_type(conn, type);
     esl_lib_log_connection_debug(CONN_FMT "Next tag info type is %u (0x%02x), connection handle = %u" APP_LOG_NL,
-                                 conn,
+                                 ESL_LIB_LOG_PTR(conn),
                                  type,
                                  char_handle,
                                  conn->connection_handle);
@@ -2567,7 +2882,7 @@ static sl_status_t get_next_tag_info(esl_lib_connection_t *conn)
                                               char_handle);
     if (sc == SL_STATUS_OK) {
       esl_lib_log_connection_debug(CONN_FMT "Next tag info type %u read requested, connection handle = %u" APP_LOG_NL,
-                                   conn,
+                                   ESL_LIB_LOG_PTR(conn),
                                    type,
                                    conn->connection_handle);
       // Move to next type
@@ -2585,7 +2900,7 @@ static sl_status_t get_next_tag_info(esl_lib_connection_t *conn)
     }
     if (sc != SL_STATUS_OK) {
       esl_lib_log_connection_error(CONN_FMT "Failed to read tag info type %u, connection handle = %u" APP_LOG_NL,
-                                   conn,
+                                   ESL_LIB_LOG_PTR(conn),
                                    type,
                                    conn->connection_handle);
       sc = get_tag_info_finish(conn, sc);
@@ -2646,7 +2961,7 @@ static sl_status_t write_next_config_value(esl_lib_connection_t *conn)
 
     while (move_to_next) {
       esl_lib_log_connection_debug(CONN_FMT "Next configure tag TLV data %u / %u, connection handle = %u" APP_LOG_NL,
-                                   conn,
+                                   ESL_LIB_LOG_PTR(conn),
                                    conn->config_index,
                                    conn->command->data.cmd_configure_tag.tlv_data.len,
                                    conn->connection_handle);
@@ -2661,7 +2976,7 @@ static sl_status_t write_next_config_value(esl_lib_connection_t *conn)
         conn->state = ESL_LIB_CONNECTION_STATE_CONNECTED;
         sc = SL_STATUS_OK;
         esl_lib_log_connection_debug(CONN_FMT "Finished configure tag, connection handle = %u" APP_LOG_NL,
-                                     conn,
+                                     ESL_LIB_LOG_PTR(conn),
                                      conn->connection_handle);
       } else {
         // Set TLV
@@ -2671,37 +2986,29 @@ static sl_status_t write_next_config_value(esl_lib_connection_t *conn)
         conn->config_type = tlv->type;
 
         esl_lib_log_connection_debug(CONN_FMT "Write next value from index %u, type %u, connection handle = %u" APP_LOG_NL,
-                                     conn,
+                                     ESL_LIB_LOG_PTR(conn),
                                      conn->config_index,
                                      (uint8_t)conn->config_type,
                                      conn->connection_handle);
 
         // Try to write the current value
         sc = write_value(conn,
-                         conn->command->data.cmd_configure_tag.att_response,
+                         ESL_LIB_TRUE,
                          tlv->type,
                          tlv->data.len,
                          tlv->data.data);
         if (sc == SL_STATUS_OK) {
-          // Set state or send response
-          if (conn->command->data.cmd_configure_tag.att_response == ESL_LIB_TRUE) {
-            // Set state, check for this later in procedure completed event
-            conn->state = ESL_LIB_CONNECTION_STATE_CONFIGURE_TAG;
-            // Return and wait for procedure completed event
-            move_to_next = false;
-            esl_lib_log_connection_debug(CONN_FMT "Wait for response to index %u, type %u, connection handle = %u" APP_LOG_NL,
-                                         conn,
-                                         conn->config_index,
-                                         (uint8_t)conn->config_type,
-                                         conn->connection_handle);
-          } else {
-            // Send response if written without response
-            (void)send_att_response(conn,
-                                    ESL_LIB_EVT_CONFIGURE_TAG_RESPONSE,
-                                    sc);
-          }
+          // Set state, check for this later in procedure completed event
+          conn->state = ESL_LIB_CONNECTION_STATE_CONFIGURE_TAG;
+          // Return and wait for procedure completed event
+          move_to_next = false;
+          esl_lib_log_connection_debug(CONN_FMT "Wait for response to index %u, type %u, connection handle = %u" APP_LOG_NL,
+                                       ESL_LIB_LOG_PTR(conn),
+                                       conn->config_index,
+                                       (uint8_t)conn->config_type,
+                                       conn->connection_handle);
         } else {
-          // Send back the response in case of error
+          // Send back an immediate response in case of error
           (void)send_att_response(conn,
                                   ESL_LIB_EVT_CONFIGURE_TAG_RESPONSE,
                                   sc);
@@ -2746,7 +3053,7 @@ static sl_status_t write_value(esl_lib_connection_t *conn,
   }
   if (characteristic != ESL_LIB_INVALID_CHARACTERISTIC_HANDLE) {
     esl_lib_log_connection_debug(CONN_FMT "Writing value type %u (0x%02x), connection handle = %u" APP_LOG_NL,
-                                 conn,
+                                 ESL_LIB_LOG_PTR(conn),
                                  type,
                                  characteristic,
                                  conn->connection_handle);
@@ -2766,7 +3073,7 @@ static sl_status_t write_value(esl_lib_connection_t *conn,
           (void)app_timer_stop(&conn->gatt_timer);
         } else {
           esl_lib_log_connection_debug(CONN_FMT "Writing value type %u (0x%02x) succeeded, waiting for response, connection handle = %u" APP_LOG_NL,
-                                       conn,
+                                       ESL_LIB_LOG_PTR(conn),
                                        type,
                                        characteristic,
                                        conn->connection_handle);
@@ -2780,13 +3087,13 @@ static sl_status_t write_value(esl_lib_connection_t *conn,
                                                                   &sent_len);
       if (sc == SL_STATUS_OK && sent_len == len) {
         esl_lib_log_connection_debug(CONN_FMT "Writing value type %u (0x%02x) succeeded, connection handle = %u" APP_LOG_NL,
-                                     conn,
+                                     ESL_LIB_LOG_PTR(conn),
                                      type,
                                      characteristic,
                                      conn->connection_handle);
       } else {
         esl_lib_log_connection_warning(CONN_FMT "Writing value type %u (0x%02x) unsuccesful, connection handle = %u, length/sent: %u/%u, sc = 0x%04x" APP_LOG_NL,
-                                       conn,
+                                       ESL_LIB_LOG_PTR(conn),
                                        type,
                                        characteristic,
                                        conn->connection_handle,
@@ -2797,7 +3104,7 @@ static sl_status_t write_value(esl_lib_connection_t *conn,
     }
   } else {
     esl_lib_log_connection_error(CONN_FMT "Invalid GATT handle for value type %u, connection handle = %u" APP_LOG_NL,
-                                 conn,
+                                 ESL_LIB_LOG_PTR(conn),
                                  type,
                                  conn->connection_handle);
     sc = SL_STATUS_INVALID_HANDLE;
@@ -2832,42 +3139,194 @@ static bool find_tlv(esl_lib_command_list_cmd_t  *cmd,
   return false;
 }
 
-static void close_broken_connection(esl_lib_connection_t **conn)
+static void *close_broken_connection(esl_lib_connection_t **conn, esl_lib_address_t *backup)
 {
-  if (conn == NULL || *conn == NULL
+  if (conn == NULL || *conn == ESL_LIB_INVALID_HANDLE
+      || !esl_lib_connection_contains(*conn)
       || (*conn)->connection_handle == SL_BT_INVALID_CONNECTION_HANDLE
       || (*conn)->last_error == SL_STATUS_BT_CTRL_CONNECTION_TERMINATED_BY_LOCAL_HOST) {
     // Nothing left to close (second invocation can happen on the same connection in edge cases, especially in case of various OTS errors)
-    return;
+    return NULL;
   } else {
     (void)app_timer_stop(&(*conn)->timer);
+    (void)app_timer_stop(&(*conn)->gatt_timer);
     esl_lib_log_connection_debug(CONN_FMT "Cleanup command list for connection handle = %u during close on error" APP_LOG_NL,
-                                 *conn,
+                                 ESL_LIB_LOG_PTR(*conn),
                                  (*conn)->connection_handle);
     esl_lib_command_list_cleanup(&(*conn)->command_list);
+    // Fill up backup adress if needed
+    if (backup != NULL) {
+      backup->address_type = (*conn)->address_type;
+      memcpy(backup->address.addr, (*conn)->address.addr, sizeof(backup->address.addr));
+    }
   }
 
   sl_status_t sc = close_connection(*conn);
   if (sc != SL_STATUS_OK) {
     esl_lib_log_connection_error(CONN_FMT "Closing request failed with status: 0x%04x on connection handle = %u during close on error" APP_LOG_NL,
-                                 *conn,
+                                 ESL_LIB_LOG_PTR(*conn),
                                  sc,
                                  (*conn)->connection_handle);
     // Send error event about the deletion of the connection pointer
     send_connection_status(*conn, ESL_LIB_FALSE, SL_STATUS_BT_CTRL_UNKNOWN_CONNECTION_IDENTIFIER);
     // Force removal of connection handle in case of error on sl_bt_connection_close request
     (void)esl_lib_connection_remove_ptr(*conn);
-    *conn = NULL;
+    *conn = ESL_LIB_INVALID_HANDLE;
   } else {
     esl_lib_log_connection_debug(CONN_FMT "Requested closing connection with handle = %u on error" APP_LOG_NL,
-                                 *conn,
+                                 ESL_LIB_LOG_PTR(*conn),
                                  (*conn)->connection_handle);
-    (void)app_timer_start(&(*conn)->timer,
-                          CLOSE_TIMEOUT_MS,
-                          connection_timeout,
-                          *conn,
-                          false);
-    // Prevent executing any future commands until the connection is closed
-    (*conn)->command_complete = false;
+  }
+
+  return (void *)backup;
+}
+
+static sl_status_t esl_lib_initiate_auto_connection(esl_lib_connection_t *handle)
+{
+  sl_status_t               sc = SL_STATUS_OK;
+  esl_lib_connection_t      *conn = handle;
+  uint8_t                   connection_handle = SL_BT_INVALID_CONNECTION_HANDLE;
+  esl_lib_core_state_t      core_status;
+  esl_lib_connection_mode_t mode = esl_lib_get_connection_mode_and_status(&core_status, NULL, NULL);
+  filter_data_p             command = NULL;
+
+  if (mode == ESL_LIB_CONNECTION_MODE_SINGLE) {
+    return SL_STATUS_INVALID_STATE;
+  }
+
+  if (core_status == ESL_LIB_CORE_STATE_CONNECTING) {
+    // esl_lib_initiate_auto_connection() will be invoked later by the connection open / close event processors.
+    return SL_STATUS_OK;
+  }
+
+  esl_lib_log_connection_debug("Preparing to activate Initiator Filter Policy" APP_LOG_NL);
+
+  // Check if identity recovery is needed
+  if (foreign_initiator_id) {
+    bd_addr default_identity;
+    uint8_t default_address_type;
+    sc = esl_lib_core_get_identity_address(&default_identity, &default_address_type);
+
+    if (sc == SL_STATUS_OK) {
+      sc = sl_bt_gap_set_identity_address(default_identity, default_address_type);
+    }
+    // Re-check status as it may have changed
+    if (sc != SL_STATUS_OK) {
+      esl_lib_log_connection_error("Identity address recovery failed, sc = 0x%04x" APP_LOG_NL, sc);
+    }
+
+    foreign_initiator_id = false;
+  }
+
+  if (sc == SL_STATUS_OK) {
+    // Auto connection mode does only support the following SM config
+    sc = sl_bt_sm_configure(0, sl_bt_sm_io_capability_noinputnooutput);
+    if (sc != SL_STATUS_OK) {
+      esl_lib_log_connection_error("Failed to configure SM, sc = 0x%04x" APP_LOG_NL, sc);
+    }
+  }
+
+  while (sc == SL_STATUS_OK
+         && filter_accept_list_get_size(auto_acceptance_list)) {
+    // Get the first node from the overall acceptance list
+    command = filter_accept_list_pop_first_node(auto_acceptance_list);
+    // Convert between address formats for the stack
+    bd_addr *addr = (bd_addr *)&(command->data.cmd_connect.address.addr);
+    uint8_t address_type = command->data.cmd_connect.address.address_type;
+
+    // Add address to the link layer's accept list via stack API
+    sc = sl_bt_accept_list_add_device_by_address(*addr,
+                                                 address_type);
+    if (sc != SL_STATUS_OK) {
+      // If we couldn't pass it to the stack for any reason, then put it back to the acceptance list
+      filter_accept_list_insert_command(auto_acceptance_list, command);
+    } else {
+      // Otherwise put it on the auto initiator list
+      filter_accept_list_insert_command(auto_initiator_list, command);
+    }
+  }
+
+  // Check if there's anything on the active list
+  if (filter_accept_list_get_size(auto_initiator_list) == 0) {
+    return SL_STATUS_OK;
+  }
+
+  if (sc == SL_STATUS_OK || sc == SL_STATUS_BT_CTRL_MEMORY_CAPACITY_EXCEEDED) {
+    (void)esl_lib_core_suspend_scan(SCAN_INIT_INTERVAL, 0);
+    // Enable Initiator Filter Policy if everything went OK so far
+    sc = sl_bt_connection_open_with_accept_list(sl_bt_gap_phy_1m, &connection_handle);
+  }
+  // Do final status check to decide whether or not to generate an error event
+  if (sc == SL_STATUS_OK) {
+    if (conn == ESL_LIB_INVALID_HANDLE) {
+      // Allocate and add the connection to the connection list.
+      sc = esl_lib_connection_add(connection_handle, &conn);
+    } else {
+      conn->connection_handle = connection_handle;
+      conn->last_error = SL_STATUS_IN_PROGRESS; // Operation is in progress and not yet complete (pass or fail)
+      conn->established = false;
+      sc = app_timer_start(&conn->timer,
+                           CONNECTION_TIMEOUT_MS,
+                           connection_timeout,
+                           conn,
+                           false);
+      if (sc != SL_STATUS_OK) {
+        esl_lib_log_connection_error(CONN_FMT "Connection timeout reinit failed, handle = %u. Closing." APP_LOG_NL,
+                                     ESL_LIB_LOG_PTR(conn),
+                                     conn->connection_handle);
+        (void)close_connection(conn);
+        return sc; // Skip the list operations below for this kind of error
+      }
+    }
+
+    if (sc == SL_STATUS_OK) {
+      // Move to connecting state with no error present.
+      conn->state = ESL_LIB_CONNECTION_STATE_CONNECTING;
+      // Set command initially to NULL for auto conn handles - it will e updated on successful connection open
+      conn->command = NULL;
+      conn->command_complete = false;
+      esl_lib_log_connection_debug(CONN_FMT "Pending new auto connection to next address" APP_LOG_NL,
+                                   ESL_LIB_LOG_PTR(conn));
+    }
+  } else if (sc != SL_STATUS_BT_CTRL_CONNECTION_LIMIT_EXCEEDED && sc != SL_STATUS_NO_MORE_RESOURCE) {
+    // Remove all accepted devie at Link Layer level on errors that we can't handle otherwise
+    (void)sl_bt_accept_list_remove_all_devices();
+    // Check if any list recovery is needed
+    while ((command = filter_accept_list_pop_first_node(auto_initiator_list)) != NULL ) {
+      // Try recover the internal acceptance list at least
+      filter_accept_list_insert_command(auto_acceptance_list, command);
+    }
+  } else {
+    // The library automatically handles reaching the connection limit, do not report this as an error in auto mode.
+    sc = SL_STATUS_OK;
+  }
+
+  return sc;
+}
+
+static void esl_lib_connection_emit_mass_errors(esl_lib_connection_t *conn)
+{
+  if (conn != NULL) { // Ignore invalid calls
+    filter_data_p node_data;
+
+    while ((node_data = filter_accept_list_pop_first_node(auto_initiator_list)) != NULL) {
+      conn->command = node_data;
+      // Set temporary BLE address for the connection handle
+      conn->address_type = node_data->data.cmd_connect.address.address_type;
+      memcpy(conn->address.addr,
+             node_data->data.cmd_connect.address.addr,
+             sizeof(conn->address.addr));
+
+      (void)send_connection_error(conn,
+                                  ESL_LIB_STATUS_CONN_FAILED,
+                                  SL_STATUS_BT_CTRL_CONNECTION_ACCEPT_TIMEOUT_EXCEEDED,
+                                  conn->state);
+      // Free node data, i.e. the connect command after it is no longer needed
+      esl_lib_memory_free(node_data);
+    }
+    // Invalidate address and command fields after processing
+    memset(conn->address.addr, 0, sizeof(conn->address.addr));
+    conn->address_type = sl_bt_gap_public_address;
+    conn->command = NULL;
   }
 }

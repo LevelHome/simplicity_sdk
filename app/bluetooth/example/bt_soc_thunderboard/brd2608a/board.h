@@ -31,10 +31,6 @@
 #ifndef BOARD_H
 #define BOARD_H
 
-//--------------------------------
-#define BOARD_EM4WUEN_BTN  sl_button_btn1 // The button to use for EM4 wake-up
-
-//--------------------------------
 #define BOARD_RGBLED_COUNT 1    // Number of RGB LEDs on the board
 #define BOARD_RGBLED_MASK  0x01 // Bitmask corresponding to the only RGB LED the board has
 

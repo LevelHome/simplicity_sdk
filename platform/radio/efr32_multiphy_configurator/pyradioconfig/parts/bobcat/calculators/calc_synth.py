@@ -11,8 +11,7 @@ class Calc_Synth_Bobcat(CALC_Synth_ocelot):
         """
 
         # Build variables from Lynx
-        calc_synth_ocelot_obj = CALC_Synth_ocelot()
-        calc_synth_ocelot_obj.buildVariables(model)
+        super().buildVariables(model)
 
         # : Modify synth RX modes from Ocelot
         model.vars.synth_rx_mode.var_enum = CreateModelVariableEnum(

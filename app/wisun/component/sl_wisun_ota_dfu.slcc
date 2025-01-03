@@ -5,19 +5,21 @@ description: >
   The Wi-SUN Over-The-Air Device Firmware Upgrade (OTA DFU) service is
   implemented to facilitate the updating of Wi-SUN device firmware. This
   component requires the Gecko Bootloader API to execute firmware writing,
-  verification, and boot-load operations.
+  verification, and bootload operations.
   To obtain a new Gecko Bootloader File (GBL) file from a remote host
   Over-The-Air, a Trivial File Transfer Protocol (TFTP) client is employed,
-  leveraging the Wi-SUN network. 
+  leveraging the Wi-SUN network.
   The entire firmware upgrade session is manageable over CoAP, with the service
-  offering remote host connection settings, firmware file selection, notification and 
+  offering remote host connection settings, firmware file selection, notification, and
   status request capabilities.
   Configuration of the connection to the TFTP remote host can be accomplished 
-  even within the component configuration file.
-  To utilize this component, a bootloader must be flashed onto the device. The
+  within the component configuration file.
+  To use this component, a bootloader must be flashed onto the device. The
   component relies on functions that reside within the bootloader. To choose
   the appropriate bootloader, consider factors such as flash location
-  (internal or external) and size. If necessary, apply compression.
+  (internal or external) and size. 
+  To save on download time, we recommend applying compression on both the bootloader and device projects.
+
 category: "Wi-SUN|Wi-SUN Services"
 quality: "production"
 metadata:
@@ -42,7 +44,6 @@ requires:
   - name: bootloader_interface
   - name: sl_ftp
   - name: sl_wisun_coap
-  - name: sl_wisun_ftp_posix_port
   - name: sleeptimer
 
 #-------------- Template Contribution ----------------
@@ -52,7 +53,6 @@ template_contribution:
       event: "internal_app_init"
       include: "sl_wisun_ota_dfu.h"
       handler: "sl_wisun_ota_dfu_init"
-
 
 #---------------- Component Catalog ------------------
   - name: component_catalog

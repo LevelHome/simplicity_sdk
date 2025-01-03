@@ -1,6 +1,6 @@
 /***************************************************************************//**
  * @file sl_wisun_rht_measurement.c
- * @brief Wi-SUN temperature and relative humidity measurement modul
+ * @brief Wi-SUN temperature and relative humidity measurement module
  *******************************************************************************
  * # License
  * <b>Copyright 2019 Silicon Laboratories Inc. www.silabs.com</b>
@@ -31,6 +31,8 @@
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
+#include <assert.h>
+#include <stddef.h>
 
 #include "sl_wisun_types.h"
 #include "sl_wisun_rht_measurement.h"
@@ -44,10 +46,6 @@
 #include "cmsis_os2.h"
 #include "sl_cmsis_os2_common.h"
 #endif
-
-#include <assert.h>
-#include <stddef.h>
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------

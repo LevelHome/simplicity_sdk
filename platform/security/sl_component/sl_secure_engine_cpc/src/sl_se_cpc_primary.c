@@ -36,6 +36,7 @@
 #include "sl_cpc.h"
 #include "sl_se_cpc_primary.h"
 #include "sli_se_cpc.h"
+#include "sli_se_manager_mailbox.h"
 
 // -----------------------------------------------------------------------------
 // Macros
@@ -135,7 +136,7 @@ static sl_status_t serialize_request(sl_se_command_context_t *cmd_ctx,
   current_command_size += SLI_REQUEST_NUM_INPUTS_SIZE;
   cpc_tx_data[num_input_index] = 0u;
   if (cmd_ctx->command.data_in != NULL) {
-    SE_DataTransfer_t *current_data = cmd_ctx->command.data_in;
+    sli_se_datatransfer_t *current_data = cmd_ctx->command.data_in;
     do {
       cpc_tx_data[num_input_index]++;
       VALIDATE_CPC_BUFFER_USAGE(current_command_size + SLI_REQUEST_INPUT_LENGTHS_ELEMENT_SIZE);
@@ -154,7 +155,7 @@ static sl_status_t serialize_request(sl_se_command_context_t *cmd_ctx,
   current_command_size += SLI_REQUEST_NUM_OUTPUTS_SIZE;
   cpc_tx_data[num_output_index] = 0u;
   if (cmd_ctx->command.data_out != NULL) {
-    SE_DataTransfer_t *current_data = cmd_ctx->command.data_out;
+    sli_se_datatransfer_t *current_data = cmd_ctx->command.data_out;
     do {
       cpc_tx_data[num_output_index]++;
       VALIDATE_CPC_BUFFER_USAGE(current_command_size + SLI_REQUEST_OUTPUT_LENGTHS_ELEMENT_SIZE);
@@ -169,7 +170,7 @@ static sl_status_t serialize_request(sl_se_command_context_t *cmd_ctx,
 
   // Input Data
   size_t number_of_inputs = cpc_tx_data[num_input_index];
-  SE_DataTransfer_t *current_data = cmd_ctx->command.data_in;
+  sli_se_datatransfer_t *current_data = cmd_ctx->command.data_in;
   for (size_t i = 0u; i < number_of_inputs; i++) {
     size_t input_data_len = (current_data->length & SE_DATATRANSFER_LENGTH_MASK);
     VALIDATE_CPC_BUFFER_USAGE(current_command_size + input_data_len);
@@ -225,7 +226,7 @@ static sl_status_t parse_response(sl_se_command_context_t *cmd_ctx)
   uint8_t num_outputs = cpc_rx_data[SLI_RESPONSE_NUM_OUTPUTS_OFFSET];
   uint32_t *output_lengths = (uint32_t *)&cpc_rx_data[SLI_RESPONSE_OUTPUT_LENGTHS_OFFSET];
 
-  SE_DataTransfer_t *current_data_output = cmd_ctx->command.data_out;
+  sli_se_datatransfer_t *current_data_output = cmd_ctx->command.data_out;
   size_t output_data_index = (SLI_RESPONSE_COMMAND_TYPE_SIZE
                               + SLI_RESPONSE_COMMAND_SIZE
                               + SLI_RESPONSE_COMMAND_RESPONSE_SIZE

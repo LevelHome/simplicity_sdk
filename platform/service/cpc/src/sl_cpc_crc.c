@@ -35,10 +35,14 @@
 #include "sl_component_catalog.h"
 #endif
 
-#if defined(SL_CATALOG_EMLIB_CORE_PRESENT)
-#include "em_cmu.h"
-#else
+#if !defined(SL_CATALOG_EMLIB_CORE_PRESENT) && !defined(SL_CATALOG_SL_CORE_PRESENT)
 #include "mcu.h"
+#else
+#if defined(SL_CATALOG_EMLIB_CORE_PRESENT)
+#include "em_core.h"
+#elif defined(SL_CATALOG_SL_CORE_PRESENT)
+#include "sl_core.h"
+#endif
 #endif
 
 #ifdef CPC_TEST_WITH_INVALID_CRC

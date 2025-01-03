@@ -20,7 +20,7 @@
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-#include "em_cmu.h"
+#include "em_device.h"
 #include <inttypes.h>
 #include <stdio.h>
 
@@ -28,45 +28,45 @@
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
 #if (SE_MANAGER_PRINT == 1)
-#define print_error_cycle(CODE, CTX)                                      \
-  do {                                                                    \
-    sl_status_t ret;                                                      \
-    uint32_t cycles;                                                      \
-                                                                          \
-    if (CTX != NULL) {                                                    \
-      sl_se_init_command_context(CTX);                                    \
-    }                                                                     \
-                                                                          \
-    DWT->CYCCNT = 0;                                                      \
-    ret = CODE;                                                           \
-    cycles = DWT->CYCCNT;                                                 \
-                                                                          \
-    if (CTX != NULL) {                                                    \
-      sl_se_deinit_command_context(CTX);                                  \
-      sl_status_print(ret);                                               \
-    } else {                                                              \
-      if (ret == SL_STATUS_OK) {                                          \
-        printf("SL_STATUS_OK");                                           \
-      } else {                                                            \
-        if ((ret >> 16) != 0xffff) {                                      \
-          sl_status_print(ret);                                           \
-        } else {                                                          \
-          printf("Failed - 0x%08lX", ret);                                \
-        }                                                                 \
-      }                                                                   \
-    }                                                                     \
-                                                                          \
-    if (cycles < (CMU_ClockFreqGet(cmuClock_CORE) / 10)) {                \
-      printf(" (cycles: %" PRIu32 " time: %" PRIu32 " us)\n",             \
-             cycles,                                                      \
-             (cycles * 10) / (CMU_ClockFreqGet(cmuClock_CORE) / 100000)); \
-    }                                                                     \
-    else {                                                                \
-      printf(" (cycles: %" PRIu32 " time: %" PRIu32 " ms)\n",             \
-             cycles,                                                      \
-             cycles / (CMU_ClockFreqGet(cmuClock_CORE) / 1000));          \
-    }                                                                     \
-    return ret;                                                           \
+#define print_error_cycle(CODE, CTX)                          \
+  do {                                                        \
+    sl_status_t ret;                                          \
+    uint32_t cycles;                                          \
+                                                              \
+    if (CTX != NULL) {                                        \
+      sl_se_init_command_context(CTX);                        \
+    }                                                         \
+                                                              \
+    DWT->CYCCNT = 0;                                          \
+    ret = CODE;                                               \
+    cycles = DWT->CYCCNT;                                     \
+                                                              \
+    if (CTX != NULL) {                                        \
+      sl_se_deinit_command_context(CTX);                      \
+      sl_status_print(ret);                                   \
+    } else {                                                  \
+      if (ret == SL_STATUS_OK) {                              \
+        printf("SL_STATUS_OK");                               \
+      } else {                                                \
+        if ((ret >> 16) != 0xffff) {                          \
+          sl_status_print(ret);                               \
+        } else {                                              \
+          printf("Failed - 0x%08lX", ret);                    \
+        }                                                     \
+      }                                                       \
+    }                                                         \
+                                                              \
+    if (cycles < (SystemHCLKGet() / 10)) {                    \
+      printf(" (cycles: %" PRIu32 " time: %" PRIu32 " us)\n", \
+             cycles,                                          \
+             (cycles * 10) / (SystemHCLKGet() / 100000));     \
+    }                                                         \
+    else {                                                    \
+      printf(" (cycles: %" PRIu32 " time: %" PRIu32 " ms)\n", \
+             cycles,                                          \
+             cycles / (SystemHCLKGet() / 1000));              \
+    }                                                         \
+    return ret;                                               \
   } while (0)
 
 #else

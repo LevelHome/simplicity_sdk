@@ -40,17 +40,20 @@
 /***************************************************************************//**
  * Initializes the memory manager.
  *
- * @note This function is called after copying in RAM the .data section
+ * @note With a C++ application, the memory manager requires to be initialized
+ * prior to any malloc() done in any static global objects' constructors.
+ *
+ * This function is called after copying in RAM the .data section
  * (initialized global variables) and zeroing the .bss section (non-initialized
  * global variables) and before the main() entry point. The function is placed
- * in a special section called .preinit_array. .preinit_array hold pointers
+ * in a special section called .preinit_array. preinit_array hold pointers
  * to functions that should be executed before any other initialization
  * functions, including C++ static constructors. It allows very early
  * initialization tasks that need to be completed before any dynamic linking
  * or library initialization occurs.
- * The memory manager requires to be initialized prior to any malloc() done
- * in any static constructors. This early initialization applies only for GCC
- * and in that case, sl_memory_init() is not called by the component sl_system.
+ *
+ * When sl_memory_init() is called early during the GCC/G++ startup code,
+ * sl_memory_init() is not called by the component sl_system.
  ******************************************************************************/
 static void sl_memory_preinit(void) {
   sl_memory_init();
@@ -58,6 +61,42 @@ static void sl_memory_preinit(void) {
 
 __attribute__((used, section(".preinit_array")))
 static void (*preinit_array)(void) = sl_memory_preinit;
+#endif
+
+#if defined(__IAR_SYSTEMS_ICC__)
+/***************************************************************************//**
+ * Initializes the memory manager.
+ *
+ * @note This special C++ class and its associated global object allows the
+ * memory manager sl_memory_init() to be initialized prior to any malloc() done
+ * in any static global objects' constructors.
+ * It serves the same purpose as the C function sl_memory_preinit() used for
+ * GCC/G++ early initialization above. It will use the special section
+ * .preinit_array.
+ *
+ * The IAR "#pragma early_dynamic_initialization" marks certain global objects
+ * for earlier initialization by registering their constructor to the
+ * .preinit_array section. When sl_memory_init() is called early during the
+ * IAR startup code (i.e. after copying in RAM the .data section
+ * (initialized global variables) and zeroing the .bss section (non-initialized
+ * global variables) and before the main() entry point), sl_memory_init()
+ * is not called by the component sl_system.
+ ******************************************************************************/
+#pragma early_dynamic_initialization
+class sl_memory_preinit
+{
+public:
+  sl_memory_preinit()
+  {
+    sl_memory_init();
+  }
+
+  ~sl_memory_preinit()
+  {
+  }
+};
+
+sl_memory_preinit sl_memory_preinit_obj;
 #endif
 
 //--------------------------------------------------------------------------

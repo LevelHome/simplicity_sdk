@@ -151,6 +151,11 @@ int64_t divide_integer(int64_t dividend, int32_t divisor);
 /// Get the number of elements in an array (must not be used with pointers)
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
 
+/// Get the size of a structure member
+#define MEMBER_SIZE(type, member) (sizeof( ((type *)0)->member ))
+
+#define LIFETIME_INFINITE 0xFFFFFFFF
+
 // 32bit addition with saturation
 static inline uint32_t add32sat(uint32_t a, uint32_t b)
 {

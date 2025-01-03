@@ -87,7 +87,7 @@ MISRAC_ENABLE
 static bool bootload_verifySecureBoot(uint32_t startAddress);
 
 static void flashData(uint32_t address,
-                      uint8_t  data[],
+                      const uint8_t  data[],
                       size_t   length);
 
 static bool getSignatureX(ApplicationProperties_t *appProperties,
@@ -150,10 +150,10 @@ static uint32_t getHighestApplicationVersionSeen(void)
 #endif
 
 static void flashData(uint32_t address,
-                      uint8_t  data[],
+                      const uint8_t  data[],
                       size_t   length)
 {
-  const uint32_t pageSize = (uint32_t)FLASH_PAGE_SIZE;
+  const uint32_t pageSize = FLASH_PAGE_SIZE;
 
   // Erase the page if write starts at a page boundary
   if (address % pageSize == 0UL) {
@@ -203,7 +203,8 @@ static bool bootload_verifySecureBoot(uint32_t startAddress)
 
   BareBootTable_t *appStart = (BareBootTable_t *)startAddress;
   uint32_t appProps = (uint32_t)appStart->signature;
-  uint32_t appSignatureX, appSignatureY;
+  uint32_t appSignatureX;
+  uint32_t appSignatureY;
   ApplicationProperties_t *appProperties =
     (ApplicationProperties_t *)(appProps);
 
@@ -215,10 +216,8 @@ static bool bootload_verifySecureBoot(uint32_t startAddress)
   }
 
 #if !defined(_SILICON_LABS_GECKO_INTERNAL_SDID_80)
-  if (PARSER_REQUIRE_ANTI_ROLLBACK_PROTECTION) {
-    if (!bootload_verifyApplicationVersion(appProperties->app.version, true)) {
-      return false;
-    }
+  if (PARSER_REQUIRE_ANTI_ROLLBACK_PROTECTION && !bootload_verifyApplicationVersion(appProperties->app.version, true)) {
+    return false;
   }
 #endif
 
@@ -314,7 +313,7 @@ SL_WEAK void bootload_applicationCallback(uint32_t address,
                                           void     *context)
 {
 #if defined(BTL_PARSER_SUPPORT_DELTA_DFU)
-  BootloaderParserContext_t *ctx = (BootloaderParserContext_t *) context;
+  const BootloaderParserContext_t *ctx = (BootloaderParserContext_t *) context;
   if (ctx->parserContext.newFwCRC != 0x00) {
     uint32_t startOfAppSpace = BTL_APPLICATION_BASE;
     uint32_t pc = *(uint32_t *)(startOfAppSpace + 4);
@@ -371,7 +370,7 @@ SL_WEAK void bootload_bootloaderCallback(uint32_t offset,
   //    Skip offset > (uint32_t) (UINT32_MAX - BTL_UPGRADE_LOCATION)
   //     if BTL_UPGRADE_LOCATION is zero
   #if (BTL_UPGRADE_LOCATION != 0UL)
-  if ((offset > (uint32_t) (UINT32_MAX - BTL_UPGRADE_LOCATION))
+  if ((offset > UINT32_MAX - BTL_UPGRADE_LOCATION)
       || (address >= max_address))
   #else
   if (address >= max_address)
@@ -385,7 +384,7 @@ SL_WEAK void bootload_bootloaderCallback(uint32_t offset,
 
   // ii) Semantically equivalent to (address + length > max_address),
   //     but without the risk of integer overflow (or underflow, because of (i))
-  if (length > (uint32_t) (max_address - address)) {
+  if (length > max_address - address) {
     BTL_DEBUG_PRINT("OOB, length too large; (address) 0x");
     BTL_DEBUG_PRINT_WORD_HEX(address);
     BTL_DEBUG_PRINT(", (length) 0x");
@@ -398,10 +397,8 @@ SL_WEAK void bootload_bootloaderCallback(uint32_t offset,
   // if the bootloader upgrade location overlaps with the application.
   // This ensures that application is not misinterpreted as valid when
   // bootloader upgrade has started
-  if (offset == 0UL) {
-    if (BTL_UPGRADE_LOCATION < (uint32_t)(mainBootloaderTable->endOfAppSpace)) {
-      flash_erasePage((uint32_t)(mainBootloaderTable->startOfAppSpace));
-    }
+  if (offset == 0UL && BTL_UPGRADE_LOCATION < (uint32_t)(mainBootloaderTable->endOfAppSpace)) {
+    flash_erasePage((uint32_t)(mainBootloaderTable->startOfAppSpace));
   }
 
   flashData(address, data, length);
@@ -420,7 +417,7 @@ bool bootload_checkApplicationPropertiesMagic(void *appProperties)
 #endif
 
   uint8_t magicRev[16U] = APPLICATION_PROPERTIES_REVERSED;
-  uint8_t *magic = (uint8_t *)appProperties;
+  const uint8_t *magic = (uint8_t *)appProperties;
 
   for (size_t i = 0U; i < 16U; i++) {
     if (magicRev[15U - i] != magic[i]) {
@@ -433,11 +430,11 @@ bool bootload_checkApplicationPropertiesMagic(void *appProperties)
 
 bool bootload_checkApplicationPropertiesVersion(void *appProperties)
 {
-  ApplicationProperties_t *appProp = (ApplicationProperties_t *)appProperties;
+  const ApplicationProperties_t *appProp = (ApplicationProperties_t *)appProperties;
   // Compatibility check of the application properties struct.
   if (((appProp->structVersion & APPLICATION_PROPERTIES_VERSION_MAJOR_MASK)
        >> APPLICATION_PROPERTIES_VERSION_MAJOR_SHIFT)
-      > (uint32_t)APPLICATION_PROPERTIES_VERSION_MAJOR) {
+      > APPLICATION_PROPERTIES_VERSION_MAJOR) {
     return false;
   }
   return true;
@@ -688,7 +685,7 @@ void bootload_removeStoredApplicationVersions(void)
 #endif
 }
 
-bool bootload_gotCertificate(void *appProp)
+bool bootload_gotCertificate(const void *appProp)
 {
 #if defined(BOOTLOADER_SUPPORT_CERTIFICATES) && (BOOTLOADER_SUPPORT_CERTIFICATES == 1)
   if (appProp == NULL) {
@@ -720,7 +717,7 @@ bool bootload_gotCertificate(void *appProp)
 #endif
 }
 
-bool bootload_verifyCertificate(void *cert)
+bool bootload_verifyCertificate(const void *cert)
 {
 #if defined(BOOTLOADER_SUPPORT_CERTIFICATES) && (BOOTLOADER_SUPPORT_CERTIFICATES == 1)
   if (cert == NULL) {
@@ -775,7 +772,7 @@ bool bootload_verifyCertificate(void *cert)
 #endif
 }
 
-bool bootload_verifyApplicationCertificate(void *appProp, void *gotCert)
+bool bootload_verifyApplicationCertificate(const void *appProp, const void *gotCert)
 {
 #if defined(BOOTLOADER_SUPPORT_CERTIFICATES) && (BOOTLOADER_SUPPORT_CERTIFICATES == 1)
   ApplicationProperties_t *appProperties = (ApplicationProperties_t *)(appProp);
@@ -859,7 +856,7 @@ SL_WEAK bool bootload_commitBootloaderUpgrade(uint32_t upgradeAddress, uint32_t 
   sli_se_mailbox_execute_command(&applyImage);
 
   // Should never get here
-  response = sli_se_mailbox_read_response();
+  sli_se_mailbox_read_response();
   return false;
 #elif defined(CRYPTOACC_PRESENT)
   // Set reset code for when we get back
@@ -904,7 +901,7 @@ bool bootload_lockApplicationArea(uint32_t startAddress, uint32_t endAddress)
   }
 
   uint32_t volatile * pageLockAddr;
-  const uint32_t pageSize = (uint32_t)FLASH_PAGE_SIZE;
+  const uint32_t pageSize = FLASH_PAGE_SIZE;
   uint32_t pageNo = ((startAddress - (startAddress % pageSize)) - FLASH_BASE) / pageSize;
   uint32_t endPageNo = ((endAddress - (endAddress % pageSize) + pageSize) - FLASH_BASE) / pageSize;
 
@@ -973,7 +970,7 @@ SL_WEAK bool bootload_commitSeUpgrade(uint32_t upgradeAddress)
   sli_se_mailbox_execute_command(&applyImage);
 
   // Should never get here
-  response = sli_se_mailbox_read_response();
+  sli_se_mailbox_read_response();
   return false;
 }
 

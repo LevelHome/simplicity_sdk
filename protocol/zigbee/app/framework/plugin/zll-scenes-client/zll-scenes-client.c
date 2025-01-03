@@ -20,13 +20,13 @@
 
 #include "zap-cluster-command-parser.h"
 
-bool sl_zigbee_af_scenes_cluster_enhanced_add_scene_response_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_scenes_cluster_enhanced_add_scene_response_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_scenes_cluster_enhanced_add_scene_response_command_t cmd_data;
 
   if (zcl_decode_scenes_cluster_enhanced_add_scene_response_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   return sl_zigbee_af_scenes_client_parse_add_scene_response(cmd,
@@ -35,13 +35,13 @@ bool sl_zigbee_af_scenes_cluster_enhanced_add_scene_response_cb(sl_zigbee_af_clu
                                                              cmd_data.sceneId);
 }
 
-bool sl_zigbee_af_scenes_cluster_enhanced_view_scene_response_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_scenes_cluster_enhanced_view_scene_response_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_scenes_cluster_enhanced_view_scene_response_command_t cmd_data;
 
   if (zcl_decode_scenes_cluster_enhanced_view_scene_response_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   return sl_zigbee_af_scenes_client_parse_view_scene_response(cmd,
@@ -53,21 +53,20 @@ bool sl_zigbee_af_scenes_cluster_enhanced_view_scene_response_cb(sl_zigbee_af_cl
                                                               cmd_data.extensionFieldSets);
 }
 
-bool sl_zigbee_af_scenes_cluster_copy_scene_response_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_scenes_cluster_copy_scene_response_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_scenes_cluster_copy_scene_response_command_t cmd_data;
 
   if (zcl_decode_scenes_cluster_copy_scene_response_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_scenes_cluster_println("RX: CopySceneResponse 0x%x, 0x%2x, 0x%x",
+  sl_zigbee_af_scenes_cluster_println("RX: CopySceneResponse 0x%02X, 0x%04X, 0x%02X",
                                       cmd_data.status,
                                       cmd_data.groupIdFrom,
                                       cmd_data.sceneIdFrom);
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
 uint32_t sl_zigbee_af_zll_scenes_cluster_client_command_parse(sl_service_opcode_t opcode,
@@ -76,29 +75,27 @@ uint32_t sl_zigbee_af_zll_scenes_cluster_client_command_parse(sl_service_opcode_
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_COPY_SCENE_RESPONSE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_scenes_cluster_copy_scene_response_cb(cmd);
+        status = sl_zigbee_af_scenes_cluster_copy_scene_response_cb(cmd);
         break;
       }
       case ZCL_ENHANCED_ADD_SCENE_RESPONSE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_scenes_cluster_enhanced_add_scene_response_cb(cmd);
+        status = sl_zigbee_af_scenes_cluster_enhanced_add_scene_response_cb(cmd);
         break;
       }
       case ZCL_ENHANCED_VIEW_SCENE_RESPONSE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_scenes_cluster_enhanced_view_scene_response_cb(cmd);
+        status = sl_zigbee_af_scenes_cluster_enhanced_view_scene_response_cb(cmd);
         break;
       }
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

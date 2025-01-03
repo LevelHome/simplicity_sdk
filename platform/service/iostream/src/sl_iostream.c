@@ -33,7 +33,7 @@
 #include "sl_assert.h"
 #include "sl_core.h"
 
-#if defined(SL_CATALOG_KERNEL_PRESENT)
+#if defined(SL_CATALOG_KERNEL_PRESENT) && !defined(SL_IOSTREAM_FORCE_BAREMETAL)
 #include "cmsis_os2.h"
 #include "sli_cmsis_os2_ext_task_register.h"
 #endif
@@ -48,7 +48,7 @@
  *******************************   DEFINES   ***********************************
  ******************************************************************************/
 
-#if defined(SL_CATALOG_KERNEL_PRESENT)
+#if defined(SL_CATALOG_KERNEL_PRESENT) && !defined(SL_IOSTREAM_FORCE_BAREMETAL)
 #define TASK_REGISTER_ID_INVALID   0xFF
 #endif
 
@@ -56,7 +56,7 @@
  ***************************  LOCAL VARIABLES   ********************************
  ******************************************************************************/
 
-#if defined(SL_CATALOG_KERNEL_PRESENT)
+#if defined(SL_CATALOG_KERNEL_PRESENT) && !defined(SL_IOSTREAM_FORCE_BAREMETAL)
 static sli_task_register_id_t sli_task_register_id = TASK_REGISTER_ID_INVALID;
 static sl_iostream_t  *sli_iostream_system_default = NULL;
 #endif
@@ -86,14 +86,14 @@ static void stream_putchar(char character,
  ******************************************************************************/
 sl_status_t sl_iostream_set_default(sl_iostream_t  *stream)
 {
-#if defined(SL_CATALOG_KERNEL_PRESENT)
+#if defined(SL_CATALOG_KERNEL_PRESENT) && !defined(SL_IOSTREAM_FORCE_BAREMETAL)
   sli_task_register_id_t reg_id;
   sl_status_t status;
 #endif
   CORE_DECLARE_IRQ_STATE;
 
   CORE_ENTER_CRITICAL();
-#if defined(SL_CATALOG_KERNEL_PRESENT)
+#if defined(SL_CATALOG_KERNEL_PRESENT) && !defined(SL_IOSTREAM_FORCE_BAREMETAL)
   if (osThreadGetId() != NULL) {
     reg_id = sli_task_register_id;
     if (reg_id == TASK_REGISTER_ID_INVALID) {
@@ -106,7 +106,7 @@ sl_status_t sl_iostream_set_default(sl_iostream_t  *stream)
   sli_iostream_default = stream;
   CORE_EXIT_CRITICAL();
 
-#if defined(SL_CATALOG_KERNEL_PRESENT)
+#if defined(SL_CATALOG_KERNEL_PRESENT) && !defined(SL_IOSTREAM_FORCE_BAREMETAL)
   if (osThreadGetId() != NULL) {
     status = sli_osTaskRegisterSetValue(NULL, reg_id, (uint32_t)stream);
     EFM_ASSERT(status == SL_STATUS_OK);
@@ -121,7 +121,7 @@ sl_status_t sl_iostream_set_default(sl_iostream_t  *stream)
  ******************************************************************************/
 sl_iostream_t *sl_iostream_get_default(void)
 {
-#if defined(SL_CATALOG_KERNEL_PRESENT)
+#if defined(SL_CATALOG_KERNEL_PRESENT) && !defined(SL_IOSTREAM_FORCE_BAREMETAL)
   sl_status_t status;
   sli_task_register_id_t reg_id;
 #endif
@@ -129,13 +129,13 @@ sl_iostream_t *sl_iostream_get_default(void)
   CORE_DECLARE_IRQ_STATE;
 
   CORE_ENTER_CRITICAL();
-#if defined(SL_CATALOG_KERNEL_PRESENT)
+#if defined(SL_CATALOG_KERNEL_PRESENT) && !defined(SL_IOSTREAM_FORCE_BAREMETAL)
   reg_id = sli_task_register_id;
 #endif
   stream = sli_iostream_default;
   CORE_EXIT_CRITICAL();
 
-#if defined(SL_CATALOG_KERNEL_PRESENT)
+#if defined(SL_CATALOG_KERNEL_PRESENT) && !defined(SL_IOSTREAM_FORCE_BAREMETAL)
   if (osThreadGetId() != NULL) {
     if (reg_id != TASK_REGISTER_ID_INVALID) {
       uint32_t reg;
@@ -159,7 +159,7 @@ sl_iostream_t *sl_iostream_get_default(void)
 /***************************************************************************//**
  * Set systemwide default IO stream
  ******************************************************************************/
-#if defined(SL_CATALOG_KERNEL_PRESENT)
+#if defined(SL_CATALOG_KERNEL_PRESENT) && !defined(SL_IOSTREAM_FORCE_BAREMETAL)
 sl_status_t sl_iostream_set_system_default(sl_iostream_t *stream)
 {
   sl_status_t status = SL_STATUS_OK;

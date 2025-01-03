@@ -73,7 +73,7 @@ uint8_t sli_zigbee_af_ota_page_request_handler(uint8_t clientEndpoint,
 {
   uint32_t totalSize;
   uint8_t status;
-  sl_zigbee_af_ota_bootload_cluster_println("RX ImagePageReq mfgId:%2x imageType:%2x, file:%4x, offset:%4x dataSize:%d pageSize%2x spacing:%d",
+  sl_zigbee_af_ota_bootload_cluster_println("RX ImagePageReq mfgId:%04X imageType:%04X, file:%08X, offset:%08X dataSize:%d pageSize%04X spacing:%d",
                                             id->manufacturerId,
                                             id->imageTypeId,
                                             id->firmwareVersion,

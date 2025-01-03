@@ -19,14 +19,18 @@ include:
     file_list:
       - path: sl_joystick.h
 config_file:
-  - path: "config/sl_joystick_config.h"
+  - path: "config/s2/sl_joystick_config.h"
     file_id: joystick_config
+    condition: [device_series_2]
+  - path: "config/s3/sl_joystick_config.h"
+    file_id: joystick_config
+    condition: [device_series_3]
 provides:
   - name: joystick
     allow_multiple: false
 requires:
-  - name: emlib_gpio
-  - name: emlib_iadc
+  - name: gpio
+  - name: hal_generic_adc
   - name: hal_generic_common
   - name: clock_manager_runtime
   - name: status

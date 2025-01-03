@@ -28,30 +28,7 @@ class CALC_Misc(ICalculator):
         Args:
             model (ModelRoot) : Builds the variables specific to this calculator
         """
-        self._addModelRegister(model, 'MODEM.CTRL0.FRAMEDETDEL'        , int, ModelVariableFormat.HEX )
-
-
-        self._addModelRegister(model, 'MODEM.CTRL1.SYNC1INV'           , int, ModelVariableFormat.HEX )
-
-        # FIXME: amtudave: Restore the conditional after tri sync detection added to sync det
-        self._addModelRegister(model, 'MODEM.CTRL1.SYNCERRORS'         , int, ModelVariableFormat.HEX )
-
-        self._addModelRegister(model, 'MODEM.CTRL2.BRDIVA'             , int, ModelVariableFormat.HEX )
-        self._addModelRegister(model, 'MODEM.CTRL2.BRDIVB'             , int, ModelVariableFormat.HEX )
-
-        self._addModelRegister(model, 'MODEM.CTRL4.ADCSATDENS'         , int, ModelVariableFormat.HEX )
-        self._addModelRegister(model, 'MODEM.CTRL4.ADCSATLEVEL'        , int, ModelVariableFormat.HEX )
-
-        self._addModelRegister(model, 'MODEM.CTRL5.BRCALMODE'          , int, ModelVariableFormat.HEX )
-        self._addModelRegister(model, 'MODEM.CTRL5.DETDEL'             , int, ModelVariableFormat.HEX )
-
-        self._addModelRegister(model, 'MODEM.PRE.DSSSPRE'              , int, ModelVariableFormat.HEX )
-
-        self._addModelRegister(model, 'MODEM.TIMING.FASTRESYNC'        , int, ModelVariableFormat.HEX )
-        self._addModelRegister(model, 'MODEM.TIMING.TIMSEQSYNC'        , int, ModelVariableFormat.HEX )
-        self._addModelRegister(model, 'MODEM.TIMING.TSAGCDEL'          , int, ModelVariableFormat.HEX )
-
-        self._addModelRegister(model, 'MODEM.AFC.AFCTXMODE'            , int, ModelVariableFormat.HEX )
+        self._build_misc_regs(model)
 
         self._addModelVariable(model, 'in_2fsk_opt_scope', bool, ModelVariableFormat.DECIMAL)
 
@@ -63,16 +40,46 @@ class CALC_Misc(ICalculator):
                 ['Custom', 0, 'Custom stack'],
                 ['EmberPHY', 1, 'EFR32 EmberPHY (Zigbee/Thread)'],
                 ['Thread', 2, 'Thread on RAIL'],
-                ['BLE', 3, 'BLE'],
+                ['BLE', 3, 'BLE on RAIL'],
                 ['Connect', 4, 'Connect on RAIL'],
-                ['Zigbee', 5, 'Zigbee on rail'],
+                ['Zigbee', 5, 'Zigbee on RAIL'],
                 ['ZWave', 6, 'ZWave on RAIL'],
-                ['WiSUN', 7, 'WiSUN on RAIL']
+                ['WiSUN', 7, 'WiSUN on RAIL'],
+                ['Custom_802154', 8, 'Custom 802.15.4 on RAIL'],
+                ['Sidewalk', 9, 'Sidewalk on RAIL'],
+                ['Longrange', 10, 'Longrange'],
+                ['Mbus', 11, 'Mbus'],
+                ['Sigfox', 12, 'Sigfox'],
             ])
 
         self._addModelVariable(model, 'stack_info', int, ModelVariableFormat.DECIMAL,
                                desc='information dedicated to stack', is_array=True)
 
+
+    def _build_misc_regs(self, model):
+        self._addModelRegister(model, 'MODEM.CTRL0.FRAMEDETDEL', int, ModelVariableFormat.HEX)
+
+        self._addModelRegister(model, 'MODEM.CTRL1.SYNC1INV', int, ModelVariableFormat.HEX)
+
+        # FIXME: amtudave: Restore the conditional after tri sync detection added to sync det
+        self._addModelRegister(model, 'MODEM.CTRL1.SYNCERRORS', int, ModelVariableFormat.HEX)
+
+        self._addModelRegister(model, 'MODEM.CTRL2.BRDIVA', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'MODEM.CTRL2.BRDIVB', int, ModelVariableFormat.HEX)
+
+        self._addModelRegister(model, 'MODEM.CTRL4.ADCSATDENS', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'MODEM.CTRL4.ADCSATLEVEL', int, ModelVariableFormat.HEX)
+
+        self._addModelRegister(model, 'MODEM.CTRL5.BRCALMODE', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'MODEM.CTRL5.DETDEL', int, ModelVariableFormat.HEX)
+
+        self._addModelRegister(model, 'MODEM.PRE.DSSSPRE', int, ModelVariableFormat.HEX)
+
+        self._addModelRegister(model, 'MODEM.TIMING.FASTRESYNC', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'MODEM.TIMING.TIMSEQSYNC', int, ModelVariableFormat.HEX)
+        self._addModelRegister(model, 'MODEM.TIMING.TSAGCDEL', int, ModelVariableFormat.HEX)
+
+        self._addModelRegister(model, 'MODEM.AFC.AFCTXMODE', int, ModelVariableFormat.HEX)
 
     def calc_misc(self, model):
         """

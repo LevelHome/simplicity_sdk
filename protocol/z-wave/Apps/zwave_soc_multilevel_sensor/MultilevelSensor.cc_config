@@ -1,30 +1,32 @@
 zw_cc_multilevel_sensor:
-  sensors:
-    air_temperature:
-      name: SENSOR_NAME_AIR_TEMPERATURE
-      scales:
-        - SENSOR_SCALE_CELSIUS
-        - SENSOR_SCALE_FAHRENHEIT
-    humidity:
-      name: SENSOR_NAME_HUMIDITY
-      scales:
-        - SENSOR_SCALE_PERCENTAGE
-    ambient_light:
-      name: SENSOR_NAME_ILLUMINANCE
-      scales:
-        - SENSOR_SCALE_LUX
-    motion_axis_x:
-      name: SENSOR_NAME_ACCELERATION_X
-      scales:
-        - SENSOR_SCALE_METER_SQUARE_SECOND
-    motion_axis_y:
-      name: SENSOR_NAME_ACCELERATION_Y
-      scales:
-        - SENSOR_SCALE_METER_SQUARE_SECOND
-    motion_axis_z:
-      name: SENSOR_NAME_ACCELERATION_Z
-      scales:
-        - SENSOR_SCALE_METER_SQUARE_SECOND
+  endpoints:
+    - endpoint: 0
+      sensors:
+        air_temperature:
+          name: SENSOR_NAME_AIR_TEMPERATURE
+          scales:
+            - SENSOR_SCALE_CELSIUS
+            - SENSOR_SCALE_FAHRENHEIT
+        humidity:
+          name: SENSOR_NAME_HUMIDITY
+          scales:
+            - SENSOR_SCALE_PERCENTAGE
+        ambient_light:
+          name: SENSOR_NAME_ILLUMINANCE
+          scales:
+            - SENSOR_SCALE_LUX
+        motion_axis_x:
+          name: SENSOR_NAME_ACCELERATION_X
+          scales:
+            - SENSOR_SCALE_METER_SQUARE_SECOND
+        motion_axis_y:
+          name: SENSOR_NAME_ACCELERATION_Y
+          scales:
+            - SENSOR_SCALE_METER_SQUARE_SECOND
+        motion_axis_z:
+          name: SENSOR_NAME_ACCELERATION_Z
+          scales:
+            - SENSOR_SCALE_METER_SQUARE_SECOND
 zw_cc_configuration:
   configurations:
     - name: "Minimum temperature limit"

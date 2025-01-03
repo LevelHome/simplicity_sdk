@@ -36,7 +36,7 @@
 #include "esl_tag_image.h"
 #include "esl_tag_core.h"
 #include "esl_tag_log.h"
-#include "em_common.h"
+#include "sl_common.h"
 #include "gatt_db.h"
 #include "nvm3.h"
 #include "nvm3_hal_flash.h"
@@ -132,6 +132,8 @@ sl_status_t esl_image_chunk_received(uint8_t const *data,
       image_registry.pending_write = 0;
       // prepare buffer for the transfer
       image_chunk_buffer.next_nvm_obj_key = active_image->first_nvm_obj_key;
+      // (re)initialize decompressor on start
+      esl_image_unpack_init();
     }
 
     // check for overflow condition
@@ -275,7 +277,8 @@ void esl_image_characteristic_update(void)
 }
 
 sl_status_t esl_image_add(uint16_t width, uint16_t height,
-                          uint8_t bits_per_pixel)
+                          uint8_t bits_per_pixel,
+                          sl_bt_ots_object_type_t *type)
 {
   sl_status_t result = SL_STATUS_INVALID_STATE;
   esl_state_t state  = esl_core_get_status();
@@ -302,10 +305,6 @@ sl_status_t esl_image_add(uint16_t width, uint16_t height,
 
       if (chunks <= available) {
         uint8_t new_image_index = image_registry.images_count;
-        const sl_bt_ots_object_type_t* type;
-        // currently, there are only two types of images available
-        type = bits_per_pixel == 1 ? &esl_image_type_1b : &esl_image_type_2b;
-
         // store maximum size of the image object
         image_object[new_image_index].max_size = (uint16_t)size;
         // set actual size to zero, initially

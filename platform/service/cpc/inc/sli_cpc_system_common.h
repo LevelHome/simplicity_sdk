@@ -35,6 +35,7 @@
 #include "sl_enum.h"
 #include "sl_status.h"
 #include "sl_cpc.h"
+#include "sli_cpc_bootloader.h"
 #include <stddef.h>
 #include <stdarg.h>
 
@@ -419,6 +420,18 @@ SL_ENUM_GENERIC(sli_cpc_system_ep_frame_type_t, uint8_t) {
   SYSTEM_EP_UFRAME, ///< U-Frame
   SYSTEM_EP_IFRAME  ///< I-Frame
 };
+
+/***************************************************************************//**
+ * Bootloader Information.
+ *
+ * @note
+ *   Used with the value returned by a property-get on PROP_BOOTLOADER_INFO.
+ ******************************************************************************/
+typedef struct {
+  sl_cpc_bootloader_t type;
+  uint32_t version;
+  uint32_t capabilities;
+} sli_cpc_system_bootloader_info_t;
 
 /***************************************************************************//**
  * Enter IRQ command parameters

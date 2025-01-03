@@ -21,10 +21,13 @@ provides:
     allow_multiple: true
   - name: iostream_transport
     allow_multiple: true
+  - name: iostream_console_support
+    allow_multiple: true
 requires:
   - name: dmadrv
   - name: iostream_usart_core
   - name: device_has_usart
+  - name: iostream
 template_contribution:
   - name: iostream_usart_instances
     value: "{{instance}}"

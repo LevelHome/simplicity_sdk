@@ -9,7 +9,7 @@ from rail_scripts.rail_model import RAILModel
 from rail_scripts.rail_model_types import *
 from rail_scripts import rail_model_types
 
-from host_py_rm_studio_internal import RM_Factory
+from host_py_rm_studio_internal import RM_Factory, RM_S1_PART_FAMILY_NAMES, RM_S2_PART_FAMILY_NAMES
 from pyradioconfig.calculator_model_framework.CalcManager import CalcManager
 from pycalcmodel import *
 
@@ -20,9 +20,6 @@ WRITE_ONLY_REGISTERS = [
 ]
 
 class RAILAdapter(object):
-
-  _MAX_NUM_REG_BASES = 8
-  _MAX_NUM_REG_BASES_SOL = 16
 
   _REG_BASES = (
     0x40080000,
@@ -43,13 +40,7 @@ class RAILAdapter(object):
     0xA8040000,
     0xB0000000,
     0xB5000000,
-    0xA6040000	
-  )
-  _REG_BASES_SIXG301 = (
-    0xA0200000,
-    0xA0210000,
-    0xA0220000,
-    0xB0000000,
+    0xA6040000
   )
 
   import os
@@ -120,6 +111,57 @@ class RAILAdapter(object):
   def _getRegNameFromFieldName(self, fieldname):
     (block, reg, field) = fieldname.split('.')
     return block + '.' + reg
+
+  def _getRegBasesFromFamily(self, family):
+    # Bit positions for base address and opcode
+    basePos = 25
+    opCodePos = 28
+    isSeries1or2 = True
+
+    if family in ["dumbo", "jumbo", "nerio", "nixi"]:
+      regBases = self._REG_BASES
+
+    elif family in ["panther", "lynx", "ocelot", "bobcat", "leopard", "margay", "caracal", "lion", "sol"]:
+      regBases = self._REG_BASES_EFR32XG2x
+
+      if family in ["sol"]:
+        # Sol has 16 base addresses because of its virtual registers defined at the same address.
+        # So let's consider basePos is 24 which is not true since bit position 24 is for the VERIFY bit
+        # but it's not used anyway
+        basePos = 24
+        regBases = self._REG_BASES_EFR32XG25
+
+    else:
+      # Series 3
+      isSeries1or2 = False
+      basePos = 24
+      ymlSource = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'generators/seqacc_regbases.yml')
+
+      try:
+        ymlRegBase = yaml.safe_load(open(ymlSource))
+      except FileNotFoundError:
+        raise Exception("YAML source file {} not found.".format(ymlSource))
+
+      try:
+        regBases = ymlRegBase[family.upper()]['BaseAddrCfgDefault']['BaseAddr']
+        basePos = ymlRegBase[family.upper()]['BaseAddrCfgDefault']['BasePos']
+      except KeyError:
+        raise Exception("Family part {} not found in {}. Please verify that this part is mentioned in it and it"
+                        "contains base addresses.".format(family.upper(), ymlSource))
+
+    maxNumRegBases = 2 ** (opCodePos - basePos)
+
+    if isSeries1or2:
+      if len(regBases) > maxNumRegBases:
+        raise Exception(("Number of register bases ({}) exceeds maximum allowed "
+                         "value ({}) for {}").format(len(regBases), maxNumRegBases, family))
+      regBases = {key: val for val, key in enumerate(regBases)}
+    else:
+      if (len(regBases) - 1) > maxNumRegBases:  # subtracting 1 to get rid of 0xFFFFFFFF key
+        raise Exception(("Number of register bases ({}) exceeds maximum allowed "
+                         "value ({}) for {}").format(len(regBases) - 1, maxNumRegBases, family))
+
+    self._regBases = regBases
 
 def getParserArgs():
   """

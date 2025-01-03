@@ -15,6 +15,10 @@ requires:
   - name: rail_util_ieee802154_fast_channel_switching
     condition:
       - "rail_ieee802154_supports_rx_channel_switching"
+# For concurrent listening on xG26
+  - name: rail_util_dma
+    condition:
+      - device_sdid_225
 # For concurrent listening on xG24
   - name: rail_util_dma
     condition:

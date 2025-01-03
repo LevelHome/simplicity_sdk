@@ -63,11 +63,11 @@ static int32_t receivePacket(BgapiPacket_t *packet)
 
     // Read the first byte
     requestedBytes = 1;
-    ret = uart_receiveBuffer(buf,
-                             requestedBytes,
-                             &receivedBytes,
-                             true,
-                             1000);
+    uart_receiveBuffer(buf,
+                       requestedBytes,
+                       &receivedBytes,
+                       true,
+                       1000);
   } while (packet->header.type != BGAPI_PACKET_TYPE_COMMAND);
 
   // Read the rest of the header
@@ -127,7 +127,7 @@ int32_t bootloader_bgapi_communication_start(void)
     // Sent evt_dfu_boot_failure
     BgapiPacket_t failEvent
       = BGAPI_EVENT_DFU_BOOT_FAILURE(SL_STATUS_SECURITY_IMAGE_CHECKSUM_ERROR);
-    ret = sendPacket(&failEvent);
+    sendPacket(&failEvent);
   }
   // Send evt_dfu_boot
   BgapiPacket_t event = BGAPI_EVENT_DFU_BOOT();
@@ -165,7 +165,7 @@ int32_t bootloader_bgapi_communication_main(ImageProperties_t *imageProps,
           // Do nothing -- command is deprecated
           response.header.command = DFU_FLASH_SET_ADDRESS;
           response.body.response.error = SL_STATUS_OK;
-          ret = sendPacket(&response);
+          sendPacket(&response);
           break;
 
         case DFU_FLASH_UPLOAD:
@@ -192,7 +192,7 @@ int32_t bootloader_bgapi_communication_main(ImageProperties_t *imageProps,
             response.body.response.error =
               SL_STATUS_SECURITY_IMAGE_CHECKSUM_ERROR;
           }
-          ret = sendPacket(&response);
+          sendPacket(&response);
           break;
 
         case DFU_FLASH_UPLOAD_FINISH:
@@ -204,30 +204,26 @@ int32_t bootloader_bgapi_communication_main(ImageProperties_t *imageProps,
             response.body.response.error =
               SL_STATUS_SECURITY_IMAGE_CHECKSUM_ERROR;
           }
-          ret = sendPacket(&response);
+          sendPacket(&response);
 
           if (imageProps->imageCompleted && imageProps->imageVerified) {
 #if defined(SEMAILBOX_PRESENT) || defined(CRYPTOACC_PRESENT)
-            if (imageProps->contents & BTL_IMAGE_CONTENT_SE) {
-              if (bootload_checkSeUpgradeVersion(imageProps->seUpgradeVersion)) {
-                // Install SE upgrade
+            if ((imageProps->contents & BTL_IMAGE_CONTENT_SE) && bootload_checkSeUpgradeVersion(imageProps->seUpgradeVersion)) {
+              // Install SE upgrade
 #if defined(BOOTLOADER_NONSECURE)
-                bootload_commitSeUpgrade();
+              bootload_commitSeUpgrade();
 #else
-                bootload_commitSeUpgrade(BTL_UPGRADE_LOCATION);
+              bootload_commitSeUpgrade(BTL_UPGRADE_LOCATION);
 #endif
-              }
             }
 #endif
-            if (imageProps->contents & BTL_IMAGE_CONTENT_BOOTLOADER) {
-              if (imageProps->bootloaderVersion > bootload_getBootloaderVersion()) {
-                // Install bootloader upgrade
+            if ((imageProps->contents & BTL_IMAGE_CONTENT_BOOTLOADER) && imageProps->bootloaderVersion > bootload_getBootloaderVersion()) {
+              // Install bootloader upgrade
 #if defined(BOOTLOADER_NONSECURE)
-                bootload_commitBootloaderUpgrade(imageProps->bootloaderUpgradeSize);
+              bootload_commitBootloaderUpgrade(imageProps->bootloaderUpgradeSize);
 #else
-                bootload_commitBootloaderUpgrade(BTL_UPGRADE_LOCATION, imageProps->bootloaderUpgradeSize);
+              bootload_commitBootloaderUpgrade(BTL_UPGRADE_LOCATION, imageProps->bootloaderUpgradeSize);
 #endif
-              }
             }
           }
           break;

@@ -29,7 +29,7 @@
  ******************************************************************************/
 
 #include "os.h"
-#include "em_common.h"
+#include "sl_common.h"
 #include "app_assert.h"
 #include "sl_bt_l2cap_transfer.h"
 #include "sli_bt_l2cap_transfer_adaptation.h"

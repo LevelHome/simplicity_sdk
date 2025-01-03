@@ -37,6 +37,7 @@
 extern "C" {
 #endif
 
+void aws_mbedtls_mutex_set_recursive(mbedtls_threading_mutex_t * mutex);
 void aws_mbedtls_mutex_init(mbedtls_threading_mutex_t   *mutex);
 void aws_mbedtls_mutex_free(mbedtls_threading_mutex_t   *mutex);
 int  aws_mbedtls_mutex_lock(mbedtls_threading_mutex_t   *mutex);

@@ -30,7 +30,7 @@ from . import util
 from .event import LocalEvent
 from .mdl import NamedModelID
 from .statedict import StateDictObject
-from .util import ConnectionParams
+from .util import ConnectionParams, ConnectionDataLength
 
 
 class Network(StateDictObject):
@@ -318,6 +318,7 @@ class ConnectionInfo(StateDictObject):
     timeout_ms: int
     mtu: int
     step: ConnectionStep = ConnectionStep.INACTIVE
+    conn_data_len: Optional[ConnectionDataLength] = None
     conn_params: Optional[ConnectionParams] = None
 
     def __post_init__(self):
@@ -327,6 +328,8 @@ class ConnectionInfo(StateDictObject):
             self.ini_phy = GapPhy.from_int(self.ini_phy)
         if not isinstance(self.step, ConnectionStep):
             self.step = ConnectionStep.from_int(self.step)
+        if not self.conn_data_len:
+            self.conn_data_len = None
         if not self.conn_params:
             self.conn_params = None
         elif isinstance(self.conn_params, Mapping):

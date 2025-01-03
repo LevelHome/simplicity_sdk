@@ -47,6 +47,7 @@ requires:
   - name: component_catalog
   - name: nvm3_lib
   - name: memory_manager
+  - name: sl_common
   - name: app_timer
 
 template_contribution:

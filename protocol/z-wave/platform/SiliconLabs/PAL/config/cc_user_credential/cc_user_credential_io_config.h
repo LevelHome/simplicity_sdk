@@ -19,10 +19,6 @@
 
 // <h> Command Class User Credential I/O Configuration
 
-// <o U3C_BUFFER_SIZE_USER_NAME> Size of buffer for holding User Names <1..255:1> <f.d>
-// <i> Default: 255
-#define U3C_BUFFER_SIZE_USER_NAME  255
-
 // <o U3C_BUFFER_SIZE_CREDENTIAL_DATA> Size of buffer for holding Credential Data <1..255:1> <f.d>
 // <i> Default: 100
 #define U3C_BUFFER_SIZE_CREDENTIAL_DATA  100

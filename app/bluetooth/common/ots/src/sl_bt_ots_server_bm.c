@@ -30,7 +30,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "sl_status.h"
-#include "em_core.h"
+#include "sl_core.h"
 #include "sli_bt_ots_server_adaptation.h"
 #include "sl_bt_ots_server_config.h"
 #include "sl_bt_ots_server_instances.h"

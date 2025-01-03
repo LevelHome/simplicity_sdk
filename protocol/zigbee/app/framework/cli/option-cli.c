@@ -31,7 +31,7 @@ void sli_zigbee_af_cli_service_discovery_callback(const sl_zigbee_af_service_dis
     // Do nothing
   } else if (result->zdoRequestClusterId == MATCH_DESCRIPTORS_REQUEST) {
     const sl_zigbee_af_endpoint_list_t* epList = (const sl_zigbee_af_endpoint_list_t*)result->responseData;
-    sl_zigbee_app_debug_println("Match %py from 0x%04X, ep %d",
+    sl_zigbee_app_debug_println("Match %sy from 0x%04X, ep %d",
                                 "discover",
                                 result->matchAddress,
                                 epList->list[0]);
@@ -99,7 +99,7 @@ void optionBindingTablePrintCommand(sl_cli_command_arg_t *arguments)
         sl_zigbee_core_debug_print("\n");
       }
     } else {
-      sl_zigbee_core_debug_print("sl_zigbee_get_binding Error: 0x%8X\n", status);
+      sl_zigbee_core_debug_print("sl_zigbee_get_binding Error: 0x%08X\n", status);
       sl_zigbee_af_app_flush();
     }
     sl_zigbee_af_app_flush();
@@ -226,7 +226,7 @@ void optionInstallCodeCommand(sl_cli_command_arg_t *arguments)
       sl_zigbee_app_debug_println("ERR: Install Code must be 8, 10, 14, or 18 bytes in "
                                   "length");
     } else {
-      sl_zigbee_app_debug_println("ERR: AES-MMO hash failed: 0x%x", status);
+      sl_zigbee_app_debug_println("ERR: AES-MMO hash failed: 0x%02X", status);
     }
     return;
   }

@@ -15,6 +15,9 @@ description: >
 
   - The AoD mode parameters are configured globally in this component.
 category: Bluetooth|Application|GATT Services
+metadata:
+  sbom:
+    license: Zlib
 quality: production
 root_path: app/bluetooth/common/gatt_service_cte
 tag:

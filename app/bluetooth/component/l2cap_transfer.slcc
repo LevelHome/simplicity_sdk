@@ -6,6 +6,9 @@ description: >
   link layer. The component serves as an API to access the L2CAP data
   transfer functionalites.
 category: Bluetooth|Application|Miscellaneous
+metadata:
+  sbom:
+    license: Zlib
 quality: evaluation
 root_path: app/bluetooth/common/l2cap_transfer
 tag:
@@ -40,6 +43,8 @@ requires:
   - name: component_catalog
   - name: power_manager
   - name: slist
+  - name: sl_common
+  - name: sl_core
 template_contribution:
   - name: bluetooth_on_event
     value:

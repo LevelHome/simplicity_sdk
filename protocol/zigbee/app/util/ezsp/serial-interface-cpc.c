@@ -296,7 +296,7 @@ WEAK_TEST sl_zigbee_ezsp_status_t serialSendCommand(void)
 
   test_print("CPC TX %d bytes\n", write_out);
 
-  // sl_zigbee_ezsp_trace_ezsp_verbose("serialSendCommand(): ID=0x%x Seq=0x%x",
+  // sl_zigbee_ezsp_trace_ezsp_verbose("serialSendCommand(): ID=0x%02X Seq=0x%02X",
   //                      ezspFrameContents[EZSP_FRAME_ID_INDEX],
   //                      ezspFrameContents[EZSP_SEQUENCE_INDEX]);
   // TODO check for error status...

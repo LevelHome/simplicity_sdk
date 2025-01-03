@@ -115,6 +115,44 @@
 
 // </e>
 
+// <e ESL_TAG_SYNC_SCAN_ENABLE> Custom intermediate state for temporary loss of sync
+// <i> Custom intermediate state to recover from temporary loss of sync. It can reduce advertising traffic caused by ESLs that have encountered an unexpected loss of PAwR sync.
+// <i> Requires the 'bluetooth_feature_sync_scanner' feature to be manually added to the project if enabled.
+// <i> Note: This is a non-standard ESL behavior that should be compatible with standard APs that are unaware of the feature.
+// <i> Default: Off
+#define ESL_TAG_SYNC_SCAN_ENABLE                 0
+
+// <o ESL_TAG_SCAN_TIMEOUT_SEC> Scanning timeout [seconds]<2-163>
+// <i> Specifies a custom grace period during which the ESL will attempt to resync by scanning after a PAwR train loss before entering the Unsynchronized state.
+// <i> This value is more of a trade-off between fast fallback to advertising if the scan doesn't succeed and the energy budget required to scan.
+// <i> If the value is considerably less than twice the typical PAwR interval of the target ESL network, the resynchronization attempt by scanning is likely to fail.
+// <i> Default: 11 seconds
+#define ESL_TAG_SCAN_TIMEOUT_SEC                 11
+
+// <o ESL_TAG_SCAN_COUNT_LIMIT> Successive scanning limit <1-10>
+// <i> Specifies a maximum limit for successive resynchronizations by scanning.
+// <i> After this limit is reached, the ESL starts advertising on the next sync loss to keep the absolute timer counter bias under control.
+// <i> Default: 3 times
+#define ESL_TAG_SCAN_COUNT_LIMIT                 3
+
+// <o ESL_TAG_SCAN_SWEEEP_COEFF> Scan sweep coefficient <3-11>
+// <5=> PAwR / 5
+// <7=> PAwR / 7
+// <11=> PAwR / 11
+// <i> Specifies a coefficient for calculating an appropriate scan interval for successfully finding the lost PAwR sync train, while ignoring most others.
+// <i> A larger value implies a more frequent scan with an increased energy budget and also a higher probability to find the signal faster.
+// <i> A higher value may also prevent sync-by-scan for extremely short PAwR intervals. In this case, the standard advertising starts immediately.
+// <i> Default: one fifth of the lost PAwR interval
+#define ESL_TAG_SCAN_SWEEEP_COEFF                5
+
+// <o ESL_TAG_SCAN_WINDOW_MS> Scanning window [ms]<10-100>
+// <i> Defines the scan window within the scan interval.
+// <i> If this value exceeds the scan interval derived from the last PAwR by the sweep coefficient, the scan window is set equal to the interval.
+// <i> Default: 30 ms
+#define ESL_TAG_SCAN_WINDOW_MS                   30
+
+// </e>
+
 // </h>
 
 // <<< end of configuration section >>>

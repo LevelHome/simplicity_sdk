@@ -34,6 +34,8 @@
 #include "btl_crc32.h"
 #include "common.h"
 #include "patch.h"
+#include "core/btl_reset.h"
+#include "btl_reset_info.h"
 #endif
 
 #if defined(__GNUC__)
@@ -139,7 +141,7 @@ static void advanceParser(BootloaderParserContext_t         *ctx,
 {
   #if defined(BOOTLOADER_SUPPORT_INTERNAL_STORAGE) && defined(_SILICON_LABS_32B_SERIES_2)
   // Only activate the check if we have a bootloader blob that will be parsed
-  if (callbacks->bootloaderCallback == bootload_bootloaderCallback) {
+  if (callbacks->bootloaderCallback == &bootload_bootloaderCallback) {
     uint32_t upgradeLocation = bootload_getUpgradeLocation();
     // Perform conservative check with the "worst" case upgrade size.
     uint32_t startAddr = storageLayout.slot[ctx->slotId].address + ctx->slotOffset;
@@ -273,6 +275,7 @@ int32_t storage_initParseSlot(uint32_t                  slotId,
 
 #if defined (BTL_PARSER_SUPPORT_DELTA_DFU)
   context->parserContext.deltaPatchAddress = slot.address;
+  context->parserContext.endOfStorageSlot = slot.address + slot.length;
 #endif
 
   return BOOTLOADER_OK;
@@ -379,10 +382,10 @@ static bool read_old_firmware(size_t offset, size_t nbytes, uint8_t *out_buf, vo
   if (nbytes == 0x00) {
     return false;
   }
-  struct callback_streams *ctx;
+  const struct callback_streams *ctx;
   ctx = (struct callback_streams *)user_ctx;
   uint32_t read_addr = ctx->old_fw_addr + offset;
-  if ((read_addr >= BTL_APPLICATION_BASE)) {
+  if (read_addr >= BTL_APPLICATION_BASE) {
     //old firmware will always be in the internal flash.
     memcpy(out_buf, (const void *)read_addr, nbytes);
   } else {
@@ -395,7 +398,6 @@ static bool read_old_firmware(size_t offset, size_t nbytes, uint8_t *out_buf, vo
 static bool write_new_firmware(uint8_t *buf, size_t nbyte, void *user_ctx)
 {
   uint32_t ret = BOOTLOADER_OK;
-  uint32_t itr = 0;
   struct callback_streams *ctx = (struct callback_streams *)user_ctx;
 
   if (nbyte == 0x00) {
@@ -406,12 +408,12 @@ static bool write_new_firmware(uint8_t *buf, size_t nbyte, void *user_ctx)
     return false;
   }
 
-  for (itr = 0; itr < nbyte; itr++) {
+  for (uint32_t itr = 0; itr < nbyte; itr++) {
     ctx->data_buf[ctx->data_index] = buf[itr];
     ctx->data_index++;
     //Write 32 bytes at a time.
     if (ctx->data_index == DELTA_DFU_WRITE_SIZE) {
-      ret = storage_writeRaw((uint32_t)ctx->new_fw_addr, ctx->data_buf, DELTA_DFU_WRITE_SIZE);
+      ret = storage_writeRaw(ctx->new_fw_addr, ctx->data_buf, DELTA_DFU_WRITE_SIZE);
       if (ret != BOOTLOADER_OK) {
         return false;
       }
@@ -427,9 +429,8 @@ static bool write_new_firmware(uint8_t *buf, size_t nbyte, void *user_ctx)
 static bool seek_new_firmware(size_t nbyte, void *user_ctx)
 {
   uint32_t ret = BOOTLOADER_OK;
-  uint32_t itr = 0;
   struct callback_streams *ctx = (struct callback_streams *)user_ctx;
-  for (itr = 0; itr < nbyte; itr++) {
+  for (uint32_t itr = 0; itr < nbyte; itr++) {
     ctx->data_buf[ctx->data_index] = 0xFF;
     ctx->data_index++;
     //Write 32 bytes at a time.
@@ -464,7 +465,6 @@ static bool is_end_of_patch(void *user_ctx)
     }
     return true;
   }
-  return false;
 }
 
 // Callback implementation to read patch for delta dfu library
@@ -619,7 +619,8 @@ static bool bootloadFromSlot(BootloaderParserContext_t         *context,
     is_end_of_patch
   };
 
-  uint32_t temp_deltaLength = context->parserContext.deltaGBLLength;
+  uint32_t gblLength = context->parserContext.gblLength;
+  uint32_t endOfSlot = context->parserContext.endOfStorageSlot;
 #endif //BTL_PARSER_SUPPORT_DELTA_DFU
 
   parser_init(&(context->parserContext),
@@ -628,9 +629,10 @@ static bool bootloadFromSlot(BootloaderParserContext_t         *context,
               PARSER_FLAG_PARSE_CUSTOM_TAGS);
 
 #if defined(BTL_PARSER_SUPPORT_DELTA_DFU)
-  if (temp_deltaLength != 0x00) {
-    context->parserContext.deltaGBLLength = temp_deltaLength;
-  }
+  //Restore the value of deltaGBLLength in the parser context
+  context->parserContext.gblLength = gblLength;
+  //Restore the value of end of storage slot
+  context->parserContext.endOfStorageSlot = endOfSlot;
 #endif //BTL_PARSER_SUPPORT_DELTA_DFU
   // Run through the image and flash it
   while ((0 == context->errorCode)
@@ -670,9 +672,10 @@ static bool bootloadFromSlot(BootloaderParserContext_t         *context,
         //Valid app present. Reconstruct-image.
         uint32_t slot_space = (user_ctx.slotInfo.address + user_ctx.slotInfo.length)
                               - user_ctx.new_fw_base_addr;
+
         if (user_ctx.new_fw_size > slot_space) {
-          //Not enough space in slot.
-          return false;
+          //Not enough space in slot. Reset with appropriate reset reason
+          reset_resetWithReason(BOOTLOADER_RESET_REASON_NO_SLOT_SPACE);
         }
         ddfu_stat = ddfu_patch_apply(&io, &ddfuBuff, &user_ctx);
       }
@@ -685,7 +688,7 @@ static bool bootloadFromSlot(BootloaderParserContext_t         *context,
           }
         } else {
           //CRC Calculation has failed.
-          return false;
+          reset_resetWithReason(BOOTLOADER_RESET_REASON_DDFU_FAIL);
         }
       } else {
         BTL_DEBUG_PRINTLN("Re-construction complete.");
@@ -703,13 +706,22 @@ static bool bootloadFromSlot(BootloaderParserContext_t         *context,
           }
         } else {
           //CRC calculation has failed.
-          return false;
+          BTL_DEBUG_PRINTLN("CRC calculation failed.");
+          reset_resetWithReason(BOOTLOADER_RESET_REASON_BADCRC);
         }
       }
     }
   #endif //BTL_PARSER_SUPPORT_DELTA_DFU
     return true;
   } else {
+  #if defined(BTL_PARSER_SUPPORT_DELTA_DFU)
+    // Parsing did not complete. Check if we ran out of slot space.
+    if (context->errorCode == BOOTLOADER_ERROR_PARSER_OOB_WRITE) {
+      //Reset with BOOTLOADER_RESET_REASON_NO_SLOT_SPACE
+      BTL_DEBUG_PRINTLN("BOOTLOADER_ERROR_PARSER_OOB_WRITE. Reset device!");
+      reset_resetWithReason(BOOTLOADER_RESET_REASON_NO_SLOT_SPACE);
+    }
+  #endif //BTL_PARSER_SUPPORT_DELTA_DFU
     return false;
   }
 }
@@ -777,7 +789,7 @@ bool storage_bootloadApplicationFromSlot(uint32_t slotId, uint32_t version, uint
                                       &parseCtx,
                                       sizeof(BootloaderParserContext_t));
 #if defined (BTL_PARSER_SUPPORT_DELTA_DFU)
-  parseCtx.parserContext.deltaGBLLength = deltaGBLLen;
+  parseCtx.parserContext.gblLength = deltaGBLLen;
 #else
   (void)deltaGBLLen;
 #endif//BTL_PARSER_SUPPORT_DELTA_DFU

@@ -96,6 +96,19 @@ typedef struct SignatureVerificationState
 /*-----------------------------------------------------------*/
 
 /**
+ * @brief Configure mutex as recursive. This implementation only supports recursive mutexes.
+ *
+ */
+void aws_mbedtls_mutex_set_recursive( mbedtls_threading_mutex_t * mutex )
+{
+  /* Do nothing.
+     This implementation of mbedtls_threading_alt only supports recursive mutexes.
+     See aws_mbedtls_mutex_init always initialise mutex by calling
+     xSemaphoreCreateRecursiveMutex. */
+  (void) mutex;
+}
+
+/**
  * @brief Implementation of mbedtls_mutex_init for thread-safety.
  *
  */

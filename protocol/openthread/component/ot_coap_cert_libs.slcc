@@ -10,9 +10,17 @@ provides:
   - name: ot_coap_cert_libs
 requires:
   - name: ot_cert_libs
+recommends:
+  - id: ot_cert_libs
+define:
+  - name: OPENTHREAD_CONFIG_COAP_API_ENABLE
+    value: 1
+  - name: OPENTHREAD_CONFIG_COAP_OBSERVE_API_ENABLE
+    value: 1
+  - name: OPENTHREAD_CONFIG_COAP_SECURE_API_ENABLE
+    value: 1
 metadata:
   sbom:
     # BSD-3-Clause covers the files included in the libraries from
     # util/third_party/openthread and protocol/openthread/platform-abstraction/efr32.
-    # MSLA covers the files from util/plugin/security_manager.
-    license: BSD-3-Clause AND MSLA
+    license: BSD-3-Clause

@@ -43,11 +43,10 @@
 
 /* SDK emlib layer */
 #include "em_device.h"
-#include "em_gpio.h"
 #include "em_cmu.h"
 
-/* SDK emdrv layer */
-#include "gpiointerrupt.h"
+/* SDK device manager layer */
+#include "sl_device_gpio.h"
 
 /* Common I/O interface layer */
 #include "iot_gpio.h"
@@ -60,8 +59,7 @@
 typedef struct IotGpioDescriptor{
   bool is_open;
   uint8_t instance_id;
-  GPIO_Port_TypeDef port;
-  unsigned int pin;
+  sl_gpio_t gpio;
   IotGpioDirection_t direction;
   IotGpioOutputMode_t out_mode;
   IotGpioPull_t pull;

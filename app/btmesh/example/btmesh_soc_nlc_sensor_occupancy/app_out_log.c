@@ -32,7 +32,6 @@
 // Includes
 
 #include <stdbool.h>
-#include "em_common.h"
 #include "sl_status.h"
 
 #include "app.h"

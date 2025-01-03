@@ -4,6 +4,11 @@ label: Circular Queue
 description: Silicon Labs core utility providing a circular queue.
 category: Platform|Utilities
 quality: production
+metadata:
+  sbom:
+    id: silabs_core_circular_queue
+    name: Circular Queue
+    license: MSLA
 include:
   - path: util/silicon_labs/silabs_core/queue
     file_list: [{path: circular_queue.h}]

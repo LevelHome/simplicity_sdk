@@ -70,7 +70,7 @@
 #define SL_RAIL_UTIL_ANT_DIV_PERIPHERAL          MODEM
 
 // MODEM ANT0 on PB03
-#define SL_RAIL_UTIL_ANT_DIV_ANT0_PORT           gpioPortB
+#define SL_RAIL_UTIL_ANT_DIV_ANT0_PORT           SL_GPIO_PORT_B
 #define SL_RAIL_UTIL_ANT_DIV_ANT0_PIN            3
 
 

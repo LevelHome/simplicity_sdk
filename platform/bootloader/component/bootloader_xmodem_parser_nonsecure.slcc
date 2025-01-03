@@ -16,3 +16,6 @@ provides:
   - name: bootloader_xmodem_parser_nonsecure
 requires:
   - name: bootloader_crc
+metadata:
+  sbom:
+    license: MSLA

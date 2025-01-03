@@ -32,6 +32,7 @@
 #include <stdbool.h>
 #include <math.h>
 
+#include "sl_assert.h"
 #include "bmp3_defs.h"
 #include "sl_bmp3xx.h"
 #include "sl_pressure.h"

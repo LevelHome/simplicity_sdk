@@ -56,8 +56,9 @@ typedef enum {
 } esl_component_t;
 
 #ifndef SL_CATALOG_ESL_TAG_CLI_TEST_HARNESS_PRESENT
-#define sl_bt_esl_log(...)          ((void)0)
-#define sl_bt_esl_log_hexdump(...)  ((void)0)
+#define sl_bt_esl_log(...)              ((void)0)
+#define sl_bt_esl_log_hexdump(...)      ((void)0)
+#define sli_bt_esl_log_get_ordinal(...) NULL
 #else // !SL_CATALOG_ESL_TAG_CLI_TEST_HARNESS_PRESENT
 /**************************************************************************//**
  * ESL Tag logging function.
@@ -79,6 +80,13 @@ void sli_bt_esl_log_hex_dump(uint8_t component,
                              uint8_t level,
                              void    *p_data,
                              uint8_t len);
+
+/**************************************************************************//**
+ * ESL Tag log ordinal suffix getter function.
+ * @param[in] value Numeric value for suffix to form ordinal string
+ * @return Appropriate ordinal suffix string for the given numeric value.
+ *****************************************************************************/
+const char *sli_bt_esl_log_get_ordinal(uint32_t value);
 
 #define sl_bt_esl_log(...) \
   sli_bt_esl_logger(__VA_ARGS__)

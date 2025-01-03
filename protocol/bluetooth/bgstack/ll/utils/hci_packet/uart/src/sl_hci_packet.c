@@ -1,12 +1,10 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <em_device.h>
-#include <em_gpio.h>
-#include <em_core.h>
 #include "sl_hci_common_transport.h"
-#include "sl_hci_uart.h"
 #include "sl_btctrl_hci_packet.h"
+#include "sl_btctrl_hci_transport.h"
+#include "sl_hci_uart.h"
 
 #define RX_BUFFER_LEN 64
 
@@ -52,11 +50,6 @@ void sl_btctrl_hci_packet_step(void)
   uint16_t bytes_read;
   uint16_t len;
 
-  /* Check if data available */
-  if (sl_hci_uart_rx_buffered_length() <= 0) {
-    return;
-  }
-
   if (bytes_remaining >= buffer_remaining) {
     len = buffer_remaining;
   } else {
@@ -64,6 +57,11 @@ void sl_btctrl_hci_packet_step(void)
   }
 
   bytes_read = sl_hci_uart_read(buf_byte_ptr, len);
+
+  if (bytes_read == 0) {
+    return;
+  }
+
   buf_byte_ptr += bytes_read;
   total_bytes_read += bytes_read;
   bytes_remaining -= bytes_read;
@@ -168,5 +166,4 @@ uint32_t hci_common_transport_transmit(uint8_t *data, int16_t len)
 void hci_common_transport_init(void)
 {
   reset();
-  sl_hci_uart_init();
 }

@@ -41,29 +41,41 @@
 
 #ifndef EM_DEVICE_H
 #define EM_DEVICE_H
-#if defined(EFR32BG26B310F1024IL136)
-#include "efr32bg26b310f1024il136.h"
+#if defined(EFR32BG26B311F1024IL136)
+#include "efr32bg26b311f1024il136.h"
 
-#elif defined(EFR32BG26B310F1024IM68)
-#include "efr32bg26b310f1024im68.h"
+#elif defined(EFR32BG26B311F1024IM68)
+#include "efr32bg26b311f1024im68.h"
 
-#elif defined(EFR32BG26B310F2048IL136)
-#include "efr32bg26b310f2048il136.h"
+#elif defined(EFR32BG26B311F2048IL136)
+#include "efr32bg26b311f2048il136.h"
 
-#elif defined(EFR32BG26B310F2048IM48)
-#include "efr32bg26b310f2048im48.h"
+#elif defined(EFR32BG26B311F2048IM48)
+#include "efr32bg26b311f2048im48.h"
 
-#elif defined(EFR32BG26B310F2048IM68)
-#include "efr32bg26b310f2048im68.h"
+#elif defined(EFR32BG26B311F2048IM68)
+#include "efr32bg26b311f2048im68.h"
 
-#elif defined(EFR32BG26B320F1024IM68)
-#include "efr32bg26b320f1024im68.h"
+#elif defined(EFR32BG26B321F1024IM68)
+#include "efr32bg26b321f1024im68.h"
 
-#elif defined(EFR32BG26B320F2048IM48)
-#include "efr32bg26b320f2048im48.h"
+#elif defined(EFR32BG26B321F2048IM48)
+#include "efr32bg26b321f2048im48.h"
 
-#elif defined(EFR32BG26B320F2048IM68)
-#include "efr32bg26b320f2048im68.h"
+#elif defined(EFR32BG26B321F2048IM68)
+#include "efr32bg26b321f2048im68.h"
+
+#elif defined(EFR32BG26B410F3200IM48)
+#include "efr32bg26b410f3200im48.h"
+
+#elif defined(EFR32BG26B411F3200IM48)
+#include "efr32bg26b411f3200im48.h"
+
+#elif defined(EFR32BG26B420F3200IM48)
+#include "efr32bg26b420f3200im48.h"
+
+#elif defined(EFR32BG26B421F3200IM48)
+#include "efr32bg26b421f3200im48.h"
 
 #elif defined(EFR32BG26B510F3200IL136)
 #include "efr32bg26b510f3200il136.h"
@@ -73,6 +85,15 @@
 
 #elif defined(EFR32BG26B510F3200IM68)
 #include "efr32bg26b510f3200im68.h"
+
+#elif defined(EFR32BG26B511F3200IL136)
+#include "efr32bg26b511f3200il136.h"
+
+#elif defined(EFR32BG26B511F3200IM48)
+#include "efr32bg26b511f3200im48.h"
+
+#elif defined(EFR32BG26B511F3200IM68)
+#include "efr32bg26b511f3200im68.h"
 
 #else
 #error "em_device.h: PART NUMBER undefined"

@@ -166,7 +166,9 @@ WEAK(void sl_zigbee_af_gpep_incoming_message_cb(
        // The length of the GPD command payload.
        uint8_t gpdCommandPayloadLength,
        // The GPD command payload.
-       uint8_t *gpdCommandPayload))
+       uint8_t *gpdCommandPayload,
+       // Rx packet information
+       sl_zigbee_rx_packet_info_t *packetInfo))
 {
   (void)status;
   (void)gpdLink;
@@ -182,6 +184,7 @@ WEAK(void sl_zigbee_af_gpep_incoming_message_cb(
   (void)proxyTableIndex;
   (void)gpdCommandPayloadLength;
   (void)gpdCommandPayload;
+  (void)packetInfo;
 }
 
 // A callback invoked by the ZigBee GP stack when a GPDF is received.
@@ -216,11 +219,13 @@ void sl_zigbee_ezsp_gpep_incoming_message_handler(
   // The length of the GPD command payload.
   uint8_t gpdCommandPayloadLength,
   // The GPD command payload.
-  uint8_t *gpdCommandPayload)
+  uint8_t *gpdCommandPayload,
+  // Rx packet information
+  sl_zigbee_rx_packet_info_t *packetInfo)
 {
   sl_zigbee_af_push_callback_network_index();
-  sli_zigbee_af_gpep_incoming_message(status, gpdLink, sequenceNumber, addr, gpdfSecurityLevel, gpdfSecurityKeyType, autoCommissioning, bidirectionalInfo, gpdSecurityFrameCounter, gpdCommandId, mic, proxyTableIndex, gpdCommandPayloadLength, gpdCommandPayload);
-  sl_zigbee_af_gpep_incoming_message_cb(status, gpdLink, sequenceNumber, addr, gpdfSecurityLevel, gpdfSecurityKeyType, autoCommissioning, bidirectionalInfo, gpdSecurityFrameCounter, gpdCommandId, mic, proxyTableIndex, gpdCommandPayloadLength, gpdCommandPayload);
+  sli_zigbee_af_gpep_incoming_message(status, gpdLink, sequenceNumber, addr, gpdfSecurityLevel, gpdfSecurityKeyType, autoCommissioning, bidirectionalInfo, gpdSecurityFrameCounter, gpdCommandId, mic, proxyTableIndex, gpdCommandPayloadLength, gpdCommandPayload, packetInfo);
+  sl_zigbee_af_gpep_incoming_message_cb(status, gpdLink, sequenceNumber, addr, gpdfSecurityLevel, gpdfSecurityKeyType, autoCommissioning, bidirectionalInfo, gpdSecurityFrameCounter, gpdCommandId, mic, proxyTableIndex, gpdCommandPayloadLength, gpdCommandPayload, packetInfo);
   sl_zigbee_af_pop_network_index();
 }
 
@@ -593,7 +598,7 @@ void sl_zigbee_ezsp_trust_center_post_join_handler(sl_802154_short_addr_t newNod
                                     parentOfNewNode,
                                     status,
                                     policyDecision);
-  sl_zigbee_af_security_println("Trust Center Join Handler: status = %p, decision = %p (%x), shortid 0x%2x",
+  sl_zigbee_af_security_println("Trust Center Join Handler: status = %s, decision = %s (%02X), shortid 0x%04X",
                                 deviceUpdateText[status],
                                 joinDecisionText[policyDecision],
                                 policyDecision,

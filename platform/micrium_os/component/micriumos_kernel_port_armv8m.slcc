@@ -36,6 +36,8 @@ include:
           - toolchain_gcc
 provides:
   - name: kernel_port_armv8m
+  - name: kernel_port
+    condition: [cortexm33]
 requires:
   - name: kernel_port_generic
   - name: component_catalog

@@ -1,6 +1,6 @@
 id: "connect_radio_stream_library"
 label: "Radio Stream (Library)"
-package: "Flex"
+package: "Connect"
 category: "Connect"
 quality: "production"
 ui_hints:

@@ -76,7 +76,7 @@ sl_status_t sl_zigbee_af_initiate_partner_link_key_exchange_cb(sl_802154_short_a
   uint8_t destinationEndpoint;
 
   if (state->active) {
-    sl_zigbee_af_key_establishment_cluster_println("%pPartner link key exchange in progress",
+    sl_zigbee_af_key_establishment_cluster_println("%sPartner link key exchange in progress",
                                                    "Error: ");
     return SL_STATUS_INVALID_STATE;
   }
@@ -88,7 +88,7 @@ sl_status_t sl_zigbee_af_initiate_partner_link_key_exchange_cb(sl_802154_short_a
 
   status = sl_zigbee_lookup_eui64_by_node_id(target, source);
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_key_establishment_cluster_println("Starting %p for node 0x%2x",
+    sl_zigbee_af_key_establishment_cluster_println("Starting %s for node 0x%04X",
                                                    "IEEE discovery",
                                                    target);
     status = sl_zigbee_af_find_ieee_address(target, addressDiscoveryCallback);
@@ -125,7 +125,7 @@ static void addressDiscoveryCallback(const sl_zigbee_af_service_discovery_result
     // In both cases, we need to update the address table but only in the first
     // case we need to continue the PLKE process.
     uint8_t* eui64ptr = (uint8_t*)(result->responseData);
-    sl_zigbee_af_key_establishment_cluster_println("%p response: 0x%2X = %X%X%X%X%X%X%X%X",
+    sl_zigbee_af_key_establishment_cluster_println("%s response: 0x%04X = %02X%02X%02X%02X%02X%02X%02X%02X",
                                                    result->zdoRequestClusterId == IEEE_ADDRESS_REQUEST
                                                    ? "IEEE discovery"
                                                    : "NWK Address discovery",
@@ -169,7 +169,7 @@ static sl_status_t continuePartnerLinkKeyExchangeCallback(sl_802154_short_addr_t
 
   status = validateKeyRequest(source);
   if (status != SL_ZIGBEE_ZDP_SUCCESS) {
-    sl_zigbee_af_key_establishment_cluster_println("%p%p: 0x%x",
+    sl_zigbee_af_key_establishment_cluster_println("%s%s: 0x%02X",
                                                    "Error: ",
                                                    "Cannot perform partner link key exchange",
                                                    status);
@@ -187,7 +187,7 @@ static sl_status_t continuePartnerLinkKeyExchangeCallback(sl_802154_short_addr_t
                                   destinationEndpoint,
                                   SL_ZIGBEE_APS_OPTION_NONE);
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_key_establishment_cluster_println("%p%p: 0x%x",
+    sl_zigbee_af_key_establishment_cluster_println("%s%s: 0x%02X",
                                                    "Error: ",
                                                    "Failed to send bind request",
                                                    status);
@@ -199,10 +199,10 @@ sl_zigbee_zdo_status_t sl_zigbee_af_partner_link_key_exchange_request_cb(sl_8021
 {
   sl_zigbee_zdo_status_t status = validateKeyRequest(partner);
   if (status != SL_ZIGBEE_ZDP_SUCCESS) {
-    sl_zigbee_af_key_establishment_cluster_print("%pRejected parter link key request from ",
+    sl_zigbee_af_key_establishment_cluster_print("%sRejected parter link key request from ",
                                                  "Error: ");
     sl_zigbee_af_key_establishment_cluster_debug_exec(sl_zigbee_af_print_big_endian_eui64(partner));
-    sl_zigbee_af_key_establishment_cluster_println(": 0x%x", status);
+    sl_zigbee_af_key_establishment_cluster_println(": 0x%02X", status);
     return status;
   }
 
@@ -230,7 +230,7 @@ void sl_zigbee_af_partner_link_key_exchange_response_cb(sl_802154_short_addr_t s
   if (state->active && state->target == sender) {
     sl_802154_long_addr_t partner;
     if (status != SL_ZIGBEE_ZDP_SUCCESS) {
-      sl_zigbee_af_key_establishment_cluster_println("%pNode 0x%2x rejected partner link key request: 0x%x",
+      sl_zigbee_af_key_establishment_cluster_println("%sNode 0x%04X rejected partner link key request: 0x%02X",
                                                      "Error: ",
                                                      sender,
                                                      status);
@@ -238,7 +238,7 @@ void sl_zigbee_af_partner_link_key_exchange_response_cb(sl_802154_short_addr_t s
       return;
     }
     if (sl_zigbee_lookup_eui64_by_node_id(sender, partner) != SL_STATUS_OK) {
-      sl_zigbee_af_key_establishment_cluster_println("%pIEEE address of node 0x%2x is unknown",
+      sl_zigbee_af_key_establishment_cluster_println("%sIEEE address of node 0x%04X is unknown",
                                                      "Error: ",
                                                      sender);
       partnerLinkKeyExchangeComplete(false); // failure
@@ -247,7 +247,7 @@ void sl_zigbee_af_partner_link_key_exchange_response_cb(sl_802154_short_addr_t s
     {
       sl_status_t requestLinkKeyStatus = sl_zigbee_request_link_key(partner);
       if (requestLinkKeyStatus != SL_STATUS_OK) {
-        sl_zigbee_af_key_establishment_cluster_println("%p%p: 0x%x",
+        sl_zigbee_af_key_establishment_cluster_println("%s%s: 0x%02X",
                                                        "Error: ",
                                                        "Failed to request link key",
                                                        requestLinkKeyStatus);

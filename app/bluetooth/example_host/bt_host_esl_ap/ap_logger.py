@@ -28,27 +28,32 @@ import os
 import sys
 import logging
 import threading
+
 try:
     import colorlog
 except ImportError:
     pass
 from functools import partial, partialmethod
 
-LEVELS = {'NOTSET': logging.NOTSET,
-          'TRACE': logging.DEBUG - 5,
-          'DEBUG': logging.DEBUG,
-          'INFO' : logging.INFO,
-          'WARNING' : logging.WARNING,
-          'ERROR': logging.ERROR,
-          'CRITICAL': logging.CRITICAL}
+LEVELS = {
+    "NOTSET": logging.NOTSET,
+    "TRACE": logging.DEBUG - 5,
+    "DEBUG": logging.DEBUG,
+    "INFO": logging.INFO,
+    "WARNING": logging.WARNING,
+    "ERROR": logging.ERROR,
+    "CRITICAL": logging.CRITICAL,
+}
 
-COLORS = {'NOTSET': 'light_purple',
-          'TRACE': 'light_blue',
-          'DEBUG' : 'light_black',
-          'INFO' : 'light_green',
-          'WARNING' : 'light_yellow',
-          'ERROR': 'light_red',
-          'CRITICAL': 'bold_red'}
+COLORS = {
+    "NOTSET": "light_purple",
+    "TRACE": "light_blue",
+    "DEBUG": "light_black",
+    "INFO": "light_green",
+    "WARNING": "light_yellow",
+    "ERROR": "light_red",
+    "CRITICAL": "bold_red",
+}
 
 stdout = False
 level = logging.INFO
@@ -56,24 +61,37 @@ lock = threading.Lock()
 
 _logger_list = {}
 
-def log(*args, _half_indent_log :bool=False, **kwargs):
-    ''' Print with 1 tab + 1 whitespace indentation '''
-    args = [arg.replace('\n', '\n\t ') if isinstance(arg, str) else arg for arg in args]
+
+def log(*args, _half_indent_log: bool = False, **kwargs):
+    """Print with 1 tab + 1 whitespace indentation"""
+    args = [arg.replace("\n", "\n\t ") if isinstance(arg, str) else arg for arg in args]
     with lock:
-        print('\t' if not _half_indent_log else 3*' ', *args, file=sys.stdout if stdout else sys.stderr, flush=True, **kwargs)
+        print(
+            "\t" if not _half_indent_log else 3 * " ",
+            *args,
+            file=sys.stdout if stdout else sys.stderr,
+            flush=True,
+            **kwargs,
+        )
+
 
 class StreamHandler(logging.StreamHandler):
     def __init__(self):
         super().__init__(stream=sys.stdout if stdout else sys.stderr)
-        self.fmt = '\r%(asctime)s.%(msecs)03d: %(name)-3s - %(levelname)-8s - %(message)s'
-        self.fmt_date = '%d/%b %H:%M:%S'
-        if 'colorlog' in sys.modules and os.isatty(2):
-            cformat = '%(log_color)s' + self.fmt
-            self.formatter = colorlog.ColoredFormatter(cformat, self.fmt_date, log_colors=COLORS)
+        self.fmt = (
+            "\r%(asctime)s.%(msecs)03d: %(name)-3s - %(levelname)-8s - %(message)s"
+        )
+        self.fmt_date = "%d/%b %H:%M:%S"
+        if "colorlog" in sys.modules and os.isatty(2):
+            cformat = "%(log_color)s" + self.fmt
+            self.formatter = colorlog.ColoredFormatter(
+                cformat, self.fmt_date, log_colors=COLORS
+            )
         else:
             self.formatter = logging.Formatter(self.fmt, self.fmt_date)
         self.setFormatter(self.formatter)
         self.setLevel(logging.NOTSET)
+
 
 def getLogger(name="AP "):
     logger = logging.Logger(name)
@@ -84,6 +102,7 @@ def getLogger(name="AP "):
     _logger_list[name] = logger
     return _logger_list[name]
 
+
 def setLogLevel(new_level: LEVELS):
     global level
     global _logger_list
@@ -92,16 +111,24 @@ def setLogLevel(new_level: LEVELS):
         basic_level = logging.CRITICAL
     else:
         basic_level = level
-    logging.basicConfig(force=True, level=basic_level, datefmt='%d/%b %H:%M:%S', format='\r%(asctime)s.%(msecs)03d: %(name)-3.3s - %(levelname)-8s - %(message)s')
+    logging.basicConfig(
+        force=True,
+        level=basic_level,
+        datefmt="%d/%b %H:%M:%S",
+        format="\r%(asctime)s.%(msecs)03d: %(name)-3.3s - %(levelname)-8s - %(message)s",
+    )
     logging.disable(logging.NOTSET)
     for logger in _logger_list:
         logging.Logger(logger).setLevel(level)
 
+
 def logLevelName():
     return logging.getLevelName(level)
 
+
 def logLevel():
     return level
+
 
 def addLogLevel(value, name):
     """
@@ -114,9 +141,15 @@ def addLogLevel(value, name):
     attribute = name.lower()
 
     if hasattr(logging.getLoggerClass(), attribute) or hasattr(logging, attribute):
-        raise AttributeError(f"The level name '{attribute}' is already defined in logger facility!")
+        raise AttributeError(
+            f"The level name '{attribute}' is already defined in logger facility!"
+        )
     else:
-        setattr(logging.getLoggerClass(), attribute, partialmethod(logging.getLoggerClass().log, value))
+        setattr(
+            logging.getLoggerClass(),
+            attribute,
+            partialmethod(logging.getLoggerClass().log, value),
+        )
         setattr(logging, attribute, partial(logging.log, value))
         setattr(logging, name, value)
         logging.addLevelName(value, name)

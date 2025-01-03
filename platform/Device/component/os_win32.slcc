@@ -4,6 +4,9 @@ package: platform
 description: OS component for Win32.
 category: Platform|Device|Native
 quality: production
+metadata:
+  sbom:
+    license: Zlib
 provides:
   - name: operating_system
   - name: win32

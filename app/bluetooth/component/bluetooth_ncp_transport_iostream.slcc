@@ -1,0 +1,58 @@
+id: bluetooth_ncp_transport_iostream
+label: Bluetooth NCP Transport over IO Stream
+package: Bluetooth
+description: >
+  Component that provides transport layer for Bluetooth NCP over IO Stream.
+
+  IO Stream type and instance can be configured in the configuration file,
+  but the given IO Stream type or instance is required to be present in
+  the project.
+
+category: Application|Utility
+metadata:
+  sbom:
+    license: Zlib
+quality: experimental
+root_path: app/bluetooth/common/ncp_transport
+tag:
+  - No-Code
+config_file:
+  - path: config/sl_bt_ncp_transport_iostream_config.h
+source:
+  - path: sl_bt_ncp_transport_iostream.c
+include:
+  - path: .
+    file_list:
+      - path: sl_bt_ncp_transport.h
+      - path: sli_bt_ncp_transport.h
+provides:
+  - name: bluetooth_ncp_transport_iostream
+  - name: bluetooth_ncp_transport
+requires:
+  - name: component_catalog
+  - name: iostream
+  - name: app_rta
+  - name: status
+  - name: sl_common
+  - name: sl_core
+template_contribution:
+  - name: component_catalog
+    value: bluetooth_ncp_transport_iostream
+  - name: component_catalog
+    value: bluetooth_ncp_transport
+  - name: app_rta_init
+    value:
+      include: sli_bt_ncp_transport.h
+      handler: sli_bt_ncp_transport_init
+  - name: app_rta_ready
+    value:
+      include: sli_bt_ncp_transport.h
+      handler: sli_bt_ncp_transport_rta_ready
+validation_library:
+  - path: ../../../common/validation/autonumber_common.lua
+    name: autonumber_common
+validation_helper:
+  - path: config/iostream_validator.lua
+documentation:
+  docset: bluetooth
+  document: bluetooth-service-api/bluetooth-ncp-transport

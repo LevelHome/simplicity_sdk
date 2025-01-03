@@ -1,6 +1,6 @@
 id: "connect_stack_counters"
 label: "Stack Counters"
-package: "Flex"
+package: "Connect"
 category: "Connect"
 quality: "production"
 description: "This component provides stack packet counters functionality. If this component is enabled, the stack shall keep track of successful and failed transmissions as well as successful received packets and dropped incoming packets."

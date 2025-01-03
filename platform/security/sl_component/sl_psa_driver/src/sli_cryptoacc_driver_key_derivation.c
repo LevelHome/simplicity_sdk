@@ -67,8 +67,7 @@ static void uint32_to_octet_string(uint32_t value, uint8_t buffer[4])
 static void xorbuf(block_t dk, block_t u)
 {
   for (uint32_t i = 0; i < u.len; i += 4) {
-    *((uint32_t*)(dk.addr + i)) =
-      *((uint32_t*)(dk.addr + i)) ^ (*(uint32_t*)(u.addr + i));
+    *(uint32_t*)((uint32_t)dk.addr + i) ^= *(uint32_t*)((uint32_t)u.addr + i);
   }
 }
 
@@ -218,6 +217,7 @@ psa_status_t sli_cryptoacc_driver_single_shot_pbkdf2(
     return PSA_ERROR_INVALID_ARGUMENT;
   }
   size_t key_out_size = PSA_BITS_TO_BYTES(psa_get_key_bits(key_out_attributes));
+  psa_status_t psa_status = PSA_ERROR_NOT_SUPPORTED;
 
   if (key_out_buffer_size < key_out_size) {
     return PSA_ERROR_BUFFER_TOO_SMALL;
@@ -292,13 +292,13 @@ psa_status_t sli_cryptoacc_driver_single_shot_pbkdf2(
 
       block_t salt_block = block_t_convert(salt, salt_length);
       block_t key_out_block = block_t_convert(key_out_buffer, key_out_buffer_size);
-      return derive_key_pbkdf2_aes_cmac_128_prf(&key_block, &salt_block, iterations, key_out_size, &key_out_block);
+      psa_status = derive_key_pbkdf2_aes_cmac_128_prf(&key_block, &salt_block, iterations, key_out_size, &key_out_block);
       break;
     }
     default:
-      return PSA_ERROR_NOT_SUPPORTED;
+      psa_status = PSA_ERROR_NOT_SUPPORTED;
   }
-  return PSA_ERROR_CORRUPTION_DETECTED;
+  return psa_status;
 }
 
 #endif // defined(SLI_PSA_DRIVER_FEATURE_PBKDF2)

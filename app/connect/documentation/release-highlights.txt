@@ -1,0 +1,4 @@
+Connect SDK 4.0.0.0
+- Connect Apps and Stack
+  - PSA Crypto hardware acceleration for payload encryption enabled in Connect Stack on Series-2 parts
+  - Connect stack and Connect SDK enabled on BRD4276A radio board with EFR32FG25 and SKY66122-11 frontend module for high TX power applications

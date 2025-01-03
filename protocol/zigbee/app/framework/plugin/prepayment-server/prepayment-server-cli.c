@@ -73,7 +73,7 @@ void sli_zigbee_af_prepayment_server_cli_write_attribute(sl_cli_command_arg_t *a
 
   status = sl_zigbee_af_write_attribute(endpoint, ZCL_PREPAYMENT_CLUSTER_ID, attributeId,
                                         CLUSTER_MASK_SERVER, (uint8_t *)&value, attributeType);
-  sl_zigbee_af_prepayment_cluster_println("Write Attribute status=0x%x", status);
+  sl_zigbee_af_prepayment_cluster_println("Write Attribute status=0x%02X", status);
 }
 
 void sli_zigbee_af_prepayment_server_cli_verify_payment_mode(sl_cli_command_arg_t *arguments)
@@ -93,7 +93,7 @@ void sli_zigbee_af_prepayment_server_cli_verify_payment_mode(sl_cli_command_arg_
   if ( (status == SL_ZIGBEE_ZCL_STATUS_SUCCESS) && (expectedPaymentControlConfiguration == readPaymentControlConfiguration) ) {
     sl_zigbee_af_prepayment_cluster_println("Payment Mode Match Success - %d", readPaymentControlConfiguration);
   } else {
-    sl_zigbee_af_prepayment_cluster_println("Payment Mode Failed Match, status=0x%x, read=%d, exp=%d", status, readPaymentControlConfiguration, expectedPaymentControlConfiguration);
+    sl_zigbee_af_prepayment_cluster_println("Payment Mode Failed Match, status=0x%02X, read=%d, exp=%d", status, readPaymentControlConfiguration, expectedPaymentControlConfiguration);
   }
 }
 
@@ -119,7 +119,7 @@ void sli_zigbee_af_prepayment_server_cli_verify_attribute(sl_cli_command_arg_t *
   if ( (status == SL_ZIGBEE_ZCL_STATUS_SUCCESS) && (expectedAttributeValue == readAttributeValue) ) {
     sl_zigbee_af_prepayment_cluster_println("Attribute Read Match Success - %d", status);
   } else {
-    sl_zigbee_af_prepayment_cluster_println("Attribute Read Failed Match status=0x%x, read=%d, exp=%d", status, readAttributeValue, expectedAttributeValue);
+    sl_zigbee_af_prepayment_cluster_println("Attribute Read Failed Match status=0x%02X, read=%d, exp=%d", status, readAttributeValue, expectedAttributeValue);
   }
 }
 
@@ -144,7 +144,7 @@ void sli_zigbee_af_prepayment_server_cli_add_snapshot_event(sl_cli_command_arg_t
 
   endpoint = sl_cli_get_argument_uint8(arguments, 0);
   snapshotCause = sl_cli_get_argument_uint32(arguments, 1);
-  sl_zigbee_af_prepayment_cluster_println("CLI Add Snapshot Event, endpoint=%d cause=0x%4x", endpoint, snapshotCause);
+  sl_zigbee_af_prepayment_cluster_println("CLI Add Snapshot Event, endpoint=%d cause=0x%08X", endpoint, snapshotCause);
 
   sl_zigbee_af_prepayment_snapshot_storage_take_snapshot(endpoint, snapshotCause);
 }
@@ -187,9 +187,9 @@ void sli_zigbee_af_prepayment_check_calendar_cli(sl_cli_command_arg_t *arguments
 
   calcUtcTime = sl_zigbee_af_get_utc_from_time_struct(&afTime);
   if ( calcUtcTime == utcTime ) {
-    sl_zigbee_af_prepayment_cluster_println("= UTC Times Match, 0x%4x", calcUtcTime);
+    sl_zigbee_af_prepayment_cluster_println("= UTC Times Match, 0x%08X", calcUtcTime);
   } else {
-    sl_zigbee_af_prepayment_cluster_println(" ERROR: UTC Times Don't Match, 0x%4x != 0x%4x", utcTime, calcUtcTime);
+    sl_zigbee_af_prepayment_cluster_println(" ERROR: UTC Times Don't Match, 0x%08X != 0x%08X", utcTime, calcUtcTime);
   }
 }
 
@@ -200,7 +200,7 @@ void sli_zigbee_af_prepayment_get_weekday_cli(sl_cli_command_arg_t *arguments)
 
   utcTime = sl_cli_get_argument_uint32(arguments, 0);
   weekday = sl_zigbee_af_get_weekday_from_utc(utcTime);
-  sl_zigbee_af_prepayment_cluster_println("UTC Time=0x%4x, Weekday=%d", utcTime, weekday);
+  sl_zigbee_af_prepayment_cluster_println("UTC Time=0x%08X, Weekday=%d", utcTime, weekday);
 }
 
 void sli_zigbee_af_prepayment_schedule_debt_repayment_cli(sl_cli_command_arg_t *arguments)

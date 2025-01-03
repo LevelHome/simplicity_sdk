@@ -205,7 +205,7 @@ void assertEFM(const char *file, int line)
     BUG("assert in %s:%d\n", file, line);
 }
 
-void HardFault_Handler(void) 
+void HardFault_Handler(void)
 {
     NVIC_SystemReset();
 }

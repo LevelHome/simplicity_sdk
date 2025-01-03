@@ -5,6 +5,9 @@ description: |-
   Utility for drawing graphics for demo applications.
 category: Platform|Utilities
 quality: production
+metadata:
+  sbom:
+    license: MSLA
 include:
   - path: util/plugin/plugin-common/demo-ui
     file_list: 

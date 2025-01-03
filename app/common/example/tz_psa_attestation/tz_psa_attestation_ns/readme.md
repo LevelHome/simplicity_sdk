@@ -1,6 +1,6 @@
 # TrustZone PSA Attestation (Non-secure application)
 
-This example uses the PSA attestation API to fetch the PSA attestation token on the supported Series 2 device.
+This example uses the PSA attestation API to fetch the PSA attestation token on the supported device.
 
 The example also demonstrates how the PSA attestation token can be parsed and printed in a human-readable format. Parsing and printing the PSA attestation token on the chip might not be a typical use case. But it can showcase the structure and capabilities of the PSA attestation token.
 

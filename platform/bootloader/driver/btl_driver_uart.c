@@ -167,7 +167,8 @@ static LDMA_Descriptor_t ldmaRxDesc[4] = {
  */
 void uart_init(void)
 {
-  uint32_t refFreq, clkdiv;
+  uint32_t refFreq;
+  uint32_t clkdiv;
 
 #if defined(USART_PRESENT) && defined(EUART_PRESENT)
 #if defined(USART0) && (SL_SERIAL_UART_PERIPHERAL_NO == 0)
@@ -476,7 +477,7 @@ void uart_deinit(void)
  *
  * @return BOOTLOADER_OK if successful, error code otherwise
  */
-int32_t uart_sendBuffer(uint8_t* buffer, size_t length, bool blocking)
+int32_t uart_sendBuffer(const uint8_t* buffer, size_t length, bool blocking)
 {
   BTL_ASSERT(initialized == true);
   BTL_ASSERT(length > 0);

@@ -68,18 +68,12 @@ IotSPIDescriptor_t iot_spi_desc[] = {
     .pxPeripheral       = IOT_SPI_CFG_{{ instance | upper }}_PERIPHERAL,
     .ucPeripheralNo     = IOT_SPI_CFG_{{ instance | upper }}_PERIPHERAL_NO,
 
-    /* ports */
+    /* GPIO structures */
 #if IOT_SPI_CFG_{{ instance | upper }}_LOOPBACK == 0
-    .xTxPort            = IOT_SPI_CFG_{{ instance | upper }}_TX_PORT,
-    .xRxPort            = IOT_SPI_CFG_{{ instance | upper }}_RX_PORT,
-    .xClkPort           = IOT_SPI_CFG_{{ instance | upper }}_CLK_PORT,
-    .xCsPort            = IOT_SPI_CFG_{{ instance | upper }}_CS_PORT,
-
-    /* pins */
-    .ucTxPin            = IOT_SPI_CFG_{{ instance | upper }}_TX_PIN,
-    .ucRxPin            = IOT_SPI_CFG_{{ instance | upper }}_RX_PIN,
-    .ucClkPin           = IOT_SPI_CFG_{{ instance | upper }}_CLK_PIN,
-    .ucCsPin            = IOT_SPI_CFG_{{ instance | upper }}_CS_PIN,
+    .txGpio             = {.port = IOT_SPI_CFG_{{ instance | upper }}_TX_PORT, .pin = IOT_SPI_CFG_{{ instance | upper }}_TX_PIN},
+    .rxGpio             = {.port = IOT_SPI_CFG_{{ instance | upper }}_RX_PORT, .pin = IOT_SPI_CFG_{{ instance | upper }}_RX_PIN},
+    .clkGpio            = {.port = IOT_SPI_CFG_{{ instance | upper }}_CLK_PORT, .pin = IOT_SPI_CFG_{{ instance | upper }}_CLK_PIN},
+    .csGpio             = {.port = IOT_SPI_CFG_{{ instance | upper }}_CS_PORT, .pin = IOT_SPI_CFG_{{ instance | upper }}_CS_PIN},
 
     /* locations */
 #if (_SILICON_LABS_32B_SERIES < 2)
@@ -89,16 +83,10 @@ IotSPIDescriptor_t iot_spi_desc[] = {
     .ucCsLoc            = IOT_SPI_CFG_{{ instance | upper }}_CS_LOC,
 #endif
 #else
-    .xTxPort            = IOT_SPI_CFG_{{ instance | upper }}_TX_PORT,
-    .xRxPort            = IOT_SPI_CFG_{{ instance | upper }}_TX_PORT,
-    .xClkPort           = IOT_SPI_CFG_{{ instance | upper }}_CLK_PORT,
-    .xCsPort            = IOT_SPI_CFG_{{ instance | upper }}_CS_PORT,
-
-    /* pins */
-    .ucTxPin            = IOT_SPI_CFG_{{ instance | upper }}_TX_PIN,
-    .ucRxPin            = IOT_SPI_CFG_{{ instance | upper }}_TX_PIN,
-    .ucClkPin           = IOT_SPI_CFG_{{ instance | upper }}_CLK_PIN,
-    .ucCsPin            = IOT_SPI_CFG_{{ instance | upper }}_CS_PIN,
+    .txGpio             = {.port = IOT_SPI_CFG_{{ instance | upper }}_TX_PORT, .pin = IOT_SPI_CFG_{{ instance | upper }}_TX_PIN},
+    .rxGpio             = {.port = IOT_SPI_CFG_{{ instance | upper }}_TX_PORT, .pin = IOT_SPI_CFG_{{ instance | upper }}_TX_PIN},
+    .clkGpio            = {.port = IOT_SPI_CFG_{{ instance | upper }}_CLK_PORT, .pin = IOT_SPI_CFG_{{ instance | upper }}_CLK_PIN},
+    .csGpio             = {.port = IOT_SPI_CFG_{{ instance | upper }}_CS_PORT, .pin = IOT_SPI_CFG_{{ instance | upper }}_CS_PIN},
 
     /* locations */
 #if (_SILICON_LABS_32B_SERIES < 2)

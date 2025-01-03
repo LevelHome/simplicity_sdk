@@ -65,7 +65,7 @@ static bool afMatchUegOrDeviceClass(uint8_t endpoint,
                                 2,
                                 &dataType);
   dc = (uint16_t)dcArray[0] | ((uint16_t)dcArray[1] << 8);
-  sl_zigbee_af_demand_response_load_control_cluster_print("Device Class: 0x%2x, status: 0x%x\r\n",
+  sl_zigbee_af_demand_response_load_control_cluster_print("Device Class: 0x%04X, status: 0x%02X\r\n",
                                                           dc,
                                                           status);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
@@ -106,27 +106,27 @@ static void fillReportEventData(uint8_t commandStatus,
   //sl_zigbee_af_demand_response_load_control_cluster_flush();
   sl_zigbee_af_demand_response_load_control_cluster_println("= TX Report Event Status =");
   //sl_zigbee_af_demand_response_load_control_cluster_flush();
-  sl_zigbee_af_demand_response_load_control_cluster_println("  eid: %4x",
+  sl_zigbee_af_demand_response_load_control_cluster_println("  eid: %08X",
                                                             e->eventId);
   //sl_zigbee_af_demand_response_load_control_cluster_flush();
-  sl_zigbee_af_demand_response_load_control_cluster_println("   es: %x",
+  sl_zigbee_af_demand_response_load_control_cluster_println("   es: %02X",
                                                             commandStatus);
-  sl_zigbee_af_demand_response_load_control_cluster_println("   st: T%4x",
+  sl_zigbee_af_demand_response_load_control_cluster_println("   st: T%08X",
                                                             statusTime);
   //sl_zigbee_af_demand_response_load_control_cluster_flush();
-  sl_zigbee_af_demand_response_load_control_cluster_println("  cla: %x",
+  sl_zigbee_af_demand_response_load_control_cluster_println("  cla: %02X",
                                                             e->criticalityLevel);
-  sl_zigbee_af_demand_response_load_control_cluster_println("   ec: %x", e->eventControl);
-  sl_zigbee_af_demand_response_load_control_cluster_println("ctspa: %2x (%d)",
+  sl_zigbee_af_demand_response_load_control_cluster_println("   ec: %02X", e->eventControl);
+  sl_zigbee_af_demand_response_load_control_cluster_println("ctspa: %04X (%d)",
                                                             e->coolingTempSetPoint,
                                                             e->coolingTempSetPoint);
   //sl_zigbee_af_demand_response_load_control_cluster_flush();
-  sl_zigbee_af_demand_response_load_control_cluster_println("htspa: %2x (%d)",
+  sl_zigbee_af_demand_response_load_control_cluster_println("htspa: %04X (%d)",
                                                             e->heatingTempSetPoint,
                                                             e->heatingTempSetPoint);
-  sl_zigbee_af_demand_response_load_control_cluster_println("  avg: %x", e->avgLoadPercentage);
+  sl_zigbee_af_demand_response_load_control_cluster_println("  avg: %02X", e->avgLoadPercentage);
   //sl_zigbee_af_demand_response_load_control_cluster_flush();
-  sl_zigbee_af_demand_response_load_control_cluster_println("   dc: %x", e->dutyCycle);
+  sl_zigbee_af_demand_response_load_control_cluster_println("   dc: %02X", e->dutyCycle);
   sl_zigbee_af_demand_response_load_control_cluster_flush();
 
   appResponseLength = 0;
@@ -205,40 +205,40 @@ void sl_zigbee_af_demand_response_load_control_cluster_client_tick_cb(uint8_t en
                                      MILLISECOND_TICKS_PER_SECOND);
 }
 
-bool sl_zigbee_af_demand_response_load_control_cluster_load_control_event_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_demand_response_load_control_cluster_load_control_event_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_demand_response_and_load_control_cluster_load_control_event_command_t cmd_data;
   sl_zigbee_af_load_control_event_t e;
 
   if (zcl_decode_demand_response_and_load_control_cluster_load_control_event_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   sl_zigbee_af_demand_response_load_control_cluster_println("= RX Load Control Event =");
-  sl_zigbee_af_demand_response_load_control_cluster_println("  eid: %4x", cmd_data.issuerEventId);
-  sl_zigbee_af_demand_response_load_control_cluster_println(" dc/g: %2x / %x",
+  sl_zigbee_af_demand_response_load_control_cluster_println("  eid: %08X", cmd_data.issuerEventId);
+  sl_zigbee_af_demand_response_load_control_cluster_println(" dc/g: %04X / %02X",
                                                             cmd_data.deviceClass,
                                                             cmd_data.utilityEnrollmentGroup);
-  sl_zigbee_af_demand_response_load_control_cluster_println("   st: T%4x", cmd_data.startTime);
+  sl_zigbee_af_demand_response_load_control_cluster_println("   st: T%08X", cmd_data.startTime);
   sl_zigbee_af_demand_response_load_control_cluster_flush();
-  sl_zigbee_af_demand_response_load_control_cluster_println("  dur: %2x", cmd_data.durationInMinutes);
-  sl_zigbee_af_demand_response_load_control_cluster_println("  cla: %x", cmd_data.criticalityLevel);
-  sl_zigbee_af_demand_response_load_control_cluster_println("co/ho: %x / %x",
+  sl_zigbee_af_demand_response_load_control_cluster_println("  dur: %04X", cmd_data.durationInMinutes);
+  sl_zigbee_af_demand_response_load_control_cluster_println("  cla: %02X", cmd_data.criticalityLevel);
+  sl_zigbee_af_demand_response_load_control_cluster_println("co/ho: %02X / %02X",
                                                             cmd_data.coolingTemperatureOffset,
                                                             cmd_data.heatingTemperatureOffset);
   sl_zigbee_af_demand_response_load_control_cluster_flush();
-  sl_zigbee_af_demand_response_load_control_cluster_println("ctspa: %2x (%d)",
+  sl_zigbee_af_demand_response_load_control_cluster_println("ctspa: %04X (%d)",
                                                             cmd_data.coolingTemperatureSetPoint,
                                                             cmd_data.coolingTemperatureSetPoint);
-  sl_zigbee_af_demand_response_load_control_cluster_println("htspa: %2x (%d)",
+  sl_zigbee_af_demand_response_load_control_cluster_println("htspa: %04X (%d)",
                                                             cmd_data.heatingTemperatureSetPoint,
                                                             cmd_data.heatingTemperatureSetPoint);
   sl_zigbee_af_demand_response_load_control_cluster_flush();
-  sl_zigbee_af_demand_response_load_control_cluster_println("  avg: %x",
+  sl_zigbee_af_demand_response_load_control_cluster_println("  avg: %02X",
                                                             cmd_data.averageLoadAdjustmentPercentage);
-  sl_zigbee_af_demand_response_load_control_cluster_println("   dc: %x", cmd_data.dutyCycle);
-  sl_zigbee_af_demand_response_load_control_cluster_println("   ec: %x", cmd_data.eventControl);
+  sl_zigbee_af_demand_response_load_control_cluster_println("   dc: %02X", cmd_data.dutyCycle);
+  sl_zigbee_af_demand_response_load_control_cluster_println("   ec: %02X", cmd_data.eventControl);
   sl_zigbee_af_demand_response_load_control_cluster_flush();
 
   if (!afMatchUegOrDeviceClass(sl_zigbee_af_current_endpoint(),
@@ -251,7 +251,7 @@ bool sl_zigbee_af_demand_response_load_control_cluster_load_control_event_cb(sl_
     // nothing. We choose to do nothing.
     //sl_zigbee_af_send_default_response(sl_zigbee_af_current_command(),
     //                           SL_ZIGBEE_ZCL_STATUS_NOT_FOUND);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
   }
 
   // Reserved criticality level
@@ -259,7 +259,7 @@ bool sl_zigbee_af_demand_response_load_control_cluster_load_control_event_cb(sl_
       || cmd_data.criticalityLevel > SL_ZIGBEE_ZCL_AMI_CRITICALITY_LEVEL_UTILITY_DEFINED6) {
     sl_zigbee_af_demand_response_load_control_cluster_println(
       "Reserved criticality level.  Ignoring.");
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
   }
 
   e.destinationEndpoint = cmd->apsFrame->destinationEndpoint;
@@ -294,22 +294,22 @@ bool sl_zigbee_af_demand_response_load_control_cluster_load_control_event_cb(sl_
   }
 
   sl_zigbee_af_demand_response_load_control_cluster_println(
-    "schedule -- start: %4x, start-random: %2x duration-random: %2x",
+    "schedule -- start: %08X, start-random: %04X duration-random: %04X",
     e.startTime,
     e.startRand,
     e.durationRand);
 
   sli_zigbee_af_schedule_load_control_event(sl_zigbee_af_current_endpoint(), &e);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_demand_response_load_control_cluster_cancel_load_control_event_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_demand_response_load_control_cluster_cancel_load_control_event_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_demand_response_and_load_control_cluster_cancel_load_control_event_command_t cmd_data;
 
   if (zcl_decode_demand_response_and_load_control_cluster_cancel_load_control_event_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   // FILTER ON DEVICE CLASS AND UTILITY ENROLLMENT GROUP
@@ -319,30 +319,30 @@ bool sl_zigbee_af_demand_response_load_control_cluster_cancel_load_control_event
     // CCB 1380: Device must send back a default response of success, or do
     // nothing. We choose to do nothing.
     //sl_zigbee_af_send_default_response(sl_zigbee_af_current_command(), SL_ZIGBEE_ZCL_STATUS_NOT_FOUND);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
   }
   sli_zigbee_af_cancel_load_control_event(sl_zigbee_af_current_endpoint(),
                                           cmd_data.issuerEventId,
                                           cmd_data.cancelControl,
                                           cmd_data.effectiveTime);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_demand_response_load_control_cluster_cancel_all_load_control_events_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_demand_response_load_control_cluster_cancel_all_load_control_events_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_demand_response_and_load_control_cluster_cancel_all_load_control_events_command_t cmd_data;
 
   if (zcl_decode_demand_response_and_load_control_cluster_cancel_all_load_control_events_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   if (!sli_zigbee_af_cancel_all_load_control_events(sl_zigbee_af_current_endpoint(), cmd_data.cancelControl)) {
     // We didn't find any events to cancel but we were still successful in trying
     // So we return a default response of success.
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
+    return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
   }
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
 void sl_zigbee_af_event_action(sl_zigbee_af_load_control_event_t *event,
@@ -411,29 +411,27 @@ uint32_t sl_zigbee_af_demand_response_load_control_cluster_client_command_parse(
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_LOAD_CONTROL_EVENT_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_demand_response_load_control_cluster_load_control_event_cb(cmd);
+        status = sl_zigbee_af_demand_response_load_control_cluster_load_control_event_cb(cmd);
         break;
       }
       case ZCL_CANCEL_LOAD_CONTROL_EVENT_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_demand_response_load_control_cluster_cancel_load_control_event_cb(cmd);
+        status = sl_zigbee_af_demand_response_load_control_cluster_cancel_load_control_event_cb(cmd);
         break;
       }
       case ZCL_CANCEL_ALL_LOAD_CONTROL_EVENTS_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_demand_response_load_control_cluster_cancel_all_load_control_events_cb(cmd);
+        status = sl_zigbee_af_demand_response_load_control_cluster_cancel_all_load_control_events_cb(cmd);
         break;
       }
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

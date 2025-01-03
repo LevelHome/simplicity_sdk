@@ -1,4 +1,4 @@
-/***************************************************************************//**
+/*******************************************************************************
  * @file
  * @brief This file defines the radio counters updated by the efr32 PAL
  *******************************************************************************
@@ -30,6 +30,9 @@
 
 #ifndef RADIO_COUNTERS_H_
 #define RADIO_COUNTERS_H_
+
+#include <stdint.h>
+
 typedef struct efr32RadioCounters
 {
     uint32_t mRailPlatTxTriggered;
@@ -55,7 +58,8 @@ typedef struct efr32RadioCounters
     uint32_t mRailEventsEnhAckTxFailed;
     uint32_t mRailEventsScheduledTxTriggeredCount;
     uint32_t mRailEventsScheduledTxStartedCount;
-    union { 
+    union
+    {
         // Allow for reuse / overloading of fields for various debugging
         uint32_t m32;
         uint16_t m16[2];

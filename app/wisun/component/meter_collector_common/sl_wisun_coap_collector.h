@@ -1,9 +1,9 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_wisun_coap_collector.h
+ * @brief Wi-SUN CoAP Collector
  *******************************************************************************
  * # License
- * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __SL_WISUN_COAP_COLLECTOR_H__
-#define __SL_WISUN_COAP_COLLECTOR_H__
+#ifndef SL_WISUN_COAP_COLLECTOR_H
+#define SL_WISUN_COAP_COLLECTOR_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,14 +38,11 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-#include "sl_status.h"
-#include "sl_wisun_app_core.h"
-#include "sl_wisun_coap.h"
-#include "sli_wisun_meter_collector.h"
-#include "sl_wisun_collector.h"
-#include "sl_wisun_coap_meter_collector_config.h"
-#include "sl_wisun_collector_config.h"
+#include <stdint.h>
 
+#include "sl_status.h"
+#include "socket/socket.h"
+#include "sli_wisun_meter_collector.h"
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -58,21 +55,10 @@ extern "C" {
 //                          Public Function Declarations
 // -----------------------------------------------------------------------------
 /**************************************************************************//**
- * @brief Init coap collector.
- * @details init collec
+ * @brief Init CoAP Collector.
+ * @details Init CoAP Collector component
  *****************************************************************************/
 void sl_wisun_coap_collector_init(void);
-
-/**************************************************************************//**
- * @brief Prepare CoAP request.
- * @details Should be used in thread init part
- * @param[in] req_type Request type
- * @param[out] req Pointer to the request
- * @return SL_STATUS_OK Success
- * @return SL_STATUS_FAIL Failure
- *****************************************************************************/
-sl_status_t sl_wisun_coap_collector_prepare_request(const sl_wisun_request_type_t req_type,
-                                                    sl_wisun_meter_request_t * const req);
 
 /**************************************************************************//**
 * @brief Prepare LED Toggle request.
@@ -90,10 +76,52 @@ sl_status_t sl_wisun_coap_collector_prepare_led_toggle_request(const uint8_t led
 * @return SL_STATUS_OK Success
 * @return SL_STATUS_FAIL Failure
 ******************************************************************************/
-sl_status_t sl_wisun_coap_collector_send_led_toggle_request(const sockaddr_in6_t *meter_addr);
+sl_status_t sl_wisun_coap_collector_send_led_toggle_request(const sockaddr_in6_t * meter_addr);
+
+/**************************************************************************//**
+ * @brief Register Meter.
+ * @details Add meter to the meter storage
+ * @param[in] meter_addr meter address structure
+ * @return SL_STATUS_OK meter has been successfully added
+ * @return SL_STATUS_ALREADY_EXISTS meter had already been added
+ * @return SL_STATUS_FAIL on error
+ *****************************************************************************/
+sl_status_t sl_wisun_coap_collector_register_meter(const sockaddr_in6_t * const meter_addr);
+
+/**************************************************************************//**
+ * @brief Remove Meter.
+ * @details Remove registered meter from the registered meter storage
+ * @param[in] meter_addr meter address structure
+ * @return SL_STATUS_OK meter has been successfully removed
+ * @return SL_STATUS_FAIL on error
+ *****************************************************************************/
+sl_status_t sl_wisun_coap_collector_remove_meter(const sockaddr_in6_t * const meter_addr);
+
+/**************************************************************************//**
+ * @brief Send async request.
+ * @details Send async request to the given meter
+ * @param[in] meter_addr meter address structure
+ * @return SL_STATUS_OK async request has been successfully sent
+ * @return SL_STATUS_FAIL on error
+ *****************************************************************************/
+sl_status_t sl_wisun_coap_collector_send_async_request(const sockaddr_in6_t * const meter_addr);
+
+/**************************************************************************//**
+ * @brief Print Meters.
+ * @details Print registered and async meters
+ *****************************************************************************/
+void sl_wisun_coap_collector_print_meters(void);
+
+/**************************************************************************//**
+ * @brief Remove broken meters
+ * @details Remove meters from the given mempool which did not reply for the
+ *          request in time.
+ * @param[in] req Request type
+ *****************************************************************************/
+void sl_wisun_coap_collector_remove_broken_meters(sl_wisun_request_type_t req);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif // SL_WISUN_COAP_COLLECTOR_H

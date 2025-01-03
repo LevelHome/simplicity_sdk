@@ -1,8 +1,8 @@
 id: "sl_wisun_ping"
-label: "Ping"
+label: "Wi-SUN Ping"
 package: "wisun"
 description: >
-  The Ping component implements a ping service utilizing the ICMPv6 protocol.
+  The Ping component implements a ping service using the ICMPv6 protocol.
   It can send ICMPv6 packets, receive corresponding responses, and calculate
   round-trip latency.
   Applications can emit a single ping packet using the sl_wisun_ping_request()

@@ -8,6 +8,7 @@ from rail_scripts._version import __version__
 from rail_scripts.rail_adapter_multi_phy import RAILAdapter_MultiPhy
 import jinja2
 import jinja2.ext
+import yaml
 
 class RAILConfig_generator:
 
@@ -37,11 +38,11 @@ class RAILConfig_generator:
     self.jinja_env.filters['last16'] = self.last16
 
     # Register the templates
-    self.template_path_h = "rail_config_multi_phy.h.j2".format(self.rail_version)
+    self.template_path_h = "rail_config_multi_phy_{}x.h.j2".format(self.rail_version)
     if self.pte_script is False:
-      self.template_path_c = "rail_config_multi_phy.c.j2".format(self.rail_version)
+      self.template_path_c = "rail_config_multi_phy_{}x.c.j2".format(self.rail_version)
     else:
-      self.template_path_c = "rail_config_multi_phy_pte.c.j2".format(self.rail_version)
+      self.template_path_c = "rail_config_multi_phy_pte_{}x.c.j2".format(self.rail_version)
 
     # We need the railAdapter object to be populated before we can generate the
     # context. If the railAdapter object is not populated by the caller, we can
@@ -51,7 +52,10 @@ class RAILConfig_generator:
       railAdapter.populateModel()
 
     self.context = railAdapter.generateRailModelContext()
-    self.context['filename'] = "rail_config"
+    if self.rail_version >= 3:
+      self.context['filename'] = "sl_rail_config"
+    else:
+      self.context['filename'] = "rail_config"
     self.context['title'] = "Radio Config"
     self.context['rail_version'] = self.rail_version
     self.context['rc_version'] = self.rc_version
@@ -70,6 +74,17 @@ class RAILConfig_generator:
       self.context['protocol'] = basePhy.split('_')[0].lower()
     except:
       self.context['accelerationBufferSize'] = 0
+
+    # self.rail_stack_info = yaml.safe_load(open(os.path.join(RAILAdapter.current_dir, "rail_stack_info_3x.yml")))
+    if self.rail_version >= 3:
+      with open(os.path.join(os.getcwd(), "rail_stack_info_{}x.yml".format(self.rail_version))) as f:
+        self.yamlobject = None
+        if hasattr(yaml, 'FullLoader'):
+          self.yamlobject = yaml.load(f.read(), Loader=yaml.FullLoader)
+        else:
+          self.yamlobject = yaml.load(f.read())
+      self.rail_stack_info = self.yamlobject
+      self.context['rail_stack_info'] = self.rail_stack_info
 
   # Allow clients to override the built-in templates; note that we are only
   # modifying the loader attribute of the jinja environment already created.

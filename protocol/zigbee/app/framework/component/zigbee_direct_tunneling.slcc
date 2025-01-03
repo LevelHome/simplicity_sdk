@@ -17,6 +17,7 @@ requires:
   - name: zigbee_zcl_framework_core
   - name: bluetooth_stack
   - name: zigbee_direct_zdd
+  - name: zigbee_dynamic_commissioning
 
 include:
   - path: protocol/zigbee/app/framework/plugin-soc/zigbee_direct_tunneling/

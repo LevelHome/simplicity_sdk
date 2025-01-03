@@ -17,6 +17,7 @@
 
 #include PLATFORM_HEADER
 #include "sl_legacy_hal_wdog.h"
+#include "sl_code_classification.h"
 
 /***************************************************************************//**
  * Watchdog Interrupt Handler.
@@ -67,6 +68,7 @@ void halInternalEnableWatchDog(void)
 #endif
 }
 
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_LEGACY_HAL, SL_CODE_CLASS_TIME_CRITICAL)
 void halResetWatchdog(void)
 {
 #if (SL_LEGACY_HAL_DISABLE_WATCHDOG == 0)

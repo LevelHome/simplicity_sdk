@@ -25,7 +25,6 @@
 #define TOKEN_MANAGER_H
 
 #include <stdbool.h>
-#include "ecode.h"
 #if defined(USE_NVM3)
 #include "nvm3.h"
 #endif // defined(USE_NVM3)
@@ -34,15 +33,26 @@
 extern "C" {
 #endif
 
+#ifndef NVM3KEY_MFG_TOKEN_RANGE
+//To store a manufacturing token in NVM3 region we shall follow NVM3 key format.
+//Each object in the NVM3 is addressed by a 20-bit key
+//4MSB bits(19:16) of the NVM3 key are used to identify the static tokens
+//that are stored in NVM3 memory space. The value 0xF is used along with the
+//exisitng static token ID to form a 20bit NVM3 key.
+#define NVM3KEY_MFG_TOKEN_RANGE_ID_SHIFT     16u
+#define NVM3KEY_MFG_TOKEN_RANGE_ID           0xF
+#define NVM3KEY_MFG_TOKEN_RANGE              (NVM3KEY_MFG_TOKEN_RANGE_ID << NVM3KEY_MFG_TOKEN_RANGE_ID_SHIFT)
+#endif
+
 /***************************************************************************//**
  * Initialize the Token Manager.
  *
  * @note This function must be called before any other sl_token functions. If
  * it does not return success, the other sl_token functions will not work.
  *
- * @return 0 if successful. Error code otherwise.
+ * @return SL_STATUS_OK if successful, an error code otherwise.
  ******************************************************************************/
-Ecode_t sl_token_init(void);
+sl_status_t sl_token_init(void);
 
 /***************************************************************************//**
  * Read the data stored in the specified data or manufacturing token.
@@ -52,12 +62,12 @@ Ecode_t sl_token_init(void);
  * @param data A pointer to where the token data should be placed.
  * @param length The size of the token data in number of bytes.
  *
- * @return 0 if successful. Error code otherwise.
+ * @return SL_STATUS_OK if successful, an error code otherwise.
  ******************************************************************************/
-Ecode_t sl_token_get_data(uint32_t token,
-                          uint32_t index,
-                          void *data,
-                          uint32_t length);
+sl_status_t sl_token_get_data(uint32_t token,
+                              uint32_t index,
+                              void *data,
+                              uint32_t length);
 
 /***************************************************************************//**
  * Writes the data to the specified token.
@@ -67,12 +77,12 @@ Ecode_t sl_token_get_data(uint32_t token,
  * @param data A pointer to the data being written.
  * @param length The size of the token data in number of bytes.
  *
- * @return 0 if successful. Error code otherwise.
+ * @return SL_STATUS_OK if successful, an error code otherwise.
  ******************************************************************************/
-Ecode_t sl_token_set_data(uint32_t token,
-                          uint32_t index,
-                          void *data,
-                          uint32_t length);
+sl_status_t sl_token_set_data(uint32_t token,
+                              uint32_t index,
+                              void *data,
+                              uint32_t length);
 
 /***************************************************************************//**
  * Increments the value of a counter token.  This call does not support
@@ -80,9 +90,21 @@ Ecode_t sl_token_set_data(uint32_t token,
  *
  * @param token The NVM3KEY for the token.
  *
- * @return 0 if successful. Error code otherwise.
+ * @return SL_STATUS_OK if successful, an error code otherwise.
  ******************************************************************************/
-Ecode_t sl_token_increment_counter(uint32_t token);
+sl_status_t sl_token_increment_counter(uint32_t token);
+
+/***************************************************************************//**
+ * This call support deleting manufacturing tokens from NVM3 region only
+ * when NVM3 override is enabled.
+ *
+ * @note This call support deleting manufacturing tokens from NVM3 region.
+ *
+ * @param token - The NVM3 key for the mfg token.
+ *
+ * @return SL_STATUS_OK if successful, an error code otherwise.
+ ******************************************************************************/
+sl_status_t sl_token_delete_token(uint32_t token);
 
 /***************************************************************************//**
  * Read the data associated with the specified manufacturing token.
@@ -92,12 +114,12 @@ Ecode_t sl_token_increment_counter(uint32_t token);
  * @param data A pointer to where the token data should be placed.
  * @param length The size of the token data in number of bytes.
  *
- * @return 0 if successful. Error code otherwise.
+ * @return SL_STATUS_OK if successful, an error code otherwise.
  ******************************************************************************/
-Ecode_t sl_token_get_manufacturing_data(uint32_t token,
-                                        uint32_t index,
-                                        void *data,
-                                        uint32_t length);
+sl_status_t sl_token_get_manufacturing_data(uint32_t token,
+                                            uint32_t index,
+                                            void *data,
+                                            uint32_t length);
 
 /***************************************************************************//**
  * Writes data to a manufacturing token.
@@ -110,11 +132,11 @@ Ecode_t sl_token_get_manufacturing_data(uint32_t token,
  * @param data A pointer to the data being written.
  * @param length The size of the token data in number of bytes.
  *
- * @return 0 if successful. Error code otherwise.
+ * @return SL_STATUS_OK if successful, an error code otherwise.
  ******************************************************************************/
-Ecode_t sl_token_set_manufacturing_data(uint32_t token,
-                                        void *data,
-                                        uint32_t length);
+sl_status_t sl_token_set_manufacturing_data(uint32_t token,
+                                            void *data,
+                                            uint32_t length);
 
 /** @} end token_manager */
 
@@ -131,6 +153,19 @@ Ecode_t sl_token_set_manufacturing_data(uint32_t token,
  * @param linenumber
  ******************************************************************************/
 void halInternalAssertFailed(const char * filename, int linenumber);
+
+/***************************************************************************//**
+ * During initialisation of token system using sl_token_init, the NVM cache is checked for overflow by NVM3 system.
+ * If the cache is not set to appropriate size with rest of the NVM3 configuration,
+ * the overflow will indicate that and NVM3 operations will be slower.
+ * This callback allows user to assert to indicate the adjustment to cache to appropriate size.
+ * The assert is useful during in development but it may be supressed in production if needed.
+ *
+ * @note See AN1135: Using Third Generation Non-Volatile Memory (NVM3) Data Storage for more information on NVM3 caching.
+ *
+ * @return True if assert, false otherwise.
+ ******************************************************************************/
+__WEAK bool sl_token_assert_on_cache_overflow_callback(void);
 
 /**
  * @description External declaration of an array of NVM3 object keys.
@@ -212,6 +247,13 @@ extern const uint8_t tokenArraySize[];
  */
 extern const void * const tokenDefaults[];
 
+/**
+ * @description External declaration of a flag. When set to true
+ * manufacturing token read/write happens through NVM3 in case of S3 devices.
+ *
+ * This flag should be set to false in case of S2 devices.
+ */
+extern bool nvm3OverrideActive;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 #ifdef __cplusplus

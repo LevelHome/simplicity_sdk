@@ -9,7 +9,7 @@ quality: "production"
 root_path: "protocol/wisun/stack/"
 
 requires:
-  - name: "wisun_stack"
+  - name: "a_wisun_stack"
 
 provides:
   - name: "wisun_select"

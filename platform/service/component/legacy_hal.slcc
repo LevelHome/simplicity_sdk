@@ -3,6 +3,9 @@ label: Legacy HAL
 package: platform
 category: Services|Ember Legacy
 quality: production
+metadata:
+  sbom:
+    license: MSLA
 description: >
   Legacy Ember HAL
 
@@ -19,8 +22,14 @@ requires:
     condition:
       - device_cortexm
   - name: component_catalog
+  - name: code_classification
 template_contribution:
   - name: component_catalog
+    value: legacy_hal
+  - name: code_classification_components
+    value: legacy_hal
+define:
+  - name: SL_CODE_COMPONENT_LEGACY_HAL
     value: legacy_hal
 documentation:
     docset: gecko-platform

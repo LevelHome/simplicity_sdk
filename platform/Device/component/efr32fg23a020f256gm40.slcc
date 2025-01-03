@@ -8,6 +8,10 @@
   - name: EFR32FG23A020F256GM40
     unless:
     - device_content_override
+  - name: SL_CODE_COMPONENT_SYSTEM
+    unless:
+    - device_content_override
+    value: system
 - source:
   - path: platform/Device/SiliconLabs/EFR32FG23/Source/system_efr32fg23.c
     unless:
@@ -39,8 +43,6 @@
     - path: efr32fg23_iadc.h
     - path: efr32fg23_icache.h
     - path: efr32fg23_keyscan.h
-    - path: efr32fg23_lcd.h
-    - path: efr32fg23_lcdrf.h
     - path: efr32fg23_ldma.h
     - path: efr32fg23_ldmaxbar.h
     - path: efr32fg23_ldmaxbar_defines.h
@@ -168,6 +170,8 @@
   - id: trustzone_unaware
 - requires:
   - name: cmsis_core
+  - name: code_classification
+  - name: component_catalog
 - template_contribution:
   - name: device_opn
     value: EFR32FG23A020F256GM40
@@ -217,6 +221,8 @@
       count: '4'
       mask: '0x000F'
       name: gpio_port_d
+  - name: code_classification_components
+    value: system
 - tag:
   - device:opn:efr32fg23a020f256gm40
 - toolchain_settings:

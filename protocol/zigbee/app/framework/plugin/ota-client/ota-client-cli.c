@@ -68,7 +68,7 @@
  */
 static void otaStartStopClientCommand(bool starting)
 {
-  sl_zigbee_af_core_println("%p" "ing OTA client state machine",
+  sl_zigbee_af_core_println("%s" "ing OTA client state machine",
                             starting ? "start" : "stopp");
   if (starting) {
     sl_zigbee_af_ota_client_start_cb();
@@ -121,24 +121,24 @@ void otaPrintClientInfo(sl_cli_command_arg_t *arguments)
   uint16_t hardwareVersion;
   sl_zigbee_af_ota_client_version_info_cb(&myId, &hardwareVersion);
   otaPrintln("Client image query info");
-  otaPrintln("Manuf ID:         0x%2X", myId.manufacturerId);
-  otaPrintln("Image Type ID:    0x%2X", myId.imageTypeId);
-  otaPrintln("Current Version:  0x%4X", myId.firmwareVersion);
+  otaPrintln("Manuf ID:         0x%04X", myId.manufacturerId);
+  otaPrintln("Image Type ID:    0x%04X", myId.imageTypeId);
+  otaPrintln("Current Version:  0x%08X", myId.firmwareVersion);
   sl_zigbee_af_ota_bootload_cluster_print("Hardware Version: ");
   if (hardwareVersion != SL_ZIGBEE_AF_INVALID_HARDWARE_VERSION) {
-    otaPrintln("0x%2X", hardwareVersion);
+    otaPrintln("0x%04X", hardwareVersion);
   } else {
     otaPrintln("NA");
   }
   sl_zigbee_af_core_flush();
 
-  otaPrintln("Query Delay ms:            %l", (uint32_t)SL_ZIGBEE_AF_OTA_QUERY_DELAY_MS);
+  otaPrintln("Query Delay ms:            %ld", (uint32_t)SL_ZIGBEE_AF_OTA_QUERY_DELAY_MS);
   sl_zigbee_af_core_flush();
-  otaPrintln("Server Discovery Delay ms: %l", (uint32_t)SL_ZIGBEE_AF_OTA_SERVER_DISCOVERY_DELAY_MS);
-  otaPrintln("Download Delay ms:         %l", (uint32_t)SL_ZIGBEE_AF_PLUGIN_OTA_CLIENT_DOWNLOAD_DELAY_MS);
-  otaPrintln("Run Upgrade Delay ms:      %l", (uint32_t)SL_ZIGBEE_AF_RUN_UPGRADE_REQUEST_DELAY_MS);
+  otaPrintln("Server Discovery Delay ms: %ld", (uint32_t)SL_ZIGBEE_AF_OTA_SERVER_DISCOVERY_DELAY_MS);
+  otaPrintln("Download Delay ms:         %ld", (uint32_t)SL_ZIGBEE_AF_PLUGIN_OTA_CLIENT_DOWNLOAD_DELAY_MS);
+  otaPrintln("Run Upgrade Delay ms:      %ld", (uint32_t)SL_ZIGBEE_AF_RUN_UPGRADE_REQUEST_DELAY_MS);
   sl_zigbee_af_core_flush();
-  otaPrintln("Verify Delay ms:           %l", (uint32_t)SL_ZIGBEE_AF_PLUGIN_OTA_CLIENT_VERIFY_DELAY_MS);
+  otaPrintln("Verify Delay ms:           %ld", (uint32_t)SL_ZIGBEE_AF_PLUGIN_OTA_CLIENT_VERIFY_DELAY_MS);
   otaPrintln("Download Error Threshold:  %d", SL_ZIGBEE_AF_PLUGIN_OTA_CLIENT_DOWNLOAD_ERROR_THRESHOLD);
   otaPrintln("Upgrade Wait Threshold:    %d", SL_ZIGBEE_AF_PLUGIN_OTA_CLIENT_UPGRADE_WAIT_THRESHOLD);
   sl_zigbee_af_core_flush();

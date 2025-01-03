@@ -152,8 +152,8 @@ static void sl_zigbee_af_device_management_cluster_print_pending_status(sl_zigbe
   }
 }
 
-static void sendDeviceManagementClusterReportWildCardAttribute(uint8_t attributeSet,
-                                                               uint8_t endpoint)
+static sl_zigbee_af_zcl_request_status_t sendDeviceManagementClusterReportWildCardAttribute(uint8_t attributeSet,
+                                                                                            uint8_t endpoint)
 {
   uint8_t attrSet, j, k;
   uint8_t eventConfiguration;
@@ -192,7 +192,7 @@ static void sendDeviceManagementClusterReportWildCardAttribute(uint8_t attribute
                                                       sizeof(eventConfiguration));
 
           if (status == SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-            //sl_zigbee_af_device_management_cluster_println("Attributed Id 0x%2x",attributeId);
+            //sl_zigbee_af_device_management_cluster_println("Attributed Id 0x%04X",attributeId);
             atLeastOneEvent = true;
             (void) sl_zigbee_af_put_int16u_in_resp(attributeId);
             (void) sl_zigbee_af_put_int8u_in_resp(eventConfiguration);
@@ -202,13 +202,12 @@ static void sendDeviceManagementClusterReportWildCardAttribute(uint8_t attribute
     }
   }
 
-  if (atLeastOneEvent) {
-    sl_zigbee_af_send_response();
-  } else {
-    status = SL_ZIGBEE_ZCL_STATUS_NOT_FOUND;
+  if (!atLeastOneEvent) {
     sl_zigbee_af_device_management_cluster_println("sending default response");
-    sl_zigbee_af_send_immediate_default_response(status);
+    return SL_ZIGBEE_ZCL_STATUS_NOT_FOUND;
   }
+  sl_zigbee_af_send_response();
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
 static void writeDeviceManagementClusterWildCardAttribute(uint8_t attributeSet,
@@ -273,7 +272,7 @@ static void writeDeviceManagementClusterByLogTypeAttribute(uint8_t logType,
                                                                            (uint8_t*)&attributeConfiguration,
                                                                            ZCL_BITMAP8_ATTRIBUTE_TYPE);
               if (status == SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-                sl_zigbee_af_device_management_cluster_println("Writing %x to 0x%2x", attributeConfiguration, attributeId);
+                sl_zigbee_af_device_management_cluster_println("Writing %02X to 0x%04X", attributeConfiguration, attributeId);
               }
             }
           }
@@ -315,7 +314,7 @@ static void writeDeviceManagementClusterByMatchingAttribute(uint8_t currentConfi
                                                                            (uint8_t*)&attributeConfiguration,
                                                                            ZCL_BITMAP8_ATTRIBUTE_TYPE);
               if (status == SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-                sl_zigbee_af_device_management_cluster_println("Writing %x to 0x%2x", attributeConfiguration, attributeId);
+                sl_zigbee_af_device_management_cluster_println("Writing %02X to 0x%04X", attributeConfiguration, attributeId);
               }
             }
           }
@@ -361,7 +360,7 @@ void sl_zigbee_af_device_management_cluster_client_tick_cb(uint8_t endpoint)
   // Action pending changes
   if (pmInfo.pendingUpdates & SL_ZIGBEE_AF_DEVICE_MANAGEMENT_CHANGE_OF_TENANCY_PENDING_MASK) {
     if (currentTime >= pmInfo.tenancy.implementationDateTime) {
-      sl_zigbee_af_device_management_cluster_println("DEVICE MANAGEMENT CLIENT: Enacting change of tenancy at time 0x%4x\n",
+      sl_zigbee_af_device_management_cluster_println("DEVICE MANAGEMENT CLIENT: Enacting change of tenancy at time 0x%08X\n",
                                                      currentTime);
       sl_zigbee_af_device_management_client_enact_change_of_tenancy_cb(endpoint,
                                                                        &(pmInfo.tenancy));
@@ -373,7 +372,7 @@ void sl_zigbee_af_device_management_cluster_client_tick_cb(uint8_t endpoint)
 
   if (pmInfo.pendingUpdates & SL_ZIGBEE_AF_DEVICE_MANAGEMENT_CHANGE_OF_SUPPLIER_PENDING_MASK) {
     if (currentTime >= pmInfo.supplier.implementationDateTime) {
-      sl_zigbee_af_device_management_cluster_println("DEVICE MANAGEMENT CLIENT: Enacting change of supplier at time 0x%4x\n",
+      sl_zigbee_af_device_management_cluster_println("DEVICE MANAGEMENT CLIENT: Enacting change of supplier at time 0x%08X\n",
                                                      currentTime);
       sl_zigbee_af_device_management_client_enact_change_of_supplier_cb(endpoint,
                                                                         &(pmInfo.supplier));
@@ -394,7 +393,7 @@ void sl_zigbee_af_device_management_cluster_client_tick_cb(uint8_t endpoint)
       if (status == SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
         pmInfo.pendingUpdates &= ~(SL_ZIGBEE_AF_DEVICE_MANAGEMENT_UPDATE_SITE_ID_PENDING_MASK);
       }
-      sl_zigbee_af_device_management_cluster_println("DEVICE MANAGEMENT CLIENT: Enacting site id update at time 0x%4x: %d\n",
+      sl_zigbee_af_device_management_cluster_println("DEVICE MANAGEMENT CLIENT: Enacting site id update at time 0x%08X: %d\n",
                                                      currentTime,
                                                      status);
     } else if (pmInfo.siteId.implementationDateTime - currentTime < nextTick) {
@@ -413,7 +412,7 @@ void sl_zigbee_af_device_management_cluster_client_tick_cb(uint8_t endpoint)
       if (status == SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
         pmInfo.pendingUpdates &= ~(SL_ZIGBEE_AF_DEVICE_MANAGEMENT_UPDATE_CIN_PENDING_MASK);
       }
-      sl_zigbee_af_device_management_cluster_println("DEVICE MANAGEMENT CLIENT: Enacting customer id number update at time 0x%4x: %d\n",
+      sl_zigbee_af_device_management_cluster_println("DEVICE MANAGEMENT CLIENT: Enacting customer id number update at time 0x%08X: %d\n",
                                                      currentTime,
                                                      status);
     } else if (pmInfo.cin.implementationDateTime - currentTime < nextTick) {
@@ -422,7 +421,7 @@ void sl_zigbee_af_device_management_cluster_client_tick_cb(uint8_t endpoint)
   }
 
   if (pmInfo.pendingUpdates & SL_ZIGBEE_AF_DEVICE_MANAGEMENT_UPDATE_SERVICE_PASSWORD_PENDING_MASK) {
-    sl_zigbee_af_device_management_cluster_println("DEVICE MANAGEMENT CLIENT: Service password current time 0x%4x: implementationTime 0x%4x\n",
+    sl_zigbee_af_device_management_cluster_println("DEVICE MANAGEMENT CLIENT: Service password current time 0x%08X: implementationTime 0x%08X\n",
                                                    currentTime,
                                                    servicePassword.implementationDateTime);
     if (currentTime >= servicePassword.implementationDateTime) {
@@ -456,7 +455,7 @@ void sl_zigbee_af_device_management_cluster_client_tick_cb(uint8_t endpoint)
   }
 }
 
-bool sl_zigbee_af_device_management_cluster_publish_change_of_tenancy_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_device_management_cluster_publish_change_of_tenancy_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_device_management_cluster_publish_change_of_tenancy_command_t cmd_data;
   uint32_t currentTime = sl_zigbee_af_get_current_time();
@@ -465,10 +464,10 @@ bool sl_zigbee_af_device_management_cluster_publish_change_of_tenancy_cb(sl_zigb
 
   if (zcl_decode_device_management_cluster_publish_change_of_tenancy_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_device_management_cluster_println("RX: PublishChangeOfTenancy: 0x%4X, 0x%4X, 0x%X, 0x%4X, 0x%4X",
+  sl_zigbee_af_device_management_cluster_println("RX: PublishChangeOfTenancy: 0x%08X, 0x%08X, 0x%02X, 0x%08X, 0x%08X",
                                                  cmd_data.providerId,
                                                  cmd_data.issuerEventId,
                                                  cmd_data.tariffType,
@@ -527,11 +526,10 @@ bool sl_zigbee_af_device_management_cluster_publish_change_of_tenancy_cb(sl_zigb
   }
 
   kickout:
-  sl_zigbee_af_send_immediate_default_response(status);
-  return true;
+  return status;
 }
 
-bool sl_zigbee_af_device_management_cluster_publish_change_of_supplier_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_device_management_cluster_publish_change_of_supplier_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_device_management_cluster_publish_change_of_supplier_command_t cmd_data;
   sl_zigbee_af_status_t status = SL_ZIGBEE_ZCL_STATUS_SUCCESS;
@@ -540,10 +538,10 @@ bool sl_zigbee_af_device_management_cluster_publish_change_of_supplier_cb(sl_zig
 
   if (zcl_decode_device_management_cluster_publish_change_of_supplier_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_device_management_cluster_println("RX: PublishChangeOfSupplier: 0x%4X, 0x%4X, 0x%X, 0x%4X, 0x%4X, 0x%4X, ",
+  sl_zigbee_af_device_management_cluster_println("RX: PublishChangeOfSupplier: 0x%08X, 0x%08X, 0x%02X, 0x%08X, 0x%08X, 0x%08X, ",
                                                  cmd_data.currentProviderId,
                                                  cmd_data.issuerEventId,
                                                  cmd_data.tariffType,
@@ -595,11 +593,10 @@ bool sl_zigbee_af_device_management_cluster_publish_change_of_supplier_cb(sl_zig
   }
 
   kickout:
-  sl_zigbee_af_send_immediate_default_response(status);
-  return true;
+  return status;
 }
 
-bool sl_zigbee_af_device_management_cluster_request_new_password_response_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_device_management_cluster_request_new_password_response_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_device_management_cluster_request_new_password_response_command_t cmd_data;
   uint32_t currentTime = sl_zigbee_af_get_current_time();
@@ -609,7 +606,7 @@ bool sl_zigbee_af_device_management_cluster_request_new_password_response_cb(sl_
 
   if (zcl_decode_device_management_cluster_request_new_password_response_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   if (cmd_data.password == NULL) {
@@ -660,11 +657,10 @@ bool sl_zigbee_af_device_management_cluster_request_new_password_response_cb(sl_
                            SL_ZIGBEE_AF_DEVICE_MANAGEMENT_MAXIMUM_PASSWORD_LENGTH);
 
   kickout:
-  sl_zigbee_af_send_immediate_default_response(status);
-  return true;
+  return status;
 }
 
-bool sl_zigbee_af_device_management_cluster_update_site_id_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_device_management_cluster_update_site_id_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_device_management_cluster_update_site_id_command_t cmd_data;
   uint32_t currentTime = sl_zigbee_af_get_current_time();
@@ -673,7 +669,7 @@ bool sl_zigbee_af_device_management_cluster_update_site_id_cb(sl_zigbee_af_clust
 
   if (zcl_decode_device_management_cluster_update_site_id_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   if (pmInfo.providerId != cmd_data.providerId) {
@@ -697,8 +693,8 @@ bool sl_zigbee_af_device_management_cluster_update_site_id_cb(sl_zigbee_af_clust
       status = SL_ZIGBEE_ZCL_STATUS_SUCCESS;
     } else {
       sl_zigbee_af_device_management_cluster_println("Unable to cancel scheduled siteId update.");
-      sl_zigbee_af_device_management_cluster_println("Provider ID: 0x%4x", pmInfo.providerId);
-      sl_zigbee_af_device_management_cluster_println("Issuer Event ID: 0x%4x", pmInfo.issuerEventId);
+      sl_zigbee_af_device_management_cluster_println("Provider ID: 0x%08X", pmInfo.providerId);
+      sl_zigbee_af_device_management_cluster_println("Issuer Event ID: 0x%08X", pmInfo.issuerEventId);
       sl_zigbee_af_device_management_cluster_print_pending_status(SL_ZIGBEE_AF_DEVICE_MANAGEMENT_UPDATE_SITE_ID_PENDING_MASK);
       status = SL_ZIGBEE_ZCL_STATUS_FAILURE;
       goto kickout;
@@ -750,11 +746,10 @@ bool sl_zigbee_af_device_management_cluster_update_site_id_cb(sl_zigbee_af_clust
   }
 
   kickout:
-  sl_zigbee_af_send_immediate_default_response(status);
-  return true;
+  return status;
 }
 
-bool sl_zigbee_af_device_management_cluster_update_cin_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_device_management_cluster_update_cin_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_device_management_cluster_update_cin_command_t cmd_data;
   uint32_t currentTime = sl_zigbee_af_get_current_time();
@@ -763,7 +758,7 @@ bool sl_zigbee_af_device_management_cluster_update_cin_cb(sl_zigbee_af_cluster_c
 
   if (zcl_decode_device_management_cluster_update_cin_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   if (pmInfo.providerId != cmd_data.providerId) {
@@ -781,8 +776,8 @@ bool sl_zigbee_af_device_management_cluster_update_cin_cb(sl_zigbee_af_cluster_c
       status = SL_ZIGBEE_ZCL_STATUS_SUCCESS;
     } else {
       sl_zigbee_af_device_management_cluster_println("Unable to cancel scheduled CIN update.");
-      sl_zigbee_af_device_management_cluster_println("Provider ID: 0x%4x", pmInfo.providerId);
-      sl_zigbee_af_device_management_cluster_println("Issuer Event ID: 0x%4x", pmInfo.issuerEventId);
+      sl_zigbee_af_device_management_cluster_println("Provider ID: 0x%08X", pmInfo.providerId);
+      sl_zigbee_af_device_management_cluster_println("Issuer Event ID: 0x%08X", pmInfo.issuerEventId);
       sl_zigbee_af_device_management_cluster_print_pending_status(SL_ZIGBEE_AF_DEVICE_MANAGEMENT_UPDATE_CIN_PENDING_MASK);
       status = SL_ZIGBEE_ZCL_STATUS_FAILURE;
       goto kickout;
@@ -833,11 +828,10 @@ bool sl_zigbee_af_device_management_cluster_update_cin_cb(sl_zigbee_af_cluster_c
   }
 
   kickout:
-  sl_zigbee_af_send_immediate_default_response(status);
-  return true;
+  return status;
 }
 
-bool sl_zigbee_af_device_management_cluster_get_event_configuration_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_device_management_cluster_get_event_configuration_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_device_management_cluster_get_event_configuration_command_t cmd_data;
   uint8_t endpoint = sl_zigbee_af_current_endpoint();
@@ -846,7 +840,7 @@ bool sl_zigbee_af_device_management_cluster_get_event_configuration_cb(sl_zigbee
 
   if (zcl_decode_device_management_cluster_get_event_configuration_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   if ((cmd_data.eventId & 0xFF) == 0xFF) {
@@ -854,13 +848,10 @@ bool sl_zigbee_af_device_management_cluster_get_event_configuration_cb(sl_zigbee
     uint8_t attributeSet = (cmd_data.eventId & 0xFF00) >> 8;
     //sl_zigbee_af_device_management_cluster_println("attribute set %u",attributeSet);
     if ((attributeSet < 1 || attributeSet > 8) && attributeSet != 0xFF) {
-      status = SL_ZIGBEE_ZCL_STATUS_NOT_FOUND;
-      sl_zigbee_af_send_immediate_default_response(status);
-      return true;
+      return SL_ZIGBEE_ZCL_STATUS_NOT_FOUND;
     } else {
-      sendDeviceManagementClusterReportWildCardAttribute(attributeSet,
-                                                         endpoint);
-      return true;
+      return sendDeviceManagementClusterReportWildCardAttribute(attributeSet,
+                                                                endpoint);
     }
   } else {
     sl_zigbee_af_device_management_cluster_println("Get Event callback %u", cmd_data.eventId);
@@ -882,23 +873,21 @@ bool sl_zigbee_af_device_management_cluster_get_event_configuration_cb(sl_zigbee
       (void) sl_zigbee_af_put_int16u_in_resp(cmd_data.eventId);
       (void) sl_zigbee_af_put_int8u_in_resp(eventConfiguration);
       sl_zigbee_af_send_response();
-      return true;
+      return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
     } else {
-      status = SL_ZIGBEE_ZCL_STATUS_NOT_FOUND;
-      sl_zigbee_af_send_immediate_default_response(status);
-      return true;
+      return SL_ZIGBEE_ZCL_STATUS_NOT_FOUND;
     }
   }
 }
 
-bool sl_zigbee_af_device_management_cluster_set_event_configuration_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_device_management_cluster_set_event_configuration_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_device_management_cluster_set_event_configuration_command_t cmd_data;
   uint8_t payloadIndex = 0;
 
   if (zcl_decode_device_management_cluster_set_event_configuration_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   switch (cmd_data.configurationControl) {
@@ -909,7 +898,7 @@ bool sl_zigbee_af_device_management_cluster_set_event_configuration_cb(sl_zigbee
       while (payloadIndex < numberOfEvents * 2) {
         uint16_t attributeId = sl_zigbee_af_get_int16u(cmd_data.eventConfigurationPayload, payloadIndex, numberOfEvents * 2 + 1);
         payloadIndex += 2;
-        sl_zigbee_af_device_management_cluster_println("AttributeId 0x%2x", attributeId);
+        sl_zigbee_af_device_management_cluster_println("AttributeId 0x%04X", attributeId);
         writeDeviceManagementAttribute(attributeId, cmd_data.eventConfiguration);
       }
       break;
@@ -937,9 +926,9 @@ bool sl_zigbee_af_device_management_cluster_set_event_configuration_cb(sl_zigbee
       break;
     }
     default:
-      sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_INVALID_VALUE);
+      return SL_ZIGBEE_ZCL_STATUS_INVALID_VALUE;
   }
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
 void sl_zigbee_af_device_management_client_print(void)
@@ -948,53 +937,53 @@ void sl_zigbee_af_device_management_client_print(void)
   sl_zigbee_af_device_management_cluster_println("== Device Management Information ==\n");
 
   sl_zigbee_af_device_management_cluster_println("  == Tenancy ==");
-  sl_zigbee_af_device_management_cluster_println("  Implementation Date / Time: 0x%4x", pmInfo.tenancy.implementationDateTime);
-  sl_zigbee_af_device_management_cluster_println("  Tenancy: 0x%4x", pmInfo.tenancy.tenancy);
+  sl_zigbee_af_device_management_cluster_println("  Implementation Date / Time: 0x%08X", pmInfo.tenancy.implementationDateTime);
+  sl_zigbee_af_device_management_cluster_println("  Tenancy: 0x%08X", pmInfo.tenancy.tenancy);
   sl_zigbee_af_device_management_cluster_print_pending_status(SL_ZIGBEE_AF_DEVICE_MANAGEMENT_CHANGE_OF_TENANCY_PENDING_MASK);
   sl_zigbee_af_device_management_cluster_println("");
 
   sl_zigbee_af_device_management_cluster_println("  == Supplier ==");
   sl_zigbee_af_device_management_cluster_print("  Provider name: ");
   sl_zigbee_af_device_management_cluster_print_string(pmInfo.supplier.proposedProviderName);
-  sl_zigbee_af_device_management_cluster_println("\n  Proposed Provider Id: 0x%4x", pmInfo.supplier.proposedProviderId);
-  sl_zigbee_af_device_management_cluster_println("  Implementation Date / Time: 0x%4x", pmInfo.supplier.implementationDateTime);
-  sl_zigbee_af_device_management_cluster_println("  Provider Change Control: 0x%4x", pmInfo.supplier.providerChangeControl);
+  sl_zigbee_af_device_management_cluster_println("\n  Proposed Provider Id: 0x%08X", pmInfo.supplier.proposedProviderId);
+  sl_zigbee_af_device_management_cluster_println("  Implementation Date / Time: 0x%08X", pmInfo.supplier.implementationDateTime);
+  sl_zigbee_af_device_management_cluster_println("  Provider Change Control: 0x%08X", pmInfo.supplier.providerChangeControl);
   sl_zigbee_af_device_management_cluster_print_pending_status(SL_ZIGBEE_AF_DEVICE_MANAGEMENT_CHANGE_OF_TENANCY_PENDING_MASK);
   sl_zigbee_af_device_management_cluster_println("");
 
   sl_zigbee_af_device_management_cluster_println("  == Site ID ==");
   sl_zigbee_af_device_management_cluster_print("  Site ID: ");
   sl_zigbee_af_device_management_cluster_print_string(pmInfo.siteId.siteId);
-  sl_zigbee_af_device_management_cluster_println("\n  Site Id Implementation Date / Time: 0x%4x", pmInfo.siteId.implementationDateTime);
+  sl_zigbee_af_device_management_cluster_println("\n  Site Id Implementation Date / Time: 0x%08X", pmInfo.siteId.implementationDateTime);
   sl_zigbee_af_device_management_cluster_print_pending_status(SL_ZIGBEE_AF_DEVICE_MANAGEMENT_UPDATE_SITE_ID_PENDING_MASK);
   sl_zigbee_af_device_management_cluster_println("");
 
   sl_zigbee_af_device_management_cluster_println("  == Customer ID Number ==");
   sl_zigbee_af_device_management_cluster_print("  Customer ID Number: ");
   sl_zigbee_af_device_management_cluster_print_string(pmInfo.cin.cin);
-  sl_zigbee_af_device_management_cluster_println("\n  Customer ID Number Implementation Date / Time: 0x%4x\n", pmInfo.cin.implementationDateTime);
+  sl_zigbee_af_device_management_cluster_println("\n  Customer ID Number Implementation Date / Time: 0x%08X\n", pmInfo.cin.implementationDateTime);
   sl_zigbee_af_device_management_cluster_print_pending_status(SL_ZIGBEE_AF_DEVICE_MANAGEMENT_UPDATE_CIN_PENDING_MASK);
 
   sl_zigbee_af_device_management_cluster_println("  == Passwords ==");
   sl_zigbee_af_device_management_cluster_println("   = Service Password =");
   sl_zigbee_af_device_management_cluster_print("   Password: ");
   sl_zigbee_af_device_management_cluster_print_string(pmInfo.servicePassword.password);
-  sl_zigbee_af_device_management_cluster_println("\n   Implementation Date / Time: 0x%4x", pmInfo.servicePassword.implementationDateTime);
-  sl_zigbee_af_device_management_cluster_println("   Duration In Minutes: 0x%2x", pmInfo.servicePassword.durationInMinutes);
-  sl_zigbee_af_device_management_cluster_println("   Password Type: 0x%x\n", pmInfo.servicePassword.passwordType);
+  sl_zigbee_af_device_management_cluster_println("\n   Implementation Date / Time: 0x%08X", pmInfo.servicePassword.implementationDateTime);
+  sl_zigbee_af_device_management_cluster_println("   Duration In Minutes: 0x%04X", pmInfo.servicePassword.durationInMinutes);
+  sl_zigbee_af_device_management_cluster_println("   Password Type: 0x%02X\n", pmInfo.servicePassword.passwordType);
 
   sl_zigbee_af_device_management_cluster_println("   = Consumer Password =");
   sl_zigbee_af_device_management_cluster_print("   Password: ");
   sl_zigbee_af_device_management_cluster_print_string(pmInfo.consumerPassword.password);
-  sl_zigbee_af_device_management_cluster_println("\n   Implementation Date / Time: 0x%4x", pmInfo.consumerPassword.implementationDateTime);
-  sl_zigbee_af_device_management_cluster_println("   Duration In Minutes: 0x%2x", pmInfo.consumerPassword.durationInMinutes);
-  sl_zigbee_af_device_management_cluster_println("   Password Type: 0x%x\n", pmInfo.consumerPassword.passwordType);
+  sl_zigbee_af_device_management_cluster_println("\n   Implementation Date / Time: 0x%08X", pmInfo.consumerPassword.implementationDateTime);
+  sl_zigbee_af_device_management_cluster_println("   Duration In Minutes: 0x%04X", pmInfo.consumerPassword.durationInMinutes);
+  sl_zigbee_af_device_management_cluster_println("   Password Type: 0x%02X\n", pmInfo.consumerPassword.passwordType);
 
   sl_zigbee_af_device_management_cluster_println("  == Issuer Event ID ==");
-  sl_zigbee_af_device_management_cluster_println("  Issuer Event ID: 0x%4x\n", pmInfo.issuerEventId);
+  sl_zigbee_af_device_management_cluster_println("  Issuer Event ID: 0x%08X\n", pmInfo.issuerEventId);
 
   sl_zigbee_af_device_management_cluster_println("  == Provider ID ==");
-  sl_zigbee_af_device_management_cluster_println("  Provider Id: 0x%4x", pmInfo.providerId);
+  sl_zigbee_af_device_management_cluster_println("  Provider Id: 0x%08X", pmInfo.providerId);
 
   sl_zigbee_af_device_management_cluster_println("== End of Device Management Information ==");
 }
@@ -1005,49 +994,47 @@ uint32_t sl_zigbee_af_device_management_cluster_client_command_parse(sl_service_
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_PUBLISH_CHANGE_OF_TENANCY_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_device_management_cluster_publish_change_of_tenancy_cb(cmd);
+        status = sl_zigbee_af_device_management_cluster_publish_change_of_tenancy_cb(cmd);
         break;
       }
       case ZCL_PUBLISH_CHANGE_OF_SUPPLIER_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_device_management_cluster_publish_change_of_supplier_cb(cmd);
+        status = sl_zigbee_af_device_management_cluster_publish_change_of_supplier_cb(cmd);
         break;
       }
       case ZCL_REQUEST_NEW_PASSWORD_RESPONSE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_device_management_cluster_request_new_password_response_cb(cmd);
+        status = sl_zigbee_af_device_management_cluster_request_new_password_response_cb(cmd);
         break;
       }
       case ZCL_UPDATE_SITE_ID_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_device_management_cluster_update_site_id_cb(cmd);
+        status = sl_zigbee_af_device_management_cluster_update_site_id_cb(cmd);
         break;
       }
       case ZCL_SET_EVENT_CONFIGURATION_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_device_management_cluster_set_event_configuration_cb(cmd);
+        status = sl_zigbee_af_device_management_cluster_set_event_configuration_cb(cmd);
         break;
       }
       case ZCL_GET_EVENT_CONFIGURATION_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_device_management_cluster_get_event_configuration_cb(cmd);
+        status = sl_zigbee_af_device_management_cluster_get_event_configuration_cb(cmd);
         break;
       }
       case ZCL_UPDATE_CIN_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_device_management_cluster_update_cin_cb(cmd);
+        status = sl_zigbee_af_device_management_cluster_update_cin_cb(cmd);
         break;
       }
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

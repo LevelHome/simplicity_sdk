@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file silabs_wisun_logo.h
+ * @brief Silabs Wi-SUN Logo image
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __SILABS_WISUN_LOGO_H
-#define __SILABS_WISUN_LOGO_H
+#ifndef SILABS_WISUN_LOGO_H
+#define SILABS_WISUN_LOGO_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,10 +44,10 @@ extern "C" {
 // -----------------------------------------------------------------------------
 
 /// Silabs & Wi-SUN logo width
-#define SILABS_WISUN_LOGO_WIDTH 128
+#define SILABS_WISUN_LOGO_WIDTH   (128)
 
 /// Silabs & Wi-SUN logo height
-#define SILABS_WISUN_LOGO_HEIGHT 128
+#define SILABS_WISUN_LOGO_HEIGHT  (128)
 
 // -----------------------------------------------------------------------------
 //                                Global Variables
@@ -64,4 +64,4 @@ extern const unsigned char silabs_wisun_logo_bits[];
 }
 #endif
 
-#endif /* __SILABS_WISUN_LOGO_H */
+#endif // SILABS_WISUN_LOGO_H

@@ -9,7 +9,7 @@ description: >
 root_path: "protocol/wisun"
 
 requires:
-  - name: "wisun_stack"
+  - name: "a_wisun_stack"
 
 provides:
   - name: "wisun_rf_test"

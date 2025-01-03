@@ -29,11 +29,8 @@
  ******************************************************************************/
 
 #include "em_device.h"
-#ifdef _SILICON_LABS_32B_SERIES_2
-#include "em_gpio.h"
-#else
 #include "sl_gpio.h"
-#endif
+
 #include "rail.h"
 #include "sl_rail_util_pti.h"
 #include "sl_rail_util_pti_config.h"

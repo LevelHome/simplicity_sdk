@@ -17,10 +17,7 @@ metadata:
     license: Zlib
 root_path: platform/driver/button/
 config_file:
-  - path: config/s2/sl_simple_button_config.h
-    condition: [device_series_2]
-  - path: config/s3/sl_simple_button_config.h
-    condition: [device_series_3]
+  - path: config/sl_simple_button_config.h
 source:
   - path: src/sl_simple_button.c
 include:
@@ -30,12 +27,7 @@ include:
 provides:
   - name: simple_button_core
 requires:
-  - name: gpiointerrupt
-    condition: [device_series_2]
-  - name: emlib_gpio
-    condition: [device_series_2]
   - name: gpio
-    condition: [device_series_3]
   - name: clock_manager_runtime
   - name: button
 template_file:

@@ -61,7 +61,7 @@ extern "C" {
 
 #define SL_PWM_MIKROE_OUTPUT_CHANNEL             0
 // TIMER3 CC0 on PD02
-#define SL_PWM_MIKROE_OUTPUT_PORT                gpioPortD
+#define SL_PWM_MIKROE_OUTPUT_PORT                SL_GPIO_PORT_D
 #define SL_PWM_MIKROE_OUTPUT_PIN                 2
 
 // [TIMER_SL_PWM_MIKROE]$

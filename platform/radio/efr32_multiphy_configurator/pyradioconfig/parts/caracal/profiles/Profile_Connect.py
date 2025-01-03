@@ -41,6 +41,8 @@ class Profile_Connect_Caracal(Profile_Base_Caracal):
 
     def profile_calculate(self, model):
 
+        model.vars.protocol_id.value_forced = model.vars.protocol_id.var_enum.Connect
+
         # frame_general
         model.vars.frame_bitendian.value_forced = model.vars.frame_bitendian.var_enum.LSB_FIRST
         model.vars.frame_length_type.value_forced = model.vars.frame_length_type.var_enum.VARIABLE_LENGTH

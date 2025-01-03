@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_wisun_udp_client.c
+ * @brief Wi-SUN UDP client
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -31,7 +31,6 @@
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,7 +38,6 @@
 #include "socket/socket.h"
 #include "sl_wisun_trace_util.h"
 #include "sl_wisun_udp_client.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -60,31 +58,33 @@
 //                          Public Function Definitions
 // -----------------------------------------------------------------------------
 
-/* create tcp client */
-void sl_wisun_udp_client_create(void)
+/* create udp client */
+int32_t sl_wisun_udp_client_create(void)
 {
-  int32_t sockid = SOCKET_INVALID_ID; // client socket id
-
   // create client socket
-  sockid = socket(AF_INET6, SOCK_DGRAM, IPPROTO_IP);
+  int32_t sockid = socket(AF_INET6, SOCK_DGRAM | SOCK_NONBLOCK, IPPROTO_UDP);
 
   if (sockid == SOCKET_INVALID_ID) {
     printf("[Failed to create socket: %ld]\n", sockid);
-    return;
-  } else {
-    printf("[Socket created: %ld]\n", sockid);
+    return SOCKET_INVALID_ID;
   }
+
+  printf("[Socket created: %ld]\n", sockid);
+
+  return sockid;
 }
 
-/* close tcp client socket */
+/* close udp client socket */
 void sl_wisun_udp_client_close(const int32_t sockid)
 {
   if (close(sockid) == SOCKET_RETVAL_ERROR) {
     printf("[Failed to close socket: %ld]\n", sockid);
+  } else {
+    printf("[Socket closed: %ld]\n", sockid);
   }
 }
 
-/* write to tcp client socket */
+/* write to udp client socket */
 void sl_wisun_udp_client_write(const int32_t sockid, const char *remote_ip_address,
                                const uint16_t remote_port, const char *str)
 {
@@ -116,21 +116,23 @@ void sl_wisun_udp_client_write(const int32_t sockid, const char *remote_ip_addre
   }
 }
 
-/* read on tcp client socket */
+/* read on udp client socket */
 void sl_wisun_udp_client_read(const int32_t sockid, const uint16_t size)
 {
-  char *c = (char *) app_wisun_malloc((size + 1) * sizeof(char));
+  char *c = (char *)app_wisun_malloc(size + 1);
   int32_t res;
   static sockaddr_in6_t server_addr;
   socklen_t len = sizeof(server_addr);
 
-  res = recvfrom(sockid, c, size, 0,
-                 (struct sockaddr *)&server_addr, &len);
+  memset(c, 0U, size + 1);
+
+  res = recvfrom(sockid, c, size, 0, (struct sockaddr *)&server_addr, &len);
   if (res == SOCKET_RETVAL_ERROR) {
     app_wisun_free(c);
     return;
   }
-  printf("%s\r\n", c);
+
+  printf("%s\n", c);
   app_wisun_free(c);
 }
 

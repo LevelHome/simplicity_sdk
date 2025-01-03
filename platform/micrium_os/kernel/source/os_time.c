@@ -186,7 +186,11 @@ void OSTimeDly(OS_TICK  dly,
                                        OS_TimerCallback,
                                        (void *)OSTCBCurPtr,
                                        0u,
+#if defined(MICRIUMOS_SLEEP_ON_EXIT_SUPPORT)
+                                       SL_SLEEPTIMER_NO_HIGH_PRECISION_HF_CLOCKS_REQUIRED_FLAG);
+#else
                                        0u);
+#endif
     if (status != SL_STATUS_OK) {
       CORE_EXIT_ATOMIC();
       RTOS_ERR_SET(*p_err, RTOS_ERR_FAIL);

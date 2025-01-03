@@ -17,6 +17,8 @@ include:
     - path: "em_burtc.h"
 provides:
   - name: emlib_burtc
+  - name: hal_generic_burtc
+    condition: [device_series_2]
 requires:
   - name: device
   - name: device_has_burtc

@@ -133,16 +133,6 @@ sl_status_t halCommonIdleForMilliseconds(uint32_t *duration);
 void halStackSymbolDelayAIsr(void);
 
 /**
- * @brief This function is halStackRadioPowerUpBoard
- */
-void halStackRadioPowerUpBoard(void);
-
-/**
- * @brief This function is halStackRadioPowerUpBoard
- */
-void halStackRadioPowerDownBoard(void);
-
-/**
  * @brief This function is halStackProcessBootCount
  */
 void halStackProcessBootCount(void);

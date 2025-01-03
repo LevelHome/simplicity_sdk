@@ -148,21 +148,36 @@ bool get_was_tamper_reset(void)
  ******************************************************************************/
 void init_tamper_prs(void)
 {
+  int32_t int_no;
+  sl_gpio_t gpio_prs_pb0 = {
+    .port = PRS_PB0_PORT,
+    .pin = PRS_PB0_PIN,
+  };
+  sl_gpio_t gpio_prs_pb1 = {
+    .port = PRS_PB1_PORT,
+    .pin = PRS_PB1_PIN,
+  };
+
   // Enable GPIO and PRS clock if required
-  CMU_ClockEnable(cmuClock_GPIO, true);
-  CMU_ClockEnable(cmuClock_PRS, true);
+  sl_clock_manager_enable_bus_clock(SL_BUS_CLOCK_GPIO);
+  sl_clock_manager_enable_bus_clock(SL_BUS_CLOCK_PRS);
 
   // Configure push buttons (PB0 and PB1) on WSTK
-  GPIO_PinModeSet(PRS_PB0_PORT, PRS_PB0_PIN, gpioModeInputPull, 1);
-  GPIO_ExtIntConfig(PRS_PB0_PORT, PRS_PB0_PIN, PRS_PB0_PIN, false, false,
-                    false);
+  // Configuration for PRS_PB0_PIN
+  int_no = PRS_PB0_PIN;
+  sl_gpio_set_pin_mode(&gpio_prs_pb0, SL_GPIO_MODE_INPUT_PULL, 1);
+  sl_gpio_configure_external_interrupt(&gpio_prs_pb0, &int_no, false, NULL, NULL);
+  sl_gpio_disable_interrupts(1 << int_no);
 
-  GPIO_PinModeSet(PRS_PB1_PORT, PRS_PB1_PIN, gpioModeInputPull, 1);
-  GPIO_ExtIntConfig(PRS_PB1_PORT, PRS_PB1_PIN, PRS_PB1_PIN, false, false,
-                    false);
+  // Configuration for PRS_PB1_PIN
+  int_no = PRS_PB1_PIN;
+  sl_gpio_set_pin_mode(&gpio_prs_pb1, SL_GPIO_MODE_INPUT_PULL, 1);
+  sl_gpio_configure_external_interrupt(&gpio_prs_pb1, &int_no, false, NULL, NULL);
+  sl_gpio_disable_interrupts(1 << int_no);
 
   // Configure push buttons (PB0 and PB1) as PRS producers
   // Use GPIO pin number for PRS_ASYNC_CH_CTRL_SIGSEL_GPIOPIN0#
+#if defined(_SILICON_LABS_32B_SERIES_2)
   PRS_SourceAsyncSignalSet(TAMPER_INT_PRS_CH, PRS_ASYNC_CH_CTRL_SOURCESEL_GPIO,
                            PRS_PB0_PIN);
   PRS_SourceAsyncSignalSet(HW_RST_TAMPER_PRS_CH,
@@ -172,7 +187,16 @@ void init_tamper_prs(void)
   // Deactivate PRS outputs before connecting them to tamper sources
   PRS_ChannelLevelSet(TAMPER_INT_PRS_CH, true);
   PRS_ChannelLevelSet(HW_RST_TAMPER_PRS_CH, true);
+#else
+  sl_hal_prs_async_connect_channel_producer(TAMPER_INT_PRS_CH,
+                                            PRS_PB0_PIN);
+  sl_hal_prs_async_connect_channel_producer(HW_RST_TAMPER_PRS_CH,
+                                            PRS_PB1_PIN);
 
+  // Deactivate PRS outputs before connecting them to tamper sources
+  sl_hal_prs_async_set_channel_swlevel(TAMPER_INT_PRS_CH, true);
+  sl_hal_prs_async_set_channel_swlevel(HW_RST_TAMPER_PRS_CH, true);
+#endif
   // Configure tamper sources as PRS consumers
   // PB0 for interrupt and filter counter, PB1 and software PRS for tamper reset
   // Note: PRS channel 0 is the default producer for all tamper sources
@@ -185,7 +209,7 @@ void init_tamper_prs(void)
                       offsetof(PRS_TypeDef, CONSUMER_SE_TAMPERSRC4));
   PRS_ConnectConsumer(SW_RST_TAMPER_PRS_CH, prsTypeAsync,
                       offsetof(PRS_TypeDef, CONSUMER_SE_TAMPERSRC5));
-#elif defined(_SILICON_LABS_32B_SERIES_2_CONFIG_5)
+#elif defined(_SILICON_LABS_32B_SERIES_2_CONFIG_5) || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_9)
   PRS_ConnectConsumer(TAMPER_INT_PRS_CH, prsTypeAsync,
                       offsetof(PRS_TypeDef, CONSUMER_SETAMPER_TAMPERSRC27));
   PRS_ConnectConsumer(TAMPER_CNT_PRS_CH, prsTypeAsync,
@@ -194,6 +218,15 @@ void init_tamper_prs(void)
                       offsetof(PRS_TypeDef, CONSUMER_SETAMPER_TAMPERSRC30));
   PRS_ConnectConsumer(SW_RST_TAMPER_PRS_CH, prsTypeAsync,
                       offsetof(PRS_TypeDef, CONSUMER_SETAMPER_TAMPERSRC31));
+#elif defined(_SILICON_LABS_32B_SERIES_3_CONFIG_301)
+  sl_hal_prs_connect_channel_consumer(TAMPER_CNT_PRS_CH, SL_HAL_PRS_TYPE_ASYNC,
+                                      offsetof(PRS_TypeDef, CONSUMER_SETAMPER_TAMPERSRC28));
+  sl_hal_prs_connect_channel_consumer(TAMPER_INT_PRS_CH, SL_HAL_PRS_TYPE_ASYNC,
+                                      offsetof(PRS_TypeDef, CONSUMER_SETAMPER_TAMPERSRC29));
+  sl_hal_prs_connect_channel_consumer(HW_RST_TAMPER_PRS_CH, SL_HAL_PRS_TYPE_ASYNC,
+                                      offsetof(PRS_TypeDef, CONSUMER_SETAMPER_TAMPERSRC30));
+  sl_hal_prs_connect_channel_consumer(SW_RST_TAMPER_PRS_CH, SL_HAL_PRS_TYPE_ASYNC,
+                                      offsetof(PRS_TypeDef, CONSUMER_SETAMPER_TAMPERSRC31));
 #else
   PRS_ConnectConsumer(TAMPER_INT_PRS_CH, prsTypeAsync,
                       offsetof(PRS_TypeDef, CONSUMER_SETAMPER_TAMPERSRC26));
@@ -392,7 +425,7 @@ sl_status_t init_se_otp_conf(void)
   otp_init.tamper_levels[SL_SE_TAMPER_SIGNAL_DPLL_LOCK_FAIL_HIGH] =
     SL_SE_TAMPER_LEVEL_FILTER;
 
-#if defined(_SILICON_LABS_32B_SERIES_2_CONFIG_5)
+#if defined(_SILICON_LABS_32B_SERIES_2_CONFIG_5) || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_9)
   otp_init.tamper_levels[SL_SE_TAMPER_SIGNAL_ETAMPDET] =
     SL_SE_TAMPER_LEVEL_FILTER;
 #endif
@@ -406,7 +439,7 @@ sl_status_t init_se_otp_conf(void)
   otp_init.tamper_levels[SL_SE_TAMPER_SIGNAL_PRS4] = SL_SE_TAMPER_LEVEL_RESET;
   otp_init.tamper_levels[SL_SE_TAMPER_SIGNAL_PRS5] = SL_SE_TAMPER_LEVEL_RESET;
 
-#if !defined(_SILICON_LABS_32B_SERIES_2_CONFIG_5)
+#if !defined(_SILICON_LABS_32B_SERIES_2_CONFIG_5) && !defined(_SILICON_LABS_32B_SERIES_2_CONFIG_9)
   otp_init.tamper_levels[SL_SE_TAMPER_SIGNAL_PRS6] =
     SL_SE_TAMPER_LEVEL_PERMANENTLY_ERASE_OTP;
 #endif

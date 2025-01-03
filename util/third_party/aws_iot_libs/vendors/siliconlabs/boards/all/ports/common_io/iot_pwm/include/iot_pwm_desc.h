@@ -42,7 +42,7 @@
 #include "sl_status.h"
 
 #include "em_device.h"
-#include "em_gpio.h"
+#include "sl_device_gpio.h"
 #include "em_timer.h"
 #include "em_cmu.h"
 
@@ -69,18 +69,15 @@ typedef struct IotPwmDescriptor {
   uint8_t            ucPeripheralNo;
 
   /* channel 0 */
-  GPIO_Port_TypeDef  xCC0Port;
-  uint8_t            ucCC0Pin;
+  sl_gpio_t          cc0Gpio;
   uint8_t            ucCC0Loc;
 
   /* channel 1 */
-  GPIO_Port_TypeDef  xCC1Port;
-  uint8_t            ucCC1Pin;
+  sl_gpio_t          cc1Gpio;
   uint8_t            ucCC1Loc;
 
   /* channel 2 */
-  GPIO_Port_TypeDef  xCC2Port;
-  uint8_t            ucCC2Pin;
+  sl_gpio_t          cc2Gpio;
   uint8_t            ucCC2Loc;
 
   /**************************************/

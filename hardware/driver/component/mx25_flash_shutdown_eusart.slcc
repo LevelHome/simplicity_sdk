@@ -15,8 +15,11 @@ provides:
   - name: mx25_flash_shutdown_driver
 requires:
   - name: clock_manager_runtime
-  - name: emlib_eusart
-  - name: hal_generic_gpio
+  - name: hal_generic_eusart
+  - name: emlib_gpio
+    condition: [device_series_2]
+  - name: gpio
+    condition: [device_series_3]
   - name: udelay
   - name: device
   - name: device_has_eusart
@@ -30,6 +33,9 @@ config_file:
   - path: config/s2/mx25_flash_shutdown_eusart/sl_mx25_flash_shutdown_eusart_config.h
     file_id: mx25_flash_shutdown_eusart_config
     condition: [device_series_2]
+  - path: config/s3/mx25_flash_shutdown_eusart/sl_mx25_flash_shutdown_eusart_config.h
+    file_id: mx25_flash_shutdown_eusart_config
+    condition: [device_series_3]
 template_contribution:
   - name: component_catalog
     value: mx25_flash_shutdown_eusart

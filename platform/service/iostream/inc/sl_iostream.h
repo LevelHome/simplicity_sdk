@@ -165,7 +165,7 @@ sl_iostream_t *sl_iostream_get_default(void);
  *
  * @return  Status result
  ******************************************************************************/
-#if defined(SL_CATALOG_KERNEL_PRESENT)
+#if defined(SL_CATALOG_KERNEL_PRESENT) && !defined(SL_IOSTREAM_FORCE_BAREMETAL)
 sl_status_t sl_iostream_set_system_default(sl_iostream_t *stream);
 #else
 #define sl_iostream_set_system_default sl_iostream_set_default

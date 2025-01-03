@@ -44,7 +44,7 @@ static bool getBarrierPositionDescription(uint8_t endpoint,
 
 static void printSafetyStatus(uint16_t safetyStatus)
 {
-  sl_zigbee_af_app_print("SafetyStatus: 0x%2X (", safetyStatus);
+  sl_zigbee_af_app_print("SafetyStatus: 0x%04X (", safetyStatus);
   if (safetyStatus != 0) {
     if (READBITS(safetyStatus,
                  SL_ZIGBEE_AF_BARRIER_CONTROL_SAFETY_STATUS_REMOTE_LOCKOUT)) {

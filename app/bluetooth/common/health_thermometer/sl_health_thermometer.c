@@ -29,7 +29,7 @@
  ******************************************************************************/
 
 #include <stdbool.h>
-#include "em_common.h"
+#include "sl_common.h"
 #include "sl_bluetooth.h"
 #include "gatt_db.h"
 #include "app_assert.h"

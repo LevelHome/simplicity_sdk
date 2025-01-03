@@ -4,6 +4,9 @@ package: platform
 description: Token Manager using NVM3 for storage.
 category: Services|Token Manager
 quality: production
+metadata:
+  sbom:
+    license: MSLA
 provides:
   - name: token_manager_nvm3
   - name: token_manager_storage

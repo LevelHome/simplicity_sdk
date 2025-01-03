@@ -69,7 +69,7 @@ sl_wisun_keychain_credential_t *sl_wisun_keychain_get_credential(sl_wisun_keycha
                           data,
                           nvm_len);
       if (ret != ECODE_OK) {
-        free(credential);
+        sl_free(credential);
         return NULL;
       }
       credential->certificate.data_length = nvm_len + 1;
@@ -147,7 +147,7 @@ sl_wisun_keychain_entry_t *sl_wisun_keychain_get_trustedca(uint8_t index)
                         nvm_len);
     if (ret != ECODE_OK)
     {
-      free(cert);
+      sl_free(cert);
       return NULL;
     }
     cert->data_length = nvm_len + 1;

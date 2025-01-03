@@ -235,8 +235,8 @@ void bleAdvertisingConfig(sl_cli_command_arg_t *args)
 
 void blePhySwitchToRx(sl_cli_command_arg_t *args)
 {
-  phySwitchToRx.enable = !!sl_cli_get_argument_uint8(args, 0);
-  if (phySwitchToRx.enable) {
+  phySwitchToRx.iterations = sl_cli_get_argument_uint8(args, 0);
+  if (phySwitchToRx.iterations > 0) {
     phySwitchToRx.phy = RAIL_BLE_1Mbps;
     phySwitchToRx.physicalChannel = 0U;
     phySwitchToRx.timeDelta = 1000U;
@@ -272,7 +272,7 @@ void blePhySwitchToRx(sl_cli_command_arg_t *args)
     }
   }
 
-  char *enabled = phySwitchToRx.enable ? "Enabled" : "Disabled";
+  char *enabled = (phySwitchToRx.iterations > 0) ? "Enabled" : "Disabled";
   responsePrint(sl_cli_get_command_string(args, 0), "PhySwitchToRx:%s", enabled);
 }
 

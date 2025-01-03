@@ -31,7 +31,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "app.h"
-#include "em_common.h"
+#include "sl_common.h"
 #include "sl_bt_api.h"
 #include "esl_tag_log.h"
 #include "esl_tag_core.h"
@@ -64,6 +64,7 @@
 #ifdef gattdb_esl_image_info
 #include "esl_tag_image.h"
 #include "esl_tag_image_config.h"
+#include "esl_tag_ots_server.h"
 #endif // gattdb_esl_image_info
 #ifdef gattdb_esl_display_info
 #include "esl_tag_display.h"
@@ -91,6 +92,7 @@
 static bool led0_feedback_enabled = false;
 #endif // SL_CATALOG_SIMPLE_LED_LED0_PRESENT
 
+#ifdef gattdb_esl_led_info
 // type definition for simple SW PWM control
 typedef struct {
   sl_sleeptimer_timer_handle_t *sw_pwm_handle;  // sleep timer handle
@@ -100,6 +102,15 @@ typedef struct {
   bool                         state;           // actual led state
   uint8_t                      duty;            // requested duty cycle
 } led_sw_pwm_t;
+#endif // gattdb_esl_led_info
+
+#if defined(gattdb_esl_image_info) && defined(SL_CATALOG_DMD_MEMLCD_PRESENT)
+// OTS object type for image storage
+static sl_bt_ots_object_type_t esl_image_type_wstk = {
+  false,
+  (uint8_t[SL_BT_OTS_UUID_SIZE_128]){ 0 }
+};
+#endif // gattdb_esl_image_info
 
 #ifdef gattdb_esl_led_info
 
@@ -325,14 +336,25 @@ void esl_core_boot_event(void)
   // suppress the compiler warning if none of the optional ESL characteristics are present
   (void)sc;
 #if defined(gattdb_esl_image_info) && defined(SL_CATALOG_DMD_MEMLCD_PRESENT)
+  #ifdef SL_CATALOG_OTF_DECOMPRESSOR_PRESENT
+  esl_image_ots_flags_t wstk_display_image_flags = (ESL_IMAGE_FLAGS_FORMAT_LZJB | ESL_IMAGE_FLAGS_BIT_FLIP);
+  #else
+  esl_image_ots_flags_t wstk_display_image_flags = (ESL_IMAGE_FLAGS_FORMAT_RAW | ESL_IMAGE_FLAGS_BIT_FLIP);
+  #endif // SL_CATALOG_OTF_DECOMPRESSOR_PRESENT
+  sc = esl_tag_ots_prepare_object_type(ESL_DISPLAY_TYPE_BLACK_WHITE,
+                                       wstk_display_image_flags,
+                                       &esl_image_type_wstk);
+  sl_bt_esl_assert(sc == SL_STATUS_OK);
   // Please don't forget to adjust max. image pool size if resolution increases!
   sc = esl_image_add(SL_MEMLCD_DISPLAY_WIDTH,
                      SL_MEMLCD_DISPLAY_HEIGHT,
-                     SL_MEMLCD_DISPLAY_BPP);
+                     SL_MEMLCD_DISPLAY_BPP,
+                     &esl_image_type_wstk);
   sl_bt_esl_assert(sc == SL_STATUS_OK);
   sc = esl_image_add(SL_MEMLCD_DISPLAY_WIDTH,
                      SL_MEMLCD_DISPLAY_HEIGHT,
-                     SL_MEMLCD_DISPLAY_BPP);
+                     SL_MEMLCD_DISPLAY_BPP,
+                     &esl_image_type_wstk);
   sl_bt_esl_assert(sc == SL_STATUS_OK);
 #endif // gattdb_esl_image_info
 
@@ -589,6 +611,8 @@ sl_status_t esl_core_process_vendor_opcode(tlv_t opcode,
   switch (opcode) {
     // this vendor specified opcode allows to skip N cycle of PAwR sync train
     // the ESL tag to save power during e.g. store closed hours
+    // Note that if the custom resync-by-scan feature is also enabled, then a
+    // successful resync-by-scan resets the skip value to zero.
     case SILABS_LOW_ENERGY_ENABLE_OPCODE: {
       uint8_t settings = 0;
       // check the input length to make sure to avoid memory corruption by copy

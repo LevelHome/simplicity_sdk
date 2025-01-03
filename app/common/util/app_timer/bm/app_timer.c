@@ -38,7 +38,7 @@
 #include "app_timer.h"
 #include "app_timer_internal.h"
 #include "app_timer_types.h"
-#include "em_core.h"
+#include "sl_core.h"
 
 // -----------------------------------------------------------------------------
 // Definitions
@@ -62,8 +62,6 @@ static app_timer_t *app_timer_head = NULL;
  *
  * @param[in] handle Pointer to the sleeptimer handle.
  * @param[in] data Pointer to the sleeptimer's parent app timer.
- *
- * @note This function runs in interrupt context.
  ******************************************************************************/
 static void app_timer_callback(sl_sleeptimer_timer_handle_t *handle,
                                void *data);

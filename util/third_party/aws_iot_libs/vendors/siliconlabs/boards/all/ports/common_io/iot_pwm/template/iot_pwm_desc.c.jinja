@@ -61,8 +61,7 @@ IotPwmDescriptor_t iot_pwm_desc[] = {
 
     /* channel 0 */
 #ifdef IOT_PWM_CFG_{{ instance | upper }}_CC0_PORT
-    .xCC0Port           = IOT_PWM_CFG_{{ instance | upper }}_CC0_PORT,
-    .ucCC0Pin           = IOT_PWM_CFG_{{ instance | upper }}_CC0_PIN,
+    .cc0Gpio            = {.port = IOT_PWM_CFG_{{ instance | upper }}_CC0_PORT, .pin = IOT_PWM_CFG_{{ instance | upper }}_CC0_PIN},
 #if (_SILICON_LABS_32B_SERIES < 2)
     .ucCC0Loc           = IOT_PWM_CFG_{{ instance | upper }}_CC0_LOC,
 #endif
@@ -70,8 +69,7 @@ IotPwmDescriptor_t iot_pwm_desc[] = {
 
     /* channel 1 */
 #ifdef IOT_PWM_CFG_{{ instance | upper }}_CC1_PORT
-    .xCC1Port           = IOT_PWM_CFG_{{ instance | upper }}_CC1_PORT,
-    .ucCC1Pin           = IOT_PWM_CFG_{{ instance | upper }}_CC1_PIN,
+    .cc1Gpio            = {.port = IOT_PWM_CFG_{{ instance | upper }}_CC1_PORT, .pin = IOT_PWM_CFG_{{ instance | upper }}_CC1_PIN},
 #if (_SILICON_LABS_32B_SERIES < 2)
     .ucCC1Loc           = IOT_PWM_CFG_{{ instance | upper }}_CC1_LOC,
 #endif
@@ -79,8 +77,7 @@ IotPwmDescriptor_t iot_pwm_desc[] = {
 
     /* channel 2 */
 #ifdef IOT_PWM_CFG_{{ instance | upper }}_CC2_PORT
-    .xCC2Port           = IOT_PWM_CFG_{{ instance | upper }}_CC2_PORT,
-    .ucCC2Pin           = IOT_PWM_CFG_{{ instance | upper }}_CC2_PIN,
+    .cc2Gpio            = {.port = IOT_PWM_CFG_{{ instance | upper }}_CC2_PORT, .pin = IOT_PWM_CFG_{{ instance | upper }}_CC2_PIN},
 #if (_SILICON_LABS_32B_SERIES < 2)
     .ucCC2Loc           = IOT_PWM_CFG_{{ instance | upper }}_CC2_LOC,
 #endif

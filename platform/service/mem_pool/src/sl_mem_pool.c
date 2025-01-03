@@ -31,12 +31,9 @@
 #include "sl_component_catalog.h"
 #endif
 
-#if defined(SL_CATALOG_EMLIB_CORE_PRESENT)
-#include "em_core.h"
-#else
 #include "sl_assert.h"
-#include "mcu.h"
-#endif
+#include "sl_core.h"
+
 #include "sli_mem_pool.h"
 
 #include <stddef.h>

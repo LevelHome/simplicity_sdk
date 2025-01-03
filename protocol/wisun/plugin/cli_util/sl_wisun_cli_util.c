@@ -273,6 +273,26 @@ sl_status_t app_util_get_mac_address_string(char *value_str,
   return SL_STATUS_OK;
 }
 
+sl_status_t app_util_get_byte_array(const char *value_str, uint8_t *out, int size)
+{
+  unsigned int val;
+
+  for (int i = 0; i < size; i++) {
+    if (value_str[2] != '\0' && value_str[2] != ':') {
+      return SL_STATUS_FAIL;
+    }
+    if (sscanf(value_str, "%x", &val) != 1) {
+      return SL_STATUS_FAIL;
+    }
+    out[i] = val;
+    value_str += 3;
+  }
+  if (value_str[-1] != '\0') {
+    return SL_STATUS_FAIL;
+  }
+  return SL_STATUS_OK;
+}
+
 /* App util printable data init */
 char *app_util_printable_data_init(app_printable_data_ctx_t *const ctx,
                                    const uint8_t *const data,

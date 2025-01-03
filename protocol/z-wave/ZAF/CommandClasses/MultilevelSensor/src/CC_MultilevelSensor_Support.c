@@ -193,6 +193,7 @@ cc_multilevel_sensor_cmd_sensor_multilevel_get( RECEIVE_OPTIONS_TYPE_EX *pRxOpt,
   }
 
   sensor_interface_t* sensor_interface;
+  uint8_t endpoint          = pRxOpt->destNode.endpoint;
   uint8_t sensor_type_value =  pCmd->ZW_SensorMultilevelGetV11Frame.sensorType;
   uint8_t scale             = (pCmd->ZW_SensorMultilevelGetV11Frame.properties1 >> 3) & 0x03;
 
@@ -200,7 +201,7 @@ cc_multilevel_sensor_cmd_sensor_multilevel_get( RECEIVE_OPTIONS_TYPE_EX *pRxOpt,
   pFrameOut->ZW_SensorMultilevelReport4byteV11Frame.cmd      = SENSOR_MULTILEVEL_REPORT_V11;
 
   if( CC_MULTILEVEL_SENSOR_RETURN_VALUE_NOT_FOUND ==
-      cc_multilevel_sensor_check_sensor_type_registered(sensor_type_value))
+      cc_multilevel_sensor_check_sensor_type_registered(endpoint, sensor_type_value))
   {
     cc_multilevel_sensor_get_default_sensor_type(&sensor_type_value);
   }
@@ -208,7 +209,7 @@ cc_multilevel_sensor_cmd_sensor_multilevel_get( RECEIVE_OPTIONS_TYPE_EX *pRxOpt,
   pFrameOut->ZW_SensorMultilevelReport4byteV11Frame.sensorType = sensor_type_value;
 
   if(CC_MULTILEVEL_SENSOR_RETURN_VALUE_OK ==
-     cc_multilevel_sensor_get_interface(sensor_type_value, &sensor_interface))
+     cc_multilevel_sensor_get_interface(endpoint, sensor_type_value, &sensor_interface))
   {
     sensor_read_result_t read_result;
 
@@ -262,7 +263,7 @@ cc_multilevel_sensor_cmd_sensor_multilevel_get_supported_sensor( RECEIVE_OPTIONS
     if(raw_buffer_payload[payload_length - 1] != 0){break;}
     payload_length--;
   }
-  send_buffer_length_bytes += payload_length;
+  send_buffer_length_bytes += (uint8_t)payload_length;
   *pLengthOut = send_buffer_length_bytes;
 
   return RECEIVED_FRAME_STATUS_SUCCESS;

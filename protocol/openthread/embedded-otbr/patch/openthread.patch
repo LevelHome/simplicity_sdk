@@ -1,0 +1,27 @@
+diff --git a/src/posix/platform/include/openthread/openthread-system.h b/src/posix/platform/include/openthread/openthread-system.h
+index 3c72ad0b5..f68f11d4e 100644
+--- a/src/posix/platform/include/openthread/openthread-system.h
++++ b/src/posix/platform/include/openthread/openthread-system.h
+@@ -39,7 +39,8 @@
+ #include <stdbool.h>
+ #include <stdint.h>
+ #include <stdio.h>
+-#include <sys/select.h>
++// #include <sys/select.h>
++#include "lwip/sockets.h"
+ 
+ #include <openthread/error.h>
+ #include <openthread/instance.h>
+diff --git a/src/posix/platform/platform-posix.h b/src/posix/platform/platform-posix.h
+index 822f3f48a..c1f845003 100644
+--- a/src/posix/platform/platform-posix.h
++++ b/src/posix/platform/platform-posix.h
+@@ -42,7 +42,7 @@
+ #include <stdint.h>
+ #include <stdio.h>
+ #include <string.h>
+-#include <sys/select.h>
++// #include <sys/select.h>
+ #include <sys/time.h>
+ 
+ #include <openthread/error.h>

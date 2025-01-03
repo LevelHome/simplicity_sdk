@@ -68,7 +68,7 @@ typedef struct {
  *
  * @return True if the tag is a custom tag, else false
  ******************************************************************************/
-bool gbl_isCustomTag(GblTagHeader_t *tagHeader);
+bool gbl_isCustomTag(const GblTagHeader_t *tagHeader);
 
 /***************************************************************************//**
  * Get properties for a custom GBL tag.

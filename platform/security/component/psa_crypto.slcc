@@ -73,8 +73,7 @@ requires:
     condition: [device_series_2]
   - name: psa_crypto_trng
     condition: [device_si91x]
-    # TODO: Replace with TRNG once supported
-  - name: mbedtls_random
+  - name: psa_crypto_trng
     condition: [device_series_3]
 
 include:
@@ -115,14 +114,6 @@ template_contribution:
     priority: 1
     condition: [trustzone_unaware, mbedtls_entropy_nvseed]
     unless: [rail_lib, zigbee_classic_key_storage, native]
-  - name: event_handler
-    value:
-      event: service_init
-      include: psa/crypto.h
-      handler: psa_crypto_init
-    priority: 1
-    condition: [trustzone_unaware, mbedtls_entropy_dummy_nvseed]
-    unless: [rail_lib, zigbee_classic_key_storage, native]
 
   - name: mbedtls_config
     value: MBEDTLS_PSA_CRYPTO_C
@@ -132,6 +123,9 @@ template_contribution:
 
   - name: mbedtls_config
     value: MBEDTLS_CIPHER_C
+
+  - name: mbedtls_config
+    value: MBEDTLS_PSA_ASSUME_EXCLUSIVE_BUFFERS
 
   - name: psa_key_slots
     value:
@@ -144,3 +138,13 @@ template_contribution:
 
 documentation:
   url: https://armmbed.github.io/mbed-crypto/html/
+
+metadata:
+  sbom:
+    license: Zlib AND Apache-2.0
+    upstream:
+      name: Mbed TLS
+      version: v3.6.2
+      supplier: Trusted Firmware
+      url: https://github.com/Mbed-TLS/mbedtls.git
+      comment: Mbed TLS is a C library implementing the PSA Cryptography API, cryptographic primitives, X.509 certificate manipulation and the SSL/TLS and DTLS protocols

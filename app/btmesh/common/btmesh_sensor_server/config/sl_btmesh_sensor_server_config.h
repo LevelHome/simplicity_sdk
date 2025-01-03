@@ -3,7 +3,7 @@
  * @brief
  *******************************************************************************
  * # License
- * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -43,5 +43,8 @@
 // </h>
 
 // <<< end of configuration section >>>
+
+// Models Metadata additional info
+#define SL_BTMESH_METADATA_SENSOR_PROPERTIES_ID          0x0001
 
 #endif // SL_BTMESH_SENSOR_SERVER_CONFIG_H

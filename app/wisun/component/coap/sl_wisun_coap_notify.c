@@ -1,5 +1,5 @@
 /***************************************************************************//**
- * @file
+ * @file sl_wisun_coap_notify.c
  * @brief Wi-SUN CoAP notfication service
  *******************************************************************************
  * # License
@@ -27,19 +27,20 @@
  * 3. This notice may not be removed or altered from any source distribution.
  *
  ******************************************************************************/
+
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <string.h>
 #include <assert.h>
-#include "sl_wisun_coap_notify.h"
+
 #include "cmsis_os2.h"
 #include "sl_cmsis_os2_common.h"
 #include "sl_mempool.h"
 #include "sl_string.h"
+#include "sl_wisun_app_core.h"
 #include "sl_wisun_app_core_util.h"
-
+#include "sl_wisun_coap_notify.h"
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -71,6 +72,20 @@
     _coap_notify_mtx_release();                          \
     return (__val);                                      \
   } while (0)
+
+#if SL_WISUN_COAP_NOTIFY_SERVICE_ENABLE
+/// Notify schedule parameters
+typedef struct sl_wisun_coap_notify_schedule {
+  /// Time quanta for synchronous notification
+  const uint32_t timequanta;
+  /// Tick event enable flag
+  bool tick_evt_enable;
+  /// Tick event ID
+  osEventFlagsId_t evt;
+  /// Tick event mask
+  const uint32_t evt_msk;
+} sl_wisun_coap_notify_schedule_t;
+#endif
 
 // -----------------------------------------------------------------------------
 //                          Static Function Declarations
@@ -154,6 +169,23 @@ static const osThreadAttr_t _notify_thr_attr = {
   .priority    = osPriorityNormal7,
   .tz_module   = 0U
 };
+
+/// Schedule parameters
+static sl_wisun_coap_notify_schedule_t _schd = {
+  .timequanta = 1UL,
+  .tick_evt_enable = false,
+  .evt_msk = 0x00000001U,
+  .evt = NULL
+};
+
+/// Notify event attribute
+static const osEventFlagsAttr_t _notify_evt_attr = {
+  .name = "CoAP-Notify-Tick-Event",
+  .attr_bits = 0U,
+  .cb_mem = NULL,
+  .cb_size = 0U
+};
+
 #endif
 
 /// Internal notification buffer
@@ -185,6 +217,12 @@ void sl_wisun_coap_notify_init(void)
   assert(stat == SL_STATUS_OK);
 
 #if SL_WISUN_COAP_NOTIFY_SERVICE_ENABLE
+
+  // init schedule parameters
+  _schd.tick_evt_enable = false;
+  _schd.evt = osEventFlagsNew(&_notify_evt_attr);
+  assert(_schd.evt != NULL);
+
   // init thread
   _notfiy_thr = osThreadNew(_notify_thr_fnc, NULL, &_notify_thr_attr);
   assert(_notfiy_thr != NULL);
@@ -296,12 +334,6 @@ sl_status_t sl_wisun_coap_notify_send_notification(const sl_wisun_coap_notify_t 
   uint16_t payload_size = 0U;
   int32_t sockid = SOCKET_INVALID_ID;
 
-  // create socket
-  sockid = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
-  if (sockid == SOCKET_RETVAL_ERROR) {
-    return SL_STATUS_FAIL;
-  }
-
   // Invalid handler for create coap packet
   if (notify->hnd_cb == NULL) {
     return SL_STATUS_FAIL;
@@ -310,6 +342,18 @@ sl_status_t sl_wisun_coap_notify_send_notification(const sl_wisun_coap_notify_t 
   // Preapre coap packet
   pkt = notify->hnd_cb(notify);
   if (pkt == NULL) {
+    return SL_STATUS_FAIL;
+  }
+
+  // check condition to send
+  if (notify->condition_cb != NULL
+      && !notify->condition_cb(notify)) {
+    return SL_STATUS_OK;
+  }
+
+  // create socket
+  sockid = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
+  if (sockid == SOCKET_RETVAL_ERROR) {
     return SL_STATUS_FAIL;
   }
 
@@ -389,49 +433,75 @@ static sl_wisun_coap_notify_t * _get_notify(const char * const id)
 }
 
 #if SL_WISUN_COAP_NOTIFY_SERVICE_ENABLE
+
 static void _notify_thr_fnc(void * args)
 {
   sl_wisun_coap_notify_t *notify = NULL;
-  sl_mempool_block_hnd_t *slot = NULL;
 
   (void) args;
 
   SL_COAP_SERVICE_LOOP() {
-    if (!sl_wisun_app_core_util_network_is_connected()) {
-      osDelay(1000UL);
-      continue;
-    }
-
+    
+    (void) sl_wisun_app_core_wait_state((1UL << SL_WISUN_APP_CORE_STATE_NETWORK_CONNECTED), 
+                                         osWaitForever);
+    
     _coap_notify_mtx_acquire();
 
-    for (slot = _notifications.blocks; slot != NULL; slot = slot->next) {
+    if (_schd.tick_evt_enable) {
+      (void) osEventFlagsWait(_schd.evt, _schd.evt_msk, osFlagsWaitAny, osWaitForever);
+    }
+
+    for (sl_mempool_block_hnd_t *slot = _notifications.blocks; slot != NULL; slot = slot->next) {
       // get notification instance
       notify = (sl_wisun_coap_notify_t *)slot->start_addr;
 
       // check schedule
-      if (notify->schedule_time_ms == notify->tick_ms) {
-        // check condition
-        if (notify->condition_cb != NULL
-            && notify->condition_cb(notify)) {
-          // sendto
-          if (sl_wisun_coap_notify_send_notification(notify) != SL_STATUS_OK) {
-            // error handling
-            sl_wisun_coap_notify_error_hnd(notify);
-          }
-        }
-
-        // reset time counter
-        notify->tick_ms = 0UL;
-      } else {
+      if (!_schd.tick_evt_enable && (notify->schedule_time_ms != notify->tick_ms)) {
         ++notify->tick_ms;
+        continue;
       }
+
+      // sendto
+      if (sl_wisun_coap_notify_send_notification(notify) != SL_STATUS_OK) {
+        // error handling
+        sl_wisun_coap_notify_error_hnd(notify);
+      }
+
+      // reset time counter
+      notify->tick_ms = 0UL;
     }
 
     _coap_notify_mtx_release();
 
-    // 1 ms time quanta
-    osDelay(1UL);
+    if (!_schd.tick_evt_enable) {
+      // 1 ms time quanta if event trigger is not enabled
+      osDelay(_schd.timequanta);
+    }
   }
+}
+
+void sl_wisun_coap_notify_tick_evt_enable(const bool enable)
+{
+  _coap_notify_mtx_acquire();
+  _schd.tick_evt_enable = enable;
+  _coap_notify_mtx_release();
+}
+
+bool sl_wisun_coap_notify_tick_evt_is_enabled(void)
+{
+  bool ret = false;
+  _coap_notify_mtx_acquire();
+  ret = _schd.tick_evt_enable;
+  _coap_notify_mtx_release();
+  return ret;
+}
+
+sl_status_t sl_wisun_coap_notify_tick(void)
+{
+  uint32_t stat = 0UL;
+  stat =  osEventFlagsSet(_schd.evt, _schd.evt_msk);
+  // if high bit is set, it means error
+  return (stat & (1UL << 31UL)) ? SL_STATUS_FAIL : SL_STATUS_OK;
 }
 #endif
 

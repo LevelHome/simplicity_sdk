@@ -30,7 +30,7 @@ void sli_zigbee_af_price_common_cluster_get_adjusted_start_time_cli(sl_cli_comma
   adjustedStartTime = sl_zigbee_af_price_common_cluster_get_adjusted_start_time(startTimeUTc,
                                                                                 durationType);
   UNUSED_VAR(adjustedStartTime);
-  sl_zigbee_af_price_cluster_println("adjustedStartTime: 0x%4X", adjustedStartTime);
+  sl_zigbee_af_price_cluster_println("adjustedStartTime: 0x%08X", adjustedStartTime);
 }
 
 void sli_zigbee_af_price_common_cluster_convert_duration_to_seconds_cli(sl_cli_command_arg_t *arguments)

@@ -4,6 +4,11 @@ package: platform
 description: Silabs core utility to format text using response print syntax.
 category: Platform|Utilities
 quality: production
+metadata:
+  sbom:
+    id: silabs_core_response_print
+    name: Response Print
+    license: MSLA
 include:
   - path: util/silicon_labs/silabs_core/response_print
     file_list:

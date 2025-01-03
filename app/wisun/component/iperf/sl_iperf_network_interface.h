@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_iperf_network_interface.h
+ * @brief iPerf network interface
  *******************************************************************************
  * # License
  * <b>Copyright 2022 Silicon Laboratories Inc. www.silabs.com</b>
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __IPERF_NETWORK_INTERFACE_H__
-#define __IPERF_NETWORK_INTERFACE_H__
+#ifndef SL_IPERF_NETWORK_INTERFACE_H
+#define SL_IPERF_NETWORK_INTERFACE_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,7 +38,6 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
@@ -66,14 +65,14 @@ extern "C" {
     #define SL_WEAK                   __attribute__ ((weak))
   #endif
   #if !defined(SL_PACK_START)
-// GCC always uses 1 byte maximum aligment
+// GCC always uses 1 byte maximum alignment
     #define SL_PACK_START(x)
     #define SL_PACK_END()
   #endif
 #endif
 
 /**************************************************************************//**
- * @addtogroup SL_IPERF_NETWORK_INTERFACE_API iPerf - Network interface
+ * @addtogroup SL_IPERF_NETWORK_INTERFACE_API Portable interface
  * @ingroup SL_IPERF
  * @{
  *****************************************************************************/
@@ -85,7 +84,7 @@ extern "C" {
 /// Size definition of IPv6 address
 #define SL_IPERF_IN6ADDR_SIZE     (16U)
 
-/// iPerf timestamp milisecond data type deifinition
+/// iPerf timestamp millisecond data type deifinition
 typedef uint64_t sl_iperf_ts_ms_t;
 
 /// iPerf time data type definition
@@ -96,7 +95,7 @@ typedef struct sl_iperf_time {
   uint32_t usec;
 } sl_iperf_time_t;
 
-/// Iperf socket IP protocol type definition enum
+/// iPerf socket IP protocol type definition enum
 typedef enum sl_iperf_protocol {
   /// UDP IPv6 protocol
   SL_IPERF_IPROTOV6_UDP = 0,
@@ -200,13 +199,11 @@ int32_t sl_iperf_socket_accept(int32_t sockid, sl_iperf_socket_addr_t *addr);
  * @brief Initiate a connection on a socket.
  * @details Connects the socket referred to by the socketid to the address specified by addr.
  * @param[in] sockid socket id
- * @param[in,out] addr If the socket sockid is of type SOCK_DGRAM, then addr is the
+ * @param[in] addr If the socket sockid is of type SOCK_DGRAM, then addr is the
  *                     address to which datagrams are sent by default, and the only
  *                     address from which datagrams are received.
  *                     If the socket is of type SOCK_STREAM, this call attempts to make a
  *                     connection to the socket that is bound to the address specified by addr.
- * @param[in,out] addrlen It is the byte size of the address.
- *                In Wi-SUN, it won't be set to the actual size on return.
  * @return If the connection or binding succeeds, zero is returned. On error, -1 is returned.
  *****************************************************************************/
 int32_t sl_iperf_socket_connect(int32_t sockid, const sl_iperf_socket_addr_t *addr);
@@ -228,7 +225,6 @@ int32_t sl_iperf_socket_send(int32_t sockid, const void *buff, size_t len);
  * @param[in] buff buffer pointer to send
  * @param[in] len length of buffer to send
  * @param[in] dest_addr destination address ptr, the structure must be prepared for UDP sockets
- * @param[in] addr_len destination address length
  * @return On success, these calls return the number of bytes sent. On error, -1 is returned
  *****************************************************************************/
 int32_t sl_iperf_socket_sendto(int32_t sockid, const void *buff, uint32_t len, const sl_iperf_socket_addr_t *dest_addr);
@@ -237,7 +233,7 @@ int32_t sl_iperf_socket_sendto(int32_t sockid, const void *buff, uint32_t len, c
  * @brief Receive a message from a socket.
  * @details It should be used for connection-oriented protocol (TCP)
  * @param[in] sockid socket id
- * @param[out] buf destination buffer ptr
+ * @param[out] buff destination buffer ptr
  * @param[in] len length of data to read
  * @return return the number of bytes received, or -1 if an error occurred
  *****************************************************************************/
@@ -250,7 +246,6 @@ int32_t sl_iperf_socket_recv(int32_t sockid, void *buff, size_t len);
  * @param[out] buf destination buffer ptr
  * @param[in] len length of data to read
  * @param[in] src_addr Source address
- * @param[in] addrlen length of the source address
  * @return return the number of bytes received, or -1 if an error occurred
  *****************************************************************************/
 int32_t sl_iperf_socket_recvfrom(int32_t sockid, void *buf, uint32_t len,
@@ -279,6 +274,7 @@ int32_t sl_iperf_socket_setsockopt(int32_t sockid, int32_t level, int32_t optnam
  * @param[in] sockid socket id
  * @param[in] level Not used in Wi-SUN domain.
  * @param[in] optname Option name.
+ * @param[out] optval Destination option value pointer
  * @param[in] optlen Must be the size of sl_wisun_socket_option_data_t union
  * @return Return 0 on success, other wise -1
  *****************************************************************************/
@@ -365,16 +361,16 @@ uint32_t sl_iperf_network_htonl(uint32_t val);
 uint32_t sl_iperf_network_ntohl(uint32_t val);
 
 /**************************************************************************//**
- * @brief Get milisec timestamp
- * @details Get CPU tick convert to milisec
- * @return sl_iperf_ts_ms_t Timestamp in milisec
+ * @brief Get millisec timestamp
+ * @details Get CPU tick convert to millisec
+ * @return sl_iperf_ts_ms_t Timestamp in millisec
  *****************************************************************************/
 sl_iperf_ts_ms_t sl_iperf_get_timestamp_ms(void);
 
 /**************************************************************************//**
- * @brief iPerf milisec dely
+ * @brief iPerf millisec delay
  * @details Customizable delay function
- * @param [in] ms Milisec value
+ * @param [in] ms Millisec value
  *****************************************************************************/
 void sl_iperf_delay_ms(const uint32_t ms);
 
@@ -392,8 +388,8 @@ int32_t sl_iperf_inet_pton(const char *src_str,
  * @brief Convert IPv4 and IPv6 addresses from binary to text form.
  * @details Converts the network address structure src in the af address family
  *          into a character string.
- * @param[in] src_str Source address in byte form
- * @param[out] dst_addr Destination buffer ptr
+ * @param[in] src_addr Source address in byte form
+ * @param[out] dst_str Destination buffer ptr
  * @param[in] size Size of the destination buffer.
  * @return It returns a non-null pointer to dst.
  *         NULL is returned if there was an error
@@ -449,4 +445,5 @@ __STATIC_INLINE void sl_iperf_get_socket_addr(const sl_iperf_socket_addr_t * con
 #ifdef __cplusplus
 }
 #endif
-#endif
+
+#endif // SL_IPERF_NETWORK_INTERFACE_H

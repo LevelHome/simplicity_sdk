@@ -582,7 +582,7 @@ static uint8_t responseReceived(void)
   }
 
   if (status != SL_ZIGBEE_EZSP_SUCCESS) {
-    EZSP_ASH_TRACE("responseReceived(): sl_zigbee_ezsp_error_handler(): 0x%x", status);
+    EZSP_ASH_TRACE("responseReceived(): sl_zigbee_ezsp_error_handler(): 0x%02X", status);
     sl_zigbee_ezsp_error_handler(status);
   }
 
@@ -635,7 +635,7 @@ static sl_zigbee_ezsp_status_t sendCommand(void)
       sl_zigbee_ezsp_waiting_for_response();
     }
   } else {
-    EZSP_ASH_TRACE("sendCommand(): sl_zigbee_ezsp_error_handler(): 0x%x", status);
+    EZSP_ASH_TRACE("sendCommand(): sl_zigbee_ezsp_error_handler(): 0x%02X", status);
     sl_zigbee_ezsp_error_handler(status);
   }
   sendingCommand = false;

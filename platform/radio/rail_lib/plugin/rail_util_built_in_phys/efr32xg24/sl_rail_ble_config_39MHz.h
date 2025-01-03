@@ -2,8 +2,8 @@
  * @brief RAIL Configuration
  * @details
  *   WARNING: Auto-Generated Radio Config Header  -  DO NOT EDIT
- *   Radio Configurator Version: 2304.2.1
- *   RAIL Adapter Version: 2.4.32
+ *   Radio Configurator Version: 2404.4.4
+ *   RAIL Adapter Version: 2.4.33
  *   RAIL Compatibility: 2.x
  *******************************************************************************
  * # License
@@ -48,32 +48,32 @@ extern const uint32_t sl_rail_ble_phy_500kbps_39MHz_0_37_modemConfig[];
 extern const uint32_t sl_rail_ble_phy_simulscan_39MHz_0_37_modemConfig[];
 
 #define RAIL0_SL_RAIL_BLE_PHY_1MBPS_VITERBI_39MHZ_PHY_BLUETOOTH_1M_AOX_PROD
-#define RAIL0_SL_RAIL_BLE_PHY_1MBPS_VITERBI_39MHZ_PROFILE_BASE
+#define RAIL0_SL_RAIL_BLE_PHY_1MBPS_VITERBI_39MHZ_PROFILE_BLE
 extern const RAIL_ChannelConfig_t sl_rail_ble_phy_1Mbps_viterbi_39MHz_channelConfig;
 extern const RAIL_ChannelConfigEntry_t sl_rail_ble_phy_1Mbps_viterbi_39MHz_channels[];
 
 #define RAIL0_SL_RAIL_BLE_PHY_2MBPS_VITERBI_39MHZ_PHY_BLUETOOTH_2M_PROD
-#define RAIL0_SL_RAIL_BLE_PHY_2MBPS_VITERBI_39MHZ_PROFILE_BASE
+#define RAIL0_SL_RAIL_BLE_PHY_2MBPS_VITERBI_39MHZ_PROFILE_BLE
 extern const RAIL_ChannelConfig_t sl_rail_ble_phy_2Mbps_viterbi_39MHz_channelConfig;
 extern const RAIL_ChannelConfigEntry_t sl_rail_ble_phy_2Mbps_viterbi_39MHz_channels[];
 
 #define RAIL0_SL_RAIL_BLE_PHY_2MBPS_AOX_39MHZ_PHY_BLUETOOTH_2M_AOX_PROD
-#define RAIL0_SL_RAIL_BLE_PHY_2MBPS_AOX_39MHZ_PROFILE_BASE
+#define RAIL0_SL_RAIL_BLE_PHY_2MBPS_AOX_39MHZ_PROFILE_BLE
 extern const RAIL_ChannelConfig_t sl_rail_ble_phy_2Mbps_aox_39MHz_channelConfig;
 extern const RAIL_ChannelConfigEntry_t sl_rail_ble_phy_2Mbps_aox_39MHz_channels[];
 
 #define RAIL0_SL_RAIL_BLE_PHY_125KBPS_39MHZ_PHY_BLUETOOTH_LR_125K_PROD
-#define RAIL0_SL_RAIL_BLE_PHY_125KBPS_39MHZ_PROFILE_BASE
+#define RAIL0_SL_RAIL_BLE_PHY_125KBPS_39MHZ_PROFILE_BLE
 extern const RAIL_ChannelConfig_t sl_rail_ble_phy_125kbps_39MHz_channelConfig;
 extern const RAIL_ChannelConfigEntry_t sl_rail_ble_phy_125kbps_39MHz_channels[];
 
 #define RAIL0_SL_RAIL_BLE_PHY_500KBPS_39MHZ_PHY_BLUETOOTH_LR_500K_PROD
-#define RAIL0_SL_RAIL_BLE_PHY_500KBPS_39MHZ_PROFILE_BASE
+#define RAIL0_SL_RAIL_BLE_PHY_500KBPS_39MHZ_PROFILE_BLE
 extern const RAIL_ChannelConfig_t sl_rail_ble_phy_500kbps_39MHz_channelConfig;
 extern const RAIL_ChannelConfigEntry_t sl_rail_ble_phy_500kbps_39MHz_channels[];
 
 #define RAIL0_SL_RAIL_BLE_PHY_SIMULSCAN_39MHZ_PHY_BLUETOOTH_1M_CONCURRENT_PROD
-#define RAIL0_SL_RAIL_BLE_PHY_SIMULSCAN_39MHZ_PROFILE_BASE
+#define RAIL0_SL_RAIL_BLE_PHY_SIMULSCAN_39MHZ_PROFILE_BLE
 extern const RAIL_ChannelConfig_t sl_rail_ble_phy_simulscan_39MHz_channelConfig;
 extern const RAIL_ChannelConfigEntry_t sl_rail_ble_phy_simulscan_39MHz_channels[];
 

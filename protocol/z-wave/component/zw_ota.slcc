@@ -2,9 +2,10 @@ id: "zw_ota"
 label: Z-Wave OTA
 category: Z-Wave
 description: >
-  The Z-Wave OTA component can be used by applications that support OTA (Over The Air Firmware
-  Update). This component defines custom bootloader storage size in flash for Z-Wave applications
-  both for Series 1 and Series 2 devices.
+  The Z-Wave OTA SLC component, which is a crucial component for embedded devices, can be used by applications that 
+  support OTA (Over The Air Firmware Update). This component defines custom bootloader 
+  storage size in flash for Z-Wave applications.
+  NOTE: Bootloader size are differenet in Release and Debug mode.
 package: Z-Wave
 quality: production
 metadata:

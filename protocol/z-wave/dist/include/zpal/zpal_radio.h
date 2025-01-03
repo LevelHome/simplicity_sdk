@@ -441,7 +441,7 @@ typedef enum
   ZPAL_RADIO_STATUS_RX_BEAM                     /// Beam RX in progress
 } zpal_radio_status_t;
 
-typedef void (*zpal_radio_callback_t)(zpal_radio_event_t event);
+typedef void (*zpal_radio_callback_t)(const zpal_radio_event_t event);
 
 /**
  * @brief Z-Wave receive frame.
@@ -572,7 +572,7 @@ zpal_status_t zpal_radio_transmit(zpal_radio_transmit_parameter_t const *const t
                                   uint8_t frame_payload_length,
                                   uint8_t const *const frame_payload_buffer,
                                   uint8_t use_lbt,
-                                  int8_t tx_power);
+                                  zpal_radio_tx_power_t tx_power);
 
 /**
  * @brief Function for transmitting a Z-Wave Beam frame though the radio.
@@ -736,7 +736,7 @@ zpal_tx_power_t zpal_radio_get_default_tx_power(void);
  *
  * @return The current reduce RF TX power in dBm.
  */
-uint8_t zpal_radio_get_reduce_tx_power(void);
+zpal_radio_tx_power_t zpal_radio_get_reduce_tx_power(void);
 
 /**
  * @brief Allows the radio to go into FLiRS receive mode.
@@ -778,13 +778,6 @@ void zpal_radio_reset_after_beam_receive(bool start_receiver);
  * @return True if use of fragmented beams is enabled, false otherwise.
  */
 bool zpal_radio_is_fragmented_beam_enabled(void);
-
-/**
- * @brief Returns whether use of receive beams is enabled or not for the active region.
- *
- * @return True if use of fragmented beams is enabled, false otherwise.
- */
-bool zpal_radio_is_receive_beam_enabled(void);
 
 /**
  * @brief Calibrates the radio.
@@ -898,6 +891,15 @@ void zpal_radio_set_long_range_lock(bool lock);
  * @return True if node shall use Long Range channel only.
  */
 bool zpal_radio_is_long_range_locked(void);
+
+/**
+ * @brief Function to check if the stack implementation supports a given region
+ *
+ * @param[in] region  Region to check
+ *
+ * @return  True if the region is supported, False if it is not
+ */
+bool zpal_radio_is_region_supported(zpal_radio_region_t region);
 
 /**
  * @brief Read the saved tx power of the last received long-range beam.

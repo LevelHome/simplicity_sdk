@@ -302,22 +302,22 @@ bool sli_zigbee_af_gp_calculate_incoming_command_mic(sl_zigbee_gp_address_t * gp
   context.core_key_type = SL_ZB_SEC_MAN_KEY_TYPE_INTERNAL;
   sl_zigbee_sec_man_export_key(&context, &key);
 
-  sl_zigbee_af_green_power_cluster_print("Using KeyType = %d fc = %4x Key :[", keyType, gpdSecurityFrameCounter);
+  sl_zigbee_af_green_power_cluster_print("Using KeyType = %d fc = %08X Key :[", keyType, gpdSecurityFrameCounter);
   for (int i = 0; i < 16; i++) {
-    sl_zigbee_af_green_power_cluster_print("%x ", key.key[i]);
+    sl_zigbee_af_green_power_cluster_print("%02X ", key.key[i]);
   }
   sl_zigbee_af_green_power_cluster_print("]\n");
   sl_zigbee_af_green_power_cluster_print("Prepared Nonce :[");
   for (int i = 0; i < NONCE_LENGTH; i++) {
-    sl_zigbee_af_green_power_cluster_print("%x ", nonce[i]);
+    sl_zigbee_af_green_power_cluster_print("%02X ", nonce[i]);
   }
   sl_zigbee_af_green_power_cluster_print("]\n");
   sl_zigbee_af_green_power_cluster_print("Prepared Payload :[");
   for (int i = 0; i < totalLength; i++) {
-    sl_zigbee_af_green_power_cluster_print("%x ", payload[i]);
+    sl_zigbee_af_green_power_cluster_print("%02X ", payload[i]);
   }
   sl_zigbee_af_green_power_cluster_print("]\n");
-  sl_zigbee_af_green_power_cluster_println("encryptionStartIndex :%x,totalLength :%x payloadLength:%x",
+  sl_zigbee_af_green_power_cluster_println("encryptionStartIndex :%02X,totalLength :%02X payloadLength:%02X",
                                            encryptionStartIndex,
                                            totalLength,
                                            payloadLength);
@@ -327,7 +327,7 @@ bool sli_zigbee_af_gp_calculate_incoming_command_mic(sl_zigbee_gp_address_t * gp
     memmove(&payload[encryptionStartIndex], &temp, payloadLength);
     //sl_zigbee_af_green_power_cluster_print("Decrypted (same as one more encryption) Payload :[");
     //for (int i = 0; i < payloadLength; i++) {
-    // sl_zigbee_af_green_power_cluster_print("%x ",payload[encryptionStartIndex + i]);
+    // sl_zigbee_af_green_power_cluster_print("%02X ",payload[encryptionStartIndex + i]);
     //}
     //sl_zigbee_af_green_power_cluster_print("]\n");
   }

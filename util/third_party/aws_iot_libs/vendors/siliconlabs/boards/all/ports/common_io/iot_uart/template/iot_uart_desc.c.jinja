@@ -78,8 +78,7 @@ IotUARTDescriptor_t iot_uart_desc[] = {
     /* TX pin */
 #ifdef IOT_UART_CFG_{{ instance | upper }}_TX_PORT
     .ucTxEn            = 1,
-    .xTxPort           = IOT_UART_CFG_{{ instance | upper }}_TX_PORT,
-    .ucTxPin           = IOT_UART_CFG_{{ instance | upper }}_TX_PIN,
+    .txGpio            = {.port = IOT_UART_CFG_{{ instance | upper }}_TX_PORT, .pin = IOT_UART_CFG_{{ instance | upper }}_TX_PIN},
 #if (_SILICON_LABS_32B_SERIES < 2)
     .ucTxLoc           = IOT_UART_CFG_{{ instance | upper }}_TX_LOC,
 #endif
@@ -88,8 +87,7 @@ IotUARTDescriptor_t iot_uart_desc[] = {
     /* RX pin */
 #ifdef IOT_UART_CFG_{{ instance | upper }}_RX_PORT
     .ucRxEn            = 1,
-    .xRxPort           = IOT_UART_CFG_{{ instance | upper }}_RX_PORT,
-    .ucRxPin           = IOT_UART_CFG_{{ instance | upper }}_RX_PIN,
+    .rxGpio            = {.port = IOT_UART_CFG_{{ instance | upper }}_RX_PORT, .pin = IOT_UART_CFG_{{ instance | upper }}_RX_PIN},
 #if (_SILICON_LABS_32B_SERIES < 2)
     .ucRxLoc           = IOT_UART_CFG_{{ instance | upper }}_RX_LOC,
 #endif
@@ -98,8 +96,7 @@ IotUARTDescriptor_t iot_uart_desc[] = {
     /* CLK pin */
 #ifdef IOT_UART_CFG_{{ instance | upper }}_CLK_PORT
     .ucClkEn           = 1,
-    .xClkPort          = IOT_UART_CFG_{{ instance | upper }}_CLK_PORT,
-    .ucClkPin          = IOT_UART_CFG_{{ instance | upper }}_CLK_PIN,
+    .clkGpio           = {.port = IOT_UART_CFG_{{ instance | upper }}_CLK_PORT, .pin = IOT_UART_CFG_{{ instance | upper }}_CLK_PIN},
 #if (_SILICON_LABS_32B_SERIES < 2)
     .ucClkLoc          = IOT_UART_CFG_{{ instance | upper }}_CLK_LOC,
 #endif
@@ -108,8 +105,7 @@ IotUARTDescriptor_t iot_uart_desc[] = {
     /* CS pin */
 #ifdef IOT_UART_CFG_{{ instance | upper }}_CS_PORT
     .ucCsEn            = 1,
-    .xCsPort           = IOT_UART_CFG_{{ instance | upper }}_CS_PORT,
-    .ucCsPin           = IOT_UART_CFG_{{ instance | upper }}_CS_PIN,
+    .csGpio            = {.port = IOT_UART_CFG_{{ instance | upper }}_CS_PORT, .pin = IOT_UART_CFG_{{ instance | upper }}_CS_PIN},
 #if (_SILICON_LABS_32B_SERIES < 2)
     .ucCsLoc           = IOT_UART_CFG_{{ instance | upper }}_CS_LOC,
 #endif
@@ -118,8 +114,7 @@ IotUARTDescriptor_t iot_uart_desc[] = {
     /* RTS pin */
 #ifdef IOT_UART_CFG_{{ instance | upper }}_RTS_PORT
     .ucRtsEn           = 1,
-    .xRtsPort          = IOT_UART_CFG_{{ instance | upper }}_RTS_PORT,
-    .ucRtsPin          = IOT_UART_CFG_{{ instance | upper }}_RTS_PIN,
+    .rtsGpio           = {.port = IOT_UART_CFG_{{ instance | upper }}_RTS_PORT, .pin = IOT_UART_CFG_{{ instance | upper }}_RTS_PIN},
 #if (_SILICON_LABS_32B_SERIES < 2)
     .ucCsLoc           = IOT_UART_CFG_{{ instance | upper }}_RTS_LOC,
 #endif
@@ -128,8 +123,7 @@ IotUARTDescriptor_t iot_uart_desc[] = {
     /* CTS pin */
 #ifdef IOT_UART_CFG_{{ instance | upper }}_CTS_PORT
     .ucCtsEn           = 1,
-    .xCtsPort          = IOT_UART_CFG_{{ instance | upper }}_CTS_PORT,
-    .ucCtsPin          = IOT_UART_CFG_{{ instance | upper }}_CTS_PIN,
+    .ctsGpio           = {.port = IOT_UART_CFG_{{ instance | upper }}_CTS_PORT, .pin = IOT_UART_CFG_{{ instance | upper }}_CTS_PIN},
 #if (_SILICON_LABS_32B_SERIES < 2)
     .ucCsLoc           = IOT_UART_CFG_{{ instance | upper }}_CTS_LOC,
 #endif

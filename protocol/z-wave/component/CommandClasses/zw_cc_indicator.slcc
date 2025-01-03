@@ -20,3 +20,6 @@ provides:
   - name: zw_cc_indicator
 requires:
   - name: zw_core
+template_contribution:
+  - name: component_catalog
+    value: ZW_CC_INDICATOR

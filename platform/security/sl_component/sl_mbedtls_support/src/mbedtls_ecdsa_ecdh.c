@@ -76,17 +76,6 @@
 #include "mbedtls/error.h"
 #include "psa/crypto.h"
 
-// Parameter validation macros based on platform_util.h
-#define ECDH_VALIDATE_RET(cond) \
-  MBEDTLS_INTERNAL_VALIDATE_RET(cond, MBEDTLS_ERR_ECP_BAD_INPUT_DATA)
-#define ECDH_VALIDATE(cond) \
-  MBEDTLS_INTERNAL_VALIDATE(cond)
-
-#define ECDSA_VALIDATE_RET(cond) \
-  MBEDTLS_INTERNAL_VALIDATE_RET(cond, MBEDTLS_ERR_ECP_BAD_INPUT_DATA)
-#define ECDSA_VALIDATE(cond) \
-  MBEDTLS_INTERNAL_VALIDATE(cond)
-
 #if defined(ECC_IMPLEMENTATION_PRESENT)
 static int psa_status_to_mbedtls(psa_status_t status)
 {
@@ -109,33 +98,33 @@ static int mbedtls_grp_to_psa_attr(mbedtls_ecp_group_id id,
 {
   switch (id) {
     case MBEDTLS_ECP_DP_SECP192R1:
-      attr->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type) = PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1);
+      attr->MBEDTLS_PRIVATE(type) = PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1);
       psa_set_key_bits(attr, 192);
       break;
 #if defined(CRYPTOACC_PRESENT)
     case MBEDTLS_ECP_DP_SECP224R1:
-      attr->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type) = PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1);
+      attr->MBEDTLS_PRIVATE(type) = PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1);
       psa_set_key_bits(attr, 224);
       break;
     case MBEDTLS_ECP_DP_SECP256K1:
-      attr->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type) = PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_K1);
+      attr->MBEDTLS_PRIVATE(type) = PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_K1);
       psa_set_key_bits(attr, 256);
       break;
 #endif
     case MBEDTLS_ECP_DP_SECP256R1:
-      attr->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type) = PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1);
+      attr->MBEDTLS_PRIVATE(type) = PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1);
       psa_set_key_bits(attr, 256);
       break;
     case MBEDTLS_ECP_DP_SECP384R1:
-      attr->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type) = PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1);
+      attr->MBEDTLS_PRIVATE(type) = PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1);
       psa_set_key_bits(attr, 384);
       break;
     case MBEDTLS_ECP_DP_SECP521R1:
-      attr->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type) = PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1);
+      attr->MBEDTLS_PRIVATE(type) = PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1);
       psa_set_key_bits(attr, 521);
       break;
     case MBEDTLS_ECP_DP_CURVE25519:
-      attr->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type) = PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_MONTGOMERY);
+      attr->MBEDTLS_PRIVATE(type) = PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_MONTGOMERY);
       psa_set_key_bits(attr, 255);
       break;
     default:
@@ -210,9 +199,6 @@ int mbedtls_ecdsa_genkey(mbedtls_ecdsa_context *ctx, mbedtls_ecp_group_id gid,
   (void)f_rng;
   (void)p_rng;
 
-  ECDSA_VALIDATE_RET(ctx   != NULL);
-  ECDSA_VALIDATE_RET(f_rng != NULL);
-
   mbedtls_ecp_group_load(&ctx->MBEDTLS_PRIVATE(grp), gid);
 
   return ecc_keygen(&ctx->MBEDTLS_PRIVATE(grp), &ctx->MBEDTLS_PRIVATE(d), &ctx->MBEDTLS_PRIVATE(Q));
@@ -227,13 +213,6 @@ int mbedtls_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi *r, mbedtls_mpi *s,
   /* PSA uses internal entropy */
   (void)f_rng;
   (void)p_rng;
-
-  ECDSA_VALIDATE_RET(grp   != NULL);
-  ECDSA_VALIDATE_RET(r     != NULL);
-  ECDSA_VALIDATE_RET(s     != NULL);
-  ECDSA_VALIDATE_RET(d     != NULL);
-  ECDSA_VALIDATE_RET(f_rng != NULL);
-  ECDSA_VALIDATE_RET(buf   != NULL || blen == 0);
 
   psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
   uint8_t key_signature_buf[((((MBEDTLS_ECP_MAX_BYTES) +3) / 4) * 4) * 2] = { 0 };
@@ -285,12 +264,6 @@ int mbedtls_ecdsa_verify(mbedtls_ecp_group *grp,
                          const unsigned char *buf, size_t blen,
                          const mbedtls_ecp_point *Q, const mbedtls_mpi *r, const mbedtls_mpi *s)
 {
-  ECDSA_VALIDATE_RET(grp != NULL);
-  ECDSA_VALIDATE_RET(Q   != NULL);
-  ECDSA_VALIDATE_RET(r   != NULL);
-  ECDSA_VALIDATE_RET(s   != NULL);
-  ECDSA_VALIDATE_RET(buf != NULL || blen == 0);
-
   uint8_t pub[((((MBEDTLS_ECP_MAX_BYTES) +3) / 4) * 4) * 2 + 1] = { 0 };
   uint8_t signature[((((MBEDTLS_ECP_MAX_BYTES) +3) / 4) * 4) * 2] = { 0 };
   psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
@@ -300,13 +273,19 @@ int mbedtls_ecdsa_verify(mbedtls_ecp_group *grp,
   if ( status != PSA_SUCCESS ) {
     return status;
   }
+
+  /* Check signature components r, s or both are not negative. */
+  if ( (r->MBEDTLS_PRIVATE(s) < 0) || (s->MBEDTLS_PRIVATE(s) < 0) ) {
+    return MBEDTLS_ERR_ECP_VERIFY_FAILED;
+  }
+
   psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_VERIFY_HASH);
 
   if (PSA_KEY_TYPE_ECC_GET_FAMILY(psa_get_key_type(&attr)) == PSA_ECC_FAMILY_MONTGOMERY) {
     return PSA_ERROR_NOT_SUPPORTED;
   }
 
-  attr.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type) =
+  attr.MBEDTLS_PRIVATE(type) =
     PSA_KEY_TYPE_ECC_PUBLIC_KEY(PSA_KEY_TYPE_ECC_GET_FAMILY(psa_get_key_type(&attr)));
 
   size_t keybytes = PSA_BITS_TO_BYTES(psa_get_key_bits(&attr));
@@ -340,11 +319,6 @@ int mbedtls_ecdh_gen_public(mbedtls_ecp_group *grp, mbedtls_mpi *d, mbedtls_ecp_
   (void)f_rng;
   (void)p_rng;
 
-  ECDH_VALIDATE_RET(grp != NULL);
-  ECDH_VALIDATE_RET(d != NULL);
-  ECDH_VALIDATE_RET(Q != NULL);
-  ECDH_VALIDATE_RET(f_rng != NULL);
-
   return ecc_keygen(grp, d, Q);
 }
 #endif /* #if defined(MBEDTLS_ECDH_GEN_PUBLIC_ALT) */
@@ -358,11 +332,6 @@ int mbedtls_ecdh_compute_shared(mbedtls_ecp_group *grp, mbedtls_mpi *z,
   /* PSA uses internal entropy */
   (void)f_rng;
   (void)p_rng;
-
-  ECDH_VALIDATE_RET(grp != NULL);
-  ECDH_VALIDATE_RET(Q != NULL);
-  ECDH_VALIDATE_RET(d != NULL);
-  ECDH_VALIDATE_RET(z != NULL);
 
   uint8_t pub[((((MBEDTLS_ECP_MAX_BYTES) +3) / 4) * 4) * 2 + 1u] = { 0 };
   uint8_t priv[((((MBEDTLS_ECP_MAX_BYTES) +3) / 4) * 4) * 2] = { 0 };

@@ -33,11 +33,7 @@
 #include "sl_led.h"
 #include "em_device.h"
 
-#if defined(SL_CATALOG_GPIO_PRESENT)
 #include "sl_gpio.h"
-#else
-#include "em_gpio.h"
-#endif
 
 #if defined(_SILICON_LABS_32B_SERIES_3)
 #include "sl_hal_timer.h"
@@ -56,15 +52,8 @@ extern "C" {
 typedef struct {
   void   (*set_color)(void *context, uint16_t color);  ///< Member function to set color of PWM LED
   void   (*get_color)(void *context, uint16_t *color); ///< Member function to get color of PWM LED
-
   uint8_t           channel;      /**< TIMER channel */
-
-#if defined(SL_CATALOG_GPIO_PRESENT)
-  sl_gpio_port_t    port;             ///< LED port
-#else
-  GPIO_Port_TypeDef port;             ///< LED port
-#endif
-
+  sl_gpio_port_t    port;         /**< GPIO port */
   uint8_t           pin;          /**< GPIO pin */
   uint16_t          level;        /**< PWM duty cycle [0-65535] */
   uint8_t           polarity;     /**< GPIO polarity (active high/low) */

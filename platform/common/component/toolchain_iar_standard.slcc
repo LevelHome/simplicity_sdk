@@ -14,10 +14,10 @@ provides:
   - name: toolchain_iar_standard
   - name: toolchain_linker_type
 template_file:
-  - path: toolchain/iar/s2/linkerfile.icf.jinja
-    condition: [device_series_2]
-  - path: toolchain/iar/s30/linkerfile.icf.jinja
-    condition: [device_generic_family_sixx301]
+  - path: toolchain/cortexm/iar/s2/linkerfile.icf.jinja
+    condition: [device_cortexm, device_series_2]
+  - path: toolchain/cortexm/iar/s30/linkerfile.icf.jinja
+    condition: [device_cortexm, device_generic_family_sixx301]
 toolchain_settings:
   - option: linkerfile
     value: autogen/linkerfile.icf

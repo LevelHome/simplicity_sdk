@@ -36,7 +36,8 @@
 #endif
 //#define MAX_MAC_INDEX 2
 #ifdef HIGH_DATARATE_PHY
-#define MAX_FLAT_PACKET_SIZE 255 // CHANGE THIS FOR 2049 size packet when supported
+//+9 is sizeof (RAIL_SchedulerInfo_t)
+#define MAX_FLAT_PACKET_SIZE (255 + 9) // CHANGE THIS FOR 2049+9 size packet when supported
 #else
 #define MAX_FLAT_PACKET_SIZE 127
 #endif //HIGH_DATARATE_PHY
@@ -198,7 +199,6 @@ typedef struct {
 } sl_mac_upper_mac_tx_queue_entry_t;
 
 typedef struct {
-  uint8_t outgoing_flat_packet[MAX_FLAT_PACKET_SIZE];
   uint8_t pending_tasks_bitmask;
 
   sl_mac_upper_mac_tx_queue_entry_t tx_queue[MAC_TX_QUEUE_SIZE];

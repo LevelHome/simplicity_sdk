@@ -28,10 +28,7 @@ component:
   - id: freertos
   - id: i2cspm
     instance: [sensor]
-  - id: simple_led
-    instance:
-        - led0
-        - led1
+  - id: simple_led_recommended_instance
   - id: iostream_stdlib_config
   - id: iostream_retarget_stdio
   - id: iostream_recommended_stream
@@ -42,7 +39,6 @@ readme:
 ui_hints:
   highlight: readme.md
 tag:
-  - hardware:component:led:2+
   - hardware:component:sensor:si7021
   - hardware:device:ram:10
 configuration:

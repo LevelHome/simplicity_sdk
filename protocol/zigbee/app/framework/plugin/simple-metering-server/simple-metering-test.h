@@ -49,12 +49,12 @@ void afTestMeterRandomError(uint8_t changeIn256);
 
 void afTestMeterEnableProfiles(uint8_t enable);
 
-bool sli_zigbee_af_test_meter_get_profiles(uint8_t intervalChannel,
-                                           uint32_t endTime,
-                                           uint8_t numberOfPeriods);
+sl_zigbee_af_zcl_request_status_t sli_zigbee_af_test_meter_get_profiles(uint8_t intervalChannel,
+                                                                        uint32_t endTime,
+                                                                        uint8_t numberOfPeriods);
 #else
-bool sli_zigbee_af_test_meter_get_profiles(uint8_t intervalChannel,
-                                           uint32_t endTime,
-                                           uint8_t numberOfPeriods);
+sl_zigbee_af_zcl_request_status_t sli_zigbee_af_test_meter_get_profiles(uint8_t intervalChannel,
+                                                                        uint32_t endTime,
+                                                                        uint8_t numberOfPeriods);
 
 #endif // SIMPLE_METERING_SERVER_TEST_METER_ENABLED

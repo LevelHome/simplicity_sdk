@@ -10,6 +10,9 @@ description: >
   instances of OTS Object Server, add one of the Object Server components to
   the project: Dynamic, Static or Single.
 category: Bluetooth|Application|GATT Services
+metadata:
+  sbom:
+    license: Zlib
 quality: evaluation
 root_path:  app/bluetooth/common/ots
 tag:
@@ -54,9 +57,10 @@ requires:
   - name: l2cap_transfer
   - name: slist
   - name: app_queue
+  - name: sl_common
+  - name: sl_core
 recommends:
   - id: ots_server_single
-  - id: app_timer
 template_file:
   - path: inst/sl_bt_ots_server_instances.c.jinja
   - path: inst/sl_bt_ots_server_instances.h.jinja

@@ -38,10 +38,10 @@ WEAK(void sl_zigbee_af_network_steering_complete_cb(sl_status_t status,
                                                     uint8_t joinAttempts,
                                                     uint8_t finalState))
 {
-  sl_zigbee_af_core_println("Network Steering Completed: %p (0x%X)",
+  sl_zigbee_af_core_println("Network Steering Completed: %s (0x%02X)",
                             (status == SL_STATUS_OK ? "Join Success" : "FAILED"),
                             status);
-  sl_zigbee_af_core_println("Finishing state: 0x%X", finalState);
+  sl_zigbee_af_core_println("Finishing state: 0x%02X", finalState);
   sl_zigbee_af_core_println("Beacons heard: %d\nJoin Attempts: %d", totalBeacons, joinAttempts);
 }
 

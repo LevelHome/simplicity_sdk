@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief Wi-SUN command line component configuration
+ * @file sl_wisun_cli_util_config.h
+ * @brief Wi-SUN CLI utility configuration
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -27,7 +27,6 @@
  * 3. This notice may not be removed or altered from any source distribution.
  *
  ******************************************************************************/
-
 #ifndef SL_WISUN_CLI_UTIL_CONFIG_H
 #define SL_WISUN_CLI_UTIL_CONFIG_H
 

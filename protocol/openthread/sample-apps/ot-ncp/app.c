@@ -1,4 +1,4 @@
-/***************************************************************************//**
+/*******************************************************************************
  * @file
  * @brief Core application logic.
  *******************************************************************************
@@ -32,17 +32,22 @@
 #include <openthread-core-config.h>
 #include <openthread/config.h>
 
-#include <openthread/ncp.h>
 #include <openthread/diag.h>
+#include <openthread/ncp.h>
 #include <openthread/tasklet.h>
 
-#include "openthread-system.h"
 #include "app.h"
+#include "openthread-system.h"
 
 #include "reset_util.h"
 
 #include "sl_component_catalog.h"
 #include "sl_memory_manager.h"
+
+#if SL_OPENTHREAD_ENABLE_HOST_WAKE_GPIO
+#include "sl_gpio.h"
+sl_gpio_t host_wakeup_gpio;
+#endif
 
 #if OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE
 #if OPENTHREAD_CONFIG_MULTIPLE_STATIC_INSTANCE_ENABLE == 0
@@ -66,7 +71,7 @@ extern void otAppNcpInit(otInstance *aInstance);
 #if OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_ENABLE && !OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE
 static uint8_t *sOtInstanceBuffer = NULL;
 #endif
-static otInstance* sInstance = NULL;
+static otInstance *sInstance = NULL;
 
 otInstance *otGetInstance(void)
 {
@@ -84,7 +89,7 @@ void sl_ot_create_instance(void)
     }
     sInstance = sInstances[0];
 #elif OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_ENABLE && !OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE
-    size_t   otInstanceBufferLength = 0;
+    size_t otInstanceBufferLength = 0;
 
     // Call to query the buffer size
     (void)otInstanceInit(NULL, &otInstanceBufferLength);
@@ -110,16 +115,25 @@ void sl_ot_ncp_init(void)
 #endif
 }
 
-/**************************************************************************//**
+/******************************************************************************
  * Application Init.
  *****************************************************************************/
+OT_TOOL_WEAK void sl_host_wakeup_init(void)
+{
+#if SL_OPENTHREAD_ENABLE_HOST_WAKE_GPIO
+    host_wakeup_gpio.port = (uint8_t)SL_OPENTHREAD_HOST_WAKEUP_GPIO_PORT;
+    host_wakeup_gpio.pin  = (uint8_t)SL_OPENTHREAD_HOST_WAKEUP_GPIO_PIN;
+    sl_gpio_set_pin_mode(&host_wakeup_gpio, SL_GPIO_MODE_PUSH_PULL, 0);
+#endif
+}
 
 void app_init(void)
 {
     OT_SETUP_RESET_JUMP(argv);
+    sl_host_wakeup_init();
 }
 
-/**************************************************************************//**
+/******************************************************************************
  * Application Process Action.
  *****************************************************************************/
 void app_process_action(void)
@@ -128,7 +142,7 @@ void app_process_action(void)
     otSysProcessDrivers(sInstance);
 }
 
-/**************************************************************************//**
+/******************************************************************************
  * Application Exit.
  *****************************************************************************/
 void app_exit(void)

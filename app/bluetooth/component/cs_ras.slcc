@@ -4,6 +4,9 @@ label: CS Ranging Service
 description: >
   Channel Sounding (CS) Ranging Service (RAS) is used for parsing RAS GATT messages as well as creating RAS GATT responses.
 category: Bluetooth|Application|Miscellaneous
+metadata:
+  sbom:
+    license: Zlib
 quality: evaluation
 root_path: app/bluetooth/common/cs_ras
 include:
@@ -15,6 +18,7 @@ source:
 requires:
   - name: app_log
   - name: app_assert
+  - name: sl_common
 provides:
   - name: cs_ras
 documentation:

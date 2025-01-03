@@ -42,6 +42,7 @@ class ProfileSidewalkNerio(IProfile):
         return profile
 
     def profile_calculate(self, model):
+        model.vars.protocol_id.value_forced = model.vars.protocol_id.var_enum.Sidewalk
         self._fixed_sidewalk_vars(model)
         self._lookup_from_sidewalk_mode(model)
         self._lookup_syncword_from_fec(model)

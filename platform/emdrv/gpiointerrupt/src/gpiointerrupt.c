@@ -28,28 +28,26 @@
  *
  ******************************************************************************/
 
+#include <stddef.h>
+
 #include "gpiointerrupt.h"
 #include "sl_assert.h"
 #include "sl_common.h"
-#include "sl_interrupt_manager.h"
+#include "sl_gpio.h"
 
 /***************************************************************************//**
  * @addtogroup gpioint
  * @{
  ******************************************************************************/
 
-/*******************************************************************************
- *******************************   DEFINES   ***********************************
- ******************************************************************************/
-
 /** @cond DO_NOT_INCLUDE_WITH_DOXYGEN */
 
-#define _GPIOINT_IF_EVEN_MASK ((_GPIO_IF_MASK) & 0x55555555UL)
-#define _GPIOINT_IF_ODD_MASK  ((_GPIO_IF_MASK) & 0xAAAAAAAAUL)
-
 /*******************************************************************************
- ********************************   MACROS   ***********************************
+ ********************************   DEFINES   **********************************
  ******************************************************************************/
+
+/// Define for supporting gpiointerrupt porting
+#define SL_GPIO_PORT_INTERRUPT  (0xFF)
 
 /*******************************************************************************
  *******************************   STRUCTS   ***********************************
@@ -67,16 +65,10 @@ typedef struct {
 } GPIOINT_CallbackDesc_t;
 
 /*******************************************************************************
- ********************************   GLOBALS   **********************************
+ **************************   LOCAL FUNCTIONS   *******************************
  ******************************************************************************/
 
-/* Array of user callbacks. One for each pin interrupt number. */
-static GPIOINT_CallbackDesc_t gpioCallbacks[32] = { 0 };
-
-/*******************************************************************************
- ******************************   PROTOTYPES   *********************************
- ******************************************************************************/
-static void GPIOINT_IRQDispatcher(uint32_t iflags);
+static void gpioint_map_callback (uint8_t int_no, void *context);
 
 /** @endcond */
 
@@ -91,14 +83,7 @@ static void GPIOINT_IRQDispatcher(uint32_t iflags);
  ******************************************************************************/
 void GPIOINT_Init(void)
 {
-  if (sl_interrupt_manager_is_irq_disabled(GPIO_ODD_IRQn)) {
-    NVIC_ClearPendingIRQ(GPIO_ODD_IRQn);
-    NVIC_EnableIRQ(GPIO_ODD_IRQn);
-  }
-  if (sl_interrupt_manager_is_irq_disabled(GPIO_EVEN_IRQn)) {
-    NVIC_ClearPendingIRQ(GPIO_EVEN_IRQn);
-    NVIC_EnableIRQ(GPIO_EVEN_IRQn);
-  }
+  sl_gpio_init();
 }
 
 /***************************************************************************//**
@@ -118,14 +103,22 @@ void GPIOINT_Init(void)
  ******************************************************************************/
 void GPIOINT_CallbackRegister(uint8_t intNo, GPIOINT_IrqCallbackPtr_t callbackPtr)
 {
-  CORE_ATOMIC_SECTION(
-    /* Dispatcher is used */
-    gpioCallbacks[intNo].callback = (void *)callbackPtr;
-    gpioCallbacks[intNo].context_flag = false;
-    )
+  sl_gpio_t gpio;
+  gpio.port = SL_GPIO_PORT_INTERRUPT;
+  gpio.pin = -1;
+  int32_t int_no = intNo;
+  if (int_no <= GPIO_PIN_MAX) {
+    sl_gpio_configure_external_interrupt(&gpio, &int_no, false, gpioint_map_callback, (void *)callbackPtr);
+  } else {
+#if defined(_GPIO_IEN_EM4WUIEN_SHIFT)
+    int_no = int_no - _GPIO_IEN_EM4WUIEN_SHIFT;
+#else
+    int_no = int_no - _GPIO_IEN_EM4WUIEN0_SHIFT;
+#endif
+    sl_gpio_configure_wakeup_em4_interrupt(&gpio, &int_no, false, gpioint_map_callback, (void *)callbackPtr);
+  }
 }
 
-#if defined(_SILICON_LABS_32B_SERIES_2)
 /***************************************************************************//**
  * @brief
  *   Registers user em4 wakeup callback for given port and pin interrupt number.
@@ -155,16 +148,20 @@ unsigned int GPIOINT_EM4WUCallbackRegisterExt(GPIO_Port_TypeDef port,
                                               GPIOINT_IrqCallbackPtrExt_t callbackPtr,
                                               void *callbackCtx)
 {
-  CORE_DECLARE_IRQ_STATE;
-  unsigned int intNo = INTERRUPT_UNAVAILABLE;
-
-  CORE_ENTER_ATOMIC();
+  int32_t intNo = INTERRUPT_UNAVAILABLE;
+  sl_gpio_t gpio;
+  gpio.port = SL_GPIO_PORT_INTERRUPT;
+  gpio.pin = -1;
 
   if (false) {
     /* Check all the EM4WU Pins and check if given pin matches any of them. */
 #if defined(GPIO_EM4WU0_PORT)
   } else if (GPIO_EM4WU0_PORT == port && GPIO_EM4WU0_PIN == pin) {
     intNo = 0;
+#endif
+#if defined(GPIO_EM4WU1_PORT)
+  } else if (GPIO_EM4WU1_PORT == port && GPIO_EM4WU1_PIN == pin) {
+    intNo = 1;
 #endif
 #if defined(GPIO_EM4WU3_PORT)
   } else if (GPIO_EM4WU3_PORT == port && GPIO_EM4WU3_PIN == pin) {
@@ -196,23 +193,14 @@ unsigned int GPIOINT_EM4WUCallbackRegisterExt(GPIO_Port_TypeDef port,
 #endif
   }
 
-  if (intNo != INTERRUPT_UNAVAILABLE) {
-#if defined(_GPIO_IEN_EM4WUIEN_SHIFT)
-    gpioCallbacks[_GPIO_IEN_EM4WUIEN_SHIFT + intNo].callback = (void *)callbackPtr;
-    gpioCallbacks[_GPIO_IEN_EM4WUIEN_SHIFT + intNo].context = callbackCtx;
-    gpioCallbacks[_GPIO_IEN_EM4WUIEN_SHIFT + intNo].context_flag = true;
-#else
-    gpioCallbacks[_GPIO_IEN_EM4WUIEN0_SHIFT + intNo].callback = (void *)callbackPtr;
-    gpioCallbacks[_GPIO_IEN_EM4WUIEN0_SHIFT + intNo].context = callbackCtx;
-    gpioCallbacks[_GPIO_IEN_EM4WUIEN0_SHIFT + intNo].context_flag = true;
-#endif
+  sl_status_t status = sl_gpio_configure_wakeup_em4_interrupt(&gpio, &intNo, false, (sl_gpio_irq_callback_t)callbackPtr, callbackCtx);
+
+  if (status == SL_STATUS_OK) {
+    return intNo;
+  } else {
+    return INTERRUPT_UNAVAILABLE;
   }
-
-  CORE_EXIT_ATOMIC();
-
-  return intNo;
 }
-#endif
 
 /***************************************************************************//**
  * @brief
@@ -236,120 +224,37 @@ unsigned int GPIOINT_EM4WUCallbackRegisterExt(GPIO_Port_TypeDef port,
  ******************************************************************************/
 unsigned int GPIOINT_CallbackRegisterExt(uint8_t pin, GPIOINT_IrqCallbackPtrExt_t callbackPtr, void *callbackCtx)
 {
-  CORE_DECLARE_IRQ_STATE;
-  unsigned int intNo = INTERRUPT_UNAVAILABLE;
-
-  CORE_ENTER_ATOMIC();
-
-#if defined(_GPIO_EXTIPINSELL_MASK)
-  uint32_t intToCheck;
-  uint32_t intGroupStart = (pin & 0xFFC);
-  uint32_t intsEnabled = GPIO_EnabledIntGet();
-
-  // loop through the interrupt group, starting
-  // from the pin number, and take
-  // the first available
-  for (uint8_t i = 0; i < 4; i++) {
-    intToCheck = intGroupStart + ((pin + i) & 0x3); // modulo 4
-    if (((intsEnabled >> intToCheck) & 0x1) == 0) {
-      intNo = (unsigned int)intToCheck;
-      break;
-    }
-  }
-#else
-  if (gpioCallbacks[pin].callback == 0) {
-    intNo = (unsigned int)pin;
-  }
-#endif
-
-  if (intNo != INTERRUPT_UNAVAILABLE) {
-    gpioCallbacks[intNo].callback = (void *)callbackPtr;
-    gpioCallbacks[intNo].context = callbackCtx;
-    gpioCallbacks[intNo].context_flag = true;
-  }
-
-  CORE_EXIT_ATOMIC();
-
-  return intNo;
-}
-
-/** @cond DO_NOT_INCLUDE_WITH_DOXYGEN */
-
-/***************************************************************************//**
- * @brief
- *   Function calls users callback for registered pin interrupts.
- *
- * @details
- *   This function is called when GPIO interrupts are handled by the IRQHandlers.
- *   Function gets even or odd interrupt flags and calls user callback
- *   registered for that pin. Function iterates on flags starting from MSB.
- *
- * @param iflags
- *  Interrupt flags which shall be handled by the dispatcher.
- *
- ******************************************************************************/
-static void GPIOINT_IRQDispatcher(uint32_t iflags)
-{
-  uint32_t irqIdx;
-  GPIOINT_CallbackDesc_t *callback;
-
-  /* check for all flags set in IF register */
-  while (iflags != 0U) {
-    irqIdx = SL_CTZ(iflags);
-
-    /* clear flag*/
-    iflags &= ~(1UL << irqIdx);
-
-    callback = &gpioCallbacks[irqIdx];
-    if (callback->callback) {
-      /* call user callback */
-      if (callback->context_flag) {
-        GPIOINT_IrqCallbackPtrExt_t func = (GPIOINT_IrqCallbackPtrExt_t)(callback->callback);
-        func((uint8_t)irqIdx, callback->context);
-      } else {
-        GPIOINT_IrqCallbackPtr_t func = (GPIOINT_IrqCallbackPtr_t)(callback->callback);
-        func((uint8_t)irqIdx);
-      }
-    }
+  sl_gpio_t gpio;
+  gpio.port = SL_GPIO_PORT_INTERRUPT;
+  gpio.pin = pin;
+  int32_t intNo = SL_GPIO_INTERRUPT_UNAVAILABLE;
+  sl_status_t status = sl_gpio_configure_external_interrupt(&gpio, &intNo, false, (sl_gpio_irq_callback_t)callbackPtr, callbackCtx);
+  if (status == SL_STATUS_OK) {
+    return intNo;
+  } else {
+    return INTERRUPT_UNAVAILABLE;
   }
 }
 
-/***************************************************************************//**
- * @brief
- *   GPIO EVEN interrupt handler. Interrupt handler clears all IF even flags and
- *   call the dispatcher passing the flags which triggered the interrupt.
- *
+/*******************************************************************************
+ **************************   LOCAL FUNCTIONS   *******************************
  ******************************************************************************/
-void GPIO_EVEN_IRQHandler(void)
-{
-  uint32_t iflags;
-
-  /* Get all even interrupts. */
-  iflags = GPIO_IntGetEnabled() & _GPIOINT_IF_EVEN_MASK;
-
-  /* Clean only even interrupts. */
-  GPIO_IntClear(iflags);
-
-  GPIOINT_IRQDispatcher(iflags);
-}
 
 /***************************************************************************//**
  * @brief
- *   GPIO ODD interrupt handler. Interrupt handler clears all IF odd flags and
- *   call the dispatcher passing the flags which triggered the interrupt.
+ *   Wrapper function to support porting gpiointerrupt
  *
+ * @param[in] int_no
+ *   Interrupt number for callback
+ * @param[in] context
+ *   A pointer to callback
  ******************************************************************************/
-void GPIO_ODD_IRQHandler(void)
+static void gpioint_map_callback(uint8_t int_no, void *context)
 {
-  uint32_t iflags;
-
-  /* Get all odd interrupts. */
-  iflags = GPIO_IntGetEnabled() & _GPIOINT_IF_ODD_MASK;
-
-  /* Clean only odd interrupts. */
-  GPIO_IntClear(iflags);
-
-  GPIOINT_IRQDispatcher(iflags);
+  GPIOINT_IrqCallbackPtr_t old_callback = (GPIOINT_IrqCallbackPtr_t)context;
+  if (old_callback != NULL) {
+    old_callback(int_no);
+  }
 }
 
 /** @endcond */

@@ -443,7 +443,7 @@ uint16_t sl_802154_get_tx_power_mode(void)
   return msg.data.get_tx_power_mode.response.result;
 }
 
-sl_status_t sl_802154_radio_get_scheduler_priorities(sl_zigbee_multiprotocol_priorities_t *priorities)
+sl_status_t sl_802154_radio_get_scheduler_priorities(sl_802154_radio_priorities_t *priorities)
 {
   sli_zigbee_ipc_cmd_t msg;
 
@@ -477,7 +477,7 @@ sl_status_t sl_802154_radio_get_scheduler_sliptime(uint32_t *slipTime)
   return msg.data.radio_get_scheduler_sliptime.response.result;
 }
 
-sl_status_t sl_802154_radio_set_scheduler_priorities(const sl_zigbee_multiprotocol_priorities_t *priorities)
+sl_status_t sl_802154_radio_set_scheduler_priorities(const sl_802154_radio_priorities_t *priorities)
 {
   sli_zigbee_ipc_cmd_t msg;
 
@@ -651,18 +651,15 @@ void sl_zigbee_get_extended_pan_id(uint8_t *resultLocation)
 {
   sli_zigbee_ipc_cmd_t msg;
 
-  if ((16) > (16)) {
-    assert(false); // "vector resultLocation length exceeds expected maximum
+  if (resultLocation != NULL) {
+    memmove(msg.data.get_extended_pan_id.request.resultLocation, resultLocation, sizeof(uint8_t) * (16));
   }
 
-  memmove(msg.data.get_extended_pan_id.request.resultLocation, resultLocation, sizeof(uint8_t) * (16));
   sli_zigbee_send_ipc_cmd(sli_zigbee_stack_get_extended_pan_id_process_ipc_command, &msg);
 
-  if ((16) > (16)) {
-    assert(false); // "vector resultLocation length exceeds expected maximum
+  if (resultLocation != NULL) {
+    memmove(resultLocation, msg.data.get_extended_pan_id.request.resultLocation, sizeof(uint8_t) * (16));
   }
-
-  memmove(resultLocation, msg.data.get_extended_pan_id.request.resultLocation, sizeof(uint8_t) * (16));
 }
 
 uint8_t sl_zigbee_get_initial_neighbor_outgoing_cost(void)

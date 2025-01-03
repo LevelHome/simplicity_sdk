@@ -17,3 +17,6 @@ provides:
 template_contribution:
   - name: mbedtls_config
     value: MBEDTLS_PSA_CRYPTO_BUILTIN_KEYS
+metadata:
+  sbom:
+    license: Zlib

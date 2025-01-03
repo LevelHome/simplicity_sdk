@@ -4,6 +4,11 @@ description: Utility to aid with IEEE802.15.4 PHY Configuration
 package: platform
 category: Platform|Radio
 quality: production
+metadata:
+  sbom:
+    id: rail_util_ieee802154_phy_select
+    name: RAIL Utility, IEEE802.15.4 PHY Configuration
+    license: Zlib
 ui_hints:
   visibility: never
 requires:
@@ -12,6 +17,7 @@ requires:
   - name: rail_lib
   - name: status
   - name: rail_util_ieee802154_stack_event
+  - name: code_classification
 provides:
   - name: rail_util_ieee802154_phy_select
 documentation:
@@ -26,6 +32,9 @@ include:
       - path: sl_rail_util_ieee802154_phy_select.h
 template_file:
   - path: platform/radio/rail_lib/plugin/rail_util_ieee802154/sl_rail_util_ieee802154_phy_select.c.jinja
+define:
+  - name: SL_CODE_COMPONENT_RAIL_UTIL_IEEE802154_PHY_SELECT
+    value: rail_util_ieee802154_phy_select
 template_contribution:
   - name: rail_util_ieee802154_callbacks
     value:
@@ -33,4 +42,6 @@ template_contribution:
       handler: sl_rail_util_ieee802154_phy_select_on_event
     priority: -9010
   - name: component_catalog
+    value: rail_util_ieee802154_phy_select
+  - name: code_classification_components
     value: rail_util_ieee802154_phy_select

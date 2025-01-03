@@ -21,7 +21,9 @@
 #include "app/framework/util/af-main.h"
 #include "app/framework/util/common.h"
 #include "app/framework/util/util.h"
+#ifdef SL_CATALOG_ZIGBEE_CLI_PRESENT
 #include "app/util/serial/sl_zigbee_command_interpreter.h"
+#endif // SL_CATALOG_ZIGBEE_CLI_PRESENT
 #include "test-harness.h"
 #ifdef SL_CATALOG_CLI_PRESENT
 #include "test-harness-cli.h"
@@ -207,7 +209,7 @@ static void testHarnessPrintVarArgs(const char * format,
 {
   sl_zigbee_af_core_flush();
   sl_zigbee_af_core_print(TEST_HARNESS_PRINT_PREFIX);
-  (void) sli_legacy_serial_printf_var_arg(SL_ZIGBEE_AF_PRINT_OUTPUT, format, vargs);
+  (void) local_vprintf(format, vargs);
   sl_zigbee_af_core_flush();
 }
 
@@ -250,7 +252,7 @@ sl_status_t sl_zigbee_af_trust_center_start_network_key_update(void)
   status = unicastKeyUpdate ? sl_zigbee_af_trust_center_start_unicast_network_key_update()
            : sl_zigbee_af_trust_center_start_broadcast_network_key_update();
 
-  sl_zigbee_app_debug_println("%s: %s: 0x%X",
+  sl_zigbee_app_debug_println("%s: %s: 0x%02X",
                               TEST_HARNESS_PRINT_NAME,
                               "Network Key Update",
                               status);
@@ -282,12 +284,12 @@ void sli_zigbee_af_test_harness_init_callback(uint8_t init_level)
 void sli_zigbee_af_key_establishment_test_harness_event_handler(sl_zigbee_af_event_t * event)
 {
   sl_zigbee_af_event_set_inactive(testHarnessEventControl);
-  testHarnessPrintln("Test Harness Event Handler fired, Tick: 0x%4X",
+  testHarnessPrintln("Test Harness Event Handler fired, Tick: 0x%08X",
                      halCommonGetInt32uMillisecondTick());
 
   stopRecursion = true;
 #if defined(SL_CATALOG_ZIGBEE_KEY_ESTABLISHMENT_PRESENT)
-  testHarnessPrintln("Generating %p callback.",
+  testHarnessPrintln("Generating %s callback.",
                      ((delayedCbkeOperation == CBKE_OPERATION_GENERATE_KEYS
                        || delayedCbkeOperation == CBKE_OPERATION_GENERATE_KEYS_283K1)
                       ? "sl_zigbee_generate_cbke_keys_handler()"
@@ -308,7 +310,7 @@ void sli_zigbee_af_key_establishment_test_harness_event_handler(sl_zigbee_af_eve
                                                                  (sl_zigbee_smac_data_t*)delayedData,
                                                                  (sl_zigbee_smac_data_t*)(delayedData + SL_ZIGBEE_SMAC_SIZE));
   } else {
-    testHarnessPrintln("Test Harness Event Handler: Unknown operation 0x%4X", delayedCbkeOperation);
+    testHarnessPrintln("Test Harness Event Handler: Unknown operation 0x%08X", delayedCbkeOperation);
   }
 #endif
 
@@ -327,7 +329,7 @@ bool sli_zigbee_af_key_establishment_test_harness_cbke_callback(uint8_t cbkeOper
     return false;
   }
 
-  testHarnessPrintln("Delaying %p key callback for %d seconds",
+  testHarnessPrintln("Delaying %s key callback for %d seconds",
                      ((cbkeOperation == CBKE_OPERATION_GENERATE_KEYS
                        || cbkeOperation == CBKE_OPERATION_GENERATE_KEYS_283K1)
                       ? "ephemeral"
@@ -350,7 +352,7 @@ bool sli_zigbee_af_key_establishment_test_harness_cbke_callback(uint8_t cbkeOper
 
   delayedCbkeOperation = cbkeOperation;
 
-  testHarnessPrintln("Test Harness Tick: 0x%4X",
+  testHarnessPrintln("Test Harness Tick: 0x%08X",
                      halCommonGetInt32uMillisecondTick());
   uint32_t delayMs = (((uint32_t)(cbkeDelaySeconds))
                       * MILLISECOND_TICKS_PER_SECOND);
@@ -384,7 +386,7 @@ bool sli_zigbee_af_key_establishment_test_harness_message_send_callback(uint8_t 
         }
         appResponseLength += certLengthMod;
 
-        testHarnessPrintln("Mangling certificate length by %p%d bytes",
+        testHarnessPrintln("Mangling certificate length by %s%d bytes",
                            (certLengthMod > 0
                             ? "+"
                             : ""),
@@ -397,7 +399,7 @@ bool sli_zigbee_af_key_establishment_test_harness_message_send_callback(uint8_t 
                 : ((appResponseLength == 81) ? CERT_SUBJECT_OFFSET_283K1 : CERT_SUBJECT_OFFSET));
 
         memmove(ptr, invalidEui64, EUI64_SIZE);
-        testHarnessPrintln("Mangling certificate %p to be (>)%X%X%X%X%X%X%X%X",
+        testHarnessPrintln("Mangling certificate %s to be (>)%02X%02X%02X%02X%02X%02X%02X%02X",
                            (certMangleType == CERT_MANGLE_ISSUER
                             ? "issuer"
                             : "subject"),
@@ -522,7 +524,7 @@ bool sli_zigbee_af_key_establishment_test_harness_message_send_callback(uint8_t 
       }
       appResponseLength += keyLengthMod;
 
-      testHarnessPrintln("Mangling key length by %p%d bytes",
+      testHarnessPrintln("Mangling key length by %s%d bytes",
                          (keyLengthMod > 0
                           ? "+"
                           : ""),
@@ -674,12 +676,12 @@ void sl_zigbee_af_test_harness_key_establishment_set_available_suite_command(sl_
 
 void sl_zigbee_af_test_harness_status_command(sl_cli_command_arg_t *arguments)
 {
-  sl_zigbee_af_key_establishment_cluster_print("Test Harness Mode: %p", modeText[testHarnessMode]);
+  sl_zigbee_af_key_establishment_cluster_print("Test Harness Mode: %s", modeText[testHarnessMode]);
   if (testHarnessMode == MODE_CERT_MANGLE) {
     sl_zigbee_af_key_establishment_cluster_println("");
-    sl_zigbee_af_key_establishment_cluster_print("Cert Mangling Type: %p", certMangleText[certMangleType]);
+    sl_zigbee_af_key_establishment_cluster_print("Cert Mangling Type: %s", certMangleText[certMangleType]);
     if (certMangleType == CERT_MANGLE_LENGTH) {
-      sl_zigbee_af_key_establishment_cluster_print(" (%p%d bytes)",
+      sl_zigbee_af_key_establishment_cluster_print(" (%s%d bytes)",
                                                    ((certLengthMod > 0)
                                                     ? "+"
                                                     : ""),
@@ -694,7 +696,7 @@ void sl_zigbee_af_test_harness_status_command(sl_cli_command_arg_t *arguments)
   }
   sl_zigbee_af_key_establishment_cluster_println("");
 
-  sl_zigbee_af_key_establishment_cluster_println("Auto SE Registration: %p",
+  sl_zigbee_af_key_establishment_cluster_println("Auto SE Registration: %s",
                                                  (sli_zigbee_af_test_harness_allow_registration
                                                   ? "On"
                                                   : "Off"));
@@ -702,11 +704,11 @@ void sl_zigbee_af_test_harness_status_command(sl_cli_command_arg_t *arguments)
   if (clusterIdRequiringApsSecurity == NULL_CLUSTER_ID) {
     sl_zigbee_af_key_establishment_cluster_println("off");
   } else {
-    sl_zigbee_af_key_establishment_cluster_println("0x%2X",
+    sl_zigbee_af_key_establishment_cluster_println("0x%04X",
                                                    clusterIdRequiringApsSecurity);
   }
 
-  sl_zigbee_af_key_establishment_cluster_println("Publish Price includes SE 1.1 fields: %p",
+  sl_zigbee_af_key_establishment_cluster_println("Publish Price includes SE 1.1 fields: %s",
                                                  (sli_zigbee_af_test_harness_support_for_new_price_fields
                                                   ? "yes"
                                                   : "no"));
@@ -715,7 +717,7 @@ void sl_zigbee_af_test_harness_status_command(sl_cli_command_arg_t *arguments)
 #if defined(STACK_TEST_HARNESS)
   {
     uint8_t beaconsLeft = sli_zigbee_test_harness_beacon_suppress_get();
-    sl_zigbee_af_key_establishment_cluster_print("Beacon Suppress: %p",
+    sl_zigbee_af_key_establishment_cluster_print("Beacon Suppress: %s",
                                                  (beaconsLeft == 255
                                                   ? "Disabled "
                                                   : "Enabled "));
@@ -956,7 +958,7 @@ void sl_zigbee_af_test_harness_endpoint_status_command(sl_cli_command_arg_t *arg
     uint8_t endpoint = sl_zigbee_af_endpoint_from_index(i);
     sl_zigbee_ezsp_endpoint_flags_t flags;
     sl_zigbee_ezsp_get_endpoint_flags(endpoint, &flags);
-    testHarnessPrintln("EP %d, Flags 0x%2X [%s]",
+    testHarnessPrintln("EP %d, Flags 0x%04X [%s]",
                        endpoint,
                        flags,
                        ((flags & SL_ZIGBEE_EZSP_ENDPOINT_ENABLED)
@@ -978,7 +980,7 @@ void sl_zigbee_af_test_harness_endpoint_status_command(sl_cli_command_arg_t *arg
                                                                    (sl_zigbee_smac_data_t*)delayedData,
                                                                    (sl_zigbee_smac_data_t*)(delayedData + SL_ZIGBEE_SMAC_SIZE));
     } else {
-      testHarnessPrintln("Test Harness Event Handler: Unknown operation 0x%4X", delayedCbkeOperation);
+      testHarnessPrintln("Test Harness Event Handler: Unknown operation 0x%08X", delayedCbkeOperation);
     }
 #endif // SL_CATALOG_ZIGBEE_KEY_ESTABLISHMENT_PRESENT
   }
@@ -1003,7 +1005,7 @@ void sl_zigbee_af_test_harness_cluster_endpoint_index_command(sl_cli_command_arg
                                    ? sl_zigbee_af_find_cluster_client_endpoint_index(endpoint, clusterId)
                                    : sl_zigbee_af_find_cluster_server_endpoint_index(endpoint, clusterId));
 
-  testHarnessPrintln("endpoint: 0x%2x cluster: 0x%2x clusterEndpointIndex: 0x%2x %s",
+  testHarnessPrintln("endpoint: 0x%04X cluster: 0x%04X clusterEndpointIndex: 0x%04X %s",
                      endpoint,
                      clusterId,
                      clusterEndpointIndex,
@@ -1032,7 +1034,7 @@ void sl_zigbee_af_test_harness_radio_on_off_command(sl_cli_command_arg_t *argume
   } else {
     status = sl_zigbee_stop_scan();
   }
-  sl_zigbee_app_debug_println("Radio %s status: 0x%X",
+  sl_zigbee_app_debug_println("Radio %s status: 0x%02X",
                               (radioOff ? "OFF" : "ON"),
                               status);
 }
@@ -1050,7 +1052,7 @@ void sl_zigbee_af_test_harness_get_radio_channel(sl_cli_command_arg_t *arguments
 
   uint8_t logicalChannel = sl_zigbee_get_radio_channel();
   uint8_t radioChannel = sli_mac_lower_mac_get_radio_channel(PHY_INDEX_NATIVE);
-  sl_zigbee_af_app_println("%p %d %p %d", "Logical channel:", logicalChannel, "Radio channel:", radioChannel);
+  sl_zigbee_af_app_println("%s %d %s %d", "Logical channel:", logicalChannel, "Radio channel:", radioChannel);
 #else
 
   testHarnessPrintln("Not supported on host.");
@@ -1070,7 +1072,7 @@ void sl_zigbee_af_test_harness_add_child_command(sl_cli_command_arg_t *arguments
   nodeType = sl_cli_get_argument_uint16(arguments, 2);
 
   status = sl_zigbee_add_child(shortId, longId, nodeType);
-  sl_zigbee_app_debug_println("status 0x%x", status);
+  sl_zigbee_app_debug_println("status 0x%02X", status);
 #endif
 }
 
@@ -1084,7 +1086,7 @@ void sl_zigbee_af_test_harness_set_node_descriptor_compliance_revision(SL_CLI_CO
   sl_status_t status;
   status = sl_zigbee_ezsp_set_value(SL_ZIGBEE_EZSP_VALUE_ENABLE_R21_BEHAVIOR, 1, &val);
   if (status == SL_STATUS_OK) {
-    sl_zigbee_app_debug_println("The compliance revision of the device has been changed to R%d (0x%X)", val, status);
+    sl_zigbee_app_debug_println("The compliance revision of the device has been changed to R%d (0x%02X)", val, status);
   }
 #elif defined(SL_ZIGBEE_TEST)
   sli_zigbee_set_stack_compliance_revision(val);
@@ -1135,7 +1137,7 @@ void sl_zigbee_suppress_cluster(sl_cli_command_arg_t *arguments)
 
   char *action = sl_zigbee_af_get_suppress_cluster(clusterId, serverClient) ? "unsuppress" : "suppress";
   sl_zigbee_af_status_t status = sl_zigbee_af_set_suppress_cluster(clusterId, serverClient);
-  sl_zigbee_core_debug_println("%p clstr %d side %d: 0x%02X",
+  sl_zigbee_core_debug_println("%s clstr %d side %d: 0x%02X",
                                action,
                                clusterId,
                                serverClient,
@@ -1152,7 +1154,7 @@ void sl_zigbee_suppress_command(sl_cli_command_arg_t *arguments)
 
   char *action = sl_zigbee_af_get_suppress_command(clusterId, serverClient, commandId) ? "unsuppress" : "suppress";
   sl_zigbee_af_status_t status = sl_zigbee_af_set_suppress_command(clusterId, serverClient, commandId);
-  sl_zigbee_core_debug_println("%p clstr %d side %d cmd %d: 0x%02X",
+  sl_zigbee_core_debug_println("%s clstr %d side %d cmd %d: 0x%02X",
                                action,
                                clusterId,
                                serverClient,

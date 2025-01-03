@@ -135,16 +135,16 @@ sl_status_t zaTrustCenterSecurityInit(bool centralizedNetwork)
 
   sl_zigbee_af_security_init_cb(&state, &extended, true); // trust center?
 
-  sl_zigbee_af_security_println("set state to: 0x%2x", state.bitmask);
+  sl_zigbee_af_security_println("set state to: 0x%04X", state.bitmask);
   status = sl_zigbee_set_initial_security_state(&state);
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_security_println("security init TC: 0x%x", status);
+    sl_zigbee_af_security_println("security init TC: 0x%02X", status);
     return status;
   }
 
   // Don't need to check on the status here, sl_zigbee_set_extended_security_bitmask
   // always returns SL_STATUS_OK.
-  sl_zigbee_af_security_println("set extended security to: 0x%2x", extended);
+  sl_zigbee_af_security_println("set extended security to: 0x%04X", extended);
   sl_zigbee_set_extended_security_bitmask(extended);
 
   status = zaTrustCenterSecurityPolicyInit();
@@ -323,7 +323,7 @@ sl_zigbee_join_decision_t sli_zigbee_af_trust_center_pre_join_callback(sl_802154
 
   (void) sl_zigbee_af_pop_network_index();
 
-  sl_zigbee_af_security_println("Trust Center Join Handler: status = %p, decision = %p (%x), shortid 0x%2x",
+  sl_zigbee_af_security_println("Trust Center Join Handler: status = %s, decision = %s (%02X), shortid 0x%04X",
                                 deviceUpdateText[status],
                                 joinDecisionText[joinDecision],
                                 joinDecision,

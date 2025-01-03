@@ -243,10 +243,10 @@ bool sl_zigbee_af_price_get_block_thresholds_by_issuer_tariff_id(uint8_t endpoin
    sl_zigbee_af_price_common_info_t *curInfo;
 
    sl_zigbee_af_debug_println("findTariffs: selection criteria");
-   sl_zigbee_af_debug_println("             earliestStartTime: %4x", earliestStartTime);
-   sl_zigbee_af_debug_println("             minIssuerId: %4x", minIssuerId);
+   sl_zigbee_af_debug_println("             earliestStartTime: %08X", earliestStartTime);
+   sl_zigbee_af_debug_println("             minIssuerId: %08X", minIssuerId);
    sl_zigbee_af_debug_println("             numberOfTariffsRequested: %d", numTariffs);
-   sl_zigbee_af_debug_println("             tariffType: %x", tariffType);
+   sl_zigbee_af_debug_println("             tariffType: %02X", tariffType);
 
    ep = sl_zigbee_af_find_cluster_server_endpoint_index(endpoint, ZCL_PRICE_CLUSTER_ID);
    if (ep == 0xFF) {
@@ -462,7 +462,7 @@ bool sl_zigbee_af_price_add_price_matrix_raw(uint8_t endpoint,
       uint8_t tier = payload[payloadIndex];
       memcpy(&price, &payload[payloadIndex + 1], 4);
       pm.matrix.tier[tier] = price;
-      sl_zigbee_af_price_cluster_println("Info: Updating PriceMatrix tier[%d] = 0x%4X",
+      sl_zigbee_af_price_cluster_println("Info: Updating PriceMatrix tier[%d] = 0x%08X",
                                          tier,
                                          price);
     } else if ((subPayloadControl & 0x01) == 0x00) {
@@ -470,7 +470,7 @@ bool sl_zigbee_af_price_add_price_matrix_raw(uint8_t endpoint,
       uint8_t tier = (payload[payloadIndex] & 0xF0) >> 4;
       memcpy(&price, &payload[payloadIndex + 1], 4);
       pm.matrix.blockAndTier[tier][blockNumber] = price;
-      sl_zigbee_af_price_cluster_println("Info: Updating PriceMatrix blockAndTier[%d][%d] = 0x%4X",
+      sl_zigbee_af_price_cluster_println("Info: Updating PriceMatrix blockAndTier[%d][%d] = 0x%08X",
                                          tier,
                                          blockNumber,
                                          price);
@@ -726,11 +726,11 @@ void sl_zigbee_af_price_print_tariff(const sl_zigbee_af_price_common_info_t *inf
   sl_zigbee_af_price_cluster_print(" label: ");
   sl_zigbee_af_price_cluster_print_string(tariff->tariffLabel);
   if (sl_zigbee_af_string_length(tariff->tariffLabel) > 0) {
-    sl_zigbee_af_price_cluster_print("(0x%X)", sl_zigbee_af_string_length(tariff->tariffLabel));
+    sl_zigbee_af_price_cluster_print("(0x%02X)", sl_zigbee_af_string_length(tariff->tariffLabel));
   }
-  sl_zigbee_af_price_cluster_print("\n uom/cur: 0x%X/0x%2X"
-                                   "\r\n pid/eid/etid: 0x%4X/0x%4X/0x%4X"
-                                   "\r\n st/tt: 0x%4X/0x%X",
+  sl_zigbee_af_price_cluster_print("\n uom/cur: 0x%02X/0x%04X"
+                                   "\r\n pid/eid/etid: 0x%08X/0x%08X/0x%08X"
+                                   "\r\n st/tt: 0x%08X/0x%02X",
                                    tariff->unitOfMeasure,
                                    tariff->currency,
                                    tariff->providerId,
@@ -739,9 +739,9 @@ void sl_zigbee_af_price_print_tariff(const sl_zigbee_af_price_common_info_t *inf
                                    info->startTime,
                                    tariff->tariffTypeChargingScheme);
   sl_zigbee_af_price_cluster_flush();
-  sl_zigbee_af_price_cluster_print("\r\n ptu/btu: 0x%X/0x%X"
-                                   "\r\n ptd/sc/tbm: 0x%X/0x%4X/0x%X"
-                                   "\r\n btm/btd: 0x%4X/0x%4X",
+  sl_zigbee_af_price_cluster_print("\r\n ptu/btu: 0x%02X/0x%02X"
+                                   "\r\n ptd/sc/tbm: 0x%02X/0x%08X/0x%02X"
+                                   "\r\n btm/btd: 0x%08X/0x%08X",
                                    tariff->numberOfPriceTiersInUse,
                                    tariff->numberOfBlockThresholdsInUse,
                                    tariff->priceTrailingDigit,
@@ -783,10 +783,10 @@ void sl_zigbee_af_price_print_price_matrix(uint8_t endpoint,
 
   chargingScheme = t.tariffTypeChargingScheme;
 
-  sl_zigbee_af_price_cluster_print("  provider id: %4x\r\n", pm->providerId);
-  sl_zigbee_af_price_cluster_print("  issuer event id: %4x\r\n", info->issuerEventId);
-  sl_zigbee_af_price_cluster_print("  issuer tariff id: %4x\r\n", pm->issuerTariffId);
-  sl_zigbee_af_price_cluster_print("  start time: %4x\r\n", info->startTime);
+  sl_zigbee_af_price_cluster_print("  provider id: %08X\r\n", pm->providerId);
+  sl_zigbee_af_price_cluster_print("  issuer event id: %08X\r\n", info->issuerEventId);
+  sl_zigbee_af_price_cluster_print("  issuer tariff id: %08X\r\n", pm->issuerTariffId);
+  sl_zigbee_af_price_cluster_print("  start time: %08X\r\n", info->startTime);
 
   sl_zigbee_af_price_cluster_flush();
 
@@ -794,19 +794,19 @@ void sl_zigbee_af_price_print_price_matrix(uint8_t endpoint,
   switch (chargingScheme >> 4) {
     case 0: // TOU only
       for (i = 0; i < t.numberOfPriceTiersInUse; i++) {
-        sl_zigbee_af_price_cluster_print("  tier %d: %4x\r\n", i, pm->matrix.tier[i]);
+        sl_zigbee_af_price_cluster_print("  tier %d: %08X\r\n", i, pm->matrix.tier[i]);
       }
       break;
     case 1: // Block only
       for (i = 0; i < t.numberOfPriceTiersInUse; i++) {
-        sl_zigbee_af_price_cluster_print("  tier %d (block 1): %4x\r\n", i, pm->matrix.blockAndTier[i][0]);
+        sl_zigbee_af_price_cluster_print("  tier %d (block 1): %08X\r\n", i, pm->matrix.blockAndTier[i][0]);
       }
       break;
     case 2: // TOU and Block
     case 3:
       for (i = 0; i < t.numberOfPriceTiersInUse; i++) {
         for (j = 0; j < t.numberOfBlockThresholdsInUse + 1; j++) {
-          sl_zigbee_af_price_cluster_print("  tier %d block %d: %4x\r\n", i, j + 1, pm->matrix.blockAndTier[i][j]);
+          sl_zigbee_af_price_cluster_print("  tier %d block %d: %08X\r\n", i, j + 1, pm->matrix.blockAndTier[i][j]);
         }
       }
       break;
@@ -841,10 +841,10 @@ void sl_zigbee_af_price_print_block_thresholds(uint8_t endpoint,
 
   tierBlockMode = t.tierBlockMode;
 
-  sl_zigbee_af_price_cluster_print("  provider id: %4x\r\n", bt->providerId);
-  sl_zigbee_af_price_cluster_print("  issuer event id: %4x\r\n", info->issuerEventId);
-  sl_zigbee_af_price_cluster_print("  issuer tariff id: %4x\r\n", bt->issuerTariffId);
-  sl_zigbee_af_price_cluster_print("  start time: %4x\r\n", info->startTime);
+  sl_zigbee_af_price_cluster_print("  provider id: %08X\r\n", bt->providerId);
+  sl_zigbee_af_price_cluster_print("  issuer event id: %08X\r\n", info->issuerEventId);
+  sl_zigbee_af_price_cluster_print("  issuer tariff id: %08X\r\n", bt->issuerTariffId);
+  sl_zigbee_af_price_cluster_print("  start time: %08X\r\n", info->startTime);
 
   sl_zigbee_af_price_cluster_flush();
 
@@ -853,7 +853,7 @@ void sl_zigbee_af_price_print_block_thresholds(uint8_t endpoint,
     case 0: // ActiveBlock
     case 1: // ActiveBlockPriceTier
       for (j = 0; j < t.numberOfBlockThresholdsInUse; j++) {
-        sl_zigbee_af_price_cluster_print("  block threshold %d: 0x%x%x%x%x%x%x\r\n", j,
+        sl_zigbee_af_price_cluster_print("  block threshold %d: 0x%02X%02X%02X%02X%02X%02X\r\n", j,
                                          bt->thresholds.block[j][0],
                                          bt->thresholds.block[j][1],
                                          bt->thresholds.block[j][2],
@@ -865,7 +865,7 @@ void sl_zigbee_af_price_print_block_thresholds(uint8_t endpoint,
     case 2: // ActiveBlockPriceTierThreshold
       for (i = 0; i < t.numberOfPriceTiersInUse; i++) {
         for (j = 0; j < t.numberOfBlockThresholdsInUse; j++) {
-          sl_zigbee_af_price_cluster_print("  tier %d block threshold %d: 0x%x%x%x%x%x%x\r\n", i, j,
+          sl_zigbee_af_price_cluster_print("  tier %d block threshold %d: 0x%02X%02X%02X%02X%02X%02X\r\n", i, j,
                                            bt->thresholds.blockAndTier[i][j][0],
                                            bt->thresholds.blockAndTier[i][j][1],
                                            bt->thresholds.blockAndTier[i][j][2],
@@ -878,7 +878,7 @@ void sl_zigbee_af_price_print_block_thresholds(uint8_t endpoint,
     case 0xFF://Not used: in case of TOU tariff or Block tariff charging scheme only
       if ((t.tariffTypeChargingScheme & CHARGING_SCHEME_MASK) == 0x10) {//block tariff only
         for (j = 0; j < t.numberOfBlockThresholdsInUse; j++) {
-          sl_zigbee_af_price_cluster_print("  block threshold %d: 0x%x%x%x%x%x%x\r\n", j,
+          sl_zigbee_af_price_cluster_print("  block threshold %d: 0x%02X%02X%02X%02X%02X%02X\r\n", j,
                                            bt->thresholds.block[j][0],
                                            bt->thresholds.block[j][1],
                                            bt->thresholds.block[j][2],
@@ -889,7 +889,7 @@ void sl_zigbee_af_price_print_block_thresholds(uint8_t endpoint,
       } else if ((t.tariffTypeChargingScheme & CHARGING_SCHEME_MASK) == 0x00) {//TOU tariff only
         for (i = 0; i < t.numberOfPriceTiersInUse; i++) {
           for (j = 0; j < t.numberOfBlockThresholdsInUse; j++) {
-            sl_zigbee_af_price_cluster_print("  tier %d block threshold %d: 0x%x%x%x%x%x%x\r\n", i, j,
+            sl_zigbee_af_price_cluster_print("  tier %d block threshold %d: 0x%02X%02X%02X%02X%02X%02X\r\n", i, j,
                                              bt->thresholds.blockAndTier[i][j][0],
                                              bt->thresholds.blockAndTier[i][j][1],
                                              bt->thresholds.blockAndTier[i][j][2],
@@ -899,7 +899,7 @@ void sl_zigbee_af_price_print_block_thresholds(uint8_t endpoint,
           }
         }
       } else {
-        sl_zigbee_af_price_cluster_print("invalid tariff charging scheme 0x%x for tierblockmode 0xFF", t.tariffTypeChargingScheme);
+        sl_zigbee_af_price_cluster_print("invalid tariff charging scheme 0x%02X for tierblockmode 0xFF", t.tariffTypeChargingScheme);
       }
       break;
     default:
@@ -948,7 +948,7 @@ void sl_zigbee_af_price_print_price_matrix_table(uint8_t endpoint)
   sl_zigbee_af_price_cluster_println("  Note: ALL values given in HEX (except indices)\r\n");
   sl_zigbee_af_price_cluster_flush();
   for (i = 0; i < SL_ZIGBEE_AF_PLUGIN_PRICE_SERVER_TARIFF_TABLE_SIZE; i++) {
-    sl_zigbee_af_price_cluster_println("=PRICE MATRIX %x =",
+    sl_zigbee_af_price_cluster_println("=PRICE MATRIX %02X =",
                                        i);
     sl_zigbee_af_price_print_price_matrix(endpoint,
                                           &priceServerInfo.scheduledPriceMatrixTable.commonInfos[ep][i],
@@ -971,7 +971,7 @@ void sl_zigbee_af_price_print_block_thresholds_table(uint8_t endpoint)
   sl_zigbee_af_price_cluster_println("  Note: ALL values given in HEX (except indices)\r\n");
   sl_zigbee_af_price_cluster_flush();
   for (i = 0; i < SL_ZIGBEE_AF_PLUGIN_PRICE_SERVER_TARIFF_TABLE_SIZE; i++) {
-    sl_zigbee_af_price_cluster_println("=BLOCK THRESHOLDS %x =",
+    sl_zigbee_af_price_cluster_println("=BLOCK THRESHOLDS %02X =",
                                        i);
     sl_zigbee_af_price_print_block_thresholds(endpoint,
                                               &priceServerInfo.scheduledBlockThresholdsTable.commonInfos[ep][i],
@@ -1002,7 +1002,7 @@ static void sl_zigbee_af_put_price_block_threshold_in_resp(sli_zigbee_af_price_b
 //-----------------------
 // ZCL Commands Callbacks
 
-bool sl_zigbee_af_price_cluster_get_tariff_information_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_price_cluster_get_tariff_information_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_price_cluster_get_tariff_information_command_t cmd_data;
   uint8_t validCmds[SL_ZIGBEE_AF_PLUGIN_PRICE_SERVER_TARIFF_TABLE_SIZE];
@@ -1013,10 +1013,10 @@ bool sl_zigbee_af_price_cluster_get_tariff_information_cb(sl_zigbee_af_cluster_c
 
   if (zcl_decode_price_cluster_get_tariff_information_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_debug_println("RX: GetTariffInformation, 0x%4X, 0x%4X, 0x%X, 0x%X",
+  sl_zigbee_af_debug_println("RX: GetTariffInformation, 0x%08X, 0x%08X, 0x%02X, 0x%02X",
                              cmd_data.earliestStartTime,
                              cmd_data.minIssuerEventId,
                              cmd_data.numberOfCommands,
@@ -1024,8 +1024,7 @@ bool sl_zigbee_af_price_cluster_get_tariff_information_cb(sl_zigbee_af_cluster_c
 
   if (ep == ZCL_PRICE_INVALID_ENDPOINT_INDEX) {
     sl_zigbee_af_price_cluster_println("ERR: Unable to find endpoint (%d)!", ep);
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_INVALID_VALUE);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_INVALID_VALUE;
   }
 
   entriesCount = sl_zigbee_af_price_common_find_valid_entries(validCmds,
@@ -1055,10 +1054,10 @@ bool sl_zigbee_af_price_cluster_get_tariff_information_cb(sl_zigbee_af_cluster_c
                       validCmds,
                       entriesCount);
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_price_cluster_get_price_matrix_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_price_cluster_get_price_matrix_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_price_cluster_get_price_matrix_command_t cmd_data;
   sl_zigbee_af_scheduled_tariff_t tariff;
@@ -1069,7 +1068,7 @@ bool sl_zigbee_af_price_cluster_get_price_matrix_cb(sl_zigbee_af_cluster_command
 
   if (zcl_decode_price_cluster_get_price_matrix_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   uint8_t endpoint = sl_zigbee_af_current_endpoint(), i, j, payloadControl;
@@ -1086,10 +1085,9 @@ bool sl_zigbee_af_price_cluster_get_price_matrix_cb(sl_zigbee_af_cluster_command
                                                             &tariff);
 
   if (!found) {
-    sl_zigbee_af_debug_println("GetPriceMatrix: no corresponding tariff for id 0x%4x found",
+    sl_zigbee_af_debug_println("GetPriceMatrix: no corresponding tariff for id 0x%08X found",
                                cmd_data.issuerTariffId);
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_NOT_FOUND);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_NOT_FOUND;
   }
 
   // Grab the actual price matrix
@@ -1099,10 +1097,9 @@ bool sl_zigbee_af_price_cluster_get_price_matrix_cb(sl_zigbee_af_cluster_command
                                                                   &pm);
 
   if (!found) {
-    sl_zigbee_af_debug_println("GetPriceMatrix: no corresponding price matrix for id 0x%4x found",
+    sl_zigbee_af_debug_println("GetPriceMatrix: no corresponding price matrix for id 0x%08X found",
                                cmd_data.issuerTariffId);
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_NOT_FOUND);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_NOT_FOUND;
   }
 
   // The structure of the price matrix will vary depending on the type of the tariff
@@ -1142,12 +1139,11 @@ bool sl_zigbee_af_price_cluster_get_price_matrix_cb(sl_zigbee_af_cluster_command
       break;
     default:
       sl_zigbee_af_debug_println("GetPriceMatrix: invalid tariff type / charging scheme");
-      sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_INVALID_VALUE);
-      return true;
+      return SL_ZIGBEE_ZCL_STATUS_INVALID_VALUE;
   }
 
   // Populate and send the PublishPriceMatrix command
-  sl_zigbee_af_debug_println("GetPriceMatrix: subpayload size 0x%2x", size);
+  sl_zigbee_af_debug_println("GetPriceMatrix: subpayload size 0x%04X", size);
 
 #ifdef SL_CATALOG_ZIGBEE_GBCS_COMPATIBILITY_PRESENT
   // GBCS explicitly lists some commands that need to be sent with "disable
@@ -1167,10 +1163,10 @@ bool sl_zigbee_af_price_cluster_get_price_matrix_cb(sl_zigbee_af_cluster_command
                                                                size);
   sl_zigbee_af_send_response();
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_price_cluster_get_block_thresholds_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_price_cluster_get_block_thresholds_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_price_cluster_get_block_thresholds_command_t cmd_data;
   sl_zigbee_af_price_common_info_t tariffInfo;
@@ -1184,7 +1180,7 @@ bool sl_zigbee_af_price_cluster_get_block_thresholds_cb(sl_zigbee_af_cluster_com
 
   if (zcl_decode_price_cluster_get_block_thresholds_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   // Block thresholds must have an associated tariff, otherwise it is meaningless
@@ -1194,10 +1190,9 @@ bool sl_zigbee_af_price_cluster_get_block_thresholds_cb(sl_zigbee_af_cluster_com
                                                             &tariff);
 
   if (!found) {
-    sl_zigbee_af_debug_println("GetBlockThresholds: no corresponding tariff for id 0x%4x found",
+    sl_zigbee_af_debug_println("GetBlockThresholds: no corresponding tariff for id 0x%08X found",
                                cmd_data.issuerTariffId);
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_NOT_FOUND);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_NOT_FOUND;
   }
 
   // Grab the actual block thresholds
@@ -1207,10 +1202,9 @@ bool sl_zigbee_af_price_cluster_get_block_thresholds_cb(sl_zigbee_af_cluster_com
                                                                       &bt);
 
   if (!found) {
-    sl_zigbee_af_debug_println("GetBlockThresholds: no corresponding block thresholds for id 0x%4x found",
+    sl_zigbee_af_debug_println("GetBlockThresholds: no corresponding block thresholds for id 0x%08X found",
                                cmd_data.issuerTariffId);
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_NOT_FOUND);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_NOT_FOUND;
   }
 
   // Populate and send the PublishBlockThresholds command
@@ -1269,20 +1263,18 @@ bool sl_zigbee_af_price_cluster_get_block_thresholds_cb(sl_zigbee_af_cluster_com
           }
         }
       } else {
-        sl_zigbee_af_debug_println("GetBlockThresholds: invalid tariff charging scheme 0x%x for tierblockmode 0xFF",
+        sl_zigbee_af_debug_println("GetBlockThresholds: invalid tariff charging scheme 0x%02X for tierblockmode 0xFF",
                                    tariff.tariffTypeChargingScheme);
-        sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_INVALID_VALUE);
-        return true;
+        return SL_ZIGBEE_ZCL_STATUS_INVALID_VALUE;
       }
       break;
     default:
       sl_zigbee_af_debug_println("GetBlockThresholds: invalid tier block mode");
-      sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_INVALID_VALUE);
-      return true;
+      return SL_ZIGBEE_ZCL_STATUS_INVALID_VALUE;
   }
 
-  sl_zigbee_af_debug_println("GetBlockThresholds: subpayload size 0x%2x", size);
+  sl_zigbee_af_debug_println("GetBlockThresholds: subpayload size 0x%04X", size);
   sl_zigbee_af_send_response();
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }

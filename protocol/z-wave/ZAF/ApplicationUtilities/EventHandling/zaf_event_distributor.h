@@ -39,10 +39,9 @@ const SEventDistributor *zaf_event_distributor_get(void);
  *
  * Wraps EventDistributorDistribute().
  *
- * @return true In case of success
- * @return false In case of error
+ * @return bitfield with unhandled events
  */
-bool zaf_event_distributor_distribute(void);
+uint32_t zaf_event_distributor_distribute(void);
 
 /**
  * @} // addtogroup EventDistributor

@@ -1,5 +1,5 @@
 /***************************************************************************//**
- * @file
+ * @file sl_wisun_app_status.c
  * @brief Wi-SUN Application Status CoAP notfication
  *******************************************************************************
  * # License
@@ -31,10 +31,10 @@
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
+
 #include "em_device.h"
 #include "cmsis_os2.h"
 #include "sl_cmsis_os2_common.h"
@@ -51,7 +51,6 @@
 #include "sl_wisun_trace_util.h"
 #include "sl_wisun_app_core.h"
 #include "sl_wisun_app_core_util.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------

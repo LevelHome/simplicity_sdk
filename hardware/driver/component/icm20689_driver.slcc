@@ -14,8 +14,8 @@ provides:
 requires:
   - name: hal_generic_common
   - name: clock_manager_runtime
-  - name: emlib_gpio
-  - name: emlib_eusart
+  - name: gpio
+  - name: hal_generic_eusart
   - name: sleeptimer
   - name: status
 include:
@@ -28,6 +28,10 @@ source:
 config_file:
   - path: config/s2/sl_icm20689_config.h
     file_id: icm20689_config
+    condition: [device_series_2]
+  - path: config/s3/sl_icm20689_config.h
+    file_id: icm20689_config
+    condition: [device_series_3]
 template_contribution:
   - name: component_catalog
     value: icm20689_driver

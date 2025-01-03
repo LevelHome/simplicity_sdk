@@ -34,15 +34,19 @@ requires:
   # (trustzone_unaware) should be used.
   - name: trustzone_security_state
 
-define:
-  # Make sure that the Mbed TLS alt-plugins are not enabled.
-  # TODO: Remove once acceleration is supported.
-  - name: NO_CRYPTO_ACCELERATION
-    condition: [device_series_3]
-
 recommends:
   # Assume that projects are TZ unaware unless a state is explicitly included.
   # The condtion on device ensures that the recommendation does not exist before
   # the device selection is completely resolved.
   - id: trustzone_unaware
     condition: [device]
+
+metadata:
+  sbom:
+    license: Zlib AND Apache-2.0
+    upstream:
+      name: Mbed TLS
+      version: v3.6.2
+      supplier: Trusted Firmware
+      url: https://github.com/Mbed-TLS/mbedtls.git
+      comment: Mbed TLS is a C library implementing the PSA Cryptography API, cryptographic primitives, X.509 certificate manipulation and the SSL/TLS and DTLS protocols

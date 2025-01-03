@@ -1,8 +1,11 @@
 id: power_supply
 label: Power supply measurement
 package: Bluetooth
-description: Power supply measurement HW abstraction designed for Thunderboard.
+description: Power supply measurement HW abstraction designed for development boards with coin cell battery support, i.e. Thunderboard and Dev Kit. Not suitable for other applications.
 category: Bluetooth|Application|Miscellaneous
+metadata:
+  sbom:
+    license: Zlib
 quality: production
 root_path: app/bluetooth/common/power_supply
 tag:

@@ -93,7 +93,7 @@ static void identifyRequestHandler(const sl_802154_long_addr_t source,
 {
   if ((sli_zigbee_af_zll_get_policy() & SL_ZIGBEE_ZLL_POLICY_STEALING_ENABLED)
       || sli_zigbee_af_zll_am_factory_new()) {
-    sl_zigbee_af_zll_commissioning_cluster_println("RX: IdentifyRequest 0x%4x, 0x%2x",
+    sl_zigbee_af_zll_commissioning_cluster_println("RX: IdentifyRequest 0x%08X, 0x%04X",
                                                    transaction,
                                                    identifyDurationS);
     sl_zigbee_af_zll_commissioning_server_identify_cb(identifyDurationS);
@@ -105,7 +105,7 @@ static void identifyRequestHandler(const sl_802154_long_addr_t source,
 static void resetToFactoryNewRequestHandler(const sl_802154_long_addr_t source,
                                             uint32_t transaction)
 {
-  sl_zigbee_af_zll_commissioning_cluster_println("RX: ResetToFactoryNewRequest 0x%4x",
+  sl_zigbee_af_zll_commissioning_cluster_println("RX: ResetToFactoryNewRequest 0x%08X",
                                                  transaction);
   if (!sli_zigbee_af_zll_am_factory_new()) {
     sl_zigbee_current_security_state_t securityState;

@@ -17,6 +17,8 @@
 
 #include "rail.h"
 #include "sl_core.h"
+#include "sl_gpio.h"
+#include "sl_hal_gpio.h"
 #include "em_device.h"
 #include "coexistence-hal.h"
 
@@ -165,9 +167,8 @@ static void setGpioConfig(COEX_GpioHandle_t gpioHandle)
   if (gpioHandle != NULL) {
     COEX_HAL_GpioConfig_t *gpio = (COEX_HAL_GpioConfig_t*)gpioHandle;
 
-    bool pin_value;
-    sl_gpio_get_pin_output(&(sl_gpio_t){gpio->port, gpio->pin }, &pin_value);
-    sl_gpio_set_pin_mode(&(sl_gpio_t){gpio->port, gpio->pin }, gpio->mode, pin_value);
+    bool pin_value = sl_hal_gpio_get_pin_output(&(sl_gpio_t){gpio->port, gpio->pin });
+    sl_hal_gpio_set_pin_mode(&(sl_gpio_t){gpio->port, gpio->pin }, gpio->mode, pin_value);
   }
 }
 
@@ -249,11 +250,11 @@ static void setGpio(COEX_GpioHandle_t gpioHandle, bool enabled)
 #endif //SL_RAIL_UTIL_COEX_GPIO_PULL_UP_DOWN
 
 #if SL_RAIL_UTIL_COEX_GPIO_PULL_UP_DOWN
-#define GPIO_CONFIG_AND (gpioModeWiredAndPullUp)
-#define GPIO_CONFIG_OR  (gpioModeWiredOrPullDown)
+#define GPIO_CONFIG_AND (SL_GPIO_MODE_WIRED_AND_PULLUP)
+#define GPIO_CONFIG_OR  (SL_GPIO_MODE_WIRED_OR_PULL_DOWN)
 #else //SL_RAIL_UTIL_COEX_GPIO_PULL_UP_DOWN
-#define GPIO_CONFIG_AND (gpioModeWiredAnd)
-#define GPIO_CONFIG_OR  (gpioModeWiredOr)
+#define GPIO_CONFIG_AND (SL_GPIO_MODE_WIRED_AND)
+#define GPIO_CONFIG_OR  (SL_GPIO_MODE_WIRED_OR)
 #endif //SL_RAIL_UTIL_COEX_GPIO_PULL_UP_DOWN
 
 static void configGpio(COEX_GpioHandle_t gpioHandle, COEX_GpioConfig_t *coexGpio)

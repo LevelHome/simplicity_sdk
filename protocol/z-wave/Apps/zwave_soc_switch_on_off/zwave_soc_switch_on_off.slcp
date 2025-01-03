@@ -16,7 +16,6 @@ component:
   - id: zaf_soc
   - id: zw_core
   - id: zw_role_type_always_on
-  - id: zw_appshw_switchonoff
   - id: zw_zaf
   - id: zw_true_status
   - id: zw_ota
@@ -33,23 +32,38 @@ component:
   - id: zw_cc_indicator
   - id: zw_cc_powerlevel
   - id: zw_cc_zwaveplusinfo
+  - id: zw_appshw
   - id: sl_system
   - id: device_init
   - id: mpu # disable execution from RAM
   - id: ZW_MIGRATION_TO_7_19
   - id: zw_cli_common
     condition: [zw_production]
+  - id: app_button_press
+  - id: app_assert
+  - id: simple_button
+    instance: [btn0, btn1]
+  - id: simple_led
+    instance: [led0, led1]
 
 source:
   - path: app.c
   - path: main.c
   - path: app_cli.c
+    condition: [zw_cli_common]
+  - path: app_btn_handler.c
+    condition: [simple_button]
+  - path: app_cc_binary_switch_callbacks.c
 
 include:
   - path: .
     file_list:
       - path: events.h
 configuration:
+  - name: SHORT_BUTTON_PRESS_DURATION
+    value: (400)
+  - name: MEDIUM_BUTTON_PRESS_DURATION
+    value: (1500)
   - name: ZAF_CONFIG_REQUEST_KEY_S0
     value: 1
   - name: ZAF_CONFIG_REQUEST_KEY_S2_UNAUTHENTICATED
@@ -133,6 +147,11 @@ define:
 config_file:
   - path: SwitchOnOff.cc_config
     directory: cc_config
+  # Sample keys for signing
+  - path: ../../platform/SiliconLabs/PAL/BootLoader/sample-keys/sample_encrypt.key
+    directory: sample_keys
+  - path: ../../platform/SiliconLabs/PAL/BootLoader/sample-keys/sample_sign.key
+    directory: sample_keys
 
 template_contribution:
 #------------------ CLI commands ---------------------
@@ -141,7 +160,13 @@ template_contribution:
     value:
       name: toggle_led
       handler: cli_toggle_led
-      help: Toggle the LED0 on the expansion header
+      help: Toggle the LED0
+  - name: cli_command
+    condition: [zw_cli_common]
+    value:
+      name: get_led_state
+      handler: cli_get_led_state
+      help: Get LED0 state from the expansion header
   - name: cli_command
     condition: [zw_cli_common]
     value:
@@ -149,11 +174,8 @@ template_contribution:
       handler: cli_send_nif
       help: Send Node Information Frame
 
-other_file:
-  - path: ../../DevTools/postbuild.sh
-
 post_build:
-  profile: zwave_soc_switch_on_off
+  - profile: zwave_application
 
 tag:
   - prebuilt_demo

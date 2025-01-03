@@ -18,12 +18,12 @@ template_contribution:
 - name: component_catalog
   value: radio_config_simple_rail_multiphy
 config_file:
-- path: platform/radio/radio_configuration/Base/simple_rail_multiphy/device_sdid_210/rf_band_868/subGHz/rf_band_914/radio_settings.radioconf
+- path: platform/radio/radio_configuration/Base/simple_rail_multiphy/device_generic_family_efr32xg23/rf_band_868/subGHz/rf_band_914/radio_settings.radioconf
   file_id: radio_configuration_settings
   directory: rail
   condition:
   - device_has_radio_subghz
-  - device_sdid_210
+  - device_generic_family_efr32xg23
   unless:
   - device_has_radio_2g4hz
   - device_has_radio_dualband
@@ -31,46 +31,46 @@ config_file:
   - hardware_board_tb
   - hardware_board_stk
   - device_is_module
-  - device_sdid_200
-- path: platform/radio/radio_configuration/Base/simple_rail_multiphy/device_sdid_235/rf_band_868/2p4GHz/radio_settings.radioconf
+  - device_generic_family_efr32xg21
+- path: platform/radio/radio_configuration/Base/simple_rail_multiphy/device_generic_family_efr32xg28/rf_band_868/2p4GHz/radio_settings.radioconf
   file_id: radio_configuration_settings
   directory: rail
   condition:
   - device_has_radio_dualband
-  - device_sdid_235
+  - device_generic_family_efr32xg28
   unless:
   - hardware_board_rb
   - hardware_board_tb
   - hardware_board_stk
   - device_is_module
-  - device_sdid_200
-- path: platform/radio/radio_configuration/Base/simple_rail_multiphy/device_sdid_210/rf_band_868/subGHz/rf_band_914/radio_settings.radioconf
+  - device_generic_family_efr32xg21
+- path: platform/radio/radio_configuration/Base/simple_rail_multiphy/device_generic_family_efr32xg23/rf_band_868/subGHz/rf_band_914/radio_settings.radioconf
   file_id: radio_configuration_settings
   directory: rail
   condition:
   - hardware_board_default_rf_band_868
-  - device_sdid_210
+  - device_generic_family_efr32xg23
   - hardware_board_supports_rf_band_914
   unless:
   - device_is_module
-  - device_sdid_200
-- path: platform/radio/radio_configuration/Base/simple_rail_multiphy/device_sdid_210/rf_band_868/subGHz/rf_band_915/radio_settings.radioconf
+  - device_generic_family_efr32xg21
+- path: platform/radio/radio_configuration/Base/simple_rail_multiphy/device_generic_family_efr32xg23/rf_band_868/subGHz/rf_band_915/radio_settings.radioconf
   file_id: radio_configuration_settings
   directory: rail
   condition:
   - hardware_board_default_rf_band_868
-  - device_sdid_210
+  - device_generic_family_efr32xg23
   - hardware_board_supports_rf_band_915
   unless:
   - device_is_module
-  - device_sdid_200
-- path: platform/radio/radio_configuration/Base/simple_rail_multiphy/device_sdid_235/rf_band_868/2p4GHz/radio_settings.radioconf
+  - device_generic_family_efr32xg21
+- path: platform/radio/radio_configuration/Base/simple_rail_multiphy/device_generic_family_efr32xg28/rf_band_868/2p4GHz/radio_settings.radioconf
   file_id: radio_configuration_settings
   directory: rail
   condition:
   - hardware_board_default_rf_band_868
-  - device_sdid_235
+  - device_generic_family_efr32xg28
   - hardware_board_supports_rf_band_2400
   unless:
   - device_is_module
-  - device_sdid_200
+  - device_generic_family_efr32xg21

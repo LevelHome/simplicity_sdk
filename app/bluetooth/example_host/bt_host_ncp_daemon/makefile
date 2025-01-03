@@ -139,9 +139,11 @@ endif
 
 # HOST_TOOLCHAIN flag indicates host side compilation,
 # SL_CATALOG_APP_LOG_PRESENT is used by app_log component.
+# Suppress OpenSSL 3.0 warnings until proper API update is made
 override CFLAGS += \
 -DHOST_TOOLCHAIN \
--DSL_CATALOG_APP_LOG_PRESENT
+-DSL_CATALOG_APP_LOG_PRESENT \
+-DOPENSSL_API_COMPAT=0x10101000L
 
 ####################################################################
 # Files                                                            #

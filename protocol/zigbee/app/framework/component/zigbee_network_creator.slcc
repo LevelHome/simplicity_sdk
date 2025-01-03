@@ -45,7 +45,7 @@ template_contribution:
     value:
       group: network-creator
       name: stop
-      handler: sl_zigbee_af_network_creator_stop
+      handler: sl_zigbee_af_network_creator_stop_command
       help: Stops the network formation process.
   - name: cli_command
     value:

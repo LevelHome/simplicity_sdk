@@ -64,7 +64,7 @@ To test the application, do the following:
 
 1. Make sure a bootloader is installed. See the Troubleshooting section.
 2. Build and flash the **Bluetooth Mesh - NLC Basic Scene Selector** example to the device.
-3. Reset the device by pressing and releasing the reset button on the mainboard while pressing BTN0. The message "Factory reset" should appear on the LCD.
+3. Reset the device by pressing and releasing the reset button on the mainboard while pressing BTN0.
 4. Provision the device in one of three ways:
 
    - NCP Host provisioner examples, see for example an SDK folder `app/btmesh/example_host/btmesh_host_provisioner` or [github](https://github.com/SiliconLabs/bluetooth_mesh_stack_features/tree/master/provisioning)

@@ -23,9 +23,6 @@ void sl_zigbee_af_ncp_configuration_ncp_init_cb(void)
   sl_zigbee_af_set_ezsp_config_value(SL_ZIGBEE_EZSP_CONFIG_BINDING_TABLE_SIZE,
                                      SL_ZIGBEE_BINDING_TABLE_SIZE,
                                      "binding table size");
-  sl_zigbee_af_set_ezsp_config_value(SL_ZIGBEE_EZSP_CONFIG_KEY_TABLE_SIZE,
-                                     SL_ZIGBEE_KEY_TABLE_SIZE,
-                                     "key table size");
   sl_zigbee_af_set_ezsp_config_value(SL_ZIGBEE_EZSP_CONFIG_MAX_END_DEVICE_CHILDREN,
                                      SL_ZIGBEE_MAX_END_DEVICE_CHILDREN,
                                      "max end device children");

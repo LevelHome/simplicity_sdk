@@ -127,7 +127,7 @@ void sl_gatt_service_device_information_on_event(sl_bt_msg_t *evt)
       // System ID
 #if defined(gattdb_system_id)
       // Extract unique ID from BT Address.
-      sc = sl_bt_system_get_identity_address(&address, &address_type);
+      sc = sl_bt_gap_get_identity_address(&address, &address_type);
       app_assert_status(sc);
 
       // Pad and reverse unique ID to get System ID.

@@ -11,6 +11,9 @@ description: |-
   The wrapper functions are called sl_malloc(), sl_calloc, sl_realloc() and sl_free().
 category: Platform|Utilities
 quality: deprecated
+metadata:
+  sbom:
+    license: MSLA
 include:
   - path: util/silicon_labs/silabs_core/memory_manager
     file_list:

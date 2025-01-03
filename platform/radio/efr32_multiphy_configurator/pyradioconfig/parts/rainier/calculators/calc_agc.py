@@ -1,7 +1,33 @@
 from pyradioconfig.parts.bobcat.calculators.calc_agc import Calc_AGC_Bobcat
 from py_2_and_3_compatibility import *
+from enum import Enum
+from pycalcmodel.core.variable import ModelVariableFormat, CreateModelVariableEnum
 
 class CalcAgcRainier(Calc_AGC_Bobcat):
+
+    def buildVariables(self, model):
+        # Build variables from Panther
+        super().buildVariables(model)
+
+        var = self._addModelVariable(model, 'agc_power_mode', Enum, ModelVariableFormat.DECIMAL, 'AGC power mode')
+        member_data = [
+            ['HP', 0, 'AGC High Performance Mode'],
+            ['LP', 1, 'AGC Low Power Mode'],
+        ]
+        var.var_enum = CreateModelVariableEnum(
+            'AgcPowerMode',
+            'List of supported AGC Lock Modes',
+            member_data)
+
+        var = self._addModelVariable(model, 'rfpkd_mode', Enum, ModelVariableFormat.DECIMAL, 'RF Peak Detector Mode')
+        member_data = [
+            ['DISABLE', 0, 'RFPKD Disabled'],
+            ['DUAL', 1, 'Dual RFPKD mode'],
+        ]
+        var.var_enum = CreateModelVariableEnum(
+            'RfPeakDetectorMode',
+            'List of supported RF Peak Detector Modes',
+            member_data)
 
     def calc_agc_series2(self, model):
         # Override method to account for IFPKD settling time
@@ -76,25 +102,48 @@ class CalcAgcRainier(Calc_AGC_Bobcat):
         self._reg_write(model.vars.AGC_GAINRANGE_PNINDEXBORDER, pnindexborder)
 
     def calc_lnamixslice_reg(self, model):
-        # From Chris Calvo
-        lnaindexmax = 9
-        self._reg_write(model.vars.AGC_LNAMIXCODE0_LNAMIXSLICE1,46)
-        self._reg_write(model.vars.AGC_LNAMIXCODE0_LNAMIXSLICE2,34)
-        self._reg_write(model.vars.AGC_LNAMIXCODE0_LNAMIXSLICE3,16)
-        self._reg_write(model.vars.AGC_LNAMIXCODE0_LNAMIXSLICE4,12)
-        self._reg_write(model.vars.AGC_LNAMIXCODE0_LNAMIXSLICE5,9)
-        self._reg_write(model.vars.AGC_LNAMIXCODE1_LNAMIXSLICE6,7)
-        self._reg_write(model.vars.AGC_LNAMIXCODE1_LNAMIXSLICE7,5)
-        self._reg_write(model.vars.AGC_LNAMIXCODE1_LNAMIXSLICE8,3)
-        self._reg_write(model.vars.AGC_LNAMIXCODE1_LNAMIXSLICE9,2)
+        # From Mohamed - https://jira.silabs.com/browse/MCUW_RADIO_CFG-2574
+        agc_power_mode =  model.vars.agc_power_mode.value
+
+        if agc_power_mode == model.vars.agc_power_mode.var_enum.LP:
+            lnaindexmax = 8
+            lnamixslice1 = 34
+            lnamixslice2 = 25
+            lnamixslice3 = 12
+            lnamixslice4 = 8
+            lnamixslice5 = 6
+            lnamixslice6 = 3
+            lnamixslice7 = 2
+            lnamixslice8 = 1
+            lnamixslice9 = 0
+        else: # default to HP mode
+            lnaindexmax = 9
+            lnamixslice1 = 46
+            lnamixslice2 = 34
+            lnamixslice3 = 25
+            lnamixslice4 = 12
+            lnamixslice5 = 8
+            lnamixslice6 = 6
+            lnamixslice7 = 3
+            lnamixslice8 = 2
+            lnamixslice9 = 1
+
+        self._reg_write(model.vars.AGC_LNAMIXCODE0_LNAMIXSLICE1,lnamixslice1)
+        self._reg_write(model.vars.AGC_LNAMIXCODE0_LNAMIXSLICE2,lnamixslice2)
+        self._reg_write(model.vars.AGC_LNAMIXCODE0_LNAMIXSLICE3,lnamixslice3)
+        self._reg_write(model.vars.AGC_LNAMIXCODE0_LNAMIXSLICE4,lnamixslice4)
+        self._reg_write(model.vars.AGC_LNAMIXCODE0_LNAMIXSLICE5,lnamixslice5)
+        self._reg_write(model.vars.AGC_LNAMIXCODE1_LNAMIXSLICE6,lnamixslice6)
+        self._reg_write(model.vars.AGC_LNAMIXCODE1_LNAMIXSLICE7,lnamixslice7)
+        self._reg_write(model.vars.AGC_LNAMIXCODE1_LNAMIXSLICE8,lnamixslice8)
+        self._reg_write(model.vars.AGC_LNAMIXCODE1_LNAMIXSLICE9,lnamixslice9)
         self._reg_write_default(model.vars.AGC_LNAMIXCODE1_LNAMIXSLICE10)
         self._reg_write(model.vars.AGC_GAINSTEPLIM1_LNAINDEXMAX, lnaindexmax)
 
-
     def calc_lnamixrfatt_reg(self, model):
 
-        #Values from Chris Calvo 10/5/23
-        lnamixrfatt = [0, 3, 6, 10, 16, 21, 29, 33, 47, 63, 113, 159, 255, 1023, 2047, 2047]
+        #Values from Mohamed - https://jira.silabs.com/browse/MCUW_RADIO_CFG-2574
+        lnamixrfatt = [0x0, 0x3, 0x6, 0xB, 0x10, 0x18, 0x1F, 0x23, 0x33, 0x60, 0x71, 0x9F, 0xFF, 0x6FF, 0xFFF, 0xFFF]
         pnindexmax = 15 # Set to 15 to include RF PAD
 
         #Write registers
@@ -140,21 +189,51 @@ class CalcAgcRainier(Calc_AGC_Bobcat):
     def calc_lnagaindb_reg(self, model):
         # New in Rainier - initializing to reset values
         # 8-bit signed values including 2-bit fraction
-        self._reg_write(model.vars.AGC_LNAGAIN1_LNAGAINDB1, 36)
-        self._reg_write(model.vars.AGC_LNAGAIN1_LNAGAINDB2, 28)
-        self._reg_write(model.vars.AGC_LNAGAIN1_LNAGAINDB3, 20)
-        self._reg_write(model.vars.AGC_LNAGAIN1_LNAGAINDB4, 12)
-        self._reg_write(model.vars.AGC_LNAGAIN2_LNAGAINDB5, 4)
-        self._reg_write(model.vars.AGC_LNAGAIN2_LNAGAINDB6, 252)
-        self._reg_write(model.vars.AGC_LNAGAIN2_LNAGAINDB7, 244)
-        self._reg_write(model.vars.AGC_LNAGAIN2_LNAGAINDB8, 235)
-        self._reg_write(model.vars.AGC_LNAGAIN3_LNAGAINDB9, 235)
-        self._reg_write(model.vars.AGC_LNAGAIN3_LNAGAINDB10, 235)
+        agc_power_mode = model.vars.agc_power_mode.value
+
+        if agc_power_mode == model.vars.agc_power_mode.var_enum.LP:
+            lnagaindb1 = 28
+            lnagaindb2 = 20
+            lnagaindb3 = 12
+            lnagaindb4 = 4
+            lnagaindb5 = 252
+            lnagaindb6 = 244
+            lnagaindb7 = 235
+            lnagaindb8 = 235
+            lnagaindb9 = 235
+            lnagaindb10 = 235
+        else: # Default to HP mode
+            lnagaindb1 = 36
+            lnagaindb2 = 28
+            lnagaindb3 = 20
+            lnagaindb4 = 12
+            lnagaindb5 = 4
+            lnagaindb6 = 252
+            lnagaindb7 = 244
+            lnagaindb8 = 235
+            lnagaindb9 = 235
+            lnagaindb10 = 235
+
+        self._reg_write(model.vars.AGC_LNAGAIN1_LNAGAINDB1, lnagaindb1)
+        self._reg_write(model.vars.AGC_LNAGAIN1_LNAGAINDB2, lnagaindb2)
+        self._reg_write(model.vars.AGC_LNAGAIN1_LNAGAINDB3, lnagaindb3)
+        self._reg_write(model.vars.AGC_LNAGAIN1_LNAGAINDB4, lnagaindb4)
+        self._reg_write(model.vars.AGC_LNAGAIN2_LNAGAINDB5, lnagaindb5)
+        self._reg_write(model.vars.AGC_LNAGAIN2_LNAGAINDB6, lnagaindb6)
+        self._reg_write(model.vars.AGC_LNAGAIN2_LNAGAINDB7, lnagaindb7)
+        self._reg_write(model.vars.AGC_LNAGAIN2_LNAGAINDB8, lnagaindb8)
+        self._reg_write(model.vars.AGC_LNAGAIN3_LNAGAINDB9, lnagaindb9)
+        self._reg_write(model.vars.AGC_LNAGAIN3_LNAGAINDB10, lnagaindb10)
 
     def calc_lnamixcuren_reg(self, model):
         # Corresponds to lnamix_doublecur1_en
         # LSB->agcindex1, MSB->agcindex10
-        lnamixcurr = 0b1111111100
+        agc_power_mode =  model.vars.agc_power_mode.value
+
+        if agc_power_mode == model.vars.agc_power_mode.var_enum.LP:
+            lnamixcurr = 0x1F8 >> 1
+        else: # Default to HP mode
+            lnamixcurr = 0x1F8
 
         self._reg_write(model.vars.AGC_LNAMIXCODE2_LNAMIXCUREN, lnamixcurr)
 
@@ -171,24 +250,6 @@ class CalcAgcRainier(Calc_AGC_Bobcat):
         self._reg_write(model.vars.AGC_TIACODE1_TIACOMP9, 2)
         self._reg_write(model.vars.AGC_TIACODE1_TIACOMP10, 4)
         self._reg_write(model.vars.AGC_TIACODE1_TIACOMP11, 4)
-
-    def calc_tia_capfb_reg(self, model):
-        # New in Rainier
-        # for rainier there will be only one BW supported (the PHYs only need 5MHz)
-        # these values are currently being written by us and are set as per the confluence page
-        # https://confluence.silabs.com/display/IPEM22NM/Rainier+Radio-RX+AGC+Schedule
-        # but will eventually come from PTE in phase 3
-        self._reg_write(model.vars.AGC_TIACODE2_TIACAPFB1, 16)
-        self._reg_write(model.vars.AGC_TIACODE2_TIACAPFB2, 20)
-        self._reg_write(model.vars.AGC_TIACODE2_TIACAPFB3, 26)
-        self._reg_write(model.vars.AGC_TIACODE2_TIACAPFB4, 33)
-        self._reg_write(model.vars.AGC_TIACODE3_TIACAPFB5, 41)
-        self._reg_write(model.vars.AGC_TIACODE3_TIACAPFB6, 52)
-        self._reg_write(model.vars.AGC_TIACODE3_TIACAPFB7, 64)
-        self._reg_write(model.vars.AGC_TIACODE3_TIACAPFB8, 81)
-        self._reg_write(model.vars.AGC_TIACODE4_TIACAPFB9, 103)
-        self._reg_write(model.vars.AGC_TIACODE4_TIACAPFB10, 126)
-        self._reg_write(model.vars.AGC_TIACODE4_TIACAPFB11, 155)
 
     def calc_pgagaindb_reg(self, model):
         # New in Rainier - initializing to reset values
@@ -213,6 +274,29 @@ class CalcAgcRainier(Calc_AGC_Bobcat):
         # New in Rainier
         self._reg_write(model.vars.AGC_AGCPERIOD0_PERIODLOSTL, 1)
 
+    def calc_agc_rfpkd_enable(self, model):
+        model.vars.rfpkd_mode.value = model.vars.rfpkd_mode.var_enum.DUAL        # Set default RFPKD dual mode
+        rfpkd_mode = model.vars.rfpkd_mode.value
+
+        if rfpkd_mode == model.vars.rfpkd_mode.var_enum.DUAL:
+            disrfpkd = 0
+            rfpkdcnten = 1
+            rfpkdsel = 1
+            rfpkdsyncsel = 1
+            endualrfpkd = 1
+        else:
+            disrfpkd = 1
+            rfpkdcnten = 0
+            rfpkdsel = 0
+            rfpkdsyncsel = 0
+            endualrfpkd = 0
+
+        self._reg_write(model.vars.AGC_CTRL2_DISRFPKD,disrfpkd)
+        self._reg_write(model.vars.AGC_CTRL4_RFPKDCNTEN,rfpkdcnten)
+        self._reg_write(model.vars.AGC_CTRL4_RFPKDSEL,rfpkdsel)
+        self._reg_write(model.vars.AGC_CTRL4_RFPKDSYNCSEL,rfpkdsyncsel)
+        self._reg_write(model.vars.AGC_CTRL6_ENDUALRFPKD, endualrfpkd)
+
     def calc_agc_misc(self, model):
         # copied from ocelot, removed deprecated registers
         self._reg_write(model.vars.AGC_AGCPERIOD0_SETTLETIMEIF,6)
@@ -225,7 +309,6 @@ class CalcAgcRainier(Calc_AGC_Bobcat):
         self._reg_write(model.vars.AGC_CTRL0_DISPNGAINUP,0)
         self._reg_write(model.vars.AGC_CTRL0_ENRSSIRESET,0)
         self._reg_write(model.vars.AGC_CTRL1_PWRPERIOD, 1)
-        self._reg_write(model.vars.AGC_CTRL2_DISRFPKD,0)
         self._reg_write(model.vars.AGC_CTRL2_DMASEL,0)
         self._reg_write(model.vars.AGC_CTRL2_PRSDEBUGEN,0)
         self._reg_write(model.vars.AGC_CTRL2_REHICNTTHD,7)
@@ -243,10 +326,7 @@ class CalcAgcRainier(Calc_AGC_Bobcat):
         self._reg_write(model.vars.AGC_CTRL3_RFPKDDEBRST,10)
         self._reg_write(model.vars.AGC_CTRL3_RFPKDDEBTHD,1)
         self._reg_write(model.vars.AGC_CTRL4_PERIODRFPKD,4000)
-        self._reg_write(model.vars.AGC_CTRL4_RFPKDCNTEN,1)
         self._reg_write(model.vars.AGC_CTRL4_RFPKDPRDGEAR,4)
-        self._reg_write(model.vars.AGC_CTRL4_RFPKDSEL,1)
-        self._reg_write(model.vars.AGC_CTRL4_RFPKDSYNCSEL,1)
         self._reg_write(model.vars.AGC_CTRL5_PNUPRELTHD,4)
         self._reg_write(model.vars.AGC_CTRL5_SEQPNUPALLOW,0)
         self._reg_write(model.vars.AGC_CTRL5_SEQRFPKDEN,0)
@@ -280,3 +360,7 @@ class CalcAgcRainier(Calc_AGC_Bobcat):
         self._reg_write(model.vars.AGC_RSSISTEPTHR_RSSIFAST,0)
         self._reg_write(model.vars.AGC_GAINSTEPLIM0_CFLOOPSTEPMAX, 0)
         self._reg_write(model.vars.AGC_GAINSTEPLIM0_HYST, 0)
+
+    def calc_agc_pwr_mode(self, model):
+        #High performance by default, allow override
+        model.vars.agc_power_mode.value = model.vars.agc_power_mode.var_enum.HP

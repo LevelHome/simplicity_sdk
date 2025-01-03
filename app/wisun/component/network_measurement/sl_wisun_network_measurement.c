@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief Wi-SUN Network measurement component
+ * @file sl_wisun_network_measurement.c
+ * @brief Wi-SUN Network Measurement
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -31,9 +31,9 @@
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <assert.h>
 #include <string.h>
+
 #include "sl_component_catalog.h"
 #include "sl_wisun_network_measurement.h"
 #include "cmsis_os2.h"
@@ -230,7 +230,7 @@ void sl_wisun_nwm_measure(const sockaddr_in6_t * const remote_address,
 {
   (void) sl_wisun_ping(remote_address, meas_count, meas_packet_length,
                        sl_wisun_nwm_stat_handler,
-                       update_gui ? _progbar_updater : NULL);
+                       update_gui ? &_progbar_updater : NULL);
 }
 
 // -----------------------------------------------------------------------------

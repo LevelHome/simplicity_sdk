@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_iperf.h
+ * @brief iPerf
  *******************************************************************************
  * # License
  * <b>Copyright 2022 Silicon Laboratories Inc. www.silabs.com</b>
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __SL_IPERF_H__
-#define __SL_IPERF_H__
+#ifndef SL_IPERF_H
+#define SL_IPERF_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,26 +38,18 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <stddef.h>
 #include <stdint.h>
 
 #include "sl_iperf_types.h"
 #include "sl_iperf_log.h"
 #include "sl_iperf_config.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
 
 /**************************************************************************//**
- * @addtogroup SL_IPERF iPerf
- * @{
- *****************************************************************************/
-
-/**************************************************************************//**
- * @defgroup SL_IPERF_TYPES iPerf type definitions
- * @ingroup SL_IPERF
+ * @addtogroup SL_IPERF
  * @{
  *****************************************************************************/
 
@@ -91,7 +83,6 @@ extern "C" {
 /// iPerf Server TX FINACK max count to retry
 #define SL_IPERF_SERVER_UDP_TX_FINACK_COUNT   (10U)
 
-/** @} (end SL_IPERF_TYPES) */
 
 // -----------------------------------------------------------------------------
 //                                Global Variables
@@ -158,4 +149,5 @@ bool sl_iperf_test_get(sl_iperf_test_t * const test, const uint32_t timeout_ms);
 #ifdef __cplusplus
 }
 #endif
-#endif
+
+#endif // SL_IPERF_H

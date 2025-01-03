@@ -65,6 +65,8 @@ zw_status_t zw_import_aes_key_secure_vault(uint32_t *key_id, const uint8_t *aes_
 void DeleteAllNetworkKeys (void);
 #endif
 
+void zw_psa_verify_public_key(const uint8_t *const key);
+
 #define ZWAVE_SECURE_TRUE  0xAA55
 #define ZWAVE_SECURE_FALSE 0x55AA
 

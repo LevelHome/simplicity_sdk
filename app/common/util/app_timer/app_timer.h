@@ -41,6 +41,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "app_timer_types.h"
+#include "sl_status.h"
 
 /***************************************************************************//**
  * Start timer or restart if it is running already.

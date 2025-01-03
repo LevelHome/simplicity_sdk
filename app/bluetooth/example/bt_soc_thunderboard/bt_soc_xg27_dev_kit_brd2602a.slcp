@@ -3,7 +3,7 @@ package: Bluetooth
 label: Bluetooth - SoC EFR32xG27 DevKit (BRD2602A)
 description: >
   Demonstrates the features of the EFR32xG27 DevKit board.
-  Features can be evaluated with the EFR Connect mobile app.
+  Features can be evaluated with the Simplicity Connect mobile app.
 category: Bluetooth Examples
 quality: production
 
@@ -30,10 +30,6 @@ component:
   - id: rail_util_pti
   - id: app_log
   - id: app_assert
-  - id: iostream_eusart
-    instance:
-      - vcom
-  - id: iostream_retarget_stdio
   - id: printf
   - id: app_timer
   - id: mpu
@@ -46,11 +42,11 @@ component:
   - id: gatt_service_lux
   - id: gatt_service_rht
   - id: gatt_service_sound
-  - id: sensor_hall
-  - id: sensor_imu
   - id: sensor_lux
   - id: sensor_rht
-  - id: sensor_sound
+  - id: si7210_driver
+  - id: imu_driver
+  - id: mic_driver
 
   - id: i2cspm
     instance:
@@ -61,15 +57,18 @@ component:
   - id: simple_button
     instance:
       - btn0
-  - id: bt_post_build
   - id: sl_system
   - id: clock_manager
   - id: device_init
+  - id: sl_common
 
 source:
   - path: advertise.c
   - path: app.c
   - path: main.c
+  - path: driver/hall/sensor_hall.c
+  - path: driver/imu/sensor_imu.c
+  - path: driver/sound/sensor_sound.c
 
 include:
   - path: .
@@ -79,6 +78,15 @@ include:
   - path: brd2602a
     file_list:
       - path: board.h
+  - path: driver/hall
+    file_list:
+      - path: sensor_hall.h
+  - path: driver/imu
+    file_list:
+      - path: sensor_imu.h
+  - path: driver/sound
+    file_list:
+      - path: sensor_sound.h
 
 readme:
   - path: readme.md
@@ -97,15 +105,18 @@ other_file:
   - path: image/readme_img3.png
   - path: image/readme_img4.png
   - path: image/readme_img5.png
-  - path: image/readme_img6.png
 
 configuration:
   - name: SL_STACK_SIZE
     value: "2752"
   - name: SL_BOARD_ENABLE_VCOM
     value: "1"
+  - name: SL_IOSTREAM_USART_VCOM_RESTRICT_ENERGY_MODE_TO_ALLOW_RECEPTION
+    value: "0"
   - name: SL_IOSTREAM_EUSART_VCOM_RESTRICT_ENERGY_MODE_TO_ALLOW_RECEPTION
     value: "0"
+  - name: SL_POWER_MANAGER_INIT_EMU_EM4_PIN_RETENTION_MODE
+    value: "EMU_EM4CTRL_EM4IORETMODE_EM4EXIT"
   - name: SL_BOARD_ENABLE_SENSOR_RHT
     value: "1"
   - name: SL_PSA_KEY_USER_SLOT_COUNT
@@ -114,6 +125,10 @@ configuration:
       - psa_crypto
   - name: APP_LOG_NEW_LINE
     value: "APP_LOG_NEW_LINE_RN"
+
+post_build:
+  - profile: bt_common
+    condition: [device_series_2, bootloader_app_properties]
 
 tag:
   - prebuilt_demo

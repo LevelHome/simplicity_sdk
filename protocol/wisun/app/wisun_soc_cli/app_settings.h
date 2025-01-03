@@ -48,7 +48,7 @@ typedef struct {
   uint8_t operating_class;
   uint16_t operating_mode;
   uint8_t network_size;
-  int8_t tx_power;
+  int16_t tx_power_ddbm;
   uint8_t uc_dwell_interval_ms;
   uint16_t number_of_channels;
   uint32_t ch0_frequency;
@@ -74,6 +74,7 @@ typedef struct {
   uint8_t neighbor_table_size;
   uint8_t keychain;
   uint8_t keychain_index;
+  uint8_t direct_connect_pmk[SL_WISUN_PMK_LEN];
 } app_settings_wisun_t;
 
 typedef struct {

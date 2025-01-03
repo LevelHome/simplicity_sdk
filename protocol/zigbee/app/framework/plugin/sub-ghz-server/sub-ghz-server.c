@@ -198,7 +198,7 @@ void sli_zigbee_af_sub_ghz_server_zdo_message_received_callback(sl_802154_short_
     }
 
     if (sli_zigbee_af_validate_channel_pages(channelPage, channel) != SL_STATUS_OK) {
-      sl_zigbee_af_sub_ghz_cluster_println("Invalid channel mask: 0x%4x (page %d)",
+      sl_zigbee_af_sub_ghz_cluster_println("Invalid channel mask: 0x%08X (page %d)",
                                            channelMask,
                                            channelPage);
       return;
@@ -340,7 +340,7 @@ bool sli_zigbee_af_sub_ghz_server_incoming_message(sl_zigbee_incoming_message_ty
             && cmd.direction == ZCL_DIRECTION_CLIENT_TO_SERVER
             && cmd.clusterSpecific
             && cmd.commandId == ZCL_IMAGE_BLOCK_REQUEST_COMMAND_ID) {
-          sl_zigbee_af_core_println("%s: client %2x %s within its suspend period.",
+          sl_zigbee_af_core_println("%s: client %04X %s within its suspend period.",
                                     PLUGIN_NAME_STR,
                                     sender,
                                     "requesting an OTA block");
@@ -361,7 +361,7 @@ bool sli_zigbee_af_sub_ghz_server_incoming_message(sl_zigbee_incoming_message_ty
 
     // Special cases sorted, back to the general case: send "Suspend ZCL Messages"
     if (sender != sl_zigbee_af_get_node_id()) { // do not accidentally suspend ourselves
-      sl_zigbee_af_core_println("%s: client %2x %s within its suspend period.",
+      sl_zigbee_af_core_println("%s: client %04X %s within its suspend period.",
                                 PLUGIN_NAME_STR,
                                 sender,
                                 "transmitting");
@@ -435,7 +435,7 @@ static void jointDutyCycleHandler(uint8_t channelPage,
       const sl_802154_short_addr_t currentNode = arrayOfDutyCycles[i].nodeId;
       const sl_zigbee_duty_cycle_hecto_pct_t currentDutyCycle = arrayOfDutyCycles[i].dutyCycleConsumed;
 
-      sl_zigbee_af_sub_ghz_cluster_println("%s: Checking client %2x, %s = %d",
+      sl_zigbee_af_sub_ghz_cluster_println("%s: Checking client %04X, %s = %d",
                                            PLUGIN_NAME_STR,
                                            currentNode,
                                            "duty cycle",
@@ -462,7 +462,7 @@ static void jointDutyCycleHandler(uint8_t channelPage,
     if (chosenNodeId == SL_ZIGBEE_NULL_NODE_ID) {
       uint16_t shortestSuspendTime = 0xFFFF;
       for (i = 0; i < sizeof clientTable / sizeof clientTable[0]; ++i) {
-        sl_zigbee_af_sub_ghz_cluster_println("%s: Checking client %2x, %s = %d",
+        sl_zigbee_af_sub_ghz_cluster_println("%s: Checking client %04X, %s = %d",
                                              PLUGIN_NAME_STR,
                                              clientTable[i].nodeId,
                                              "time left",
@@ -481,7 +481,7 @@ static void jointDutyCycleHandler(uint8_t channelPage,
     // the only possible reason at this point is that our clients table is still
     // empty (unlikely given we are inside the "duty cycle limit reached" callback).
     if (chosenNodeId != SL_ZIGBEE_NULL_NODE_ID) {
-      sl_zigbee_af_sub_ghz_cluster_println("%s: Suspending client %2x",
+      sl_zigbee_af_sub_ghz_cluster_println("%s: Suspending client %04X",
                                            PLUGIN_NAME_STR,
                                            chosenNodeId);
       sl_zigbee_af_sub_ghz_server_send_suspend_zcl_messages_command(chosenNodeId,
@@ -557,14 +557,14 @@ void sl_zigbee_af_sub_ghz_cluster_server_tick_cb(uint8_t endpoint)
 //-----------------------
 // ZCL commands callbacks
 
-bool sl_zigbee_af_sub_ghz_cluster_get_suspend_zcl_messages_status_cb(void)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_sub_ghz_cluster_get_suspend_zcl_messages_status_cb(void)
 {
   sl_zigbee_af_cluster_command_t *cmd = sl_zigbee_af_current_command();
   if (cmd) {    // sanity, since we dereference cmd
     const uint16_t suspendTime = sl_zigbee_af_sub_ghz_server_suspend_zcl_messages_status(cmd->source);
     sendSuspendZclMessagesCommand(cmd->source, SECOND_TO_MINUTES(suspendTime));
   }
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
 uint32_t sl_zigbee_af_sub_ghz_cluster_server_command_parse(sl_service_opcode_t opcode,
@@ -573,13 +573,11 @@ uint32_t sl_zigbee_af_sub_ghz_cluster_server_command_parse(sl_service_opcode_t o
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific && cmd->commandId == ZCL_GET_SUSPEND_ZCL_MESSAGES_STATUS_COMMAND_ID) {
-    wasHandled = sl_zigbee_af_sub_ghz_cluster_get_suspend_zcl_messages_status_cb();
+    status = sl_zigbee_af_sub_ghz_cluster_get_suspend_zcl_messages_status_cb();
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

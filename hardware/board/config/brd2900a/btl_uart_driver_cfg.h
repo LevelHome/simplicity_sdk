@@ -56,19 +56,19 @@
 #define SL_SERIAL_UART_PERIPHERAL_NO             0
 
 // USART0 TX on PC07
-#define SL_SERIAL_UART_TX_PORT                   gpioPortC
+#define SL_SERIAL_UART_TX_PORT                   SL_GPIO_PORT_C
 #define SL_SERIAL_UART_TX_PIN                    7
 
 // USART0 RX on PB03
-#define SL_SERIAL_UART_RX_PORT                   gpioPortB
+#define SL_SERIAL_UART_RX_PORT                   SL_GPIO_PORT_B
 #define SL_SERIAL_UART_RX_PIN                    3
 
 // USART0 CTS on PB04
-#define SL_SERIAL_UART_CTS_PORT                  gpioPortB
+#define SL_SERIAL_UART_CTS_PORT                  SL_GPIO_PORT_B
 #define SL_SERIAL_UART_CTS_PIN                   4
 
 // USART0 RTS on PB02
-#define SL_SERIAL_UART_RTS_PORT                  gpioPortB
+#define SL_SERIAL_UART_RTS_PORT                  SL_GPIO_PORT_B
 #define SL_SERIAL_UART_RTS_PIN                   2
 
 // [USART_SL_SERIAL_UART]$

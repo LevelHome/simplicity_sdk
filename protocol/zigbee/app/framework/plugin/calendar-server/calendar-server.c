@@ -123,17 +123,17 @@ void sl_zigbee_af_calendar_cluster_server_tick_cb(uint8_t endpoint)
   }
 }
 
-bool sl_zigbee_af_calendar_cluster_get_calendar_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_calendar_cluster_get_calendar_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_calendar_cluster_get_calendar_command_t cmd_data;
   uint8_t i;
 
   if (zcl_decode_calendar_cluster_get_calendar_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_calendar_cluster_println("RX: GetCalendar 0x%4x, 0x%4x, 0x%x, 0x%x, 0x%4x",
+  sl_zigbee_af_calendar_cluster_println("RX: GetCalendar 0x%08X, 0x%08X, 0x%02X, 0x%02X, 0x%08X",
                                         cmd_data.earliestStartTime,
                                         cmd_data.minIssuerEventId,
                                         cmd_data.numberOfCalendars,
@@ -142,12 +142,11 @@ bool sl_zigbee_af_calendar_cluster_get_calendar_cb(sl_zigbee_af_cluster_command_
 
   // Only one Get can be processed at a time.
   if (publishInfo.commandIndex != SL_ZIGBEE_AF_PLUGIN_CALENDAR_COMMON_INVALID_INDEX) {
-    sl_zigbee_af_calendar_cluster_println("%p%p%p",
+    sl_zigbee_af_calendar_cluster_println("%s%s%s",
                                           "Error: ",
                                           "Cannot get calendar: ",
                                           "only one Get command can be processed at a time");
-    sl_zigbee_af_send_default_response(cmd, SL_ZIGBEE_ZCL_STATUS_FAILURE);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_FAILURE;
   }
 
   publishInfo.totalCommands = 0;
@@ -190,70 +189,65 @@ bool sl_zigbee_af_calendar_cluster_get_calendar_cb(sl_zigbee_af_cluster_command_
   // If we sent nothing, we return an error.  Otherwise, we need to roll
   // through all the calendars and clear the sent bit.
   if (publishInfo.totalCommands == 0) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_NOT_FOUND);
-  } else {
-    for (i = 0; i < SL_ZIGBEE_AF_PLUGIN_CALENDAR_COMMON_TOTAL_CALENDARS; i++) {
-      if (READBITS(calendars[i].flags, SL_ZIGBEE_AF_PLUGIN_CALENDAR_COMMON_FLAGS_SENT)) {
-        CLEARBITS(calendars[i].flags, SL_ZIGBEE_AF_PLUGIN_CALENDAR_COMMON_FLAGS_SENT);
-      }
+    return SL_ZIGBEE_ZCL_STATUS_NOT_FOUND;
+  }
+  for (i = 0; i < SL_ZIGBEE_AF_PLUGIN_CALENDAR_COMMON_TOTAL_CALENDARS; i++) {
+    if (READBITS(calendars[i].flags, SL_ZIGBEE_AF_PLUGIN_CALENDAR_COMMON_FLAGS_SENT)) {
+      CLEARBITS(calendars[i].flags, SL_ZIGBEE_AF_PLUGIN_CALENDAR_COMMON_FLAGS_SENT);
     }
-
-    publishInfo.publishCommandId = ZCL_PUBLISH_CALENDAR_COMMAND_ID;
-    publishInfo.commandIndex = 0;
-    publishInfo.nodeId = cmd->source;
-    publishInfo.clientEndpoint = cmd->apsFrame->sourceEndpoint;
-    publishInfo.serverEndpoint = cmd->apsFrame->destinationEndpoint;
-    publishInfo.sequence = cmd->seqNum;
-    sl_zigbee_zcl_schedule_server_tick(sl_zigbee_af_current_endpoint(),
-                                       ZCL_CALENDAR_CLUSTER_ID,
-                                       MILLISECOND_TICKS_PER_QUARTERSECOND);
   }
 
-  return true;
+  publishInfo.publishCommandId = ZCL_PUBLISH_CALENDAR_COMMAND_ID;
+  publishInfo.commandIndex = 0;
+  publishInfo.nodeId = cmd->source;
+  publishInfo.clientEndpoint = cmd->apsFrame->sourceEndpoint;
+  publishInfo.serverEndpoint = cmd->apsFrame->destinationEndpoint;
+  publishInfo.sequence = cmd->seqNum;
+  sl_zigbee_zcl_schedule_server_tick(sl_zigbee_af_current_endpoint(),
+                                     ZCL_CALENDAR_CLUSTER_ID,
+                                     MILLISECOND_TICKS_PER_QUARTERSECOND);
+
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_calendar_cluster_get_day_profiles_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_calendar_cluster_get_day_profiles_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_calendar_cluster_get_day_profiles_command_t cmd_data;
   uint8_t calendarIndex;
 
   if (zcl_decode_calendar_cluster_get_day_profiles_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   calendarIndex = sl_zigbee_af_calendar_common_get_calendar_by_id(cmd_data.issuerCalendarId,
                                                                   cmd_data.providerId);
 
-  sl_zigbee_af_calendar_cluster_println("RX: GetDayProfiles 0x%4x, 0x%4x, 0x%x, 0x%x",
+  sl_zigbee_af_calendar_cluster_println("RX: GetDayProfiles 0x%08X, 0x%08X, 0x%02X, 0x%02X",
                                         cmd_data.providerId,
                                         cmd_data.issuerCalendarId,
                                         cmd_data.startDayId,
                                         cmd_data.numberOfDays);
 
   if (calendarIndex == SL_ZIGBEE_AF_PLUGIN_CALENDAR_COMMON_INVALID_INDEX) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_NOT_FOUND);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_NOT_FOUND;
   }
 
   if (cmd_data.startDayId == 0) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_INVALID_FIELD);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_INVALID_FIELD;
   }
 
   if (calendars[calendarIndex].numberOfDayProfiles < cmd_data.startDayId) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_NOT_FOUND);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_NOT_FOUND;
   }
 
   // Only one Get can be processed at a time.
   if (publishInfo.commandIndex != SL_ZIGBEE_AF_PLUGIN_CALENDAR_COMMON_INVALID_INDEX) {
-    sl_zigbee_af_calendar_cluster_println("%p%p%p",
+    sl_zigbee_af_calendar_cluster_println("%s%s%s",
                                           "Error: ",
                                           "Cannot get day profiles: ",
                                           "only one Get command can be processed at a time");
-    sl_zigbee_af_send_default_response(cmd, SL_ZIGBEE_ZCL_STATUS_FAILURE);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_FAILURE;
   }
 
   publishInfo.totalCommands = calendars[calendarIndex].numberOfDayProfiles - cmd_data.startDayId + 1;
@@ -274,23 +268,23 @@ bool sl_zigbee_af_calendar_cluster_get_day_profiles_cb(sl_zigbee_af_cluster_comm
                                      ZCL_CALENDAR_CLUSTER_ID,
                                      MILLISECOND_TICKS_PER_QUARTERSECOND);
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_calendar_cluster_get_week_profiles_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_calendar_cluster_get_week_profiles_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_calendar_cluster_get_week_profiles_command_t cmd_data;
   uint8_t calendarIndex;
 
   if (zcl_decode_calendar_cluster_get_week_profiles_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   calendarIndex = sl_zigbee_af_calendar_common_get_calendar_by_id(cmd_data.issuerCalendarId,
                                                                   cmd_data.providerId);
 
-  sl_zigbee_af_calendar_cluster_println("RX: GetWeekProfiles 0x%4x, 0x%4x, 0x%x, 0x%x",
+  sl_zigbee_af_calendar_cluster_println("RX: GetWeekProfiles 0x%08X, 0x%08X, 0x%02X, 0x%02X",
                                         cmd_data.providerId,
                                         cmd_data.issuerCalendarId,
                                         cmd_data.startWeekId,
@@ -302,23 +296,20 @@ bool sl_zigbee_af_calendar_cluster_get_week_profiles_cb(sl_zigbee_af_cluster_com
   }
 
   if (cmd_data.startWeekId == 0) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_INVALID_FIELD);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_INVALID_FIELD;
   }
 
   if (calendars[calendarIndex].numberOfWeekProfiles < cmd_data.startWeekId) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_NOT_FOUND);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_NOT_FOUND;
   }
 
   // Only one Get can be processed at a time.
   if (publishInfo.commandIndex != SL_ZIGBEE_AF_PLUGIN_CALENDAR_COMMON_INVALID_INDEX) {
-    sl_zigbee_af_calendar_cluster_println("%p%p%p",
+    sl_zigbee_af_calendar_cluster_println("%s%s%s",
                                           "Error: ",
                                           "Cannot get week profile: ",
                                           "only one Get command can be processed at a time");
-    sl_zigbee_af_send_default_response(cmd, SL_ZIGBEE_ZCL_STATUS_FAILURE);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_FAILURE;
   }
 
   publishInfo.totalCommands = calendars[calendarIndex].numberOfWeekProfiles - cmd_data.startWeekId + 1;
@@ -339,39 +330,37 @@ bool sl_zigbee_af_calendar_cluster_get_week_profiles_cb(sl_zigbee_af_cluster_com
                                      ZCL_CALENDAR_CLUSTER_ID,
                                      MILLISECOND_TICKS_PER_QUARTERSECOND);
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_calendar_cluster_get_seasons_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_calendar_cluster_get_seasons_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_calendar_cluster_get_seasons_command_t cmd_data;
   uint8_t calendarIndex;
 
   if (zcl_decode_calendar_cluster_get_seasons_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   calendarIndex = sl_zigbee_af_calendar_common_get_calendar_by_id(cmd_data.issuerCalendarId,
                                                                   cmd_data.providerId);
-  sl_zigbee_af_calendar_cluster_println("RX: GetSeasons 0x%4x, 0x%4x",
+  sl_zigbee_af_calendar_cluster_println("RX: GetSeasons 0x%08X, 0x%08X",
                                         cmd_data.providerId,
                                         cmd_data.issuerCalendarId);
 
   if (calendarIndex == SL_ZIGBEE_AF_PLUGIN_CALENDAR_COMMON_INVALID_INDEX
       || calendars[calendarIndex].numberOfSeasons == 0) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_NOT_FOUND);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_NOT_FOUND;
   }
 
   // Only one Get can be processed at a time.
   if (publishInfo.commandIndex != SL_ZIGBEE_AF_PLUGIN_CALENDAR_COMMON_INVALID_INDEX) {
-    sl_zigbee_af_calendar_cluster_println("%p%p%p",
+    sl_zigbee_af_calendar_cluster_println("%s%s%s",
                                           "Error: ",
                                           "Cannot get seasons: ",
                                           "only one Get command can be processed at a time");
-    sl_zigbee_af_send_default_response(cmd, SL_ZIGBEE_ZCL_STATUS_FAILURE);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_FAILURE;
   }
 
   publishInfo.totalCommands = 1;
@@ -389,10 +378,10 @@ bool sl_zigbee_af_calendar_cluster_get_seasons_cb(sl_zigbee_af_cluster_command_t
                                      ZCL_CALENDAR_CLUSTER_ID,
                                      MILLISECOND_TICKS_PER_QUARTERSECOND);
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_calendar_cluster_get_special_days_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_calendar_cluster_get_special_days_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_calendar_cluster_get_special_days_command_t cmd_data;
   uint8_t numberOfSpecialDaysSent = 0;
@@ -400,10 +389,10 @@ bool sl_zigbee_af_calendar_cluster_get_special_days_cb(sl_zigbee_af_cluster_comm
 
   if (zcl_decode_calendar_cluster_get_special_days_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_calendar_cluster_println("RX: GetSpecialDays 0x%4x, 0x%x, 0x%x, 0x%4x, 0x%4x",
+  sl_zigbee_af_calendar_cluster_println("RX: GetSpecialDays 0x%08X, 0x%02X, 0x%02X, 0x%08X, 0x%08X",
                                         cmd_data.startTime,
                                         cmd_data.numberOfEvents,
                                         cmd_data.calendarType,
@@ -419,12 +408,11 @@ bool sl_zigbee_af_calendar_cluster_get_special_days_cb(sl_zigbee_af_cluster_comm
 
   // Only one Get can be processed at a time.
   if (publishInfo.commandIndex != SL_ZIGBEE_AF_PLUGIN_CALENDAR_COMMON_INVALID_INDEX) {
-    sl_zigbee_af_calendar_cluster_println("%p%p%p",
+    sl_zigbee_af_calendar_cluster_println("%s%s%s",
                                           "Error: ",
                                           "Cannot get special days: ",
                                           "only one Get command can be processed at a time");
-    sl_zigbee_af_send_default_response(cmd, SL_ZIGBEE_ZCL_STATUS_FAILURE);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_FAILURE;
   }
 
 #ifdef SL_CATALOG_ZIGBEE_GAS_PROXY_FUNCTION_PRESENT
@@ -485,42 +473,41 @@ bool sl_zigbee_af_calendar_cluster_get_special_days_cb(sl_zigbee_af_cluster_comm
 
   // If there is nothing to send, we return an error.
   if (publishInfo.totalCommands == 0) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_NOT_FOUND);
-  } else {
-    publishInfo.publishCommandId = ZCL_PUBLISH_SPECIAL_DAYS_COMMAND_ID;
-    publishInfo.commandIndex = 0;
-    if (cmd_data.numberOfEvents == 0 || numberOfSpecialDaysSent < cmd_data.numberOfEvents) {
-      publishInfo.numberOfEvents = numberOfSpecialDaysSent;
-    } else {
-      publishInfo.numberOfEvents = cmd_data.numberOfEvents;
-    }
-    publishInfo.nodeId = cmd->source;
-    publishInfo.clientEndpoint = cmd->apsFrame->sourceEndpoint;
-    publishInfo.serverEndpoint = cmd->apsFrame->destinationEndpoint;
-    publishInfo.sequence = cmd->seqNum;
-    sl_zigbee_zcl_schedule_server_tick(sl_zigbee_af_current_endpoint(),
-                                       ZCL_CALENDAR_CLUSTER_ID,
-                                       MILLISECOND_TICKS_PER_QUARTERSECOND);
+    return SL_ZIGBEE_ZCL_STATUS_NOT_FOUND;
   }
 
-  return true;
+  publishInfo.publishCommandId = ZCL_PUBLISH_SPECIAL_DAYS_COMMAND_ID;
+  publishInfo.commandIndex = 0;
+  if (cmd_data.numberOfEvents == 0 || numberOfSpecialDaysSent < cmd_data.numberOfEvents) {
+    publishInfo.numberOfEvents = numberOfSpecialDaysSent;
+  } else {
+    publishInfo.numberOfEvents = cmd_data.numberOfEvents;
+  }
+  publishInfo.nodeId = cmd->source;
+  publishInfo.clientEndpoint = cmd->apsFrame->sourceEndpoint;
+  publishInfo.serverEndpoint = cmd->apsFrame->destinationEndpoint;
+  publishInfo.sequence = cmd->seqNum;
+  sl_zigbee_zcl_schedule_server_tick(sl_zigbee_af_current_endpoint(),
+                                     ZCL_CALENDAR_CLUSTER_ID,
+                                     MILLISECOND_TICKS_PER_QUARTERSECOND);
+
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_calendar_cluster_get_calendar_cancellation_cb(void)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_calendar_cluster_get_calendar_cancellation_cb(void)
 {
   sl_zigbee_af_calendar_cluster_println("RX: GetCalendarCancellation");
 
   if (lastCancelCalendar == NULL) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_NOT_FOUND);
-  } else {
-    sl_zigbee_af_fill_command_calendar_cluster_cancel_calendar(lastCancelCalendar->providerId,
-                                                               lastCancelCalendar->issuerEventId,
-                                                               lastCancelCalendar->calendarType);
-    sl_zigbee_af_send_response();
-    lastCancelCalendar = NULL;
+    return SL_ZIGBEE_ZCL_STATUS_NOT_FOUND;
   }
+  sl_zigbee_af_fill_command_calendar_cluster_cancel_calendar(lastCancelCalendar->providerId,
+                                                             lastCancelCalendar->issuerEventId,
+                                                             lastCancelCalendar->calendarType);
+  sl_zigbee_af_send_response();
+  lastCancelCalendar = NULL;
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
 // Publish a calendar.
@@ -532,7 +519,7 @@ void sl_zigbee_af_calendar_server_publish_calendar_message(sl_802154_short_addr_
   sl_status_t status;
 
   if (SL_ZIGBEE_AF_PLUGIN_CALENDAR_COMMON_TOTAL_CALENDARS <= calendarIndex) {
-    sl_zigbee_af_calendar_cluster_println("%p%p%p",
+    sl_zigbee_af_calendar_cluster_println("%s%s%s",
                                           "Error: ",
                                           "Cannot publish calendar: ",
                                           "invalid calendar index");
@@ -559,7 +546,7 @@ void sl_zigbee_af_calendar_server_publish_calendar_message(sl_802154_short_addr_
   sl_zigbee_af_get_command_aps_frame()->options |= SL_ZIGBEE_APS_OPTION_SOURCE_EUI64;
   status = sl_zigbee_af_send_command_unicast(SL_ZIGBEE_OUTGOING_DIRECT, nodeId);
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_calendar_cluster_println("%p%p0x%x",
+    sl_zigbee_af_calendar_cluster_println("%s%s0x%02X",
                                           "Error: ",
                                           "Cannot publish calendar: ",
                                           status);
@@ -576,7 +563,7 @@ void sl_zigbee_af_calendar_server_publish_day_profiles_message(sl_802154_short_a
   uint8_t i;
 
   if (SL_ZIGBEE_AF_PLUGIN_CALENDAR_COMMON_TOTAL_CALENDARS <= calendarIndex) {
-    sl_zigbee_af_calendar_cluster_println("%p%p%p",
+    sl_zigbee_af_calendar_cluster_println("%s%s%s",
                                           "Error: ",
                                           "Cannot publish day profiles: ",
                                           "invalid calendar index");
@@ -584,7 +571,7 @@ void sl_zigbee_af_calendar_server_publish_day_profiles_message(sl_802154_short_a
   }
 
   if (calendars[calendarIndex].numberOfDayProfiles <= dayIndex) {
-    sl_zigbee_af_calendar_cluster_println("%p%p%p",
+    sl_zigbee_af_calendar_cluster_println("%s%s%s",
                                           "Error: ",
                                           "Cannot publish day profiles: ",
                                           "invalid day index");
@@ -625,7 +612,7 @@ void sl_zigbee_af_calendar_server_publish_day_profiles_message(sl_802154_short_a
   sl_zigbee_af_get_command_aps_frame()->options |= SL_ZIGBEE_APS_OPTION_SOURCE_EUI64;
   status = sl_zigbee_af_send_command_unicast(SL_ZIGBEE_OUTGOING_DIRECT, nodeId);
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_calendar_cluster_println("%p%p0x%x",
+    sl_zigbee_af_calendar_cluster_println("%s%s0x%02X",
                                           "Error: ",
                                           "Cannot publish day profiles: ",
                                           status);
@@ -641,7 +628,7 @@ void sl_zigbee_af_calendar_server_publish_week_profile_message(sl_802154_short_a
   sl_status_t status;
 
   if (SL_ZIGBEE_AF_PLUGIN_CALENDAR_COMMON_TOTAL_CALENDARS <= calendarIndex) {
-    sl_zigbee_af_calendar_cluster_println("%p%p%p",
+    sl_zigbee_af_calendar_cluster_println("%s%s%s",
                                           "Error: ",
                                           "Cannot publish week profile: ",
                                           "invalid calendar index");
@@ -649,7 +636,7 @@ void sl_zigbee_af_calendar_server_publish_week_profile_message(sl_802154_short_a
   }
 
   if (calendars[calendarIndex].numberOfWeekProfiles <= weekIndex) {
-    sl_zigbee_af_calendar_cluster_println("%p%p%p",
+    sl_zigbee_af_calendar_cluster_println("%s%s%s",
                                           "Error: ",
                                           "Cannot publish week profile: ",
                                           "invalid week index");
@@ -684,7 +671,7 @@ void sl_zigbee_af_calendar_server_publish_week_profile_message(sl_802154_short_a
   sl_zigbee_af_get_command_aps_frame()->options |= SL_ZIGBEE_APS_OPTION_SOURCE_EUI64;
   status = sl_zigbee_af_send_command_unicast(SL_ZIGBEE_OUTGOING_DIRECT, nodeId);
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_calendar_cluster_println("%p%p0x%x",
+    sl_zigbee_af_calendar_cluster_println("%s%s0x%02X",
                                           "Error: ",
                                           "Cannot publish week profile: ",
                                           status);
@@ -700,7 +687,7 @@ void sl_zigbee_af_calendar_server_publish_seasons_message(sl_802154_short_addr_t
   uint8_t i;
 
   if (SL_ZIGBEE_AF_PLUGIN_CALENDAR_COMMON_TOTAL_CALENDARS <= calendarIndex) {
-    sl_zigbee_af_calendar_cluster_println("%p%p%p",
+    sl_zigbee_af_calendar_cluster_println("%s%s%s",
                                           "Error: ",
                                           "Cannot publish seasons: ",
                                           "invalid calendar index");
@@ -740,7 +727,7 @@ void sl_zigbee_af_calendar_server_publish_seasons_message(sl_802154_short_addr_t
   sl_zigbee_af_get_command_aps_frame()->options |= SL_ZIGBEE_APS_OPTION_SOURCE_EUI64;
   status = sl_zigbee_af_send_command_unicast(SL_ZIGBEE_OUTGOING_DIRECT, nodeId);
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_calendar_cluster_println("%p%p0x%x",
+    sl_zigbee_af_calendar_cluster_println("%s%s0x%02X",
                                           "Error: ",
                                           "Cannot publish seasons: ",
                                           status);
@@ -759,7 +746,7 @@ void sl_zigbee_af_calendar_server_publish_special_days_message(sl_802154_short_a
   uint8_t i;
 
   if (SL_ZIGBEE_AF_PLUGIN_CALENDAR_COMMON_TOTAL_CALENDARS <= calendarIndex) {
-    sl_zigbee_af_calendar_cluster_println("%p%p%p",
+    sl_zigbee_af_calendar_cluster_println("%s%s%s",
                                           "Error: ",
                                           "Cannot publish special days: ",
                                           "invalid calendar index");
@@ -834,7 +821,7 @@ void sl_zigbee_af_calendar_server_publish_special_days_message(sl_802154_short_a
   sl_zigbee_af_get_command_aps_frame()->options |= SL_ZIGBEE_APS_OPTION_SOURCE_EUI64;
   status = sl_zigbee_af_send_command_unicast(SL_ZIGBEE_OUTGOING_DIRECT, nodeId);
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_calendar_cluster_println("%p%p0x%x",
+    sl_zigbee_af_calendar_cluster_println("%s%s0x%02X",
                                           "Error: ",
                                           "Cannot publish special days: ",
                                           status);
@@ -857,7 +844,7 @@ void sl_zigbee_af_calendar_server_cancel_calendar_message(sl_802154_short_addr_t
   sl_status_t status;
 
   if (SL_ZIGBEE_AF_PLUGIN_CALENDAR_COMMON_TOTAL_CALENDARS <= calendarIndex) {
-    sl_zigbee_af_calendar_cluster_println("%p%p%p",
+    sl_zigbee_af_calendar_cluster_println("%s%s%s",
                                           "Error: ",
                                           "Cannot send cancel calendar: ",
                                           "invalid calendar index");
@@ -871,7 +858,7 @@ void sl_zigbee_af_calendar_server_cancel_calendar_message(sl_802154_short_addr_t
   sl_zigbee_af_get_command_aps_frame()->options |= SL_ZIGBEE_APS_OPTION_SOURCE_EUI64;
   status = sl_zigbee_af_send_command_unicast(SL_ZIGBEE_OUTGOING_DIRECT, nodeId);
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_calendar_cluster_println("%p%p0x%x",
+    sl_zigbee_af_calendar_cluster_println("%s%s0x%02X",
                                           "Error: ",
                                           "Cannot publish calendar: ",
                                           status);
@@ -889,44 +876,42 @@ uint32_t sl_zigbee_af_calendar_cluster_server_command_parse(sl_service_opcode_t 
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_GET_CALENDAR_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_calendar_cluster_get_calendar_cb(cmd);
+        status = sl_zigbee_af_calendar_cluster_get_calendar_cb(cmd);
         break;
       }
       case ZCL_GET_DAY_PROFILES_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_calendar_cluster_get_day_profiles_cb(cmd);
+        status = sl_zigbee_af_calendar_cluster_get_day_profiles_cb(cmd);
         break;
       }
       case ZCL_GET_WEEK_PROFILES_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_calendar_cluster_get_week_profiles_cb(cmd);
+        status = sl_zigbee_af_calendar_cluster_get_week_profiles_cb(cmd);
         break;
       }
       case ZCL_GET_SEASONS_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_calendar_cluster_get_seasons_cb(cmd);
+        status = sl_zigbee_af_calendar_cluster_get_seasons_cb(cmd);
         break;
       }
       case ZCL_GET_SPECIAL_DAYS_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_calendar_cluster_get_special_days_cb(cmd);
+        status = sl_zigbee_af_calendar_cluster_get_special_days_cb(cmd);
         break;
       }
       case ZCL_GET_CALENDAR_CANCELLATION_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_calendar_cluster_get_calendar_cancellation_cb();
+        status = sl_zigbee_af_calendar_cluster_get_calendar_cancellation_cb();
         break;
       }
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

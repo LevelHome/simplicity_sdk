@@ -60,8 +60,6 @@ requires:
     condition: [ 'device_has_emu', 'device_series_2' ]
   - name: emlib_rtcc
     condition: [ 'device_has_rtcc' ]
-  - name: emlib_se
-    condition: [ 'device_series_2' ]
   - name: emlib_smu
     condition: [ 'device_has_smu' ]
   - name: emlib_system

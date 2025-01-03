@@ -1,5 +1,5 @@
 /***************************************************************************//**
- * @file
+ * @file sl_wisun_app_status.h
  * @brief Wi-SUN Application Status CoAP notfication
  *******************************************************************************
  * # License
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __SL_WISUN_APP_STATUS_H__
-#define __SL_WISUN_APP_STATUS_H__
+#ifndef SL_WISUN_APP_STATUS_H
+#define SL_WISUN_APP_STATUS_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,9 +41,15 @@ extern "C" {
 
 #include <stdbool.h>
 #include <stdint.h>
+
 #include "sl_status.h"
 #include "sl_wisun_coap_notify.h"
 #include "socket.h"
+
+/**************************************************************************//**
+ * @addtogroup SL_WISUN_APP_STATUS
+ * @{
+ *****************************************************************************/
 
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
@@ -104,8 +110,10 @@ sl_status_t sl_wisun_app_status_set_remote_address(const char *remote_address, c
  *****************************************************************************/
 void sl_wisun_app_status_set_schedule_time_ms(const uint32_t new_schedule_time_ms);
 
+/** @}*/
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif // SL_WISUN_APP_STATUS_H

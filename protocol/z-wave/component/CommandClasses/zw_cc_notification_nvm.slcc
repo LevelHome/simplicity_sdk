@@ -1,5 +1,5 @@
 id: zw_cc_notification_nvm
-label: Notification - NVM
+label: Notification Command Class - NVM
 category: Z-Wave|Command Classes
 description: >
   This component provides the NVM implementation of the IO Interface for the Notification Command

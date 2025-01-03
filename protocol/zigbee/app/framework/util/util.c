@@ -103,6 +103,7 @@ static const uint8_t sl_zigbee_af_analog_discrete_thresholds[] = {
 };
 
 uint8_t sli_zigbee_af_extended_pan_id[EXTENDED_PAN_ID_SIZE] = { 0, 0, 0, 0, 0, 0, 0, 0, };
+bool sli_command_or_default_response_submitted = false;
 
 #ifdef SL_CATALOG_KERNEL_PRESENT
 extern osMutexId_t sli_zigbee_af_mutex_id;
@@ -289,6 +290,7 @@ void sl_zigbee_af_init(uint8_t init_level)
     sl_zigbee_af_initialize_attributes(SL_ZIGBEE_BROADCAST_ENDPOINT);
     (void) sl_zigbee_af_pop_network_index();
   }
+  sli_zigbee_af_init_attribute_storage();
 
   memset(afDeviceEnabled, true, sl_zigbee_af_endpoint_count());
 
@@ -369,11 +371,11 @@ void sl_zigbee_af_decode_and_print_cluster_with_mfg_code(uint16_t cluster, uint1
   uint16_t index = sl_zigbee_af_find_cluster_name_index_with_mfg_code(cluster, mfgCode);
   if (index == 0xFFFFu) {
     sl_zigbee_af_print(sl_zigbee_af_print_active_area,
-                       "(Unknown clus. [0x%2x])",
+                       "(Unknown clus. [0x%04X])",
                        cluster);
   } else {
     sl_zigbee_af_print(sl_zigbee_af_print_active_area,
-                       "(%p)",
+                       "(%s)",
                        sl_zigbee_zcl_cluster_names[index].name);
   }
 }
@@ -403,16 +405,16 @@ static void printIncomingZclMessage(const sl_zigbee_af_cluster_command_t *cmd)
 {
 #if ((defined(EMBER_AF_PRINT_ENABLE) && defined(SL_ZIGBEE_AF_PRINT_APP)) || (!defined(LARGE_NETWORK_TESTING) ))
   if (sl_zigbee_af_print_received_messages) {
-    sl_zigbee_af_app_print("\r\nT%4x:", sl_zigbee_af_get_current_time());
-    sl_zigbee_af_app_print("RX len %d, ep %x, clus 0x%2x ",
+    sl_zigbee_af_app_print("\r\nT%08X:", sl_zigbee_af_get_current_time());
+    sl_zigbee_af_app_print("RX len %d, ep %02X, clus 0x%04X ",
                            cmd->bufLen,
                            cmd->apsFrame->destinationEndpoint,
                            cmd->apsFrame->clusterId);
     sl_zigbee_af_app_debug_exec(sl_zigbee_af_decode_and_print_cluster_with_mfg_code(cmd->apsFrame->clusterId, cmd->mfgCode));
     if (cmd->mfgSpecific) {
-      sl_zigbee_af_app_print(" mfgId %2x", cmd->mfgCode);
+      sl_zigbee_af_app_print(" mfgId %04X", cmd->mfgCode);
     }
-    sl_zigbee_af_app_print(" FC %x seq %x cmd %x payload[",
+    sl_zigbee_af_app_print(" FC %02X seq %02X cmd %02X payload[",
                            cmd->buffer[0], // frame control
                            cmd->seqNum,
                            cmd->commandId);
@@ -430,17 +432,17 @@ static bool dispatchZclMessage(sl_zigbee_af_cluster_command_t *cmd)
 {
   uint8_t index = sl_zigbee_af_index_from_endpoint(cmd->apsFrame->destinationEndpoint);
   if (index == 0xFFu || (index >= MAX_ENDPOINT_COUNT)) {
-    sl_zigbee_af_debug_print("Drop cluster 0x%2x command 0x%x",
+    sl_zigbee_af_debug_print("Drop cluster 0x%04X command 0x%02X",
                              cmd->apsFrame->clusterId,
                              cmd->commandId);
     sl_zigbee_af_debug_print(" due to invalid endpoint: ");
-    sl_zigbee_af_debug_println("0x%x", cmd->apsFrame->destinationEndpoint);
+    sl_zigbee_af_debug_println("0x%02X", cmd->apsFrame->destinationEndpoint);
     return false;
   } else if (sl_zigbee_af_network_index_from_endpoint_index(index) != cmd->networkIndex) {
-    sl_zigbee_af_debug_print("Drop cluster 0x%2x command 0x%x",
+    sl_zigbee_af_debug_print("Drop cluster 0x%04X command 0x%02X",
                              cmd->apsFrame->clusterId,
                              cmd->commandId);
-    sl_zigbee_af_debug_print(" for endpoint 0x%x due to wrong %p: ",
+    sl_zigbee_af_debug_print(" for endpoint 0x%02X due to wrong %s: ",
                              cmd->apsFrame->destinationEndpoint,
                              "network");
     sl_zigbee_af_debug_println("%d", cmd->networkIndex);
@@ -449,25 +451,25 @@ static bool dispatchZclMessage(sl_zigbee_af_cluster_command_t *cmd)
              && (cmd->apsFrame->profileId != SL_ZIGBEE_WILDCARD_PROFILE_ID
                  || (SL_ZIGBEE_MAXIMUM_STANDARD_PROFILE_ID
                      < sl_zigbee_af_profile_id_from_index(index)))) {
-    sl_zigbee_af_debug_print("Drop cluster 0x%2x command 0x%x",
+    sl_zigbee_af_debug_print("Drop cluster 0x%04X command 0x%02X",
                              cmd->apsFrame->clusterId,
                              cmd->commandId);
-    sl_zigbee_af_debug_print(" for endpoint 0x%x due to wrong %p: ",
+    sl_zigbee_af_debug_print(" for endpoint 0x%02X due to wrong %s: ",
                              cmd->apsFrame->destinationEndpoint,
                              "profile");
-    sl_zigbee_af_debug_println("0x%2x", cmd->apsFrame->profileId);
+    sl_zigbee_af_debug_println("0x%04X", cmd->apsFrame->profileId);
     return false;
   } else if ((cmd->type == SL_ZIGBEE_INCOMING_MULTICAST
               || cmd->type == SL_ZIGBEE_INCOMING_MULTICAST_LOOPBACK)
              && !sl_zigbee_af_groups_cluster_endpoint_in_group_cb(cmd->apsFrame->destinationEndpoint,
                                                                   cmd->apsFrame->groupId)) {
-    sl_zigbee_af_debug_print("Drop cluster 0x%2x command 0x%x",
+    sl_zigbee_af_debug_print("Drop cluster 0x%04X command 0x%02X",
                              cmd->apsFrame->clusterId,
                              cmd->commandId);
-    sl_zigbee_af_debug_print(" for endpoint 0x%x due to wrong %p: ",
+    sl_zigbee_af_debug_print(" for endpoint 0x%02X due to wrong %s: ",
                              cmd->apsFrame->destinationEndpoint,
                              "group");
-    sl_zigbee_af_debug_println("0x%2x", cmd->apsFrame->groupId);
+    sl_zigbee_af_debug_println("0x%04X", cmd->apsFrame->groupId);
     return false;
   } else {
     return (cmd->clusterSpecific
@@ -486,6 +488,7 @@ bool sl_zigbee_af_process_message(sl_zigbee_aps_frame_t *apsFrame,
 {
   sl_status_t sendStatus;
   bool msgHandled = false;
+  sli_command_or_default_response_submitted = false;
   //reset/reinitialize curCmd
   curCmd =  staticCmd;
   if (!sl_zigbee_af_process_message_into_zcl_cmd(apsFrame,
@@ -527,7 +530,7 @@ bool sl_zigbee_af_process_message(sl_zigbee_aps_frame_t *apsFrame,
                                                             curCmd.apsFrame->clusterId,
                                                             curCmd.source)
         && (!(curCmd.apsFrame->options & SL_ZIGBEE_APS_OPTION_ENCRYPTION))) {
-      sl_zigbee_af_debug_println("Drop clus %2x due to no aps security",
+      sl_zigbee_af_debug_println("Drop clus %04X due to no aps security",
                                  curCmd.apsFrame->clusterId);
       afNoSecurityForDefaultResponse = true;
 #if defined(ZCL_USING_SL_WWAH_CLUSTER_SERVER) || defined(ZCL_USING_SL_WWAH_CLUSTER_CLIENT)
@@ -539,7 +542,7 @@ bool sl_zigbee_af_process_message(sl_zigbee_aps_frame_t *apsFrame,
       sendStatus = sl_zigbee_af_send_default_response(&curCmd, SL_ZIGBEE_ZCL_STATUS_FAILURE);
 #endif
       if (SL_STATUS_OK != sendStatus) {
-        sl_zigbee_af_debug_println("Util: failed to send %s response: 0x%x",
+        sl_zigbee_af_debug_println("Util: failed to send %s response: 0x%02X",
                                    "default",
                                    sendStatus);
       }
@@ -675,6 +678,7 @@ sl_status_t sl_zigbee_af_send_response_with_cb(sl_zigbee_af_message_sent_functio
   uint8_t label;
   sl_802154_short_addr_t alias = SL_ZIGBEE_NULL_NODE_ID;
   uint8_t seq = 0;
+  sli_command_or_default_response_submitted = true;
   // If the no-response flag is set, don't send anything.
   if ((sl_zigbee_af_response_type & ZCL_UTIL_RESP_NONE) != 0U) {
     sl_zigbee_af_debug_println("ZCL Util: no response at user request");
@@ -739,7 +743,7 @@ sl_status_t sl_zigbee_af_send_response_with_cb(sl_zigbee_af_message_sent_functio
                                                  callback);
   }
   UNUSED_VAR(label);
-  sl_zigbee_af_debug_println("T%4x:TX (%p) %ccast 0x%x%p",
+  sl_zigbee_af_debug_println("T%08X:TX (%s) %ccast 0x%02X%s",
                              sl_zigbee_af_get_current_time(),
                              "resp",
                              label,
@@ -934,6 +938,7 @@ uint8_t sl_zigbee_af_maximum_aps_payload_length(sl_zigbee_outgoing_message_type_
 {
   sl_802154_short_addr_t destination = SL_ZIGBEE_UNKNOWN_NODE_ID;
   sl_802154_long_addr_t eui64;
+  uint8_t sourceRouteOverhead = SL_ZIGBEE_SOURCE_ROUTE_OVERHEAD_UNKNOWN;
   uint8_t max = SL_ZIGBEE_AF_MAXIMUM_APS_PAYLOAD_LENGTH;
 
   if ((apsFrame->options & SL_ZIGBEE_APS_OPTION_ENCRYPTION) != 0U) {
@@ -971,7 +976,10 @@ uint8_t sl_zigbee_af_maximum_aps_payload_length(sl_zigbee_outgoing_message_type_
       break;
   }
 
-  max -= sl_zigbee_af_get_source_route_overhead_cb(destination);
+  sourceRouteOverhead = sl_zigbee_af_get_source_route_overhead_cb(destination);
+  if (sourceRouteOverhead != SL_ZIGBEE_SOURCE_ROUTE_OVERHEAD_UNKNOWN) {
+    max -= sourceRouteOverhead;
+  }
 
   return max;
 }
@@ -1047,6 +1055,9 @@ int8_t sl_zigbee_af_compare_values(uint8_t* val1,
                                    bool signedNumber)
 {
   uint8_t i, j, k;
+
+  SL_ZIGBEE_TEST_ASSERT(len > 0);
+
   if (signedNumber) { // signed number comparison
     if (len <= 4) { // only number with 32-bits or less is supported
       int32_t accum1 = 0x0;
@@ -1382,7 +1393,7 @@ bool sl_zigbee_af_get_suppress_cluster(uint16_t clusterId, bool isClientCluster)
     if (clusterId == entry->clusterId
         && isClientCluster == entry->isClientCluster
         && 0xff == entry->commandId) {
-      sl_zigbee_af_debug_println("sl_zigbee_af_get_suppress_cluster match: isClient = %d, cluster = %2X", isClientCluster, clusterId);
+      sl_zigbee_af_debug_println("sl_zigbee_af_get_suppress_cluster match: isClient = %d, cluster = %04X", isClientCluster, clusterId);
       return true;
     }
   }
@@ -1419,7 +1430,7 @@ sl_zigbee_af_status_t sl_zigbee_af_set_suppress_command(uint16_t clusterId, bool
 
 bool sl_zigbee_af_get_suppress_command(uint16_t clusterId, bool isClientCluster, uint8_t commandId)
 {
-  sl_zigbee_af_debug_println("sl_zigbee_af_get_suppress_command: isClient = %d, cluster = %2X", isClientCluster, clusterId);
+  sl_zigbee_af_debug_println("sl_zigbee_af_get_suppress_command: isClient = %d, cluster = %04X", isClientCluster, clusterId);
 
   for (uint8_t i = 0; i < MAX_SUPPRESSION_ENTRIES; i++) {
     SuppressionTableEntry *entry = &suppressionTable[i];
@@ -1438,7 +1449,7 @@ void sl_zigbee_af_print_suppression_table(void)
   sl_zigbee_af_app_println("clstr side cmd");
   for (uint8_t i = 0; i < MAX_SUPPRESSION_ENTRIES; i++) {
     SuppressionTableEntry *entry = &suppressionTable[i];
-    sl_zigbee_af_app_println("%2X   %d   %X", entry->clusterId,
+    sl_zigbee_af_app_println("%04X   %d   %02X", entry->clusterId,
                              entry->isClientCluster,
                              entry->commandId);
   }

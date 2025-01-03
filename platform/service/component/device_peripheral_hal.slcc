@@ -3,7 +3,7 @@ label: Device Manager Peripheral HAL
 package: platform
 description: >
   This component represent the Device Manager peripherals HAL layer.
-category: Services
+category: Services|Device Manager
 quality: production
 metadata:
   sbom:
@@ -27,6 +27,8 @@ provides:
     condition: [device_sdid_230]
   - name: device_peripheral_hal
     condition: [device_sdid_235]
+  - name: device_peripheral_hal
+    condition: [device_sdid_240]
 requires:
   - name: device_clock
   - name: device_peripheral
@@ -48,3 +50,5 @@ source:
     condition: [device_sdid_230]
   - path: devices/sl_device_peripheral_hal_efr32xg28.c
     condition: [device_sdid_235]
+  - path: devices/sl_device_peripheral_hal_efr32xg29.c
+    condition: [device_sdid_240]

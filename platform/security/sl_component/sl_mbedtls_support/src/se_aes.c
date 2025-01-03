@@ -59,19 +59,11 @@
 #include "mbedtls/error.h"
 #include <string.h>
 
-/* Parameter validation macros based on platform_util.h */
-#define AES_VALIDATE_RET(cond) \
-  MBEDTLS_INTERNAL_VALIDATE_RET(cond, MBEDTLS_ERR_AES_BAD_INPUT_DATA)
-#define AES_VALIDATE(cond) \
-  MBEDTLS_INTERNAL_VALIDATE(cond)
-
 /*
  * Initialize AES context
  */
 void mbedtls_aes_init(mbedtls_aes_context *ctx)
 {
-  AES_VALIDATE(ctx != NULL);
-
   memset(ctx, 0, sizeof(mbedtls_aes_context) );
 }
 
@@ -90,8 +82,6 @@ void mbedtls_aes_free(mbedtls_aes_context *ctx)
 #if defined(MBEDTLS_CIPHER_MODE_XTS)
 void mbedtls_aes_xts_init(mbedtls_aes_xts_context *ctx)
 {
-  AES_VALIDATE(ctx != NULL);
-
   mbedtls_aes_init(&ctx->crypt);
   mbedtls_aes_init(&ctx->tweak);
 }
@@ -139,9 +129,6 @@ int mbedtls_aes_xts_setkey_enc(mbedtls_aes_xts_context *ctx,
   const unsigned char *key2 = NULL;
   unsigned int key1bits = 0;
   unsigned int key2bits = 0;
-
-  AES_VALIDATE_RET(ctx != NULL);
-  AES_VALIDATE_RET(key != NULL);
 
   ret = mbedtls_aes_xts_decode_keys(key, keybits, &key1, &key1bits,
                                     &key2, &key2bits);
@@ -258,11 +245,6 @@ int mbedtls_aes_crypt_xts(mbedtls_aes_xts_context *ctx,
   unsigned char prev_tweak[16];
   unsigned char tmp[16];
 
-  AES_VALIDATE_RET(ctx != NULL);
-  AES_VALIDATE_RET(data_unit != NULL);
-  AES_VALIDATE_RET(input != NULL);
-  AES_VALIDATE_RET(output != NULL);
-
   if ((mode != MBEDTLS_AES_ENCRYPT) && (mode != MBEDTLS_AES_DECRYPT)) {
     return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
   }
@@ -366,9 +348,6 @@ int mbedtls_aes_setkey_enc(mbedtls_aes_context *ctx,
                            const unsigned char *key,
                            unsigned int keybits)
 {
-  AES_VALIDATE_RET(ctx != NULL);
-  AES_VALIDATE_RET(key != NULL);
-
   memset(ctx, 0, sizeof(mbedtls_aes_context) );
 
   if ( (128UL != keybits) && (192UL != keybits) && (256UL != keybits) ) {
@@ -389,9 +368,6 @@ int mbedtls_aes_setkey_dec(mbedtls_aes_context *ctx,
                            const unsigned char *key,
                            unsigned int keybits)
 {
-  AES_VALIDATE_RET(ctx != NULL);
-  AES_VALIDATE_RET(key != NULL);
-
   return mbedtls_aes_setkey_enc(ctx, key, keybits);
 }
 
@@ -404,10 +380,6 @@ int mbedtls_aes_crypt_ecb(mbedtls_aes_context *ctx,
                           unsigned char output[16])
 {
   sli_se_mailbox_response_t command_status;
-
-  AES_VALIDATE_RET(ctx != NULL);
-  AES_VALIDATE_RET(input != NULL);
-  AES_VALIDATE_RET(output != NULL);
 
   if ((mode != MBEDTLS_AES_ENCRYPT) && (mode != MBEDTLS_AES_DECRYPT)) {
     return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
@@ -434,7 +406,7 @@ int mbedtls_aes_crypt_ecb(mbedtls_aes_context *ctx,
   }
 
   sli_se_mailbox_execute_command(&command);
-  command_status = sli_se_mailbox_read_response();
+  command_status = sli_se_handle_mailbox_response();
 
   se_management_release();
 
@@ -458,11 +430,6 @@ int mbedtls_aes_crypt_cbc(mbedtls_aes_context *ctx,
                           unsigned char *output)
 {
   sli_se_mailbox_response_t command_status;
-
-  AES_VALIDATE_RET(ctx != NULL);
-  AES_VALIDATE_RET(iv != NULL);
-  AES_VALIDATE_RET(input != NULL);
-  AES_VALIDATE_RET(output != NULL);
 
   if ((mode != MBEDTLS_AES_ENCRYPT) && (mode != MBEDTLS_AES_DECRYPT)) {
     return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
@@ -499,7 +466,7 @@ int mbedtls_aes_crypt_cbc(mbedtls_aes_context *ctx,
   }
 
   sli_se_mailbox_execute_command(&command);
-  command_status = sli_se_mailbox_read_response();
+  command_status = sli_se_handle_mailbox_response();
 
   se_management_release();
 
@@ -526,12 +493,6 @@ int mbedtls_aes_crypt_cfb128(mbedtls_aes_context *ctx,
   size_t n = iv_off ? *iv_off : 0;
   size_t processed = 0;
   sli_se_mailbox_response_t command_status = SLI_SE_RESPONSE_OK;
-
-  AES_VALIDATE_RET(ctx != NULL);
-  AES_VALIDATE_RET(iv_off != NULL);
-  AES_VALIDATE_RET(iv != NULL);
-  AES_VALIDATE_RET(input != NULL);
-  AES_VALIDATE_RET(output != NULL);
 
   if ((mode != MBEDTLS_AES_ENCRYPT) && (mode != MBEDTLS_AES_DECRYPT)) {
     return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
@@ -583,7 +544,7 @@ int mbedtls_aes_crypt_cfb128(mbedtls_aes_context *ctx,
         }
 
         sli_se_mailbox_execute_command(&command);
-        command_status = sli_se_mailbox_read_response();
+        command_status = sli_se_handle_mailbox_response();
 
         se_management_release();
         processed += iterations * 16;
@@ -641,11 +602,6 @@ int mbedtls_aes_crypt_cfb8(mbedtls_aes_context *ctx,
   unsigned char ov[17];
   int ret = 0;
 
-  AES_VALIDATE_RET(ctx != NULL);
-  AES_VALIDATE_RET(iv != NULL);
-  AES_VALIDATE_RET(input != NULL);
-  AES_VALIDATE_RET(output != NULL);
-
   if ((mode != MBEDTLS_AES_ENCRYPT) && (mode != MBEDTLS_AES_DECRYPT)) {
     return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
   }
@@ -693,13 +649,6 @@ int mbedtls_aes_crypt_ctr(mbedtls_aes_context *ctx,
   size_t processed = 0;
   sli_se_mailbox_response_t command_status = SLI_SE_RESPONSE_OK;
 
-  AES_VALIDATE_RET(ctx != NULL);
-  AES_VALIDATE_RET(nc_off != NULL);
-  AES_VALIDATE_RET(nonce_counter != NULL);
-  AES_VALIDATE_RET(stream_block != NULL);
-  AES_VALIDATE_RET(input != NULL);
-  AES_VALIDATE_RET(output != NULL);
-
   if ( ctx->keybits != 128UL && ctx->keybits != 192UL && ctx->keybits != 256UL) {
     return MBEDTLS_ERR_AES_INVALID_KEY_LENGTH;
   }
@@ -736,7 +685,7 @@ int mbedtls_aes_crypt_ctr(mbedtls_aes_context *ctx,
         }
 
         sli_se_mailbox_execute_command(&command);
-        command_status = sli_se_mailbox_read_response();
+        command_status = sli_se_handle_mailbox_response();
 
         se_management_release();
         processed += iterations * 16;
@@ -798,12 +747,6 @@ int mbedtls_aes_crypt_ofb(mbedtls_aes_context *ctx,
 {
   int ret = 0;
   size_t n;
-
-  AES_VALIDATE_RET(ctx != NULL);
-  AES_VALIDATE_RET(iv_off != NULL);
-  AES_VALIDATE_RET(iv != NULL);
-  AES_VALIDATE_RET(input != NULL);
-  AES_VALIDATE_RET(output != NULL);
 
   n = *iv_off;
 

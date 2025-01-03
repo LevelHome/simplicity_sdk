@@ -67,13 +67,13 @@
 // <<< sl:start pin_tool >>>
 // <gpio capability=em2> SL_WAKE_LOCK_INPUT
 // $[GPIO_SL_WAKE_LOCK_INPUT]
-#define SL_WAKE_LOCK_INPUT_PORT                   gpioPortD
+#define SL_WAKE_LOCK_INPUT_PORT                   SL_GPIO_PORT_D
 #define SL_WAKE_LOCK_INPUT_PIN                    9
 // [GPIO_SL_DEEP_SLEEP]$
 
 // <gpio> SL_WAKE_LOCK_OUTPUT
 // $[GPIO_SL_WAKE_LOCK_OUTPUT]
-#define SL_WAKE_LOCK_OUTPUT_PORT                  gpioPortD
+#define SL_WAKE_LOCK_OUTPUT_PORT                  SL_GPIO_PORT_D
 #define SL_WAKE_LOCK_OUTPUT_PIN                   8
 // [GPIO_SL_WAKE_LOCK_OUTPUT]$
 

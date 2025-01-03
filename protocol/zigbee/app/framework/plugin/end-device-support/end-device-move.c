@@ -93,7 +93,7 @@ static void scheduleMoveEvent(void)
       || state->moveAttempts < SL_ZIGBEE_AF_REJOIN_ATTEMPTS_MAX) {
 #ifdef SL_CATALOG_ZIGBEE_NETWORK_FIND_SUB_GHZ_PRESENT
     if (state->moveAttempts >= MOVE_ATTEMPTS_BEFORE_TRYING_ALL_PAGES) {
-      sl_zigbee_af_app_println("%p %d: %d, page %d", "Schedule move nwk",
+      sl_zigbee_af_app_println("%s %d: %d, page %d", "Schedule move nwk",
                                networkIndex,
                                state->moveAttempts,
                                state->page);
@@ -120,8 +120,9 @@ static void scheduleMoveEvent(void)
   }
 }
 
-void sli_zigbee_af_end_device_support_move_init(void)
+void sli_zigbee_af_end_device_support_move_init(uint8_t init_level)
 {
+  (void) init_level;
   sl_zigbee_af_network_event_init(sl_zigbee_af_end_device_support_move_network_events,
                                   sl_zigbee_af_end_device_support_move_network_event_handler);
 }
@@ -329,7 +330,7 @@ void sl_zigbee_af_end_device_support_move_network_event_handler(sl_zigbee_af_eve
                                              channels,
                                              SL_ZIGBEE_AF_REJOIN_DUE_TO_END_DEVICE_MOVE,
                                              SL_ZIGBEE_DEVICE_TYPE_UNCHANGED);
-  sl_zigbee_af_debug_println("Move attempt %d nwk %d, channel mask 0x%4x: 0x%x",
+  sl_zigbee_af_debug_println("Move attempt %d nwk %d, channel mask 0x%08X: 0x%02X",
                              state->moveAttempts,
                              networkIndex,
                              channels,

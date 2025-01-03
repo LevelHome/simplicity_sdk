@@ -19,3 +19,6 @@ provides:
   - name: bootloader_delay_driver
   - name: bootloader_nonsecure_incompatible
     condition: [bootloader_core_nonsecure]
+metadata:
+  sbom:
+    license: MSLA

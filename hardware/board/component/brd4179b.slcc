@@ -20,6 +20,8 @@
   - name: hardware_board_from_slwrb4179b
   - name: hardware_board_has_efp
   - name: hardware_board_has_vcom
+  - name: hardware_board_has_uart
+  - name: board_config_clock_manager
   - name: hardware_board_has_hfxo_freq_38.4mhz
   - name: hardware_board_has_hfxo
   - name: hardware_board_has_lfxo

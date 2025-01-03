@@ -1,9 +1,9 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_wisun_meter.h
+ * @brief Wi-SUN Meter
  *******************************************************************************
  * # License
- * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __SL_WISUN_METER_H__
-#define __SL_WISUN_METER_H__
+#ifndef SL_WISUN_METER_H
+#define SL_WISUN_METER_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,31 +39,9 @@ extern "C" {
 //                                   Includes
 // -----------------------------------------------------------------------------
 
-#include <inttypes.h>
-#include "socket/socket.h"
-#include "sli_wisun_meter_collector.h"
-#include "sl_wisun_meter_collector_config.h"
-#include "sl_component_catalog.h"
-
-#if defined(SL_CATALOG_WISUN_COAP_PRESENT)
-#include "sl_wisun_coap_config.h"
-#endif
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
-#ifndef SL_WISUN_COAP_MC_OPTIMIZED_MODE_ENABLE
-#if defined(SL_CATALOG_WISUN_COAP_PRESENT)
-  #define SL_WISUN_COAP_MC_OPTIMIZED_MODE_ENABLE !SL_WISUN_COAP_RESOURCE_HND_SERVICE_ENABLE
-#else
-  #define SL_WISUN_COAP_MC_OPTIMIZED_MODE_ENABLE 1
-#endif
-#endif
-
-/// Size of the meter rx buffers in bytes
-#define SL_WISUN_METER_RX_BUFFER_LEN                                       512U
-
-/// Size of the meter tx buffers in bytes
-#define SL_WISUN_METER_TX_BUFFER_LEN                                       1232U
 
 // -----------------------------------------------------------------------------
 //                                Global Variables
@@ -74,88 +52,20 @@ extern "C" {
 // -----------------------------------------------------------------------------
 
 /**************************************************************************//**
- * @brief Generate packet id for packet.
- * @details Weak implementation, user can override it
- * @param[out] packet packet
- *****************************************************************************/
-void sl_wisun_meter_gen_packet_id(sl_wisun_meter_packet_t *packet);
-
-/**************************************************************************//**
- * @brief Measure temperature and put it to the packet.
- * @details Weak implementation, user can override it
- * @param[out] packet packet
- *****************************************************************************/
-void sl_wisun_meter_get_temperature(sl_wisun_meter_packet_t *packet);
-
-/**************************************************************************//**
- * @brief Measure relative humidity and put it to the packet.
- * @details Weak implementation, user can override it
- * @param[out] packet packet
- *****************************************************************************/
-void sl_wisun_meter_get_humidity(sl_wisun_meter_packet_t *packet);
-
-/**************************************************************************//**
- * @brief Measure light and put it to the packet.
- * @details Weak implementation, user can override it
- * @param[out] packet packet
- *****************************************************************************/
-void sl_wisun_meter_get_light(sl_wisun_meter_packet_t *packet);
-
-#if SL_WISUN_COAP_MC_OPTIMIZED_MODE_ENABLE
-/**************************************************************************//**
- * @brief Init meter component.
- * @details Init meter collector common component and RHT measurement
+ * @brief Init Meter component.
+ * @details Init Meter component resources
  *****************************************************************************/
 void sl_wisun_meter_init(void);
 
 /**************************************************************************//**
- * @brief Init common resources.
- * @details Function should be called in CoAP Meter init
- * @param[in] parser Parser callback
- * @param[in] build Build Callback
+ * @brief Meter loop function
+ * @details This function includes the entire Meter request handling and measurement.
+ *          The function is called in the application thread.
  *****************************************************************************/
-void sl_wisun_meter_init_common_resources(sl_wisun_meter_parse_t parser,
-                                          sl_wisun_meter_build_hnd_t build);
-
-/**************************************************************************//**
- * @brief Register Collector.
- * @details Add collector to the collector storage to handle in measurement loop
- * @param[in] coll_addr meter address structure
- * @return SL_STATUS_OK meter has been successfully added
- * @return SL_STATUS_ALREADY_EXISTS collector had already been added
- * @return SL_STATUS_FAIL on error
- *****************************************************************************/
-sl_status_t sl_wisun_meter_register_collector(const sockaddr_in6_t * const coll_addr);
-
-/**************************************************************************//**
- * @brief Remove Collector.
- * @details Remove registered collector from the registered collector storage
- * @param[in] coll_addr collector address structure
- * @return SL_STATUS_OK collector has been successfully removed
- * @return SL_STATUS_FAIL on error
- *****************************************************************************/
-sl_status_t sl_wisun_meter_remove_collector(const sockaddr_in6_t * const coll_addr);
-
-/**************************************************************************//**
- * @brief Error handler
- * @details Weak implementation, user can override it
- * @param[in] status Return code of the previous function
- * @param[in] socket_id Socket used for data transmission
- * @param[in] storage Pointer to the measurement data storage
- *****************************************************************************/
-void sl_wisun_meter_error_handler(const sl_status_t status,
-                                  const int32_t socket_id,
-                                  sl_wisun_meter_packet_storage_t *storage);
-
-/**************************************************************************//**
- * @brief Meter functional process
- * @details It processes the functionality of meter application.
- *****************************************************************************/
-void sl_wisun_meter_process(void);
-#endif
+void sl_wisun_meter_loop(void);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif // SL_WISUN_METER_H

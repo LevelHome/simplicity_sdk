@@ -14,9 +14,9 @@
  * sections of the MSLA applicable to Source Code.
  *
  ******************************************************************************/
-#ifdef UC_BUILD
+#ifdef SL_COMPONENT_CATALOG_PRESENT
 #include "sl_component_catalog.h"
-#endif // UC_BUILD
+#endif // SL_COMPONENT_CATALOG_PRESENT
 #include "app/framework/include/af.h"
 
 #ifdef SL_CATALOG_ZIGBEE_GREEN_POWER_CLIENT_CLI_PRESENT
@@ -59,12 +59,12 @@ WEAK(void sl_zigbee_af_green_power_client_print_proxy_table(SL_CLI_COMMAND_ARG))
       return;
     }
     if (entry.status == SL_ZIGBEE_GP_PROXY_TABLE_ENTRY_STATUS_ACTIVE) {
-      sl_zigbee_af_core_print("%d opt:%4x seco:%x srcID:%4x ", i, entry.options, entry.securityOptions, entry.gpd.id.sourceId);
+      sl_zigbee_af_core_print("%d opt:%08X seco:%02X srcID:%08X ", i, entry.options, entry.securityOptions, entry.gpd.id.sourceId);
       for (j = 0; j < 2; j++) {
         if (entry.sinkList[j].type == SL_ZIGBEE_GP_SINK_TYPE_UNUSED) {
           sl_zigbee_af_core_print("unused");
         } else if (entry.sinkList[j].type == SL_ZIGBEE_GP_SINK_TYPE_GROUPCAST) {
-          sl_zigbee_af_core_print("GC %2x", entry.sinkList[j].target.groupcast.groupID);
+          sl_zigbee_af_core_print("GC %04X", entry.sinkList[j].target.groupcast.groupID);
         } else if (entry.sinkList[j].type == SL_ZIGBEE_GP_SINK_TYPE_LW_UNICAST) {
           sl_zigbee_af_core_print("LU:");
           sl_zigbee_af_print_big_endian_eui64(entry.sinkList[j].target.unicast.sinkEUI);
@@ -73,17 +73,17 @@ WEAK(void sl_zigbee_af_green_power_client_print_proxy_table(SL_CLI_COMMAND_ARG))
       }
       sl_zigbee_af_core_print(" ");
       for (j = 0; j < SL_ZIGBEE_ENCRYPTION_KEY_SIZE; j++) {
-        sl_zigbee_af_core_print("%x", entry.gpdKey.contents[j]);
+        sl_zigbee_af_core_print("%02X", entry.gpdKey.contents[j]);
       }
       sl_zigbee_af_core_print(" ");
-      sl_zigbee_af_core_print("%x", entry.gpdSecurityFrameCounter);
+      sl_zigbee_af_core_print("%02X", entry.gpdSecurityFrameCounter);
       sl_zigbee_af_core_print("\n");
     }
   }
 #endif // SL_CATALOG_ZIGBEE_AF_SUPPORT_PRESENT
 }
 
-WEAK(void sl_zigbee_af_green_power_client_clear_proxy_table(void))
+WEAK(void sl_zigbee_af_green_power_client_clear_proxy_table_command(SL_CLI_COMMAND_ARG))
 {
 #ifdef SL_CATALOG_ZIGBEE_AF_SUPPORT_PRESENT
   uint16_t proxyTableSize = 0;
@@ -152,7 +152,7 @@ WEAK(void sl_zigbee_af_green_power_server_cli_sink_table_print(SL_CLI_COMMAND_AR
     if (status == SL_STATUS_OK
         && entry.status == SL_ZIGBEE_GP_SINK_TABLE_ENTRY_STATUS_ACTIVE) {
       tableEmpty = false;
-      sl_zigbee_af_core_println("%x %2x %x %4x %x %x %2x %x %x %4x",
+      sl_zigbee_af_core_println("%02X %04X %02X %08X %02X %02X %04X %02X %02X %08X",
                                 entry.status,
                                 entry.options,
                                 entry.gpd.applicationId,

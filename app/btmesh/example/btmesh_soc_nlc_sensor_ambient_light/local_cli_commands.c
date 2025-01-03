@@ -50,7 +50,7 @@ void info(sl_cli_command_arg_t *arguments)
   uint8_t address_type;
   uuid_128 uuid;
 
-  sl_status_t sc = sl_bt_system_get_identity_address(&address, &address_type);
+  sl_status_t sc = sl_bt_gap_get_identity_address(&address, &address_type);
   app_assert_status_f(sc, "Failed to get Bluetooth address");
   app_log("Bluetooth %s address: %02X:%02X:%02X:%02X:%02X:%02X" APP_LOG_NL,
           address_type ? "static random" : "public device",

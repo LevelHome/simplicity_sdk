@@ -67,15 +67,13 @@ IotI2CDescriptor_t iot_i2c_desc[] = {
     .ucPeripheralNo    = IOT_I2C_CFG_{{ instance | upper }}_PERIPHERAL_NO,
 
     /* SCL port/pin */
-    .xSclPort          = IOT_I2C_CFG_{{ instance | upper }}_SCL_PORT,
-    .ucSclPin          = IOT_I2C_CFG_{{ instance | upper }}_SCL_PIN,
+    .SclGpio           = {.port = IOT_I2C_CFG_{{ instance | upper }}_SCL_PORT, .pin = IOT_I2C_CFG_{{ instance | upper }}_SCL_PIN},
 #if (_SILICON_LABS_32B_SERIES < 2)
     .ucSclLoc          = IOT_I2C_CFG_{{ instance | upper }}_SCL_LOC,
 #endif
 
     /* SDA port/pin */
-    .xSdaPort          = IOT_I2C_CFG_{{ instance | upper }}_SDA_PORT,
-    .ucSdaPin          = IOT_I2C_CFG_{{ instance | upper }}_SDA_PIN,
+    .SdaGpio           = {.port = IOT_I2C_CFG_{{ instance | upper }}_SDA_PORT, .pin = IOT_I2C_CFG_{{ instance | upper }}_SDA_PIN},
 #if (_SILICON_LABS_32B_SERIES < 2)
     .ucSdaLoc          = IOT_I2C_CFG_{{ instance | upper }}_SDA_LOC,
 #endif
@@ -83,8 +81,7 @@ IotI2CDescriptor_t iot_i2c_desc[] = {
     /* EN port/pin */
 #ifdef IOT_I2C_CFG_{{ instance | upper }}_EN_PORT
     .ucEnMode          = 1,
-    .xEnPort           = IOT_I2C_CFG_{{ instance | upper }}_EN_PORT,
-    .ucEnPin           = IOT_I2C_CFG_{{ instance | upper }}_EN_PIN,
+    .EnGpio            = {.port = IOT_I2C_CFG_{{ instance | upper }}_EN_PORT, .pin = IOT_I2C_CFG_{{ instance | upper }}_EN_PIN,
 #endif
 
     /* clocks and IRQ lines (I2C0) */

@@ -27,6 +27,7 @@
  * 3. This notice may not be removed or altered from any source distribution.
  *
  ******************************************************************************/
+#include "sl_cpc_journal.h"
 
 // <<< Use Configuration Wizard in Context Menu >>>
 

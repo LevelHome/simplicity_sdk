@@ -181,6 +181,8 @@ class Profile_Sigfox_TX(IProfile):
         buildFecInputs(model, profile)
 
     def profile_calculate(self, model):
+        model.vars.protocol_id.value_forced = model.vars.protocol_id.var_enum.Sigfox
+
         model.vars.diff_encoding_mode.value_forced = model.vars.diff_encoding_mode.var_enum.DISABLED
         model.vars.symbol_encoding.value_forced = model.vars.symbol_encoding.var_enum.NRZ
         model.vars.modulation_type.value_forced = model.vars.modulation_type.var_enum.DBPSK

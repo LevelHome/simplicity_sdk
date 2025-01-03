@@ -27,10 +27,17 @@
  * 3. This notice may not be removed or altered from any source distribution.
  *
  ******************************************************************************/
+#include <stdio.h>
 #include <stddef.h>
-#include "em_common.h"
+#include <string.h>
+#include "sl_common.h"
+#include "esl_tag_log.h"
 #include "esl_tag_core.h"
 #include "esl_tag_image_core.h"
+#include "sl_component_catalog.h"
+#ifdef SL_CATALOG_OTF_DECOMPRESSOR_PRESENT
+#include "otf_decompressor.h"
+#endif // SL_CATALOG_OTF_DECOMPRESSOR_PRESENT
 
 SL_WEAK void esl_image_init(void)
 {
@@ -60,4 +67,41 @@ SL_WEAK uint8_t esl_image_get_count(void)
 
 SL_WEAK void esl_image_reset_storage(void)
 {
+}
+
+void esl_image_unpack_init(void)
+{
+#ifdef SL_CATALOG_OTF_DECOMPRESSOR_PRESENT
+  // (re)initialize decompressor on start
+  otf_unpack_init();
+#endif // SL_CATALOG_OTF_DECOMPRESSOR_PRESENT
+}
+
+sl_status_t esl_image_unpack_chunk(const void *code,
+                                   const size_t chunk_size,
+                                   void *data,
+                                   size_t data_offset,
+                                   size_t data_length,
+                                   size_t* decompressed_length)
+{
+#ifdef SL_CATALOG_OTF_DECOMPRESSOR_PRESENT
+  return otf_unpack_chunk(code, chunk_size,
+                          data, data_offset, data_length,
+                          decompressed_length);
+#else
+  // check for overflow condition
+  if ((data_offset + chunk_size) > data_length) {
+    sl_bt_esl_log(ESL_LOG_COMPONENT_RAM_IMAGE,
+                  ESL_LOG_LEVEL_ERROR,
+                  "Image size overflow!");
+    return SL_STATUS_WOULD_OVERFLOW;
+  } else {
+    // throw an usage assert - only if ESL CLI Test harness component is present
+    sl_bt_esl_assert(decompressed_length != NULL);
+    // store the data, otherwise
+    memcpy(((uint8_t *)data + data_offset), code, chunk_size);
+    *decompressed_length = chunk_size;
+    return SL_STATUS_OK;
+  }
+#endif // SL_CATALOG_OTF_DECOMPRESSOR_PRESENT
 }

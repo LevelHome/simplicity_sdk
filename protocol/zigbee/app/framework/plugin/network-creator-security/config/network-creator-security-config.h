@@ -43,6 +43,11 @@
 // <i> The TC will allow rejoining of a device using the well known key for the seconds mentioned here unless it has been set to 0 in which case trust center rejoin with well known key will be allowed forever.
 #define SL_ZIGBEE_AF_PLUGIN_NETWORK_CREATOR_SECURITY_ALLOW_TC_REJOINS_USING_WELL_KNOWN_KEY_TIMEOUT_SEC   0
 
+// <q SL_ZIGBEE_AF_PLUGIN_NETWORK_CREATOR_SECURITY_ALLOW_TC_USING_HASHED_LINK_KEY> Allow Trust Center using hashed link key instead of generating new link key.
+// <i> Default: FALSE
+// <i> Set this option to allow TC using hashed link key.
+#define SL_ZIGBEE_AF_PLUGIN_NETWORK_CREATOR_SECURITY_ALLOW_TC_USING_HASHED_LINK_KEY   0
+
 // </h>
 
 // <<< end of configuration section >>>

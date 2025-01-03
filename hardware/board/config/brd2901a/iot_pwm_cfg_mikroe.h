@@ -63,7 +63,7 @@
 #define IOT_PWM_CFG_MIKROE_PERIPHERAL_NO         3
 
 // TIMER3 CC0 on PC04
-#define IOT_PWM_CFG_MIKROE_CC0_PORT              gpioPortC
+#define IOT_PWM_CFG_MIKROE_CC0_PORT              SL_GPIO_PORT_C
 #define IOT_PWM_CFG_MIKROE_CC0_PIN               4
 
 

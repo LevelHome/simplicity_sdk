@@ -34,12 +34,17 @@
 #include "zaf_protocol_config.h"
 #include "ZW_TransportEndpoint.h"
 
-#ifdef SL_CATALOG_ZW_CLI_COMMON_PRESENT
-#include "app_cli.h"
+#ifdef SL_CATALOG_ZW_CLI_SLEEPING_PRESENT
+#include "zw_cli_sleeping.h"
+#include "zw_cli_sleeping_config.h"
 #endif
 
 #ifdef DEBUGPRINT
 #include "ZAF_PrintAppInfo.h"
+#endif
+
+#if (!defined(SL_CATALOG_SILICON_LABS_ZWAVE_APPLICATION_PRESENT) && !defined(UNIT_TEST))
+#include "app_hw.h"
 #endif
 
 #ifdef DEBUGPRINT
@@ -108,6 +113,7 @@ ApplicationInit(__attribute__((unused)) zpal_reset_reason_t eResetReason)
 void
 ApplicationTask(SApplicationHandles* pAppHandles)
 {
+  uint32_t unhandledEvents = 0;
   zpal_reset_reason_t resetReason;
 
   DPRINT("Multilevel Sensor Main App/Task started!\n");
@@ -118,7 +124,10 @@ ApplicationTask(SApplicationHandles* pAppHandles)
   ZAF_PrintAppInfo();
 #endif
 
+#if (!defined(SL_CATALOG_SILICON_LABS_ZWAVE_APPLICATION_PRESENT) && !defined(UNIT_TEST))
+  /* This preprocessor statement can be deleted from the source code */
   app_hw_init();
+#endif
 
   resetReason = GetResetReason();
 
@@ -151,8 +160,11 @@ ApplicationTask(SApplicationHandles* pAppHandles)
   DPRINTF("IsWakeupCausedByRtccTimeout=%s\n", (IsWakeupCausedByRtccTimeout()) ? "true" : "false");
   DPRINTF("CompletedSleepDurationMs   =%u\n", GetCompletedSleepDurationMs());
 
-#ifdef SL_CATALOG_ZW_CLI_COMMON_PRESENT
-  cli_util_prevent_sleeping(true);
+#ifdef SL_CATALOG_ZW_CLI_SLEEPING_PRESENT
+  // Stay awake to allow user to send the prevent sleeping command through the CLI
+  if (GetResetReason() == ZPAL_RESET_REASON_PIN) {
+    zw_cli_sleeping_util_prevent_sleeping_timeout(ZW_CLI_SLEEPING_WAKEUP_TIME_AFTER_RESET);
+  }
 #endif
 
   // Change the zpal_pm_device_type here so that the device can reach the lowest level of power consumption
@@ -161,8 +173,12 @@ ApplicationTask(SApplicationHandles* pAppHandles)
   // Wait for and process events
   DPRINT("Multilevel Sensor Event Distributor Started\n");
   for (;; ) {
-    if (false == zaf_event_distributor_distribute()) {
+    unhandledEvents = zaf_event_distributor_distribute();
+    if (0 != unhandledEvents) {
+      DPRINTF("Unhandled Events: 0x%08lx\n", unhandledEvents);
+#ifdef UNIT_TEST
       return;
+#endif
     }
   }
 }

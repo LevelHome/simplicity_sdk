@@ -144,7 +144,7 @@ void sl_zigbee_af_green_power_client_init_cb(uint8_t init_level)
 static void exitCommissioningMode(void)
 {
   commissioningState.inCommissioningMode = false;
-  sl_zigbee_af_green_power_cluster_println("Exit comm for sink %2x", commissioningState.commissioningSink);
+  sl_zigbee_af_green_power_cluster_println("Exit comm for sink %04X", commissioningState.commissioningSink);
 
   flushGpTxQueue();
 }
@@ -298,10 +298,10 @@ static uint16_t storeProxyTableEntry(sl_zigbee_gp_proxy_table_entry_t *entry,
 //---------------------------
 // Command callbacks
 
-bool sli_zigbee_af_green_power_client_gp_proxy_commissioning_mode_command_handler(uint8_t options,
-                                                                                  uint16_t commissioningWindow,
-                                                                                  uint8_t channel,
-                                                                                  bool localCommandLoopback)
+sl_zigbee_af_zcl_request_status_t sli_zigbee_af_green_power_client_gp_proxy_commissioning_mode_command_handler(uint8_t options,
+                                                                                                               uint16_t commissioningWindow,
+                                                                                                               uint8_t channel,
+                                                                                                               bool localCommandLoopback)
 {
   bool enterCommissioningMode = (options
                                  & SL_ZIGBEE_AF_GP_PROXY_COMMISSIONING_MODE_OPTION_ACTION);
@@ -330,7 +330,7 @@ bool sli_zigbee_af_green_power_client_gp_proxy_commissioning_mode_command_handle
     commissioningState.gppCommissioningWindow = SL_ZIGBEE_AF_PLUGIN_GREEN_POWER_CLIENT_GPP_COMMISSIONING_WINDOW;
     commissioningState.exitMode = (sl_zigbee_af_green_power_client_commissioning_exit_mode_t) exitMode;
     commissioningState.unicastCommunication = unicastCommunication;
-    sl_zigbee_af_green_power_cluster_println("Enter comm for sink %2x", commissioningState.commissioningSink);
+    sl_zigbee_af_green_power_cluster_println("Enter comm for sink %04X", commissioningState.commissioningSink);
     if (commissioningState.exitMode & SL_ZIGBEE_AF_GPC_COMMISSIONING_EXIT_ON_COMMISSIONING_WINDOW_EXP) {
       // store the new commissioning window value and update our local default
       // one.
@@ -350,19 +350,19 @@ bool sli_zigbee_af_green_power_client_gp_proxy_commissioning_mode_command_handle
     // exit commissioning mode.
     exitCommissioningMode();
   }
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
 /*
  * Disable default response bit should be set per GP Spec 14-0563-08
  */
-bool sl_zigbee_af_green_power_cluster_gp_proxy_commissioning_mode_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_green_power_cluster_gp_proxy_commissioning_mode_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_green_power_cluster_gp_proxy_commissioning_mode_command_t cmd_data;
 
   if (zcl_decode_green_power_cluster_gp_proxy_commissioning_mode_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   return sli_zigbee_af_green_power_client_gp_proxy_commissioning_mode_command_handler(cmd_data.options,
@@ -374,7 +374,7 @@ bool sl_zigbee_af_green_power_cluster_gp_proxy_commissioning_mode_cb(sl_zigbee_a
 /*
  * Disable default response should be enabled in the sending message.
  */
-bool sl_zigbee_af_green_power_cluster_gp_pairing_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_green_power_cluster_gp_pairing_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_green_power_cluster_gp_pairing_command_t cmd_data;
   uint8_t securityLevel;
@@ -386,7 +386,7 @@ bool sl_zigbee_af_green_power_cluster_gp_pairing_cb(sl_zigbee_af_cluster_command
 
   if (zcl_decode_green_power_cluster_gp_pairing_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   securityLevel = ((cmd_data.options & SL_ZIGBEE_AF_GP_PAIRING_OPTION_SECURITY_LEVEL)
@@ -414,7 +414,7 @@ bool sl_zigbee_af_green_power_cluster_gp_pairing_cb(sl_zigbee_af_cluster_command
                                   cmd_data.endpoint)
       || IS_GPD_SRC_ID_ZERO(appId, cmd_data.gpdSrcId)) {
     // GPD Address or App Id are invalid, so drop the command
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
   }
 
   sl_zigbee_af_core_print("GP Pairing\n");
@@ -433,6 +433,7 @@ bool sl_zigbee_af_green_power_cluster_gp_pairing_cb(sl_zigbee_af_cluster_command
     //  -In case of broadcast GP Pairing, the proxy SHALL silently drop the frame.
     //  If RemoveGPD options bit is set the comms mode is not valid so ignore this test
     if (broadcast == true) {
+      return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
       // Silently drop it as its a broadcast
     } else {
       //send default response for unicast pairing
@@ -441,7 +442,7 @@ bool sl_zigbee_af_green_power_cluster_gp_pairing_cb(sl_zigbee_af_cluster_command
   } else {
     // Step b:
 
-    sl_zigbee_af_green_power_cluster_println("GP Pairing SRCID = %4x, Opt= %u Sink = %2x", addr.id.sourceId, cmd_data.options, cmd_data.sinkNwkAddress);
+    sl_zigbee_af_green_power_cluster_println("GP Pairing SRCID = %08X, Opt= %u Sink = %04X", addr.id.sourceId, cmd_data.options, cmd_data.sinkNwkAddress);
 
     createdPairing = sl_zigbee_gp_proxy_table_process_gp_pairing(cmd_data.options,
                                                                  &addr,
@@ -481,7 +482,7 @@ bool sl_zigbee_af_green_power_cluster_gp_pairing_cb(sl_zigbee_af_cluster_command
         for (uint8_t entryIndex = 0; entryIndex < SL_ZIGBEE_GP_PROXY_TABLE_SIZE; entryIndex++) {
           sl_zigbee_gp_proxy_table_get_entry(entryIndex, &entry);
           if (entry.status == SL_ZIGBEE_GP_PROXY_TABLE_ENTRY_STATUS_UNUSED) {
-            return true; // We have an unused entry so we don't need to send a DR for full
+            return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED; // We have an unused entry so we don't need to send a DR for full
           }
         }
         sl_zigbee_af_green_power_cluster_println("ERR PROXY TABLE FULL");
@@ -490,16 +491,16 @@ bool sl_zigbee_af_green_power_cluster_gp_pairing_cb(sl_zigbee_af_cluster_command
     }
 #endif
   }
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
-bool sl_zigbee_af_green_power_cluster_gp_response_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_green_power_cluster_gp_response_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_green_power_cluster_gp_response_command_t cmd_data;
 
   if (zcl_decode_green_power_cluster_gp_response_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   sl_zigbee_gp_application_id_t appId = (cmd_data.options & SL_ZIGBEE_AF_GP_RESPONSE_OPTION_APPLICATION_ID);
@@ -521,7 +522,7 @@ bool sl_zigbee_af_green_power_cluster_gp_response_cb(sl_zigbee_af_cluster_comman
           && cmd_data.gpdCommandId == SL_ZIGBEE_ZCL_GP_GPDF_CHANNEL_CONFIGURATION)) {
     // GPD Address or App Id are invalid and
     // SrcId is only 0 for Channel configuration, else drop
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
   }
   sl_status_t result;
   switch (cmd_data.gpdCommandId) {
@@ -548,9 +549,9 @@ bool sl_zigbee_af_green_power_cluster_gp_response_cb(sl_zigbee_af_cluster_comman
 
           sl_zigbee_af_event_set_delay_ms(&channelEvent,
                                           GP_CHANNEL_EVENT_TIMEOUT_IN_MSEC);
-          return true;
+          return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
         } else {
-          return false;
+          return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
         }
       } else {
         //TODO clear firstToForward
@@ -575,7 +576,7 @@ bool sl_zigbee_af_green_power_cluster_gp_response_cb(sl_zigbee_af_cluster_comman
         if (result == SL_STATUS_OK) {
           sl_zigbee_af_green_power_cluster_println("success");
         } else {
-          sl_zigbee_af_green_power_cluster_println("fail %x", result);
+          sl_zigbee_af_green_power_cluster_println("fail %02X", result);
         }
       } else {
         sl_zigbee_af_green_power_cluster_println("Flush GP TX");
@@ -600,16 +601,16 @@ bool sl_zigbee_af_green_power_cluster_gp_response_cb(sl_zigbee_af_cluster_comman
         if (result == SL_STATUS_OK) {
           sl_zigbee_af_green_power_cluster_println("success");
         } else {
-          sl_zigbee_af_green_power_cluster_println("fail %x", result);
+          sl_zigbee_af_green_power_cluster_println("fail %02X", result);
         }
       }
       break;
     }
   }
-  kickout: return false;
+  kickout: return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 }
 
-bool sl_zigbee_af_green_power_cluster_gp_proxy_table_request_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_green_power_cluster_gp_proxy_table_request_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_green_power_cluster_gp_proxy_table_request_command_t cmd_data;
   uint8_t validEntriesCount = 0;
@@ -620,7 +621,7 @@ bool sl_zigbee_af_green_power_cluster_gp_proxy_table_request_cb(sl_zigbee_af_clu
 
   if (zcl_decode_green_power_cluster_gp_proxy_table_request_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   appId = cmd_data.options & SL_ZIGBEE_AF_GP_PROXY_TABLE_REQUEST_OPTIONS_APPLICATION_ID;
@@ -629,7 +630,7 @@ bool sl_zigbee_af_green_power_cluster_gp_proxy_table_request_cb(sl_zigbee_af_clu
 
   // only respond to unicast messages.
   if (sl_zigbee_af_current_command()->type != SL_ZIGBEE_INCOMING_UNICAST) {
-    goto kickout;
+    return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
   }
 
   if (SL_ZIGBEE_GP_PROXY_TABLE_SIZE == 0) {
@@ -638,12 +639,12 @@ bool sl_zigbee_af_green_power_cluster_gp_proxy_table_request_cb(sl_zigbee_af_clu
   }
 
   if (sl_zigbee_af_current_endpoint() != SL_ZIGBEE_GP_ENDPOINT) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   for (entryIndex = 0; entryIndex < SL_ZIGBEE_GP_PROXY_TABLE_SIZE; entryIndex++) {
     if (sl_zigbee_gp_proxy_table_get_entry(entryIndex, &entry) != SL_STATUS_OK) {
-      return false;
+      return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
     }
 
     if (entry.status != SL_ZIGBEE_GP_PROXY_TABLE_ENTRY_STATUS_UNUSED) {
@@ -681,7 +682,7 @@ bool sl_zigbee_af_green_power_cluster_gp_proxy_table_request_cb(sl_zigbee_af_clu
                                                                                   0xff,
                                                                                   1);
       if (sl_zigbee_gp_proxy_table_get_entry(entryIndex, &entry) != SL_STATUS_OK) {
-        return false;
+        return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
       }
 
       appResponseLength
@@ -709,7 +710,7 @@ bool sl_zigbee_af_green_power_cluster_gp_proxy_table_request_cb(sl_zigbee_af_clu
       uint16_t entriesCount = 0;
       for (entryIndex = 0; entryIndex < SL_ZIGBEE_GP_PROXY_TABLE_SIZE; entryIndex++) {
         if (sl_zigbee_gp_proxy_table_get_entry(entryIndex, &entry) != SL_STATUS_OK) {
-          return false;
+          return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
         }
 
         uint8_t  tempDatabuffer[SL_ZIGBEE_AF_RESPONSE_BUFFER_LEN];
@@ -749,7 +750,7 @@ bool sl_zigbee_af_green_power_cluster_gp_proxy_table_request_cb(sl_zigbee_af_clu
     }
   }
 
-  kickout:  return true;
+  kickout:  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
 bool sli_zigbee_af_green_power_client_retrieve_attribute_and_craft_response(uint8_t endpoint,
@@ -1488,12 +1489,12 @@ bool sli_zigbee_af_gp_message_checking(sl_zigbee_gp_address_t *gpAddr, uint8_t s
      if (macCap == SL_ZIGBEE_GP_GPD_MAC_SEQ_NUM_CAP_SEQUENTIAL) {
       uint8_t macSeqNum = (entry.gpdSecurityFrameCounter) & 0xFF;
       if (sequenceNumber <= macSeqNum) {
-        sl_zigbee_af_green_power_cluster_println("Drop frame due to invalid sequence number. incoming(0x%4X), current(0x%4X)", sequenceNumber, macSeqNum);
+        sl_zigbee_af_green_power_cluster_println("Drop frame due to invalid sequence number. incoming(0x%08X), current(0x%08X)", sequenceNumber, macSeqNum);
         return false;
       }
      } else { // SL_ZIGBEE_GP_GPD_MAC_SEQ_NUM_CAP_RANDOM
       if (sli_zigbee_af_green_power_find_duplicate_mac_seq_num(gpAddr, sequenceNumber)) {
-        sl_zigbee_af_green_power_cluster_println("Drop frame due to duplicate sequence number: 0x%4X", sequenceNumber);
+        sl_zigbee_af_green_power_cluster_println("Drop frame due to duplicate sequence number: 0x%08X", sequenceNumber);
         return false;
       }
      }
@@ -1501,7 +1502,7 @@ bool sli_zigbee_af_gp_message_checking(sl_zigbee_gp_address_t *gpAddr, uint8_t s
    || (securityLevel == SL_ZIGBEE_GP_SECURITY_LEVEL_FC_MIC_ENCRYPTED)) {
      // filter base on GPD security frame counter
      if (sequenceNumber <= entry.gpdSecurityFrameCounter) {
-      sl_zigbee_af_green_power_cluster_println("Drop frame due to lower sequence number: 0x%4X", sequenceNumber);
+      sl_zigbee_af_green_power_cluster_println("Drop frame due to lower sequence number: 0x%08X", sequenceNumber);
       return false;
      }
    */
@@ -1511,7 +1512,7 @@ bool sli_zigbee_af_gp_message_checking(sl_zigbee_gp_address_t *gpAddr, uint8_t s
 //GP-DATA.indication
 void sli_zigbee_af_green_power_client_gpep_incoming_message_callback(GP_PARAMS)
 {
-  //sl_zigbee_af_green_power_cluster_println("Gpep cmd %x status %x SFC %4x", gpdCommandId, status, gpdSecurityFrameCounter);
+  // sl_zigbee_af_green_power_cluster_println("Gpep cmd %x status %x SFC %4x, timestampe: %u", gpdCommandId, status, gpdSecurityFrameCounter, packetInfo->last_hop_timestamp);
   if ((commissioningState.channelStatus & GP_CLIENT_ON_TRANSMIT_CHANNEL_MASK)
       && gpdCommandId != SL_ZIGBEE_ZCL_GP_GPDF_CHANNEL_REQUEST) {
     //drop everything but a channel request when we're off on a different channel
@@ -1635,7 +1636,7 @@ void sl_zigbee_af_green_power_client_clear_proxy_table(void)
 
 void sli_zigbee_af_green_power_client_d_gp_sent_callback(sl_status_t status, uint8_t gpepHandle)
 {
-  sl_zigbee_af_green_power_cluster_println("sli_zigbee_stack_d_gp_sent_handler Status = %x", status);
+  sl_zigbee_af_green_power_cluster_println("sli_zigbee_stack_d_gp_sent_handler Status = %02X", status);
   if (status == SL_STATUS_OK
       && (commissioningState.channelStatus & GP_CLIENT_ON_TRANSMIT_CHANNEL_MASK)) {
     // Here, the sent event is for channel configuration delivery.
@@ -1659,36 +1660,34 @@ uint32_t sl_zigbee_af_green_power_cluster_client_command_parse(sl_service_opcode
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_GP_PAIRING_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_green_power_cluster_gp_pairing_cb(cmd);
+        status = sl_zigbee_af_green_power_cluster_gp_pairing_cb(cmd);
         break;
       }
       case ZCL_GP_PROXY_COMMISSIONING_MODE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_green_power_cluster_gp_proxy_commissioning_mode_cb(cmd);
+        status = sl_zigbee_af_green_power_cluster_gp_proxy_commissioning_mode_cb(cmd);
         break;
       }
       case ZCL_GP_RESPONSE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_green_power_cluster_gp_response_cb(cmd);
+        status = sl_zigbee_af_green_power_cluster_gp_response_cb(cmd);
         break;
       }
       case ZCL_GP_PROXY_TABLE_REQUEST_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_green_power_cluster_gp_proxy_table_request_cb(cmd);
+        status = sl_zigbee_af_green_power_cluster_gp_proxy_table_request_cb(cmd);
         break;
       }
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }
 
 WEAK(void sl_zigbee_af_green_power_client_gpdf_sink_table_based_forward_cb(sl_zigbee_gp_address_t *addr,

@@ -26,12 +26,10 @@
  * @{
  */
 
-#ifndef UC_BUILD
 // Define the values for DEBUG_LEVEL
 #define NO_DEBUG    0
 #define BASIC_DEBUG 1
 #define FULL_DEBUG  2
-#endif // UC_BUILD
 
 /** @brief This function is obsolete and no longer required to
  *  initialize the debug system.
@@ -41,7 +39,7 @@
  */
 #define sl_zigbee_debug_init(port) do {} while (false)
 
-#if (defined(DEBUG_LEVEL) && defined(BASIC_DEBUG) && (DEBUG_LEVEL >= BASIC_DEBUG)) || defined(DOXYGEN_SHOULD_SKIP_THIS) || defined(UC_BUILD)
+#if (defined(DEBUG_LEVEL) && defined(BASIC_DEBUG) && (DEBUG_LEVEL >= BASIC_DEBUG)) || defined(DOXYGEN_SHOULD_SKIP_THIS) || !defined(SL_ZIGBEE_SCRIPTED_TEST)
 
 #define DEBUG_ROUTINES_PRESENT
 
@@ -128,16 +126,16 @@ void sl_zigbee_debug_report_restore(bool state);
  * <tr><td align="right">%%</td><td>Percent sign</td></tr>
  * <tr><td align="right">%%c</td><td>Single-byte char</td></tr>
  * <tr><td align="right">%%s</td><td>RAM string</td></tr>
- * <tr><td align="right">%%p</td><td>Flash string (does not follow the printf standard)</td></tr>
+ * <tr><td align="right">%%s</td><td>Flash string (does not follow the printf standard)</td></tr>
  * <tr><td align="right">%%u</td><td>Two-byte unsigned decimal</td></tr>
  * <tr><td align="right">%%d</td><td>Two-byte signed decimal</td></tr>
- * <tr><td align="right">%%x, %%2x, %%4x </td><td>1-, 2-, 4-byte hex value (always 0 padded;
+ * <tr><td align="right">%%02X, %%04X, %%08X </td><td>1-, 2-, 4-byte hex value (always 0 padded;
  *         does not follow the printf standard)</td></tr>
  * </table>
  */
 void sl_zigbee_debug_printf(const char * formatString, ...);
 
-#else // (DEBUG_LEVEL >= BASIC_DEBUG) || defined(DOXYGEN_SHOULD_SKIP_THIS) || defined(UC_BUILD)
+#else // (DEBUG_LEVEL >= BASIC_DEBUG) || defined(DOXYGEN_SHOULD_SKIP_THIS) || !defined(SL_ZIGBEE_SCRIPTED_TEST)
   #define sl_zigbee_debug_assert(filename, linenumber) do {} while (false)
   #define sl_zigbee_debug_memory_dump(start, end) do {} while (false)
   #define sl_zigbee_debug_binary_printf(formatstring, ...) do {} while (false)
@@ -148,7 +146,7 @@ void sl_zigbee_debug_printf(const char * formatString, ...);
   #define sl_zigbee_debug_report_off() (false)
   #define sl_zigbee_debug_report_restore(state) do {} while (false)
   #define sl_zigbee_debug_printf(...) do {} while (false)
-#endif // (defined(DEBUG_LEVEL) && defined(BASIC_DEBUG) && (DEBUG_LEVEL >= BASIC_DEBUG)) || defined(DOXYGEN_SHOULD_SKIP_THIS) || defined(UC_BUILD)
+#endif // (defined(DEBUG_LEVEL) && defined(BASIC_DEBUG) && (DEBUG_LEVEL >= BASIC_DEBUG)) || defined(DOXYGEN_SHOULD_SKIP_THIS) || !defined(SL_ZIGBEE_SCRIPTED_TEST)
 
 /** @} END addtogroup */
 

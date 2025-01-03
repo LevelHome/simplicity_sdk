@@ -3,7 +3,7 @@
  * @brief Board HW abstraction header for BRD2601B
  *******************************************************************************
  * # License
- * <b>Copyright 2022 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -31,10 +31,6 @@
 #ifndef BOARD_H
 #define BOARD_H
 
-//--------------------------------
-#define BOARD_EM4WUEN_BTN  sl_button_btn1 // The button to use for EM4 wake-up
-
-//--------------------------------
 #define BOARD_RGBLED_COUNT 1    // Number of RGB LEDs on the board
 #define BOARD_RGBLED_MASK  0x01 // Bitmask corresponding to the only RGB LED the board has
 

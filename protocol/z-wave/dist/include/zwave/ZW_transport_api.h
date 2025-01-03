@@ -174,8 +174,8 @@ typedef struct _RECEIVE_OPTIONS_TYPE
   signed char rxRSSIVal;
   ///< Security key frame was received with.
   enum SECURITY_KEY securityKey;
-  ///< Channel on which frame was received
-  uint8_t rxChannelNo;
+  ///< CommunicationProfile used on receive
+  uint8_t rxSpeed;
   ///< Channel on which frame was received is a Z-Wave Long Range channel
   bool isLongRangeChannel;
   ///< Transmit power used by the source to transmit the frame

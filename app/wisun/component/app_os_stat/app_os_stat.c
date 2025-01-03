@@ -1,5 +1,5 @@
 /***************************************************************************//**
- * @file
+ * @file app_os_stat.c
  * @brief OS memory debug for application
  *******************************************************************************
  * # License
@@ -31,7 +31,6 @@
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <assert.h>
 #include <stdint.h>
 
@@ -56,26 +55,24 @@
 #warning 'SEGGER_RTT_PRINTF_BUFFER_SIZE' not set. (>= 512 recommended)
 #endif
 
-// Check OS config to get info about threafs
+// Check OS config to get info about threads
 #if APP_OS_STAT_THREAD_STACK_ENABLED
 #if defined(SL_CATALOG_MICRIUMOS_KERNEL_PRESENT)
   #if !OS_CFG_STAT_TASK_EN
-  #warning 'OS_CFG_STAT_TASK_EN' not enabled
+  #warning 'OS_CFG_STAT_TASK_EN' not enabled, no OS statistics can be gathered
   #endif
 
   #if !OS_CFG_DBG_EN
-  #warning 'OS_CFG_DBG_EN' not enabled
+  #warning 'OS_CFG_DBG_EN' not enabled, no OS statistics can be gathered
   #endif
 #endif
 
 #if defined(SL_CATALOG_FREERTOS_KERNEL_PRESENT)
   #if !configUSE_TRACE_FACILITY
-  #warning 'configUSE_TRACE_FACILITY' not enabled
+  #warning 'configUSE_TRACE_FACILITY' not enabled, no OS statistics can be gathered
   #endif
 #endif
 #endif
-
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -97,26 +94,31 @@
 /// App OS Thread stack statistic print format
 #if defined(SL_CATALOG_MICRIUMOS_KERNEL_PRESENT)
 #define APP_OS_THREAD_STACK_STAT_PRINT_FORMAT \
-  "\n" APP_OS_PRINT_PREFIX "[%s] Used/Tot: %lu/%lu"
+  APP_OS_PRINT_PREFIX "[%-25s] Used/Tot: %lu/%lu (%lu%%)\n"
 
 #elif defined(SL_CATALOG_FREERTOS_KERNEL_PRESENT)
 #define APP_OS_THREAD_STACK_STAT_PRINT_FORMAT \
-  "\n" APP_OS_PRINT_PREFIX "[%s] Free: %lu"
+  APP_OS_PRINT_PREFIX "[%s] Free: %lu\n"
 #endif
 
 /// App OS Heap statistic print format
-#define APP_OS_STAT_HEAP_PRINT_FORMAT \
-  "\n" APP_OS_PRINT_PREFIX "[heap]base_addr : 0x%x" \
-  "\n" APP_OS_PRINT_PREFIX "[heap]used_size : %lu" \
-  "\n" APP_OS_PRINT_PREFIX "[heap]free_size : %lu" \
-  "\n" APP_OS_PRINT_PREFIX "[heap]tot_size : %lu" \
-  "\n" APP_OS_PRINT_PREFIX "[heap]free_blk_cnt : %lu" \
-  "\n" APP_OS_PRINT_PREFIX "[heap]free_blk_lsize : %lu" \
-  "\n" APP_OS_PRINT_PREFIX "[heap]free_blk_ssize : %lu" \
-  "\n" APP_OS_PRINT_PREFIX "[heap]used_blk_cnt : %lu" \
-  "\n" APP_OS_PRINT_PREFIX "[heap]used_blk_lsize : %lu" \
-  "\n" APP_OS_PRINT_PREFIX "[heap]used_blk_ssize : %lu" \
-  "\n" APP_OS_PRINT_PREFIX "[heap]max_used : %lu"
+#if APP_OS_STAT_VERBOSE_MODE_ENABLED
+#define APP_OS_STAT_HEAP_PRINT_FORMAT                \
+  APP_OS_PRINT_PREFIX "[heap]base_addr : 0x%x\n"     \
+  APP_OS_PRINT_PREFIX "[heap]used_size : %lu\n"      \
+  APP_OS_PRINT_PREFIX "[heap]free_size : %lu\n"      \
+  APP_OS_PRINT_PREFIX "[heap]tot_size : %lu\n"       \
+  APP_OS_PRINT_PREFIX "[heap]free_blk_cnt : %lu\n"   \
+  APP_OS_PRINT_PREFIX "[heap]free_blk_lsize : %lu\n" \
+  APP_OS_PRINT_PREFIX "[heap]free_blk_ssize : %lu\n" \
+  APP_OS_PRINT_PREFIX "[heap]used_blk_cnt : %lu\n"   \
+  APP_OS_PRINT_PREFIX "[heap]used_blk_lsize : %lu\n" \
+  APP_OS_PRINT_PREFIX "[heap]used_blk_ssize : %lu\n" \
+  APP_OS_PRINT_PREFIX "[heap]max_used : %lu\n"
+#else
+#define APP_OS_STAT_HEAP_PRINT_FORMAT_SHORT \
+  APP_OS_PRINT_PREFIX "[heap]  addr 0x%.8lx   Used/Tot: %lu/%lu (%lu%%)\n"
+#endif
 
 /// App OS memory statistic
 typedef struct app_os_stat_mem {
@@ -166,8 +168,9 @@ static void _app_os_stat_thr_fnc(void *args);
  * @param[in,out] stat
  * @param[in] free Free space
  * @param[in] used Used space
+ * @return bool TRUE if statistics are changed, FALSE if do not
  ******************************************************************************/
-static void _update_stat(app_os_stat_mem_t * const stat,
+static bool _update_stat(app_os_stat_mem_t * const stat,
                          const uint32_t free,
                          const uint32_t used);
 
@@ -321,8 +324,10 @@ static void _app_os_stat_thr_fnc(void *args)
 #endif
 #endif
 
-  while (1) {
+  APP_OS_STAT_THREAD_LOOP {
+#if !APP_OS_STAT_ASYNC_MODE_ENABLED
     __print_rtt("\n");
+#endif
 
 // Print thread stack statistic
 #if APP_OS_STAT_THREAD_STACK_ENABLED
@@ -346,19 +351,30 @@ static void _app_os_stat_thr_fnc(void *args)
 #if APP_OS_STAT_HEAP_ENABLED
     _print_heap_stat();
 #endif
-
+#if !APP_OS_STAT_ASYNC_MODE_ENABLED
     __print_rtt("\n");
-    osDelay(APP_OS_STAT_UPDATE_PERIODE_TIME_MS);
+#endif
+    osDelay(APP_OS_STAT_UPDATE_PERIOD_TIME_MS);
   }
 }
 
-static void _update_stat(app_os_stat_mem_t * const stat, const uint32_t free, const uint32_t used)
+static bool _update_stat(app_os_stat_mem_t * const stat, const uint32_t free, const uint32_t used)
 {
+#if APP_OS_STAT_ASYNC_MODE_ENABLED
+  uint32_t previous_max_used = stat->max_used;
+#endif
+
   stat->max_free = stat->max_free < free ? free : stat->max_free;
   stat->min_free = stat->min_free > free ? free : stat->min_free;
 
   stat->max_used = stat->max_used < used ? used : stat->max_used;
   stat->min_used = stat->min_used > used ? used : stat->min_used;
+
+#if APP_OS_STAT_ASYNC_MODE_ENABLED
+  return (stat->max_used > previous_max_used);
+#else
+  return true;
+#endif
 }
 
 #if APP_OS_STAT_THREAD_STACK_ENABLED
@@ -381,15 +397,18 @@ static void _print_thread_stack_stat(app_os_stat_thread_t * const thr_stat)
   stack_free = osThreadGetStackSpace(thr_stat->id);
 #endif
 
-  // update minimum stack sapce
-  _update_stat(&thr_stat->stat, stack_free, stack_used);
+  // update min and max stack space
+  if (_update_stat(&thr_stat->stat, stack_free, stack_used)) {
 #if defined(SL_CATALOG_MICRIUMOS_KERNEL_PRESENT)
-  __print_rtt(APP_OS_THREAD_STACK_STAT_PRINT_FORMAT,
-              name == NULL ? "N/A" : name, stack_used, stack_size);
+    if (stack_size / 100 != 0) {
+      __print_rtt(APP_OS_THREAD_STACK_STAT_PRINT_FORMAT,
+                  name == NULL ? "N/A" : name, stack_used, stack_size, stack_used / (stack_size / 100));
+    }
 #elif defined(SL_CATALOG_FREERTOS_KERNEL_PRESENT)
-  __print_rtt(APP_OS_THREAD_STACK_STAT_PRINT_FORMAT,
-              name == NULL ? "N/A" : name, stack_free);
+    __print_rtt(APP_OS_THREAD_STACK_STAT_PRINT_FORMAT,
+                name == NULL ? "N/A" : name, stack_free);
 #endif
+  }
 }
 #endif
 
@@ -397,7 +416,18 @@ static void _print_thread_stack_stat(app_os_stat_thread_t * const thr_stat)
 static void _print_heap_stat(void)
 {
   static app_os_stat_heap_t heap = {
-    .minfo = { 0U },
+    .minfo = {
+      .base_addr = 0UL,
+      .used_size = 0UL,
+      .free_size = 0UL,
+      .total_size = 0UL,
+      .free_block_count = 0UL,
+      .free_block_largest_size = 0UL,
+      .free_block_smallest_size = 0UL,
+      .used_block_count = 0UL,
+      .used_block_largest_size = 0UL,
+      .used_block_smallest_size = 0UL
+    },
     .stat.max_free = 0UL,
     .stat.min_free = UINT32_MAX,
     .stat.max_used = 0UL,
@@ -408,19 +438,29 @@ static void _print_heap_stat(void)
   sl_memory_get_heap_info(&heap.minfo);
 
   // update statistic
-  _update_stat(&heap.stat, heap.minfo.free_size, heap.minfo.used_size);
-
-  __print_rtt(APP_OS_STAT_HEAP_PRINT_FORMAT,
-              heap.minfo.base_addr,
-              heap.minfo.used_size,
-              heap.minfo.free_size,
-              heap.minfo.total_size,
-              heap.minfo.free_block_count,
-              heap.minfo.free_block_largest_size,
-              heap.minfo.free_block_smallest_size,
-              heap.minfo.used_block_count,
-              heap.minfo.used_block_largest_size,
-              heap.minfo.used_block_smallest_size,
-              heap.stat.max_used);
+  if (_update_stat(&heap.stat, heap.minfo.free_size, heap.minfo.used_size)) {
+#if APP_OS_STAT_VERBOSE_MODE_ENABLED
+    __print_rtt(APP_OS_STAT_HEAP_PRINT_FORMAT,
+                heap.minfo.base_addr,
+                heap.minfo.used_size,
+                heap.minfo.free_size,
+                heap.minfo.total_size,
+                heap.minfo.free_block_count,
+                heap.minfo.free_block_largest_size,
+                heap.minfo.free_block_smallest_size,
+                heap.minfo.used_block_count,
+                heap.minfo.used_block_largest_size,
+                heap.minfo.used_block_smallest_size,
+                heap.stat.max_used);
+#else
+    if (heap.minfo.total_size / 100UL != 0UL) {
+      __print_rtt(APP_OS_STAT_HEAP_PRINT_FORMAT_SHORT,
+                  heap.minfo.base_addr,
+                  heap.minfo.used_size,
+                  heap.minfo.total_size,
+                  heap.minfo.used_size / (heap.minfo.total_size / 100UL));
+    }
+#endif
+  }
 }
 #endif

@@ -10,7 +10,7 @@ description: >
   Real Time Locating (RTL) library and a CS Reflector device role that can
   be instantiated or deleted with the CS specific user messages.
 category: Bluetooth Examples
-quality: evaluation
+quality: production
 
 filter:
   - name: "Wireless Technology"
@@ -39,7 +39,9 @@ component:
   - id: bluetooth_feature_dynamic_gattdb
   - id: bluetooth_feature_test
   - id: bluetooth_feature_cs
+  - id: bluetooth_utility_bgapi_trace
   - id: ncp
+  - id: ncp_user_cmd
   - id: uartdrv_usart
     instance:
       - vcom
@@ -49,29 +51,33 @@ component:
   - id: device_init
   - id: bootloader_interface
   - id: rtllib
-  - id: rail_util_cs_antenna_offset
+  - id: rail_util_ble_cs_antenna_offset
   - id: cs_reflector
   - id: cs_initiator
   - id: cs_antenna
-  - id: iostream_rtt
-  - id: bt_post_build
+  - id: iostream_bgapi_trace
+  - id: iostream_dummy
+    instance:
+      - mock
 
 source:
   - path: main.c
   - path: app.c
   - path: rtl_log.c
+  - path: extended_result.c
 
 include:
   - path: .
     file_list:
       - path: app.h
       - path: rtl_log.h
+      - path: extended_result.h
   - path: ../../common/cs_acp
     file_list:
       - path: cs_acp.h
   - path: ../../common/cs_initiator/inc
     file_list:
-      - path: cs_initiator_configurator.h
+      - path: cs_initiator_client.h
 
 readme:
   - path: readme.md
@@ -80,6 +86,16 @@ other_file:
   - path: image/readme_img0.png
 
 configuration:
+  - name: SL_CLOCK_MANAGER_HFRCO_DPLL_EN
+    value: 1
+  - name: SL_CLOCK_MANAGER_DPLL_FREQ
+    value: 80000000
+  - name: SL_CLOCK_MANAGER_SYSCLK_SOURCE
+    value: CMU_SYSCLKCTRL_CLKSEL_HFRCODPLL
+  - name: SL_CLOCK_MANAGER_HFXO_FREQ
+    value: 40000000
+    unless:
+      - hardware_board
   - name: SL_STACK_SIZE
     value: 2752
   - name: SL_BT_CONFIG_BUFFER_SIZE
@@ -100,6 +116,20 @@ configuration:
     value: "0"
     condition:
       - psa_crypto
+  - name: SL_BGAPI_TRACE_RTT_BUFFER_SIZE
+    value: 4096
+  - name: BUFFER_SIZE_UP
+    value: 4
+  - name: BUFFER_SIZE_DOWN
+    value: 4
+
+define:
+  - name: SLI_BGAPI_TRACE_DISABLE_AUTO_START
+    value: 1
+
+post_build:
+  - profile: bt_common
+    condition: [device_series_2, bootloader_app_properties]
 
 tag:
   - prebuilt_demo

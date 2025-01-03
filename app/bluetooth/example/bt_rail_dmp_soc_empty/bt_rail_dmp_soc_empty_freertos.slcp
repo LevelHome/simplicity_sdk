@@ -29,8 +29,12 @@ component:
   - id: bluetooth_feature_sm
   - id: bluetooth_feature_system
   - id: bootloader_interface
+    condition:
+      - device_series_2
   - id: mpu
   - id: in_place_ota_dfu
+    condition:
+      - device_series_2
   - id: rail_util_init
     instance:
       - inst0
@@ -38,25 +42,17 @@ component:
   - id: rail_lib_multiprotocol
   - id: radio_config_simple_rail_singlephy
   - id: app_assert
-  - id: iostream_usart
-    instance:
-      - vcom
-  - id: bt_rail_compatibility_fix
-  - id: bt_post_build
   - id: sl_system
   - id: clock_manager
   - id: device_init
-# ------------------ Require list ----------------------
-requires:
-  - name: printf
-    condition:
-      - sl_flex_assert
+  - id: sl_common
+
+conflicts:
+  - name: device_is_module
 
 source:
   - path: main.c
   - path: app.c
-    condition:
-      - bootloader_interface
   - path: app_bluetooth.c
   - path: freertos/app_proprietary.c
 
@@ -92,14 +88,17 @@ configuration:
     value: "2752"
   - name: SL_BOARD_ENABLE_VCOM
     value: "1"
+
   - name: SL_IOSTREAM_USART_VCOM_FLOW_CONTROL_TYPE
     value: "usartHwFlowControlNone"
-    condition:
-      - iostream_usart
   - name: SL_IOSTREAM_USART_VCOM_RESTRICT_ENERGY_MODE_TO_ALLOW_RECEPTION
     value: "0"
-    condition:
-      - iostream_usart
+
+  - name: SL_IOSTREAM_EUSART_VCOM_FLOW_CONTROL_TYPE
+    value: "SL_IOSTREAM_EUSART_UART_FLOW_CTRL_NONE"
+  - name: SL_IOSTREAM_EUSART_VCOM_RESTRICT_ENERGY_MODE_TO_ALLOW_RECEPTION
+    value: "0"
+
   # ---------------- FreeRTOS settings -----------------
   - name: configTOTAL_HEAP_SIZE
     value: "8192"
@@ -227,6 +226,10 @@ configuration:
   # ------------- Other project settings ---------------
   - name: APP_LOG_PREFIX_ENABLE
     value: "0"
+
+post_build:
+  - profile: bt_common
+    condition: [device_series_2, bootloader_app_properties]
 
 tag:
   - hardware:device:ram:64

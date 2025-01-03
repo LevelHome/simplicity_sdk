@@ -55,13 +55,7 @@
 #endif
 #endif
 
-#if defined(UARTDRV_USE_PERIPHERAL)
-#define EMDRV_UARTDRV_FLOW_CONTROL_ENABLE 0
-#include "sl_hal_gpio.h"
-#else
-#include "em_gpio.h"
-#endif
-
+#include "sl_gpio.h"
 #include "sl_clock_manager.h"
 #include "ecode.h"
 #include "uartdrv_config.h"
@@ -243,8 +237,8 @@ typedef struct {
 #elif defined(_USART_ROUTE_MASK)
   uint8_t                    portLocation;      ///< A location number for UART pins.
 #elif defined(_GPIO_USART_ROUTEEN_MASK)
-  GPIO_Port_TypeDef          txPort;            ///< Port for UART Tx pin.
-  GPIO_Port_TypeDef          rxPort;            ///< Port for UART Rx pin.
+  sl_gpio_port_t             txPort;            ///< Port for UART Tx pin.
+  sl_gpio_port_t             rxPort;            ///< Port for UART Rx pin.
   uint8_t                    txPin;             ///< Pin number for UART Tx.
   uint8_t                    rxPin;             ///< Pin number for UART Rx.
   uint8_t                    uartNum;           ///< UART instance number.
@@ -256,9 +250,9 @@ typedef struct {
   bool                       mvdis;             ///< Majority Vote Disable for 16x, 8x and 6x oversampling modes.
 #endif
   UARTDRV_FlowControlType_t  fcType;            ///< Flow control mode.
-  GPIO_Port_TypeDef          ctsPort;           ///< A CTS pin port number.
+  sl_gpio_port_t             ctsPort;           ///< A CTS pin port number.
   uint8_t                    ctsPin;            ///< A CTS pin number.
-  GPIO_Port_TypeDef          rtsPort;           ///< An RTS pin port number.
+  sl_gpio_port_t             rtsPort;           ///< An RTS pin port number.
   uint8_t                    rtsPin;            ///< An RTS pin number.
   UARTDRV_Buffer_FifoQueue_t *rxQueue;          ///< A receive operation queue.
   UARTDRV_Buffer_FifoQueue_t *txQueue;          ///< T transmit operation queue.
@@ -291,9 +285,9 @@ typedef struct {
   LEUART_Stopbits_TypeDef    stopBits;          ///< Number of stop bits
   LEUART_Parity_TypeDef      parity;            ///< Parity configuration
   UARTDRV_FlowControlType_t  fcType;            ///< Flow control mode
-  GPIO_Port_TypeDef          ctsPort;           ///< CTS pin port number
+  sl_gpio_port_t             ctsPort;           ///< CTS pin port number
   uint8_t                    ctsPin;            ///< CTS pin number
-  GPIO_Port_TypeDef          rtsPort;           ///< RTS pin port number
+  sl_gpio_port_t             rtsPort;           ///< RTS pin port number
   uint8_t                    rtsPin;            ///< RTS pin number
   UARTDRV_Buffer_FifoQueue_t *rxQueue;          ///< Receive operation queue
   UARTDRV_Buffer_FifoQueue_t *txQueue;          ///< Transmit operation queue
@@ -309,13 +303,8 @@ typedef struct {
   EUSART_TypeDef                  *port;                ///< The peripheral used for EUART
   bool                            useLowFrequencyMode;  ///< Clock configuration of the EUART
   uint32_t                        baudRate;             ///< EUART baud rate
-#if defined(UARTDRV_USE_PERIPHERAL)
   sl_gpio_port_t                  txPort;               ///< Port for UART Tx pin.
   sl_gpio_port_t                  rxPort;               ///< Port for UART Rx pin.
-#else
-  GPIO_Port_TypeDef               txPort;               ///< Port for UART Tx pin.
-  GPIO_Port_TypeDef               rxPort;               ///< Port for UART Rx pin.
-#endif
   uint8_t                         txPin;                ///< Pin number for UART Tx.
   uint8_t                         rxPin;                ///< Pin number for UART Rx.
   uint8_t                         uartNum;              ///< EUART instance number.
@@ -331,17 +320,10 @@ typedef struct {
   EUSART_MajorityVote_TypeDef     mvdis;                ///< Majority Vote Disable for 16x, 8x and 6x oversampling modes.
 #endif
   UARTDRV_FlowControlType_t       fcType;               ///< Flow control mode
-#if defined(UARTDRV_USE_PERIPHERAL)
   sl_gpio_port_t                  ctsPort;              ///< CTS pin port number
   uint8_t                         ctsPin;               ///< CTS pin number
   sl_gpio_port_t                  rtsPort;              ///< RTS pin port number
   uint8_t                         rtsPin;               ///< RTS pin number
-#else
-  GPIO_Port_TypeDef               ctsPort;              ///< CTS pin port number
-  uint8_t                         ctsPin;               ///< CTS pin number
-  GPIO_Port_TypeDef               rtsPort;              ///< RTS pin port number
-  uint8_t                         rtsPin;               ///< RTS pin number
-#endif
   UARTDRV_Buffer_FifoQueue_t      *rxQueue;             ///< Receive operation queue
   UARTDRV_Buffer_FifoQueue_t      *txQueue;             ///< Transmit operation queue
 } UARTDRV_InitEuart_t;
@@ -373,17 +355,11 @@ typedef struct UARTDRV_HandleData{
   UARTDRV_FlowControlState_t    fcSelfState;       // A current self flow control state
   UARTDRV_FlowControlState_t    fcSelfCfg;         // A self flow control override configuration
   UARTDRV_FlowControlState_t    fcPeerState;       // A current peer flow control state
-#if defined(UARTDRV_USE_PERIPHERAL)
+
   sl_gpio_port_t                txPort;            // A Tx pin port number
   sl_gpio_port_t                rxPort;            // An Rx pin port number
   sl_gpio_port_t                ctsPort;           // A CTS pin port number
   sl_gpio_port_t                rtsPort;           // An RTS pin port number
-#else
-  GPIO_Port_TypeDef             txPort;            // A Tx pin port number
-  GPIO_Port_TypeDef             rxPort;            // An Rx pin port number
-  GPIO_Port_TypeDef             ctsPort;           // A CTS pin port number
-  GPIO_Port_TypeDef             rtsPort;           // An RTS pin port number
-#endif
   uint8_t                       txPin;             // A Tx pin number
   uint8_t                       rxPin;             // An Tx pin number
   uint8_t                       ctsPin;            // A CTS pin number
@@ -482,6 +458,7 @@ Ecode_t UARTDRV_FlowControlSetPeerStatus(UARTDRV_Handle_t handle, UARTDRV_FlowCo
 Ecode_t UARTDRV_FlowControlIgnoreRestrain(UARTDRV_Handle_t handle);
 
 #if defined(SL_CATALOG_POWER_MANAGER_PRESENT) && !defined(SL_CATALOG_KERNEL_PRESENT)
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_UARTDRV, SL_CODE_CLASS_TIME_CRITICAL)
 sl_power_manager_on_isr_exit_t sl_uartdrv_sleep_on_isr_exit(void);
 #endif
 

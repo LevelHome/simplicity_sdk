@@ -28,7 +28,6 @@
 #endif
 
 #include "hal/hal.h"
-#include "app/util/serial/sl_zigbee_command_interpreter.h"
 #include "app/framework/include/af.h"
 
 #include <stdlib.h>

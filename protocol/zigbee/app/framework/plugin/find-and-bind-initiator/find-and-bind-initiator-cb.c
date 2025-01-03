@@ -47,5 +47,5 @@ WEAK(bool sl_zigbee_af_find_and_bind_initiator_bind_target_cb(sl_802154_short_ad
  */
 WEAK(void sl_zigbee_af_find_and_bind_initiator_complete_cb(sl_status_t status))
 {
-  sl_zigbee_af_core_println("Find and Bind Initiator: Complete: 0x%X", status);
+  sl_zigbee_af_core_println("Find and Bind Initiator: Complete: 0x%02X", status);
 }

@@ -9,10 +9,14 @@ description: >
 provides:
   - name: ot_cert_libs
   - name: ot_stack_implementation
+  - name: ot_stack_tcp_implementation
+    allow_multiple: true
   - name: ot_stack_configuration
-  - name: ot_platform_abstraction_implementation
 requires:
   - name: ot_platform_abstraction_utils
+  - name: ot_diags_implementation
+recommends:
+  - id: ot_diags_stubs
 library:
   - path: protocol/openthread/libs/libsl_ot_stack_ftd_efr32mg21_gcc.a
     condition:
@@ -40,32 +44,12 @@ library:
       - device_sdid_200
       - ot_stack_mtd
       - ot_coap_cert_libs
-  - path: protocol/openthread/libs/libsl_platform_ftd_efr32mg21_gcc.a
+  - path: protocol/openthread/libs/libsl_ot_stack_tcp_efr32mg21_gcc.a
     condition:
       - toolchain_gcc
       - device_sdid_200
-      - ot_stack_ftd
     unless:
-      - rail_lib_multiprotocol
-  - path: protocol/openthread/libs/libsl_platform_mtd_efr32mg21_gcc.a
-    condition:
-      - toolchain_gcc
-      - device_sdid_200
-      - ot_stack_mtd
-    unless:
-      - rail_lib_multiprotocol
-  - path: protocol/openthread/libs/libsl_platform_ftd_dmp_efr32mg21_gcc.a
-    condition:
-      - toolchain_gcc
-      - device_sdid_200
-      - ot_stack_ftd
-      - rail_lib_multiprotocol
-  - path: protocol/openthread/libs/libsl_platform_mtd_dmp_efr32mg21_gcc.a
-    condition:
-      - toolchain_gcc
-      - device_sdid_200
-      - ot_stack_mtd
-      - rail_lib_multiprotocol
+      - ot_stack_tcp_stubs
   - path: protocol/openthread/libs/libsl_ot_stack_ftd_efr32mg24_gcc.a
     condition:
       - toolchain_gcc
@@ -92,32 +76,12 @@ library:
       - device_sdid_215
       - ot_stack_mtd
       - ot_coap_cert_libs
-  - path: protocol/openthread/libs/libsl_platform_ftd_efr32mg24_gcc.a
+  - path: protocol/openthread/libs/libsl_ot_stack_tcp_efr32mg24_gcc.a
     condition:
       - toolchain_gcc
       - device_sdid_215
-      - ot_stack_ftd
     unless:
-      - rail_lib_multiprotocol
-  - path: protocol/openthread/libs/libsl_platform_mtd_efr32mg24_gcc.a
-    condition:
-      - toolchain_gcc
-      - device_sdid_215
-      - ot_stack_mtd
-    unless:
-      - rail_lib_multiprotocol
-  - path: protocol/openthread/libs/libsl_platform_ftd_dmp_efr32mg24_gcc.a
-    condition:
-      - toolchain_gcc
-      - device_sdid_215
-      - ot_stack_ftd
-      - rail_lib_multiprotocol
-  - path: protocol/openthread/libs/libsl_platform_mtd_dmp_efr32mg24_gcc.a
-    condition:
-      - toolchain_gcc
-      - device_sdid_215
-      - ot_stack_mtd
-      - rail_lib_multiprotocol
+      - ot_stack_tcp_stubs
   - path: protocol/openthread/libs/libsl_ot_stack_ftd_efr32mg26_gcc.a
     condition:
       - toolchain_gcc
@@ -144,35 +108,14 @@ library:
       - device_sdid_225
       - ot_stack_mtd
       - ot_coap_cert_libs
-  - path: protocol/openthread/libs/libsl_platform_ftd_efr32mg26_gcc.a
+  - path: protocol/openthread/libs/libsl_ot_stack_tcp_efr32mg26_gcc.a
     condition:
       - toolchain_gcc
       - device_sdid_225
-      - ot_stack_ftd
     unless:
-      - rail_lib_multiprotocol
-  - path: protocol/openthread/libs/libsl_platform_mtd_efr32mg26_gcc.a
-    condition:
-      - toolchain_gcc
-      - device_sdid_225
-      - ot_stack_mtd
-    unless:
-      - rail_lib_multiprotocol
-  - path: protocol/openthread/libs/libsl_platform_ftd_dmp_efr32mg26_gcc.a
-    condition:
-      - toolchain_gcc
-      - device_sdid_225
-      - ot_stack_ftd
-      - rail_lib_multiprotocol
-  - path: protocol/openthread/libs/libsl_platform_mtd_dmp_efr32mg26_gcc.a
-    condition:
-      - toolchain_gcc
-      - device_sdid_225
-      - ot_stack_mtd
-      - rail_lib_multiprotocol
+      - ot_stack_tcp_stubs
 metadata:
   sbom:
     # BSD-3-Clause covers the files included in the libraries from
     # util/third_party/openthread and protocol/openthread/platform-abstraction/efr32.
-    # MSLA covers the files from util/plugin/security_manager.
-    license: BSD-3-Clause AND MSLA
+    license: BSD-3-Clause

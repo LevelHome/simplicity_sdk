@@ -106,14 +106,11 @@ static void constructKeyNegotiationTlvPayload(uint8_t payload_length,
   sl_status_t status = sl_zigbee_get_network_parameters(&myNodeType, NULL);
 
   //tlvindex has no meaning, we are just appending
-  sl_zigbee_app_debug_println("Old size %X plus %X", tlvIndex, sl_zigbee_tlv_get_length(&ourPointTlv));
   if (tlvIndex + ourPointTlv.length + TLV_T_LENGTH_BYTE_OFFSET <= payload_length) {
     memmove(payload + tlvIndex, &ourPointTlv, ourPointTlv.length + TLV_T_LENGTH_BYTE_OFFSET);
     // if is key negotiation request, we need to include the selected key negotiation method
     // NOTE the latest revision of the spec mandates that both the request and response include
     // the selected key negotiation method
-
-    sl_zigbee_app_debug_println("Appended public point tlv, new size %X", payload_length);
 
     if (status != SL_STATUS_NOT_JOINED) {
       sl_zigbee_app_debug_println("Appending nwk sequence no tlv");
@@ -267,7 +264,7 @@ sl_status_t sli_zigbee_handle_incoming_dlk_negotiation_request(uint8_t messageLe
 
   sl_zigbee_app_debug_print("Peer Point TLV [");
   for (uint8_t i = 0; i < peerPointTlv.length; i++) {
-    sl_zigbee_app_debug_print(" %X", peerPointTlv.value[i]);
+    sl_zigbee_app_debug_print(" %02X", peerPointTlv.value[i]);
   }
   sl_zigbee_app_debug_println("]");
 
@@ -275,7 +272,7 @@ sl_status_t sli_zigbee_handle_incoming_dlk_negotiation_request(uint8_t messageLe
   sl_dlk_ecc_curve_id curve_id = get_curve_id_with_valid_public_key_tlv(peerPointTlv, selected_method);
   // discard if the public point tlv is invalid or unsupported
   if (curve_id == DLK_ECC_CURVE_INVALID) {
-    sl_zigbee_app_debug_println("Not the negotiation method %X  against peerpoint %X with length %2X but will continue anyway", selected_method, peerPointTlv.tag_id, peerPointTlv.length);
+    sl_zigbee_app_debug_println("Not the negotiation method %02X  against peerpoint %02X with length %04X but will continue anyway", selected_method, peerPointTlv.tag_id, peerPointTlv.length);
     return SL_STATUS_FAIL;
   }
 
@@ -287,21 +284,17 @@ sl_status_t sli_zigbee_handle_incoming_dlk_negotiation_request(uint8_t messageLe
         sl_zvd_connection_status = PROVISIONED;
         halCommonSetToken(TOKEN_PLUGIN_ZDD_AUTH_STATUS, &sl_zvd_connection_status);
       }
-      if ((sl_zvd_connection_status >= PROVISIONED) && ((sl_zigbee_get_permit_joining() == false) || (sl_zigbee_direct_anonymous_join_timeout_sec == 0))) {
-        sl_zigbee_app_debug_println("Killing attempt as we are already commissioned (%X) or permit joining is closed %X sec or timeout %4X sec",
+      if ((sl_zigbee_direct_anonymous_join_timeout_sec == 0) || ((sl_zvd_connection_status >= PROVISIONED) && (sl_zigbee_get_permit_joining() == false))) {
+        sl_zigbee_app_debug_println("Killing attempt as we are already commissioned (%02X) or permit joining is closed %02X sec or timeout %08X sec",
                                     sl_zvd_connection_status, sl_zigbee_af_get_open_network_duration_sec(), sl_zigbee_direct_anonymous_join_timeout_sec);
         sl_bt_connection_close(sl_my_connection);
         return SL_STATUS_FAIL;
       } else {
-        sl_zigbee_app_debug_println("NOT Killing attempt as commissioned (%X) and permit joining %X sec and timeout %4X sec",
+        sl_zigbee_app_debug_println("NOT Killing attempt as commissioned (%02X) and permit joining %02X sec and timeout %08X sec",
                                     sl_zvd_connection_status, sl_zigbee_af_get_open_network_duration_sec(), sl_zigbee_direct_anonymous_join_timeout_sec);
       }
       sl_zvd_connection_status_next = PROVISIONED_IN_PROVISIONING_SESSION;
       memmove(sl_zigbee_key_contents(&psk), emDlkAnonymousKeyContents, SL_ZIGBEE_ENCRYPTION_KEY_SIZE);
-      break;
-
-    case DLK_SECRET_ENUM_SYMMETRIC_AUTH_TOKEN:   //symmetric authentication token
-      // Don't need to Handle this case at this moment
       break;
 
     case DLK_SECRET_ENUM_PRECONFIG_INSTALL_CODE:   //install code
@@ -309,34 +302,41 @@ sl_status_t sli_zigbee_handle_incoming_dlk_negotiation_request(uint8_t messageLe
         sl_zvd_connection_status = PROVISIONED;
         halCommonSetToken(TOKEN_PLUGIN_ZDD_AUTH_STATUS, &sl_zvd_connection_status);
       }
-      if ((sl_zvd_connection_status >= PROVISIONED) && ((sl_zigbee_get_permit_joining() == false) || (sl_zigbee_direct_anonymous_join_timeout_sec == 0))) {
-        sl_zigbee_app_debug_println("Killing attempt as we are already commissioned (%X) or permit joining is closed %X sec or timeout %4X sec",
-                                    sl_zvd_connection_status, sl_zigbee_af_get_open_network_duration_sec(), sl_zigbee_direct_anonymous_join_timeout_sec);
+
+      if (sl_zvd_connection_status >= PROVISIONED) {
+        sl_zigbee_app_debug_println("Killing attempt as we are already commissioned (%02X)", sl_zvd_connection_status);
         sl_bt_connection_close(sl_my_connection);
         return SL_STATUS_FAIL;
       }
       sl_zvd_connection_status_next = PROVISIONED_IN_PROVISIONING_SESSION;
       halCommonGetMfgToken(&tokInstallCode, TOKEN_MFG_INSTALLATION_CODE);
       sl_zigbee_core_debug_println("Install Code:");
-      sl_zigbee_core_debug_println("CRC: %2X", tokInstallCode.crc);
+      sl_zigbee_core_debug_println("CRC: %04X", tokInstallCode.crc);
       memcpy(installcode_with_crc, tokInstallCode.value, 16);
       installcode_with_crc[16] = LOW_BYTE(tokInstallCode.crc);
       installcode_with_crc[17] = HIGH_BYTE(tokInstallCode.crc);
       status = sli_zigbee_af_install_code_to_key(installcode_with_crc, 18, &psk);
-      sl_zigbee_core_debug_println("Install Code based key status %X: ", status);
+      sl_zigbee_core_debug_println("Install Code based key status %02X: ", status);
       sl_zigbee_af_print_zigbee_key(sl_zigbee_key_contents(&psk));
       break;
 
-    case DLK_SECRET_ENUM_VARIABLE_LENGTH_PASSCODE:   // Variable length passcode
+#ifdef SL_CATALOG_ZIGBEE_DIRECT_SECURITY_CURVE25519_PRESENT
+    case DLK_SECRET_ENUM_VARIABLE_LENGTH_PASSCODE:   // Variable length passcode can be used like install code, only acceptable with curve25519
+      if (curve_id != DLK_ECC_CURVE_25519) {
+        sl_zigbee_core_debug_println("Variable length passcode only allowed with curve25519");
+        return SL_STATUS_FAIL;
+      }
       sl_zigbee_core_debug_println("Variable length passcode:");
       sl_zigbee_af_print_zigbee_key(sl_my_passcode);
       if ((sl_my_passcode[0] == 0x00)
           && (memcmp(sl_my_passcode, sl_my_passcode + 1, SL_ZIGBEE_ENCRYPTION_KEY_SIZE - 1) == 0)) {
-        sl_zigbee_core_debug_println("Error: Passcode with all 0 would be rejected.");
+        sl_zigbee_core_debug_println("Error: Default passcode with all 0s is not acceptable.");
         return SL_STATUS_FAIL;
       }
+      sl_zvd_connection_status_next = PROVISIONED_IN_PROVISIONING_SESSION;
       memmove(sl_zigbee_key_contents(&psk), sl_my_passcode, SL_ZIGBEE_ENCRYPTION_KEY_SIZE);
       break;
+#endif //SL_CATALOG_ZIGBEE_DIRECT_SECURITY_CURVE25519_PRESENT
 
     case DLK_SECRET_ENUM_BASIC_ACCESS_KEY:   // basic key,
       sl_zigbee_direct_calculate_basic_key((uint8_t*)peerEuiData, sl_zigbee_key_contents(&basic_key));
@@ -354,7 +354,6 @@ sl_status_t sli_zigbee_handle_incoming_dlk_negotiation_request(uint8_t messageLe
       break;
 
     default:
-      sl_zigbee_app_debug_println("Sending Msg 2 / 2");
       return SL_STATUS_FAIL;
       break;
   }
@@ -375,7 +374,7 @@ sl_status_t sli_zigbee_handle_incoming_dlk_negotiation_request(uint8_t messageLe
     ourPointTlv.tag_id = SL_ZIGBEE_DIRECT_SECURITY_TLV_P256_PUBLIC_POINT_TAG_ID;
     sl_zigbee_tlv_set_length(&ourPointTlv, 72);//SL_ZIGBEE_DIRECT_SECURITY_TLV_P256_PUBLIC_POINT_MAX_LEN;
   }
-  sl_zigbee_app_debug_println("Starting DLK with curve_id %X and hash_id %X length of public point %X", curve_id, hash_id, ourPointTlv.length);
+  sl_zigbee_app_debug_println("Starting DLK with curve_id %02X and hash_id %02X length of public point %02X", curve_id, hash_id, ourPointTlv.length);
   // first 8 bytes of tlv are EUI64
   memcpy(ourPointTlv.value, sl_zigbee_get_eui64(), EUI64_SIZE);
   // the rest of the tlv is the public point
@@ -387,14 +386,13 @@ sl_status_t sli_zigbee_handle_incoming_dlk_negotiation_request(uint8_t messageLe
   if (ret == SL_STATUS_OK) {
     ret = sl_zigbee_sec_man_ecc_generate_keypair(&ecdhCtx, publicKeyBuff, &pointSize);
     if (ret == SL_STATUS_OK) {
-      sl_zigbee_app_debug_println("Getting the public key with size %X", pointSize);
+      sl_zigbee_app_debug_println("Getting the public key with size %02X", pointSize);
     } else {
       sl_zigbee_sec_man_ecc_free(&ecdhCtx);
-      sl_zigbee_app_debug_println("Not ACTUALLY getting the public key with size %X!!!", pointSize);
+      sl_zigbee_app_debug_println("Not ACTUALLY getting the public key with size %02X!!!", pointSize);
     }
   }
 
-  sl_zigbee_app_debug_println("ping");
   uint8_t response_tlv_length = 0;
   if (curve_id == DLK_ECC_CURVE_25519) {
     memcpy(our_public_point, ourPointTlv.value + EUI64_SIZE, 64);
@@ -413,7 +411,6 @@ sl_status_t sli_zigbee_handle_incoming_dlk_negotiation_request(uint8_t messageLe
   sl_status_t finishStatus = SL_STATUS_FAIL;
   ret = sl_zigbee_sec_man_ecc_extract_shared_secret(&ecdhCtx, peerKeyBytes, pointSize);
   if (ret == SL_STATUS_OK) {
-    sl_zigbee_app_debug_println("gr2");
     if (ecdhCtx.config.operation_id == DLK_ECC_OPERATION_SPEKE) {
       ret = sl_zigbee_sec_man_speke_expand_shared_secret(&ecdhCtx, sl_zigbee_get_eui64(), *peerEuiData);
     }
@@ -421,10 +418,8 @@ sl_status_t sli_zigbee_handle_incoming_dlk_negotiation_request(uint8_t messageLe
       ret = sli_zigbee_direct_p256_expand_shared_secret(&ecdhCtx);
     }
     if (ret == SL_STATUS_OK) {
-      sl_zigbee_app_debug_println("gr3");
       ret = sl_zigbee_sec_man_ecc_derive_link_key(&ecdhCtx);
       if (ret == SL_STATUS_OK) {
-        sl_zigbee_app_debug_println("gr4");
         memcpy(keyResult.contents, ecdhCtx.derived_key, SL_ZIGBEE_ENCRYPTION_KEY_SIZE);
         finishStatus = SL_STATUS_OK;
       }
@@ -455,9 +450,9 @@ sl_status_t sli_zigbee_handle_incoming_dlk_negotiation_request(uint8_t messageLe
 
   pointy2[0] = 0x02;
 
-  sl_zigbee_app_debug_print("Response has length %X and is [", length);
+  sl_zigbee_app_debug_print("Response has length %02X and is [", length);
   for (uint16_t i = 0; i < length; i++) {
-    sl_zigbee_app_debug_print(" %X", pointy2[i]);
+    sl_zigbee_app_debug_print(" %02X", pointy2[i]);
   }
   sl_zigbee_app_debug_print("]");
 
@@ -467,7 +462,7 @@ sl_status_t sli_zigbee_handle_incoming_dlk_negotiation_request(uint8_t messageLe
                                                  pointy2);
 
   if (sendStatus != 0) {
-    sl_zigbee_app_debug_println("Error sending message 2 with status %2X", sendStatus);
+    sl_zigbee_app_debug_println("Error sending message 2 with status %04X", sendStatus);
     return SL_STATUS_FAIL;
   } else {
     sl_zigbee_app_debug_println("Message 2 sent successfully");

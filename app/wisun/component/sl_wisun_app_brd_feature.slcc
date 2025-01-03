@@ -45,7 +45,6 @@ provides:
     condition:
       - brd4401c
 
-
 #-------------- Template Contribution ----------------
 template_contribution:
   - name: component_catalog

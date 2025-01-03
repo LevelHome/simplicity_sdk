@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_wisun_event_mgr.h
+ * @brief Wi-SUN event manager
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __SL_WISUN_EVENT_MGR_H__
-#define __SL_WISUN_EVENT_MGR_H__
+#ifndef SL_WISUN_EVENT_MGR_H
+#define SL_WISUN_EVENT_MGR_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,7 +40,6 @@ extern "C" {
 // -----------------------------------------------------------------------------
 #include "sl_status.h"
 #include "sl_wisun_events.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -185,7 +184,7 @@ void sl_wisun_connection_lost_event_hnd(sl_wisun_evt_t *evt);
 void sl_wisun_socket_data_sent_event_hnd(sl_wisun_evt_t *evt);
 
 /**************************************************************************//**
- * @brief Wi-SUN error occured event handler
+ * @brief Wi-SUN error occurred event handler
  * @details
  * @param[in] evt event ptr
  *****************************************************************************/
@@ -223,4 +222,4 @@ void sl_wisun_multicast_reg_finish_hnd(sl_wisun_evt_t *evt);
 }
 #endif
 
-#endif /* __SL_WISUN_EVENT_MGR_H__ */
+#endif // SL_WISUN_EVENT_MGR_H

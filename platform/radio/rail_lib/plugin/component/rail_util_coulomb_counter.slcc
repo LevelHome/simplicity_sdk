@@ -4,6 +4,11 @@ description: Utility to estimate device energy usage
 package: platform
 category: Platform|Radio
 quality: production
+metadata:
+  sbom:
+    id: rail_util_coulomb_counter
+    name: RAIL Utility, Coulomb Counter
+    license: MSLA
 requires:
   - name: rail_util_ieee802154_stack_event
   - name: status

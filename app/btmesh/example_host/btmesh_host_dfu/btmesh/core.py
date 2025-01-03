@@ -307,7 +307,7 @@ class BtmeshCore:
 
     def system_reset(self):
         """Issues system reset command and waits for and returns the boot event"""
-        self.lib.bt.system.reset(0)
+        self.lib.bt.system.reboot()
         self.lib.wait_event("bt_evt_system_boot")
 
     def open(self):

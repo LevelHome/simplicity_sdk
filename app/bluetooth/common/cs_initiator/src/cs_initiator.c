@@ -39,49 +39,31 @@
 #include <limits.h>
 
 #include "sl_bt_api.h"
-#include "sl_component_catalog.h"
 #include "sl_common.h"
 #include "sl_sleeptimer.h"
 #include "cs_initiator.h"
-#include "cs_initiator_configurator.h"
+#include "cs_initiator_client.h"
 #include "cs_initiator_config.h"
+#include "cs_initiator_log.h"
 #include "cs_ras.h"
 #include "app_timer.h"
 
 #include "sl_rtl_clib_api.h"
 
-#ifdef SL_CATALOG_APP_LOG_PRESENT
-#include "app_log.h"
-#endif // SL_CATALOG_APP_LOG_PRESENT
+#ifdef SL_CATALOG_CS_INITIATOR_REPORT_PRESENT
+#include "cs_initiator_report.h"
+#else
+#define cs_initiator_report(evt)
+#endif // SL_CATALOG_CS_INITIATOR_REPORT_PRESENT
 
 // -----------------------------------------------------------------------------
 // Macros
-// Component logging
-#if defined(SL_CATALOG_APP_LOG_PRESENT) && CS_INITIATOR_LOG
-#define LOG_PREFIX                  CS_INITIATOR_LOG_PREFIX " "
-#define LOG_NL                      APP_LOG_NL
-#define INSTANCE_PREFIX             "[%u] "
-#define initiator_log_debug(...)    app_log_debug(LOG_PREFIX  __VA_ARGS__)
-#define initiator_log_info(...)     app_log_info(LOG_PREFIX  __VA_ARGS__)
-#define initiator_log_warning(...)  app_log_warning(LOG_PREFIX  __VA_ARGS__)
-#define initiator_log_error(...)    app_log_error(LOG_PREFIX  __VA_ARGS__)
-#define initiator_log_critical(...) app_log_critical(LOG_PREFIX  __VA_ARGS__)
-#else
-#define LOG_NL
-#define INSTANCE_PREFIX
-#define initiator_log_debug(...)
-#define initiator_log_info(...)
-#define initiator_log_warning(...)
-#define initiator_log_error(...)
-#define initiator_log_critical(...)
-#endif // defined(SL_CATALOG_APP_LOG_PRESENT) && CS_INITIATOR_LOG
 
 // This configuration is for future use only
 #define CONFIG_RAS_REQUEST_PERIODIC_NOTIFICATION_MODE true
-
-#define CS_CHANNEL_MAP_MIN_CHANNELS    15
-#define CS_CHANNEL_MAP_MAX_CHANNELS    76
 #define CS_MAX_PROCEDURE_ENABLE_RETRY  3
+// Length of UUID in bytes
+#define UUID_LEN                       16
 
 // -----------------------------------------------------------------------------
 // Enums, structs, typedefs
@@ -94,6 +76,13 @@ typedef enum {
   CS_TRANSPORT_SUBSCRIBE_RAS_CONTROL_POINT,
   CS_TRANSPORT_STATE_IDLE
 } action_t;
+
+// cs procedure triggering
+typedef enum {
+  CS_PROCEDURE_STATE_IN_PROGRESS = 0u,
+  CS_PROCEDURE_STATE_ABORTED,
+  CS_PROCEDURE_STATE_COMPLETED
+} cs_procedure_state_t;
 
 typedef enum {
   INITIATOR_STATE_UNINITIALIZED = 0,
@@ -125,8 +114,6 @@ typedef struct {
   sl_rtl_cs_procedure cs_procedure;
   rtl_config_t rtl_config;
   cs_initiator_config_t config;
-  uint16_t current_cs_subevent_index;  // Associated with ongoing CS measurement
-  uint16_t current_procedure_index;    // Associated with ongoing CS measurement
   uint8_t conn_handle;
   uint32_t ras_service_handle;
   struct {
@@ -143,8 +130,10 @@ typedef struct {
       bool ras_all;
     } characteristic_found;
   } discovery_state;
+  sl_bt_connection_security_t security_mode;
   bool cs_security_enabled;
   sl_rtl_cs_libitem rtl_handle;
+  uint8_t instance_id;
   cs_result_cb_t result_cb;
   cs_intermediate_result_cb_t intermediate_result_cb;
   cs_error_cb_t error_cb;
@@ -159,6 +148,28 @@ typedef struct {
   cs_procedure_state_t reflector_procedure_state;
   uint8_t procedure_enable_retry_counter;
 } cs_initiator_t;
+
+// CS Controller capabilities
+typedef struct {
+  uint8_t num_config;
+  uint16_t max_consecutive_procedures;
+  uint8_t num_antennas;
+  uint8_t max_antenna_paths;
+  uint8_t roles;
+  uint8_t optional_modes;
+  uint8_t rtt_capability;
+  uint8_t rtt_aa_only;
+  uint8_t rtt_sounding;
+  uint8_t rtt_random_payload;
+  uint8_t optional_cs_sync_phys;
+  uint16_t optional_subfeatures;
+  uint16_t optional_t_ip1_times;
+  uint16_t optional_t_ip2_times;
+  uint16_t optional_t_fcs_times;
+  uint16_t optional_t_pm_times;
+  uint8_t t_sw_times;
+  uint8_t optional_tx_snr_capability;
+} cs_controller_capabilities_t;
 
 // -----------------------------------------------------------------------------
 // Static function declarations
@@ -175,14 +186,15 @@ static initiator_state_t initiator_stop_procedure_on_invalid_state(cs_initiator_
 static void handle_procedure_enable_completed_event_disable(cs_initiator_t *initiator);
 static bool check_characteristic_uuid(const uint8_t conn_handle,
                                       sl_bt_msg_t *evt);
+static void extract_cs_result_event_data(cs_initiator_t *initiator,
+                                         cs_result_data_t *cs_result_content);
 static cs_procedure_state_t extract_device_cs_data(const uint8_t conn_handle,
                                                    cs_data_t *device_data,
                                                    sl_rtl_cs_subevent_data *rtl_subevent_data,
                                                    uint8_t *rtl_subevent_data_count,
-                                                   sl_bt_evt_cs_result_t *evt);
+                                                   cs_result_data_t *cs_result_content);
 static cs_procedure_state_t extract_cs_result_data(cs_initiator_t *initiator,
-                                                   bool initiator_part,
-                                                   sl_bt_evt_cs_result_t *evt);
+                                                   cs_result_data_t *cs_result_content);
 static void show_rtl_api_call_result(const uint8_t conn_handle,
                                      enum sl_rtl_error_code err_code);
 static void calculate_distance(const uint8_t conn_handle);
@@ -195,7 +207,8 @@ static void on_error(const uint8_t conn_handle,
 static enum sl_rtl_error_code rtl_library_init(const uint8_t conn_handle,
                                                sl_rtl_cs_libitem *handle,
                                                rtl_config_t      *config,
-                                               const uint8_t     cs_mode);
+                                               const uint8_t     cs_mode,
+                                               uint8_t           *instance_id);
 static void init_cs_configuration(const uint8_t conn_handle);
 static void start_error_timer(const uint8_t conn_handle);
 static void stop_error_timer(const uint8_t conn_handle);
@@ -234,6 +247,8 @@ static sl_status_t state_delete_on_procedure_enable_completed(cs_initiator_t    
 // -----------------------------------------------------------------------------
 // Static variables
 static cs_initiator_t cs_initiator_instances[CS_INITIATOR_MAX_CONNECTIONS];
+static cs_controller_capabilities_t cs_local_controller;
+static cs_controller_capabilities_t cs_remote_controller;
 
 static const uint8_t ras_service_uuid[] = RAS_SERVICE_UUID;
 static const uint8_t ras_control_point_characteristic_uuid[] =
@@ -298,7 +313,7 @@ static void set_procedure_initial_state(const uint8_t         conn_handle,
 
   cs_procedure->cs_config.channel_map_repetition =
     initiator_config->channel_map_repetition;
-  cs_procedure->cs_config.cs_sync_phy = (cs_phy_t)initiator_config->phy;
+  cs_procedure->cs_config.cs_sync_phy = initiator_config->cs_sync_phy;
   initiator_log_debug(INSTANCE_PREFIX "channel_map_repetition=%u, cs_sync_phy=%u" LOG_NL,
                       conn_handle,
                       cs_procedure->cs_config.channel_map_repetition,
@@ -314,13 +329,11 @@ static void set_procedure_initial_state(const uint8_t         conn_handle,
 
   cs_procedure->cs_config.rtt_type = initiator_config->rtt_type;
   cs_procedure->cs_config.subevents_per_event = 1;
-  cs_procedure->cs_config.num_antenna_paths = 1;
-  initiator_log_debug(INSTANCE_PREFIX "rtt_type=%u,  subevents_per_event=%u,"
-                                      " num_antenna_paths=%u" LOG_NL,
+
+  initiator_log_debug(INSTANCE_PREFIX "rtt_type=%u,  subevents_per_event=%u," LOG_NL,
                       conn_handle,
                       cs_procedure->cs_config.rtt_type,
-                      cs_procedure->cs_config.subevents_per_event,
-                      cs_procedure->cs_config.num_antenna_paths);
+                      cs_procedure->cs_config.subevents_per_event);
 
   initiator_log_debug(INSTANCE_PREFIX "CS procedure - configuration - end" LOG_NL,
                       conn_handle);
@@ -462,25 +475,25 @@ static sl_status_t initiator_state_machine_event_handler(uint8_t                
       break;
 
     case INITIATOR_STATE_IN_PROCEDURE:
-      if (event == INITIATOR_EVT_CS_RESULT) {
+      if (event == INITIATOR_EVT_CS_RESULT || event == INITIATOR_EVT_CS_RESULT_CONTINUE) {
         sc = state_in_procedure_on_cs_result(initiator, data);
       }
       break;
 
     case INITIATOR_STATE_WAIT_REFLECTOR_PROCEDURE_COMPLETE:
-      if (event == INITIATOR_EVT_CS_RESULT) {
+      if (event == INITIATOR_EVT_CS_RESULT || event == INITIATOR_EVT_CS_RESULT_CONTINUE) {
         sc = state_wait_reflector_procedure_complete_on_cs_result(initiator, data);
       }
       break;
 
     case INITIATOR_STATE_WAIT_REFLECTOR_PROCEDURE_ABORTED:
-      if (event == INITIATOR_EVT_CS_RESULT) {
+      if (event == INITIATOR_EVT_CS_RESULT || event == INITIATOR_EVT_CS_RESULT_CONTINUE) {
         sc = state_wait_reflector_procedure_aborted_on_cs_result(initiator,
                                                                  data);
       }
       break;
     case INITIATOR_STATE_WAIT_INITIATOR_PROCEDURE_ABORTED:
-      if (event == INITIATOR_EVT_CS_RESULT) {
+      if (event == INITIATOR_EVT_CS_RESULT || event == INITIATOR_EVT_CS_RESULT_CONTINUE) {
         sc = state_wait_initiator_procedure_aborted_on_cs_result(initiator,
                                                                  data);
       }
@@ -536,6 +549,7 @@ static sl_status_t state_any_on_delete_instance(cs_initiator_t             *init
                        initiator->conn_handle);
     initiator->initiator_state = INITIATOR_STATE_DELETE;
   } else if (sc == SL_STATUS_BT_CTRL_COMMAND_DISALLOWED
+             || sc == SL_STATUS_BT_CTRL_INVALID_COMMAND_PARAMETERS
              || sc == SL_STATUS_INVALID_HANDLE) {
     // Procedure is already stopped by stack
     app_timer_stop(&initiator->timer_handle);
@@ -565,7 +579,7 @@ static sl_status_t state_any_on_delete_instance(cs_initiator_t             *init
     data_out.evt_error.sc = sc;
     sc = initiator_state_machine_event_handler(initiator->conn_handle,
                                                INITIATOR_EVT_ERROR,
-                                               NULL);
+                                               &data_out);
   }
 
   return sc;
@@ -628,9 +642,11 @@ static sl_status_t state_start_procedure_on_start_procedure(cs_initiator_t      
                                                &data_out);
     return sc;
   }
+  cs_initiator_report(CS_INITIATOR_REPORT_CS_PROCEDURE_BEGIN);
   sc = sl_bt_cs_procedure_enable(initiator->conn_handle,
                                  sl_bt_cs_procedure_state_enabled,
                                  initiator->config.config_id);
+
   if (sc == SL_STATUS_OK) {
     // Start timer for procedure timeout
     // The timer is stopped when the procedure is completed/aborted
@@ -672,6 +688,7 @@ static sl_status_t state_wait_procedure_enable_complete_on_enable_completed(cs_i
   state_machine_event_data_t data_out;
 
   if (data->evt_procedure_enable_completed->status == SL_STATUS_OK) {
+    cs_initiator_report(CS_INITIATOR_REPORT_CS_PROCEDURE_STARTED);
     uint32_t time_tick = sl_sleeptimer_get_tick_count();
     initiator->procedure_start_time_ms =
       sl_sleeptimer_tick_to_ms(time_tick);
@@ -701,6 +718,33 @@ static sl_status_t state_wait_procedure_enable_complete_on_enable_completed(cs_i
                         data->evt_procedure_enable_completed->status);
     initiator->procedure_enable_retry_counter++;
     if (initiator->procedure_enable_retry_counter < CS_MAX_PROCEDURE_ENABLE_RETRY ) {
+      initiator_log_error(INSTANCE_PREFIX "CS procedure - setting procedure parameters again..." LOG_NL,
+                          initiator->conn_handle);
+      sc = sl_bt_cs_set_procedure_parameters(initiator->conn_handle,
+                                             initiator->config.config_id,
+                                             initiator->config.max_procedure_duration,
+                                             initiator->config.min_procedure_interval,
+                                             initiator->config.max_procedure_interval,
+                                             initiator->config.max_procedure_count,
+                                             initiator->config.min_subevent_len,
+                                             initiator->config.max_subevent_len,
+                                             initiator->config.cs_tone_antenna_config_idx,
+                                             initiator->config.conn_phy,
+                                             initiator->config.tx_pwr_delta,
+                                             initiator->config.preferred_peer_antenna,
+                                             initiator->config.snr_control_initiator,
+                                             initiator->config.snr_control_reflector);
+
+      if (sc != SL_STATUS_OK) {
+        initiator_log_error(INSTANCE_PREFIX "CS procedure - failed to set parameters! "
+                                            "[sc: 0x%lx]" LOG_NL,
+                            initiator->conn_handle,
+                            (unsigned long)sc);
+        on_error(initiator->conn_handle,
+                 CS_ERROR_EVENT_CS_SET_PROCEDURE_PARAMETERS_FAILED,
+                 sc);
+        return sc;
+      }
       initiator_log_info(INSTANCE_PREFIX "Instance new state: START_PROCEDURE" LOG_NL,
                          initiator->conn_handle);
       initiator->initiator_state = INITIATOR_STATE_START_PROCEDURE;
@@ -728,17 +772,19 @@ static sl_status_t state_in_procedure_on_cs_result(cs_initiator_t             *i
   state_machine_event_data_t data_out;
   cs_procedure_state_t procedure_state;
 
-  procedure_state = extract_cs_result_data(initiator,
-                                           data->evt_cs_result.initiator_part,
-                                           data->evt_cs_result.cs_result_data);
-  if (data->evt_cs_result.initiator_part == true) {
-    initiator->initiator_data.procedure_counter = data->evt_cs_result.cs_result_data->procedure_counter;
-    initiator_log_debug(INSTANCE_PREFIX "Initiator CS packet received. [proc_cnt=%u, "
-                                        "proc_done=%u se_done=%u]" LOG_NL,
-                        initiator->conn_handle,
-                        data->evt_cs_result.cs_result_data->procedure_counter,
-                        data->evt_cs_result.cs_result_data->procedure_done_status,
-                        data->evt_cs_result.cs_result_data->subevent_done_status);
+  // take over general info from the different event contents
+  extract_cs_result_event_data(initiator, &data->evt_content);
+
+  procedure_state = extract_cs_result_data(initiator, &data->evt_content);
+
+  if (data->evt_content.initiator_part == true) {
+    initiator->initiator_data.procedure_counter = data->evt_content.procedure_counter;
+    initiator_log_info(INSTANCE_PREFIX "Initiator CS packet received - #%u procedure "
+                                       "[proc_done_sts:%u, subevent_done_sts:%u]" LOG_NL,
+                       initiator->conn_handle,
+                       data->evt_content.procedure_counter,
+                       data->evt_content.procedure_done_status,
+                       data->evt_content.subevent_done_status);
     switch (procedure_state) {
       case CS_PROCEDURE_STATE_IN_PROGRESS:
         initiator->initiator_state = INITIATOR_STATE_IN_PROCEDURE;
@@ -760,13 +806,13 @@ static sl_status_t state_in_procedure_on_cs_result(cs_initiator_t             *i
         break;
     }
   } else {
-    initiator->reflector_data.procedure_counter = data->evt_cs_result.cs_result_data->procedure_counter;
-    initiator_log_debug(INSTANCE_PREFIX "Reflector CS packet received. [proc_cnt=%u, "
-                                        "proc_done=%u se_done=%u]" LOG_NL,
-                        initiator->conn_handle,
-                        data->evt_cs_result.cs_result_data->procedure_counter,
-                        data->evt_cs_result.cs_result_data->procedure_done_status,
-                        data->evt_cs_result.cs_result_data->subevent_done_status);
+    initiator->reflector_data.procedure_counter = data->evt_content.procedure_counter;
+    initiator_log_info(INSTANCE_PREFIX "Reflector CS packet received - #%u procedure "
+                                       "[proc_done_sts:%u, subevent_done_sts:%u]" LOG_NL,
+                       initiator->conn_handle,
+                       data->evt_content.procedure_counter,
+                       data->evt_content.procedure_done_status,
+                       data->evt_content.subevent_done_status);
     if (procedure_state == CS_PROCEDURE_STATE_IN_PROGRESS) {
       initiator->initiator_state = INITIATOR_STATE_IN_PROCEDURE;
       sc = SL_STATUS_OK;
@@ -799,7 +845,7 @@ static sl_status_t state_wait_reflector_procedure_complete_on_cs_result(cs_initi
   state_machine_event_data_t data_out;
   cs_procedure_state_t procedure_state;
 
-  if (data->evt_cs_result.initiator_part) {
+  if (data->evt_content.initiator_part) {
     // we have already received procedure_completed from initiator
     // yet more cs_result_id event are coming - disable procedure
     initiator->initiator_state = initiator_stop_procedure_on_invalid_state(initiator);
@@ -814,9 +860,10 @@ static sl_status_t state_wait_reflector_procedure_complete_on_cs_result(cs_initi
     return sc;
   }
 
-  procedure_state = extract_cs_result_data(initiator,
-                                           data->evt_cs_result.initiator_part,
-                                           data->evt_cs_result.cs_result_data);
+  extract_cs_result_event_data(initiator, &data->evt_content);
+
+  procedure_state = extract_cs_result_data(initiator, &data->evt_content);
+
   switch (procedure_state) {
     case CS_PROCEDURE_STATE_IN_PROGRESS:
       initiator->initiator_state = INITIATOR_STATE_WAIT_REFLECTOR_PROCEDURE_COMPLETE;
@@ -889,7 +936,7 @@ static sl_status_t state_wait_reflector_procedure_aborted_on_cs_result(cs_initia
   state_machine_event_data_t data_out;
   cs_procedure_state_t procedure_state;
 
-  if (data->evt_cs_result.initiator_part) {
+  if (data->evt_content.initiator_part) {
     // we have already received procedure_aborted from initiator
     // yet more cs_result_id event are coming - disable procedure
     initiator->initiator_state = initiator_stop_procedure_on_invalid_state(initiator);
@@ -903,10 +950,12 @@ static sl_status_t state_wait_reflector_procedure_aborted_on_cs_result(cs_initia
     }
     return sc;
   }
-  procedure_state = extract_cs_result_data(initiator,
-                                           data->evt_cs_result.initiator_part,
-                                           data->evt_cs_result.cs_result_data);
-  if (procedure_state == CS_PROCEDURE_STATE_ABORTED) {
+
+  extract_cs_result_event_data(initiator, &data->evt_content);
+
+  procedure_state = extract_cs_result_data(initiator, &data->evt_content);
+
+  if (procedure_state == CS_PROCEDURE_STATE_ABORTED || procedure_state == CS_PROCEDURE_STATE_COMPLETED) {
     sc = app_timer_stop(&initiator->timer_handle);
     if (sc == SL_STATUS_OK) {
       initiator_log_info(INSTANCE_PREFIX "Instance new state: START_PROCEDURE" LOG_NL,
@@ -940,7 +989,7 @@ static sl_status_t state_wait_initiator_procedure_aborted_on_cs_result(cs_initia
   state_machine_event_data_t data_out;
   cs_procedure_state_t procedure_state;
 
-  if (data->evt_cs_result.initiator_part == false) {
+  if (data->evt_content.initiator_part == false) {
     // we have already received procedure_aborted from reflector
     // yet more gatt event are coming - disable procedure
     initiator->initiator_state = initiator_stop_procedure_on_invalid_state(initiator);
@@ -955,10 +1004,11 @@ static sl_status_t state_wait_initiator_procedure_aborted_on_cs_result(cs_initia
     return sc;
   }
 
-  procedure_state = extract_cs_result_data(initiator,
-                                           data->evt_cs_result.initiator_part,
-                                           data->evt_cs_result.cs_result_data);
-  if (procedure_state == CS_PROCEDURE_STATE_ABORTED) {
+  extract_cs_result_event_data(initiator, &data->evt_content);
+
+  procedure_state = extract_cs_result_data(initiator, &data->evt_content);
+
+  if (procedure_state == CS_PROCEDURE_STATE_ABORTED || procedure_state == CS_PROCEDURE_STATE_COMPLETED) {
     sc = app_timer_stop(&initiator->timer_handle);
     if (sc == SL_STATUS_OK) {
       initiator_log_info(INSTANCE_PREFIX "Instance new state: START_PROCEDURE" LOG_NL,
@@ -1239,32 +1289,71 @@ static bool check_characteristic_uuid(const uint8_t conn_handle,
 }
 
 /******************************************************************************
+ * Extract cs procedure state data from the cs_result and cs_result_continue
+ * events.
+ * @param initiator - initiator instance reference
+ * @param cs_result_content - cs_result and cs_result_continue event content
+ *****************************************************************************/
+static void extract_cs_result_event_data(cs_initiator_t *initiator,
+                                         cs_result_data_t *cs_result_content)
+{
+  if (cs_result_content->first_cs_result) {
+    cs_result_content->procedure_counter = cs_result_content->cs_result_data->cs_result_raw.procedure_counter;
+    cs_result_content->num_antenna_paths = cs_result_content->cs_result_data->cs_result_raw.num_antenna_paths;
+    cs_result_content->num_steps = cs_result_content->cs_result_data->cs_result_raw.num_steps;
+    cs_result_content->procedure_done_status = cs_result_content->cs_result_data->cs_result_raw.procedure_done_status;
+    cs_result_content->subevent_done_status = cs_result_content->cs_result_data->cs_result_raw.subevent_done_status;
+    cs_result_content->start_acl_conn_event = cs_result_content->cs_result_data->cs_result_raw.start_acl_conn_event;
+    cs_result_content->frequency_compensation = cs_result_content->cs_result_data->cs_result_raw.frequency_compensation;
+    cs_result_content->reference_power_level = cs_result_content->cs_result_data->cs_result_raw.reference_power_level;
+    cs_result_content->abort_reason = cs_result_content->cs_result_data->cs_result_raw.abort_reason;
+    if (cs_result_content->initiator_part) {
+      initiator->initiator_data.procedure_counter = cs_result_content->cs_result_data->cs_result_raw.procedure_counter;
+    } else {
+      initiator->reflector_data.procedure_counter = cs_result_content->cs_result_data->cs_result_raw.procedure_counter;
+    }
+  } else {
+    if (cs_result_content->initiator_part) {
+      cs_result_content->procedure_counter = initiator->initiator_data.procedure_counter;
+    } else {
+      cs_result_content->procedure_counter = initiator->reflector_data.procedure_counter;
+    }
+    cs_result_content->num_antenna_paths = cs_result_content->cs_result_data->cs_result_continue_raw.num_antenna_paths;
+    cs_result_content->num_steps = cs_result_content->cs_result_data->cs_result_continue_raw.num_steps;
+    cs_result_content->procedure_done_status = cs_result_content->cs_result_data->cs_result_continue_raw.procedure_done_status;
+    cs_result_content->subevent_done_status = cs_result_content->cs_result_data->cs_result_continue_raw.subevent_done_status;
+    cs_result_content->abort_reason = cs_result_content->cs_result_data->cs_result_continue_raw.abort_reason;
+  }
+}
+
+/******************************************************************************
  * Extract cs results (step data, subevent data) and hand over to RTL Lib
  * instance to calculate distance out of it.
  *
  * @return true if procedure restart required, false otherwise
  *****************************************************************************/
 static cs_procedure_state_t extract_cs_result_data(cs_initiator_t *initiator,
-                                                   bool initiator_part,
-                                                   sl_bt_evt_cs_result_t *evt)
+                                                   cs_result_data_t *cs_result_content)
 {
   cs_procedure_state_t procedure_state = CS_PROCEDURE_STATE_IN_PROGRESS;
-  if (initiator_part) {
+  if (cs_result_content->initiator_part == true) {
     initiator_log_info(INSTANCE_PREFIX "extract - initiator data" LOG_NL,
                        initiator->conn_handle);
+    cs_initiator_report(CS_INITIATOR_REPORT_FIRST_CS_RESULT);
     procedure_state = extract_device_cs_data(initiator->conn_handle,
                                              &initiator->initiator_data,
                                              initiator->cs_procedure.initiator_subevent_data,
                                              &initiator->cs_procedure.initiator_subevent_data_count,
-                                             evt);
+                                             cs_result_content);
   } else {
     initiator_log_info(INSTANCE_PREFIX "extract - reflector data" LOG_NL,
                        initiator->conn_handle);
+    cs_initiator_report(CS_INITIATOR_REPORT_LAST_CS_RESULT_BEGIN);
     procedure_state = extract_device_cs_data(initiator->conn_handle,
                                              &initiator->reflector_data,
                                              initiator->cs_procedure.reflector_subevent_data,
                                              &initiator->cs_procedure.reflector_subevent_data_count,
-                                             evt);
+                                             cs_result_content);
   }
 
   initiator_log_info("----" LOG_NL);
@@ -1275,7 +1364,7 @@ static cs_procedure_state_t extract_device_cs_data(const uint8_t conn_handle,
                                                    cs_data_t *device_data,
                                                    sl_rtl_cs_subevent_data *rtl_subevent_data,
                                                    uint8_t *rtl_subevent_data_count,
-                                                   sl_bt_evt_cs_result_t *evt)
+                                                   cs_result_data_t *cs_result_content)
 {
   cs_procedure_state_t procedure_state = CS_PROCEDURE_STATE_IN_PROGRESS;
   uint16_t subevent_idx = 0u;
@@ -1308,14 +1397,30 @@ static cs_procedure_state_t extract_device_cs_data(const uint8_t conn_handle,
   // set timestamp, freq. compensation data and reference power level
   device_data->subevent_data[subevent_idx].subevent_timestamp_ms =
     subevent_time_ms;
-  device_data->subevent_data[subevent_idx].frequency_compensation =
-    evt->frequency_compensation;
-  device_data->subevent_data[subevent_idx].reference_power_level
-    = evt->reference_power_level;
+  if (cs_result_content->first_cs_result == true) {
+    initiator_log_info(INSTANCE_PREFIX "extract - first CS result of procedure #%u"
+                                       "[start_acl_conn_evt: %u, freq.comp: %d, reference power level: %d]" LOG_NL,
+                       conn_handle,
+                       cs_result_content->procedure_counter,
+                       cs_result_content->start_acl_conn_event,
+                       cs_result_content->frequency_compensation,
+                       cs_result_content->reference_power_level);
+    rtl_subevent_data->frequency_compensation = cs_result_content->frequency_compensation;
+    rtl_subevent_data->reference_power_level = cs_result_content->reference_power_level;
+  } else {
+    initiator_log_info(INSTANCE_PREFIX "extract - consecutive CS result of procedure #%u" LOG_NL,
+                       conn_handle,
+                       cs_result_content->procedure_counter);
+  }
 
   // check step data size
   step_idx = device_data->step_index;
-  step_data_len = step_idx + evt->data.len;
+  // getting event data length
+  if (cs_result_content->first_cs_result == true) {
+    step_data_len = step_idx + cs_result_content->cs_result_data->cs_result_raw.data.len;
+  } else {
+    step_data_len = step_idx + cs_result_content->cs_result_data->cs_result_continue_raw.data.len;
+  }
 
   if (step_data_len > CS_INITIATOR_MAX_STEP_DATA_LEN) {
     initiator_log_error(INSTANCE_PREFIX "extract - incoming step data exceeds step data "
@@ -1331,13 +1436,25 @@ static cs_procedure_state_t extract_device_cs_data(const uint8_t conn_handle,
                                                 &data_out);
   } else {
     // copy step data from cs_results event into the device data step_data buffer
-    memcpy(&device_data->step_data[step_idx], evt->data.data, evt->data.len);
+    if (cs_result_content->first_cs_result == true) {
+      memcpy(&device_data->step_data[step_idx],
+             cs_result_content->cs_result_data->cs_result_raw.data.data,
+             cs_result_content->cs_result_data->cs_result_raw.data.len);
+    } else {
+      memcpy(&device_data->step_data[step_idx],
+             cs_result_content->cs_result_data->cs_result_continue_raw.data.data,
+             cs_result_content->cs_result_data->cs_result_continue_raw.data.len);
+    }
     initiator_log_debug(INSTANCE_PREFIX "extract - update step_index %u -> %u" LOG_NL,
                         conn_handle,
                         (unsigned int)step_idx,
                         (unsigned int)step_data_len);
     // increment step index
-    step_idx += evt->data.len;
+    if (cs_result_content->first_cs_result == true) {
+      step_idx += cs_result_content->cs_result_data->cs_result_raw.data.len;
+    } else {
+      step_idx += cs_result_content->cs_result_data->cs_result_continue_raw.data.len;
+    }
     // take back the step index
     device_data->step_index = step_idx;
 
@@ -1346,16 +1463,16 @@ static cs_procedure_state_t extract_device_cs_data(const uint8_t conn_handle,
     initiator_log_debug(INSTANCE_PREFIX "extract - updated num_steps %u -> %u [step_data_count: %u]" LOG_NL,
                         conn_handle,
                         device_data->subevent_data[subevent_idx].num_steps,
-                        (device_data->subevent_data[subevent_idx].num_steps + evt->num_steps),
+                        (device_data->subevent_data[subevent_idx].num_steps + cs_result_content->num_steps),
                         device_data->subevent_data[subevent_idx].step_data_count);
 
     // take over number of steps from cs_results event
-    device_data->subevent_data[subevent_idx].num_steps += evt->num_steps;
+    device_data->subevent_data[subevent_idx].num_steps += cs_result_content->num_steps;
   }
 
   // --------------------------------
   // Subevent state check
-  if (evt->subevent_done_status == sl_bt_cs_done_status_complete) {
+  if (cs_result_content->subevent_done_status == (uint8_t)sl_bt_cs_done_status_complete) {
     // subevent arrived - increment data counter
     (*rtl_subevent_data_count)++;
 
@@ -1363,10 +1480,10 @@ static cs_procedure_state_t extract_device_cs_data(const uint8_t conn_handle,
       // update subevent index for the device
       device_data->subevent_index++;
 
-      initiator_log_debug(INSTANCE_PREFIX "extract - procedure %u sub events %u/%u "
+      initiator_log_debug(INSTANCE_PREFIX "extract - procedure #%u sub events %u/%u "
                                           "extracted [rtl_subevent_data_count=%u]" LOG_NL,
                           conn_handle,
-                          evt->procedure_counter,
+                          cs_result_content->procedure_counter,
                           device_data->subevent_index,
                           CS_INITIATOR_MAX_SUBEVENT_PER_PROC,
                           *rtl_subevent_data_count);
@@ -1381,39 +1498,42 @@ static cs_procedure_state_t extract_device_cs_data(const uint8_t conn_handle,
                                                   INITIATOR_EVT_ERROR,
                                                   &data_out);
     }
-  } else if (evt->subevent_done_status == sl_bt_cs_done_status_partial_results_continue) {
-    initiator_log_debug(INSTANCE_PREFIX "extract - sub event partially arrived." LOG_NL,
-                        conn_handle);
-  } else if (evt->subevent_done_status == sl_bt_cs_done_status_aborted) {
-    initiator_log_warning(INSTANCE_PREFIX "extract - procedure %u sub event aborted!"
-                                          "[reason: 0x%X]" LOG_NL,
+  } else if (cs_result_content->subevent_done_status == (uint8_t)sl_bt_cs_done_status_partial_results_continue) {
+    initiator_log_debug(INSTANCE_PREFIX "extract - procedure #%u - sub event partially arrived." LOG_NL,
+                        conn_handle,
+                        cs_result_content->procedure_counter);
+  } else if (cs_result_content->subevent_done_status == (uint8_t)sl_bt_cs_done_status_aborted) {
+    initiator_log_warning(INSTANCE_PREFIX "extract - procedure #%u - sub event aborted!"
+                                          "[reason: 0x%x]" LOG_NL,
                           conn_handle,
-                          evt->procedure_counter,
-                          evt->abort_reason);
+                          cs_result_content->procedure_counter,
+                          cs_result_content->abort_reason);
     reset_subevent_data(conn_handle);
   }
   // --------------------------------
   // Procedure state check
-  if (evt->procedure_done_status == sl_bt_cs_done_status_complete) {
-    initiator_log_info(INSTANCE_PREFIX "extract - device ready." LOG_NL,
-                       conn_handle);
+  if (cs_result_content->procedure_done_status == (uint8_t)sl_bt_cs_done_status_complete) {
+    initiator_log_info(INSTANCE_PREFIX "extract - procedure #%u - device ready." LOG_NL,
+                       conn_handle,
+                       cs_result_content->procedure_counter);
 
     // reset indexes in order to prepare to the new procedure
     device_data->subevent_index = 0u;
     device_data->step_index = 0u;
     device_data->ready = true;
     procedure_state = CS_PROCEDURE_STATE_COMPLETED;
-  } else if (evt->procedure_done_status == sl_bt_cs_done_status_partial_results_continue) {
-    initiator_log_debug(INSTANCE_PREFIX "extract - procedure %u partially done." LOG_NL,
+    cs_initiator_report(CS_INITIATOR_REPORT_LAST_CS_RESULT);
+  } else if (cs_result_content->procedure_done_status == (uint8_t)sl_bt_cs_done_status_partial_results_continue) {
+    initiator_log_debug(INSTANCE_PREFIX "extract - procedure #%u partially done." LOG_NL,
                         conn_handle,
-                        evt->procedure_counter);
+                        cs_result_content->procedure_counter);
     procedure_state = CS_PROCEDURE_STATE_IN_PROGRESS;
-  } else if (evt->procedure_done_status == sl_bt_cs_done_status_aborted) {
-    initiator_log_warning(INSTANCE_PREFIX "extract - procedure %u aborted! "
-                                          "[reason: 0x%X]" LOG_NL,
+  } else if (cs_result_content->procedure_done_status == (uint8_t)sl_bt_cs_done_status_aborted) {
+    initiator_log_warning(INSTANCE_PREFIX "extract - procedure #%u aborted! "
+                                          "[reason: 0x%x]" LOG_NL,
                           conn_handle,
-                          evt->procedure_counter,
-                          evt->abort_reason);
+                          cs_result_content->procedure_counter,
+                          cs_result_content->abort_reason);
     reset_subevent_data(conn_handle);
     procedure_state = CS_PROCEDURE_STATE_ABORTED;
   }
@@ -1551,6 +1671,7 @@ static void calculate_distance(const uint8_t conn_handle)
     return;
   }
   // procedure count is always 1.
+  cs_initiator_report(CS_INITIATOR_REPORT_ESTIMATION_BEGIN);
   rtl_err = sl_rtl_cs_process(&initiator->rtl_handle,
                               1,
                               &initiator->cs_procedure);
@@ -1619,6 +1740,21 @@ static void calculate_distance(const uint8_t conn_handle)
                         rtl_err);
   }
 
+  if (initiator->config.cs_mode == sl_bt_cs_mode_rtt) {
+    initiator_log_info(INSTANCE_PREFIX "RTL - get bit error rate" LOG_NL,
+                       initiator->conn_handle);
+    rtl_err = sl_rtl_cs_get_distance_estimate_confidence(&initiator->rtl_handle,
+                                                         SL_RTL_CS_DISTANCE_ESTIMATE_CONFIDENCE_TYPE_BIT_ERROR_RATE,
+                                                         &result.bit_error_rate);
+    show_rtl_api_call_result(initiator->conn_handle, rtl_err);
+    if (rtl_err == SL_RTL_ERROR_SUCCESS) {
+      estimation_valid = true;
+    }
+  } else {
+    // Indicate that bit_error_rate is not used in PBR mode
+    result.bit_error_rate = NAN;
+  }
+
   // Set reference TX power for RSSI calculation
   param.type = SL_RTL_REF_TX_POWER;
   param.value.ref_tx_power = initiator->config.rssi_ref_tx_power;
@@ -1646,8 +1782,9 @@ static void calculate_distance(const uint8_t conn_handle)
   }
 
   if (estimation_valid && initiator->result_cb != NULL) {
+    cs_initiator_report(CS_INITIATOR_REPORT_ESTIMATION_END);
     // Call result callback in case of successful process call
-    initiator->result_cb(&result, NULL);
+    initiator->result_cb(&result, &initiator->cs_procedure, NULL);
   }
   reset_subevent_data(initiator->conn_handle);
 }
@@ -1786,7 +1923,8 @@ static void reset_subevent_data(const uint8_t conn_handle)
 static enum sl_rtl_error_code rtl_library_init(const uint8_t conn_handle,
                                                sl_rtl_cs_libitem *handle,
                                                rtl_config_t      *config,
-                                               const uint8_t     cs_mode)
+                                               const uint8_t     cs_mode,
+                                               uint8_t           *instance_id)
 {
   enum sl_rtl_error_code rtl_err;
 
@@ -1805,6 +1943,15 @@ static enum sl_rtl_error_code rtl_library_init(const uint8_t conn_handle,
   rtl_err = sl_rtl_cs_init(handle);
   if (rtl_err != SL_RTL_ERROR_SUCCESS) {
     initiator_log_error(INSTANCE_PREFIX "RTL - failed to init lib! "
+                                        "[err: 0x%02x]" LOG_NL,
+                        conn_handle,
+                        rtl_err);
+    return rtl_err;
+  }
+
+  rtl_err = sl_rtl_cs_log_get_instance_id(handle, instance_id);
+  if (rtl_err != SL_RTL_ERROR_SUCCESS) {
+    initiator_log_error(INSTANCE_PREFIX "RTL - failed to get instance id! "
                                         "[err: 0x%02x]" LOG_NL,
                         conn_handle,
                         rtl_err);
@@ -1850,11 +1997,6 @@ static enum sl_rtl_error_code rtl_library_init(const uint8_t conn_handle,
       break;
     case sl_bt_cs_mode_pbr:
     {
-      config->cs_parameters.max_number_of_frequencies =
-        (uint32_t)DEFAULT_NUM_TONES;
-      config->cs_parameters.delta_f =
-        (uint32_t)DEFAULT_FREQUENCY_DELTA;
-
       initiator_log_info(INSTANCE_PREFIX "RTL - set CS mode: PBR" LOG_NL, conn_handle);
       rtl_err = sl_rtl_cs_set_cs_mode(handle, SL_RTL_CS_MODE_PBR);
       if (rtl_err != SL_RTL_ERROR_SUCCESS) {
@@ -1864,11 +2006,6 @@ static enum sl_rtl_error_code rtl_library_init(const uint8_t conn_handle,
                             rtl_err);
         return rtl_err;
       }
-      initiator_log_debug(INSTANCE_PREFIX "RTL - CS mode set. Set CS parameters "
-                                          "[max_number_of_frequencies=%lu, delta_f=%lu]" LOG_NL,
-                          conn_handle,
-                          (unsigned long)config->cs_parameters.max_number_of_frequencies,
-                          (unsigned long)config->cs_parameters.delta_f);
       rtl_err = sl_rtl_cs_set_cs_params(handle, &config->cs_parameters);
       if (rtl_err != SL_RTL_ERROR_SUCCESS) {
         initiator_log_error(INSTANCE_PREFIX "RTL - failed to set CS parameters! "
@@ -1881,10 +2018,6 @@ static enum sl_rtl_error_code rtl_library_init(const uint8_t conn_handle,
     break;
     default:
     {
-      config->cs_parameters.max_number_of_frequencies =
-        (uint32_t)DEFAULT_NUM_TONES;
-      config->cs_parameters.delta_f = (uint32_t)DEFAULT_FREQUENCY_DELTA;
-
       initiator_log_info(INSTANCE_PREFIX "RTL - set CS mode to default [PBR]" LOG_NL,
                          conn_handle);
       rtl_err = sl_rtl_cs_set_cs_mode(handle, SL_RTL_CS_MODE_PBR);
@@ -1895,11 +2028,7 @@ static enum sl_rtl_error_code rtl_library_init(const uint8_t conn_handle,
                             rtl_err);
         return rtl_err;
       }
-      initiator_log_debug(INSTANCE_PREFIX "RTL - CS mode set. Set CS parameters "
-                                          "[max_number_of_frequencies=%lu, delta_f=%lu]" LOG_NL,
-                          conn_handle,
-                          (unsigned long)config->cs_parameters.max_number_of_frequencies,
-                          (unsigned long)config->cs_parameters.delta_f);
+
       rtl_err = sl_rtl_cs_set_cs_params(handle, &config->cs_parameters);
       if (rtl_err != SL_RTL_ERROR_SUCCESS) {
         initiator_log_error(INSTANCE_PREFIX "RTL - failed to set CS parameters! "
@@ -1997,13 +2126,13 @@ static void init_cs_configuration(const uint8_t conn_handle)
                               initiator->config.mode0_step,
                               sl_bt_cs_role_initiator,
                               initiator->config.rtt_type,
-                              (cs_phy_t)initiator->config.phy,
-                              &initiator->config.channel_map,
+                              initiator->config.cs_sync_phy,
+                              (const sl_bt_cs_channel_map_t*)initiator->rtl_config.cs_parameters.channel_map,
                               initiator->config.channel_map_repetition,
                               initiator->config.channel_selection_type,
                               initiator->config.ch3c_shape,
                               initiator->config.ch3c_jump,
-                              initiator->config.companion_signal_enable);
+                              initiator->config.reserved); // Reserved for future use
 
   if (sc != SL_STATUS_OK) {
     initiator_log_error(INSTANCE_PREFIX "CS - configuration create failed! [sc: 0x%lx]" LOG_NL,
@@ -2104,12 +2233,13 @@ static void stop_error_timer(const uint8_t conn_handle)
  * and register the selected callback function pointer as a
  * callback for the distance measurement.
  *****************************************************************************/
-sl_status_t cs_initiator_create(const uint8_t         conn_handle,
-                                cs_initiator_config_t *initiator_config,
+sl_status_t cs_initiator_create(const uint8_t               conn_handle,
+                                cs_initiator_config_t       *initiator_config,
                                 const rtl_config_t          *rtl_config,
-                                cs_result_cb_t        result_cb,
+                                cs_result_cb_t              result_cb,
                                 cs_intermediate_result_cb_t intermediate_result_cb,
-                                cs_error_cb_t         error_cb)
+                                cs_error_cb_t               error_cb,
+                                uint8_t                     *instance_id)
 {
   sl_status_t sc = SL_STATUS_OK;
   enum sl_rtl_error_code rtl_err = SL_RTL_ERROR_SUCCESS;
@@ -2150,20 +2280,39 @@ sl_status_t cs_initiator_create(const uint8_t         conn_handle,
                       initiator->conn_handle);
   memcpy(&initiator->config, initiator_config, sizeof(cs_initiator_config_t));
 
-  #ifndef CS_WEB_ASSEMBLY_MODE
-  sc = sl_bt_sm_increase_security(initiator->conn_handle);
+  sc  = sl_bt_connection_get_security_status(initiator->conn_handle, (uint8_t*)initiator->security_mode, NULL, NULL);
   if (sc != SL_STATUS_OK) {
-    initiator_log_error(INSTANCE_PREFIX "failed to increase security" LOG_NL,
+    initiator_log_error(INSTANCE_PREFIX "failed to get security status" LOG_NL,
                         initiator->conn_handle);
-    initiator_err = CS_ERROR_EVENT_INITIATOR_FAILED_TO_INCREASE_SECURITY;
+    initiator_err = CS_ERROR_EVENT_INITIATOR_FAILED_TO_GET_SECURITY_STATUS;
     goto cleanup;
   }
-  #endif //CS_WEB_ASSEMBLY_MODE
+
+  if (initiator->security_mode != sl_bt_connection_mode1_level1) {
+    initiator_log_info(INSTANCE_PREFIX "connection already encrypted [level: %u]" LOG_NL,
+                       initiator->conn_handle,
+                       initiator->security_mode);
+  } else {
+    initiator_log_info(INSTANCE_PREFIX "connection not encrypted yet, increase security" LOG_NL,
+                       initiator->conn_handle);
+
+    sc = sl_bt_sm_increase_security(initiator->conn_handle);
+    if (sc != SL_STATUS_OK) {
+      initiator_log_error(INSTANCE_PREFIX "failed to increase security!" LOG_NL,
+                          initiator->conn_handle);
+      initiator_err = CS_ERROR_EVENT_INITIATOR_FAILED_TO_INCREASE_SECURITY;
+      goto cleanup;
+    }
+  }
 
   // take over RTL lib configuration into the instance
   initiator->rtl_config.algo_mode = rtl_config->algo_mode;
   initiator->rtl_config.cs_parameters = rtl_config->cs_parameters;
   initiator->rtl_config.rtl_logging_enabled = rtl_config->rtl_logging_enabled;
+
+  memcpy(initiator->rtl_config.cs_parameters.channel_map,
+         rtl_config->cs_parameters.channel_map,
+         sizeof(rtl_config->cs_parameters.channel_map));
 
   if (initiator->rtl_config.algo_mode == SL_RTL_CS_ALGO_MODE_REAL_TIME_BASIC) {
     initiator_log_info(INSTANCE_PREFIX "RTL - algo mode selected: real-time basic"
@@ -2179,7 +2328,6 @@ sl_status_t cs_initiator_create(const uint8_t         conn_handle,
                                           "(moving objects tracking)!" LOG_NL,
                           initiator->conn_handle, initiator->rtl_config.algo_mode);
   }
-
   set_procedure_initial_state(initiator->conn_handle,
                               &initiator->config,
                               &initiator->cs_procedure);
@@ -2193,30 +2341,30 @@ sl_status_t cs_initiator_create(const uint8_t         conn_handle,
   initiator_log_debug(INSTANCE_PREFIX "registered callbacks" LOG_NL,
                       initiator->conn_handle);
 
+  // Validate the channel map
+  rtl_err = sl_rtl_util_validate_bluetooth_cs_channel_map(initiator->config.cs_mode,
+                                                          initiator->rtl_config.algo_mode,
+                                                          initiator->rtl_config.cs_parameters.channel_map);
+  if (rtl_err != SL_RTL_ERROR_SUCCESS) {
+    initiator_log_error(INSTANCE_PREFIX "RTL - invalid channel map! [err: 0x%02x]" LOG_NL,
+                        conn_handle,
+                        rtl_err);
+    initiator_err = CS_ERROR_EVENT_INITIATOR_FAILED_TO_GET_CHANNEL_MAP;
+    sc = SL_STATUS_INVALID_PARAMETER;
+    goto cleanup;
+  } else {
+    initiator_log_info(INSTANCE_PREFIX "RTL - channel map validated." LOG_NL,
+                       initiator->conn_handle);
+  }
+
   enabled_channels =
-    get_num_tones_from_channel_map(initiator->config.channel_map.data,
-                                   initiator->config.channel_map_len);
+    get_num_tones_from_channel_map(initiator->rtl_config.cs_parameters.channel_map,
+                                   sizeof(initiator->rtl_config.cs_parameters.channel_map));
 
   initiator_log_info(INSTANCE_PREFIX "CS channel map - channel count: %lu" LOG_NL,
                      initiator->conn_handle,
                      (unsigned long)enabled_channels);
 
-  if (enabled_channels < CS_CHANNEL_MAP_MIN_CHANNELS) {
-    initiator_log_error(INSTANCE_PREFIX "CS channel map - too few channels channels enabled!" LOG_NL,
-                        initiator->conn_handle);
-    sc = SL_STATUS_INVALID_PARAMETER;
-    initiator_err = CS_ERROR_EVENT_INITIATOR_CHANNEL_MAP_TOO_FEW_CHANNELS;
-    goto cleanup;
-  }
-  if (enabled_channels > CS_CHANNEL_MAP_MAX_CHANNELS) {
-    initiator_log_error(INSTANCE_PREFIX "CS channel - too many channels enabled!" LOG_NL,
-                        initiator->conn_handle);
-    sc = SL_STATUS_INVALID_PARAMETER;
-    initiator_err = CS_ERROR_EVENT_INITIATOR_CHANNEL_MAP_TOO_MANY_CHANNELS;
-    goto cleanup;
-  }
-
-  #ifndef CS_WEB_ASSEMBLY_MODE
   // Request connection parameter update.
   sc = sl_bt_connection_set_parameters(initiator->conn_handle,
                                        initiator->config.min_connection_interval,
@@ -2234,7 +2382,16 @@ sl_status_t cs_initiator_create(const uint8_t         conn_handle,
       CS_ERROR_EVENT_INITIATOR_FAILED_TO_SET_CONNECTION_PARAMETERS;
     goto cleanup;
   }
-  #endif //CS_WEB_ASSEMBLY_MODE
+  sc = sl_bt_connection_set_preferred_phy(conn_handle, initiator->config.conn_phy, sl_bt_gap_phy_any);
+  if (sc != SL_STATUS_OK) {
+    initiator_log_error(INSTANCE_PREFIX "CS - failed to set connection PHY! "
+                                        "[sc: 0x%04lx]" LOG_NL,
+                        initiator->conn_handle,
+                        (unsigned long)sc);
+    initiator_err =
+      CS_ERROR_EVENT_INITIATOR_FAILED_TO_SET_CONNECTION_PHY;
+    goto cleanup;
+  }
 
   initiator_log_debug(INSTANCE_PREFIX "CS - set connection parameters ..." LOG_NL,
                       initiator->conn_handle);
@@ -2243,23 +2400,27 @@ sl_status_t cs_initiator_create(const uint8_t         conn_handle,
   initiator->discovery_state.characteristic_found.ras_subevent_ranging_data = false;
   initiator->discovery_state.characteristic_found.ras_all = false;
 
-  start_error_timer(initiator->conn_handle);
   // trying to initialize RTL lib within error-timeout
   initiator_log_debug(INSTANCE_PREFIX "RTL - initialize lib item" LOG_NL,
                       initiator->conn_handle);
   rtl_err = rtl_library_init(initiator->conn_handle,
                              &initiator->rtl_handle,
                              &initiator->rtl_config,
-                             initiator->config.cs_mode);
+                             initiator->config.cs_mode,
+                             &initiator->instance_id);
   if (rtl_err != SL_RTL_ERROR_SUCCESS) {
     initiator_log_error(INSTANCE_PREFIX "RTL - failed to init lib item! [err: 0x%02x]" LOG_NL,
                         initiator->conn_handle,
                         rtl_err);
     initiator_err = CS_ERROR_EVENT_INITIATOR_FAILED_TO_INIT_RTL_LIB;
+    sc = SL_STATUS_FAIL;
+    goto cleanup;
   }
-  stop_error_timer(initiator->conn_handle);
   initiator_log_info(INSTANCE_PREFIX "RTL - lib item initialized." LOG_NL,
                      initiator->conn_handle);
+  if (instance_id != NULL) {
+    *instance_id = initiator->instance_id;
+  }
   (void)initiator_state_machine_event_handler(initiator->conn_handle,
                                               INITIATOR_EVT_INIT_STARTED,
                                               NULL);
@@ -2287,6 +2448,12 @@ void cs_initiator_init(void)
     initiator->cs_procedure.reflector_subevent_data =
       &initiator->reflector_data.subevent_data[0];
   }
+
+  // Initialize local and remote controller data
+  memset(&cs_local_controller, 0, sizeof(cs_local_controller));
+  memset(&cs_remote_controller, 0, sizeof(cs_remote_controller));
+
+  cs_initiator_report(CS_INITIATOR_REPORT_INIT);
 }
 
 /******************************************************************************
@@ -2349,25 +2516,246 @@ bool cs_initiator_on_event(sl_bt_msg_t *evt)
       if (evt->data.evt_connection_parameters.security_mode
           != sl_bt_connection_mode1_level1) {
         initiator_log_info(INSTANCE_PREFIX "CS - connection parameters set: "
-                                           "encryption on. Start discovering RAS service "
-                                           "& characteristic ..." LOG_NL,
+                                           "encryption on. "
+                                           "Read remote cs capabilities" LOG_NL,
                            initiator->conn_handle);
 
-        sc = sl_bt_gatt_discover_primary_services_by_uuid(initiator->conn_handle,
-                                                          UUID_LEN,
-                                                          ras_service_uuid);
-        if (sc != SL_STATUS_OK && sc != SL_STATUS_IN_PROGRESS) {
-          initiator_log_error(INSTANCE_PREFIX "failed to start RAS service discovery" LOG_NL,
-                              initiator->conn_handle);
-          on_error(initiator->conn_handle,
-                   CS_ERROR_EVENT_START_SERVICE_DISCOVERY,
-                   sc);
+        sc = sl_bt_cs_read_remote_supported_capabilities(initiator->conn_handle);
 
+        if (sc != SL_STATUS_OK) {
+          initiator_log_error(INSTANCE_PREFIX "CS - failed to read remote supported capabilities! "
+                                              "[sc: 0x%lx]" LOG_NL,
+                              initiator->conn_handle,
+                              (unsigned long)sc);
+          on_error(initiator->conn_handle,
+                   CS_ERROR_EVENT_INITIATOR_FAILED_TO_GET_CS_CONTROLLER_REMOTE_CAPABILITIES,
+                   sc);
           break;
         }
-
-        init_cs_configuration(initiator->conn_handle);
+        start_error_timer(initiator->conn_handle);
       }
+      break;
+
+    case sl_bt_evt_connection_phy_status_id:
+      initiator = cs_initiator_get_instance(evt->data.evt_connection_phy_status.connection);
+      if (initiator == NULL) {
+        break;
+      }
+      initiator->config.conn_phy = evt->data.evt_connection_phy_status.phy;
+      initiator_log_info(INSTANCE_PREFIX "Connection phy set to: %u" LOG_NL,
+                         initiator->conn_handle,
+                         initiator->config.conn_phy);
+      break;
+
+    // --------------------------------
+    // CS remote supported capabilities
+    case sl_bt_evt_cs_read_remote_supported_capabilities_complete_id:
+      initiator = cs_initiator_get_instance(evt->data.evt_cs_read_remote_supported_capabilities_complete.connection);
+      if (initiator == NULL) {
+        initiator_log_error("Unexpected event "
+                            "[sl_bt_evt_cs_read_remote_supported_capabilities_complete_id]!"
+                            "Unknown target connection id: %u" LOG_NL,
+                            evt->data.evt_cs_read_remote_supported_capabilities_complete.connection);
+        break;
+      }
+
+      stop_error_timer(initiator->conn_handle);
+
+      // Assign remote controller data
+      cs_remote_controller.num_config = evt->data.evt_cs_read_remote_supported_capabilities_complete.num_config;
+      cs_remote_controller.max_consecutive_procedures = evt->data.evt_cs_read_remote_supported_capabilities_complete.max_consecutive_procedures;
+      cs_remote_controller.num_antennas = evt->data.evt_cs_read_remote_supported_capabilities_complete.num_antennas;
+      cs_remote_controller.max_antenna_paths = evt->data.evt_cs_read_remote_supported_capabilities_complete.max_antenna_paths;
+      cs_remote_controller.roles = evt->data.evt_cs_read_remote_supported_capabilities_complete.roles;
+      cs_remote_controller.rtt_capability = evt->data.evt_cs_read_remote_supported_capabilities_complete.rtt_capability;
+      cs_remote_controller.rtt_aa_only = evt->data.evt_cs_read_remote_supported_capabilities_complete.rtt_aa_only;
+      cs_remote_controller.rtt_sounding = evt->data.evt_cs_read_remote_supported_capabilities_complete.rtt_sounding;
+      cs_remote_controller.rtt_random_payload = evt->data.evt_cs_read_remote_supported_capabilities_complete.rtt_random_payload;
+      cs_remote_controller.t_sw_times = evt->data.evt_cs_read_remote_supported_capabilities_complete.t_sw_times;
+
+      initiator_log_info(INSTANCE_PREFIX "CS - remote capabilities received "
+                                         "[antennas available: %u, max antenna paths: %u]" LOG_NL,
+                         initiator->conn_handle,
+                         cs_remote_controller.num_antennas,
+                         cs_remote_controller.max_antenna_paths);
+
+      sc = sl_bt_cs_read_local_supported_capabilities(&cs_local_controller.num_config,
+                                                      &cs_local_controller.max_consecutive_procedures,
+                                                      &cs_local_controller.num_antennas,
+                                                      &cs_local_controller.max_antenna_paths,
+                                                      &cs_local_controller.roles,
+                                                      &cs_local_controller.optional_modes,
+                                                      &cs_local_controller.rtt_capability,
+                                                      &cs_local_controller.rtt_aa_only,
+                                                      &cs_local_controller.rtt_sounding,
+                                                      &cs_local_controller.rtt_random_payload,
+                                                      &cs_local_controller.optional_cs_sync_phys,
+                                                      &cs_local_controller.optional_subfeatures,
+                                                      &cs_local_controller.optional_t_ip1_times,
+                                                      &cs_local_controller.optional_t_ip2_times,
+                                                      &cs_local_controller.optional_t_fcs_times,
+                                                      &cs_local_controller.optional_t_pm_times,
+                                                      &cs_local_controller.t_sw_times,
+                                                      &cs_local_controller.optional_tx_snr_capability);
+
+      initiator->config.num_antennas = cs_local_controller.num_antennas;
+
+      if (sc != SL_STATUS_OK) {
+        initiator_log_error(INSTANCE_PREFIX "CS - failed to read local supported capabilities! "
+                                            "[sc: 0x%lx]" LOG_NL,
+                            initiator->conn_handle,
+                            (unsigned long)sc);
+        on_error(initiator->conn_handle,
+                 CS_ERROR_EVENT_INITIATOR_FAILED_TO_GET_CS_CONTROLLER_LOCAL_CAPABILITIES,
+                 sc);
+        break;
+      }
+
+      initiator_log_info(INSTANCE_PREFIX "CS - local capabilities received "
+                                         "[antennas available: %u, max antenna paths: %u]" LOG_NL,
+                         initiator->conn_handle,
+                         cs_local_controller.num_antennas,
+                         cs_local_controller.max_antenna_paths);
+
+      // Prepare for the CS mode: PBR antenna usage
+      if (initiator->config.cs_mode == sl_bt_cs_mode_pbr) {
+        switch (initiator->config.cs_tone_antenna_config_idx_req) {
+          case CS_ANTENNA_CONFIG_INDEX_SINGLE_ONLY:
+            initiator->cs_procedure.cs_config.num_antenna_paths = 1;
+            initiator_log_info(INSTANCE_PREFIX "CS - PBR - 1:1 antenna usage set" LOG_NL,
+                               initiator->conn_handle);
+            break;
+          case CS_ANTENNA_CONFIG_INDEX_DUAL_I_SINGLE_R:
+            if (cs_local_controller.num_antennas < 2) {
+              initiator_log_warning(INSTANCE_PREFIX "CS - PBR - 1:1 antenna usage "
+                                                    "is possible only!" LOG_NL,
+                                    initiator->conn_handle);
+              on_error(initiator->conn_handle,
+                       CS_ERROR_EVENT_INITIATOR_PBR_ANTENNA_USAGE_NOT_SUPPORTED,
+                       SL_STATUS_FAIL);
+              initiator->config.cs_tone_antenna_config_idx_req = CS_ANTENNA_CONFIG_INDEX_SINGLE_ONLY;
+              initiator->cs_procedure.cs_config.num_antenna_paths = 1;
+            } else {
+              initiator->cs_procedure.cs_config.num_antenna_paths = 2;
+              initiator_log_info(INSTANCE_PREFIX "CS - PBR - 2:1 antenna usage set" LOG_NL,
+                                 initiator->conn_handle);
+            }
+            break;
+          case CS_ANTENNA_CONFIG_INDEX_SINGLE_I_DUAL_R:
+            if (cs_remote_controller.num_antennas < 2) {
+              initiator_log_warning(INSTANCE_PREFIX "CS - PBR - 1:1 antenna usage "
+                                                    "is possible only!" LOG_NL,
+                                    initiator->conn_handle);
+              on_error(initiator->conn_handle,
+                       CS_ERROR_EVENT_INITIATOR_PBR_ANTENNA_USAGE_NOT_SUPPORTED,
+                       SL_STATUS_FAIL);
+              initiator->config.cs_tone_antenna_config_idx_req = CS_ANTENNA_CONFIG_INDEX_SINGLE_ONLY;
+              initiator->cs_procedure.cs_config.num_antenna_paths = 1;
+            } else {
+              initiator->cs_procedure.cs_config.num_antenna_paths = 2;
+              initiator_log_info(INSTANCE_PREFIX "CS - PBR - 1:2 antenna usage set" LOG_NL,
+                                 initiator->conn_handle);
+            }
+            break;
+          case CS_ANTENNA_CONFIG_INDEX_DUAL_ONLY:
+            if (cs_remote_controller.num_antennas >= 2 && cs_local_controller.num_antennas >= 2) {
+              initiator->cs_procedure.cs_config.num_antenna_paths = 4;
+              initiator_log_info(INSTANCE_PREFIX "CS - PBR - 2:2 antenna usage set" LOG_NL,
+                                 initiator->conn_handle);
+            } else {
+              on_error(initiator->conn_handle,
+                       CS_ERROR_EVENT_INITIATOR_PBR_ANTENNA_USAGE_NOT_SUPPORTED,
+                       SL_STATUS_FAIL);
+              if (cs_remote_controller.num_antennas == 1 && cs_local_controller.num_antennas == 2) {
+                initiator->cs_procedure.cs_config.num_antenna_paths = 2;
+                initiator->config.cs_tone_antenna_config_idx_req = CS_ANTENNA_CONFIG_INDEX_DUAL_I_SINGLE_R;
+                initiator_log_info(INSTANCE_PREFIX "CS - PBR - 2:1 antenna usage set" LOG_NL,
+                                   initiator->conn_handle);
+              } else if (cs_remote_controller.num_antennas == 2 && cs_local_controller.num_antennas == 1) {
+                initiator->cs_procedure.cs_config.num_antenna_paths = 2;
+                initiator->config.cs_tone_antenna_config_idx_req = CS_ANTENNA_CONFIG_INDEX_SINGLE_I_DUAL_R;
+                initiator_log_info(INSTANCE_PREFIX "CS - PBR - 1:2 antenna usage set" LOG_NL,
+                                   initiator->conn_handle);
+              } else {
+                initiator_log_warning(INSTANCE_PREFIX "CS - PBR - 1:1 antenna usage is possible only!" LOG_NL,
+                                      initiator->conn_handle);
+
+                initiator->config.cs_tone_antenna_config_idx_req = CS_ANTENNA_CONFIG_INDEX_SINGLE_ONLY;
+                initiator->cs_procedure.cs_config.num_antenna_paths = 1;
+              }
+            }
+            break;
+          default:
+            initiator_log_warning(INSTANCE_PREFIX "CS - PBR - unknown antenna usage! "
+                                                  "Using the default setting: 1:1 antenna" LOG_NL,
+                                  initiator->conn_handle);
+            initiator->cs_procedure.cs_config.num_antenna_paths = 1;
+            initiator->config.cs_tone_antenna_config_idx_req = CS_ANTENNA_CONFIG_INDEX_SINGLE_ONLY;
+            break;
+        }
+        initiator_log_info(INSTANCE_PREFIX "CS - PBR - using %u antenna paths" LOG_NL,
+                           initiator->conn_handle,
+                           initiator->cs_procedure.cs_config.num_antenna_paths);
+      }
+
+      initiator->config.cs_tone_antenna_config_idx = initiator->config.cs_tone_antenna_config_idx_req;
+      initiator_log_info(INSTANCE_PREFIX "Using tone antenna configuration index: %u" LOG_NL,
+                         initiator->conn_handle,
+                         initiator->config.cs_tone_antenna_config_idx);
+
+      // Prepare for the CS mode: RTT antenna usage
+      if (initiator->config.cs_mode == sl_bt_cs_mode_rtt) {
+        switch (initiator->config.cs_sync_antenna_req) {
+          case CS_SYNC_ANTENNA_1:
+            initiator_log_warning(INSTANCE_PREFIX "CS - RTT - 1. antenna device! Using the antenna ID 1" LOG_NL,
+                                  initiator->conn_handle);
+            initiator->config.cs_sync_antenna = CS_SYNC_ANTENNA_1;
+            break;
+          case CS_SYNC_ANTENNA_2:
+            if (cs_local_controller.num_antennas >= 2) {
+              initiator_log_warning(INSTANCE_PREFIX "CS - RTT - 2. antenna device! Using the antenna ID 1" LOG_NL,
+                                    initiator->conn_handle);
+              initiator->config.cs_sync_antenna = CS_SYNC_ANTENNA_2;
+            } else {
+              initiator_log_warning(INSTANCE_PREFIX "CS - RTT - only 1 antenna device! Using the antenna ID 1" LOG_NL,
+                                    initiator->conn_handle);
+              initiator->config.cs_sync_antenna = CS_SYNC_ANTENNA_1;
+              on_error(initiator->conn_handle,
+                       CS_ERROR_EVENT_INITIATOR_RTT_ANTENNA_USAGE_NOT_SUPPORTED,
+                       SL_STATUS_FAIL);
+            }
+            break;
+          case CS_SYNC_SWITCHING:
+            initiator_log_info(INSTANCE_PREFIX "CS - RTT - switching between %u available antennas" LOG_NL,
+                               initiator->conn_handle,
+                               initiator->config.num_antennas);
+            initiator->config.cs_sync_antenna = CS_SYNC_SWITCHING;
+            break;
+          default:
+            initiator_log_warning(INSTANCE_PREFIX "CS - RTT - unknown antenna usage! "
+                                                  "Using the default setting: antenna ID 1" LOG_NL,
+                                  initiator->conn_handle);
+            initiator->config.cs_sync_antenna_req = CS_SYNC_ANTENNA_1;
+            break;
+        }
+        // In case of RTT num_antenna_paths is ignored
+        initiator->cs_procedure.cs_config.num_antenna_paths = 0;
+      }
+      initiator_log_info(INSTANCE_PREFIX "Start discovering RAS service "
+                                         "& characteristic ..." LOG_NL,
+                         initiator->conn_handle);
+      sc = sl_bt_gatt_discover_primary_services_by_uuid(initiator->conn_handle,
+                                                        UUID_LEN,
+                                                        ras_service_uuid);
+      if (sc != SL_STATUS_OK && sc != SL_STATUS_IN_PROGRESS) {
+        initiator_log_error(INSTANCE_PREFIX "failed to start RAS service discovery" LOG_NL,
+                            initiator->conn_handle);
+        on_error(initiator->conn_handle,
+                 CS_ERROR_EVENT_START_SERVICE_DISCOVERY,
+                 sc);
+        break;
+      }
+      init_cs_configuration(initiator->conn_handle);
       break;
 
     // --------------------------------
@@ -2498,14 +2886,25 @@ bool cs_initiator_on_event(sl_bt_msg_t *evt)
 
       if (evt->data.evt_gatt_characteristic_value.att_opcode == sl_bt_gatt_handle_value_notification) {
         handled = true;
-        struct sl_bt_evt_cs_result_s *result_ptr =
-          (struct sl_bt_evt_cs_result_s*)evt->data.evt_gatt_characteristic_value.value.data;
+        // The first byte represents whether this is a cs_result_id or cs_result_continue_id
+        evt_data.evt_content.first_cs_result = evt->data.evt_gatt_characteristic_value.value.data[0];
+        // The rest of the data is the actual CS result data
+        state_machine_event_t sm_event;
+        if (evt_data.evt_content.first_cs_result == true) {
+          initiator_log_info(INSTANCE_PREFIX "CS - received first reflector CS result" LOG_NL,
+                             evt->data.evt_gatt_characteristic_value.connection);
+          sm_event = INITIATOR_EVT_CS_RESULT;
+        } else {
+          initiator_log_info(INSTANCE_PREFIX "CS - received reflector CS result" LOG_NL,
+                             evt->data.evt_gatt_characteristic_value.connection);
+          sm_event = INITIATOR_EVT_CS_RESULT_CONTINUE;
+        }
+        evt_data.evt_content.cs_result_data =
+          (cs_result_event_t *)&evt->data.evt_gatt_characteristic_value.value.data[sizeof(evt_data.evt_content.first_cs_result)];
+        evt_data.evt_content.initiator_part = false;
 
-        // Extract CS result data and process it
-        evt_data.evt_cs_result.cs_result_data = result_ptr;
-        evt_data.evt_cs_result.initiator_part = false;
-        (void)initiator_state_machine_event_handler(evt->data.evt_cs_result.connection,
-                                                    INITIATOR_EVT_CS_RESULT,
+        (void)initiator_state_machine_event_handler(evt->data.evt_gatt_characteristic_value.connection,
+                                                    sm_event,
                                                     &evt_data);
       }
       break;
@@ -2521,14 +2920,13 @@ bool cs_initiator_on_event(sl_bt_msg_t *evt)
                             evt->data.evt_cs_procedure_enable_complete.connection);
         break;
       }
+
       handled = true;
       evt_data.evt_procedure_enable_completed = &evt->data.evt_cs_procedure_enable_complete;
-      if (evt->data.evt_cs_procedure_enable_complete.state) {
-        // procedure enable/disable received
-        (void)initiator_state_machine_event_handler(evt->data.evt_cs_procedure_enable_complete.connection,
-                                                    INITIATOR_EVT_PROCEDURE_ENABLE_COMPLETED,
-                                                    &evt_data);
-      }
+      // procedure enable/disable received
+      (void)initiator_state_machine_event_handler(evt->data.evt_cs_procedure_enable_complete.connection,
+                                                  INITIATOR_EVT_PROCEDURE_ENABLE_COMPLETED,
+                                                  &evt_data);
       break;
 
     // --------------------------------
@@ -2554,10 +2952,10 @@ bool cs_initiator_on_event(sl_bt_msg_t *evt)
         initiator->cs_procedure.cs_config.cs_sync_phy = evt->data.evt_cs_config_complete.cs_sync_phy;
         initiator->cs_procedure.cs_config.rtt_type = evt->data.evt_cs_config_complete.rtt_type;
         initiator->cs_procedure.cs_config.num_calib_steps = evt->data.evt_cs_config_complete.mode_calibration_steps;
-        initiator->cs_procedure.cs_config.T_FCS_time = evt->data.evt_cs_config_complete.fcs_time_us;
-        initiator->cs_procedure.cs_config.T_IP1_time = evt->data.evt_cs_config_complete.ip1_time_us;
-        initiator->cs_procedure.cs_config.T_IP2_time = evt->data.evt_cs_config_complete.ip2_time_us;
-        initiator->cs_procedure.cs_config.T_PM_time = evt->data.evt_cs_config_complete.pm_time_us;
+        initiator->cs_procedure.cs_config.T_PM_time = evt->data.evt_cs_config_complete.t_pm_time;
+        initiator->cs_procedure.cs_config.T_IP1_time = evt->data.evt_cs_config_complete.t_ip1_time;
+        initiator->cs_procedure.cs_config.T_IP2_time = evt->data.evt_cs_config_complete.t_ip2_time;
+        initiator->cs_procedure.cs_config.T_FCS_time = evt->data.evt_cs_config_complete.t_fcs_time;
 
         sc = sl_bt_cs_set_procedure_parameters(initiator->conn_handle,
                                                initiator->config.config_id,
@@ -2567,8 +2965,8 @@ bool cs_initiator_on_event(sl_bt_msg_t *evt)
                                                initiator->config.max_procedure_count,
                                                initiator->config.min_subevent_len,
                                                initiator->config.max_subevent_len,
-                                               initiator->config.antenna_config,
-                                               initiator->config.phy,
+                                               initiator->config.cs_tone_antenna_config_idx,
+                                               initiator->config.conn_phy,
                                                initiator->config.tx_pwr_delta,
                                                initiator->config.preferred_peer_antenna,
                                                initiator->config.snr_control_initiator,
@@ -2591,35 +2989,62 @@ bool cs_initiator_on_event(sl_bt_msg_t *evt)
     // --------------------------------
     // CS result (initiator) arrived
     case sl_bt_evt_cs_result_id:
-      initiator_log_info(INSTANCE_PREFIX "CS - received initator CS result" LOG_NL,
+      initiator = cs_initiator_get_instance(evt->data.evt_cs_result.connection);
+      if (initiator == NULL) {
+        break;
+      }
+      initiator_log_info(INSTANCE_PREFIX "CS - received first initiator CS result" LOG_NL,
                          evt->data.evt_cs_result.connection);
 
-      evt_data.evt_cs_result.cs_result_data = &evt->data.evt_cs_result;
-      evt_data.evt_cs_result.initiator_part = true;
+      evt_data.evt_content.cs_result_data = (cs_result_event_t *)&evt->data.evt_cs_result;
+      evt_data.evt_content.initiator_part = true;
+      evt_data.evt_content.first_cs_result = true;
+      evt_data.evt_content.procedure_counter = evt->data.evt_cs_result.procedure_counter;
       sc = initiator_state_machine_event_handler(evt->data.evt_cs_result.connection,
                                                  INITIATOR_EVT_CS_RESULT,
                                                  &evt_data);
       if (sc == SL_STATUS_OK) {
         handled = true;
       }
+      #ifdef SL_CATALOG_BLUETOOTH_FEATURE_CS_TEST_PRESENT
+      handled = false;
+      #endif //SL_CATALOG_BLUETOOTH_FEATURE_CS_TEST_PRESENT
+      break;
+
+    // --------------------------------
+    // Consecutive CS result (initiator) arrived
+    case sl_bt_evt_cs_result_continue_id:
+      initiator = cs_initiator_get_instance(evt->data.evt_cs_result_continue.connection);
+      if (initiator == NULL) {
+        break;
+      }
+      initiator_log_info(INSTANCE_PREFIX "CS - received initiator CS result" LOG_NL,
+                         evt->data.evt_cs_result_continue.connection);
+
+      evt_data.evt_content.cs_result_data = (cs_result_event_t *)&evt->data.evt_cs_result_continue;
+      evt_data.evt_content.initiator_part = true;
+      evt_data.evt_content.first_cs_result = false;
+      sc = initiator_state_machine_event_handler(evt->data.evt_cs_result_continue.connection,
+                                                 INITIATOR_EVT_CS_RESULT_CONTINUE,
+                                                 &evt_data);
+      if (sc == SL_STATUS_OK) {
+        handled = true;
+      }
+      #ifdef SL_CATALOG_BLUETOOTH_FEATURE_CS_TEST_PRESENT
+      handled = false;
+      #endif //SL_CATALOG_BLUETOOTH_FEATURE_CS_TEST_PRESENT
       break;
 
     // --------------------------------
     // Bluetooth stack resource exhausted
     case sl_bt_evt_system_resource_exhausted_id:
     {
-      uint8_t num_buffers_discarded =
-        evt->data.evt_system_resource_exhausted.num_buffers_discarded;
-      uint8_t num_buffer_allocation_failures =
-        evt->data.evt_system_resource_exhausted.num_buffer_allocation_failures;
-      uint8_t num_heap_allocation_failures =
-        evt->data.evt_system_resource_exhausted.num_heap_allocation_failures;
       initiator_log_error("BT stack buffers exhausted, "
                           "data loss may have occurred! [buf_discarded:%u, "
                           "buf_alloc_fail:%u, heap_alloc_fail:%u]" LOG_NL,
-                          num_buffers_discarded,
-                          num_buffer_allocation_failures,
-                          num_heap_allocation_failures);
+                          evt->data.evt_system_resource_exhausted.num_buffers_discarded,
+                          evt->data.evt_system_resource_exhausted.num_buffer_allocation_failures,
+                          evt->data.evt_system_resource_exhausted.num_heap_allocation_failures);
     }
     break;
 
@@ -2631,11 +3056,4 @@ bool cs_initiator_on_event(sl_bt_msg_t *evt)
 
   // Return false if the event was handled above.
   return !handled;
-}
-
-/******************************************************************************
- * Weak implementation of the on_waiting indication for CS Initiator.
- *****************************************************************************/
-SL_WEAK void cs_initiator_on_waiting(void)
-{
 }

@@ -34,11 +34,13 @@
 
 /* SDK emlib layer */
 #include "em_device.h"
-#include "em_gpio.h"
 #include "em_cmu.h"
 
-/* SDK emdrv layer */
-#include "gpiointerrupt.h"
+/* SDK driver layer */
+#include "sl_gpio.h"
+
+/* SDK peripheral layer */
+#include "sl_hal_gpio.h"
 
 /* FreeRTOS kernel layer */
 #include "FreeRTOS.h"
@@ -70,17 +72,19 @@ static bool sl_gpio_validate(IotGpioHandle_t pxGpio);
 
 /************************ sl_gpio_irq_callback() ******************************/
 
-static void sl_gpio_irq_callback(uint8_t intNo)
+static void sl_gpio_irq_callback(uint8_t intNo, void *ctx)
 {
+  (void)ctx;
   uint32_t table_size = iot_gpio_desc_get_table_size();
+  bool state;
+
   for (uint32_t i = 0; i < table_size; i++) {
     // Validate interrupt number and if gpio is opened
     if (intNo == iot_gpio_desc[i].int_number && iot_gpio_desc[i].is_open) {
       // Validate callback and Interrupt enabled
       if (iot_gpio_desc[i].callback != NULL
           && iot_gpio_desc[i].interrupt != eGpioInterruptNone) {
-        uint8_t state = GPIO_PinInGet(iot_gpio_desc[i].port, iot_gpio_desc[i].pin);
-
+        sl_gpio_get_pin_input(&iot_gpio_desc[i].gpio, &state);
         iot_gpio_desc[i].callback(state, iot_gpio_desc[i].context);
       }
     }
@@ -93,26 +97,44 @@ static int32_t sl_gpio_config_irq(IotGpioHandle_t pxGpioHandle)
 {
   static bool gpio_int_init = false;
   bool disable_int = false;
+  int32_t int_no = pxGpioHandle->int_number;
+  sl_gpio_interrupt_flag_t flag = SL_GPIO_INTERRUPT_NO_EDGE;
 
   switch (pxGpioHandle->interrupt) {
     case eGpioInterruptNone:
-      GPIO_ExtIntConfig(pxGpioHandle->port, pxGpioHandle->pin,
-                        pxGpioHandle->int_number, false, false, false);
+      sl_gpio_configure_external_interrupt(&pxGpioHandle->gpio,
+                                           &int_no,
+                                           SL_GPIO_INTERRUPT_NO_EDGE,
+                                           NULL,
+                                           NULL);
+      flag = SL_GPIO_INTERRUPT_NO_EDGE;
       disable_int = true;
       break;
     case eGpioInterruptRising:
-      GPIO_ExtIntConfig(pxGpioHandle->port, pxGpioHandle->pin,
-                        pxGpioHandle->int_number, true, false, true);
+      sl_gpio_configure_external_interrupt(&pxGpioHandle->gpio,
+                                           &int_no,
+                                           SL_GPIO_INTERRUPT_RISING_EDGE,
+                                           NULL,
+                                           NULL);
+      flag = SL_GPIO_INTERRUPT_RISING_EDGE;
       gpio_int_init = true;
       break;
     case eGpioInterruptFalling:
-      GPIO_ExtIntConfig(pxGpioHandle->port, pxGpioHandle->pin,
-                        pxGpioHandle->int_number, false, true, true);
+      sl_gpio_configure_external_interrupt(&pxGpioHandle->gpio,
+                                           &int_no,
+                                           SL_GPIO_INTERRUPT_FALLING_EDGE,
+                                           NULL,
+                                           NULL);
+      flag = SL_GPIO_INTERRUPT_FALLING_EDGE;
       gpio_int_init = true;
       break;
     case eGpioInterruptEdge:
-      GPIO_ExtIntConfig(pxGpioHandle->port, pxGpioHandle->pin,
-                        pxGpioHandle->int_number, true, true, true);
+      sl_gpio_configure_external_interrupt(&pxGpioHandle->gpio,
+                                           &int_no,
+                                           SL_GPIO_INTERRUPT_RISING_FALLING_EDGE,
+                                           NULL,
+                                           NULL);
+      flag = SL_GPIO_INTERRUPT_RISING_FALLING_EDGE;
       gpio_int_init = true;
       break;
     case eGpioInterruptLow:
@@ -122,16 +144,20 @@ static int32_t sl_gpio_config_irq(IotGpioHandle_t pxGpioHandle)
   }
 
   if (disable_int && gpio_int_init) {
-    GPIOINT_CallbackUnRegister(pxGpioHandle->int_number);
+    sl_gpio_deconfigure_external_interrupt(int_no);
     return IOT_GPIO_SUCCESS;
   }
 
   if (!gpio_int_init) {
-    GPIOINT_Init();
+    sl_gpio_init();
     gpio_int_init = true;
   }
 
-  GPIOINT_CallbackRegister(pxGpioHandle->int_number, sl_gpio_irq_callback);
+  sl_gpio_configure_external_interrupt(&pxGpioHandle->gpio,
+                                       &int_no,
+                                       flag,
+                                       sl_gpio_irq_callback,
+                                       NULL);
 
   return IOT_GPIO_SUCCESS;
 }
@@ -140,31 +166,32 @@ static int32_t sl_gpio_config_irq(IotGpioHandle_t pxGpioHandle)
 
 static void sl_gpio_config_pin(IotGpioHandle_t pxGpio)
 {
+  bool pin_val;
+
   switch (pxGpio->direction) {
     case eGpioDirectionInput:
       if (pxGpio->pull == eGpioPullUp) {
-        GPIO_PinModeSet(pxGpio->port, pxGpio->pin, gpioModeInputPull, 1);
+        sl_gpio_set_pin_mode(&pxGpio->gpio, SL_GPIO_MODE_INPUT_PULL, 1);
       } else if (pxGpio->pull == eGpioPullDown) {
-        GPIO_PinModeSet(pxGpio->port, pxGpio->pin, gpioModeInputPull, 0);
+        sl_gpio_set_pin_mode(&pxGpio->gpio, SL_GPIO_MODE_INPUT_PULL, 0);
       } else {
-        GPIO_PinModeSet(pxGpio->port, pxGpio->pin, gpioModeInput,
-                        GPIO_PinOutGet(pxGpio->port, pxGpio->pin));
+        sl_gpio_get_pin_output(&pxGpio->gpio, &pin_val);
+        sl_gpio_set_pin_mode(&pxGpio->gpio, SL_GPIO_MODE_INPUT, pin_val);
       }
       break;
 
     case eGpioDirectionOutput:
       if (pxGpio->out_mode == eGpioOpenDrain) {
         if (pxGpio->pull == eGpioPullUp) {
-          GPIO_PinModeSet(pxGpio->port, pxGpio->pin,
-                          gpioModeWiredAndPullUp,
-                          GPIO_PinOutGet(pxGpio->port, pxGpio->pin));
+          sl_gpio_get_pin_output(&pxGpio->gpio, &pin_val);
+          sl_gpio_set_pin_mode(&pxGpio->gpio, SL_GPIO_MODE_WIRED_AND_PULLUP, pin_val);
         } else {
-          GPIO_PinModeSet(pxGpio->port, pxGpio->pin, gpioModeWiredAnd,
-                          GPIO_PinOutGet(pxGpio->port, pxGpio->pin));
+          sl_gpio_get_pin_output(&pxGpio->gpio, &pin_val);
+          sl_gpio_set_pin_mode(&pxGpio->gpio, SL_GPIO_MODE_WIRED_AND, pin_val);
         }
       } else {
-        GPIO_PinModeSet(pxGpio->port, pxGpio->pin, gpioModePushPull,
-                        GPIO_PinOutGet(pxGpio->port, pxGpio->pin));
+        sl_gpio_get_pin_output(&pxGpio->gpio, &pin_val);
+        sl_gpio_set_pin_mode(&pxGpio->gpio, SL_GPIO_MODE_PUSH_PULL, pin_val);
       }
       break;
   }
@@ -283,7 +310,10 @@ int32_t iot_gpio_read_sync(IotGpioHandle_t const pxGpio,
     return IOT_GPIO_INVALID_VALUE;
   }
 
-  *pucPinState = (uint8_t)GPIO_PinInGet(pxGpio->port, pxGpio->pin);
+  bool pin_val;
+
+  sl_gpio_get_pin_input(&pxGpio->gpio, &pin_val);
+  *pucPinState = (uint8_t)pin_val;
 
   return IOT_GPIO_SUCCESS;
 }
@@ -313,9 +343,9 @@ int32_t iot_gpio_write_sync(IotGpioHandle_t const pxGpio,
   if (ucPinState > 1) {
     return IOT_GPIO_INVALID_VALUE;
   } else if (ucPinState) {
-    GPIO_PinOutSet(pxGpio->port, pxGpio->pin);
+    sl_gpio_set_pin(&pxGpio->gpio);
   } else {
-    GPIO_PinOutClear(pxGpio->port, pxGpio->pin);
+    sl_gpio_clear_pin(&pxGpio->gpio);
   }
 
   return IOT_GPIO_SUCCESS;

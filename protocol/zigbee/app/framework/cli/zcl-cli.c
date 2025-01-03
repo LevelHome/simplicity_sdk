@@ -65,6 +65,8 @@ static void zcl_global_setup(uint8_t commandId, sl_cli_command_arg_t *arguments)
 
 void sli_zigbee_af_aps_frame_endpoint_setup(uint8_t srcEndpoint,
                                             uint8_t dstEndpoint);
+// Print attribute table utility.
+void sl_zigbee_af_print_attribute_table(void);
 
 static void af_aps_frame_cluster_id_setup(uint16_t clusterId)
 {
@@ -105,14 +107,10 @@ void keysDeleteCommand(sl_cli_command_arg_t *arguments)
 }
 
 // keys clear
-void keysClearCommand(void)
+void keysClearCommand(sl_cli_command_arg_t *arguments)
 {
-#if SL_ZIGBEE_KEY_TABLE_SIZE
-  uint8_t i;
-  for (i = 0; i < SL_ZIGBEE_KEY_TABLE_SIZE; i++) {
-    eraseKeyTableEntry(i);
-  }
-#endif
+  (void) arguments;
+  sl_zigbee_clear_key_table();
 }
 
 static void cliBufferPrint(void)
@@ -147,6 +145,12 @@ static void zclBufferSetup(uint8_t frameType, uint16_t clusterId, uint8_t comman
   appZclBuffer[index++] = sl_zigbee_af_next_sequence();
   appZclBuffer[index++] = commandId;
   appZclBufferLen = index;
+}
+
+void printAttributeTable(sl_cli_command_arg_t *arguments)
+{
+  (void) arguments;
+  sl_zigbee_af_print_attribute_table();
 }
 
 void printTimeCommand(sl_cli_command_arg_t *arguments)

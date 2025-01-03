@@ -3,7 +3,7 @@
  * @brief IV Update age backup implementation
  *******************************************************************************
  * # License
- * <b>Copyright 2023 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -29,6 +29,7 @@
  ******************************************************************************/
 
 #include "sl_status.h"
+#include "sl_core.h"
 
 #include "sl_bt_api.h"
 #include "sl_btmesh_api.h"
@@ -133,7 +134,10 @@ static void on_iv_update_age_backup_timer(app_timer_t *handle, void *data)
 {
   (void)data;
   (void)handle;
+  CORE_DECLARE_IRQ_STATE;
+  CORE_ENTER_ATOMIC();
   age += SL_BTMESH_IV_UPDATE_AGE_BACKUP_PERIOD_S;
+  CORE_EXIT_ATOMIC();
   backup_age();
 }
 

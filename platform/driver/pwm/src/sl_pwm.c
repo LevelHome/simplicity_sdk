@@ -30,17 +30,11 @@
 
 #include "sl_pwm.h"
 
-#if defined(SL_CATALOG_GPIO_PRESENT)
 #include "sl_gpio.h"
-#else
-#include "em_gpio.h"
-#endif
 
 #if defined(_SILICON_LABS_32B_SERIES_3)
-#include "sl_hal_bus.h"
 #include "sl_hal_timer.h"
 #else
-#include "em_bus.h"
 #include "em_timer.h"
 #endif
 
@@ -48,85 +42,76 @@
 #include "sl_device_peripheral.h"
 
 // -----------------------------------------------------------------------------
-//                                Static Variables
+//                                Static Functions
 // -----------------------------------------------------------------------------
-/// stores the address of corresponding sl_peripheral_t variable
-static sl_peripheral_t peripheral;
 
-static sl_bus_clock_t get_timer_clock(TIMER_TypeDef *timer)
+static void get_timer_clock(TIMER_TypeDef *timer, sl_bus_clock_t *timer_clock, sl_peripheral_t *peripheral)
 {
-  sl_bus_clock_t timer_clock = 0;
   switch ((uint32_t)timer) {
 #if defined(TIMER0_BASE)
     case TIMER0_BASE:
-      timer_clock = SL_BUS_CLOCK_TIMER0;
-      peripheral = SL_PERIPHERAL_TIMER0;
+      *timer_clock = SL_BUS_CLOCK_TIMER0;
+      *peripheral = SL_PERIPHERAL_TIMER0;
       break;
 #endif
 #if defined(TIMER1_BASE)
     case TIMER1_BASE:
-      timer_clock = SL_BUS_CLOCK_TIMER1;
-      peripheral = SL_PERIPHERAL_TIMER1;
+      *timer_clock = SL_BUS_CLOCK_TIMER1;
+      *peripheral = SL_PERIPHERAL_TIMER1;
       break;
 #endif
 #if defined(TIMER2_BASE)
     case TIMER2_BASE:
-      timer_clock = SL_BUS_CLOCK_TIMER2;
-      peripheral = SL_PERIPHERAL_TIMER2;
+      *timer_clock = SL_BUS_CLOCK_TIMER2;
+      *peripheral = SL_PERIPHERAL_TIMER2;
       break;
 #endif
 #if defined(TIMER3_BASE)
     case TIMER3_BASE:
-      timer_clock = SL_BUS_CLOCK_TIMER3;
-      peripheral = SL_PERIPHERAL_TIMER3;
+      *timer_clock = SL_BUS_CLOCK_TIMER3;
+      *peripheral = SL_PERIPHERAL_TIMER3;
       break;
 #endif
 #if defined(TIMER4_BASE)
     case TIMER4_BASE:
-      timer_clock = SL_BUS_CLOCK_TIMER4;
-      peripheral = SL_PERIPHERAL_TIMER4;
+      *timer_clock = SL_BUS_CLOCK_TIMER4;
+      *peripheral = SL_PERIPHERAL_TIMER4;
       break;
 #endif
 #if defined(TIMER5_BASE)
     case TIMER5_BASE:
-      timer_clock = SL_BUS_CLOCK_TIMER5;
-      peripheral = SL_PERIPHERAL_TIMER5;
+      *timer_clock = SL_BUS_CLOCK_TIMER5;
+      *peripheral = SL_PERIPHERAL_TIMER5;
       break;
 #endif
 #if defined(TIMER6_BASE)
     case TIMER6_BASE:
-      timer_clock = SL_BUS_CLOCK_TIMER6;
-      peripheral = SL_PERIPHERAL_TIMER6;
+      *timer_clock = SL_BUS_CLOCK_TIMER6;
+      *peripheral = SL_PERIPHERAL_TIMER6;
       break;
 #endif
     default:
       EFM_ASSERT(0);
       break;
   }
-  return timer_clock;
 }
 
 sl_status_t sl_pwm_init(sl_pwm_instance_t *pwm, sl_pwm_config_t *config)
 {
-  sl_bus_clock_t timer_clock = get_timer_clock(pwm->timer);
+  sl_bus_clock_t timer_clock;
+  sl_peripheral_t peripheral;
+  get_timer_clock(pwm->timer, &timer_clock, &peripheral);
   sl_clock_manager_enable_bus_clock(timer_clock);
 
   // Set PWM pin as output
   sl_clock_manager_enable_bus_clock(SL_BUS_CLOCK_GPIO);
 
-#if defined(SL_CATALOG_GPIO_PRESENT)
   sl_gpio_t gpio;
-  gpio.port = (sl_gpio_port_t)pwm->port;
+  gpio.port = pwm->port;
   gpio.pin = pwm->pin;
   sl_gpio_set_pin_mode(&gpio,
                        SL_GPIO_MODE_PUSH_PULL,
                        config->polarity);
-#else
-  GPIO_PinModeSet((GPIO_Port_TypeDef)pwm->port,
-                  pwm->pin,
-                  gpioModePushPull,
-                  config->polarity);
-#endif
 
   // Set CC channel parameters
 #if defined(_SILICON_LABS_32B_SERIES_2)
@@ -145,33 +130,33 @@ sl_status_t sl_pwm_init(sl_pwm_instance_t *pwm, sl_pwm_config_t *config)
   sl_hal_timer_channel_init(pwm->timer, pwm->channel, &channel_init);
 #endif
   // Configure CC channel pinout
-#if defined(_TIMER_ROUTE_MASK)
-#if defined(_SILICON_LABS_32B_SERIES_2)
-  BUS_RegMaskedWrite(&pwm->timer->ROUTE,
-                     _TIMER_ROUTE_LOCATION_MASK,
-                     pwm->location << _TIMER_ROUTE_LOCATION_SHIFT);
-#else
-  sl_hal_bus_reg_write_mask(&pwm->timer->ROUTE,
-                            _TIMER_ROUTE_LOCATION_MASK,
-                            pwm->location << _TIMER_ROUTE_LOCATION_SHIFT);
-#endif
-#elif defined(_TIMER_ROUTELOC0_MASK)
-#if defined(_SILICON_LABS_32B_SERIES_2)
-  BUS_RegMaskedWrite(&pwm->timer->ROUTELOC0,
-                     _TIMER_ROUTELOC0_CC0LOC_MASK << (pwm->channel * 8U),
-                     pwm->location << (pwm->channel * 8U));
-#else
-  sl_hal_bus_reg_write_mask(&pwm->timer->ROUTELOC0,
-                            _TIMER_ROUTELOC0_CC0LOC_MASK << (pwm->channel * 8U),
-                            pwm->location << (pwm->channel * 8U));
-#endif
-#elif defined(_GPIO_TIMER_ROUTEEN_MASK)
-  volatile uint32_t * route_register = &GPIO->TIMERROUTE[TIMER_NUM(pwm->timer)].CC0ROUTE;
+  volatile uint32_t * route_register;
+#if defined(_GPIO_TIMER_ROUTEEN_MASK)
+  route_register = &GPIO->TIMERROUTE[TIMER_NUM(pwm->timer)].CC0ROUTE;
   route_register += pwm->channel;
   *route_register = (pwm->port << _GPIO_TIMER_CC0ROUTE_PORT_SHIFT)
                     | (pwm->pin << _GPIO_TIMER_CC0ROUTE_PIN_SHIFT);
 #else
-#error "Unknown route setting"
+  switch (TIMER_NUM(pwm->timer)) {
+    case 0:
+      route_register = &GPIO->TIMER0ROUTE[0].CC0ROUTE;
+      break;
+    case 1:
+      route_register = &GPIO->TIMER1ROUTE[0].CC0ROUTE;
+      break;
+    case 2:
+      route_register = &GPIO->TIMER2ROUTE[0].CC0ROUTE;
+      break;
+    case 3:
+      route_register = &GPIO->TIMER3ROUTE[0].CC0ROUTE;
+      break;
+    default:
+      EFM_ASSERT(0);
+      return SL_STATUS_FAIL;
+  }
+  route_register += pwm->channel;
+  *route_register = (pwm->port << _GPIO_TIMER0_CC0ROUTE_PORT_SHIFT)
+                    | (pwm->pin << _GPIO_TIMER0_CC0ROUTE_PIN_SHIFT);
 #endif
 
   // Configure TIMER frequency
@@ -191,14 +176,18 @@ sl_status_t sl_pwm_init(sl_pwm_instance_t *pwm, sl_pwm_config_t *config)
   TIMER_Init_TypeDef timer_init = TIMER_INIT_DEFAULT;
   TIMER_Init(pwm->timer, &timer_init);
 #else
+  // Initialize TIMER
+  sl_hal_timer_config_t timer_init = SL_HAL_TIMER_CONFIG_DEFAULT;
+  sl_hal_timer_init(pwm->timer, &timer_init);
+  sl_hal_timer_enable(pwm->timer);
+
+  // Set TIMER period
   sl_hal_timer_set_top(pwm->timer, top);
 
   // Set initial duty cycle to 0%
   sl_hal_timer_channel_set_compare(pwm->timer, pwm->channel, 0U);
 
-  // Initialize TIMER
-  sl_hal_timer_config_t timer_init = SL_HAL_TIMER_CONFIG_DEFAULT;
-  sl_hal_timer_init(pwm->timer, &timer_init);
+  sl_hal_timer_start(pwm->timer);
 #endif
 
   return SL_STATUS_OK;
@@ -209,25 +198,30 @@ sl_status_t sl_pwm_deinit(sl_pwm_instance_t *pwm)
   // Reset TIMER routes
   sl_pwm_stop(pwm);
 
-#if defined(_TIMER_ROUTE_MASK)
-#if defined(_SILICON_LABS_32B_SERIES_2)
-  BUS_RegMaskedClear(&pwm->timer->ROUTE, _TIMER_ROUTE_LOCATION_MASK);
+  volatile uint32_t * route_register;
+#if defined(_GPIO_TIMER_ROUTEEN_MASK)
+  route_register = &GPIO->TIMERROUTE[TIMER_NUM(pwm->timer)].CC0ROUTE;
 #else
-  sl_hal_bus_reg_clear_mask(&pwm->timer->ROUTE, _TIMER_ROUTE_LOCATION_MASK);
+  switch (TIMER_NUM(pwm->timer)) {
+    case 0:
+      route_register = &GPIO->TIMER0ROUTE[0].CC0ROUTE;
+      break;
+    case 1:
+      route_register = &GPIO->TIMER1ROUTE[0].CC0ROUTE;
+      break;
+    case 2:
+      route_register = &GPIO->TIMER2ROUTE[0].CC0ROUTE;
+      break;
+    case 3:
+      route_register = &GPIO->TIMER3ROUTE[0].CC0ROUTE;
+      break;
+    default:
+      EFM_ASSERT(0);
+      return SL_STATUS_FAIL;
+  }
 #endif
-#elif defined(_TIMER_ROUTELOC0_MASK)
-#if defined(_SILICON_LABS_32B_SERIES_2)
-  BUS_RegMaskedClear(&pwm->timer->ROUTELOC0, _TIMER_ROUTELOC0_CC0LOC_MASK << (pwm->channel * 8));
-#else
-  sl_hal_bus_reg_clear_mask(&pwm->timer->ROUTELOC0, _TIMER_ROUTELOC0_CC0LOC_MASK << (pwm->channel * 8));
-#endif
-#elif defined(_GPIO_TIMER_ROUTEEN_MASK)
-  volatile uint32_t * route_register = &GPIO->TIMERROUTE[TIMER_NUM(pwm->timer)].CC0ROUTE;
   route_register += pwm->channel;
   *route_register = 0;
-#else
-#error "Unknown route setting"
-#endif
 
   // Reset TIMER
 #if defined(_SILICON_LABS_32B_SERIES_2)
@@ -237,21 +231,17 @@ sl_status_t sl_pwm_deinit(sl_pwm_instance_t *pwm)
 #endif
 
   // Reset GPIO
-#if defined(SL_CATALOG_GPIO_PRESENT)
   sl_gpio_t reset_gpio;
-  reset_gpio.port = (sl_gpio_port_t)pwm->port;
+  reset_gpio.port = pwm->port;
   reset_gpio.pin = pwm->pin;
   sl_gpio_set_pin_mode(&reset_gpio,
                        SL_GPIO_MODE_DISABLED,
                        0);
-#else
-  GPIO_PinModeSet((GPIO_Port_TypeDef)pwm->port,
-                  pwm->pin,
-                  gpioModeDisabled,
-                  0);
-#endif
 
-  sl_bus_clock_t timer_clock = get_timer_clock(pwm->timer);
+  sl_bus_clock_t timer_clock;
+  sl_peripheral_t peripheral;
+  get_timer_clock(pwm->timer, &timer_clock, &peripheral);
+  (void) peripheral;
   sl_clock_manager_disable_bus_clock(timer_clock);
 
   return SL_STATUS_OK;
@@ -260,54 +250,53 @@ sl_status_t sl_pwm_deinit(sl_pwm_instance_t *pwm)
 void sl_pwm_start(sl_pwm_instance_t *pwm)
 {
   // Enable PWM output
-#if defined(_TIMER_ROUTE_MASK)
-#if defined(_SILICON_LABS_32B_SERIES_2)
-  BUS_RegMaskedSet(&pwm->timer->ROUTE,
-                   1 << (pwm->channel + _TIMER_ROUTE_CC0PEN_SHIFT));
-#else
-  sl_hal_bus_reg_set_mask(&pwm->timer->ROUTE,
-                          1 << (pwm->channel + _TIMER_ROUTE_CC0PEN_SHIFT));
-#endif
-#elif defined(_TIMER_ROUTELOC0_MASK)
-#if defined(_SILICON_LABS_32B_SERIES_2)
-  BUS_RegMaskedSet(&pwm->timer->ROUTEPEN,
-                   1 << (pwm->channel + _TIMER_ROUTEPEN_CC0PEN_SHIFT));
-#else
-  sl_hal_bus_reg_set_mask(&pwm->timer->ROUTEPEN,
-                          1 << (pwm->channel + _TIMER_ROUTEPEN_CC0PEN_SHIFT));
-#endif
-#elif defined(_GPIO_TIMER_ROUTEEN_MASK)
+#if defined(_GPIO_TIMER_ROUTEEN_MASK)
   GPIO->TIMERROUTE_SET[TIMER_NUM(pwm->timer)].ROUTEEN = 1 << (pwm->channel + _GPIO_TIMER_ROUTEEN_CC0PEN_SHIFT);
 #else
-#error "Unknown route setting"
+  switch (TIMER_NUM(pwm->timer)) {
+    case 0:
+      GPIO->TIMER0ROUTE_SET[0].ROUTEEN = 1 << (pwm->channel + _GPIO_TIMER0_ROUTEEN_CC0PEN_SHIFT);
+      break;
+    case 1:
+      GPIO->TIMER1ROUTE_SET[0].ROUTEEN = 1 << (pwm->channel + _GPIO_TIMER1_ROUTEEN_CC0PEN_SHIFT);
+      break;
+    case 2:
+      GPIO->TIMER2ROUTE_SET[0].ROUTEEN = 1 << (pwm->channel + _GPIO_TIMER2_ROUTEEN_CC0PEN_SHIFT);
+      break;
+    case 3:
+      GPIO->TIMER3ROUTE_SET[0].ROUTEEN = 1 << (pwm->channel + _GPIO_TIMER3_ROUTEEN_CC0PEN_SHIFT);
+      break;
+    default:
+      EFM_ASSERT(0);
+      break;
+  }
 #endif
 }
 
 void sl_pwm_stop(sl_pwm_instance_t *pwm)
 {
   // Disable PWM output
-#if defined(_TIMER_ROUTE_MASK)
-#if defined(_SILICON_LABS_32B_SERIES_2)
-  BUS_RegMaskedClear(&pwm->timer->ROUTE,
-                     1 << (pwm->channel + _TIMER_ROUTE_CC0PEN_SHIFT));
-#else
-  sl_hal_bus_reg_clear_mask(&pwm->timer->ROUTE,
-                            1 << (pwm->channel + _TIMER_ROUTE_CC0PEN_SHIFT));
-#endif
-#elif defined(_TIMER_ROUTELOC0_MASK)
-#if defined(_SILICON_LABS_32B_SERIES_2)
-  BUS_RegMaskedClear(&pwm->timer->ROUTEPEN,
-                     1 << (pwm->channel + _TIMER_ROUTEPEN_CC0PEN_SHIFT));
-#else
-  sl_hal_bus_reg_clear_mask(&pwm->timer->ROUTEPEN,
-                            1 << (pwm->channel + _TIMER_ROUTEPEN_CC0PEN_SHIFT));
-#endif
-#elif defined(_GPIO_TIMER_ROUTEEN_MASK)
+#if defined(_GPIO_TIMER_ROUTEEN_MASK)
   GPIO->TIMERROUTE_CLR[TIMER_NUM(pwm->timer)].ROUTEEN = 1 << (pwm->channel + _GPIO_TIMER_ROUTEEN_CC0PEN_SHIFT);
 #else
-#error "Unknown route setting"
+  switch (TIMER_NUM(pwm->timer)) {
+    case 0:
+      GPIO->TIMER0ROUTE_CLR[0].ROUTEEN = 1 << (pwm->channel + _GPIO_TIMER0_ROUTEEN_CC0PEN_SHIFT);
+      break;
+    case 1:
+      GPIO->TIMER1ROUTE_CLR[0].ROUTEEN = 1 << (pwm->channel + _GPIO_TIMER1_ROUTEEN_CC0PEN_SHIFT);
+      break;
+    case 2:
+      GPIO->TIMER2ROUTE_CLR[0].ROUTEEN = 1 << (pwm->channel + _GPIO_TIMER2_ROUTEEN_CC0PEN_SHIFT);
+      break;
+    case 3:
+      GPIO->TIMER3ROUTE_CLR[0].ROUTEEN = 1 << (pwm->channel + _GPIO_TIMER3_ROUTEEN_CC0PEN_SHIFT);
+      break;
+    default:
+      EFM_ASSERT(0);
+      break;
+  }
 #endif
-
   // Keep timer running in case other channels are in use
 }
 

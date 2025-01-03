@@ -147,7 +147,7 @@ uint32_t sli_zigbee_af_get_ebl_start_offset(void)
 
 static void setEblStartOffset(uint32_t eblStart)
 {
-  debugPrint("Writing EBL start offset of 0x%4X to EEPROM offset 0x%4X",
+  debugPrint("Writing EBL start offset of 0x%08X to EEPROM offset 0x%08X",
              eblStart,
              gOtaImageInfoStart + EBL_START_OFFSET_INDEX);
   debugFlush();
@@ -158,7 +158,7 @@ static void setEblStartOffset(uint32_t eblStart)
   #if defined(DEBUG_PRINT)
   {
     uint32_t offset = sli_zigbee_af_get_ebl_start_offset();
-    debugPrint("EBL Start Offset: 0x%4X", offset);
+    debugPrint("EBL Start Offset: 0x%08X", offset);
   }
   #endif // DEBUG_PRINT
 }
@@ -248,7 +248,7 @@ static bool readWritePrimitive(bool read,
   uint32_t realLength = length;
   uint32_t realOffset = offset;
 
-  debugPrint("readWritePrimitive(): OTA offset 0x%4X, length %l", offset, length);
+  debugPrint("readWritePrimitive(): OTA offset 0x%08X, length %ld", offset, length);
 
   bool spansBreak = sli_zigbee_af_ota_storage_driver_get_real_offset(&realOffset, &realLength);
   if (spansBreak) {
@@ -259,7 +259,7 @@ static bool readWritePrimitive(bool read,
     uint8_t status;
 
     debugFlush();
-    debugPrint("%p realOffset: 0x%4X, realLength: %l",
+    debugPrint("%s realOffset: 0x%08X, realLength: %ld",
                (read ? "read" : "write"),
                realOffset,
                realLength);
@@ -402,7 +402,7 @@ bool sl_zigbee_af_ota_storage_driver_write_cb(const uint8_t* dataToWrite,
 
 void sl_zigbee_af_ota_storage_driver_download_finish_cb(uint32_t finalOffset)
 {
-  debugPrint("Noting final download offset 0x%4X", finalOffset);
+  debugPrint("Noting final download offset 0x%08X", finalOffset);
   sli_zigbee_af_storage_eeprom_update_download_offset(finalOffset,
                                                       true); // final offset?
   sl_zigbee_af_eeprom_flush_saved_partial_writes();
@@ -455,7 +455,7 @@ void calculateSlotAndEepromOffsets()
 
     if (SL_STATUS_OK != status) {
       otaPrintln("OTA Simple Storage EEPROM warning: could not get slot info "
-                 "for slot %d (error 0x%x). Defaulting to specified address "
+                 "for slot %d (error 0x%02X). Defaulting to specified address "
                  "offsets", gOtaSlotToUse, status);
     } else if (0 == numSlots) {
       // A Gecko bootloader is on the chip but no slots are configured. OTA
@@ -526,29 +526,29 @@ void sli_zigbee_af_ota_storage_driver_info_print(void)
     otaPrintln("Slot to use:                %d", gOtaSlotToUse);
     otaPrintFlush();
   }
-  otaPrintln("Current Download Offset:    0x%4X", downloadOffset);
+  otaPrintln("Current Download Offset:    0x%08X", downloadOffset);
 
 #if defined(SOC_BOOTLOADING_SUPPORT)
   otaPrintFlush();
-  otaPrintln("EBL Start Offset:           0x%4X", sli_zigbee_af_get_ebl_start_offset());
+  otaPrintln("EBL Start Offset:           0x%08X", sli_zigbee_af_get_ebl_start_offset());
   otaPrintFlush();
 #endif // SOC_BOOTLOADING_SUPPORT
 
-  otaPrintln("EEPROM Start:               0x%4X", gOtaStorageStart);
+  otaPrintln("EEPROM Start:               0x%08X", gOtaStorageStart);
   otaPrintFlush();
-  otaPrintln("EEPROM End:                 0x%4X", gOtaStorageEnd);
+  otaPrintln("EEPROM End:                 0x%08X", gOtaStorageEnd);
   otaPrintFlush();
-  otaPrintln("Image Info Start:           0x%4X", gOtaImageInfoStart);
+  otaPrintln("Image Info Start:           0x%08X", gOtaImageInfoStart);
   otaPrintFlush();
-  otaPrintln("Save Rate (bytes)           0x%4X", SAVE_RATE);
+  otaPrintln("Save Rate (bytes)           0x%08X", SAVE_RATE);
   otaPrintFlush();
-  otaPrintln("Offset of download offset   0x%4X", gOtaImageInfoStart
+  otaPrintln("Offset of download offset   0x%08X", gOtaImageInfoStart
              + SAVED_DOWNLOAD_OFFSET_INDEX);
   otaPrintFlush();
-  otaPrintln("Offset of EBL offset:       0x%4X", gOtaImageInfoStart
+  otaPrintln("Offset of EBL offset:       0x%08X", gOtaImageInfoStart
              + EBL_START_OFFSET_INDEX);
   otaPrintFlush();
-  otaPrintln("Offset of image start:      0x%4X", gOtaImageInfoStart
+  otaPrintln("Offset of image start:      0x%08X", gOtaImageInfoStart
              + OTA_HEADER_INDEX);
   otaPrintFlush();
 
@@ -580,7 +580,7 @@ static void printImageInfoStartData(void)
   otaPrintFlush();
 
   for (i = 0; i < maxSize; i += DATA_SIZE) {
-    otaPrintln("Read Offset: 0x%4X", (gOtaImageInfoStart + i));
+    otaPrintln("Read Offset: 0x%08X", (gOtaImageInfoStart + i));
     sl_zigbee_af_eeprom_read((gOtaImageInfoStart + i), data, DATA_SIZE);
     sl_zigbee_af_print_cert(data);  // certs are 48 bytes long
     otaPrintFlush();
@@ -592,7 +592,7 @@ static void printDataBlock(const uint8_t* block)
   uint8_t i;
   for (i = 0; i < DATA_SIZE; i += 8) {
     otaPrintFlush();
-    otaPrintln("%X %X %X %X %X %X %X %X",
+    otaPrintln("%02X %02X %02X %02X %02X %02X %02X %02X",
                block[i],
                block[i + 1],
                block[i + 2],
@@ -617,7 +617,7 @@ void sl_zigbee_af_eeprom_test(void)
     uint32_t address = addressOffset + (i * DATA_SIZE);
     value = 0x09 + i;
     memset(data, value, DATA_SIZE);
-    otaPrintln("Writing value 0x%X to address 0x%4X", value, address);
+    otaPrintln("Writing value 0x%02X to address 0x%08X", value, address);
     sl_zigbee_af_eeprom_write(address, data, DATA_SIZE);
     memset(data, 0, DATA_SIZE);
     sl_zigbee_af_eeprom_read(address, data, DATA_SIZE);
@@ -630,7 +630,7 @@ void sl_zigbee_af_eeprom_test(void)
 
   addressOffset = 0;
   value = 0x02;
-  otaPrintln("Re-writing value 0x%X of length %d to address 0x%4X",
+  otaPrintln("Re-writing value 0x%02X of length %d to address 0x%08X",
              value,
              length,
              addressOffset);

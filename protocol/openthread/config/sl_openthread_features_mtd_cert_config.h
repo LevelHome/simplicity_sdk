@@ -1,4 +1,4 @@
-/***************************************************************************//**
+/*******************************************************************************
  * @file
  * @brief OpenThread MTD certification configuration file.
  *******************************************************************************
@@ -40,7 +40,7 @@
 // </h>
 // <h>
 // </h>
-// <h> Note: If you have selected the "OpenThread CoAP Certification configuration" component, then please turn on CoAP API options if you require CoAP API CLI.
+// <h> Note: If you have selected the "OpenThread CoAP Certification configuration" component, then the CoAP API options will be automatically enabled for the project and will not be affected by the settings here.
 // </h>
 // <h>
 // </h>
@@ -51,9 +51,9 @@
 //      <OT_THREAD_VERSION_1_2=> Thread 1.2
 //      <OT_THREAD_VERSION_1_3=> Thread 1.3
 //      <OT_THREAD_VERSION_1_4=> Thread 1.4
-// <i>  Current Default: OT_THREAD_VERSION_1_3
+// <i>  Current Default: OT_THREAD_VERSION_1_4
 #ifndef OPENTHREAD_CONFIG_THREAD_VERSION
-#define OPENTHREAD_CONFIG_THREAD_VERSION OT_THREAD_VERSION_1_3
+#define OPENTHREAD_CONFIG_THREAD_VERSION OT_THREAD_VERSION_1_4
 #endif
 // </h>
 
@@ -120,13 +120,13 @@
 #ifndef OPENTHREAD_CONFIG_SRP_SERVER_ENABLE
 #define OPENTHREAD_CONFIG_SRP_SERVER_ENABLE         0
 #endif
-// <q>  TCPlp (Low power TCP over OpenThread)
+// <q>  TCP API
 #ifndef OPENTHREAD_CONFIG_TCP_ENABLE
-#define OPENTHREAD_CONFIG_TCP_ENABLE                0
+#define OPENTHREAD_CONFIG_TCP_ENABLE                1
 #endif
 // <q>  DNS Client over TCP
 #ifndef OPENTHREAD_CONFIG_DNS_CLIENT_OVER_TCP_ENABLE
-#define OPENTHREAD_CONFIG_DNS_CLIENT_OVER_TCP_ENABLE 0
+#define OPENTHREAD_CONFIG_DNS_CLIENT_OVER_TCP_ENABLE 1
 #endif
 // <q> Thread over Infrastructure (NCP only)
 #ifndef OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE
@@ -183,11 +183,6 @@
 // <e>  DHCP6 Server
 #ifndef OPENTHREAD_CONFIG_DHCP6_SERVER_ENABLE
 #define OPENTHREAD_CONFIG_DHCP6_SERVER_ENABLE       0
-#endif
-// </e>
-// <e>  Diagnostic
-#ifndef OPENTHREAD_CONFIG_DIAG_ENABLE
-#define OPENTHREAD_CONFIG_DIAG_ENABLE               0
 #endif
 // </e>
 // <e>  ECDSA (Elliptic Curve Digital Signature Algorithm) (Required for Matter support)
@@ -293,6 +288,11 @@
 // <e>  TMF Network Diagnostic client API
 #ifndef OPENTHREAD_CONFIG_TMF_NETDIAG_CLIENT_ENABLE
 #define OPENTHREAD_CONFIG_TMF_NETDIAG_CLIENT_ENABLE   1
+#endif
+// </e>
+// <e>  Run-time configuration of Vendor Info
+#ifndef OPENTHREAD_CONFIG_NET_DIAG_VENDOR_INFO_SET_API_ENABLE
+#define OPENTHREAD_CONFIG_NET_DIAG_VENDOR_INFO_SET_API_ENABLE   1
 #endif
 // </e>
 // <e>  Time Synchronization Service

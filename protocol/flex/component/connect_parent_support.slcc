@@ -1,6 +1,6 @@
 id: "connect_parent_support"
 label: "Parent Support"
-package: "Flex"
+package: "Connect"
 category: "Connect"
 quality: "production"
 description: "Provides parent functionalities such as indirect communication (communication with sleepy devices) and child table. It should be included for any coordinator or range extender node intended to support multiple end-device and/or sleepy end-device nodes."

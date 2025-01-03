@@ -85,6 +85,18 @@ requires:
   - name: bootloader_tz_secure_config
     condition: [device_generic_family_efr32xg26, bootloader_spiflash_storage_sfdp]
   - name: bootloader_tz_secure_config
+    condition: [device_family_efm32pg26, bootloader_ezsp_spi]
+  - name: bootloader_tz_secure_config
+    condition: [device_family_efm32pg26, bootloader_internal_storage]
+  - name: bootloader_tz_secure_config
+    condition: [device_family_efm32pg26, bootloader_spiflash_storage]
+  - name: bootloader_tz_secure_config
+    condition: [device_family_efm32pg26, bootloader_bgapi_uartdfu]
+  - name: bootloader_tz_secure_config
+    condition: [device_family_efm32pg26, bootloader_uart_xmodem]
+  - name: bootloader_tz_secure_config
+    condition: [device_family_efm32pg26, bootloader_spiflash_storage_sfdp]
+  - name: bootloader_tz_secure_config
     condition: [device_generic_family_efr32xg28, bootloader_ezsp_spi]
   - name: bootloader_tz_secure_config
     condition: [device_generic_family_efr32xg28, bootloader_internal_storage]
@@ -100,6 +112,18 @@ requires:
     condition: [device_family_efm32pg28, bootloader_internal_storage]
   - name: bootloader_tz_secure_config
     condition: [device_family_efm32pg28, bootloader_uart_xmodem]
+  - name: bootloader_tz_secure_config
+    condition: [device_generic_family_efr32xg29, bootloader_ezsp_spi]
+  - name: bootloader_tz_secure_config
+    condition: [device_generic_family_efr32xg29, bootloader_internal_storage]
+  - name: bootloader_tz_secure_config
+    condition: [device_generic_family_efr32xg29, bootloader_spiflash_storage]
+  - name: bootloader_tz_secure_config
+    condition: [device_generic_family_efr32xg29, bootloader_bgapi_uartdfu]
+  - name: bootloader_tz_secure_config
+    condition: [device_generic_family_efr32xg29, bootloader_uart_xmodem]
+  - name: bootloader_tz_secure_config
+    condition: [device_generic_family_efr32xg29, bootloader_spiflash_storage_sfdp]
   - name: sl_fault_injection_hardening
   - name: bootloader_aes_ctr_stream_block_cfg
     condition: [device_has_semailbox]
@@ -242,6 +266,16 @@ template_contribution:
       - device_sdid_235
     unless:
       - bootloader_apploader
+  - name: bootloader_flash_addr
+    value: 0x8000000
+    condition:
+      - device_sdid_240
+  - name: bootloader_main_size
+    value: 0x6000
+    condition:
+      - device_sdid_240
+    unless:
+      - bootloader_apploader
   - name: bootloader_main_size
     value: 0x12000
     condition:
@@ -252,3 +286,6 @@ validation_helper:
 toolchain_settings:
   - option: optimize
     value: size
+metadata:
+  sbom:
+    license: MSLA

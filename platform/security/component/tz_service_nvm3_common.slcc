@@ -45,3 +45,7 @@ template_contribution:
     value:
       sid: SLI_TZ_SERVICE_NVM3_DEINITDEFAULT_SID
       func: sli_tz_nvm3_deinit_default
+
+metadata:
+  sbom:
+    license: Zlib

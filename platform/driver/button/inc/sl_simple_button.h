@@ -32,12 +32,7 @@
 #define SL_SIMPLE_BUTTON_H
 
 #include "sl_button.h"
-
-#if defined(SL_CATALOG_GPIO_PRESENT)
 #include "sl_gpio.h"
-#else
-#include "em_gpio.h"
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -81,13 +76,7 @@ extern "C" {
 typedef struct {
   sl_button_state_t     state;          ///< Current button state
   uint16_t              history;        ///< History of button states
-
-#if defined(SL_CATALOG_GPIO_PRESENT)
-  sl_gpio_port_t port;                  ///< Button port
-#else
-  GPIO_Port_TypeDef     port;           ///< Button port
-#endif
-
+  sl_gpio_port_t        port;           ///< Button port
   uint8_t               pin;            ///< Button pin
   sl_button_mode_t      mode;           ///< Mode of operation
 } sl_simple_button_context_t;

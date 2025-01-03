@@ -28,8 +28,9 @@
 
 //Mtorr related functions
 
-void sli_zigbee_source_route_update_event_handler(void)
+void sli_zigbee_source_route_update_event_handler(sli_zigbee_event_t *event)
 {
+  (void) event;
 }
 
 //source route table related functions

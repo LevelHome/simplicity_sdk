@@ -105,21 +105,21 @@
 #define IOT_UART_CFG_LOOPBACK_PERIPHERAL_NO      0
 
 // USART0 TX on PC00
-#define IOT_UART_CFG_LOOPBACK_TX_PORT            gpioPortC
+#define IOT_UART_CFG_LOOPBACK_TX_PORT            SL_GPIO_PORT_C
 #define IOT_UART_CFG_LOOPBACK_TX_PIN             0
 
 // USART0 RX on PC01
-#define IOT_UART_CFG_LOOPBACK_RX_PORT            gpioPortC
+#define IOT_UART_CFG_LOOPBACK_RX_PORT            SL_GPIO_PORT_C
 #define IOT_UART_CFG_LOOPBACK_RX_PIN             1
 
 
 
 // USART0 RTS on PC02
-#define IOT_UART_CFG_LOOPBACK_RTS_PORT           gpioPortC
+#define IOT_UART_CFG_LOOPBACK_RTS_PORT           SL_GPIO_PORT_C
 #define IOT_UART_CFG_LOOPBACK_RTS_PIN            2
 
 // USART0 CTS on PC03
-#define IOT_UART_CFG_LOOPBACK_CTS_PORT           gpioPortC
+#define IOT_UART_CFG_LOOPBACK_CTS_PORT           SL_GPIO_PORT_C
 #define IOT_UART_CFG_LOOPBACK_CTS_PIN            3
 
 // [USART_IOT_UART_CFG_LOOPBACK]$

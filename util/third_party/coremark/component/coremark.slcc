@@ -10,6 +10,17 @@ description: >
     For more information related to CoreMark library, please refer https://www.eembc.org/coremark/
 category: Application|Benchmark
 quality: production
+metadata:
+  sbom:
+    license: Apache-2.0
+    upstream:
+      name: coremark
+      version: 263270a
+      supplier: eembc
+      url: https://github.com/eembc/coremark
+      package_url: pkg:github/eembc/coremark@263270a
+      comment: This component provides a way to measure the performance of central processing units
+
 root_path: util/third_party/coremark
 include:
   - path: .

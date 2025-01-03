@@ -6,6 +6,9 @@ description: >
 category: Platform|Compute
 quality: production
 root_path: platform/compute/math
+metadata:
+  sbom:
+    license: Zlib
 source:
   - path: src/sl_math_matrix.c
 include:

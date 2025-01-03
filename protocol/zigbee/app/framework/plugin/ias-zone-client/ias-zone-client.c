@@ -190,13 +190,13 @@ static void iasClientSaveCommand(void)
 
   for (i = 0; i < SL_ZIGBEE_AF_PLUGIN_IAS_ZONE_CLIENT_MAX_DEVICES; i++) {
     if (sl_zigbee_af_ias_zone_client_known_servers[i].zoneId != 0xFF) {
-      fprintf(fp, "%x %x %x %x %x ", sl_zigbee_af_ias_zone_client_known_servers[i].zoneId,
+      fprintf(fp, "%02X %02X %02X %02X %02X ", sl_zigbee_af_ias_zone_client_known_servers[i].zoneId,
               sl_zigbee_af_ias_zone_client_known_servers[i].zoneStatus,
               sl_zigbee_af_ias_zone_client_known_servers[i].zoneState,
               sl_zigbee_af_ias_zone_client_known_servers[i].endpoint,
               sl_zigbee_af_ias_zone_client_known_servers[i].zoneType);
       for (j = 0; j < 8; j++) {
-        fprintf(fp, "%x ", sl_zigbee_af_ias_zone_client_known_servers[i].ieeeAddress[j]);
+        fprintf(fp, "%02X ", sl_zigbee_af_ias_zone_client_known_servers[i].ieeeAddress[j]);
       }
     }
   }
@@ -224,12 +224,12 @@ static void iasClientLoadCommand(void)
     if (feof(fp)) {
       break;
     }
-    fscanf(fp, "%x ", &data1);
+    fscanf(fp, "%02X ", &data1);
     if (data1 == 0xff) {
       break;
     }
     fscanf(fp,
-           "%x %x %x %x ",
+           "%02X %02X %02X %02X ",
            &data2,
            &data3,
            &data4,
@@ -242,7 +242,7 @@ static void iasClientLoadCommand(void)
     sl_zigbee_af_ias_zone_client_known_servers[i].zoneType = (uint16_t) data5;
 
     for (j = 0; j < 8; j++) {
-      fscanf(fp, "%x ", &data1);
+      fscanf(fp, "%02X ", &data1);
       sl_zigbee_af_ias_zone_client_known_servers[i].ieeeAddress[j] = (uint8_t) data1;
     }
   }
@@ -288,7 +288,7 @@ static uint8_t findIasZoneServerByNodeId(sl_802154_short_addr_t nodeId)
 //----------------------------
 // Commands callbacks
 
-bool sl_zigbee_af_ias_zone_cluster_zone_status_change_notification_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_ias_zone_cluster_zone_status_change_notification_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_ias_zone_cluster_zone_status_change_notification_command_t cmd_data;
   uint8_t serverIndex = findIasZoneServerByNodeId(cmd->source);
@@ -296,14 +296,14 @@ bool sl_zigbee_af_ias_zone_cluster_zone_status_change_notification_cb(sl_zigbee_
 
   if (zcl_decode_ias_zone_cluster_zone_status_change_notification_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   if (serverIndex != NO_INDEX) {
     status = SL_ZIGBEE_ZCL_STATUS_SUCCESS;
     setServerZoneStatus(serverIndex, cmd_data.zoneStatus);
 
-    sl_zigbee_af_ias_zone_cluster_println("Zone %d status change, 0x%2X from 0x%2X",
+    sl_zigbee_af_ias_zone_cluster_println("Zone %d status change, 0x%04X from 0x%04X",
                                           cmd_data.zoneId,
                                           cmd_data.zoneStatus,
                                           cmd->source);
@@ -312,11 +312,10 @@ bool sl_zigbee_af_ias_zone_cluster_zone_status_change_notification_cb(sl_zigbee_
     //   that is silly for the production device.
     // readIasZoneServerAttributes(cmd->source);
   }
-  sl_zigbee_af_send_default_response(cmd, status);
-  return true;
+  return status;
 }
 
-bool sl_zigbee_af_ias_zone_cluster_zone_enroll_request_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_ias_zone_cluster_zone_enroll_request_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zigbee_af_ias_enroll_response_code_t responseCode = SL_ZIGBEE_ZCL_IAS_ENROLL_RESPONSE_CODE_NO_ENROLL_PERMIT;
   uint8_t zoneId = UNKNOWN_ZONE_ID;
@@ -334,11 +333,11 @@ bool sl_zigbee_af_ias_zone_cluster_zone_enroll_request_cb(sl_zigbee_af_cluster_c
   // check our EUI64 against his CIE Address to see if we're his CIE.
   sl_zigbee_af_get_command_aps_frame()->options |= SL_ZIGBEE_APS_OPTION_SOURCE_EUI64;
   status = sl_zigbee_af_send_response();
-  sl_zigbee_af_core_println("Sent enroll response with responseCode: 0x%X, zoneId: 0x%X, status: 0x%X",
+  sl_zigbee_af_core_println("Sent enroll response with responseCode: 0x%02X, zoneId: 0x%02X, status: 0x%02X",
                             responseCode,
                             zoneId,
                             status);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
 static void stateMachineEventHandler(sl_zigbee_af_event_t * event)
@@ -380,7 +379,7 @@ static sl_status_t sendCommand(sl_802154_short_addr_t destAddress)
 {
   sl_zigbee_af_set_command_endpoints(myEndpoint, sl_zigbee_af_ias_zone_client_known_servers[currentIndex].endpoint);
   sl_status_t status = sl_zigbee_af_send_command_unicast(SL_ZIGBEE_OUTGOING_DIRECT, destAddress);
-  sl_zigbee_af_ias_zone_cluster_println("Sent IAS Zone Client Command to 0x%2X (%d -> %d) status: 0x%X",
+  sl_zigbee_af_ias_zone_cluster_println("Sent IAS Zone Client Command to 0x%04X (%d -> %d) status: 0x%02X",
                                         destAddress,
                                         myEndpoint,
                                         sl_zigbee_af_ias_zone_client_known_servers[currentIndex].endpoint,
@@ -417,7 +416,7 @@ static void iasZoneClientServiceDiscoveryCallback(const sl_zigbee_af_service_dis
     const sl_zigbee_af_endpoint_list_t* endpointList = (const sl_zigbee_af_endpoint_list_t *)result->responseData;
     if (endpointList->count > 0) {
       setServerEndpoint(currentIndex, endpointList->list[0]);
-      sl_zigbee_af_ias_zone_cluster_println("Device 0x%2X supports IAS Zone Server",
+      sl_zigbee_af_ias_zone_cluster_println("Device 0x%04X supports IAS Zone Server",
                                             result->matchAddress);
       setCieAddress(result->matchAddress);
       return;
@@ -445,7 +444,7 @@ static void checkForIasZoneServer(sl_802154_short_addr_t sl_zigbee_node_id, uint
     // write your IEEE in them just in case they left and are rejoining. --agkeesle
     // Bug: EMAPPFWKV2-1078
     setCieAddress(sl_zigbee_node_id);
-    sl_zigbee_af_ias_zone_cluster_println("Node 0x%2X already known to IAS client", sl_zigbee_node_id);
+    sl_zigbee_af_ias_zone_cluster_println("Node 0x%04X already known to IAS client", sl_zigbee_node_id);
     return;
   }
 
@@ -456,7 +455,7 @@ static void checkForIasZoneServer(sl_802154_short_addr_t sl_zigbee_node_id, uint
                                                                         iasZoneClientServiceDiscoveryCallback);
 
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_ias_zone_cluster_println("Error: Failed to initiate service discovery for IAS Zone Server 0x%2X", sl_zigbee_node_id);
+    sl_zigbee_af_ias_zone_cluster_println("Error: Failed to initiate service discovery for IAS Zone Server 0x%04X", sl_zigbee_node_id);
     clearState();
   }
 }
@@ -466,7 +465,7 @@ void sl_zigbee_af_ias_zone_client_zdo_message_received_cb(sl_802154_short_addr_t
                                                           uint8_t* message,
                                                           uint16_t length)
 {
-  sl_zigbee_af_ias_zone_cluster_println("Incoming ZDO, Cluster: 0x%2X", apsFrame->clusterId);
+  sl_zigbee_af_ias_zone_cluster_println("Incoming ZDO, Cluster: 0x%04X", apsFrame->clusterId);
   if (apsFrame->clusterId == END_DEVICE_ANNOUNCE) {
     checkForIasZoneServer(sl_zigbee_node_id, &(message[3]));
   }
@@ -534,7 +533,7 @@ void sl_zigbee_af_ias_zone_client_read_attributes_response_cb(sl_zigbee_af_clust
       uint16_t attributeId = buffer[i] + (buffer[i + 1] << 8);
       uint8_t status = buffer[i + 2];
       i += 3;
-      //sl_zigbee_af_ias_zone_cluster_println("Parsing Attribute 0x%2X, Status: 0x%X", attributeId, status);
+      //sl_zigbee_af_ias_zone_cluster_println("Parsing Attribute 0x%04X, Status: 0x%02X", attributeId, status);
       if (status == SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
         if ((i + 1) > bufLen) {
           // Too short, dump the message.
@@ -586,7 +585,7 @@ void sl_zigbee_af_ias_zone_client_read_attributes_response_cb(sl_zigbee_af_clust
         }
       }
     }
-    sl_zigbee_af_ias_zone_cluster_println("Retrieved IAS Zone Server attributes from 0x%2X",
+    sl_zigbee_af_ias_zone_cluster_println("Retrieved IAS Zone Server attributes from 0x%04X",
                                           sl_zigbee_af_current_command()->source);
     clearState();
   }
@@ -598,26 +597,24 @@ uint32_t sl_zigbee_af_ias_zone_cluster_client_command_parse(sl_service_opcode_t 
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_ZONE_STATUS_CHANGE_NOTIFICATION_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_ias_zone_cluster_zone_status_change_notification_cb(cmd);
+        status = sl_zigbee_af_ias_zone_cluster_zone_status_change_notification_cb(cmd);
         break;
       }
       case ZCL_ZONE_ENROLL_REQUEST_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_ias_zone_cluster_zone_enroll_request_cb(cmd);
+        status = sl_zigbee_af_ias_zone_cluster_zone_enroll_request_cb(cmd);
         break;
       }
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }
 
 #ifdef SL_CATALOG_ZIGBEE_TEST_HARNESS_Z3_PRESENT

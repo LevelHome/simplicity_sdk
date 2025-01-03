@@ -29,29 +29,37 @@
 /**
  * @brief sends the given payload over the high datarate phy
  * @internal SL_ZIGBEE_IPC_ARGS
- * {# payload | length: ((payload[1] << 8) + payload[0] + 2) | max: MAX_HIGH_DATARATE_PHY_PACKET_LENGTH #}
+ * {# payload | length: (payload[1] << 8) + payload[0] + 2 | max: MAX_HIGH_DATARATE_PHY_PACKET_LENGTH #}
  */
 sl_status_t sl_mac_send_raw_high_datarate_phy_message(uint8_t nwk_index,
                                                       uint8_t *payload);
 
+/**
+ * @brief sends the given payload over the high datarate phy at absolute timestamp
+ * @internal SL_ZIGBEE_IPC_ARGS
+ * {# payload | length: (payload[1] << 8) + payload[0] + 2 | max: MAX_HIGH_DATARATE_PHY_PACKET_LENGTH #}
+ */
+sl_status_t sl_mac_send_raw_high_datarate_phy_scheduled_message(uint8_t nwk_index, uint8_t *payload, RAIL_Time_t timestamp);
+
 void sl_mac_lower_mac_set_high_datarate_csma_params(RAIL_CsmaConfig_t *csma_params);
 
-void sl_mac_lower_mac_set_high_datarate_phy_radio_priorities(sl_zigbee_multiprotocol_priorities_t *priorities);
+void sl_mac_lower_mac_set_high_datarate_phy_radio_priorities(sl_802154_radio_priorities_t *priorities);
 
 /**
  * @brief callback that is issued when the given packet is received over the high datarate phy
  * @internal SL_ZIGBEE_IPC_ARGS
- * {# packet | length: ((packet[1] << 8) + packet[0] + 2) | max: MAX_HIGH_DATARATE_PHY_PACKET_LENGTH #}
+ * {# packet | length: (packet[1] << 8) + packet[0] + 2 | max: MAX_HIGH_DATARATE_PHY_PACKET_LENGTH #}
  */
 void sl_mac_high_datarate_phy_rx_callback(uint8_t *packet,
                                           uint8_t linkQuality,
-                                          int8_t rssi);
+                                          int8_t rssi,
+                                          uint32_t pkt_rx_timestamp);
 
 RAIL_Status_t sl_mac_set_mode_switch_sync_detect(bool enable_f);
 /**
  * @brief callback that is issued when the given packet is transmitted over the high datarate phy
  * @internal SL_ZIGBEE_IPC_ARGS
- * {# packet_contents | length: (packet_length) | max: MAX_HIGH_DATARATE_PHY_PACKET_LENGTH #}
+ * {# packet_contents | length: packet_length | max: MAX_HIGH_DATARATE_PHY_PACKET_LENGTH #}
  */
 void sl_mac_high_datarate_phy_tx_callback(uint8_t mac_index,
                                           sl_status_t status,

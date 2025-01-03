@@ -29,10 +29,8 @@
 
 #include "hal/hal.h"
 #include "serial/serial.h"
-#include "platform/service/legacy_printf/inc/sl_legacy_printf.h"
 sl_status_t sli_legacy_serial_write_data(uint8_t port, uint8_t *data, uint8_t length);
 #define NO_READLINE // disable readline in UC
-//#include "serial/ember-printf.h"
 #include "cli.h"
 
 #include <sys/types.h>         // for fstat()
@@ -65,8 +63,6 @@ sl_status_t sli_legacy_serial_write_data(uint8_t port, uint8_t *data, uint8_t le
 #endif
 
 #include "linux-serial.h"
-
-#include "ember-printf-convert.h"
 
 // Don't like readline and the GPL requirements?  Use 'libedit'.
 // It is a call-for-call compatible with the readline library but is
@@ -667,37 +663,15 @@ sl_status_t sli_legacy_serial_guaranteed_printf(uint8_t port, const char * forma
   return stat;
 }
 
-// This is implemented because a few applications count on this internal
-// function.  This is essentially a 'sprintf()' where the application wants
-// formatted text output but uses its own mechanism to print.  We will ignore
-// that use since it doesn't make much sense in the case of a gateway
-// application.  If the application really wants to do something special for
-// printing formatted output it should call sprintf() on its own.
-uint8_t sli_util_printf_internal(emPrintfFlushHandler handler,
-                                 uint8_t port,
-                                 const char * buff,
-                                 va_list list)
-{
-  (void) handler;
-
-  return (sl_status_t)sli_legacy_serial_printf_var_arg(port, buff, list);
-}
-
 // Main printing routine.
 // Calls into normal C 'vprintf()'
 sl_status_t sli_legacy_serial_printf_var_arg(uint8_t port, const char * formatString, va_list ap)
 {
   sl_status_t stat = SL_STATUS_INVALID_PARAMETER;
-  char* newFormatString = transformEmberPrintfToStandardPrintf(formatString,
-                                                               true);
-  if (newFormatString == NULL) {
-    return SL_STATUS_ALLOCATION_FAILED;
-  }
-  stat = (0 == vprintf(newFormatString, ap)
+  stat = (0 == vprintf(formatString, ap)
           ? SL_STATUS_FAIL
           : SL_STATUS_OK);
   fflush(stdout);
-  free(newFormatString);
   return stat;
 }
 
@@ -736,7 +710,7 @@ sl_status_t sli_legacy_serial_write_byte(uint8_t port, uint8_t dataByte)
 sl_status_t sli_legacy_serial_write_hex(uint8_t port, uint8_t dataByte)
 {
   uint8_t hex[3];
-  sprintf((char*)hex, "%2x", dataByte);
+  sprintf((char*)hex, "%02X", dataByte);
   return sli_legacy_serial_write_data(port, hex, 2);
 }
 

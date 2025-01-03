@@ -1,0 +1,101 @@
+id: ot_mcu_platform_abstraction
+label: Platform Abstraction
+package: OpenThread
+category: OpenThread
+quality: experimental
+description: This component provides the abstraction layer between the OpenThread stack on host MCU and Silicon Labs platform. It also adds support for additional features such as Wi-Fi coex and RTOS support
+provides:
+  - name: ot_mcu_platform_abstraction
+  - name: ot_mcu_platform_abstraction_si91x
+requires:
+  - name: ot_mcu_platform_abstraction_core
+
+
+config_file:
+  - path: ../config/sl_openthread_rtos_config.h
+    condition:
+      - kernel
+    unless: ["matter_integration"]
+toolchain_settings:
+  - option: gcc_compiler_option
+    value: "-Werror=unused-function"
+  - option: gcc_compiler_option
+    value: "-Werror=unused-label"
+  - option: gcc_compiler_option
+    value: "-Werror=unused-parameter"
+  - option: gcc_compiler_option
+    value: "-Werror=unused-variable"
+  - option: preinclude
+    value: sl_openthread_rtos_config.h
+    condition:
+      - kernel
+    unless: ["matter_integration"]
+include:
+  - path: src/mcu
+    condition:
+      - kernel
+    unless: ["matter_integration"]
+    file_list:
+      - path: sl_ot_rtos_adaptation.h
+source:
+  - path: src/mcu/sl_ot_rtos_adaptation.c
+    condition:
+      - kernel
+    unless: ["matter_integration"]
+define:
+  - name: "INCLUDE_xTimerPendFunctionCall"
+    value: 1
+    condition:
+      - freertos
+    unless: ["matter_integration"]
+  - name: OPENTHREAD_CONFIG_PLATFORM_RADIO_COEX_ENABLE
+    value: 1
+    condition:
+      -  rail_util_coex
+  - name: SL_OPENTHREAD_PHY_SELECT_STACK_SUPPORT
+    value: 1
+    condition:
+      - rail_util_ieee802154_phy_select
+  - name: DEBUG_EFM
+    value: 1
+    condition:
+      - app_assert
+template_contribution:
+  - name: event_handler
+    value:
+      event: internal_app_init
+      include: sl_ot_rtos_adaptation.h
+      handler: sl_ot_rtos_stack_init
+      priority: 9
+    condition:
+      - kernel
+    unless: ["matter_integration", otbr_test]
+  - name: event_handler
+    value:
+      event: internal_app_init
+      include: sl_ot_rtos_adaptation.h
+      handler: sl_ot_rtos_app_init
+      priority: 10
+    condition:
+      - kernel
+    unless: ["matter_integration", otbr_test]
+  - name: ot_init
+    value: sl_ot_create_instance
+    priority: 0
+    unless: [otbr_test]
+  - name: ot_init
+    value: sl_ot_cli_init
+    priority: 20
+    unless: [otbr_test]
+  - name: event_handler
+    value:
+      event: internal_app_init
+      include: test_app.h
+      handler: sl_otbr_test_app_init
+      priority: 1
+    condition:
+      - otbr_test
+metadata:
+  sbom:
+    # Zlib covers the files from protocol/openthread/config.
+    license: Zlib AND MSLA

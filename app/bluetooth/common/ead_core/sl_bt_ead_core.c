@@ -30,7 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "em_common.h"
+#include "sl_common.h"
 #include "sl_memory_manager.h"
 #include "psa/crypto.h"
 #include "sl_bt_ead_core.h"

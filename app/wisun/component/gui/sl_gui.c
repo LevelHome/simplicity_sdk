@@ -1,5 +1,5 @@
 /***************************************************************************//**
- * @file
+ * @file sl_gui.c
  * @brief Graphical User Interface
  *******************************************************************************
  * # License
@@ -31,20 +31,18 @@
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <assert.h>
+
 #include "sl_gui.h"
 #include "sl_component_catalog.h"
 #include "sl_simple_button_instances.h"
 #include "sl_display.h"
-#include "sl_wisun_trace_util.h"
 #include "sl_gui_config.h"
 
 #if defined(SL_CATALOG_KERNEL_PRESENT)
 #include "cmsis_os2.h"
 #include "sl_cmsis_os2_common.h"
 #endif
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -358,7 +356,7 @@ void sl_gui_init(void)
 }
 
 #if defined(SL_CATALOG_KERNEL_PRESENT)
-void _gui_event_task(void *args)
+static void _gui_event_task(void *args)
 {
   osStatus_t stat;
   static sl_widget_event_hnd_t evt_hnd;
@@ -366,7 +364,7 @@ void _gui_event_task(void *args)
   (void) args;
   // Set font
   sl_display_set_font((sl_display_font_t *)&sl_widget_default_font);
-  SL_WISUN_THREAD_LOOP {
+  SL_GUI_THREAD_LOOP {
     stat = osMessageQueueGet(_gui_evt_msg_queue, &evt_hnd, &msg_prio, 0U);
     (void) msg_prio;
     if (stat == osOK) {

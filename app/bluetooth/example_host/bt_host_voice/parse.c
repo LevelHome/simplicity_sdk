@@ -3,7 +3,7 @@
  * @brief Parse source file
  *******************************************************************************
  * # License
- * <b>Copyright 2018 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -29,63 +29,45 @@
  ******************************************************************************/
 
 #include <string.h>
+#include <stdbool.h>
 
-/* BG stack headers */
-//#include "gecko_bglib.h"
+// BG stack headers
 #include "app_log.h"
 
-/* Own header */
+// Own header
 #include "parse.h"
 #include "config.h"
 
-/***************************************************************************************************
+/*******************************************************************************
  * Static Function Declarations
- **************************************************************************************************/
-static int parse_address(const char *str, bd_addr *addr);
-static void usage(void);
-static void print_configuration(void);
+ ******************************************************************************/
+static bool parse_address(const char *str, bd_addr *addr);
 
-/***************************************************************************************************
- * Public Variables
- **************************************************************************************************/
-
-/***************************************************************************************************
- * Function Definitions
- **************************************************************************************************/
-
-/***********************************************************************************************//**
- *  \brief  Initialize adc_sample_rate variable in configuration structure by data from argument list.
+/***************************************************************************//**
+ *  \brief  Initialize adc_sample_rate variable in configuration structure by
+ *          data from argument list.
  *  \param[in]  sample rate
- **************************************************************************************************/
+ ******************************************************************************/
 void init_sample_rate(adc_sample_rate_t sr)
 {
   switch (sr) {
     case sr_8k:
-      CONF_get()->adc_sample_rate = sr_8k;
+      get_config()->adc_sample_rate = sr_8k;
       break;
     case sr_16k:
     default:
-      CONF_get()->adc_sample_rate = sr_16k;
+      get_config()->adc_sample_rate = sr_16k;
       break;
   }
 }
 
-/***********************************************************************************************//**
- *  \brief  Print bluetooth address on stdout.
- *  \param[in]  bluetooth address
- **************************************************************************************************/
-static void print_address(bd_addr *addr)
-{
-  app_log("Remote address:          %02x:%02x:%02x:%02x:%02x:%02x\n", addr->addr[5], addr->addr[4], addr->addr[3], addr->addr[2], addr->addr[1], addr->addr[0]);
-}
-
-/***********************************************************************************************//**
+/***************************************************************************//**
  *  \brief  Parse bluetooth address.
  *  \param[in]  data to parse
  *  \param[out] parsed bluetooth address
- *  \return 0 if success, otherwise -1
- **************************************************************************************************/
-static int parse_address(const char *str, bd_addr *addr)
+ *  \return true if success, otherwise false
+ ******************************************************************************/
+static bool parse_address(const char *str, bd_addr *addr)
 {
   int a[6];
   int i;
@@ -95,192 +77,172 @@ static int parse_address(const char *str, bd_addr *addr)
              &a[3],
              &a[2],
              &a[1],
-             &a[0]
-             );
+             &a[0]);
+
   if (i != 6) {
-    return -1;
+    return false;
   }
 
   for (i = 0; i < 6; i++) {
     addr->addr[i] = (uint8_t)a[i];
   }
 
-  return 0;
+  return true;
 }
 
-/***********************************************************************************************//**
- *  \brief  Print example of usage that application on stdout.
- **************************************************************************************************/
-static void usage(void)
+/***************************************************************************//**
+ *  \brief  Print bluetooth address on stdout.
+ *  \param[in]  bluetooth address
+ ******************************************************************************/
+void print_address(bd_addr *addr)
 {
-  app_log("Example of usage:\n");
-  app_log("  voice -v -p COM1 -b 115200 -a 00:0b:57:1a:8c:2d -s 16\n");
-  app_log("  voice -p COM1 -b 115200 -a 00:0b:57:1a:8c:2d \n");
-  app_log("  voice -h \n");
+  if (app_log_check_level(APP_LOG_LEVEL_DEBUG)) {
+    app_log("%02x:%02x:%02x:%02x:%02x:%02x" APP_LOG_NL,
+            addr->addr[5],
+            addr->addr[4],
+            addr->addr[3],
+            addr->addr[2],
+            addr->addr[1],
+            addr->addr[0]);
+  }
 }
 
-/***********************************************************************************************//**
+/***************************************************************************//**
  *  \brief  Print help on stdout.
- **************************************************************************************************/
+ ******************************************************************************/
 void help(void)
 {
-  app_log("Help:\n");
-  app_log("-p <port>       - COM port\n");
-  app_log("-b <baud_rate>  - Baud rate.\n");
-  app_log("                  Default %d b/s.\n", DEFAULT_UART_BAUD_RATE);
-  app_log("-o <file_name>  - Output file name.\n");
-  app_log("                  Audio data send to stdout by default.\n");
-  app_log("-a <bt_address> - Remote device bluetooth address. \n");
-  app_log("                  No default bluetooth address.\n");
-  app_log("-s <8/16>       - ADC sampling rate.\n");
-  app_log("                  8 or 16 kHz sampling rate can be used. Default - 16 kHz.\n");
-  app_log("-f <1/0>        - Enable/Disable filtering.\n");
-  app_log("                  Default filtering disabled. When filtering enabled HPF filter is used.\n");
-  app_log("-e <1/0>        - Enable/Disable encoding.\n");
-  app_log("                  Encoding enabled by default.\n");
-  app_log("-t <1/0>        - Enable/Disable transfer status.\n");
-  app_log("                  Transfer status enabled by default.\n");
-  app_log("-h              - Help\n");
-  app_log("-v              - Verbose\n");
-  usage();
-  exit(EXIT_SUCCESS);
+  app_log("Help:" APP_LOG_NL);
+  app_log(NCP_HOST_OPTIONS);
+  app_log(APP_LOG_OPTIONS);
+  app_log("    -o  Output file name." APP_LOG_NL);
+  app_log("        <file_name>      File name, audio data send to stdout by default." APP_LOG_NL);
+  app_log("    -a  Remote device bluetooth address." APP_LOG_NL);
+  app_log("        <bt_address>     No default bluetooth address." APP_LOG_NL);
+  app_log("    -s  ADC sampling rate." APP_LOG_NL);
+  app_log("        <8/16>           8 or 16 kHz sampling rate can be used. Default - 16 kHz." APP_LOG_NL);
+  app_log("    -x  Enable filtering, default: disabled. When filtering enabled HPF filter is used." APP_LOG_NL);
+  app_log("    -e  Disable encoding, default: enabled" APP_LOG_NL);
+  app_log("    -t  Disable transfer status, default: enabled" APP_LOG_NL);
+  app_log("    -h  Print help message." APP_LOG_NL);
 }
 
-/***********************************************************************************************//**
+/***************************************************************************//**
  *  \brief  Print configuration parameters on stdout.
- **************************************************************************************************/
-static void print_configuration(void)
+ ******************************************************************************/
+void print_configuration(void)
 {
-  app_log("Parameters:\n");
-  app_log("  Baud rate:               %d\n", CONF_get()->baud_rate);
-  app_log("  UART port:               %s\n", CONF_get()->uart_port);
-  if ( CONF_get()->output_to_stdout == true) {
-    app_log("  Audio data send to:      stdout\n");
+  app_log_debug("Parameters:" APP_LOG_NL);
+  if (get_config()->output_to_stdout == true) {
+    app_log_debug("  Audio data send to:      stdout" APP_LOG_NL);
   } else {
-    app_log("  Audio data store into:   %s\n", CONF_get()->out_file_name);
+    app_log_debug("  Audio data store into:   %s" APP_LOG_NL, get_config()->out_file_name);
   }
-  app_log("  "); print_address(&CONF_get()->remote_address);
-  app_log("  Audio data notification: %s\n", CONF_get()->audio_data_notification ? "Enabled" : "Disabled");
-  app_log("  ADC sample rate:         %d[kHz]\n", CONF_get()->adc_sample_rate);
-  app_log("  Filtering:               %s\n", CONF_get()->filter_enabled ? "Enabled" : "Disabled");
-  app_log("  Encoding:                %s\n", CONF_get()->encoding_enabled ? "Enabled" : "Disabled");
-  app_log("  Transfer status:         %s\n", CONF_get()->transfer_status ? "Enabled" : "Disabled");
-  app_log("\n");
+  app_log_debug("  Remote address:          "); print_address(&get_config()->remote_address);
+  app_log_debug("  Audio data notification: %s" APP_LOG_NL, get_config()->audio_data_notification ? "Enabled" : "Disabled");
+  app_log_debug("  ADC sample rate:         %d[kHz]" APP_LOG_NL, get_config()->adc_sample_rate);
+  app_log_debug("  Filtering:               %s" APP_LOG_NL, get_config()->filter_enabled ? "Enabled" : "Disabled");
+  app_log_debug("  Encoding:                %s" APP_LOG_NL, get_config()->encoding_enabled ? "Enabled" : "Disabled");
+  app_log_debug("  Transfer status:         %s" APP_LOG_NL, get_config()->transfer_status ? "Enabled" : "Disabled");
+  app_log_nl();
   return;
 }
 
-/***********************************************************************************************//**
+/***************************************************************************//**
  *  \brief  Add extension to output file depending on application parameters.
- **************************************************************************************************/
+ ******************************************************************************/
 static void add_extension_to_file(void)
 {
   char *ptr = NULL;
 
-  if ( strcmp(CONF_get()->out_file_name, "-") == 0 ) {
-    CONF_get()->output_to_stdout = true;
+  if (strcmp(get_config()->out_file_name, "-") == 0) {
+    get_config()->output_to_stdout = true;
     return;
   }
 
-  size_t ptrLen = 1 + strlen(CONF_get()->out_file_name) + 4;
-  ptr = (char *)malloc(ptrLen);
+  size_t ptr_len = 1 + strlen(get_config()->out_file_name) + 4;
+  ptr = (char *)malloc(ptr_len);
 
-  if ( ptr == NULL) {
-    DEBUG_ERROR("Memory allocation failed. Exiting.\n,");
-    exit(1);
+  if (ptr == NULL) {
+    app_log_error("Memory allocation failed. Exiting." APP_LOG_NL);
+    exit(EXIT_FAILURE);
   }
 
-  strcpy(ptr, CONF_get()->out_file_name);
+  strcpy(ptr, get_config()->out_file_name);
 
-  if ( CONF_get()->encoding_enabled ) {
+  if (get_config()->encoding_enabled) {
     strcat(ptr, IMA_FILE_EXTENSION);
   } else {
     strcat(ptr, S16_FILE_EXTENSION);
   }
 
-  if ( CONF_get()->out_file_name != NULL) {
-    free(CONF_get()->out_file_name);
-    CONF_get()->out_file_name = NULL;
-  }
+  free(get_config()->out_file_name);
+  get_config()->out_file_name = NULL;
 
-  CONF_get()->out_file_name = malloc(1 + strlen(ptr));
-  strcpy(CONF_get()->out_file_name, ptr);
+  get_config()->out_file_name = malloc(1 + strlen(ptr));
+  strcpy(get_config()->out_file_name, ptr);
 
   free(ptr);
 }
 
-/***********************************************************************************************//**
+/***************************************************************************//**
  *  \brief  Parse application parameters.
  *  \param[in] argc Argument count.
  *  \param[in] argv Buffer contaning application parameters.
- **************************************************************************************************/
-void PAR_parse(int argc, char **argv)
+ ******************************************************************************/
+void parse_arguments(int argc, char **argv)
 {
-  static char uart_port_name[STR_UART_PORT_SIZE];
-  bool verbose = false;
+  int opt;
+  sl_status_t sc;
 
-  if (argc == 1) {
-    help();
-  }
+  while ((opt = getopt(argc, argv, OPTSTRING)) != -1) {
+    switch (opt) {
+      case 'o':
+        size_t fLen = strlen(optarg) + 1;
+        get_config()->out_file_name = malloc(fLen);
+        memcpy(get_config()->out_file_name, optarg, fLen);
+        break;
 
-  for (uint8_t i = 0; i < argc; i++) {
-    if (argv[i][0] == '-') {
-      if ( argv[i][1] == 'p') {
-        size_t len_arg = strlen(argv[i + 1]);
-        size_t len = (len_arg > (STR_UART_PORT_SIZE - 1)) ? STR_UART_PORT_SIZE : len_arg;
-
-        memcpy(uart_port_name, argv[i + 1], len);
-        uart_port_name[len + 1] = '\0';
-        CONF_get()->uart_port = uart_port_name;
-      }
-
-      if ( argv[i][1] == 'o') {
-        size_t fLen = strlen(argv[i + 1]) + 1;
-        CONF_get()->out_file_name = malloc(fLen);
-        memcpy(CONF_get()->out_file_name, argv[i + 1], fLen);
-      }
-
-      if ( argv[i][1] == 'a') {
-        if (parse_address(argv[i + 1], &CONF_get()->remote_address)) {
-          DEBUG_ERROR("Unable to parse address %s", argv[i + 1]);
-          exit(EXIT_FAILURE);
+      case 'a':
+        if (parse_address(optarg, &get_config()->remote_address)) {
+          get_config()->remote_address_set = true;
         } else {
-          CONF_get()->remote_address_set = true;
+          app_log_error("Unable to parse address %s", optarg);
+          exit(EXIT_FAILURE);
         }
-      }
+        break;
 
-      if ( argv[i][1] == 'b') {
-        CONF_get()->baud_rate = (int)atoi(argv[i + 1]);
-      }
+      case 's':
+        init_sample_rate(atoi(optarg));
+        break;
 
-      if ( argv[i][1] == 's') {
-        init_sample_rate(atoi(argv[i + 1]));
-      }
+      case 'x':
+        get_config()->filter_enabled = true;
+        break;
 
-      if ( argv[i][1] == 'f') {
-        CONF_get()->filter_enabled = (bool)atoi(argv[i + 1]);
-      }
+      case 'e':
+        get_config()->encoding_enabled = false;
+        break;
 
-      if ( argv[i][1] == 'e') {
-        CONF_get()->encoding_enabled = (bool)atoi(argv[i + 1]);
-      }
+      case 't':
+        get_config()->transfer_status = false;
+        break;
 
-      if ( argv[i][1] == 't') {
-        CONF_get()->transfer_status = (bool)atoi(argv[i + 1]);
-      }
-
-      if ( argv[i][1] == 'h') {
+      case 'h':
         help();
-      }
+        exit(EXIT_SUCCESS);
 
-      if ( argv[i][1] == 'v') {
-        verbose = true;
-      }
+      default:
+        sc = ncp_host_set_option((char)opt, optarg);
+        if (sc == SL_STATUS_NOT_FOUND) {
+          sc = app_log_set_option((char)opt, optarg);
+        }
+        if (sc != SL_STATUS_OK) {
+          app_log(USAGE, argv[0]);
+          exit(EXIT_FAILURE);
+        }
     }
   }
 
   add_extension_to_file();
-
-  if (verbose) {
-    print_configuration();
-  }
 }

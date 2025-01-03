@@ -105,7 +105,7 @@ void sli_zigbee_af_test_harness_z3_nwk_nwk_rejoin_request_command(SL_CLI_COMMAND
                               sizeof(commandFrame));
 
   done:
-  sl_zigbee_af_core_println("%s: %s: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "Rejoin request",
                             status);
@@ -128,7 +128,7 @@ void sli_zigbee_af_test_harness_z3_nwk_nwk_rejoin_response_command(SL_CLI_COMMAN
 
   status = sendNetworkCommand(destinationShort, frame, sizeof(frame));
 
-  sl_zigbee_af_core_println("%s: %s: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "Rejoin response",
                             status);
@@ -174,14 +174,14 @@ void sli_zigbee_af_test_harness_z3_nwk_nwk_leave_command(SL_CLI_COMMAND_ARG)
       status = sendNetworkCommand(destinationShort, frame, sizeof(frame));
   }
 
-  sl_zigbee_af_core_println("%s: %s: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "Leave",
                             status);
 }
 
-// plugin test-harness z3 nwk nwk-leave-supression on
-// plugin test-harness z3 nwk nwk-leave-supression off
+// plugin test-harness z3 nwk nwk-leave-suppression on
+// plugin test-harness z3 nwk nwk-leave-suppression off
 void sli_zigbee_af_test_harness_z3_nwk_leave_suppression(SL_CLI_COMMAND_ARG)
 {
   sli_zigbee_af_test_harness_z3_ignore_leave_commands
@@ -189,29 +189,29 @@ void sli_zigbee_af_test_harness_z3_nwk_leave_suppression(SL_CLI_COMMAND_ARG)
 
   sl_zigbee_af_core_println("%s: %s: %s",
                             TEST_HARNESS_Z3_PRINT_NAME,
-                            "Supress network leave",
+                            "Suppress network leave",
                             (sli_zigbee_af_test_harness_z3_ignore_leave_commands
                              ? "YES"
                              : "NO"));
 }
 
-// plugin test-harness z3 nwk nwk-rejoin-supression on
-// plugin test-harness z3 nwk nwk-rejoin-supression off
+// plugin test-harness z3 nwk nwk-rejoin-suppression on
+// plugin test-harness z3 nwk nwk-rejoin-suppression off
 void sli_zigbee_af_test_harness_z3_nwk_rejoin_suppression(SL_CLI_COMMAND_ARG)
 {
   sli_zigbee_test_harness_z3_ignore_rejoin_commands
     = (sl_zigbee_cli_get_argument_string_and_length(arguments, -1, NULL)[1] == 'n');
-  sl_zigbee_af_core_println("%p: %p: %p",
+  sl_zigbee_af_core_println("%s: %s: %s",
                             TEST_HARNESS_Z3_PRINT_NAME,
-                            "Supress network rejoin",
+                            "Suppress network rejoin",
                             (sli_zigbee_test_harness_z3_ignore_rejoin_commands
                              ? "YES"
                              : "NO"));
 }
 
-// plugin test-harness z3 nwk nwk-key-supression on
-// plugin test-harness z3 nwk nwk-key-supression off
-void sli_zigbee_af_test_harness_z3_nwk_nwk_key_supression(SL_CLI_COMMAND_ARG)
+// plugin test-harness z3 nwk nwk-key-suppression on
+// plugin test-harness z3 nwk nwk-key-suppression off
+void sli_zigbee_af_test_harness_z3_nwk_nwk_key_suppression(SL_CLI_COMMAND_ARG)
 {
   // TODO:
 }
@@ -222,7 +222,7 @@ void sli_zigbee_af_test_harness_z3_nwk_get_network_update_id(SL_CLI_COMMAND_ARG)
   sl_zigbee_network_parameters_t networkParameters;
   sl_zigbee_node_type_t nodeType;
   sl_zigbee_af_get_network_parameters(&nodeType, &networkParameters);
-  sl_zigbee_af_core_println("%s: %s: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "Network Update Id",
                             networkParameters.nwkUpdateId);
@@ -233,7 +233,7 @@ void sli_zigbee_af_test_harness_z3_nwk_set_network_update_id(SL_CLI_COMMAND_ARG)
 {
   uint8_t updateId = sl_cli_get_argument_uint8(arguments, 0);
   sl_zigbee_set_nwk_update_id(updateId, TRUE);
-  sl_zigbee_af_core_println("%s: %s: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "Set network update id",
                             updateId);
@@ -272,7 +272,7 @@ void sli_zigbee_af_test_harness_z3_nwk_update_request_command(SL_CLI_COMMAND_ARG
                               sizeof(commandFrame));
 
   done:
-  sl_zigbee_af_core_println("%p: %p: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "Network update request",
                             status);
@@ -283,7 +283,7 @@ void sli_zigbee_af_test_harness_z3_change_pan_id(SL_CLI_COMMAND_ARG)
 {
   sl_802154_pan_id_t newPanId = (sl_802154_pan_id_t)sl_cli_get_argument_uint16(arguments, 0);
 
-  sl_zigbee_af_core_println("New PAN: %2X", newPanId);
+  sl_zigbee_af_core_println("New PAN: %04X", newPanId);
 
   // Just do it, no delays.
   sli_zigbee_change_pan_id_now(newPanId);
@@ -299,7 +299,7 @@ void sli_zigbee_test_harness_z3_nwk_set_long_up_time(SL_CLI_COMMAND_ARG)
 
   param.beaconClassificationMask |= longUpTime ? LONG_UPTIME : 0;
   sl_zigbee_set_beacon_classification_params(&param);
-  sl_zigbee_af_core_println("%p: %p: %p",
+  sl_zigbee_af_core_println("%s: %s: %s",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "Set long up time",
                             (longUpTime
@@ -316,7 +316,7 @@ void sli_zigbee_test_harness_z3_nwk_set_hub_connectivity(SL_CLI_COMMAND_ARG)
 
   param.beaconClassificationMask |= hubConnectivity ? TC_CONNECTIVITY : 0;
   sl_zigbee_set_beacon_classification_params(&param);
-  sl_zigbee_af_core_println("%p: %p: %p",
+  sl_zigbee_af_core_println("%s: %s: %s",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "Set hub connectivity",
                             (hubConnectivity
@@ -333,7 +333,7 @@ void sli_zigbee_test_harness_z3_nwk_set_parent_classification(SL_CLI_COMMAND_ARG
 
   param.beaconClassificationMask |= parentClassification ? PRIORITIZE_BEACONS_BASED_ON_PARENT_CLASSIFICATION : 0;
   sl_zigbee_set_beacon_classification_params(&param);
-  sl_zigbee_af_core_println("%p: %p: %p",
+  sl_zigbee_af_core_println("%s: %s: %s",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "Set parent classification",
                             (parentClassification

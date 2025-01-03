@@ -3,7 +3,8 @@
 ################################################################################
 
 PROJECTNAME = btmesh_host_provisioner
-SDK_DIR = ../../../..
+PROJ_DIR := $(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
+SDK_DIR := $(realpath $(PROJ_DIR)/../../../..)
 
 # Disable threading as handling more than a few mesh devices can cause data loss
 HOST_THREADING = 0
@@ -51,7 +52,7 @@ endif
 # Include paths                                                                #
 ################################################################################
 
-override INCLUDEPATHS += . \
+override INCLUDEPATHS += $(PROJ_DIR) \
 $(SDK_DIR)/app/bluetooth/common/ncp_evt_filter \
 $(SDK_DIR)/app/bluetooth/common_host/system \
 $(SDK_DIR)/platform/common/inc \
@@ -65,14 +66,11 @@ $(SDK_DIR)/protocol/bluetooth/inc
 override C_SRC += \
 $(SDK_DIR)/app/bluetooth/common_host/system/system.c \
 $(SDK_DIR)/app/bluetooth/common_host/system/sl_btmesh.c \
-app.c \
-app_conf.c \
-main.c
+$(PROJ_DIR)/app.c \
+$(PROJ_DIR)/app_conf.c \
+$(PROJ_DIR)/main.c
 
-################################################################################
-# Other files                                                          #
-################################################################################
-override OTHER_FILES += \
+PROJ_FILES += \
 btmesh_host_provisioner.code-workspace \
 README.txt
 

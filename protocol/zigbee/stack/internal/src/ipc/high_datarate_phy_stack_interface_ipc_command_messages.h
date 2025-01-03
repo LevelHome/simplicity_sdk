@@ -30,7 +30,7 @@ typedef struct {
 } sli_mac_stack_lower_mac_set_high_datarate_csma_params_ipc_msg_t;
 
 typedef struct {
-  sl_zigbee_multiprotocol_priorities_t priorities;
+  sl_802154_radio_priorities_t priorities;
 } sli_mac_stack_lower_mac_set_high_datarate_phy_radio_priorities_ipc_req_t;
 
 typedef struct {
@@ -50,6 +50,21 @@ typedef struct {
   sli_mac_stack_send_raw_high_datarate_phy_message_ipc_req_t request;
   sli_mac_stack_send_raw_high_datarate_phy_message_ipc_rsp_t response;
 } sli_mac_stack_send_raw_high_datarate_phy_message_ipc_msg_t;
+
+typedef struct {
+  uint8_t nwk_index;
+  uint8_t payload[MAX_HIGH_DATARATE_PHY_PACKET_LENGTH];
+  RAIL_Time_t timestamp;
+} sli_mac_stack_send_raw_high_datarate_phy_scheduled_message_ipc_req_t;
+
+typedef struct {
+  sl_status_t result;
+} sli_mac_stack_send_raw_high_datarate_phy_scheduled_message_ipc_rsp_t;
+
+typedef struct {
+  sli_mac_stack_send_raw_high_datarate_phy_scheduled_message_ipc_req_t request;
+  sli_mac_stack_send_raw_high_datarate_phy_scheduled_message_ipc_rsp_t response;
+} sli_mac_stack_send_raw_high_datarate_phy_scheduled_message_ipc_msg_t;
 
 typedef struct {
   bool enable_f;

@@ -41,7 +41,6 @@ static const int16_t cs_antenna_offset_wired_cm[SL_RAIL_UTIL_CS_ANTENNA_COUNT] =
 sl_status_t cs_antenna_configure(bool wired)
 {
   const int16_t *antenna_offset = wired ? cs_antenna_offset_wired_cm : cs_antenna_offset_wireless_cm;
-  // Regardless of SL_RAIL_UTIL_CS_ANTENNA_COUNT, only 1 antenna is supported for now.
-  return sl_bt_cs_set_antenna_configuration(sizeof(int16_t),
+  return sl_bt_cs_set_antenna_configuration((SL_RAIL_UTIL_CS_ANTENNA_COUNT * sizeof(int16_t)),
                                             (uint8_t *)antenna_offset);
 }

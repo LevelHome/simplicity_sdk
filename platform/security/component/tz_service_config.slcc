@@ -21,3 +21,6 @@ template_file:
 
 define:
   - name: TZ_SERVICE_CONFIG_PRESENT
+metadata:
+  sbom:
+    license: Zlib

@@ -3,7 +3,7 @@
  * @brief Low Power Node implementation
  *******************************************************************************
  * # License
- * <b>Copyright 2023 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -28,12 +28,13 @@
  *
  ******************************************************************************/
 
-#include "em_common.h"
+#include "sl_common.h"
 #include "sl_status.h"
 
 #include "sl_bt_api.h"
 #include "sl_btmesh_api.h"
 #include "sl_btmesh_config.h"
+#include "app_btmesh_rta.h"
 
 #include <stdio.h>
 #include "app_assert.h"
@@ -88,14 +89,20 @@ static uint16_t friend_address = 0;
 // Stores the netkey index of the network which the low power node belongs to
 static uint16_t lpn_friend_netkey_idx = 0;
 
+/// Stores the period of the high throughput lpn timer
+static uint32_t lpn_high_throughput_timer_period_ms = 0;
+
 static void lpn_establish_friendship(void);
 
 static void set_configuration_timer(uint32_t delay);
 
-/***************************************************************************//**
- * Initialize LPN functionality with configuration and friendship establishment.
- ******************************************************************************/
-void sl_btmesh_lpn_feature_init(void)
+static void sli_btmesh_lpn_feature_init(void);
+
+static void sli_btmesh_lpn_feature_deinit(void);
+
+sl_status_t sli_btmesh_lpn_high_throughput_unregister(sl_btmesh_lpn_high_throughput_timer_t *handle);
+
+static void sli_btmesh_lpn_feature_init(void)
 {
   sl_status_t result = SL_STATUS_OK;
   size_t netkey_bytes_written;
@@ -109,6 +116,7 @@ void sl_btmesh_lpn_feature_init(void)
 
   // Do not initialize LPN if lpn is currently active
   // or any GATT proxy connection is opened
+
   if (lpn_active || num_mesh_proxy_conn) {
     return;
   }
@@ -185,7 +193,6 @@ void sl_btmesh_lpn_feature_init(void)
   } else {
     // The get networks API provides the netkeys in little endian format
     lpn_friend_netkey_idx = (netkey_bytes[1] << 8) | netkey_bytes[0];
-
     // Establish friendship with the lpn_friend_netkey_idx network key
     // The lpn_establish_friendship function uses global variable to identify
     // the network index because it does not change after provisioning but the
@@ -200,12 +207,23 @@ void sl_btmesh_lpn_feature_init(void)
 }
 
 /***************************************************************************//**
- * Deinitialize LPN functionality.
+ * Initialize LPN functionality with configuration and friendship establishment.
  ******************************************************************************/
-void sl_btmesh_lpn_feature_deinit(void)
+void sl_btmesh_lpn_feature_init(void)
 {
-  sl_status_t result = 0;
+  sl_status_t result = SL_STATUS_OK;
 
+  result = app_btmesh_rta_acquire();
+  if (result != SL_STATUS_OK) {
+    return;
+  }
+  sli_btmesh_lpn_feature_init();
+  (void) app_btmesh_rta_release();
+}
+
+static void sli_btmesh_lpn_feature_deinit(void)
+{
+  sl_status_t result = SL_STATUS_OK;
   if (!lpn_active) {
     return; // lpn feature is currently inactive
   }
@@ -223,8 +241,24 @@ void sl_btmesh_lpn_feature_deinit(void)
 
   lpn_active = 0;
   friend_address = 0;
+
   log_info("LPN deinitialized" NL);
   sl_btmesh_lpn_on_deinit();
+}
+
+/***************************************************************************//**
+ * Deinitialize LPN functionality.
+ ******************************************************************************/
+void sl_btmesh_lpn_feature_deinit(void)
+{
+  sl_status_t result = 0;
+
+  result = app_btmesh_rta_acquire();
+  if (result != SL_STATUS_OK) {
+    return;
+  }
+  sli_btmesh_lpn_feature_deinit();
+  (void) app_btmesh_rta_release();
 }
 
 /*******************************************************************************
@@ -232,7 +266,7 @@ void sl_btmesh_lpn_feature_deinit(void)
 *******************************************************************************/
 bool sl_btmesh_lpn_is_friendship_active(void)
 {
-  return (0 != friend_address);
+  return (friend_address != 0);
 }
 
 /*******************************************************************************
@@ -254,6 +288,7 @@ sl_status_t sl_btmesh_lpn_poll_request(void)
  ******************************************************************************/
 void sl_btmesh_lpn_on_event(sl_btmesh_msg_t* evt)
 {
+  sl_status_t result;
   sl_btmesh_evt_node_initialized_t *data;
 
   switch (SL_BT_MSG_ID(evt->header)) {
@@ -303,6 +338,10 @@ void sl_btmesh_lpn_on_event(sl_btmesh_msg_t* evt)
     case sl_btmesh_evt_lpn_friendship_terminated_id:
       sl_btmesh_lpn_on_friendship_terminated(
         evt->data.evt_lpn_friendship_terminated.reason);
+      result = app_btmesh_rta_acquire();
+      if (result != SL_STATUS_OK) {
+        return;
+      }
       friend_address = 0;
       if (num_mesh_proxy_conn == 0) {
         // try again after timer expires
@@ -313,22 +352,34 @@ void sl_btmesh_lpn_on_event(sl_btmesh_msg_t* evt)
                                          false);
         app_assert_status_f(sc, "Failed to start timer");
       }
+      (void) app_btmesh_rta_release();
       break;
 
     /* Proxy Events*/
     case sl_btmesh_evt_proxy_connected_id:
+      result = app_btmesh_rta_acquire();
+      if (result != SL_STATUS_OK) {
+        return;
+      }
       num_mesh_proxy_conn++;
       // turn off lpn feature after GATT proxy connection is opened
-      sl_btmesh_lpn_feature_deinit();
+      sli_btmesh_lpn_feature_deinit();
+      (void) app_btmesh_rta_release();
       break;
 
     case sl_btmesh_evt_proxy_disconnected_id:
+      result = app_btmesh_rta_acquire();
+      if (result != SL_STATUS_OK) {
+        return;
+      }
       if (num_mesh_proxy_conn > 0) {
         if (--num_mesh_proxy_conn == 0) {
           // Initialize lpn when there is no active proxy connection
-          sl_btmesh_lpn_feature_init();
+          sli_btmesh_lpn_feature_init();
+        } else {
         }
       }
+      (void) app_btmesh_rta_release();
       break;
 
     default:
@@ -344,6 +395,10 @@ sl_status_t sl_btmesh_lpn_high_throughput_register(sl_btmesh_lpn_high_throughput
 
   handle->timeout = timeout;
   handle->mode = mode;
+  retval = app_btmesh_rta_acquire();
+  if (retval != SL_STATUS_OK) {
+    return retval;
+  }
   if (lpn_high_throughput_head == NULL) {
     // If head is not yet set, set this as the head
     lpn_high_throughput_head = handle;
@@ -353,6 +408,7 @@ sl_status_t sl_btmesh_lpn_high_throughput_register(sl_btmesh_lpn_high_throughput
                                      lpn_high_throughput_timer_cb,
                                      NULL,
                                      false);
+    lpn_high_throughput_timer_period_ms = handle->timeout;
     log_status_error_f(sc, "Failed to start timer" NL);
   } else if (lpn_high_throughput_head == handle) {
     // If only one element is registered, the loop below would not detect it
@@ -374,6 +430,7 @@ sl_status_t sl_btmesh_lpn_high_throughput_register(sl_btmesh_lpn_high_throughput
       tmp->next = handle;
     }
   }
+
   // SL_STATUS_OK indicates successful append, i.e. handle is at the end of list
   if (SL_STATUS_OK == retval) {
     // Indicate list end
@@ -383,18 +440,20 @@ sl_status_t sl_btmesh_lpn_high_throughput_register(sl_btmesh_lpn_high_throughput
   // If the registered handler requests a faster timer that's already running,
   // restart timer with the faster.
   // This might also be the case for re-registering a slowing timer as well.
-  if (lpn_high_throughput_timer.timeout_ms > handle->timeout) {
+  if (lpn_high_throughput_timer_period_ms > handle->timeout) {
     sl_status_t sc = app_timer_start(&lpn_high_throughput_timer,
                                      handle->timeout,
                                      lpn_high_throughput_timer_cb,
                                      NULL,
                                      false);
+    lpn_high_throughput_timer_period_ms = handle->timeout;
     log_status_error_f(sc, "Failed to start timer" NL);
   }
+  (void) app_btmesh_rta_release();
   return retval;
 }
 
-sl_status_t sl_btmesh_lpn_high_throughput_unregister(sl_btmesh_lpn_high_throughput_timer_t *handle)
+sl_status_t sli_btmesh_lpn_high_throughput_unregister(sl_btmesh_lpn_high_throughput_timer_t *handle)
 {
   if (lpn_high_throughput_head == NULL) {
     // If no head, nothing is to be unregistered
@@ -416,8 +475,20 @@ sl_status_t sl_btmesh_lpn_high_throughput_unregister(sl_btmesh_lpn_high_throughp
       }
     }
   }
-  // No element was found in the loop above
   return SL_STATUS_NOT_FOUND;
+}
+
+sl_status_t sl_btmesh_lpn_high_throughput_unregister(sl_btmesh_lpn_high_throughput_timer_t *handle)
+{
+  sl_status_t retval = SL_STATUS_OK;
+  retval = app_btmesh_rta_acquire();
+  if (retval != SL_STATUS_OK) {
+    return retval;
+  }
+  retval = sli_btmesh_lpn_high_throughput_unregister(handle);
+  (void) app_btmesh_rta_release();
+  // No element was found in the loop above
+  return retval;
 }
 
 /***************************************************************************//**
@@ -425,11 +496,9 @@ sl_status_t sl_btmesh_lpn_high_throughput_unregister(sl_btmesh_lpn_high_throughp
  ******************************************************************************/
 static void lpn_establish_friendship(void)
 {
-  sl_status_t result;
-
+  sl_status_t result = SL_STATUS_OK;
   log_info("Trying to find a friend..." NL);
   result = sl_btmesh_lpn_establish_friendship(lpn_friend_netkey_idx);
-
   log_status_error_f(result, "Friend not found" NL);
 }
 
@@ -465,8 +534,14 @@ static void  lpn_node_configured_timer_cb(app_timer_t *handle, void *data)
 {
   (void)data;
   (void)handle;
-
-  if (!lpn_active) {
+  sl_status_t result;
+  result = app_btmesh_rta_acquire();
+  if (result != SL_STATUS_OK) {
+    return;
+  }
+  uint8_t isactive = lpn_active;
+  (void) app_btmesh_rta_release();
+  if (!isactive) {
     log_info("Trying to initialize lpn..." NL);
     sl_btmesh_lpn_feature_init();
   }
@@ -477,11 +552,17 @@ static void lpn_high_throughput_timer_cb(app_timer_t *handle, void *data)
   (void)data;
   (void)handle;
 
+  sl_status_t result;
+  result = app_btmesh_rta_acquire();
+  if (result != SL_STATUS_OK) {
+    return;
+  }
   // Execute main operation; poll friend
   sl_btmesh_lpn_poll(lpn_friend_netkey_idx);
 
   // If all element were unregistered beforehand, simply return
   if (lpn_high_throughput_head == NULL) {
+    (void) app_btmesh_rta_release();
     return;
   }
 
@@ -494,7 +575,6 @@ static void lpn_high_throughput_timer_cb(app_timer_t *handle, void *data)
       fastest = tmp;
     }
   }
-
   if (fastest->timeout < SL_BTMESH_LPN_POLL_TIMEOUT_CFG_VAL) {
     // Start a timer with the timeout value
     sl_status_t sc = app_timer_start(&lpn_high_throughput_timer,
@@ -502,6 +582,8 @@ static void lpn_high_throughput_timer_cb(app_timer_t *handle, void *data)
                                      lpn_high_throughput_timer_cb,
                                      NULL,
                                      false);
+    lpn_high_throughput_timer_period_ms = fastest->timeout;
+
     app_assert_status_f(sc, "Failed to start timer");
 
     switch (fastest->mode) {
@@ -515,8 +597,9 @@ static void lpn_high_throughput_timer_cb(app_timer_t *handle, void *data)
     }
   } else {
     // If the timer has a slower timeout than the default, unregister it
-    sl_btmesh_lpn_high_throughput_unregister(fastest);
+    sli_btmesh_lpn_high_throughput_unregister(fastest);
   }
+  (void) app_btmesh_rta_release();
 }
 
 /** @} (end addtogroup btmesh_lpn_tmr_cb) */

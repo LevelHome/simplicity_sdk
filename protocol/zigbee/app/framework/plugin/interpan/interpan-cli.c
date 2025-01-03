@@ -88,7 +88,7 @@ void sli_zigbee_af_interpan_fragment_test_command(sl_cli_command_arg_t *args)
                                                    messageLen,
                                                    testMessage);
 
-  sl_zigbee_af_core_println("%s (0x%X)",
+  sl_zigbee_af_core_println("%s (0x%02X)",
                             (SL_STATUS_OK == status) ? "success" : "failure",
                             status);
   sl_zigbee_af_core_flush();

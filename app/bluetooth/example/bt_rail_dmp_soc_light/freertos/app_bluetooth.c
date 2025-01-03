@@ -35,7 +35,7 @@
 #include "semphr.h"
 #include "queue.h"
 #include "portmacro.h"
-#include "em_common.h"
+#include "sl_common.h"
 #include "app_assert.h"
 #include "sl_bluetooth.h"
 #include "gatt_db.h"
@@ -333,23 +333,21 @@ static void app_single_timer_cb(app_timer_t *handle,
 }
 
 /**************************************************************************//**
- * Switching LEDs off
+ * Switching LED off
  *
  *****************************************************************************/
 void appUiLedOff(void)
 {
   sl_led_turn_off(SL_SIMPLE_LED_INSTANCE(0));
-  sl_led_turn_off(SL_SIMPLE_LED_INSTANCE(1));
 }
 
 /**************************************************************************//**
- * Switching LEDs on
+ * Switching LED on
  *
  *****************************************************************************/
 void appUiLedOn(void)
 {
   sl_led_turn_on(SL_SIMPLE_LED_INSTANCE(0));
-  sl_led_turn_on(SL_SIMPLE_LED_INSTANCE(1));
 }
 
 /**************************************************************************//**
@@ -756,7 +754,7 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
     case sl_bt_evt_system_boot_id:
       light_pend();
       // Extract unique ID from BT Address
-      sc = sl_bt_system_get_identity_address(&address, NULL);
+      sc = sl_bt_gap_get_identity_address(&address, NULL);
       app_assert_status(sc);
 
       // own address: Bluetooth device address

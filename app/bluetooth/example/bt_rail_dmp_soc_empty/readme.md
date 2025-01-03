@@ -38,7 +38,7 @@ The project also contains a basic GATT database. GATT definitions can be extende
 
 To learn how to use the GATT Configurator, see [UG438: GATT Configurator User’s Guide for Bluetooth SDK v3.x](https://www.silabs.com/documents/public/user-guides/ug438-gatt-configurator-users-guide-sdk-v3x.pdf).
 
-The Bluetooth task creation and the stack initialization is already implemented in the `sl_system_init()` function, called from the `main` function. The Bluetooth event handler function, `sl_bt_on_event`, can be found in the file *bluetooth_app.c*. This contains a basic event handler, which can be extended according to the applications needs. The default implementation starts advertising with the device name defined in the GATT Configurator. After flashing it to the device, it will be visible in the EFR connect app, as follows:
+The Bluetooth task creation and the stack initialization is already implemented in the `sl_system_init()` function, called from the `main` function. The Bluetooth event handler function, `sl_bt_on_event`, can be found in the file *bluetooth_app.c*. This contains a basic event handler, which can be extended according to the applications needs. The default implementation starts advertising with the device name defined in the GATT Configurator. After flashing it to the device, it will be visible in the Simplicity Connect app, as follows:
 
 ![](image/readme_img4.png)
 

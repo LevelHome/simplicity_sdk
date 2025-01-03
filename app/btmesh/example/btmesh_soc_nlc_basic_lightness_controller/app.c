@@ -33,9 +33,9 @@
 
 #include <stdbool.h>
 #include <stdio.h>
-#include "em_common.h"
+#include "sl_common.h"
 #include "sl_status.h"
-#include "sl_sleeptimer.h"
+#include "sl_udelay.h"
 
 #include "sl_btmesh.h"
 #include "sl_bluetooth.h"
@@ -266,7 +266,7 @@ void sl_btmesh_on_node_provisioning_failed(uint16_t result)
 {
   app_show_btmesh_node_provisioning_failed(result);
   // Small delay before reboot
-  sl_sleeptimer_delay_millisecond(2000);
+  sl_udelay_wait(2000000);
   sl_bt_system_reboot();
 }
 

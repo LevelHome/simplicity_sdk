@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief Application commandline settings
+ * @file sl_wisun_cli_settings.h
+ * @brief Wi-SUN CLI settings
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __SL_WISUN_CLI_SETTINGS_H__
-#define __SL_WISUN_CLI_SETTINGS_H__
+#ifndef SL_WISUN_CLI_SETTINGS_H
+#define SL_WISUN_CLI_SETTINGS_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,13 +38,16 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <stdint.h>
 #include <stddef.h>
+
 #include "sl_status.h"
 #include "sl_wisun_types.h"
 #include "sl_wisun_api.h"
 #include "sl_wisun_cli_util.h"
+// -----------------------------------------------------------------------------
+//                              Macros and Typedefs
+// -----------------------------------------------------------------------------
 
 /**************************************************************************//**
  * @brief App settings macro definitions
@@ -82,7 +85,7 @@ typedef sl_status_t (*app_settings_get_key_handler)(char *value_str,
 /**************************************************************************//**
  * @brief Structure for settings entry
  *****************************************************************************/
-typedef struct app_settings_entry_t{
+typedef struct app_settings_entry_t {
   char *key;
   uint8_t domain;
   uint8_t value_size;
@@ -104,10 +107,6 @@ typedef struct {
   size_t data_size;
   const void *default_val;
 } app_saving_item_t;
-
-// -----------------------------------------------------------------------------
-//                              Macros and Typedefs
-// -----------------------------------------------------------------------------
 
 // -----------------------------------------------------------------------------
 //                                Global Variables
@@ -227,4 +226,4 @@ sl_status_t app_settings_get_ip_address(char *value_str,
 }
 #endif
 
-#endif  // __SL_WISUN_CLI_SETTINGS_H__
+#endif // SL_WISUN_CLI_SETTINGS_H

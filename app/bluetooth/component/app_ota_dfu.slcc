@@ -7,6 +7,9 @@ description: >
  a specialized OTA state to update, and no AppLoader utility required.
  No code is required from user to enable this component.
 category: Bluetooth|Application|Firmware Update
+metadata:
+  sbom:
+    license: Zlib
 quality: production
 root_path: app/bluetooth/common/app_ota_dfu
 tag:
@@ -36,6 +39,7 @@ requires:
   - name: bootloader_interface
   - name: gatt_configuration
   - name: power_manager
+  - name: sl_common
 template_contribution:
   - name: app_rta_init
     value:

@@ -29,8 +29,8 @@
  ******************************************************************************/
 
 #include <math.h>
-#include "em_core.h"
-#include "em_common.h"
+#include "sl_core.h"
+#include "sl_common.h"
 #include "sl_status.h"
 #include "app_timer.h"
 #include "gatt_db.h"

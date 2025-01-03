@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief File Transfer Portocol portable interface
+ * @file sl_ftp.c
+ * @brief File Transfer Protocol
  *******************************************************************************
  * # License
  * <b>Copyright 2023 Silicon Laboratories Inc. www.silabs.com</b>
@@ -30,9 +30,11 @@
 
 #include "sl_ftp.h"
 #include "sl_ftp_config.h"
+
 #if SL_FTP_ENABLE_FTP_PROTOCOL
 #include "sl_ftp_clnt.h"
 #endif
+
 #if SL_FTP_ENABLE_TFTP_PROTOCOL
 #include "sl_tftp_clnt.h"
 #endif
@@ -48,7 +50,7 @@ void sl_ftp_init(void)
 }
 
 /// Print line length
-#define SL_FTP_DATA_PRINT_LINE_LEN   20UL
+#define SL_FTP_DATA_PRINT_LINE_LEN    (20UL)
 
 void sl_ftp_dump_buff(const uint8_t * const data_ptr, const uint16_t data_size)
 {
@@ -122,10 +124,9 @@ __WEAK int32_t sl_ftp_tcp_socket_recv(int32_t sockid, void *buff, uint32_t len)
   (void) len;
   return SL_FTP_ERROR;
 }
-#endif
+#endif // SL_FTP_ENABLE_FTP_PROTOCOL
 
 #if SL_FTP_ENABLE_TFTP_PROTOCOL
-
 __WEAK int32_t sl_tftp_udp_socket_create(void)
 {
   return SL_FTP_ERROR;
@@ -148,4 +149,4 @@ __WEAK int32_t sl_tftp_udp_recvfrom(int32_t sockid, void *buff, uint32_t len, vo
   (void) src_addr;
   return SL_TFTP_ERROR;
 }
-#endif
+#endif // SL_FTP_ENABLE_TFTP_PROTOCOL

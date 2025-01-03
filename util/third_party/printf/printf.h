@@ -10,10 +10,10 @@
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -35,11 +35,9 @@
 #include <stdarg.h>
 #include <stddef.h>
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 /**
  * Output a character to a custom device like UART, used by the printf() function
@@ -48,6 +46,13 @@ extern "C" {
  */
 void _putchar(char character);
 
+/*
+ * The following functions should not be used in a Unix environment because the APIs are not thread-safe.
+ * In Unix environments, this means that all calls to printf will output directly to the process console (stdio).
+ * To ensure portable, safe, thread-compatible output, use sl_iostream_printf or fctprintf, which will route output
+ * through the IOStream interface.
+ */
+#if !defined(__unix__)
 
 /**
  * Tiny printf implementation
@@ -59,7 +64,6 @@ void _putchar(char character);
  */
 int printf(const char* format, ...);
 
-
 /**
  * Tiny sprintf implementation
  * Due to security reasons (buffer overflow) YOU SHOULD CONSIDER USING (V)SNPRINTF INSTEAD!
@@ -68,7 +72,6 @@ int printf(const char* format, ...);
  * \return The number of characters that are WRITTEN into the buffer, not counting the terminating null character
  */
 int sprintf(char* buffer, const char* format, ...);
-
 
 /**
  * Tiny snprintf/vsnprintf implementation
@@ -83,7 +86,6 @@ int sprintf(char* buffer, const char* format, ...);
 int  snprintf(char* buffer, size_t count, const char* format, ...);
 int vsnprintf(char* buffer, size_t count, const char* format, va_list va);
 
-
 /**
  * Tiny vprintf implementation
  * \param format A string that specifies the format of the output
@@ -91,7 +93,7 @@ int vsnprintf(char* buffer, size_t count, const char* format, va_list va);
  * \return The number of characters that are WRITTEN into the buffer, not counting the terminating null character
  */
 int vprintf(const char* format, va_list va);
-
+#endif // !defined(__unix__)
 
 /**
  * printf with output function
@@ -102,7 +104,6 @@ int vprintf(const char* format, va_list va);
  * \return The number of characters that are sent to the output function, not counting the terminating null character
  */
 int fctprintf(void (*out)(char character, void* arg), void* arg, const char* format, ...);
-
 
 /**
  * printf with output function
@@ -118,6 +119,5 @@ int vfctprintf(void (*out)(char character, void* arg), void* arg, const char* fo
 #ifdef __cplusplus
 }
 #endif
-
 
 #endif  // _PRINTF_H_

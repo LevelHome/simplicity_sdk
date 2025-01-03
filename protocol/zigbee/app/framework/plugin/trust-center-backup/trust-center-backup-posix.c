@@ -22,7 +22,6 @@
 #include "app/framework/include/af.h"
 #include "app/framework/util/common.h"
 #include "app/framework/util/util.h"
-#include "app/util/serial/sl_zigbee_command_interpreter.h"
 #include "app/framework/plugin/trust-center-backup/trust-center-backup.h"
 #include "stack/include/zigbee-security-manager.h"
 #include "stack/security/zigbee-security-manager-host.h"
@@ -104,12 +103,12 @@ sl_status_t sl_zigbee_af_trust_center_export_backup_to_file(const char* filepath
     return returnValue;
   }
 
-  sl_zigbee_af_security_println("Opening file '%p'",
+  sl_zigbee_af_security_println("Opening file '%s'",
                                 filepath);
 
   FILE* output = fopen(filepath, WRITE_FLAGS);
   if (NULL == output) {
-    sl_zigbee_af_security_println("Failed to open file: %p",
+    sl_zigbee_af_security_println("Failed to open file: %s",
                                   strerror(errno));
     return returnValue;
   }
@@ -123,7 +122,7 @@ sl_status_t sl_zigbee_af_trust_center_export_backup_to_file(const char* filepath
   status = sl_zigbee_trust_center_export_backup_data(&export);
 
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_security_println("%p: Failed to get TC backup data.", "Error");
+    sl_zigbee_af_security_println("%s: Failed to get TC backup data.", "Error");
     goto exportEnd;
   }
 
@@ -513,7 +512,7 @@ sl_status_t sl_zigbee_af_trust_center_backup_write_ncp_token_to_zigbeed_tokens(c
 
   FILE* input = fopen(filepath, READ_FLAGS);
   if (input == NULL) {
-    printf("Failed to open file: %p", strerror(errno));
+    printf("Failed to open file: %s", strerror(errno));
     return returnValue;
   }
   // -------------- Read Token Data from File and add set it to the token.
@@ -561,7 +560,7 @@ sl_status_t sl_zigbee_af_trust_center_backup_restore_tokens_from_file(const char
 
   FILE* input = fopen(filepath, READ_FLAGS);
   if (input == NULL) {
-    printf("Failed to open file: %p", strerror(errno));
+    printf("Failed to open file: %s", strerror(errno));
     return returnValue;
   }
   // -------------- Read Token Data from File and add set it to the token.
@@ -658,12 +657,12 @@ sl_status_t sl_zigbee_af_trust_center_import_backup_from_file(const char* filepa
     return returnValue;
   }
 
-  sl_zigbee_af_security_println("Opening file '%p'",
+  sl_zigbee_af_security_println("Opening file '%s'",
                                 filepath);
 
   FILE* input = fopen(filepath, READ_FLAGS);
   if (input == NULL) {
-    sl_zigbee_af_security_println("Failed to open file: %p",
+    sl_zigbee_af_security_println("Failed to open file: %s",
                                   strerror(errno));
     return returnValue;
   }
@@ -717,7 +716,7 @@ sl_status_t sl_zigbee_af_trust_center_import_backup_from_file(const char* filepa
                                 strlen(keyKeyWord) + 1)) { // +1 for '\0'
       keyWordPtr = keyKeyWord;
     } else {
-      sl_zigbee_af_security_println("Error: Unknown token '%p' on line %d\n",
+      sl_zigbee_af_security_println("Error: Unknown token '%s' on line %d\n",
                                     linePtr,
                                     lineNumber);
       goto importEnd;
@@ -734,7 +733,7 @@ sl_status_t sl_zigbee_af_trust_center_import_backup_from_file(const char* filepa
                                    linePtr,
                                    lineNumber);
     if (NULL == linePtr) {
-      sl_zigbee_af_security_println("Error: Failed to parse %p on line %d.",
+      sl_zigbee_af_security_println("Error: Failed to parse %s on line %d.",
                                     (keyWordPtr == extendedPanIdKeyWord
                                      ? "Extended PAN ID"
                                      : "key data"),
@@ -783,7 +782,7 @@ sl_status_t sl_zigbee_af_trust_center_import_backup_from_file(const char* filepa
 
   sl_status_t status = sl_zigbee_trust_center_import_backup_and_start_network(&import);
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_security_println("%p: Failed to import backup data and form network.",
+    sl_zigbee_af_security_println("%s: Failed to import backup data and form network.",
                                   "Error");
   } else {
     sl_zigbee_af_security_println("Import from file successful.");
@@ -825,7 +824,7 @@ static uint8_t* readHexDataIntoArray(uint8_t* result,
     data[0] = line[i];
     data[1] = '\0';
 
-    if (1 != sscanf(data, "%x", &temp)) {
+    if (1 != sscanf(data, "%02X", &temp)) {
       sl_zigbee_af_security_println("Error: Invalid character found on line %d.",
                                     lineNumber);
       return NULL;

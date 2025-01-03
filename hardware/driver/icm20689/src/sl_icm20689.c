@@ -33,10 +33,16 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "em_assert.h"
-#include "em_gpio.h"
+#include "sl_assert.h"
+
+#include "sl_gpio.h"
 #include "sl_clock_manager.h"
+#include "em_device.h"
+#if defined(_SILICON_LABS_32B_SERIES_2)
 #include "em_eusart.h"
+#else
+#include "sl_hal_eusart.h"
+#endif
 
 #include "sl_sleeptimer.h"
 #include "sl_icm20689_config.h"
@@ -121,6 +127,7 @@ sl_status_t sl_icm20689_read_register(uint8_t addr, int num_bytes, uint8_t *data
   /* Enable chip select */
   sl_icm20689_chip_select_set(true);
 
+#if defined(_SILICON_LABS_32B_SERIES_2)
   /* Set R/W bit to 1 - read */
   EUSART_Spi_TxRx(SL_ICM20689_SPI_EUSART_PERIPHERAL, (addr | 0x80));
 
@@ -128,7 +135,15 @@ sl_status_t sl_icm20689_read_register(uint8_t addr, int num_bytes, uint8_t *data
   while ( num_bytes-- ) {
     *data++ = EUSART_Spi_TxRx(SL_ICM20689_SPI_EUSART_PERIPHERAL, 0x00);
   }
+#else
+  * Set R/W bit to 1 - read */
+  sl_hal_eusart_spi_tx_rx(SL_ICM20689_SPI_EUSART_PERIPHERAL, (addr | 0x80));
 
+  /* Transmit 0's to provide clock and read the data */
+  while ( num_bytes-- ) {
+    *data++ = sl_hal_eusart_spi_tx_rx(SL_ICM20689_SPI_EUSART_PERIPHERAL, 0x00);
+  }
+#endif
   /* Disable chip select */
   sl_icm20689_chip_select_set(false);
 
@@ -143,11 +158,19 @@ sl_status_t sl_icm20689_write_register(uint8_t addr, uint8_t data)
   /* Enable chip select */
   sl_icm20689_chip_select_set(true);
 
+#if defined(_SILICON_LABS_32B_SERIES_2)
   /* clear R/W bit - write, send the address */
   EUSART_Spi_TxRx(SL_ICM20689_SPI_EUSART_PERIPHERAL, (addr & 0x7F));
 
   /* Send the data */
   EUSART_Spi_TxRx(SL_ICM20689_SPI_EUSART_PERIPHERAL, data);
+#else
+  /* clear R/W bit - write, send the address */
+  sl_hal_eusart_spi_tx_rx(SL_ICM20689_SPI_EUSART_PERIPHERAL, (addr & 0x7F));
+
+  /* Send the data */
+  sl_hal_eusart_spi_tx_rx(SL_ICM20689_SPI_EUSART_PERIPHERAL, data);
+#endif
 
   /* Disable chip select */
   sl_icm20689_chip_select_set(false);
@@ -161,6 +184,8 @@ sl_status_t sl_icm20689_write_register(uint8_t addr, uint8_t data)
 sl_status_t sl_icm20689_spi_init(void)
 {
   EUSART_TypeDef *eusart = SL_ICM20689_SPI_EUSART_PERIPHERAL;
+
+#if defined(_SILICON_LABS_32B_SERIES_2)
   EUSART_SpiInit_TypeDef init = EUSART_SPI_MASTER_INIT_DEFAULT_HF;
   EUSART_SpiAdvancedInit_TypeDef advancedInit = EUSART_SPI_ADVANCED_INIT_DEFAULT;
 
@@ -169,19 +194,34 @@ sl_status_t sl_icm20689_spi_init(void)
 
   advancedInit.autoCsEnable = false;
   advancedInit.msbFirst = true;
+#else
+  sl_hal_eusart_spi_config_t init = SL_HAL_EUSART_SPI_MASTER_INIT_DEFAULT_HF;
+  sl_hal_eusart_spi_advanced_config_t advancedInit = SL_HAL_EUSART_SPI_ADVANCED_INIT_DEFAULT;
 
+  init.advanced_config = &advancedInit;
+
+  advancedInit.auto_cs_enable = false;
+  advancedInit.msb_first = true;
+#endif
   /* Enabling clock to EUSART */
   sl_clock_manager_enable_bus_clock(ICM20689_SPI_CLK(SL_ICM20689_SPI_EUSART_PERIPHERAL_NO));
   sl_clock_manager_enable_bus_clock(SL_BUS_CLOCK_GPIO);
 
   /* IO configuration */
-  GPIO_PinModeSet(SL_ICM20689_SPI_EUSART_TX_PORT, SL_ICM20689_SPI_EUSART_TX_PIN, gpioModePushPull, 0);      /* TX - MOSI */
-  GPIO_PinModeSet(SL_ICM20689_SPI_EUSART_RX_PORT, SL_ICM20689_SPI_EUSART_RX_PIN, gpioModeInput, 0);         /* RX - MISO */
-  GPIO_PinModeSet(SL_ICM20689_SPI_EUSART_SCLK_PORT, SL_ICM20689_SPI_EUSART_SCLK_PIN, gpioModePushPull, 0);  /* Clock */
-  GPIO_PinModeSet(SL_ICM20689_SPI_EUSART_CS_PORT, SL_ICM20689_SPI_EUSART_CS_PIN, gpioModePushPull, 1);      /* CS */
+  sl_gpio_set_pin_mode(&(sl_gpio_t) {SL_ICM20689_SPI_EUSART_TX_PORT, SL_ICM20689_SPI_EUSART_TX_PIN}, SL_GPIO_MODE_PUSH_PULL, 0);  /* TX - MOSI */
+  sl_gpio_set_pin_mode(&(sl_gpio_t) {SL_ICM20689_SPI_EUSART_RX_PORT, SL_ICM20689_SPI_EUSART_RX_PIN}, SL_GPIO_MODE_PUSH_PULL, 0);  /* RX - MISO */
+  sl_gpio_set_pin_mode(&(sl_gpio_t) {SL_ICM20689_SPI_EUSART_SCLK_PORT, SL_ICM20689_SPI_EUSART_SCLK_PIN}, SL_GPIO_MODE_PUSH_PULL, 0);  /* Clock */
+  sl_gpio_set_pin_mode(&(sl_gpio_t) {SL_ICM20689_SPI_EUSART_CS_PORT, SL_ICM20689_SPI_EUSART_CS_PIN}, SL_GPIO_MODE_PUSH_PULL, 1);  /* CS */
 
   /* Initialize EUSART, in SPI master mode. */
+#if defined(_SILICON_LABS_32B_SERIES_2)
   EUSART_SpiInit(eusart, &init);
+#else
+  sl_hal_eusart_init_spi(eusart, &init);
+  sl_hal_eusart_enable(eusart);
+  sl_hal_eusart_enable_tx(eusart);
+  sl_hal_eusart_enable_rx(eusart);
+#endif
 
   /* Enable pins at correct EUSART location. */
   GPIO->EUSARTROUTE[SL_ICM20689_SPI_EUSART_PERIPHERAL_NO].TXROUTE = ((SL_ICM20689_SPI_EUSART_TX_PORT << _GPIO_EUSART_TXROUTE_PORT_SHIFT) | (SL_ICM20689_SPI_EUSART_TX_PIN << _GPIO_EUSART_TXROUTE_PIN_SHIFT));
@@ -894,7 +934,7 @@ sl_status_t sl_icm20689_read_temperature_data(float *temperature)
   raw_temp = (int16_t) ( (data[0] << 8) + data[1]);
 
   /* Calculate the Celsius value from the raw reading */
-  *temperature = ( raw_temp / 333.87f) + 21.0f;
+  *temperature = (raw_temp / 333.87f) + 21.0f;
 
   return SL_STATUS_OK;
 }
@@ -963,10 +1003,15 @@ static sl_status_t sl_icm20689_masked_write(uint8_t addr, uint8_t data, uint8_t 
  ******************************************************************************/
 static void sl_icm20689_chip_select_set(bool select)
 {
-  if ( select ) {
-    GPIO_PinOutClear(SL_ICM20689_SPI_EUSART_CS_PORT, SL_ICM20689_SPI_EUSART_CS_PIN);
+  sl_gpio_t spi_eusart_cs_gpio = {
+    .port = SL_ICM20689_SPI_EUSART_CS_PORT,
+    .pin = SL_ICM20689_SPI_EUSART_CS_PIN,
+  };
+
+  if (select) {
+    sl_gpio_clear_pin(&spi_eusart_cs_gpio);
   } else {
-    GPIO_PinOutSet(SL_ICM20689_SPI_EUSART_CS_PORT, SL_ICM20689_SPI_EUSART_CS_PIN);
+    sl_gpio_set_pin(&spi_eusart_cs_gpio);
   }
 }
 

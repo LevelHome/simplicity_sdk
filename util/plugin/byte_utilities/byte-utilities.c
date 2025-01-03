@@ -16,6 +16,7 @@
  ******************************************************************************/
 
 #include PLATFORM_HEADER
+#include "sl_code_classification.h"
 
 // Copy bytes from source to destination, reversing the order.
 void sl_util_reverse_mem_copy(uint8_t* dest, const uint8_t* src, uint16_t length)
@@ -29,6 +30,7 @@ void sl_util_reverse_mem_copy(uint8_t* dest, const uint8_t* src, uint16_t length
   }
 }
 
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_BYTE_UTILITIES, SL_CODE_CLASS_TIME_CRITICAL)
 uint16_t sl_util_fetch_low_high_int16u(const uint8_t *contents)
 {
   return HIGH_LOW_TO_INT(contents[1], contents[0]);
@@ -39,6 +41,7 @@ uint16_t sl_util_fetch_high_low_int16u(const uint8_t *contents)
   return HIGH_LOW_TO_INT(contents[0], contents[1]);
 }
 
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_BYTE_UTILITIES, SL_CODE_CLASS_TIME_CRITICAL)
 void sl_util_store_low_high_int16u(uint8_t *contents, uint16_t value)
 {
   contents[0] = LOW_BYTE(value);

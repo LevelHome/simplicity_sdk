@@ -33,6 +33,7 @@
 #include "esl_lib_memory.h"
 #include "esl_lib_log.h"
 
+#ifdef ESL_LIB_MEMORY_LEAK_CHECK
 // -----------------------------------------------------------------------------
 // Definitions
 
@@ -45,6 +46,7 @@ typedef struct {
   size_t          size;
   uint32_t        line;
   char            *file;
+  char            *func;
 } malloc_list_item_t;
 
 // -----------------------------------------------------------------------------
@@ -61,7 +63,7 @@ static sl_slist_node_t *list = NULL;
 // -----------------------------------------------------------------------------
 // Public functions
 
-void *_esl_lib_malloc(size_t size, const char *file, uint32_t line)
+void *_esl_lib_malloc(size_t size, const char *file, const char *func, uint32_t line)
 {
   // Allocate memory for data
   void *data = malloc(size);
@@ -75,13 +77,15 @@ void *_esl_lib_malloc(size_t size, const char *file, uint32_t line)
     item->size = size;
     item->line = line;
     item->file = (char *)file;
+    item->func = (char *)func;
     // Push it to the list
     sl_slist_push(&list, &item->node);
     if (item->file[8] != 'e') { // event list allocations excluded
-      esl_lib_log_debug(LOG_MODULE, ESL_LIB_LOG_HANDLE_FORMAT " Size = %zu allocated in %s:%u" APP_LOG_NL,
-                        item->ptr,
+      esl_lib_log_debug(LOG_MODULE, ESL_LIB_LOG_HANDLE_FORMAT "Allocated %zu B by %s:%s()@%u" APP_LOG_NL,
+                        ESL_LIB_LOG_PTR(item->ptr),
                         item->size,
                         item->file,
+                        item->func,
                         item->line);
     }
     // Return pointer to the allocated memory
@@ -90,7 +94,8 @@ void *_esl_lib_malloc(size_t size, const char *file, uint32_t line)
 
   return NULL;
 }
-void _esl_lib_free(void *ptr, const char *file, uint32_t line)
+
+void _esl_lib_free(void *ptr, const char *file, const char *func, uint32_t line)
 {
   // Find item
   malloc_list_item_t *item = find_item(ptr);
@@ -99,20 +104,22 @@ void _esl_lib_free(void *ptr, const char *file, uint32_t line)
     // Remove from the list
     sl_slist_remove(&list, &item->node);
     if (item->file[8] != 'e') { // events excluded
-      esl_lib_log_debug(LOG_MODULE, ESL_LIB_LOG_HANDLE_FORMAT " Size = %zu freed in %s:%u" APP_LOG_NL,
-                        item->ptr,
+      esl_lib_log_debug(LOG_MODULE, ESL_LIB_LOG_HANDLE_FORMAT "Freed %zu B allocated by %s:%s()@%u" APP_LOG_NL,
+                        ESL_LIB_LOG_PTR(item->ptr),
                         item->size,
                         item->file,
+                        item->func,
                         item->line);
     }
     // Free storage
     free(ptr);
     // Free list item
     free(item);
-  } else {
-    esl_lib_log_critical(LOG_MODULE, "Unknown free request for " ESL_LIB_LOG_HANDLE_FORMAT " in %s:%u" APP_LOG_NL,
-                         ptr,
+  } else if (ptr != NULL) {
+    esl_lib_log_critical(LOG_MODULE, "Unknown free request for " ESL_LIB_LOG_HANDLE_FORMAT " by %s:%s()@%u" APP_LOG_NL,
+                         ESL_LIB_LOG_PTR(ptr),
                          file,
+                         func,
                          line);
   }
 }
@@ -147,14 +154,15 @@ void esl_lib_memory_log(void)
   esl_lib_log_debug(LOG_MODULE, "---------------------------------------------");
   // Check for empty list
   if (list == NULL) {
-    esl_lib_log_debug(LOG_MODULE, " Empty list.");
+    esl_lib_log_debug(LOG_MODULE, " Heap is reported clean");
   }
   // Iterate and print items
   SL_SLIST_FOR_EACH_ENTRY(list, item, malloc_list_item_t, node) {
-    esl_lib_log_debug(LOG_MODULE, "%8p Size = %zu allocated in %s:%u" APP_LOG_NL,
-                      item->ptr,
+    esl_lib_log_debug(LOG_MODULE, ESL_LIB_LOG_HANDLE_FORMAT "%zu B allocated by %s:%s()@%u not released!" APP_LOG_NL,
+                      ESL_LIB_LOG_PTR(item->ptr),
                       item->size,
                       item->file,
+                      item->func,
                       item->line);
     count++;
     size += item->size;
@@ -181,3 +189,4 @@ static malloc_list_item_t *find_item(void *ptr)
   // Requested pointer not found
   return NULL;
 }
+#endif // ESL_LIB_MEMORY_LEAK_CHECK

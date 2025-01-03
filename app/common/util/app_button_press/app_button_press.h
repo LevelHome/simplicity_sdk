@@ -51,6 +51,7 @@ extern "C" {
 #define APP_BUTTON_PRESS_DURATION_LONG         2
 #define APP_BUTTON_PRESS_DURATION_VERYLONG     3
 #define APP_BUTTON_PRESS_NONE                  4
+#define APP_BUTTON_PRESS_PRESSED_DOWN          5
 
 /***************************************************************************//**
  * Enable button press callbacks.
@@ -78,6 +79,7 @@ void app_button_press_step(void);
  *                   - APP_BUTTON_PRESS_DURATION_MEDIUM
  *                   - APP_BUTTON_PRESS_DURATION_LONG
  *                   - APP_BUTTON_PRESS_DURATION_VERYLONG
+ *                   - APP_BUTTON_PRESS_PRESSED_DOWN
  ******************************************************************************/
 void app_button_press_cb(uint8_t button, uint8_t duration);
 

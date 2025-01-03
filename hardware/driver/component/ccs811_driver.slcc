@@ -14,7 +14,10 @@ provides:
 requires:
   - name: i2cspm_core
   - name: sleeptimer
-  - name: hal_generic_gpio
+  - name: emlib_gpio
+    condition: [device_series_2]
+  - name: gpio
+    condition: [device_series_3]
   - name: status
 include:
   - path: inc
@@ -26,7 +29,9 @@ include:
 source:
   - path: src/sl_ccs811.c
 config_file:
-  - path: config/sl_ccs811_config.h
+  - path: config/s2/sl_ccs811_config.h
+    file_id: ccs811_config
+  - path: config/s3/sl_ccs811_config.h
     file_id: ccs811_config
 documentation:
     docset: gecko-platform

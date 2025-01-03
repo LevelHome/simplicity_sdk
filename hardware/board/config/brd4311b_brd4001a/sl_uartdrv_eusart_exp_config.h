@@ -99,11 +99,11 @@
 #define SL_UARTDRV_EUSART_EXP_PERIPHERAL_NO      0
 
 // EUART0 TX on PA05
-#define SL_UARTDRV_EUSART_EXP_TX_PORT            gpioPortA
+#define SL_UARTDRV_EUSART_EXP_TX_PORT            SL_GPIO_PORT_A
 #define SL_UARTDRV_EUSART_EXP_TX_PIN             5
 
 // EUART0 RX on PA06
-#define SL_UARTDRV_EUSART_EXP_RX_PORT            gpioPortA
+#define SL_UARTDRV_EUSART_EXP_RX_PORT            SL_GPIO_PORT_A
 #define SL_UARTDRV_EUSART_EXP_RX_PIN             6
 
 

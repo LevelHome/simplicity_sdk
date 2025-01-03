@@ -3,10 +3,20 @@ label: RAIL Utility, BLE Channel Sounding
 description: Utility to aid with RAIL BLE Channel Sounding (CS) Support
 package: platform
 category: Platform|Radio
-quality: experimental
+quality: production
+metadata:
+  sbom:
+    id: rail_util_ble_cs
+    name: RAIL Utility, BLE Channel Sounding
+    license: MSLA
 requires:
   - name: rail_lib
-  - name: rail_util_cs_antenna_offset
+  - name: rail_util_ble_cs_antenna_offset
   - name: rail_util_cs_gdcomp
+  - name: rail_util_dma
+  - name: rail_util_aox
 provides:
   - name: rail_util_ble_cs
+documentation:
+  docset: rail
+  document: rail-api/rail-util-ble-cs

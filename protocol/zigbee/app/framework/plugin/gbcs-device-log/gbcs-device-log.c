@@ -153,7 +153,7 @@ bool sl_zigbee_af_gbcs_device_log_store(sl_802154_long_addr_t deviceId,
     return true;
   }
 
-  sl_zigbee_af_gbcs_device_log_println("%p%p%p",
+  sl_zigbee_af_gbcs_device_log_println("%s%s%s",
                                        "Error: ",
                                        "Cannot add device to GBCS Device Log: ",
                                        "Too many entries");
@@ -174,7 +174,7 @@ bool sl_zigbee_af_gbcs_device_log_remove(sl_802154_long_addr_t deviceId)
     return true;
   }
 
-  sl_zigbee_af_gbcs_device_log_println("%p%p%p",
+  sl_zigbee_af_gbcs_device_log_println("%s%s%s",
                                        "Error: ",
                                        "Cannot remove device from GBCS Device Log: ",
                                        "Device does not exist");
@@ -212,7 +212,7 @@ bool sl_zigbee_af_gbcs_device_log_get(sl_802154_long_addr_t deviceId,
     return true;
   }
 
-  sl_zigbee_af_gbcs_device_log_println("%p%p%p",
+  sl_zigbee_af_gbcs_device_log_println("%s%s%s",
                                        "Error: ",
                                        "Cannot retrieve device info from GBCS Device Log: ",
                                        "Device does not exist");

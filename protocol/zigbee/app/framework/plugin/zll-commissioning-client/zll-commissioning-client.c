@@ -118,7 +118,7 @@ static uint32_t getChannelMask(void)
     channelMask = sl_zigbee_get_zll_secondary_channel_mask();
 #endif
   }
-  debugPrintln("getChannelMask: mask = %4X, scanningPrimary = %d", channelMask, scanningPrimaryChannels);
+  debugPrintln("getChannelMask: mask = %08X, scanningPrimary = %d", channelMask, scanningPrimaryChannels);
   return channelMask;
 }
 
@@ -143,7 +143,7 @@ static sl_status_t sendDeviceInformationRequest(uint8_t startIndex)
     sl_zigbee_af_event_set_delay_ms(&touchLinkEvent,
                                     SL_ZIGBEE_AF_PLUGIN_ZLL_COMMISSIONING_TOUCH_LINK_MILLISECONDS_DELAY);
   } else {
-    sl_zigbee_af_app_println("%p%p failed 0x%x",
+    sl_zigbee_af_app_println("%s%s failed 0x%02X",
                              "Error: ",
                              "Device information request",
                              status);
@@ -168,7 +168,7 @@ static sl_status_t sendIdentifyRequest(uint16_t identifyDuration)
                                                0x0000,       // group id - ignored
                                                SL_ZIGBEE_ZLL_PROFILE_ID);
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_app_println("%p%p failed 0x%x",
+    sl_zigbee_af_app_println("%s%s failed 0x%02X",
                              "Error: ",
                              "Identify request",
                              status);
@@ -192,7 +192,7 @@ static sl_status_t sendResetToFactoryNewRequest(void)
                                                0x0000,       // group id - ignored
                                                SL_ZIGBEE_ZLL_PROFILE_ID);
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_app_println("%p%p failed 0x%x",
+    sl_zigbee_af_app_println("%s%s failed 0x%02X",
                              "Error: ",
                              "Reset to factory new request",
                              status);
@@ -225,7 +225,7 @@ static void deviceInformationResponseHandler(const sl_802154_long_addr_t source,
                         && memcmp(sli_zigbee_af_zll_network.eui64, source, EUI64_SIZE) == 0);
 
   sl_zigbee_af_zll_commissioning_cluster_flush();
-  sl_zigbee_af_zll_commissioning_cluster_print("RX: DeviceInformationResponse 0x%4x, 0x%x, 0x%x, 0x%x,",
+  sl_zigbee_af_zll_commissioning_cluster_print("RX: DeviceInformationResponse 0x%08X, 0x%02X, 0x%02X, 0x%02X,",
                                                transaction,
                                                numberOfSubDevices,
                                                startIndex,
@@ -242,7 +242,7 @@ static void deviceInformationResponseHandler(const sl_802154_long_addr_t source,
     sort = sl_zigbee_af_get_int8u(deviceInformationRecordList, (i + 1) * (8 + EUI64_SIZE) - 1, deviceInformationRecordListLen);
     sl_zigbee_af_zll_commissioning_cluster_print(" [");
     sl_zigbee_af_zll_commissioning_cluster_debug_exec(sl_zigbee_af_print_big_endian_eui64(tempDeviceInfoRecord.ieeeAddress));
-    sl_zigbee_af_zll_commissioning_cluster_print(" 0x%x 0x%2x 0x%2x 0x%x 0x%x 0x%x",
+    sl_zigbee_af_zll_commissioning_cluster_print(" 0x%02X 0x%04X 0x%04X 0x%02X 0x%02X 0x%02X",
                                                  tempDeviceInfoRecord.endpointId,
                                                  tempDeviceInfoRecord.profileId,
                                                  tempDeviceInfoRecord.deviceId,
@@ -292,15 +292,15 @@ static sl_status_t startScan(uint8_t purpose)
 {
   sl_status_t status = SL_STATUS_INVALID_STATE;
   if (touchLinkInProgress()) {
-    sl_zigbee_af_app_println("%pTouch linking in progress", "Error: ");
+    sl_zigbee_af_app_println("%sTouch linking in progress", "Error: ");
   } else if (!amInitiator()) {
-    sl_zigbee_af_app_println("%pDevice is not an initiator", "Error: ");
+    sl_zigbee_af_app_println("%sDevice is not an initiator", "Error: ");
   } else {
     sl_zigbee_af_zll_set_initial_security_state();
 
     // Use the Ember API, not the framework API, otherwise host-side returns zero if network down
     currentChannel = sl_zigbee_get_radio_channel();
-    debugPrintln("startScan: purpose = %X, flags = %2X, current channel = %d", purpose, sli_zigbee_af_zll_flags, currentChannel);
+    debugPrintln("startScan: purpose = %02X, flags = %04X, current channel = %d", purpose, sli_zigbee_af_zll_flags, currentChannel);
 
     scanningPrimaryChannels = true;
     uint32_t channelMask = getChannelMask();
@@ -318,14 +318,14 @@ static sl_status_t startScan(uint8_t purpose)
         sli_zigbee_af_zll_flags = purpose;
         moduleState = CLIENT_SCANNING;
       } else {
-        sl_zigbee_af_app_println("%p%p%p0x%x",
+        sl_zigbee_af_app_println("%s%s%s0x%02X",
                                  "Error: ",
                                  "Touch linking failed: ",
                                  "could not start scan: ",
                                  status);
       }
     } else {
-      sl_zigbee_af_app_println("%p%p0x%x",
+      sl_zigbee_af_app_println("%s%s0x%02X",
                                "Error: ",
                                "Touch linking failed: ",
                                "no scan channels configured");
@@ -377,7 +377,7 @@ static bool isTouchlinkPermitted(const sl_zigbee_zll_network_t *networkInfo)
     } else {
       // We're either joined or orphaned and not attempting to rejoin; in
       // either case we can proceed with the next stage of validation.
-      debugPrintln("isTouchlinkPermitted: security bitmask = %2X,flags = %2X",
+      debugPrintln("isTouchlinkPermitted: security bitmask = %04X,flags = %04X",
                    securityState.bitmask, sli_zigbee_af_zll_flags);
     }
   } else {
@@ -446,10 +446,10 @@ static int8_t targetCompare(const sl_zigbee_zll_network_t *t1,
 static void processScanComplete(sl_status_t scanStatus)
 {
   sl_status_t status;
-  debugPrintln("processScanComplete - status = %X", scanStatus);
+  debugPrintln("processScanComplete - status = %02X", scanStatus);
 
   if (scanStatus != SL_STATUS_OK) {
-    sl_zigbee_af_app_println("%p%p0x%x",
+    sl_zigbee_af_app_println("%s%s0x%02X",
                              "Error: ",
                              "Touch linking failed due to preemption: ",
                              scanStatus);
@@ -479,7 +479,7 @@ static void processScanComplete(sl_status_t scanStatus)
           // We will continue on the second scan complete callback.
           return;
         }
-        sl_zigbee_af_app_println("%p%p0x%x",
+        sl_zigbee_af_app_println("%s%s0x%02X",
                                  "Error: ",
                                  "could not start secondary channel scan: ",
                                  status);
@@ -495,7 +495,7 @@ static void processScanComplete(sl_status_t scanStatus)
     if (targetNetworkFound()) {
       status = sl_zigbee_set_logical_and_radio_channel(sli_zigbee_af_zll_network.zigbeeNetwork.channel);
       if (status != SL_STATUS_OK) {
-        sl_zigbee_af_app_println("%p%p%p0x%x",
+        sl_zigbee_af_app_println("%s%s%s0x%02X",
                                  "Error: ",
                                  "Touch linking failed: ",
                                  "could not change channel: ",
@@ -533,7 +533,7 @@ static void processScanComplete(sl_status_t scanStatus)
       }
       sl_zigbee_af_event_set_active(&touchLinkEvent);
     } else {
-      sl_zigbee_af_app_println("%p%p%p",
+      sl_zigbee_af_app_println("%s%s%s",
                                "Error: ",
                                "Touch linking failed: ",
                                "no networks were found");
@@ -568,7 +568,7 @@ void sli_zigbee_af_zll_abort_touch_link(sl_zigbee_af_zll_commissioning_status_t 
     status = sl_zigbee_set_logical_and_radio_channel(currentChannel);
   }
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_app_println("%p0x%x%p%d",
+    sl_zigbee_af_app_println("%s0x%02X%s%d",
                              "Error: ",
                              status,
                              " - could not restore channel to: ",
@@ -625,7 +625,7 @@ void sli_zigbee_af_zll_finish_network_formation_for_router(sl_status_t status)
 #endif // SL_ZIGBEE_TEST
     }
   } else if (touchLinkInProgress()) {
-    sl_zigbee_af_app_println("%p%p%p0x%x",
+    sl_zigbee_af_app_println("%s%s%s0x%02X",
                              "Error: ",
                              "Touch linking failed: ",
                              "could not form network: ",
@@ -644,7 +644,7 @@ sl_status_t sli_zigbee_af_zll_form_network_for_router_initiator(uint8_t channel,
   // Initialize ZLL security.
   status = sl_zigbee_af_zll_set_initial_security_state();
   if (status != SL_STATUS_OK) {
-    debugPrintln("sli_zigbee_af_zll_form_network_for_router_initiator: unable to initialize security, status = %X", status);
+    debugPrintln("sli_zigbee_af_zll_form_network_for_router_initiator: unable to initialize security, status = %02X", status);
     return status;
   }
 
@@ -667,7 +667,7 @@ sl_status_t sli_zigbee_af_zll_form_network_for_router_initiator(uint8_t channel,
   networkCreatorRadioPower = radioPower;
   networkCreatorPanId = panId;
 
-  debugPrintln("sli_zigbee_af_zll_form_network_for_router_initiator: chan mask = %4X", sli_zigbee_af_network_creator_primary_channel_mask);
+  debugPrintln("sli_zigbee_af_zll_form_network_for_router_initiator: chan mask = %08X", sli_zigbee_af_network_creator_primary_channel_mask);
 
   status = sl_zigbee_af_network_creator_start(false); // distributed network
 
@@ -780,7 +780,7 @@ void sl_zigbee_af_zll_abort_touch_link(void)
     // If the scanning portion of touch linking is already finished, we can
     // abort right away.  If not, we need to stop the scan and wait for the
     // stack to inform us when the scan is done.
-    sl_zigbee_af_app_println("%p%p%p",
+    sl_zigbee_af_app_println("%s%s%s",
                              "Error: ",
                              "Touch linking failed: ",
                              "aborted by application");
@@ -837,7 +837,7 @@ void sli_zigbee_af_zll_address_assignment_callback(sl_zigbee_zll_address_assignm
                                                    sl_zigbee_rx_packet_info_t *packetInfo)
 {
   if (touchLinkInProgress()) {
-    debugPrintln("sl_zigbee_zll_address_assignment_handler: node id = %2X", addressInfo->nodeId);
+    debugPrintln("sl_zigbee_zll_address_assignment_handler: node id = %04X", addressInfo->nodeId);
     sli_zigbee_af_zll_network.nodeId = addressInfo->nodeId;
   }
 }
@@ -846,7 +846,7 @@ void touchLinkEventHandler(sl_zigbee_af_event_t * event)
 {
   sl_status_t status = SL_STATUS_OK;
   sl_zigbee_af_event_set_inactive(&touchLinkEvent);
-  debugPrintln("touchlinkEventHandler: flags = %X", sli_zigbee_af_zll_flags);
+  debugPrintln("touchlinkEventHandler: flags = %02X", sli_zigbee_af_zll_flags);
 
   if (!touchLinkInProgress()) {
     return;
@@ -857,7 +857,7 @@ void touchLinkEventHandler(sl_zigbee_af_event_t * event)
       debugPrintln("EH: Sending device info request");
       status = sendDeviceInformationRequest(nextSubDeviceIndex);
       if (status != SL_STATUS_OK) {
-        sl_zigbee_af_app_println("%p%p%p0x%x",
+        sl_zigbee_af_app_println("%s%s%s0x%02X",
                                  "Error: ",
                                  "Touch linking failed: ",
                                  "could not send device information request: ",
@@ -868,7 +868,7 @@ void touchLinkEventHandler(sl_zigbee_af_event_t * event)
 
     case CLIENT_AWAITING_RESPONSE:
       // Timeout - give up.
-      sl_zigbee_af_app_println("%p%p%p0x%x",
+      sl_zigbee_af_app_println("%s%s%s0x%02X",
                                "Error: ",
                                "Touch linking failed: ",
                                "no reply to device information request: ",
@@ -884,7 +884,7 @@ void touchLinkEventHandler(sl_zigbee_af_event_t * event)
         sl_zigbee_af_event_set_delay_ms(&touchLinkEvent,
                                         SL_ZIGBEE_AF_PLUGIN_ZLL_COMMISSIONING_TOUCH_LINK_MILLISECONDS_DELAY);
       } else {
-        sl_zigbee_af_app_println("%p%p%p0x%x",
+        sl_zigbee_af_app_println("%s%s%s0x%02X",
                                  "Error: ",
                                  "Touch linking failed: ",
                                  "could not send identify request: ",
@@ -915,7 +915,7 @@ void touchLinkEventHandler(sl_zigbee_af_event_t * event)
                                                                        SL_ZIGBEE_AF_PLUGIN_ZLL_COMMISSIONING_COMMON_RADIO_TX_POWER,
                                                                        0xffff);
           if (status != SL_STATUS_OK) {
-            sl_zigbee_af_app_println("%p%p%p0x%x",
+            sl_zigbee_af_app_println("%s%s%s0x%02X",
                                      "Error: ",
                                      "Touch linking failed: ",
                                      "could not start network formation: ",
@@ -931,7 +931,7 @@ void touchLinkEventHandler(sl_zigbee_af_event_t * event)
           sli_zigbee_af_zll_network.zigbeeNetwork.channel = 0;
         }
         sl_zigbee_af_zll_set_initial_security_state();
-        sl_zigbee_af_app_println("%p%p%p",
+        sl_zigbee_af_app_println("%s%s%s",
                                  "Sending ",
                                  sli_zigbee_af_zll_am_factory_new() ? "start" : "join",
                                  " request to target");
@@ -948,7 +948,7 @@ void touchLinkEventHandler(sl_zigbee_af_event_t * event)
             // Abort, but report touchlink complete to application.
             sli_zigbee_af_zll_abort_touch_link(SL_ZIGBEE_AF_ZLL_NETWORK_UPDATE_OPERATION);
           } else {
-            sl_zigbee_af_app_println("%p%p%p0x%x",
+            sl_zigbee_af_app_println("%s%s%s0x%02X",
                                      "Error: ",
                                      "Touch linking failed: ",
                                      "could not send start/join: ",
@@ -960,7 +960,7 @@ void touchLinkEventHandler(sl_zigbee_af_event_t * event)
         if (scanForReset()) {
           status = sendResetToFactoryNewRequest();
           if (status != SL_STATUS_OK) {
-            sl_zigbee_af_app_println("%p%p%p0x%x",
+            sl_zigbee_af_app_println("%s%s%s0x%02X",
                                      "Error: ",
                                      "Touch linking failed: ",
                                      "could not send reset: ",

@@ -28,7 +28,7 @@
  *
  ******************************************************************************/
 
-#include "em_core.h"
+#include "sl_core.h"
 #include "sl_bt_ots_server.h"
 #include "sl_bt_ots_server_instances.h"
 #include "sl_bt_ots_server_config.h"

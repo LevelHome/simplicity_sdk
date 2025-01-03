@@ -3,7 +3,7 @@
  * @brief Root certificate definition in PEM format.
  *******************************************************************************
  * # License
- * <b>Copyright 2022 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -30,6 +30,8 @@
 #ifndef SL_BT_CBAP_ROOT_CERT_H
 #define SL_BT_CBAP_ROOT_CERT_H
 
+#warning "Please insert the root certificate created with the certificate generator python script." \
+  "For more details see the readme of the \"SoC - Certificate Signing Request Generator\" example."
 #define SL_BT_CBAP_ROOT_CERT \
   ""
 

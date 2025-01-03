@@ -17,6 +17,8 @@ include:
     - path: "em_iadc.h"
 provides:
   - name: emlib_iadc
+  - name: hal_generic_adc
+    condition: [device_series_2]
 requires:
   - name: device
   - name: device_has_iadc

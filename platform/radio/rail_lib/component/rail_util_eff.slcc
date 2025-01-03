@@ -4,6 +4,11 @@ description: Utility to provide RAIL with EFF support
 package: platform
 category: Platform|Radio
 quality: deprecated
+metadata:
+  sbom:
+    id: rail_util_eff
+    name: RAIL Utility, EFF
+    license: MSLA
 requires:
   - name: device
   - name: rail_lib

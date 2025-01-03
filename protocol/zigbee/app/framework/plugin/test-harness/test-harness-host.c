@@ -53,10 +53,10 @@ static bool checkXncpSoftware(void)
   } else if (manufacturerId != SL_ZIGBEE_MANUFACTURER_ID
              || versionNumber != SL_ZIGBEE_XNCP_TEST_HARNESS_VERSION_NUMBER) {
     sl_zigbee_af_core_println("Error: Wrong XNCP software loaded on NCP.");
-    sl_zigbee_af_core_println("  Wanted Manuf ID: 0x%2X, Version: 0x%2X",
+    sl_zigbee_af_core_println("  Wanted Manuf ID: 0x%04X, Version: 0x%04X",
                               SL_ZIGBEE_MANUFACTURER_ID,
                               SL_ZIGBEE_XNCP_TEST_HARNESS_VERSION_NUMBER);
-    sl_zigbee_af_core_println("     Got Manuf ID: 0x%2X, Version: 0x%2X",
+    sl_zigbee_af_core_println("     Got Manuf ID: 0x%04X, Version: 0x%04X",
                               manufacturerId,
                               versionNumber);
     return false;
@@ -84,7 +84,7 @@ static void resetOrAdvanceApsFrameCounter(bool advance)
                                        customEzspMessage,
                                        &replyLength,
                                        reply);
-  sl_zigbee_af_core_println("%s APS Frame counter: %s (0x%X)",
+  sl_zigbee_af_core_println("%s APS Frame counter: %s (0x%02X)",
                             (advance
                              ? "Advancing"
                              : "Reset"),

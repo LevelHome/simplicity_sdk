@@ -35,6 +35,8 @@ component:
   - id: sl_system
   - id: device_init
   - id: mpu # disable execution from RAM
+  - id: simple_led
+    instance: [led0, led1]
 source:
   - path: app.c
   - path: main.c
@@ -109,11 +111,15 @@ define:
   - name: FILE_ID_APPLICATIONDATA # File identifiers for application file system
     value: "0x00000" # Range: 0x00000 - 0x0FFFF
 
-other_file:
-  - path: ../../DevTools/postbuild.sh
+config_file:
+  # Sample keys for signing
+  - path: ../../platform/SiliconLabs/PAL/BootLoader/sample-keys/sample_encrypt.key
+    directory: sample_keys
+  - path: ../../platform/SiliconLabs/PAL/BootLoader/sample-keys/sample_sign.key
+    directory: sample_keys
 
 post_build:
-  profile: zwave_ncp_zniffer_pti
+  profile: zwave_application
 
 tag:
   - prebuilt_demo

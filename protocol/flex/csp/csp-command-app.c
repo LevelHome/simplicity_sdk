@@ -908,6 +908,54 @@ bool emberUsingLongMessages(void)
   return usingLongMessages;
 }
 
+// setRadioPriority
+EmberStatus emberSetRadioPriority(sl_connect_radio_priority_t *radio_priority)
+{
+  acquireCommandMutex();
+  uint8_t *apiCommandBuffer = getApiCommandPointer();
+  formatResponseCommand(apiCommandBuffer,
+                        MAX_STACK_API_COMMAND_SIZE,
+                        EMBER_SET_RADIO_PRIORITY_IPC_COMMAND_ID,
+                        "uuu",
+                        radio_priority->rx,
+                        radio_priority->starting_tx,
+                        radio_priority->tx_step);
+  uint8_t *apiCommandData = sendBlockingCommand(apiCommandBuffer);
+
+  EmberStatus status;
+  fetchApiParams(apiCommandData,
+                 "u",
+                 &status);
+  releaseCommandMutex();
+  return status;
+}
+
+// getRadioPriority
+EmberStatus emberGetRadioPriority(sl_connect_radio_priority_t *radio_priority)
+{
+  acquireCommandMutex();
+  uint8_t *apiCommandBuffer = getApiCommandPointer();
+  formatResponseCommand(apiCommandBuffer,
+                        MAX_STACK_API_COMMAND_SIZE,
+                        EMBER_GET_RADIO_PRIORITY_IPC_COMMAND_ID,
+                        "uuu",
+                        radio_priority->rx,
+                        radio_priority->starting_tx,
+                        radio_priority->tx_step);
+  uint8_t *apiCommandData = sendBlockingCommand(apiCommandBuffer);
+
+  EmberStatus status;
+
+  fetchApiParams(apiCommandData,
+                 "uuuu",
+                 &status,
+                 &radio_priority->rx,
+                 &radio_priority->starting_tx,
+                 &radio_priority->tx_step);
+  releaseCommandMutex();
+  return status;
+}
+
 // messageSend
 EmberStatus emberMessageSend(EmberNodeId destination,
                              uint8_t endpoint,

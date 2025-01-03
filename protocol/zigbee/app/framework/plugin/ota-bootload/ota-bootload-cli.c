@@ -29,9 +29,9 @@ void printBootloaderInfoCommand(sl_cli_command_arg_t *arguments)
   BootloaderInformation_t info = { .type = SL_BOOTLOADER, .version = 0U, .capabilities = 0U };
   bootloader_getInfo(&info);
   uint8_t keyData[SL_ZIGBEE_ENCRYPTION_KEY_SIZE];
-  otaPrintln("Installed Type (Base):  0x%X", info.type);
-  otaPrintln("Capabilities:           0x%2X", info.capabilities);
-  otaPrintln("Bootloader Version:     0x%2X", info.version);
+  otaPrintln("Installed Type (Base):  0x%02X", info.type);
+  otaPrintln("Capabilities:           0x%04X", info.capabilities);
+  otaPrintln("Bootloader Version:     0x%04X", info.version);
 
 #if defined(SL_ZIGBEE_TEST)
   memset(keyData, 0xFF, SL_ZIGBEE_ENCRYPTION_KEY_SIZE);

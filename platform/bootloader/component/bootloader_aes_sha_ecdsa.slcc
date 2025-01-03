@@ -34,3 +34,6 @@ provides:
   - name: bootloader_aes_sha_ecdsa
   - name: bootloader_nonsecure_incompatible
     condition: [bootloader_core_nonsecure]
+metadata:
+  sbom:
+    license: MSLA AND APACHE-2.0

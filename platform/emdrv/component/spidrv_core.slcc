@@ -12,6 +12,9 @@ description: >
   project.
 category: "Platform|Driver|SPI"
 quality: "production"
+metadata:
+  sbom:
+    license: Zlib
 root_path: "platform/emdrv/spidrv"
 provides:
   - name: "spidrv_core"
@@ -22,7 +25,7 @@ requires:
   - name: "sl_core"
   - name: "interrupt_manager"
   - name: "hal_generic_common"
-  - name: "hal_generic_gpio"
+  - name: "gpio"
   - name: "emlib_usart"
     condition:
     - "device_has_usart"
@@ -35,6 +38,7 @@ requires:
   - name: "enum"
   - name: "slist"
   - name: "component_catalog"
+  - name: "code_classification"
 include:
   - path: "inc"
     file_list:
@@ -55,6 +59,11 @@ template_contribution:
       event: driver_init
       include: "sl_spidrv_instances.h"
       handler: "sl_spidrv_init_instances"
+  - name: "code_classification_components"
+    value: "spidrv"
+define:
+  - name: "SL_CODE_COMPONENT_SPIDRV"
+    value: "spidrv"
 documentation:
     docset: gecko-platform
     document: platform-driver/spidrv

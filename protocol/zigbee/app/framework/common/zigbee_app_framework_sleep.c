@@ -33,7 +33,6 @@
 
 #include "stack/core/sl_zigbee_multi_network.h"
 #endif //SL_CATALOG_ZIGBEE_ZCL_FRAMEWORK_CORE_PRESENT
-#include "em_common.h"
 
 // This next line is a workaround for RAIL_LIB-6303 and can go away once that
 // ticket is resolved

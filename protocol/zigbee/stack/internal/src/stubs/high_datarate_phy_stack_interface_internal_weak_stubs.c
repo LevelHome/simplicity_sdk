@@ -25,7 +25,7 @@ SL_WEAK void sli_mac_stack_lower_mac_set_high_datarate_csma_params(RAIL_CsmaConf
   (void) csma_params;
 }
 
-SL_WEAK void sli_mac_stack_lower_mac_set_high_datarate_phy_radio_priorities(sl_zigbee_multiprotocol_priorities_t *priorities)
+SL_WEAK void sli_mac_stack_lower_mac_set_high_datarate_phy_radio_priorities(sl_802154_radio_priorities_t *priorities)
 {
   (void) priorities;
 }
@@ -38,8 +38,18 @@ SL_WEAK sl_status_t sli_mac_stack_send_raw_high_datarate_phy_message(uint8_t nwk
   return SL_STATUS_NOT_AVAILABLE;
 }
 
+SL_WEAK sl_status_t sli_mac_stack_send_raw_high_datarate_phy_scheduled_message(uint8_t nwk_index,
+                                                                               uint8_t *payload,
+                                                                               RAIL_Time_t timestamp)
+{
+  (void) nwk_index;
+  (void) payload;
+  (void) timestamp;
+  return SL_STATUS_NOT_AVAILABLE;
+}
+
 SL_WEAK RAIL_Status_t sli_mac_stack_set_mode_switch_sync_detect(bool enable_f)
 {
   (void) enable_f;
-  return 0;
+  return SL_STATUS_NOT_AVAILABLE;
 }

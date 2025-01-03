@@ -99,7 +99,7 @@ void sl_zigbee_af_messaging_cluster_client_tick_cb(uint8_t endpoint)
 //-----------------------
 // ZCL commands callbacks
 
-bool sl_zigbee_af_messaging_cluster_display_message_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_messaging_cluster_display_message_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_messaging_cluster_display_message_command_t cmd_data;
   uint8_t endpoint = sl_zigbee_af_current_endpoint();
@@ -109,11 +109,11 @@ bool sl_zigbee_af_messaging_cluster_display_message_cb(sl_zigbee_af_cluster_comm
 
   if (zcl_decode_messaging_cluster_display_message_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   sl_zigbee_af_messaging_cluster_print("RX: DisplayMessage"
-                                       " 0x%4x, 0x%x, 0x%4x, 0x%2x, \"",
+                                       " 0x%08X, 0x%02X, 0x%08X, 0x%04X, \"",
                                        cmd_data.messageId,
                                        cmd_data.messageControl,
                                        cmd_data.startTime,
@@ -127,17 +127,16 @@ bool sl_zigbee_af_messaging_cluster_display_message_cb(sl_zigbee_af_cluster_comm
                                                            cmd_data.durationInMinutes,
                                                            cmd_data.message,
                                                            cmd_data.optionalExtendedMessageControl)) {
-    goto kickout;
+    return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
   }
 
   if (ep == 0xFF) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   // Use of Inter-PAN transmission is deprecated.
   if ((cmd_data.messageControl & 0x03) == MESSAGE_CONTROL_INTER_PAN_TRANSMISSION_ONLY) {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_INVALID_FIELD);
-    return true;
+    return SL_ZIGBEE_ZCL_STATUS_INVALID_FIELD;
   }
 
   if (messageTable[ep].active) {
@@ -149,8 +148,7 @@ bool sl_zigbee_af_messaging_cluster_display_message_cb(sl_zigbee_af_cluster_comm
         messageTable[ep].esiBitmask |= BIT(esiIndex);
       }
       // Either way, we send back a default response.
-      sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-      return true;
+      return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
     } else {
       // If we already have another message, notify the application that it
       // should no longer display it.
@@ -218,12 +216,10 @@ bool sl_zigbee_af_messaging_cluster_display_message_cb(sl_zigbee_af_cluster_comm
   // display or confirm old messages.
   messageTable[ep].valid = true;
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  kickout:
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
-bool sl_zigbee_af_messaging_cluster_cancel_message_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_messaging_cluster_cancel_message_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_messaging_cluster_cancel_message_command_t cmd_data;
   uint8_t endpoint = sl_zigbee_af_current_endpoint();
@@ -233,10 +229,10 @@ bool sl_zigbee_af_messaging_cluster_cancel_message_cb(sl_zigbee_af_cluster_comma
   if (zcl_decode_messaging_cluster_cancel_message_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS
       || ep == 0xFF) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_messaging_cluster_println("RX: CancelMessage 0x%4x, 0x%x",
+  sl_zigbee_af_messaging_cluster_println("RX: CancelMessage 0x%08X, 0x%02X",
                                          cmd_data.messageId,
                                          cmd_data.messageControl);
 
@@ -251,8 +247,7 @@ bool sl_zigbee_af_messaging_cluster_cancel_message_cb(sl_zigbee_af_cluster_comma
     status = SL_ZIGBEE_ZCL_STATUS_NOT_FOUND;
   }
 
-  sl_zigbee_af_send_immediate_default_response(status);
-  return true;
+  return status;
 }
 
 void sli_zigbee_af_messaging_client_print_info(uint8_t endpoint)
@@ -266,14 +261,14 @@ void sli_zigbee_af_messaging_client_print_info(uint8_t endpoint)
   sl_zigbee_af_messaging_cluster_println("= Client Message =");
   sl_zigbee_af_messaging_cluster_flush();
 
-  sl_zigbee_af_messaging_cluster_println(" vld: %p", (messageTable[ep].valid ? "YES" : "NO"));
-  sl_zigbee_af_messaging_cluster_println(" act: %p", (messageTable[ep].active ? "YES" : "NO"));
-  sl_zigbee_af_messaging_cluster_println("  id: 0x%4x", messageTable[ep].messageId);
-  sl_zigbee_af_messaging_cluster_println("  mc: 0x%x", messageTable[ep].messageControl);
-  sl_zigbee_af_messaging_cluster_println("  st: 0x%4x", messageTable[ep].startTime);
-  sl_zigbee_af_messaging_cluster_println("  et: 0x%4x", messageTable[ep].endTime);
-  sl_zigbee_af_messaging_cluster_println("time: 0x%4x", sl_zigbee_af_get_current_time());
-  sl_zigbee_af_messaging_cluster_println(" dur: 0x%2x", messageTable[ep].durationInMinutes);
+  sl_zigbee_af_messaging_cluster_println(" vld: %s", (messageTable[ep].valid ? "YES" : "NO"));
+  sl_zigbee_af_messaging_cluster_println(" act: %s", (messageTable[ep].active ? "YES" : "NO"));
+  sl_zigbee_af_messaging_cluster_println("  id: 0x%08X", messageTable[ep].messageId);
+  sl_zigbee_af_messaging_cluster_println("  mc: 0x%02X", messageTable[ep].messageControl);
+  sl_zigbee_af_messaging_cluster_println("  st: 0x%08X", messageTable[ep].startTime);
+  sl_zigbee_af_messaging_cluster_println("  et: 0x%08X", messageTable[ep].endTime);
+  sl_zigbee_af_messaging_cluster_println("time: 0x%08X", sl_zigbee_af_get_current_time());
+  sl_zigbee_af_messaging_cluster_println(" dur: 0x%04X", messageTable[ep].durationInMinutes);
   sl_zigbee_af_messaging_cluster_flush();
   sl_zigbee_af_messaging_cluster_print(" mes: \"");
   sl_zigbee_af_messaging_cluster_print_string(messageTable[ep].message);
@@ -324,24 +319,22 @@ uint32_t sl_zigbee_af_messaging_cluster_client_command_parse(sl_service_opcode_t
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_DISPLAY_MESSAGE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_messaging_cluster_display_message_cb(cmd);
+        status = sl_zigbee_af_messaging_cluster_display_message_cb(cmd);
         break;
       }
       case ZCL_CANCEL_MESSAGE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_messaging_cluster_cancel_message_cb(cmd);
+        status = sl_zigbee_af_messaging_cluster_cancel_message_cb(cmd);
         break;
       }
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

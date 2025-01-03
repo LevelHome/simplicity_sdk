@@ -25,6 +25,8 @@
 /*                      PRIVATE TYPES and DEFINITIONS                       */
 /****************************************************************************/
 
+#define CC_USER_CODE_MAX_IDS_MAX (50)
+
 typedef struct
 {
   uint8_t userIdentifier;
@@ -42,6 +44,9 @@ static s_CC_userCode_data_t userCodeData = { 0 };
 /****************************************************************************/
 /*                            PRIVATE FUNCTIONS                             */
 /****************************************************************************/
+
+_Static_assert(CC_USER_CODE_MAX_IDS <= CC_USER_CODE_MAX_IDS_MAX,
+               "STATIC_ASSERT_FAILED_User_Code_Max_IDs_too_high");
 
 static void CC_UserCode_report_stx(zaf_tx_options_t *tx_options, void* pData);
 
@@ -124,6 +129,18 @@ CC_UserCode_handler(
 
           case USER_ID_OCCUPIED:
           case USER_ID_RESERVED:
+            /**
+             * CC:0063.01.01.12.001: The only allowed bulk operation is setting
+             * all User ID statuses to 0x00.
+             * CC:0083.01.0A.11.018: If the device also supports the
+             * User Credential Command Class, setting multiple user codes
+             * (mapped as PIN code credentials) to the same value is not allowed.
+             */
+            if (pCmd->ZW_UserCodeSet1byteFrame.userIdentifier == 0) {
+              status = false;
+              break;
+            }
+
             // Validate user code are digits
             for(i = 0; i < user_code_length; i++)
             {
@@ -137,7 +154,6 @@ CC_UserCode_handler(
 
           default:
             return RECEIVED_FRAME_STATUS_FAIL;
-            break;
         }
 
         if (true == status)
@@ -436,14 +452,14 @@ CC_UserCode_reset_data(void)
 */
 ZW_WEAK void CC_UserCode_set_usercode(char* new_user_code)
 {
-  if(strlen(new_user_code) > USERCODE_MAX_LEN)
+  if(strnlen(new_user_code, USERCODE_MAX_LEN + 1) > USERCODE_MAX_LEN)
   {
     DPRINTF("User code too long. Max length is %d\n", USERCODE_MAX_LEN);
     assert(false);
   }
   SUserCode newUserCode;
   newUserCode.user_id_status = USER_ID_OCCUPIED;
-  newUserCode.userCodeLen = sizeof(new_user_code);
+  newUserCode.userCodeLen = strnlen(new_user_code, USERCODE_MAX_LEN);
   memcpy(newUserCode.userCode, new_user_code, newUserCode.userCodeLen);
   CC_UserCode_Write(1, &newUserCode);
 }

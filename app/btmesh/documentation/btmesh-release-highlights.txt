@@ -1,2 +1,3 @@
-Bluetooth Mesh SDK 7.0.1.0
-- Support for delta-compressed firmware updates.
+Bluetooth Mesh SDK 8.0.0.0
+- Support added for Micrium and FreeRTOS.
+- Bug fixes and minor enhancements.

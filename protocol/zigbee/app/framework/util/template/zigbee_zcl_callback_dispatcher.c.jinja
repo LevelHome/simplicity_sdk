@@ -19,6 +19,17 @@
 #include "af.h"
 #include "zigbee_zcl_callback_dispatcher.h"
 
+{#- INCLUDE_CUSTOM_HEADERS -#}
+{%- for entry in zigbee_af_callback %}
+{%- if entry['include'] is string %}
+#include "{{ entry['include'] }}"
+{%- else %}
+{%- for f in entry["include"] %}
+#include "{{ f }}"
+{%- endfor %}
+{%- endif %}
+{%- endfor %}
+
 {# RESET_ATTRIBUTES -#}
 // Reset Attributes
 void sli_zigbee_af_reset_attributes(uint8_t endpointId)

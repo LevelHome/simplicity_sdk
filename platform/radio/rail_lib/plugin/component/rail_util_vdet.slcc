@@ -4,6 +4,11 @@ description: Utility to provide RAIL with Front End Module Voltage Detect (VDET)
 package: platform
 category: Platform|Radio
 quality: experimental
+metadata:
+  sbom:
+    id: rail_util_vdet
+    name: RAIL Utility, VDET
+    license: Zlib
 requires:
   - name: device
   - name: rail_lib

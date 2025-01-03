@@ -58,11 +58,6 @@
 // <i> The amount of time that must pass without hearing a MAC data poll from the device before the end device is removed from the child table.  For a router device this applies to its children.  For an end device, this is the amount of time before it automatically times itself out.
 #define SL_ZIGBEE_END_DEVICE_POLL_TIMEOUT   MINUTES_256
 
-// <o SL_ZIGBEE_KEY_TABLE_SIZE> Link Key Table Size <0-127>
-// <i> Default: 0
-// <i> The maximum number of link key table entries supported by the stack.
-#define SL_ZIGBEE_KEY_TABLE_SIZE   0
-
 // <o SL_ZIGBEE_ZLL_GROUP_ADDRESSES> ZLL group addresses <0-255>
 // <i> Default: 0
 // <i> The number of unique group identifiers that this device requires.

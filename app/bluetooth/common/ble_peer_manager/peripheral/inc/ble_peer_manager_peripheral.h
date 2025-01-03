@@ -64,7 +64,24 @@ void ble_peer_manager_peripheral_init(void);
  * @retval SL_STATUS_INVALID_STATE if the Peer Manager is in
  *         BLE_PEER_MANAGER_ADVERTISING state.
  *****************************************************************************/
-sl_status_t ble_peer_manager_peripheral_set_advertiser(sl_bt_advertiser_discovery_mode_t adv_discovery_mode);
+sl_status_t ble_peer_manager_peripheral_set_advertiser_discovery_mode(sl_bt_advertiser_discovery_mode_t adv_discovery_mode);
+
+/**************************************************************************//**
+ * Set advertiser parameters.
+ *
+ * Set the advertiser PHY if the Peer Manager is in IDLE state.
+ * Call this function before starting the advertiser.
+ *
+ * @param[in] adv_phy Advertising PHY. Should be one of
+ * the following:
+ * - sl_bt_gap_phy_1m
+ * - sl_bt_gap_phy_2m
+ *
+ * @retval SL_STATUS_OK if successful otherwise error code.
+ * @retval SL_STATUS_INVALID_STATE if the Peer Manager is in
+ *         BLE_PEER_MANAGER_ADVERTISING state.
+ *****************************************************************************/
+sl_status_t ble_peer_manager_peripheral_set_advertiser_phy(sl_bt_gap_phy_t adv_phy);
 
 /**************************************************************************//**
  * Create a central connection.
@@ -84,9 +101,9 @@ sl_status_t ble_peer_manager_peripheral_create_connection(void);
  * If handle is SL_BT_INVALID_ADVERTISING_SET_HANDLE the peer manager will
  * create an advertising handle and generate data using the default value
  * for discovery mode, or the value that was set using the
- * ble_peer_manager_peripheral_set_advertiser() function and the default
- * value for advertiser timing. If the handle is not invalid, it will
- * use the given handle to start advertising.
+ * ble_peer_manager_peripheral_set_advertiser_discovery_mode() function and
+ * the default value for advertiser timing. If the handle is not invalid,
+ * it will use the given handle to start advertising.
  *
  * @param[in] advertising_handle Advertising handle to use for advertising.
  *

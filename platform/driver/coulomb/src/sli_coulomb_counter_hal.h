@@ -166,7 +166,7 @@ sl_status_t sli_coulomb_counter_hal_int_clear(uint8_t flag);
  * @return
  *   0 if successful, error code otherwise.
  ******************************************************************************/
-sl_status_t sli_coulomb_counter_hal_init(sli_coulomb_counter_handle_t *handle);
+sl_status_t sli_coulomb_counter_hal_init(const sli_coulomb_counter_handle_t *handle);
 
 /***************************************************************************//**
  * @brief
@@ -178,7 +178,7 @@ sl_status_t sli_coulomb_counter_hal_init(sli_coulomb_counter_handle_t *handle);
  * @return
  *   True if output is available, false otherwise.
  ******************************************************************************/
-bool sli_coulomb_counter_hal_output_supports_em2(sli_coulomb_counter_output_t *output);
+bool sli_coulomb_counter_hal_output_supports_em2(const sli_coulomb_counter_output_t *output);
 
 /***************************************************************************//**
  * @brief
@@ -332,7 +332,7 @@ float sli_coulomb_counter_hal_get_osc_frequency(void);
  * @return
  *   Computed CPP, in nanocoulombs.
  ******************************************************************************/
-float sli_coulomb_counter_hal_compute_cpp(sli_coulomb_counter_handle_t *handle);
+float sli_coulomb_counter_hal_compute_cpp(const sli_coulomb_counter_handle_t *handle);
 
 /***************************************************************************//**
  * @brief

@@ -76,7 +76,7 @@ static void scanForBadFds(void);
 sl_status_t sl_zigbee_af_file_descriptor_dispatch_add(sl_zigbee_af_file_descriptor_dispatch_struct_t* dispatchStruct)
 {
   if (NULL != findDispatchByFileDescriptor(dispatchStruct->fileDescriptor)) {
-    sl_zigbee_af_core_println("%p dispatch for fileDescriptor %d already exists",
+    sl_zigbee_af_core_println("%s dispatch for fileDescriptor %d already exists",
                               PLUGIN_NAME,
                               dispatchStruct->fileDescriptor);
     return SL_STATUS_INVALID_STATE;
@@ -84,7 +84,7 @@ sl_status_t sl_zigbee_af_file_descriptor_dispatch_add(sl_zigbee_af_file_descript
 
   if ((dispatchStruct->operation == SL_ZIGBEE_AF_FILE_DESCRIPTOR_OPERATION_NONE)
       || (dispatchStruct->operation >= SL_ZIGBEE_AF_FILE_DESCRIPTOR_OPERATION_MAX)) {
-    sl_zigbee_af_core_println("Error: %p bad file descriptor operation of %d", dispatchStruct->operation);
+    sl_zigbee_af_core_println("Error: %s bad file descriptor operation of %d", dispatchStruct->operation);
     return SL_STATUS_INVALID_STATE;
   }
 
@@ -127,12 +127,12 @@ sli_zigbee_link_list_item_t* addItem(sli_zigbee_link_list_item_t* previous, sl_z
 {
   sli_zigbee_link_list_item_t* new = malloc(sizeof(sli_zigbee_link_list_item_t));
   if (new == NULL) {
-    sl_zigbee_af_core_println("Error: %p failed to allocate memory for dispatch list element.",
+    sl_zigbee_af_core_println("Error: %s failed to allocate memory for dispatch list element.",
                               PLUGIN_NAME);
     return NULL;
   }
 
-  debugPrint("%p Previous FD in list is %d",
+  debugPrint("%s Previous FD in list is %d",
              PLUGIN_NAME,
              (previous == NULL
               ? -1
@@ -146,7 +146,7 @@ sli_zigbee_link_list_item_t* addItem(sli_zigbee_link_list_item_t* previous, sl_z
   if (previous) {
     previous->next = new;
   }
-  debugPrint("%p added dispatch for FD %d", PLUGIN_NAME, new->dispatchStruct.fileDescriptor);
+  debugPrint("%s added dispatch for FD %d", PLUGIN_NAME, new->dispatchStruct.fileDescriptor);
   debugPrintList();
   return new;
 }
@@ -175,7 +175,7 @@ static void removeItem(sli_zigbee_link_list_item_t* toRemove)
     toRemove->next->prev = toRemove->prev;
   }
 
-  debugPrint("%p removed dispatch for FD %d", PLUGIN_NAME, toRemove->dispatchStruct.fileDescriptor);
+  debugPrint("%s removed dispatch for FD %d", PLUGIN_NAME, toRemove->dispatchStruct.fileDescriptor);
   free(toRemove);
   debugPrintList();
 }
@@ -185,7 +185,7 @@ bool sl_zigbee_af_file_descriptor_dispatch_remove(int fileDescriptor)
   sli_zigbee_link_list_item_t* toRemove = findDispatchByFileDescriptor(fileDescriptor);
 
   if (toRemove == NULL) {
-    sl_zigbee_af_core_println("Error: %p could not find fileDescriptor %d to remove dispatch.",
+    sl_zigbee_af_core_println("Error: %s could not find fileDescriptor %d to remove dispatch.",
                               PLUGIN_NAME,
                               fileDescriptor);
     return false;
@@ -195,7 +195,7 @@ bool sl_zigbee_af_file_descriptor_dispatch_remove(int fileDescriptor)
   // Instead mark the item for removal at a later date.
   if (executingCallbacks) {
     toRemove->markedForRemoval = true;
-    debugPrint("%p marked FD %d for removal later.", PLUGIN_NAME, fileDescriptor);
+    debugPrint("%s marked FD %d for removal later.", PLUGIN_NAME, fileDescriptor);
     return true;
   }
 
@@ -245,7 +245,7 @@ sl_status_t sl_zigbee_af_file_descriptor_dispatch_wait_for_events(uint32_t timeo
   static bool firstRun = true;
   if (firstRun) {
     firstRun = false;
-    debugPrint("%p first run, not waiting for data.", PLUGIN_NAME);
+    debugPrint("%s first run, not waiting for data.", PLUGIN_NAME);
     return SL_STATUS_OK;
   }
 
@@ -261,21 +261,21 @@ sl_status_t sl_zigbee_af_file_descriptor_dispatch_wait_for_events(uint32_t timeo
 
   while (iterator != NULL && iterator->badFd == false) {
     if (iterator->dispatchStruct.operation == SL_ZIGBEE_AF_FILE_DESCRIPTOR_OPERATION_READ) {
-      debugPrint("%p added read FD %d",
+      debugPrint("%s added read FD %d",
                  PLUGIN_NAME,
                  iterator->dispatchStruct.fileDescriptor);
       FD_SET(iterator->dispatchStruct.fileDescriptor,
              &readSet);
     }
     if (iterator->dispatchStruct.operation == SL_ZIGBEE_AF_FILE_DESCRIPTOR_OPERATION_WRITE) {
-      debugPrint("%p added write FD %d",
+      debugPrint("%s added write FD %d",
                  PLUGIN_NAME,
                  iterator->dispatchStruct.fileDescriptor);
       FD_SET(iterator->dispatchStruct.fileDescriptor,
              &writeSet);
     }
     if (iterator->dispatchStruct.operation == SL_ZIGBEE_AF_FILE_DESCRIPTOR_OPERATION_EXCEPT) {
-      debugPrint("%p added except FD %d",
+      debugPrint("%s added except FD %d",
                  PLUGIN_NAME,
                  iterator->dispatchStruct.fileDescriptor);
       FD_SET(iterator->dispatchStruct.fileDescriptor,
@@ -301,7 +301,7 @@ sl_status_t sl_zigbee_af_file_descriptor_dispatch_wait_for_events(uint32_t timeo
     (timeoutMs % 1000) * 1000,  // micro seconds
   };
 
-  debugPrint("%p select() called, highestFd %d, timeout %d ms", PLUGIN_NAME, highestFd, timeoutMs);
+  debugPrint("%s select() called, highestFd %d, timeout %d ms", PLUGIN_NAME, highestFd, timeoutMs);
 
   int status = 0;
   int cliReadFd = sli_cli_get_pipe_read_fd();
@@ -326,7 +326,7 @@ sl_status_t sl_zigbee_af_file_descriptor_dispatch_wait_for_events(uint32_t timeo
     }
   }
   if (status < 0 && errno != EINTR) {
-    sl_zigbee_af_core_println("%p select() failed: %p", PLUGIN_NAME, strerror(errno));
+    sl_zigbee_af_core_println("%s select() failed: %s", PLUGIN_NAME, strerror(errno));
 
     // EMZIGBEE-2126 Try to isolate the bad file descriptor,
     if (errno == EBADF) {
@@ -348,7 +348,7 @@ sl_status_t sl_zigbee_af_file_descriptor_dispatch_wait_for_events(uint32_t timeo
     return SL_STATUS_OK;
   }
 
-  debugPrint("%p select() returned %d", PLUGIN_NAME, status);
+  debugPrint("%s select() returned %d", PLUGIN_NAME, status);
 
   if (status == 0) {
     // timeout, no FDs set.
@@ -423,7 +423,7 @@ static void scanForBadFds(void)
 
     if (status < 0) {
       if (errno == EBADF) {
-        sl_zigbee_af_core_println("%p bad file descriptor: %d", PLUGIN_NAME,
+        sl_zigbee_af_core_println("%s bad file descriptor: %d", PLUGIN_NAME,
                                   iterator->dispatchStruct.fileDescriptor);
         sl_zigbee_af_file_descriptor_dispatch_bad_file_descriptor_cb(iterator->dispatchStruct.fileDescriptor);
         iterator->badFd = true;

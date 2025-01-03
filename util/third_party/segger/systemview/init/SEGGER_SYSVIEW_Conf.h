@@ -69,8 +69,6 @@ Revision: $Rev: 17066 $
 #include "sli_uart_recorder.h"
 #endif
 
-#include "em_core.h"
-
 /*********************************************************************
 *
 *       Defines, fixed

@@ -23,6 +23,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "cc_multilevel_sensor_support_config.h"
+#include "ZAF_types.h"
 
 /**
  * @addtogroup CC
@@ -104,10 +105,18 @@ typedef struct _sensor_read_result {
  * Structure that holds a read result from the read interface.
  */
 typedef struct _sensor_interface {
-  const sensor_type_t* sensor_type;                  ///< Reference of a sensor type structure
-  uint8_t supported_scale;                        ///< Each bit represents a supported scale
+  RECEIVE_OPTIONS_TYPE_EX rxOpt;            ///< Contains information required for Supervision and
+                                            ///< True Status. Must be the first element in this
+                                            ///< struct because TSE assumes this location.
+  uint8_t endpoint;                         ///< The sensor must be tied to an endpoint. Must be set
+                                            ///< to 0 if no endpoints. The endpoint value MUST be
+                                            ///< located as the second element in this struct as ZAF
+                                            ///< depends on that for generation of the Node
+                                            ///< Information Frame.
+  const sensor_type_t* sensor_type;         ///< Reference of a sensor type structure
+  uint8_t supported_scale;                  ///< Each bit represents a supported scale
   bool (*init)(void);                           ///< Function pointer to initialize a sensor
-  bool (*deinit)(void);                           ///< Function pointer to deinitialize a sensor
+  bool (*deinit)(void);                         ///< Function pointer to deinitialize a sensor
   bool (*read_value)(sensor_read_result_t* o_result, uint8_t i_scale); ///< Function pointer to read a sensor value
 }sensor_interface_t, sensor_interface_iterator_t;
 

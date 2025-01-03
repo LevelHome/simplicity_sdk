@@ -2,7 +2,7 @@
  * @brief RAIL Configuration
  * @details
  *   WARNING: Auto-Generated Radio Config  -  DO NOT EDIT
- *   Radio Configurator Version: 2402.3.1
+ *   Radio Configurator Version: 2404.4.4
  *   RAIL Adapter Version: 2.4.33
  *   RAIL Compatibility: 2.x
  *******************************************************************************
@@ -43,27 +43,27 @@ static const uint8_t irCalConfig_1[] = {
 };
 
 static const int32_t timingConfig_0[] = {
-  50000, 11250, 750
+  50000, 11250, 750, 750
 };
 
 static const int32_t timingConfig_1[] = {
-  50000, 5750, 375
+  50000, 5750, 375, 375
 };
 
 static const int32_t timingConfig_2[] = {
-  187125, 8100, 400
+  187125, 8100, 400, 400
 };
 
 static const int32_t timingConfig_3[] = {
-  49125, 9000, 875
+  49125, 9000, 875, 875
 };
 
 static const int32_t timingConfig_4[] = {
-  20222, 4222, 4000
+  24000, 8000, 0, 0
 };
 
 static const int32_t timingConfig_5[] = {
-  50000, 11750, 2000
+  50000, 11750, 2000, 2000
 };
 
 static const uint8_t hfxoRetimingConfigEntries[] = {
@@ -71,7 +71,14 @@ static const uint8_t hfxoRetimingConfigEntries[] = {
 };
 
 #ifdef RADIO_CONFIG_ENABLE_STACK_INFO
-static const uint8_t stackInfo_0[2] = { 0x03, 0x00 };
+static const uint8_t stackInfo_0[2] = { 0x03, 0x05 };
+static const uint8_t stackInfo_1[2] = { 0x03, 0x02 };
+static const uint8_t stackInfo_2[2] = { 0x03, 0x06 };
+static const uint8_t stackInfo_3[2] = { 0x03, 0x04 };
+static const uint8_t stackInfo_4[2] = { 0x03, 0x03 };
+static const uint8_t stackInfo_5[2] = { 0x03, 0x08 };
+static const uint8_t stackInfo_6[2] = { 0x03, 0x09 };
+static const uint8_t stackInfo_7[2] = { 0x03, 0x07 };
 #endif // RADIO_CONFIG_ENABLE_STACK_INFO
 
 static RAIL_ChannelConfigEntryAttr_t channelConfigEntryAttr_0 = {
@@ -113,7 +120,7 @@ static RAIL_ChannelConfigEntryAttr_t channelConfigEntryAttr_1 = {
 };
 
 static const uint32_t phyInfo_0[] = {
-  16UL,
+  18UL,
   0x00924924UL, // 146.28571428571428
   (uint32_t) NULL,
   (uint32_t) irCalConfig_0,
@@ -136,7 +143,7 @@ static const uint32_t phyInfo_0[] = {
 };
 
 static const uint32_t phyInfo_1[] = {
-  16UL,
+  18UL,
   0x00666666UL, // 102.39999999999999
   (uint32_t) NULL,
   (uint32_t) irCalConfig_0,
@@ -152,14 +159,14 @@ static const uint32_t phyInfo_1[] = {
   (uint32_t) NULL,
   0UL,
   0UL,
-  1999995UL,
+  1999996UL,
   (uint32_t) NULL,
   (uint32_t) NULL,
   (uint32_t) NULL,
 };
 
 static const uint32_t phyInfo_2[] = {
-  16UL,
+  18UL,
   0x0071C71CUL, // 113.77777777777776
   (uint32_t) NULL,
   (uint32_t) irCalConfig_1,
@@ -182,7 +189,7 @@ static const uint32_t phyInfo_2[] = {
 };
 
 static const uint32_t phyInfo_3[] = {
-  16UL,
+  18UL,
   0x0071C71CUL, // 113.77777777777776
   (uint32_t) NULL,
   (uint32_t) irCalConfig_1,
@@ -205,7 +212,7 @@ static const uint32_t phyInfo_3[] = {
 };
 
 static const uint32_t phyInfo_4[] = {
-  16UL,
+  18UL,
   0x00333333UL, // 51.199999999999996
   (uint32_t) NULL,
   (uint32_t) irCalConfig_0,
@@ -228,7 +235,7 @@ static const uint32_t phyInfo_4[] = {
 };
 
 static const uint32_t phyInfo_5[] = {
-  16UL,
+  18UL,
   0x00555555UL, // 85.33333333333333
   (uint32_t) NULL,
   (uint32_t) irCalConfig_0,
@@ -251,7 +258,7 @@ static const uint32_t phyInfo_5[] = {
 };
 
 static const uint32_t phyInfo_6[] = {
-  16UL,
+  18UL,
   0x0071C71CUL, // 113.77777777777776
   (uint32_t) NULL,
   (uint32_t) irCalConfig_1,
@@ -405,6 +412,8 @@ const uint32_t sl_rail_ble_phy_1Mbps_viterbi_40MHz_modemConfigBase[] = {
 };
 
 const uint32_t sl_rail_ble_phy_1Mbps_viterbi_cs_40MHz_modemConfigBase[] = {
+  0x0002400CUL, 0x00000000UL,
+  /*    4010 */ 0x00004000UL,
   0x00024020UL, 0x00000000UL,
   /*    4024 */ 0x00000000UL,
   0x00074030UL, 0x00000000UL,
@@ -422,7 +431,7 @@ const uint32_t sl_rail_ble_phy_1Mbps_viterbi_cs_40MHz_modemConfigBase[] = {
   /*    40C0 */ 0x00000000UL,
   /*    40C4 */ 0x00000000UL,
   /*    40C8 */ 0x00000000UL,
-  0x00044108UL, 0x000040FFUL,
+  0x00044108UL, 0x00004000UL,
   /*    410C */ 0x000040FFUL,
   /*    4110 */ 0x000041FFUL,
   /*    4114 */ 0x00000000UL,
@@ -558,7 +567,7 @@ const uint32_t sl_rail_ble_phy_1Mbps_viterbi_cs_40MHz_modemConfigBase[] = {
   0x0201009CUL, 0x04000C00UL,
   0x020300D8UL, 0xFF4FC579UL,
   /*    00DC */ 0x00003988UL,
-  /*    00E0 */ 0x000008A0UL,
+  /*    00E0 */ 0x00000CB0UL,
   0x120100ECUL, 0x00000FE0UL,
   0x320100ECUL, 0x1151200DUL,
   0x020100F0UL, 0x0000012BUL,
@@ -1148,8 +1157,6 @@ const uint32_t sl_rail_ble_phy_simulscan_40MHz_0_37_modemConfig[] = {
 
 const uint32_t sl_rail_ble_phy_1Mbps_viterbi_cs_0_78_40MHz_modemConfig[] = {
   0x03014FFCUL, (uint32_t) &phyInfo_4,
-  0x0002400CUL, 0x00000000UL,
-  /*    4010 */ 0x00004000UL,
   0x1001C020UL, 0x0007F800UL,
   0x3001C020UL, 0x012802FEUL,
   0x0004C060UL, 0x0E0D0B08UL,
@@ -1202,8 +1209,6 @@ const uint32_t sl_rail_ble_phy_1Mbps_viterbi_cs_0_78_40MHz_modemConfig[] = {
 
 const uint32_t sl_rail_ble_phy_2Mbps_viterbi_cs_0_78_40MHz_modemConfig[] = {
   0x03014FFCUL, (uint32_t) &phyInfo_5,
-  0x0002400CUL, 0x00000000UL,
-  /*    4010 */ 0x00004101UL,
   0x1001C020UL, 0x0007F800UL,
   0x3001C020UL, 0x012802F5UL,
   0x0004C060UL, 0x07060504UL,
@@ -1322,7 +1327,7 @@ const RAIL_ChannelConfigEntry_t sl_rail_ble_phy_2Mbps_viterbi_40MHz_channels[] =
     .entryType = 0,
 #endif
 #ifdef RADIO_CONFIG_ENABLE_STACK_INFO
-    .stackInfo = stackInfo_0,
+    .stackInfo = stackInfo_1,
 #endif
     .alternatePhy = NULL,
   },
@@ -1339,7 +1344,7 @@ const RAIL_ChannelConfigEntry_t sl_rail_ble_phy_2Mbps_viterbi_40MHz_channels[] =
     .entryType = 0,
 #endif
 #ifdef RADIO_CONFIG_ENABLE_STACK_INFO
-    .stackInfo = stackInfo_0,
+    .stackInfo = stackInfo_1,
 #endif
     .alternatePhy = NULL,
   },
@@ -1356,7 +1361,7 @@ const RAIL_ChannelConfigEntry_t sl_rail_ble_phy_2Mbps_viterbi_40MHz_channels[] =
     .entryType = 0,
 #endif
 #ifdef RADIO_CONFIG_ENABLE_STACK_INFO
-    .stackInfo = stackInfo_0,
+    .stackInfo = stackInfo_1,
 #endif
     .alternatePhy = NULL,
   },
@@ -1376,7 +1381,7 @@ const RAIL_ChannelConfigEntry_t sl_rail_ble_phy_2Mbps_aox_40MHz_channels[] = {
     .entryType = 0,
 #endif
 #ifdef RADIO_CONFIG_ENABLE_STACK_INFO
-    .stackInfo = stackInfo_0,
+    .stackInfo = stackInfo_2,
 #endif
     .alternatePhy = NULL,
   },
@@ -1393,7 +1398,7 @@ const RAIL_ChannelConfigEntry_t sl_rail_ble_phy_2Mbps_aox_40MHz_channels[] = {
     .entryType = 0,
 #endif
 #ifdef RADIO_CONFIG_ENABLE_STACK_INFO
-    .stackInfo = stackInfo_0,
+    .stackInfo = stackInfo_2,
 #endif
     .alternatePhy = NULL,
   },
@@ -1410,7 +1415,7 @@ const RAIL_ChannelConfigEntry_t sl_rail_ble_phy_2Mbps_aox_40MHz_channels[] = {
     .entryType = 0,
 #endif
 #ifdef RADIO_CONFIG_ENABLE_STACK_INFO
-    .stackInfo = stackInfo_0,
+    .stackInfo = stackInfo_2,
 #endif
     .alternatePhy = NULL,
   },
@@ -1427,7 +1432,7 @@ const RAIL_ChannelConfigEntry_t sl_rail_ble_phy_2Mbps_aox_40MHz_channels[] = {
     .entryType = 0,
 #endif
 #ifdef RADIO_CONFIG_ENABLE_STACK_INFO
-    .stackInfo = stackInfo_0,
+    .stackInfo = stackInfo_2,
 #endif
     .alternatePhy = NULL,
   },
@@ -1444,7 +1449,7 @@ const RAIL_ChannelConfigEntry_t sl_rail_ble_phy_2Mbps_aox_40MHz_channels[] = {
     .entryType = 0,
 #endif
 #ifdef RADIO_CONFIG_ENABLE_STACK_INFO
-    .stackInfo = stackInfo_0,
+    .stackInfo = stackInfo_2,
 #endif
     .alternatePhy = NULL,
   },
@@ -1461,7 +1466,7 @@ const RAIL_ChannelConfigEntry_t sl_rail_ble_phy_2Mbps_aox_40MHz_channels[] = {
     .entryType = 0,
 #endif
 #ifdef RADIO_CONFIG_ENABLE_STACK_INFO
-    .stackInfo = stackInfo_0,
+    .stackInfo = stackInfo_2,
 #endif
     .alternatePhy = NULL,
   },
@@ -1481,7 +1486,7 @@ const RAIL_ChannelConfigEntry_t sl_rail_ble_phy_125kbps_40MHz_channels[] = {
     .entryType = 0,
 #endif
 #ifdef RADIO_CONFIG_ENABLE_STACK_INFO
-    .stackInfo = stackInfo_0,
+    .stackInfo = stackInfo_3,
 #endif
     .alternatePhy = NULL,
   },
@@ -1498,7 +1503,7 @@ const RAIL_ChannelConfigEntry_t sl_rail_ble_phy_125kbps_40MHz_channels[] = {
     .entryType = 0,
 #endif
 #ifdef RADIO_CONFIG_ENABLE_STACK_INFO
-    .stackInfo = stackInfo_0,
+    .stackInfo = stackInfo_3,
 #endif
     .alternatePhy = NULL,
   },
@@ -1515,7 +1520,7 @@ const RAIL_ChannelConfigEntry_t sl_rail_ble_phy_125kbps_40MHz_channels[] = {
     .entryType = 0,
 #endif
 #ifdef RADIO_CONFIG_ENABLE_STACK_INFO
-    .stackInfo = stackInfo_0,
+    .stackInfo = stackInfo_3,
 #endif
     .alternatePhy = NULL,
   },
@@ -1535,7 +1540,7 @@ const RAIL_ChannelConfigEntry_t sl_rail_ble_phy_500kbps_40MHz_channels[] = {
     .entryType = 0,
 #endif
 #ifdef RADIO_CONFIG_ENABLE_STACK_INFO
-    .stackInfo = stackInfo_0,
+    .stackInfo = stackInfo_4,
 #endif
     .alternatePhy = NULL,
   },
@@ -1552,7 +1557,7 @@ const RAIL_ChannelConfigEntry_t sl_rail_ble_phy_500kbps_40MHz_channels[] = {
     .entryType = 0,
 #endif
 #ifdef RADIO_CONFIG_ENABLE_STACK_INFO
-    .stackInfo = stackInfo_0,
+    .stackInfo = stackInfo_4,
 #endif
     .alternatePhy = NULL,
   },
@@ -1569,7 +1574,7 @@ const RAIL_ChannelConfigEntry_t sl_rail_ble_phy_500kbps_40MHz_channels[] = {
     .entryType = 0,
 #endif
 #ifdef RADIO_CONFIG_ENABLE_STACK_INFO
-    .stackInfo = stackInfo_0,
+    .stackInfo = stackInfo_4,
 #endif
     .alternatePhy = NULL,
   },
@@ -1589,7 +1594,7 @@ const RAIL_ChannelConfigEntry_t sl_rail_ble_phy_1Mbps_viterbi_cs_40MHz_channels[
     .entryType = 0,
 #endif
 #ifdef RADIO_CONFIG_ENABLE_STACK_INFO
-    .stackInfo = stackInfo_0,
+    .stackInfo = stackInfo_5,
 #endif
     .alternatePhy = NULL,
   },
@@ -1609,7 +1614,7 @@ const RAIL_ChannelConfigEntry_t sl_rail_ble_phy_2Mbps_viterbi_cs_40MHz_channels[
     .entryType = 0,
 #endif
 #ifdef RADIO_CONFIG_ENABLE_STACK_INFO
-    .stackInfo = stackInfo_0,
+    .stackInfo = stackInfo_6,
 #endif
     .alternatePhy = NULL,
   },
@@ -1629,7 +1634,7 @@ const RAIL_ChannelConfigEntry_t sl_rail_ble_phy_simulscan_40MHz_channels[] = {
     .entryType = 0,
 #endif
 #ifdef RADIO_CONFIG_ENABLE_STACK_INFO
-    .stackInfo = stackInfo_0,
+    .stackInfo = stackInfo_7,
 #endif
     .alternatePhy = NULL,
   },
@@ -1646,7 +1651,7 @@ const RAIL_ChannelConfigEntry_t sl_rail_ble_phy_simulscan_40MHz_channels[] = {
     .entryType = 0,
 #endif
 #ifdef RADIO_CONFIG_ENABLE_STACK_INFO
-    .stackInfo = stackInfo_0,
+    .stackInfo = stackInfo_7,
 #endif
     .alternatePhy = NULL,
   },
@@ -1663,7 +1668,7 @@ const RAIL_ChannelConfigEntry_t sl_rail_ble_phy_simulscan_40MHz_channels[] = {
     .entryType = 0,
 #endif
 #ifdef RADIO_CONFIG_ENABLE_STACK_INFO
-    .stackInfo = stackInfo_0,
+    .stackInfo = stackInfo_7,
 #endif
     .alternatePhy = NULL,
   },

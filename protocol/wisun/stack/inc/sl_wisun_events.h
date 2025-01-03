@@ -80,6 +80,14 @@ typedef enum {
   SL_WISUN_MSG_LFN_MULTICAST_REG_IND_ID           = 0x91,
   /// This event is sent when DHCPv6 vendor-specific information is received.
   SL_WISUN_MSG_DHCP_VENDOR_DATA_IND_ID            = 0x92,
+  /// This event is sent to state a PAN defect state change (true for defective PAN, false for a recovery).
+  SL_WISUN_MSG_PAN_DEFECT_IND_ID                  = 0x93,
+  /// This event is sent when a Direct Connect Link is available.
+  SL_WISUN_MSG_DIRECT_CONNECT_LINK_AVAILABLE_IND_ID = 0x94,
+  /// This event is sent when the status of a Direct Connect Link changes.
+  SL_WISUN_MSG_DIRECT_CONNECT_LINK_STATUS_IND_ID  = 0x95,
+  /// This event is sent when a BR stop request has been completed.
+  SL_WISUN_BR_MSG_STOPPED_IND_ID                  = 0x96,
 } sl_wisun_msg_ind_id_t;
 
 /**************************************************************************//**
@@ -106,6 +114,33 @@ typedef struct {
 SL_PACK_END()
 
 /** @} (end SL_WISUN_MSG_CONNECTED_IND) */
+
+/**************************************************************************//**
+ * @defgroup SL_WISUN_MSG_PAN_DEFECT_IND sl_wisun_msg_pan_defect_ind
+ * @{
+ ******************************************************************************/
+
+/// Indication message body
+SL_PACK_START(1)
+typedef struct {
+  /// State of the PAN defect
+  uint32_t state;
+  ///PAN ID
+  uint32_t pan_id;
+} SL_ATTRIBUTE_PACKED sl_wisun_msg_pan_defect_ind_body_t;
+SL_PACK_END()
+
+/// Indication message
+SL_PACK_START(1)
+typedef struct {
+  /// Common message header
+  sl_wisun_msg_header_t header;
+  /// Indication message body
+  sl_wisun_msg_pan_defect_ind_body_t body;
+} SL_ATTRIBUTE_PACKED sl_wisun_msg_pan_defect_ind_t;
+SL_PACK_END()
+
+/** @} (end SL_WISUN_MSG_PAN_DEFECT_IND) */
 
 /**************************************************************************//**
  * @defgroup SL_WISUN_MSG_NETWORK_UPDATE_IND sl_wisun_msg_network_update_ind
@@ -589,6 +624,83 @@ SL_PACK_END()
 
 /** @} (end SL_WISUN_MSG_DHCP_VENDOR_DATA_IND) */
 
+/**************************************************************************//**
+ * @defgroup SL_WISUN_MSG_DIRECT_CONNECT_LINK_AVAILABLE_IND sl_wisun_msg_direct_connect_link_available_ind
+ * @{
+ ******************************************************************************/
+
+/// Indication message body
+SL_PACK_START(1)
+typedef struct {
+  /// LinkLocal IPv6 address of the client
+  in6_addr_t link_local_ipv6;
+} SL_ATTRIBUTE_PACKED sl_wisun_msg_direct_connect_link_available_ind_body_t;
+SL_PACK_END()
+
+/// Indication message
+SL_PACK_START(1)
+typedef struct {
+  /// Common message header
+  sl_wisun_msg_header_t header;
+  /// Indication message body
+  sl_wisun_msg_direct_connect_link_available_ind_body_t body;
+} SL_ATTRIBUTE_PACKED sl_wisun_msg_direct_connect_link_available_ind_t;
+SL_PACK_END()
+
+/** @} (end SL_WISUN_MSG_DIRECT_CONNECT_LINK_AVAILABLE_IND) */
+
+/**************************************************************************//**
+ * @defgroup SL_WISUN_MSG_DIRECT_CONNECT_LINK_STATUS_IND sl_wisun_msg_direct_connect_link_status_ind
+ * @{
+ ******************************************************************************/
+
+/// Indication message body
+SL_PACK_START(1)
+typedef struct {
+  /// LinkLocal IPv6 address of the client
+  in6_addr_t link_local_ipv6;
+  /// Link status
+  uint32_t   link_status;
+} SL_ATTRIBUTE_PACKED sl_wisun_msg_direct_connect_link_status_ind_body_t;
+SL_PACK_END()
+
+/// Indication message
+SL_PACK_START(1)
+typedef struct {
+  /// Common message header
+  sl_wisun_msg_header_t header;
+  /// Indication message body
+  sl_wisun_msg_direct_connect_link_status_ind_body_t body;
+} SL_ATTRIBUTE_PACKED sl_wisun_msg_direct_connect_link_status_ind_t;
+SL_PACK_END()
+
+/** @} (end SL_WISUN_MSG_DIRECT_CONNECT_LINK_STATUS_IND) */
+
+/**************************************************************************//**
+ * @defgroup SL_WISUN_BR_MSG_STOPPED_IND sl_wisun_br_msg_stopped_ind
+ * @{
+ ******************************************************************************/
+
+/// Indication message body
+SL_PACK_START(1)
+typedef struct {
+  /// Status of the indication
+  uint32_t status;
+} SL_ATTRIBUTE_PACKED sl_wisun_br_msg_stopped_ind_body_t;
+SL_PACK_END()
+
+/// Indication message
+SL_PACK_START(1)
+typedef struct {
+  /// Common message header
+  sl_wisun_msg_header_t header;
+  /// Indication message body
+  sl_wisun_br_msg_stopped_ind_body_t body;
+} SL_ATTRIBUTE_PACKED sl_wisun_br_msg_stopped_ind_t;
+SL_PACK_END()
+
+/** @} (end SL_WISUN_BR_MSG_STOPPED_IND) */
+
 /// @brief Wi-SUN event definitions
 /// @details This structure contains a Wi-SUN API event and its associated data.
 SL_PACK_START(1)
@@ -638,6 +750,14 @@ typedef struct {
     sl_wisun_msg_lfn_multicast_reg_ind_body_t lfn_multicast_reg;
     /// #SL_WISUN_MSG_DHCP_VENDOR_DATA_IND_ID event data
     sl_wisun_msg_dhcp_vendor_data_ind_body_t dhcp_vendor_data;
+    /// #SL_WISUN_MSG_PAN_DEFECT_IND_ID event data
+    sl_wisun_msg_pan_defect_ind_body_t pan_defect;
+    /// #SL_WISUN_MSG_DIRECT_CONNECT_LINK_AVAILABLE_IND_ID event data
+    sl_wisun_msg_direct_connect_link_available_ind_body_t direct_connect_link_available;
+    /// #SL_WISUN_MSG_DIRECT_CONNECT_LINK_STATUS_IND_ID event data
+    sl_wisun_msg_direct_connect_link_status_ind_body_t direct_connect_link_status;
+    /// #SL_WISUN_BR_MSG_STOPPED_IND_ID event data
+    sl_wisun_br_msg_stopped_ind_body_t br_stopped;
   } evt;
 } SL_ATTRIBUTE_PACKED sl_wisun_evt_t;
 SL_PACK_END()

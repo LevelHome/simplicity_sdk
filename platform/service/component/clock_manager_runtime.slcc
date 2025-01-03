@@ -19,6 +19,7 @@ requires:
   - name: status
   - name: enum
   - name: device_clock
+  - name: code_classification
 root_path: platform/service/clock_manager
 source:
   - path: src/sl_clock_manager.c
@@ -30,6 +31,9 @@ include:
   - path: src
     file_list:
       - path: sli_clock_manager_hal.h
+define:
+  - name: SL_CODE_COMPONENT_CLOCK_MANAGER
+    value: clock_manager
 template_contribution:
   - name: event_handler
     value:
@@ -38,6 +42,8 @@ template_contribution:
       handler: sl_clock_manager_runtime_init
     priority: -9750
     condition: [sl_system]
+  - name: code_classification_components
+    value: clock_manager
 documentation:
   docset: gecko-platform
   document: platform-service/device-init-clocks

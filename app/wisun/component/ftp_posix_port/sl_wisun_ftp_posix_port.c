@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief Wi-SUN POSIX File Transfer Portocol portable implementation
+ * @file sl_wisun_ftp_posix_port.c
+ * @brief Wi-SUN POSIX File Transfer Protocol portable implementation
  *******************************************************************************
  * # License
  * <b>Copyright 2023 Silicon Laboratories Inc. www.silabs.com</b>
@@ -33,6 +33,7 @@
 // -----------------------------------------------------------------------------
 #include <string.h>
 #include <assert.h>
+
 #include "sl_ftp.h"
 #include "socket/socket.h"
 #include "cmsis_os2.h"
@@ -44,13 +45,10 @@
 #if SL_FTP_ENABLE_TFTP_PROTOCOL
 #include "sl_tftp_clnt.h"
 #endif
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
-
-#define IPV6_STR_BUF_SIZE    40U
-
+#define IPV6_STR_BUF_SIZE     (40U)
 // -----------------------------------------------------------------------------
 //                          Static Function Declarations
 // -----------------------------------------------------------------------------
@@ -183,7 +181,7 @@ int32_t sl_ftp_tcp_socket_recv(int32_t sockid, void *buff, uint32_t len)
 {
   return recv(sockid, buff, len, 0L);
 }
-#endif
+#endif // SL_FTP_ENABLE_FTP_PROTOCOL
 
 #if SL_FTP_ENABLE_TFTP_PROTOCOL
 
@@ -194,7 +192,7 @@ int32_t sl_ftp_tcp_socket_recv(int32_t sockid, void *buff, uint32_t len)
  ******************************************************************************/
 int32_t sl_tftp_udp_socket_create(void)
 {
-  return socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
+  return socket(AF_INET6, SOCK_DGRAM | SOCK_NONBLOCK, IPPROTO_UDP);
 }
 
 /**************************************************************************//**
@@ -252,4 +250,4 @@ void sl_tftp_udp_free_addr(void *addr)
   app_wisun_free(addr);
 }
 
-#endif
+#endif // SL_FTP_ENABLE_TFTP_PROTOCOL

@@ -91,7 +91,7 @@ void sl_zigbee_af_button_joining_button0_event_handler(sl_zigbee_af_event_t * ev
 #endif // SL_CATALOG_ZIGBEE_NETWORK_CREATOR_SECURITY_PRESENT
   } else if (sl_zigbee_af_network_state() == SL_ZIGBEE_NO_NETWORK) {
 #ifdef SL_ZIGBEE_AF_HAS_COORDINATOR_NETWORK
-    sl_zigbee_af_core_println("%p: nwk down: do form", "button0");
+    sl_zigbee_af_core_println("%s: nwk down: do form", "button0");
     // Use Z3.0 network formation if we have the plugin for it; else, fall back
     // to legacy / custom formation methods
 #ifdef SL_CATALOG_ZIGBEE_NETWORK_CREATOR_PRESENT
@@ -102,7 +102,7 @@ void sl_zigbee_af_button_joining_button0_event_handler(sl_zigbee_af_event_t * ev
 #else // !SL_ZIGBEE_AF_HAS_COORDINATOR_NETWORK
     // Use Z3.0 network steering if we have the plugin for it; else, fall back
     // to legacy / custom joining method
-    sl_zigbee_af_core_println("%p: nwk down: do join", "button0");
+    sl_zigbee_af_core_println("%s: nwk down: do join", "button0");
 #ifdef SL_CATALOG_ZIGBEE_NETWORK_STEERING_PRESENT
     sl_zigbee_af_network_steering_start();
 #else // !SL_CATALOG_ZIGBEE_NETWORK_STEERING_PRESENT

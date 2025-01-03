@@ -34,9 +34,11 @@
 
 /* Simplicity SDK emlib includes */
 #include "em_device.h"
-#include "em_gpio.h"
 #include "em_timer.h"
 #include "em_cmu.h"
+
+/* SDK driver layer */
+#include "sl_gpio.h"
 
 /* Simplicity SDK service layer */
 #include "sl_power_manager.h"
@@ -55,10 +57,9 @@
 /*******************************************************************************
  *                            get_timer_clock()
  ******************************************************************************/
-
 static CMU_Clock_TypeDef get_timer_clock(TIMER_TypeDef * timer)
 {
-  CMU_Clock_TypeDef timer_clock = (CMU_Clock_TypeDef) -1;
+  CMU_Clock_TypeDef timer_clock = (CMU_Clock_TypeDef) - 1;
 
   switch ((uint32_t) timer) {
 #if defined(TIMER0_BASE)
@@ -126,7 +127,6 @@ static CMU_Clock_TypeDef get_timer_clock(TIMER_TypeDef * timer)
 /*******************************************************************************
  *                            initialize_pwm_hw()
  ******************************************************************************/
-
 static void initialize_pwm_hw(IotPwmHandle_t pxPwmHandle)
 {
   TIMER_Init_TypeDef timer_init  = TIMER_INIT_DEFAULT;
@@ -147,7 +147,6 @@ static void initialize_pwm_hw(IotPwmHandle_t pxPwmHandle)
 /*******************************************************************************
  *                            deinitialize_pwm_hw()
  ******************************************************************************/
-
 static void deinitialize_pwm_hw(IotPwmHandle_t pxPwmHandle)
 {
   CMU_Clock_TypeDef  timer_clock = (CMU_Clock_TypeDef) 0;
@@ -162,7 +161,6 @@ static void deinitialize_pwm_hw(IotPwmHandle_t pxPwmHandle)
 /*******************************************************************************
  *                            start_pwm_hw()
  ******************************************************************************/
-
 static void start_pwm_hw(IotPwmHandle_t pxPwmHandle)
 {
   TIMER_InitCC_TypeDef channel_init = TIMER_INITCC_DEFAULT;
@@ -170,8 +168,7 @@ static void start_pwm_hw(IotPwmHandle_t pxPwmHandle)
   uint32_t             timer_freq   = 0;
   uint32_t             top_value    = 0;
   uint32_t             cmp_value    = 0;
-  GPIO_Port_TypeDef    gpio_port    = (GPIO_Port_TypeDef) 0;
-  uint32_t             gpio_pin     = 0;
+  sl_gpio_t            *gpio        = NULL;
   uint32_t             gpio_loc     = 0;
 
   /* Retrieve timer clock */
@@ -204,18 +201,15 @@ static void start_pwm_hw(IotPwmHandle_t pxPwmHandle)
   /* Get GPIO port, pin, and loc */
   switch (pxPwmHandle->channel) {
     case 0:
-      gpio_port = pxPwmHandle->xCC0Port;
-      gpio_pin  = pxPwmHandle->ucCC0Pin;
+      gpio      = &(pxPwmHandle->cc0Gpio);
       gpio_loc  = pxPwmHandle->ucCC0Loc;
       break;
     case 1:
-      gpio_port = pxPwmHandle->xCC1Port;
-      gpio_pin  = pxPwmHandle->ucCC1Pin;
+      gpio      = &(pxPwmHandle->cc1Gpio);
       gpio_loc  = pxPwmHandle->ucCC1Loc;
       break;
     case 2:
-      gpio_port = pxPwmHandle->xCC2Port;
-      gpio_pin  = pxPwmHandle->ucCC2Pin;
+      gpio      = &(pxPwmHandle->cc2Gpio);
       gpio_loc  = pxPwmHandle->ucCC2Loc;
       break;
     default:
@@ -223,7 +217,9 @@ static void start_pwm_hw(IotPwmHandle_t pxPwmHandle)
   }
 
   /* Configure GPIO for PWM output */
-  GPIO_PinModeSet(gpio_port, gpio_pin, gpioModePushPull, 0);
+  sl_gpio_set_pin_mode(gpio,
+                       SL_GPIO_MODE_PUSH_PULL,
+                       false);
 
   /* Configure CC channel pinout */
 #if (_SILICON_LABS_32B_SERIES == 0)
@@ -279,24 +275,24 @@ static void start_pwm_hw(IotPwmHandle_t pxPwmHandle)
     /* channel 0 */
     case 0:
       GPIO->TIMERROUTE[TIMER_NUM(pxPwmHandle->pxPeripheral)].CC0ROUTE =
-        (gpio_port << _GPIO_TIMER_CC0ROUTE_PORT_SHIFT) |
-        (gpio_pin  << _GPIO_TIMER_CC0ROUTE_PIN_SHIFT );
+        (gpio->port << _GPIO_TIMER_CC0ROUTE_PORT_SHIFT)
+        | (gpio->pin  << _GPIO_TIMER_CC0ROUTE_PIN_SHIFT);
       GPIO->TIMERROUTE_SET[TIMER_NUM(pxPwmHandle->pxPeripheral)].ROUTEEN =
         1 << (_GPIO_TIMER_ROUTEEN_CC0PEN_SHIFT);
       break;
     /* channel 1 */
     case 1:
       GPIO->TIMERROUTE[TIMER_NUM(pxPwmHandle->pxPeripheral)].CC1ROUTE =
-        (gpio_port << _GPIO_TIMER_CC1ROUTE_PORT_SHIFT) |
-        (gpio_pin  << _GPIO_TIMER_CC1ROUTE_PIN_SHIFT );
+        (gpio->port << _GPIO_TIMER_CC1ROUTE_PORT_SHIFT)
+        | (gpio->pin  << _GPIO_TIMER_CC1ROUTE_PIN_SHIFT);
       GPIO->TIMERROUTE_SET[TIMER_NUM(pxPwmHandle->pxPeripheral)].ROUTEEN =
         1 << (_GPIO_TIMER_ROUTEEN_CC1PEN_SHIFT);
       break;
     /* channel 2 */
     case 2:
       GPIO->TIMERROUTE[TIMER_NUM(pxPwmHandle->pxPeripheral)].CC2ROUTE =
-        (gpio_port << _GPIO_TIMER_CC2ROUTE_PORT_SHIFT) |
-        (gpio_pin  << _GPIO_TIMER_CC2ROUTE_PIN_SHIFT );
+        (gpio->port << _GPIO_TIMER_CC2ROUTE_PORT_SHIFT)
+        | (gpio->pin  << _GPIO_TIMER_CC2ROUTE_PIN_SHIFT);
       GPIO->TIMERROUTE_SET[TIMER_NUM(pxPwmHandle->pxPeripheral)].ROUTEEN =
         1 << (_GPIO_TIMER_ROUTEEN_CC2PEN_SHIFT);
       break;
@@ -321,12 +317,10 @@ static void start_pwm_hw(IotPwmHandle_t pxPwmHandle)
 /*******************************************************************************
  *                            stop_pwm_output()
  ******************************************************************************/
-
 static void stop_pwm_hw(IotPwmHandle_t pxPwmHandle)
 {
   TIMER_InitCC_TypeDef channel_init = TIMER_INITCC_DEFAULT;
-  GPIO_Port_TypeDef    gpio_port    = (GPIO_Port_TypeDef) 0;
-  uint32_t             gpio_pin     = 0;
+  sl_gpio_t            *gpio        = NULL;
   uint32_t             gpio_loc     = 0;
 
   /* Disable TIMER */
@@ -341,18 +335,15 @@ static void stop_pwm_hw(IotPwmHandle_t pxPwmHandle)
   /* Get GPIO port and pin */
   switch (pxPwmHandle->channel) {
     case 0:
-      gpio_port = pxPwmHandle->xCC0Port;
-      gpio_pin  = pxPwmHandle->ucCC0Pin;
+      gpio      = &(pxPwmHandle->cc0Gpio);
       gpio_loc  = pxPwmHandle->ucCC0Loc;
       break;
     case 1:
-      gpio_port = pxPwmHandle->xCC1Port;
-      gpio_pin  = pxPwmHandle->ucCC1Pin;
+      gpio      = &(pxPwmHandle->cc1Gpio);
       gpio_loc  = pxPwmHandle->ucCC1Loc;
       break;
     case 2:
-      gpio_port = pxPwmHandle->xCC2Port;
-      gpio_pin  = pxPwmHandle->ucCC2Pin;
+      gpio      = &(pxPwmHandle->cc2Gpio);
       gpio_loc  = pxPwmHandle->ucCC2Loc;
       break;
     default:
@@ -437,7 +428,9 @@ static void stop_pwm_hw(IotPwmHandle_t pxPwmHandle)
 #endif
 
   /* Reset GPIO */
-  GPIO_PinModeSet(gpio_port, gpio_pin, gpioModeDisabled, 0);
+  sl_gpio_set_pin_mode(gpio,
+                       SL_GPIO_MODE_DISABLED,
+                       false);
 
   /* remove  EM1 requirement */
   sl_power_manager_remove_em_requirement(SL_POWER_MANAGER_EM1);
@@ -523,9 +516,9 @@ int32_t iot_pwm_set_config(IotPwmHandle_t const pxPwmHandle,
 
   /* invalid configuration in xConfig */
   ulClkFreq = CMU_ClockFreqGet(get_timer_clock(pxPwmHandle->pxPeripheral));
-  if (( xConfig.ulPwmFrequency > ulClkFreq) ||
-      ( xConfig.ucPwmDutyCycle > 100) ||
-      ( xConfig.ucPwmChannel > 2)) {
+  if ((xConfig.ulPwmFrequency > ulClkFreq)
+      || (xConfig.ucPwmDutyCycle > 100)
+      || (xConfig.ucPwmChannel > 2)) {
     return IOT_PWM_INVALID_VALUE;
   }
 
@@ -579,9 +572,9 @@ IotPwmConfig_t * iot_pwm_get_config(IotPwmHandle_t const pxPwmHandle)
 
   portENTER_CRITICAL();
 
-  pxPwmHandle->pwm_config.ucPwmChannel   = pxPwmHandle -> channel;
-  pxPwmHandle->pwm_config.ucPwmDutyCycle = pxPwmHandle -> dutycycle;
-  pxPwmHandle->pwm_config.ulPwmFrequency = pxPwmHandle -> pwm_frequency;
+  pxPwmHandle->pwm_config.ucPwmChannel   = pxPwmHandle->channel;
+  pxPwmHandle->pwm_config.ucPwmDutyCycle = pxPwmHandle->dutycycle;
+  pxPwmHandle->pwm_config.ulPwmFrequency = pxPwmHandle->pwm_frequency;
 
   portEXIT_CRITICAL();
 
@@ -709,7 +702,7 @@ int32_t iot_pwm_close(IotPwmHandle_t  const pxPwmHandle)
 
   portENTER_CRITICAL();
 
-  if ((pxPwmHandle -> is_running)) {
+  if ((pxPwmHandle->is_running)) {
     stop_pwm_hw(pxPwmHandle);
   }
 

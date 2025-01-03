@@ -31,7 +31,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "em_usart.h"
-#include "em_gpio.h"
+#include "sl_gpio.h"
 #include "sl_clock_manager.h"
 #include "sl_sleeptimer.h"
 #include "sl_icm20648.h"
@@ -980,6 +980,22 @@ sl_status_t sl_icm20648_get_device_id(uint8_t *devID)
  ******************************************************************************/
 sl_status_t sl_icm20648_spi_init(void)
 {
+  sl_gpio_t spi_tx_gpio = {
+    .port = SL_ICM20648_SPI_TX_PORT,
+    .pin = SL_ICM20648_SPI_TX_PIN,
+  };
+  sl_gpio_t spi_rx_gpio = {
+    .port = SL_ICM20648_SPI_RX_PORT,
+    .pin = SL_ICM20648_SPI_RX_PIN,
+  };
+  sl_gpio_t spi_clk_gpio = {
+    .port = SL_ICM20648_SPI_CLK_PORT,
+    .pin = SL_ICM20648_SPI_CLK_PIN,
+  };
+  sl_gpio_t spi_cs_gpio = {
+    .port = SL_ICM20648_SPI_CS_PORT,
+    .pin = SL_ICM20648_SPI_CS_PIN,
+  };
   USART_TypeDef *usart = SL_ICM20648_SPI_PERIPHERAL;
 
   USART_InitSync_TypeDef init = USART_INITSYNC_DEFAULT;
@@ -991,10 +1007,10 @@ sl_status_t sl_icm20648_spi_init(void)
   sl_clock_manager_enable_bus_clock(SL_BUS_CLOCK_GPIO);
 
   /* IO configuration */
-  GPIO_PinModeSet(SL_ICM20648_SPI_TX_PORT, SL_ICM20648_SPI_TX_PIN, gpioModePushPull, 0);    /* TX - MOSI */
-  GPIO_PinModeSet(SL_ICM20648_SPI_RX_PORT, SL_ICM20648_SPI_RX_PIN, gpioModeInput, 0);    /* RX - MISO */
-  GPIO_PinModeSet(SL_ICM20648_SPI_CLK_PORT, SL_ICM20648_SPI_CLK_PIN, gpioModePushPull, 0);    /* Clock */
-  GPIO_PinModeSet(SL_ICM20648_SPI_CS_PORT, SL_ICM20648_SPI_CS_PIN, gpioModePushPull, 1);     /* CS */
+  sl_gpio_set_pin_mode(&spi_tx_gpio, SL_GPIO_MODE_PUSH_PULL, 0); /* TX - MOSI */
+  sl_gpio_set_pin_mode(&spi_rx_gpio, SL_GPIO_MODE_INPUT, 0); /* RX - MISO */
+  sl_gpio_set_pin_mode(&spi_clk_gpio, SL_GPIO_MODE_PUSH_PULL, 0);  /* Clock */
+  sl_gpio_set_pin_mode(&spi_cs_gpio, SL_GPIO_MODE_PUSH_PULL, 1); /* CS */
 
   USART_Reset(SL_ICM20648_SPI_PERIPHERAL);
 
@@ -1109,10 +1125,15 @@ void sl_icm20648_select_register_bank(uint8_t bank)
  ******************************************************************************/
 static void sl_icm20648_chip_select_set(bool select)
 {
-  if ( select ) {
-    GPIO_PinOutClear(SL_ICM20648_SPI_CS_PORT, SL_ICM20648_SPI_CS_PIN);
+  sl_gpio_t spi_cs_gpio = {
+    .port = SL_ICM20648_SPI_CS_PORT,
+    .pin = SL_ICM20648_SPI_CS_PIN,
+  };
+
+  if (select) {
+    sl_gpio_clear_pin(&spi_cs_gpio);
   } else {
-    GPIO_PinOutSet(SL_ICM20648_SPI_CS_PORT, SL_ICM20648_SPI_CS_PIN);
+    sl_gpio_set_pin(&spi_cs_gpio);
   }
 }
 

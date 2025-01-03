@@ -27,7 +27,7 @@
  * 3. This notice may not be removed or altered from any source distribution.
  *
  ******************************************************************************/
-#include "em_common.h"
+#include "sl_common.h"
 #include "esl_tag_led_core.h"
 
 SL_WEAK void esl_led_init(void)

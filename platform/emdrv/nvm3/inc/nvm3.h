@@ -86,6 +86,10 @@ extern nvm3_Obj_t nvm3_internalObjectHandleB;
 extern nvm3_Obj_t nvm3_internalObjectHandleC;
 /// @brief A variable used by the NVM3 functions.
 extern nvm3_Obj_t nvm3_internalObjectHandleD;
+#if defined(NVM3_SECURITY)
+/// @brief A variable used by the NVM3 functions.
+extern nvm3_Obj_t nvm3_internalObjectHandleE;
+#endif
 /// @brief A variable that must contain the maximum number of object fragments.
 extern const uint8_t  nvm3_maxFragmentCount;
 /// @brief A variable containing the object handle size in bytes.

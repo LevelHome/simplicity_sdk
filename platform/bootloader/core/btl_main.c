@@ -106,7 +106,8 @@ __STATIC_INLINE void lockBootloaderArea(void)
 }
 #endif
 
-#if defined(BOOTLOADER_APPLOADER) || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_5) || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_6) || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_8)
+#if defined(BOOTLOADER_APPLOADER) || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_5) || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_6) \
+  || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_8) || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_9)
 __STATIC_INLINE void configureSMUToDefault(void)
 {
 #if defined(CMU_CLKEN1_SMU)
@@ -139,9 +140,10 @@ __STATIC_INLINE void configureSMUToDefault(void)
   CMU->CLKEN1_CLR = CMU_CLKEN1_SMU;
 #endif
 }
-#endif // BOOTLOADER_APPLOADER || _SILICON_LABS_32B_SERIES_2_CONFIG_5 || _SILICON_LABS_32B_SERIES_2_CONFIG_6 || _SILICON_LABS_32B_SERIES_2_CONFIG_8
+#endif // BOOTLOADER_APPLOADER || _SILICON_LABS_32B_SERIES_2_CONFIG_5 || _SILICON_LABS_32B_SERIES_2_CONFIG_6 || _SILICON_LABS_32B_SERIES_2_CONFIG_8 || _SILICON_LABS_32B_SERIES_2_CONFIG_9
 
-#if defined(_SILICON_LABS_32B_SERIES_2_CONFIG_5) || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_6) || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_8)
+#if defined(_SILICON_LABS_32B_SERIES_2_CONFIG_5) || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_6) \
+  || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_8) || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_9)
 __STATIC_INLINE void configureSMU(void)
 {
 #if defined(CMU_CLKEN1_SMU)
@@ -170,7 +172,7 @@ __STATIC_INLINE void configureSMU(void)
   CMU->CLKEN1_CLR = CMU_CLKEN1_SMU;
 #endif
 }
-#endif // _SILICON_LABS_32B_SERIES_2_CONFIG_5 | _SILICON_LABS_32B_SERIES_2_CONFIG_6 | _SILICON_LABS_32B_SERIES_2_CONFIG_8
+#endif // _SILICON_LABS_32B_SERIES_2_CONFIG_5 | _SILICON_LABS_32B_SERIES_2_CONFIG_6 | _SILICON_LABS_32B_SERIES_2_CONFIG_8 | _SILICON_LABS_32B_SERIES_2_CONFIG_9
 
 void HardFault_Handler(void)
 {
@@ -400,9 +402,10 @@ const ApplicationProperties_t sl_app_properties = {
  */
 void SystemInit2(void)
 {
-#if defined(_SILICON_LABS_32B_SERIES_2_CONFIG_5) || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_6) || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_8)
+#if defined(_SILICON_LABS_32B_SERIES_2_CONFIG_5) || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_6) \
+  || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_8) || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_9)
   configureSMU();
-#endif // _SILICON_LABS_32B_SERIES_2_CONFIG_5 || _SILICON_LABS_32B_SERIES_2_CONFIG_6 || _SILICON_LABS_32B_SERIES_2_CONFIG_8
+#endif // _SILICON_LABS_32B_SERIES_2_CONFIG_5 || _SILICON_LABS_32B_SERIES_2_CONFIG_6 || _SILICON_LABS_32B_SERIES_2_CONFIG_8 || _SILICON_LABS_32B_SERIES_2_CONFIG_9
 
 #if defined(TEST_BOOTLOADER_RAM_CLEAN_UP)
   ram_clean_up_test();
@@ -502,7 +505,8 @@ void SystemInit2(void)
     bootload_lockApplicationArea(startOfAppSpace, 0);
 #endif
 
-#if defined(BOOTLOADER_APPLOADER) || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_5) || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_6) || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_8)
+#if defined(BOOTLOADER_APPLOADER) || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_5) || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_6) \
+    || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_8) || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_9)
     configureSMUToDefault();
 #endif
     // Set vector table to application's table
@@ -531,7 +535,6 @@ __attribute__ ((noreturn, naked)) static void bootToApp(uint32_t startOfAppSpace
  */
 __STATIC_INLINE bool enterBootloader(void)
 {
-// *INDENT-OFF*
 #if defined(EMU_RSTCAUSE_SYSREQ)
   if (EMU->RSTCAUSE & EMU_RSTCAUSE_SYSREQ) {
 #else
@@ -549,7 +552,6 @@ __STATIC_INLINE bool enterBootloader(void)
         break;
     }
   }
-// *INDENT-ON*
 
 #ifdef BTL_GPIO_ACTIVATION
   if (gpio_enterBootloader()) {

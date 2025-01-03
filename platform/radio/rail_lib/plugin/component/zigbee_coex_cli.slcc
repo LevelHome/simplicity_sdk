@@ -4,6 +4,11 @@ description: Zigbee Coexistence CLI
 package: platform
 category: Platform|Radio
 quality: production
+metadata:
+  sbom:
+    id: zigbee_coex_cli
+    name: Zigbee Utility, Coexistence CLI
+    license: Zlib
 requires:
   - name: cli
   - name: rail_util_coex

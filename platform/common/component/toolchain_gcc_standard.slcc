@@ -14,10 +14,10 @@ provides:
   - name: toolchain_gcc_standard
   - name: toolchain_linker_type
 template_file:
-  - path: toolchain/gcc/s2/linkerfile.ld.jinja
-    condition: [device_series_2]
-  - path: toolchain/gcc/s30/linkerfile.ld.jinja
-    condition: [device_generic_family_sixx301]
+  - path: toolchain/cortexm/gcc/s2/linkerfile.ld.jinja
+    condition: [device_cortexm, device_series_2]
+  - path: toolchain/cortexm/gcc/s30/linkerfile.ld.jinja
+    condition: [device_cortexm, device_generic_family_sixx301]
 toolchain_settings:
   - option: linkerfile
     value: autogen/linkerfile.ld

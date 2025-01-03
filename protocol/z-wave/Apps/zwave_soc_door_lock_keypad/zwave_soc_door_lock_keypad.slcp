@@ -5,6 +5,8 @@ description: >
   The Z-Wave certified Door Lock application shows a lock implementation. It will support user
   codes to open a door and thereby eliminate the need for traditional keys. It is possible to both
   lock and unlock the door remotely through the Z-Wave protocol.
+
+  For certain devices, the application supports and uses the User Credential Command Class. See README file for details.
 package: Z-Wave
 quality: production
 component:
@@ -15,7 +17,6 @@ component:
   - id: zw_role_type_sleeping_listening
   - id: zaf_soc
   - id: zw_core
-  - id: zw_appshw_doorlockkeypad
   - id: zw_zaf
   - id: zw_true_status
   - id: zw_ota
@@ -35,24 +36,55 @@ component:
   - id: zw_cc_supervision
   - id: zw_cc_user_code
   - id: zw_cc_user_code_nvm
+  - id: zw_cc_user_credential
+    condition: [device_sdid_235]
+  - id: zw_cc_user_credential_nvm
+    condition: [zw_cc_user_credential]
+  - id: zw_cc_notification
+    condition: [zw_cc_user_credential]
   - id: zw_cc_version
   - id: zw_cc_zwaveplusinfo
+  - id: zw_appshw
   - id: sl_system
+  - id: sl_system_kernel
   - id: device_init
   - id: mpu # disable execution from RAM
   - id: ZW_MIGRATION_TO_7_19
+  - id: app_button_press
+  - id: app_assert
+  - id: simple_button
+    instance: [btn0, btn1]
+  - id: simple_led
+    instance: [led0, led1]
+  - id: zw_cli_common
+    condition: [zw_release]
+
 source:
   - path: app.c
   - path: app_cc_event_handlers.c
+  - path: app_credentials.c
+    condition: [zw_cc_user_credential]
   - path: main.c
   - path: app_cli.c
+    condition: [zw_cli_common]
+  - path: app_cli_cc_user_credential.c
+    condition: [zw_cli_common, zw_cc_user_credential]
+  - path: app_btn_handler.c
+    condition: [simple_button]
+  - path: app_cc_battery_callbacks.c
+  - path: app_cc_door_lock_callbacks.c
+
 include:
   - path: .
     file_list:
       - path: app_credentials.h
       - path: events.h
-      - path: app_cli.h
+
 configuration:
+  - name: SHORT_BUTTON_PRESS_DURATION
+    value: (400)
+  - name: MEDIUM_BUTTON_PRESS_DURATION
+    value: (1500)
   - name: ZAF_CONFIG_REQUEST_KEY_S0
     value: 1
   - name: ZAF_CONFIG_REQUEST_KEY_S2_ACCESS
@@ -126,6 +158,12 @@ configuration:
     value: 1
   - name: ZAF_APP_NAME
     value: '"door_lock_keypad"'
+  - name: SL_RAIL_UTIL_RAIL_POWER_MANAGER_INIT
+    value: 0
+  - name: U3C_BUFFER_SIZE_CREDENTIAL_DATA
+    value: 32
+  - name: SL_RAIL_UTIL_RAIL_POWER_MANAGER_INIT
+    value: 0
 
 define:
   - name: APP_PROPERTIES_CONFIG_FILE
@@ -136,18 +174,17 @@ define:
 config_file:
   - path: DoorLockKeyPad.cc_config
     directory: cc_config
-
-other_file:
-  - path: ../../DevTools/postbuild.sh
+  - path: DoorLockKeyPadNotification.cc_config
+    directory: cc_config
+    condition: [zw_cc_notification]
+  # Sample keys for signing
+  - path: ../../platform/SiliconLabs/PAL/BootLoader/sample-keys/sample_encrypt.key
+    directory: sample_keys
+  - path: ../../platform/SiliconLabs/PAL/BootLoader/sample-keys/sample_sign.key
+    directory: sample_keys
 
 template_contribution:
 #------------------ CLI commands ---------------------
-  - name: cli_command
-    condition: [zw_cli_common]
-    value:
-      name: enable_sleeping
-      handler: cli_enable_sleeping
-      help: Lets the application go to sleep mode, just like without CLI
   - name: cli_command
     condition: [zw_cli_common]
     value:
@@ -155,34 +192,180 @@ template_contribution:
       handler: cli_battery_report
       help: "Send battery report"
   - name: cli_command
+    condition: [zw_cli_common]
+    unless: [zw_cc_user_credential]
     value:
       name: enter_user_code
       handler: cli_enter_user_code
-      help: "Enter a 4 digit user code"
+      help: "Enter a user code"
       argument:
       - type: string
-        help: "Current 4 digit user code"
+        help: "Current user code"
   - name: cli_command
     condition: [zw_cli_common]
+    unless: [zw_cc_user_credential]
     value:
       name: set_new_user_code
       handler: cli_set_new_user_code
-      help: "Set a new 4 digit user code"
+      help: "Set a new user code"
       argument:
       - type: string
-        help: "4 digit user code to be set"
+        help: "User code to be set"
   - name: cli_command
     condition: [zw_cli_common]
     value:
       name: set_doorhandle_state
       handler: cli_set_doorhandle_state
-      help: "Set doorhandle state to locked (1) or unlocked (0)"
+      help: "Set door handle state to locked (1) or unlocked (0)"
       argument:
       - type: string
         help: "activate or deactivate" 
+  - name: cli_command
+    condition: [zw_cli_common, zw_cc_user_credential]
+    value:
+      name: u3c_add_user
+      handler: cli_u3c_db_add_user
+      help: "Add a user to the User Credential Database"
+      argument:
+      - type: string
+        help: "Name of the new user"
+  - name: cli_command
+    condition: [zw_cli_common, zw_cc_user_credential]
+    value:
+      name: u3c_add_credential
+      handler: cli_u3c_db_add_credential
+      help: "Add a user to the User Credential Database"
+      argument:
+      - type: uint16
+        help: "Associated User UID"
+      - type: string
+        help: "Type of new credential. Can be pin or password"
+      - type: uint16
+        help: "Slot numbers of the new credential"
+      - type: string
+        help: "Credential data"
+  - name: cli_command
+    condition: [zw_cli_common, zw_cc_user_credential]
+    value:
+      name: u3c_modify_user
+      handler: cli_u3c_db_modify_user
+      help: "Modify a user in the User Credential Database"
+      argument:
+      - type: uint16
+        help: "UUID of the user"
+      - type: string
+        help: "Attribute to modify. Can be type, name or active"
+      - type: string
+        help: "New attribute value"
+  - name: cli_command
+    condition: [zw_cli_common, zw_cc_user_credential]
+    value:
+      name: u3c_modify_credential
+      handler: cli_u3c_db_modify_credential
+      help: "Modify a credential in the User Credential Database"
+      argument:
+      - type: string
+        help: "Type of credential. Can be pin or password"
+      - type: uint16
+        help: "Slot of the credential"
+      - type: string
+        help: "Attribute to change. Can be data, uuid or slot"
+      - type: string
+        help: "New attribute value"
+  - name: cli_command
+    condition: [zw_cli_common, zw_cc_user_credential]
+    value:
+      name: u3c_delete_user
+      handler: cli_u3c_db_delete_user
+      help: "Delete a user from U3C database"
+      argument:
+      - type: uint16
+        help: "UUID of the user"
+  - name: cli_command
+    condition: [zw_cli_common, zw_cc_user_credential]
+    value:
+      name: u3c_delete_credential
+      handler: cli_u3c_db_delete_credential
+      help: "Delete a credential from U3C database"
+      argument:
+      - type: string
+        help: "Type of credential. Can be pin or password"
+      - type: uint16
+        help: "Slot of the credential"
+  - name: cli_command
+    condition: [zw_cli_common, zw_cc_user_credential]
+    value:
+      name: u3c_get_user
+      handler: cli_u3c_db_get_user
+      help: "Get a user's data from U3C database"
+      argument:
+      - type: uint16
+        help: "UUID of the user"
+  - name: cli_command
+    condition: [zw_cli_common, zw_cc_user_credential]
+    value:
+      name: u3c_get_credential
+      handler: cli_u3c_db_get_credential
+      help: "Get a credential's data from U3C database"
+      argument:
+      - type: string
+        help: "Type of credential. Can be pin or password"
+      - type: uint16
+        help: "Slot of the credential"
+  - name: cli_command
+    condition: [zw_cli_common, zw_cc_user_credential]
+    value:
+      name: u3c_enter_credential
+      handler: cli_u3c_enter_credential
+      help: "Enter and validate user credential"
+      argument:
+      - type: string
+        help: "Type of credential. Can be pin or password"
+      - type: string
+        help: "Credential data"
+  - name: cli_command
+    condition: [zw_cli_common, zw_cc_user_credential]
+    value:
+      name: u3c_credential_learn_start
+      handler: cli_u3c_credential_learn_start
+      help: "Start the User Credental Learn process"
+      argument:
+      - type: uint16
+        help: "Learn target UUID"
+      - type: string
+        help: "Type of credential (pin or password)"
+      - type: uint16
+        help: "Learn target slot"
+  - name: cli_command
+    condition: [zw_cli_common, zw_cc_user_credential]
+    value:
+      name: u3c_credential_learn
+      handler: cli_u3c_credential_learn
+      help: "Enter credential data for User Credental Learn process"
+      argument:
+      - type: string
+        help: "Credential data"
+  - name: cli_command
+    condition: [zw_cli_common]
+    value:
+      name: get_doorhandle_state
+      handler: cli_get_doorhandle_state
+      help: "Get door handle state"
+  - name: cli_command
+    condition: [zw_cli_common]
+    value:
+      name: get_doorbolt_state
+      handler: cli_get_doorbolt_state
+      help: "Get door bolt state"
+  - name: cli_command
+    condition: [zw_cli_common]
+    value:
+      name: get_doorlatch_state
+      handler: cli_get_doorlatch_state
+      help: "Get doorlatch state"
 
 post_build:
-  profile: zwave_soc_door_lock_keypad
+  profile: zwave_application
 
 tag:
   - prebuilt_demo

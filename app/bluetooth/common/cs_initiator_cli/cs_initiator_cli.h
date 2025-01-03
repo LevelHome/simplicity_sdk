@@ -41,3 +41,27 @@ uint8_t cs_initiator_cli_get_mode(void);
  * @return algo_mode
  ******************************************************************************/
 uint8_t cs_initiator_cli_get_algo_mode(void);
+
+/***************************************************************************//**
+ * CLI Getter for CS channel map preset
+ * @return channel_map_preset
+ ******************************************************************************/
+uint8_t cs_initiator_cli_get_preset(void);
+
+/***************************************************************************//**
+ * CLI Getter for Antenna Configuration Index (ACI)
+ * @return antenna_configuration_idex
+ ******************************************************************************/
+uint8_t cs_initiator_cli_get_antenna_config_index(void);
+
+/***************************************************************************//**
+ * CLI Getter for Antenna usage for CS SYNC packets
+ * @return cs_sync_antenna_usage
+ ******************************************************************************/
+uint8_t cs_initiator_cli_get_cs_sync_antenna_usage(void);
+
+/***************************************************************************//**
+ * CLI Getter for connection PHY
+ * @return conn_phy
+ ******************************************************************************/
+uint8_t cs_initiator_cli_get_conn_phy(void);

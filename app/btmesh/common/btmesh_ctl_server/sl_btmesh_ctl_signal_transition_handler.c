@@ -32,7 +32,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "em_common.h"
+#include "sl_common.h"
 #include "sl_status.h"
 
 #include "app_assert.h"

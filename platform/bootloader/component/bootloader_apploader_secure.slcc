@@ -15,3 +15,6 @@ define:
 provides:
   - name: bootloader_apploader
   - name: bootloader_apploader_secure
+metadata:
+  sbom:
+    license: MSLA

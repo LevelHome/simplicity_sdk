@@ -1,6 +1,10 @@
-Zigbee EmberZNet SDK 8.0.1.0
+Zigbee EmberZNet SDK 8.1
 - Zigbee
-  - Targeted quality improvements and bug fixes.
+  - 250+ entries in APS link key table
+  - ZigbeeD support on Android 12 (v21.0.6113669) and Tizen (v0.1-13.1)
+  - xG26 Module support
 - Multiprotocol
-  - Targeted quality improvements and bug fixes.
-
+  - ZigbeeD and OTBR support on OpenWRT – GA
+  - DMP BLE + CMP ZB & Matter/OT with Concurrent Listening on MG26 for SoC – GA
+  - 802.15.4 Unified radio scheduler priority component
+  - Debian packaging support for MP host applications - Alpha

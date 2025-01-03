@@ -40,8 +40,8 @@
 #include "sl_enum.h"
 #include "sl_sleeptimer.h"
 #include "sl_memory_manager.h"
+#include "sl_core.h"
 
-#include "em_core.h"
 #include "ecode.h"
 
 #include "mbedtls/aes.h"

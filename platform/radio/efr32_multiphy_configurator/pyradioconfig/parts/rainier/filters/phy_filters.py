@@ -9,14 +9,12 @@ class PhyFiltersRainier(IPhyFilter):
                            'Phys_Internal_Base_Utility',
                            'Phys_Internal_Base_ValOnly',
                            'Phys_Internal_Connect',
-                           'Phys_RAIL_Base_Standard_BLE',
-                           'Phys_RAIL_Base_Standard_IEEE802154',
                            'Phys_Internal_Base_Customer_Signify',
-                           'Phys_Studio_IEEE802154'
                            ]
 
     # Studio white list (these PHYs show in Studio as proprietary starting points)
-    simplicity_studio_phy_groups = []
+    simplicity_studio_phy_groups = ['Phys_Studio_IEEE802154', 'Phys_Studio_BLE','Phys_Studio_Connect',
+                                    'Phys_Studio_Base']
 
     # Special designation for simulation PHYs
     sim_tests_phy_groups = []

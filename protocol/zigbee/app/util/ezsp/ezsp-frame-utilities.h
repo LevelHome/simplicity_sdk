@@ -179,18 +179,22 @@ void fetch_sl_zigbee_sec_man_context_t(sl_zigbee_sec_man_context_t *context);
 void append_sl_zigbee_sec_man_aps_key_metadata_t(sl_zigbee_sec_man_aps_key_metadata_t *info);
 void fetch_sl_zigbee_sec_man_aps_key_metadata_t(sl_zigbee_sec_man_aps_key_metadata_t *info);
 
-#define append_sl_zigbee_multiprotocol_priorities_t(value) \
-  do {                                                     \
-    appendInt8u((value)->backgroundRx);                    \
-    appendInt8u((value)->tx);                              \
-    appendInt8u((value)->activeRx);                        \
+#define append_sl_802154_radio_priorities_t(value) \
+  do {                                             \
+    appendInt8u((value)->background_rx);           \
+    appendInt8u((value)->min_tx_priority);         \
+    appendInt8u((value)->tx_step);                 \
+    appendInt8u((value)->max_tx_priority);         \
+    appendInt8u((value)->active_rx);               \
   } while (0)
 
-#define fetch_sl_zigbee_multiprotocol_priorities_t(value) \
-  do {                                                    \
-    (value)->backgroundRx = fetchInt8u();                 \
-    (value)->tx = fetchInt8u();                           \
-    (value)->activeRx = fetchInt8u();                     \
+#define fetch_sl_802154_radio_priorities_t(value) \
+  do {                                            \
+    (value)->background_rx = fetchInt8u();        \
+    (value)->min_tx_priority = fetchInt8u();      \
+    (value)->tx_step = fetchInt8u();              \
+    (value)->max_tx_priority = fetchInt8u();      \
+    (value)->active_rx = fetchInt8u();            \
   } while (0)
 
 #define append_sl_zigbee_endpoint_description_t(value) \

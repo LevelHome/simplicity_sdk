@@ -58,6 +58,10 @@ extern uint32_t sli_zigbee_stack_get_security_frame_counter(void);
 //used for software fallback of CCM*
 extern void sli_util_stand_alone_encrypt_block(uint8_t *block);
 
+// Extended key table
+extern void sli_zigbee_stack_fetch_key_table_entry_at_index(uint8_t index, tokTypeStackKeyTable *tok);
+extern void sli_zigbee_stack_set_key_table_entry_at_index(uint8_t index, tokTypeStackKeyTable* tok);
+
 // Globals
 // The global context key, or key that is used in crypto operations
 static uint8_t zb_sec_man_context_key[SL_ZIGBEE_ENCRYPTION_KEY_SIZE];
@@ -335,7 +339,7 @@ sl_status_t zb_sec_man_store_in_link_key_table(sl_zigbee_sec_man_context_t* cont
 
   if (status == SL_STATUS_OK) {
     tokTypeStackKeyTable tok;
-    halCommonGetIndexedToken(&tok, TOKEN_STACK_KEY_TABLE, context->key_index);
+    sli_zigbee_stack_fetch_key_table_entry_at_index(context->key_index, &tok);
     memmove(&(tok[KEY_ENTRY_KEY_DATA_OFFSET]),
             plaintext_key->key,
             SL_ZIGBEE_ENCRYPTION_KEY_SIZE);
@@ -343,7 +347,7 @@ sl_status_t zb_sec_man_store_in_link_key_table(sl_zigbee_sec_man_context_t* cont
     if (context->flags & ZB_SEC_MAN_FLAG_SYMMETRIC_PASSPHRASE) {
       tok[KEY_ENTRY_INFO_OFFSET] |= KEY_TABLE_SYMMETRIC_PASSPHRASE;
     }
-    halCommonSetIndexedToken(TOKEN_STACK_KEY_TABLE, context->key_index, (void*)&tok);
+    sli_zigbee_stack_set_key_table_entry_at_index(context->key_index, &tok);
   }
 
   return status;
@@ -373,7 +377,7 @@ sl_status_t zb_sec_man_fetch_from_link_key_table(sl_zigbee_sec_man_context_t* co
   }
 
   tokTypeStackKeyTable tok;
-  halCommonGetIndexedToken(&tok, TOKEN_STACK_KEY_TABLE, context->key_index);
+  sli_zigbee_stack_fetch_key_table_entry_at_index(context->key_index, &tok);
   // Ensure that the token does not point to a PSA ID.  If this asserts, it
   // means that you have attempted to downgrade from an image that stored keys in
   // secure vault to an image that does not; this is prohibited.  The token

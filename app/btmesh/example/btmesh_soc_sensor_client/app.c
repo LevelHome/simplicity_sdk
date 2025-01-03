@@ -3,7 +3,7 @@
  * @brief Application code
  *******************************************************************************
  * # License
- * <b>Copyright 2022 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -29,9 +29,9 @@
  ******************************************************************************/
 #include <stdbool.h>
 #include <stdio.h>
-#include "em_common.h"
+#include "sl_common.h"
 #include "sl_status.h"
-#include "sl_sleeptimer.h"
+#include "sl_udelay.h"
 
 #include "sl_btmesh.h"
 #include "sl_bluetooth.h"
@@ -87,12 +87,6 @@
 #define BUTTON_PRESS_BUTTON_0          0
 #define BUTTON_PRESS_BUTTON_1          1
 
-#ifdef SL_CATALOG_BTMESH_WSTK_LCD_PRESENT
-#define lcd_print(...) sl_btmesh_LCD_write(__VA_ARGS__)
-#else
-#define lcd_print(...)
-#endif // SL_CATALOG_BTMESH_WSTK_LCD_PRESENT
-
 // -------------------------------
 // Periodic timer handles
 static app_timer_t app_sensor_data_timer;
@@ -119,14 +113,11 @@ static mesh_device_properties_t current_property = PRESENT_AMBIENT_TEMPERATURE;
 /// Property IDs supported by application
 static void sensor_client_change_current_property(void);
 
-// Handles button press and does a factory reset
-static bool handle_reset_conditions(void);
-
 /***************************************************************************//**
  * Change buttons to LEDs in case of shared pin
  *
  ******************************************************************************/
-void change_buttons_to_leds(void)
+void app_change_buttons_to_leds(void)
 {
   app_button_press_disable();
   // Disable button and enable led
@@ -145,7 +136,7 @@ void change_buttons_to_leds(void)
  * Change LEDs to buttons in case of shared pin
  *
  ******************************************************************************/
-void change_leds_to_buttons(void)
+void app_change_leds_to_buttons(void)
 {
   // Enable buttons
   sl_simple_button_enable(&sl_button_btn0);
@@ -153,7 +144,7 @@ void change_leds_to_buttons(void)
   sl_simple_button_enable(&sl_button_btn1);
 #endif
   // Wait
-  sl_sleeptimer_delay_millisecond(1);
+  sl_udelay_wait(1000);
   // Enable button presses
   app_button_press_enable();
 }
@@ -167,12 +158,14 @@ SL_WEAK void app_init(void)
   // Put your additional application init code here!                         //
   // This is called once during start-up.                                    //
   /////////////////////////////////////////////////////////////////////////////
+  #if !defined(SL_CATALOG_KERNEL_PRESENT)
   app_log("Bt Mesh Sensor Client initialized" APP_LOG_NL);
   // Ensure right init order in case of shared pin for enabling buttons
-  change_buttons_to_leds();
+  app_change_buttons_to_leds();
   // Change LEDs to buttons in case of shared pin
-  change_leds_to_buttons();
-  handle_reset_conditions();
+  app_change_leds_to_buttons();
+  app_handle_reset_conditions();
+  #endif // SL_CATALOG_KERNEL_PRESENT
 }
 
 /*******************************************************************************
@@ -180,11 +173,13 @@ SL_WEAK void app_init(void)
  ******************************************************************************/
 SL_WEAK void app_process_action(void)
 {
-  /////////////////////////////////////////////////////////////////////////////
-  // Put your additional application code here!                              //
-  // This is called infinitely.                                              //
-  // Do not call blocking functions from here!                               //
-  /////////////////////////////////////////////////////////////////////////////
+  if (app_is_process_required()) {
+    /////////////////////////////////////////////////////////////////////////////
+    // Put your additional application code here!                              //
+    // This will run each time app_proceed() is called.                        //
+    // Do not call blocking functions from here!                               //
+    /////////////////////////////////////////////////////////////////////////////
+  }
 }
 
 /*******************************************************************************
@@ -212,7 +207,7 @@ static void set_device_name(uuid_128 *uuid)
   // Create unique device name using the last two bytes of the device UUID
   snprintf(name,
            NAME_BUF_LEN,
-           "sensor client %02x%02x",
+           "Sensor Client %02x%02x",
            uuid->data[14],
            uuid->data[15]);
 
@@ -234,7 +229,7 @@ static void set_device_name(uuid_128 *uuid)
  *
  * @return true if there is no button press
  ******************************************************************************/
-static bool handle_reset_conditions(void)
+bool app_handle_reset_conditions(void)
 {
 #ifdef SL_CATALOG_BTMESH_FACTORY_RESET_PRESENT
   // If PB0 is held down then do full factory reset
@@ -455,7 +450,7 @@ static void sensor_client_change_current_property(void)
 void sl_btmesh_on_node_provisioning_started(uint16_t result)
 {
   // Change buttons to LEDs in case of shared pin
-  change_buttons_to_leds();
+  app_change_buttons_to_leds();
 
   sl_status_t sc = app_timer_start(&app_led_blinking_timer,
                                    APP_LED_BLINKING_TIMEOUT,
@@ -473,7 +468,7 @@ void sl_btmesh_on_node_provisioning_failed(uint16_t result)
 {
   app_show_btmesh_node_provisioning_failed(result);
   // Small delay before reboot
-  sl_sleeptimer_delay_millisecond(2000);
+  sl_udelay_wait(2000000);
   sl_bt_system_reboot();
 }
 
@@ -490,7 +485,7 @@ void sl_btmesh_on_node_provisioned(uint16_t address,
   sl_led_led1.turn_off(sl_led_led1.context);
 #endif
   // Change LEDs to buttons in case of shared pin
-  change_leds_to_buttons();
+  app_change_leds_to_buttons();
 
   app_show_btmesh_node_provisioned(address, iv_index);
 }

@@ -1,6 +1,6 @@
 id: "connect_frequency_hopping_cli"
 label: "Frequency Hopping (Cli)"
-package: "Flex"
+package: "Connect"
 category: "Connect"
 quality: "production"
 description: "This component provides frequency hopping CLI commands."

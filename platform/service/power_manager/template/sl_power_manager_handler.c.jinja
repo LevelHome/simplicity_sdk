@@ -48,6 +48,7 @@ __WEAK bool app_is_ok_to_sleep(void)
  *        called for every ISR. If a prior hook function requires to wakeup, such
  *        as a wireless stack, the application hook function won't be called.
  ******************************************************************************/
+ SL_CODE_CLASSIFY(SL_CODE_COMPONENT_POWER_MANAGER, SL_CODE_CLASS_TIME_CRITICAL)
 __WEAK sl_power_manager_on_isr_exit_t app_sleep_on_isr_exit(void)
 {
   return SL_POWER_MANAGER_IGNORE;
@@ -80,6 +81,7 @@ bool sl_power_manager_is_ok_to_sleep(void)
  * Mandatory callback that must validate if the MCU can sleep after having
  * processed an interrupt when the system was sleeping.
  ******************************************************************************/
+ SL_CODE_CLASSIFY(SL_CODE_COMPONENT_POWER_MANAGER, SL_CODE_CLASS_TIME_CRITICAL)
 bool sl_power_manager_sleep_on_isr_exit(void)
 {
   sl_power_manager_on_isr_exit_t answer;

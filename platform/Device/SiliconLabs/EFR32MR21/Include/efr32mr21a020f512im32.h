@@ -124,6 +124,7 @@ typedef enum IRQn{
  * @brief Processor and Core Peripheral Section
  *****************************************************************************/
 
+#define __CORTEXM                 1U      /**< Core architecture */
 #define __CM33_REV                0x0003U /**< Cortex-M33 Core revision */
 #define __DSP_PRESENT             1U      /**< Presence of DSP  */
 #define __FPU_PRESENT             1U      /**< Presence of FPU  */
@@ -1080,14 +1081,6 @@ typedef enum IRQn{
 #define RDMEM_SEQ_RAM_DATA_WIDTH             0x27UL     /**> SEQ_RAM_DATA_WIDTH */
 #define RDMEM_SEQ_RAM_ECC_EN                 0x1UL      /**> SEQ RAM ECCEN */
 #define PRORTC_CC_NUM                        0x2UL      /**> None */
-
-/* Instance macros for HFRCO */
-#define HFRCO(n)                       (((n) == 0) ? HFRCO0      \
-                                        : ((n) == 1) ? HFRCOEM23 \
-                                        : 0x0UL)
-#define HFRCO_NUM(ref)                 (((ref) == HFRCO0) ? 0      \
-                                        : ((ref) == HFRCOEM23) ? 1 \
-                                        : -1)
 
 /* Instance macros for TIMER */
 #define TIMER(n)                       (((n) == 0) ? TIMER0   \

@@ -1,5 +1,5 @@
 /***************************************************************************//**
- * @file
+ * @file app_init.h
  * @brief Application init
  *******************************************************************************
  * # License
@@ -53,7 +53,7 @@ extern "C" {
 /**************************************************************************//**
  * @brief Application init
  * @details This function initializes the application tasks, mutexes and
- *          register the custom callbacks
+ *          registers the custom callbacks
  *****************************************************************************/
 void app_init(void);
 

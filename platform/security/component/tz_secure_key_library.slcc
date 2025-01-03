@@ -18,3 +18,7 @@ requires:
 
 conflicts:
   - name: trustzone_unaware
+
+metadata:
+  sbom:
+    license: Zlib

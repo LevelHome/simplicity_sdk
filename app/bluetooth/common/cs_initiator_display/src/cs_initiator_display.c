@@ -108,12 +108,12 @@ void cs_initiator_display_set_rssi_distance(float distance)
 void cs_initiator_display_set_likeliness(float likeliness)
 {
   if (likeliness != lcd_content.likeliness) {
-    lcd_content.likeliness = likeliness;
+    lcd_content.likeliness = likeliness * 100;
   }
 
   cs_initiator_display_print_float_value(lcd_content.likeliness,
                                          ROW_LIKELINESS_VALUE,
-                                         NULL);
+                                         "%");
 
   cs_initiator_display_update();
 }
@@ -124,12 +124,12 @@ void cs_initiator_display_set_likeliness(float likeliness)
 void cs_initiator_display_set_bit_error_rate(float ber)
 {
   if (ber != lcd_content.bit_error_rate) {
-    lcd_content.bit_error_rate = ber;
+    lcd_content.bit_error_rate = ber * 100;
   }
 
   cs_initiator_display_print_float_value(lcd_content.bit_error_rate,
                                          ROW_BIT_ERROR_RATE_VALUE,
-                                         NULL);
+                                         "%");
   cs_initiator_display_update();
 }
 

@@ -19,9 +19,9 @@
 // <h>Zigbee Trust Center Backup Configuration
 
 // <o SL_ZIGBEE_AF_PLUGIN_TRUST_CENTER_BACKUP_MAX_CLI_BACKUP_SIZE> Maximum CLI backup size <1-255>
-// <i> Default: 6
+// <i> Default: 20
 // <i> The maximum number of import/export entries that can be manipulated by the CLI.  This should be set larger than the link key table.
-#define SL_ZIGBEE_AF_PLUGIN_TRUST_CENTER_BACKUP_MAX_CLI_BACKUP_SIZE   6
+#define SL_ZIGBEE_AF_PLUGIN_TRUST_CENTER_BACKUP_MAX_CLI_BACKUP_SIZE   20
 
 // <q SL_ZIGBEE_AF_PLUGIN_TRUST_CENTER_BACKUP_POSIX_FILE_BACKUP_SUPPORT> Enable back up to POSIX file system
 // <i> Default: FALSE

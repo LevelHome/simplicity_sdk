@@ -488,11 +488,17 @@ sl_status_t btmesh_conf_get_handle_from_event(const sl_btmesh_msg_t *evt,
       case sl_btmesh_evt_config_client_reset_status_id:
         *handle = evt->data.evt_config_client_reset_status.handle;
         break;
-      default:
-        app_assert(false == btmesh_conf_is_configuration_event(event_id),
-                   "Unhandled configuration event.");
+      case sl_btmesh_evt_config_client_obo_ack_received_id:
+        // No handle present in obo_ack_received
         sc = SL_STATUS_NOT_FOUND;
         break;
+      default:
+      {
+        sl_status_t err = btmesh_conf_is_configuration_event(event_id) ? SL_STATUS_OK : SL_STATUS_FAIL;
+        app_log_status_warning_f(err, "Unhandled configuration event: 0x%04x", event_id);
+        sc = SL_STATUS_NOT_FOUND;
+        break;
+      }
     }
   }
   return sc;

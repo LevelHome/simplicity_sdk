@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sli_wisun_network_measurement_iperf_gui.h
+ * @brief Wi-SUN Network Measurement iPerf GUI
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __SL_WISUN_NETWORK_MEASUREMENT_IPERF_GUI_H__
-#define __SL_WISUN_NETWORK_MEASUREMENT_IPERF_GUI_H__
+#ifndef SLI_WISUN_NETWORK_MEASUREMENT_IPERF_GUI_H
+#define SLI_WISUN_NETWORK_MEASUREMENT_IPERF_GUI_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -56,4 +56,4 @@ void sli_wisun_nwm_iperf_form(void *args);
 }
 #endif
 
-#endif
+#endif // SLI_WISUN_NETWORK_MEASUREMENT_IPERF_GUI_H

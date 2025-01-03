@@ -30,12 +30,8 @@ root_path: platform/driver/button/
 instantiable:
   prefix: instance
 config_file:
-  - path: "config/s2/sl_simple_button_{{instance}}_config.h"
+  - path: "config/sl_simple_button_{{instance}}_config.h"
     file_id: simple_button_config
-    condition: [device_series_2]
-  - path: "config/s3/sl_simple_button_{{instance}}_config.h"
-    file_id: simple_button_config
-    condition: [device_series_3]
 provides:
   - name: simple_button
     allow_multiple: true

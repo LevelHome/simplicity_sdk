@@ -75,17 +75,6 @@
 #if defined(RADIOAES_PRESENT)
 #include "sli_protocol_crypto.h"
 #endif
-#elif defined(CRYPTO_PRESENT)
-#include "sli_crypto_transparent_functions.h"
-#define MAC_IMPLEMENTATION_PRESENT
-#define MAC_SETUP_EN_FCT    sli_crypto_transparent_mac_sign_setup
-#define MAC_SETUP_DE_FCT    sli_crypto_transparent_mac_verify_setup
-#define MAC_UPDATE_FCT      sli_crypto_transparent_mac_update
-#define MAC_FINISH_EN_FCT   sli_crypto_transparent_mac_sign_finish
-#define MAC_FINISH_DE_FCT   sli_crypto_transparent_mac_verify_finish
-#define MAC_ABORT_FCT       sli_crypto_transparent_mac_abort
-#define MAC_ONESHOT_EN_FCT  sli_crypto_transparent_mac_compute
-#define MAC_ONESHOT_DE_FCT  sli_crypto_transparent_mac_verify
 #elif defined(CRYPTOACC_PRESENT)
 #include "sli_cryptoacc_transparent_functions.h"
 #define SLI_DEVICE_HAS_AES_192
@@ -122,7 +111,7 @@ static inline void sl_psa_set_key_type(psa_key_attributes_t *attributes,
                                        psa_key_type_t type)
 {
   /* Common case: quick path */
-  attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type) = type;
+  attributes->MBEDTLS_PRIVATE(type) = type;
 }
 
 int mbedtls_cipher_cmac_starts(mbedtls_cipher_context_t *ctx,

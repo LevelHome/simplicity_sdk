@@ -35,15 +35,12 @@ component:
   - id: app_assert
   - id: app_log
   - id: app_ota_dfu
-  - id: iostream_usart
-    instance:
-      - vcom
   - id: mpu
   - id: app_timer
-  - id: bt_post_build
   - id: sl_system
   - id: clock_manager
   - id: device_init
+  - id: sl_common
 
 source:
   - path: main.c
@@ -71,7 +68,6 @@ other_file:
   - path: image/readme_img3.png
   - path: image/readme_img4.png
   - path: image/readme_img5.png
-  - path: image/readme_img6.png
 
 configuration:
   - name: SL_STACK_SIZE
@@ -108,8 +104,12 @@ configuration:
     value: "1"
   - name: SL_IOSTREAM_USART_VCOM_RESTRICT_ENERGY_MODE_TO_ALLOW_RECEPTION
     value: "0"
-    condition:
-      - iostream_usart
+  - name: SL_IOSTREAM_EUSART_VCOM_RESTRICT_ENERGY_MODE_TO_ALLOW_RECEPTION
+    value: "0"
+
+post_build:
+  - profile: bt_common
+    condition: [bootloader_app_properties]
 
 tag:
   - hardware:rf:band:2400

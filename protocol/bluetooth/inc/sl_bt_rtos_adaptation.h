@@ -1,4 +1,5 @@
 /***************************************************************************//**
+ * @file
  * @brief Adaptation for running Bluetooth in RTOS
  *******************************************************************************
  * # License
@@ -19,17 +20,32 @@
 
 #include "sl_bt_api.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***************************************************************************//**
- * @addtogroup bluetooth_rtos_adaptation
+ * @addtogroup bluetooth_rtos_adaptation Bluetooth RTOS adaptation
  * @{
  *
  * @brief Bluetooth RTOS adaptation
  *
  * The Bluetooth RTOS adaptation component implements the relevant interfaces
- * for running the Bluetooth stack in an RTOS. When initialized in @ref
- * sl_bt_rtos_init(), the component creates the required RTOS tasks for the
- * Bluetooth stack itself, and an event task that is used to deliver
- * sl_bt_process_event() and sl_bt_on_event() callbacks to the application.
+ * for running the Bluetooth stack in an RTOS. The component creates the
+ * required RTOS synchronization primitives and tasks for the Bluetooth stack
+ * and handles the inter-process communication (IPC) required when the
+ * application calls a BGAPI command.
+ *
+ * If the Bluetooth Event System IPC component (`bluetooth_event_system_ipc`) is
+ * included in the application, Bluetooth events are delivered using the IPC
+ * mechanism provided by the `event_system` component. See @ref
+ * bluetooth_event_system for the description of that mechanism. In this
+ * configuration no event task is created by the RTOS adaptation.
+ *
+ * If the Bluetooth Event System IPC component (`bluetooth_event_system_ipc`) is
+ * not included in the application, the RTOS adaptation component creates an
+ * event task that delivers the events to the application as direct callbacks to
+ * sl_bt_process_event() and sl_bt_on_event() functions.
  *
  * To guarantee thread safety and avoid the risk of deadlocks, the Bluetooth
  * RTOS adaptation implementation makes the following promises with regard to
@@ -53,6 +69,52 @@
  */
 
 /**
+ * @brief Initialize Bluetooth RTOS Adaptation
+ *
+ * This function is called automatically at the right time in the generated
+ * initialization sequence. The application does not need to and must not call
+ * this function directly.
+ *
+ * @return SL_STATUS_OK if succeeds, otherwise error
+ */
+sl_status_t sl_bt_rtos_init();
+
+/**
+ * @brief Obtain the Bluetooth host stack command lock
+ *
+ * Starting from Gecko SDK v3.1.2, all BGAPI command functions have automatic
+ * locking to make them thread-safe. Using @ref sl_bt_bluetooth_pend() and @ref
+ * sl_bt_bluetooth_post() is therefore no longer required for individual calls
+ * to the BGAPI.
+ *
+ * The application only needs to use @ref sl_bt_bluetooth_pend() and @ref
+ * sl_bt_bluetooth_post() to protect sections of code where multiple commands
+ * need to be performed atomically in a thread-safe manner. This includes cases
+ * such as using @ref sl_bt_system_data_buffer_write() to write data to the
+ * system buffer followed by a call to @ref
+ * sl_bt_extended_advertiser_set_long_data() to set that data to an advertiser
+ * set. To synchronize access to the shared system buffer, the application would
+ * need to lock by calling @ref sl_bt_bluetooth_pend() before @ref
+ * sl_bt_system_data_buffer_write(), and release the lock by calling @ref
+ * sl_bt_bluetooth_post() after @ref sl_bt_extended_advertiser_set_long_data().
+ *
+ * @return SL_STATUS_OK if mutex has been obtained
+ */
+sl_status_t sl_bt_bluetooth_pend();
+
+/**
+ * @brief Release the Bluetooth host stack command lock
+ *
+ * See @ref sl_bt_bluetooth_pend() for description of how an application needs
+ * to use the locking to guarantee thread-safety.
+ *
+ * @return SL_STATUS_OK the mutex has been released
+ */
+sl_status_t sl_bt_bluetooth_post();
+
+/** @cond DOXYGEN_INCLUDE_INTERNAL */
+
+/**
  * @brief Hooks for API, called from tasks using Bluetooth API
  */
 void sli_bt_cmd_handler_rtos_delegate(uint32_t header, sl_bgapi_handler handler, const void* payload);
@@ -73,121 +135,16 @@ void sli_bt_rtos_stack_callback(void);
 void sli_bt_rtos_adaptation_kernel_start();
 
 /**
- * @brief Check if there any Bluetooth stack event waiting
- *
- * <b>Deprecated</b> and replaced by the @ref sl_bt_on_event callback to the
- * application. Leave SL_BT_DISABLE_EVENT_TASK disabled in new application
- * projects. Implement the callback function @ref sl_bt_on_event in the
- * application to receive Bluetooth events from the event task created by the
- * Bluetooth stack. Handle the event directly in @ref sl_bt_on_event without
- * calling this function.
- *
- * This API will not clear the event waiting flag.
- *
- * @note This API is meant to be used in applications define own Bluetooth event handler,
- * it should be only used if SL_BT_DISABLE_EVENT_TASK is defined.
- *
- * @return SL_STATUS_OK if event is waiting, otherwise SL_STATUS_FAIL or error
+ * @brief Called by Bluetooth Event System IPC to mark an event as handled
  */
-SL_BGAPI_DEPRECATED sl_status_t sl_bt_rtos_has_event_waiting();
+void sli_bt_rtos_set_event_handled();
 
-/**
- * @brief Wait Bluetooth stack to generate an event
- *
- * <b>Deprecated</b> and replaced by the @ref sl_bt_on_event callback to the
- * application. Leave SL_BT_DISABLE_EVENT_TASK disabled in new application
- * projects. Implement the callback function @ref sl_bt_on_event in the
- * application to receive Bluetooth events from the event task created by the
- * Bluetooth stack. Handle the event directly in @ref sl_bt_on_event without
- * calling this function.
- *
- * This API will clear the event waiting flag.
- *
- * @note This API is meant to be used in applications define own Bluetooth event handler,
- * it should be only used if SL_BT_DISABLE_EVENT_TASK is defined.
- *
- * @param[in] blocking specifies if the function would block until event is generated
- *
- * @return SL_STATUS_OK if the event is generated or some error
- */
-SL_BGAPI_DEPRECATED sl_status_t sl_bt_rtos_event_wait(bool blocking);
-
-/**
- * @brief Message Bluetooth stack that event is handled
- *
- * <b>Deprecated</b> and replaced by the @ref sl_bt_on_event callback to the
- * application. Leave SL_BT_DISABLE_EVENT_TASK disabled in new application
- * projects. Implement the callback function @ref sl_bt_on_event in the
- * application to receive Bluetooth events from the event task created by the
- * Bluetooth stack. Handle the event directly in @ref sl_bt_on_event without
- * calling this function.
- *
- * This will set event handled flag.
- *
- * @note This API is meant to be used in applications define own Bluetooth event handler,
- * it should be only used if SL_BT_DISABLE_EVENT_TASK is defined.
- *
- * @return SL_STATUS_OK if successful or some error
- */
-SL_BGAPI_DEPRECATED sl_status_t sl_bt_rtos_set_event_handled();
-
-/**
- * @brief Mutex functions for using Bluetooth from multiple tasks
- *
- * Starting from Gecko SDK v3.1.2, all BGAPI command functions have automatic
- * locking to make them thread-safe. Using @ref sl_bt_bluetooth_pend() and @ref
- * sl_bt_bluetooth_post() is therefore no longer required for individual calls
- * to the BGAPI.
- *
- * The application only needs to use @ref sl_bt_bluetooth_pend() and @ref
- * sl_bt_bluetooth_post() to protect sections of code where multiple commands
- * need to be performed atomically in a thread-safe manner. This includes cases
- * such as using @ref sl_bt_system_data_buffer_write() to write data to the
- * system buffer followed by a call to @ref sl_bt_advertiser_set_long_data() to
- * set that data to an advertiser set. To synchronize access to the shared
- * system buffer, the application would need to lock by calling @ref
- * sl_bt_bluetooth_pend() before @ref sl_bt_system_data_buffer_write(), and
- * release the lock by calling @ref sl_bt_bluetooth_post() after @ref
- * sl_bt_advertiser_set_long_data().
- *
- * @return SL_STATUS_OK if mutex has been obtained
- */
-sl_status_t sl_bt_bluetooth_pend();
-
-/**
- * @brief Mutex functions for using Bluetooth from multiple tasks
- *
- * See @ref sl_bt_bluetooth_pend() for description of how an application needs
- * to use the locking to guarantee thread-safety.
- *
- * @return SL_STATUS_OK the mutex has been released
- */
-sl_status_t sl_bt_bluetooth_post();
-
-/**
- * @brief Initialize Bluetooth for running in RTOS.
- * @return SL_STATUS_OK if succeeds, otherwise error
- */
-sl_status_t sl_bt_rtos_init();
-
-/**
- * @brief Gets the pointer to current Bluetooth event.
- *
- * <b>Deprecated</b> and replaced by the @ref sl_bt_on_event callback to the
- * application. Leave SL_BT_DISABLE_EVENT_TASK disabled in new application
- * projects. Implement the callback function @ref sl_bt_on_event in the
- * application to receive Bluetooth events from the event task created by the
- * Bluetooth stack. Handle the event directly in @ref sl_bt_on_event without
- * calling this function.
- *
- * Caller needs to make sure this is used for Bluetooth event processing
- * only when @ref sl_bt_rtos_event_wait indicates an event is waiting to be
- * processed. Otherwise the event may contain outdated data.
- *
- * @return pointer to the Bluetooth event
- */
-SL_BGAPI_DEPRECATED const sl_bt_msg_t* sl_bt_rtos_get_event();
+/** @endcond */ // DOXYGEN_INCLUDE_INTERNAL
 
 /** @} end bluetooth_rtos_adaptation */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //SL_BT_RTOS_ADAPTATION_H

@@ -25,10 +25,9 @@ provides:
 requires:
   - name: status
   - name: hal_generic_timer
-  - name: emlib_gpio
-    condition: [device_series_2]
   - name: gpio
-    condition: [device_series_3]
+    condition:
+      - device_cortexm
   - name: hal_generic_common
   - name: clock_manager_runtime
   - name: device_manager

@@ -16,6 +16,7 @@
  ******************************************************************************/
 #include PLATFORM_HEADER
 #include "sl_common.h"
+#include "sl_code_classification.h"
 
 #ifndef SL_ZIGBEE_AF_NCP
 #include "stack/include/sl_zigbee.h"
@@ -173,6 +174,10 @@ SL_WEAK void sl_zigbee_override_incoming_route_record_handler(
   // Return:
   bool *consumed)
 {
+  (void)packetInfo;
+  (void)relayCount;
+  (void)relayList;
+  (void)consumed;
 }
 
 // -----------------------------------------------------------------------------
@@ -200,6 +205,8 @@ SL_WEAK void sl_zigbee_internal_override_furthur_index_for_source_route_add_entr
   // Return:
   uint8_t *furtherIndex)
 {
+  (void)id;
+  (void)furtherIndex;
 }
 
 // -----------------------------------------------------------------------------
@@ -528,6 +535,7 @@ SL_WEAK void sl_zigbee_timer_handler(
 
 // -----------------------------------------------------------------------------
 // This call is fired when a counter exceeds its threshold
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_ZIGBEE_STACK, SL_CODE_CLASS_TIME_CRITICAL)
 SL_WEAK void sl_zigbee_counter_rollover_handler(
   // Type of Counter
   sl_zigbee_counter_type_t type)
@@ -826,7 +834,7 @@ SL_WEAK void sl_zigbee_calculate_smacs_283k1_handler(
 
 // -----------------------------------------------------------------------------
 // A callback invoked by the ZigBee GP stack when a GPDF is received.
-SL_WEAK void sli_zigbee_stack_gpep_incoming_message_handler(
+SL_WEAK void sl_zigbee_gpep_incoming_message_handler(
   // The status of the GPDF receive.
   sl_zigbee_gp_status_t status,
   // The gpdLink value of the received GPDF.
@@ -857,7 +865,9 @@ SL_WEAK void sli_zigbee_stack_gpep_incoming_message_handler(
   // The length of the GPD command payload.
   uint8_t gpdCommandPayloadLength,
   // The GPD command payload.
-  uint8_t *gpdCommandPayload)
+  uint8_t *gpdCommandPayload,
+  // Rx packet information
+  sl_zigbee_rx_packet_info_t *packetInfo)
 {
   (void)status;
   (void)gpdLink;
@@ -873,6 +883,7 @@ SL_WEAK void sli_zigbee_stack_gpep_incoming_message_handler(
   (void)proxyTableIndex;
   (void)gpdCommandPayloadLength;
   (void)gpdCommandPayload;
+  (void)packetInfo;
 }
 
 // -----------------------------------------------------------------------------
@@ -888,6 +899,7 @@ SL_WEAK bool sl_zigbee_rtos_idle_handler(
 
 // -----------------------------------------------------------------------------
 // Rtos Stack Wakeup Isr Handler
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_ZIGBEE_STACK, SL_CODE_CLASS_TIME_CRITICAL)
 SL_WEAK void sl_zigbee_rtos_stack_wakeup_isr_handler(void)
 {
 }
@@ -2578,7 +2590,9 @@ SL_WEAK void sl_zigbee_af_gpep_incoming_message_cb(
   // The length of the GPD command payload.
   uint8_t gpdCommandPayloadLength,
   // The GPD command payload.
-  uint8_t *gpdCommandPayload)
+  uint8_t *gpdCommandPayload,
+  // Rx packet information
+  sl_zigbee_rx_packet_info_t *packetInfo)
 {
   (void)status;
   (void)gpdLink;
@@ -2594,10 +2608,11 @@ SL_WEAK void sl_zigbee_af_gpep_incoming_message_cb(
   (void)proxyTableIndex;
   (void)gpdCommandPayloadLength;
   (void)gpdCommandPayload;
+  (void)packetInfo;
 }
 
 // A callback invoked by the ZigBee GP stack when a GPDF is received.
-SL_WEAK void sli_zigbee_stack_gpep_incoming_message_handler(
+SL_WEAK void sl_zigbee_gpep_incoming_message_handler(
   // The status of the GPDF receive.
   sl_zigbee_gp_status_t status,
   // The gpdLink value of the received GPDF.
@@ -2628,11 +2643,13 @@ SL_WEAK void sli_zigbee_stack_gpep_incoming_message_handler(
   // The length of the GPD command payload.
   uint8_t gpdCommandPayloadLength,
   // The GPD command payload.
-  uint8_t *gpdCommandPayload)
+  uint8_t *gpdCommandPayload,
+  // Rx packet information
+  sl_zigbee_rx_packet_info_t *packetInfo)
 {
   sl_zigbee_af_push_callback_network_index();
-  sli_zigbee_af_gpep_incoming_message(status, gpdLink, sequenceNumber, addr, gpdfSecurityLevel, gpdfSecurityKeyType, autoCommissioning, bidirectionalInfo, gpdSecurityFrameCounter, gpdCommandId, mic, proxyTableIndex, gpdCommandPayloadLength, gpdCommandPayload);
-  sl_zigbee_af_gpep_incoming_message_cb(status, gpdLink, sequenceNumber, addr, gpdfSecurityLevel, gpdfSecurityKeyType, autoCommissioning, bidirectionalInfo, gpdSecurityFrameCounter, gpdCommandId, mic, proxyTableIndex, gpdCommandPayloadLength, gpdCommandPayload);
+  sli_zigbee_af_gpep_incoming_message(status, gpdLink, sequenceNumber, addr, gpdfSecurityLevel, gpdfSecurityKeyType, autoCommissioning, bidirectionalInfo, gpdSecurityFrameCounter, gpdCommandId, mic, proxyTableIndex, gpdCommandPayloadLength, gpdCommandPayload, packetInfo);
+  sl_zigbee_af_gpep_incoming_message_cb(status, gpdLink, sequenceNumber, addr, gpdfSecurityLevel, gpdfSecurityKeyType, autoCommissioning, bidirectionalInfo, gpdSecurityFrameCounter, gpdCommandId, mic, proxyTableIndex, gpdCommandPayloadLength, gpdCommandPayload, packetInfo);
   sl_zigbee_af_pop_network_index();
 }
 
@@ -2662,15 +2679,16 @@ SL_WEAK bool sl_zigbee_rtos_idle_handler(
 
 // -----------------------------------------------------------------------------
 // Weak implementation of public Callback sl_zigbee_af_rtos_stack_wakeup_isr_cb
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_ZIGBEE_STACK, SL_CODE_CLASS_TIME_CRITICAL)
 SL_WEAK void sl_zigbee_af_rtos_stack_wakeup_isr_cb(void)
 {
 }
 
 // Rtos Stack Wakeup Isr Handler
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_ZIGBEE_STACK, SL_CODE_CLASS_TIME_CRITICAL)
 SL_WEAK void sl_zigbee_rtos_stack_wakeup_isr_handler(void)
 {
   sl_zigbee_af_push_callback_network_index();
-  sli_zigbee_common_wakeup_isr();
   sl_zigbee_af_rtos_stack_wakeup_isr_cb();
   sl_zigbee_af_pop_network_index();
 }
@@ -2736,4 +2754,8 @@ SL_WEAK void sli_zigbee_stack_override_incoming_route_record_handler(sl_zigbee_r
                                                                      uint8_t *relayList,
                                                                      bool *consumed)
 {
+  (void)packetInfo;
+  (void)relayCount;
+  (void)relayList;
+  (void)consumed;
 }

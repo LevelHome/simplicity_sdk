@@ -209,7 +209,7 @@ void sli_zigbee_af_test_harness_z3_ota_server_activate_command(SL_CLI_COMMAND_AR
                                                         &loadedOtaImageId);
 
 #endif /* EZSP_HOST */
-  sl_zigbee_af_core_println("%s: %s: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "Ota Server activate",
                             status);
@@ -230,7 +230,7 @@ void sli_zigbee_af_test_harness_z3_ota_server_de_activate_command(SL_CLI_COMMAND
   status = SL_STATUS_OK;
 #endif /* EZSP_HOST */
 
-  sl_zigbee_af_core_println("%s: %s: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "Ota Server Deactivate",
                             status);

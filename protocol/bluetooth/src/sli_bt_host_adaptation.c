@@ -15,12 +15,12 @@
  ******************************************************************************/
 
 #include "sli_bt_host_adaptation.h"
+#include "sl_bluetooth_config.h"
 #include "sl_bt_host_adaptation_config.h"
 #include "sl_bt_api.h"
 #include "sl_assert.h"
+#include "sl_core.h"
 #include "em_device.h"
-#include "em_system.h"
-#include "em_chip.h"
 #include "sl_component_catalog.h"
 #if defined(SL_CATALOG_GECKO_BOOTLOADER_INTERFACE_PRESENT)
 #include "btl_interface.h"
@@ -99,16 +99,6 @@ void sli_bt_host_adaptation_init_interrupts(void)
 #endif // !defined(SL_CATALOG_KERNEL_PRESENT)
 }
 
-// Get the hardware version information
-void sli_bt_host_adaptation_get_hardware_version(uint8_t *hw_major_version,
-                                                 uint8_t *hw_minor_version)
-{
-  SYSTEM_ChipRevision_TypeDef rev;
-  SYSTEM_ChipRevisionGet(&rev);
-  *hw_major_version = rev.major;
-  *hw_minor_version = rev.minor;
-}
-
 // Get the bootloader version information
 sl_status_t sli_bt_host_adaptation_get_bootloader_version(uint32_t *bootloader_version)
 {
@@ -131,5 +121,158 @@ sl_status_t sli_bt_host_adaptation_get_bootloader_version(uint32_t *bootloader_v
 // Reset the chip
 void sli_bt_host_adaptation_chip_reset(void)
 {
-  CHIP_Reset();
+  CORE_ResetSystem();
 }
+
+#if defined(SL_CATALOG_NVM3_PRESENT)
+#include "nvm3_generic.h"
+#include "nvm3_default.h"
+
+/**
+ * @brief NVM3 handle used for NVM3 in the Bluetooth host stack
+ */
+#define SL_BT_NVM3 (nvm3_defaultHandle)
+
+/**
+ * @brief NVM3 key for custom Bluetooth address type. Value 1 byte: 0 for public type, 1 for static
+ */
+#define SLI_BT_NVM3_LOCAL_BD_ADDR_TYPE 0x4003c
+
+/**
+ * @brief NVM3 key for custom Bluetooth address. Value: 6 bytes in little endian
+ */
+#define SLI_BT_NVM3_LOCAL_BD_ADDR      0x4002c
+
+/**
+ * @brief Length of a Bluetooth address
+ */
+#define SLI_BT_BD_ADDRESS_LEN      6
+
+sl_status_t sli_bt_host_adaptation_write_custom_address(uint8_t address_type,
+                                                        const uint8_t *address)
+{
+  if ((address_type != sl_bt_gap_public_address)
+      && (address_type != sl_bt_gap_static_address)) {
+    return SL_STATUS_INVALID_PARAMETER;
+  }
+
+  sl_status_t result = nvm3_open(SL_BT_NVM3, nvm3_defaultInit);
+  if (result != SL_STATUS_OK) {
+    return result;
+  }
+
+  // 00:00:00:00:00:00 or ff:ff:ff:ff:ff:ff is used to reset the custom address.
+  // Delete the NVM3 keys and the default address will be used in the next reboot.
+  uint8_t all_bit_1_address[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+  uint8_t all_bit_0_address[SLI_BT_BD_ADDRESS_LEN] = { 0x00 };
+  if ((memcmp(address, all_bit_1_address, SLI_BT_BD_ADDRESS_LEN) == 0)
+      || (memcmp(address, all_bit_0_address, SLI_BT_BD_ADDRESS_LEN) == 0)) {
+    result = nvm3_deleteObject(SL_BT_NVM3, SLI_BT_NVM3_LOCAL_BD_ADDR_TYPE);
+    if ((result == SL_STATUS_OK) || (result == SL_STATUS_NOT_FOUND)) {
+      result = nvm3_deleteObject(SL_BT_NVM3, SLI_BT_NVM3_LOCAL_BD_ADDR);
+    }
+    if (result == SL_STATUS_NOT_FOUND) {
+      result = SL_STATUS_OK;
+    }
+    return result;
+  }
+
+  // A static device address needs set two MSB bits to 1
+  if (address_type == sl_bt_gap_static_address && (address[5] >> 6) != 3) {
+    return SL_STATUS_INVALID_PARAMETER;
+  }
+
+  if (address_type == sl_bt_gap_public_address) {
+    result = nvm3_deleteObject(SL_BT_NVM3, SLI_BT_NVM3_LOCAL_BD_ADDR_TYPE);
+    if (result == SL_STATUS_NOT_FOUND) {
+      result = SL_STATUS_OK;
+    }
+  } else {
+    result = nvm3_writeData(SL_BT_NVM3,
+                            SLI_BT_NVM3_LOCAL_BD_ADDR_TYPE,
+                            (void*) &address_type,
+                            sizeof(address_type));
+  }
+
+  if (result == SL_STATUS_OK) {
+    result = nvm3_writeData(SL_BT_NVM3,
+                            SLI_BT_NVM3_LOCAL_BD_ADDR,
+                            (void*) address,
+                            SLI_BT_BD_ADDRESS_LEN);
+  }
+
+  return result;
+}
+#else
+sl_status_t sli_bt_host_adaptation_write_custom_address(uint8_t address_type,
+                                                        const uint8_t *address)
+{
+  (void) address_type;
+  (void) address;
+  // The user application does not use NVM3
+  return SL_STATUS_NOT_AVAILABLE;
+}
+#endif // SL_CATALOG_NVM3_PRESENT
+
+// Load custom Bluetooth identity address from NVM3
+sl_status_t sli_bt_host_adaptation_read_custom_address(uint8_t *address_type,
+                                                       uint8_t *address)
+{
+#if (SL_BT_CONFIG_SET_CUSTOM_ADDRESS_FROM_NVM3 == 1) && defined(SL_CATALOG_NVM3_PRESENT)
+  if (!address_type || !address) {
+    return SL_STATUS_INVALID_PARAMETER;
+  }
+
+  sl_status_t result = nvm3_open(SL_BT_NVM3, nvm3_defaultInit);
+
+  if (result == SL_STATUS_OK) {
+    // Read the address in NVM3
+    result = nvm3_readData(SL_BT_NVM3, SLI_BT_NVM3_LOCAL_BD_ADDR, address, SLI_BT_BD_ADDRESS_LEN);
+  }
+
+  if (result == SL_STATUS_OK) {
+    // Read the address type in NVM3. Treat the address as public device address if error
+    sl_status_t read_type_result = nvm3_readData(SL_BT_NVM3, SLI_BT_NVM3_LOCAL_BD_ADDR_TYPE, address_type, sizeof(*address_type));
+    if (read_type_result != SL_STATUS_OK) {
+      *address_type = 0;
+    }
+  }
+
+  return result;
+#else
+  // The user application does not use custom address, or NVM3 does not present
+  (void) address_type;
+  (void) address;
+  return SL_STATUS_NOT_FOUND;
+#endif // (SL_BT_CONFIG_SET_CUSTOM_ADDRESS_FROM_NVM3 == 1) && defined(SL_CATALOG_NVM3_PRESENT)
+}
+
+#if (SL_BT_CONFIG_SET_CTUNE_FROM_NVM3 == 1) && defined(SL_CATALOG_NVM3_PRESENT)
+#include "em_cmu.h"
+
+/**
+ * @brief NVM3 key for custom CTUNE in Bluetooth NVM3 space. Value 2 bytes
+ */
+#define SLI_BT_NVM3_CTUNE 0x40032
+
+// Set HFXO CTUNE using the value stored in the Bluetooth space of NVM3.
+void sli_bt_host_adaptation_read_and_set_ctune()
+{
+  uint16_t ctune;
+  sl_status_t err = nvm3_open(SL_BT_NVM3, nvm3_defaultInit);
+  if (err == SL_STATUS_OK) {
+    err = nvm3_readData(SL_BT_NVM3, SLI_BT_NVM3_CTUNE, &ctune, sizeof(ctune));
+  }
+  if (err == SL_STATUS_OK) {
+    // Setting CTUNE could fail and we do it with best effort. Please find CTUNE and
+    // its calibration related details in the platform.
+    err = CMU_HFXOCTuneSet(ctune);
+    (void) err;
+  }
+}
+#else
+void sli_bt_host_adaptation_read_and_set_ctune()
+{
+  // Feature is disabled. Do nothing.
+}
+#endif // #if (SL_BT_CONFIG_SET_CTUNE_FROM_NVM3 == 1) && defined(SL_CATALOG_NVM3_PRESENT)

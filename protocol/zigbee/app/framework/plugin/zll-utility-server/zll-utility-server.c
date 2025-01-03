@@ -74,7 +74,7 @@ WEAK(bool sl_zigbee_af_zll_commissioning_server_endpoint_information_cb(uint8_t 
 }
 #endif // !SL_CATALOG_ZIGBEE_ZLL_COMMISSIONING_SERVER_PRESENT
 
-bool sl_zigbee_af_zll_commissioning_cluster_get_group_identifiers_request_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_zll_commissioning_cluster_get_group_identifiers_request_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_zll_commissioning_cluster_get_group_identifiers_request_command_t cmd_data;
 
@@ -87,10 +87,10 @@ bool sl_zigbee_af_zll_commissioning_cluster_get_group_identifiers_request_cb(sl_
 
   if (zcl_decode_zll_commissioning_cluster_get_group_identifiers_request_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_zll_commissioning_cluster_println("RX: GetGroupIdentifiersRequest 0x%x",
+  sl_zigbee_af_zll_commissioning_cluster_println("RX: GetGroupIdentifiersRequest 0x%02X",
                                                  cmd_data.startIndex);
 
   (void) sl_zigbee_af_fill_external_buffer((ZCL_CLUSTER_SPECIFIC_COMMAND
@@ -120,14 +120,14 @@ bool sl_zigbee_af_zll_commissioning_cluster_get_group_identifiers_request_cb(sl_
   sendStatus = sl_zigbee_af_send_response();
   if (SL_STATUS_OK != sendStatus) {
     sl_zigbee_af_zll_commissioning_cluster_println("ZLL: failed to send %s response: "
-                                                   "0x%x",
+                                                   "0x%02X",
                                                    "group_identifiers",
                                                    sendStatus);
   }
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_zll_commissioning_cluster_get_endpoint_list_request_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_zll_commissioning_cluster_get_endpoint_list_request_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_zll_commissioning_cluster_get_endpoint_list_request_command_t cmd_data;
 
@@ -140,10 +140,10 @@ bool sl_zigbee_af_zll_commissioning_cluster_get_endpoint_list_request_cb(sl_zigb
 
   if (zcl_decode_zll_commissioning_cluster_get_endpoint_list_request_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_zll_commissioning_cluster_println("RX: GetEndpointListRequest 0x%x",
+  sl_zigbee_af_zll_commissioning_cluster_println("RX: GetEndpointListRequest 0x%02X",
                                                  cmd_data.startIndex);
 
   (void) sl_zigbee_af_fill_external_buffer((ZCL_CLUSTER_SPECIFIC_COMMAND
@@ -176,11 +176,11 @@ bool sl_zigbee_af_zll_commissioning_cluster_get_endpoint_list_request_cb(sl_zigb
   sendStatus = sl_zigbee_af_send_response();
   if (SL_STATUS_OK != sendStatus) {
     sl_zigbee_af_zll_commissioning_cluster_println("ZLL: failed to send %s response: "
-                                                   "0x%x",
+                                                   "0x%02X",
                                                    "endpoint_list",
                                                    sendStatus);
   }
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
 uint32_t sl_zigbee_af_zll_commissioning_cluster_server_command_parse(sl_service_opcode_t opcode,
@@ -189,24 +189,22 @@ uint32_t sl_zigbee_af_zll_commissioning_cluster_server_command_parse(sl_service_
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_GET_ENDPOINT_LIST_REQUEST_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_zll_commissioning_cluster_get_endpoint_list_request_cb(cmd);
+        status = sl_zigbee_af_zll_commissioning_cluster_get_endpoint_list_request_cb(cmd);
         break;
       }
       case ZCL_GET_GROUP_IDENTIFIERS_REQUEST_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_zll_commissioning_cluster_get_group_identifiers_request_cb(cmd);
+        status = sl_zigbee_af_zll_commissioning_cluster_get_group_identifiers_request_cb(cmd);
         break;
       }
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

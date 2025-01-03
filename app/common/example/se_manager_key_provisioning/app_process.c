@@ -175,7 +175,7 @@ static const char *tamper_source[SL_SE_TAMPER_SIGNAL_NUM_SIGNALS] = {
   "Temperature sensor    : ",
   "DPLL lock fail low    : ",
   "DPLL lock fail high   : ",
-#if defined(_SILICON_LABS_32B_SERIES_2_CONFIG_5)
+#if defined(_SILICON_LABS_32B_SERIES_2_CONFIG_5) || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_9)
   "ETAMPDET              : ",
   "PRS0                  : ",
   "PRS1                  : ",
@@ -211,7 +211,7 @@ void app_process_action(void)
   switch (app_state) {
     case SE_MANAGER_INIT:
       printf("\n\n%s - Core running at %" PRIu32 " kHz.\n", example_string,
-             CMU_ClockFreqGet(cmuClock_CORE) / 1000);
+             SystemHCLKGet() / 1000);
       printf("  . SE manager initialization... ");
       if (init_se_manager() == SL_STATUS_OK) {
         app_state = READ_SE_VERSION;

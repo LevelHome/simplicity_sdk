@@ -478,15 +478,15 @@ sl_status_t sl_zigbee_ezsp_setup_delayed_join(
   // Network key timeout
   uint8_t networkKeyTimeoutS);
 
-// Get the current scheduler priorities for multiprotocol apps.
+// Get the current scheduler priorities for radio operations
 void sl_zigbee_ezsp_radio_get_scheduler_priorities(
   // Return: The current priorities.
-  sl_zigbee_multiprotocol_priorities_t *priorities);
+  sl_802154_radio_priorities_t *priorities);
 
-// Set the current scheduler priorities for multiprotocol apps.
+// Set the current scheduler priorities for radio operations
 void sl_zigbee_ezsp_radio_set_scheduler_priorities(
   // The current priorities.
-  sl_zigbee_multiprotocol_priorities_t *priorities);
+  sl_802154_radio_priorities_t *priorities);
 
 // Get the current multiprotocol sliptime
 void sl_zigbee_ezsp_radio_get_scheduler_sliptime(
@@ -3074,7 +3074,9 @@ void sl_zigbee_ezsp_gpep_incoming_message_handler(
   // The length of the GPD command payload.
   uint8_t gpdCommandPayloadLength,
   // The GPD command payload.
-  uint8_t *gpdCommandPayload);
+  uint8_t *gpdCommandPayload,
+  // Rx packet information.
+  sl_zigbee_rx_packet_info_t *packetInfo);
 
 // Retrieves the proxy table entry stored at the passed index.
 // Return: An sl_status_t value indicating success or the reason for failure.

@@ -25,3 +25,6 @@ define:
 provides:
   - name: bootloader_bgapi_uartdfu
   - name: bootloader_bgapi_uartdfu_nonsecure
+metadata:
+  sbom:
+    license: MSLA

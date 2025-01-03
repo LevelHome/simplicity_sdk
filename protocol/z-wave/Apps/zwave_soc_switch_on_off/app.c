@@ -19,7 +19,6 @@
 #include "ZAF_network_management.h"
 #include "events.h"
 #include "zpal_watchdog.h"
-#include "app_hw.h"
 #include "board_indicator.h"
 #include "ZAF_ApplicationEvents.h"
 #include "CC_BinarySwitch.h"
@@ -32,6 +31,10 @@
 
 #ifdef SL_CATALOG_ZW_CLI_COMMON_PRESENT
 #include "zw_cli_common.h"
+#endif
+
+#if (!defined(SL_CATALOG_SILICON_LABS_ZWAVE_APPLICATION_PRESENT) && !defined(UNIT_TEST))
+#include "app_hw.h"
 #endif
 
 #ifdef DEBUGPRINT
@@ -100,13 +103,17 @@ ApplicationInit(__attribute__((unused)) zpal_reset_reason_t eResetReason)
 void
 ApplicationTask(SApplicationHandles* pAppHandles)
 {
+  uint32_t unhandledEvents = 0;
   ZAF_Init(xTaskGetCurrentTaskHandle(), pAppHandles);
 
 #ifdef DEBUGPRINT
   ZAF_PrintAppInfo();
 #endif
 
+#if (!defined(SL_CATALOG_SILICON_LABS_ZWAVE_APPLICATION_PRESENT) && !defined(UNIT_TEST))
+  /* This preprocessor statement can be deleted from the source code */
   app_hw_init();
+#endif
 
   /* Enter SmartStart*/
   /* Protocol will commence SmartStart only if the node is NOT already included in the network */
@@ -115,8 +122,12 @@ ApplicationTask(SApplicationHandles* pAppHandles)
   // Wait for and process events
   DPRINT("SwitchOnOff Event processor Started\r\n");
   for (;; ) {
-    if (false == zaf_event_distributor_distribute()) {
+    unhandledEvents = zaf_event_distributor_distribute();
+    if (0 != unhandledEvents) {
+      DPRINTF("Unhandled Events: 0x%08lx\n", unhandledEvents);
+#ifdef UNIT_TEST
       return;
+#endif
     }
   }
 }

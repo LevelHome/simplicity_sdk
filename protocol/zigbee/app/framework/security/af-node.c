@@ -60,16 +60,16 @@ sl_status_t zaNodeSecurityInit(bool centralizedNetwork)
 
   sl_zigbee_af_security_init_cb(&state, &newExtended, false); // trust center?
 
-  sl_zigbee_af_security_println("set state to: 0x%2x", state.bitmask);
+  sl_zigbee_af_security_println("set state to: 0x%04X", state.bitmask);
   status = sl_zigbee_set_initial_security_state(&state);
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_security_println("security init node: 0x%x", status);
+    sl_zigbee_af_security_println("security init node: 0x%02X", status);
     return status;
   }
 
   // Don't need to check on the status here, sl_zigbee_set_extended_security_bitmask
   // always returns SL_STATUS_OK.
-  sl_zigbee_af_security_println("set extended security to: 0x%2x", newExtended);
+  sl_zigbee_af_security_println("set extended security to: 0x%04X", newExtended);
   sl_zigbee_set_extended_security_bitmask(newExtended);
 
   sli_zigbee_af_clear_link_key_table();

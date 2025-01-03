@@ -1,7 +1,7 @@
 #ifndef SL_HCI_CPC_H
 #define SL_HCI_CPC_H
 
-#include "em_common.h"
+#include "sl_common.h"
 
 typedef uint32_t Ecode_t;
 

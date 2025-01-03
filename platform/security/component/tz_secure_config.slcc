@@ -22,3 +22,7 @@ include:
 template_contribution:
   - name: component_catalog
     value: trustzone_secure_config
+
+metadata:
+  sbom:
+    license: Zlib

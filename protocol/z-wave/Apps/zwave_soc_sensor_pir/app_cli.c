@@ -39,8 +39,6 @@
 #include "app_log.h"
 #include "ev_man.h"
 #include "events.h"
-#include "app_cli.h"
-#include "zpal_power_manager.h"
 #include "zaf_event_distributor_soc.h"
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
@@ -77,35 +75,15 @@ void cli_battery_report(sl_cli_command_arg_t *arguments)
  *****************************************************************************/
 void cli_motion_detected(sl_cli_command_arg_t *arguments)
 {
-  (void) arguments;
-  app_log_info("Motion detected\r\n");
-  zaf_event_distributor_enqueue_app_event(EVENT_APP_TRANSITION_TO_ACTIVE);
-}
-
-/******************************************************************************
- * CLI - enable_sleeping: Enabling the device to go into sleep mode
- *****************************************************************************/
-void cli_enable_sleeping(sl_cli_command_arg_t *arguments)
-{
-  (void) arguments;
-  app_log_info("Enable sleeping\r\n");
-  cli_util_prevent_sleeping(false);
-}
-
-/******************************************************************************
- * CLI - Util Preventing the application to go into sleep mode to keep
- * the CLI alive
- *****************************************************************************/
-void cli_util_prevent_sleeping(bool is_prevent)
-{
-  static zpal_pm_handle_t pm_handle = NULL;
-
-  if ((true == is_prevent) && (pm_handle == NULL)) {
-    pm_handle  = zpal_pm_register(ZPAL_PM_TYPE_USE_RADIO);
-    zpal_pm_stay_awake(pm_handle, 0);
+  char* state = sl_cli_get_argument_string(arguments, 0);
+  if (strcmp(state, "activate") == 0) {
+    app_log_info("Activate PIR event\r\n");
+    zaf_event_distributor_enqueue_app_event(EVENT_APP_TRANSITION_TO_ACTIVE);
+  } else if (strcmp(state, "deactivate") == 0) {
+    app_log_info("Deactivate PIR event\r\n");
+    zaf_event_distributor_enqueue_app_event(EVENT_APP_TRANSITION_TO_DEACTIVE);
   } else {
-    zpal_pm_cancel(pm_handle);
-    pm_handle = NULL;
+    app_log_error("Invalid argument\r\n");
   }
 }
 

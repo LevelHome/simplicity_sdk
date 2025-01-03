@@ -123,7 +123,7 @@ static const uint8_t gcm_tag[] = {
   0x7a, 0x4f, 0x56, 0xb4, 0x22, 0xac, 0xab, 0x49
 };
 
-#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT)
+#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT) && !defined(_SILICON_LABS_32B_SERIES_3_CONFIG_301)
 /// Initial counter for ChaCha20
 static uint32_t initial_counter;
 
@@ -193,7 +193,7 @@ void app_process_action(void)
   switch (app_state) {
     case SE_MANAGER_INIT:
       printf("\n%s - Core running at %" PRIu32 " kHz.\n", example_string,
-             CMU_ClockFreqGet(cmuClock_CORE) / 1000);
+             SystemHCLKGet() / 1000);
       printf("  . SE manager initialization... ");
       if (init_se_manager() == SL_STATUS_OK) {
         printf("  + Setting a 256-bit symmetric plaintext key... ");
@@ -396,7 +396,7 @@ void app_process_action(void)
         if (memcmp(gcm_plain_text, get_plain_msg_buf_ptr(),
                    sizeof(gcm_plain_text)) == 0) {
           printf("OK\n");
-#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT)
+#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT) && !defined(_SILICON_LABS_32B_SERIES_3_CONFIG_301)
           app_state = START_CHACHA20_ENCRYPT_STREAM;
 #else
           app_state = SE_MANAGER_EXIT;
@@ -410,7 +410,7 @@ void app_process_action(void)
       }
       break;
 
-#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT)
+#if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT) && !defined(_SILICON_LABS_32B_SERIES_3_CONFIG_301)
     case START_CHACHA20_ENCRYPT_STREAM:
       printf("\n  . ChaCha20 encryption streaming test\n");
       printf("  + Encrypting %d bytes plaintext with %d-bit key... ",

@@ -88,11 +88,11 @@
 #define IOT_I2C_CFG_SENSOR_PERIPHERAL_NO         0
 
 // I2C0 SCL on PB05
-#define IOT_I2C_CFG_SENSOR_SCL_PORT              gpioPortB
+#define IOT_I2C_CFG_SENSOR_SCL_PORT              SL_GPIO_PORT_B
 #define IOT_I2C_CFG_SENSOR_SCL_PIN               5
 
 // I2C0 SDA on PB06
-#define IOT_I2C_CFG_SENSOR_SDA_PORT              gpioPortB
+#define IOT_I2C_CFG_SENSOR_SDA_PORT              SL_GPIO_PORT_B
 #define IOT_I2C_CFG_SENSOR_SDA_PIN               6
 
 // [I2C_IOT_I2C_CFG_SENSOR]$

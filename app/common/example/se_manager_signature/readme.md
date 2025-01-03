@@ -1,6 +1,6 @@
 # SE Manager Digital Signature (ECDSA and EdDSA)
 
-This example uses the SE Manager API to perform the digital signature (ECDSA and EdDSA) on the supported Series 2 device.
+This example uses the SE Manager API to perform the digital signature (ECDSA and EdDSA) on the supported device.
 
 In this example, SE Manager is used first to generate a public/private key pair using a given Elliptic Curve Cryptography (ECC) curve. The private key is then used to sign the hash of a message buffer. The signature is then verified using the public key.
 

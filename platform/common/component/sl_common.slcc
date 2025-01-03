@@ -14,6 +14,7 @@ include:
   - path: inc
     file_list:
       - path: sl_common.h
+      - path: sl_compiler.h
 requires:
   - name: sl_assert
 provides:

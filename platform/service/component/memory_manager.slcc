@@ -40,21 +40,15 @@ requires:
   - name: status
   - name: memory_manager_region
   - name: memory_manager_pool_implementation
-  - name: memory_manager_pool
-    condition: [device_series_2]
   - name: memory_manager_cpp
     condition: [cpp_support]
 recommends:
   - id: memory_manager_pool
-    condition: [device_series_2]
-  - id: memory_manager_pool_power_aware
-    condition: [device_series_3]
-  - id: memory_manager_pool
-    condition: [device_host]
 template_contribution:
   - name: component_catalog
     value: memory_manager
   - name: event_handler
+    condition: [sl_system]
     unless: [cpp_support]
     value:
       event: platform_init

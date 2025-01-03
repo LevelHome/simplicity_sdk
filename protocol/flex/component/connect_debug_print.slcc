@@ -1,6 +1,6 @@
 id: "connect_debug_print"
 label: "Debug Print"
-package: "Flex"
+package: "Connect"
 category: "Connect"
 quality: "production"
 description: "Provides APIs for adding serial debugging capability."

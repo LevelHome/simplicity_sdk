@@ -42,7 +42,7 @@ void sl_zigbee_af_multirail_demo_cli_init(sl_cli_command_arg_t *arguments)
  */
 void sl_zigbee_af_multirail_demo_cli_get_handle(sl_cli_command_arg_t *arguments)
 {
-  sl_zigbee_af_core_println("%4X", (uint32_t)sl_zigbee_af_multirail_demo_get_handle);
+  sl_zigbee_af_core_println("%08X", (uint32_t)sl_zigbee_af_multirail_demo_get_handle);
 }
 
 /** Send a packet using the second RAIL instance.

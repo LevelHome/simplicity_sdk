@@ -21,6 +21,10 @@
 #include "app/framework/util/common.h"
 #include "zll-identify-server-config.h"
 #include "zap-cluster-command-parser.h"
+#include "sl_component_catalog.h"
+#ifdef SL_CATALOG_SIMPLE_LED_PRESENT
+#include "sl_simple_led_instances.h"
+#endif // SL_CATALOG_SIMPLE_LED_PRESENT
 
 #ifndef EZSP_HOST
 #include "hal/hal.h"
@@ -122,7 +126,7 @@ void sli_zigbee_af_zll_identify_server_init_callback(uint8_t init_level)
   }
 }
 
-bool sl_zigbee_af_identify_cluster_trigger_effect_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_identify_cluster_trigger_effect_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_identify_cluster_trigger_effect_command_t cmd_data;
   uint8_t endpoint = sl_zigbee_af_current_endpoint();
@@ -139,7 +143,7 @@ bool sl_zigbee_af_identify_cluster_trigger_effect_cb(sl_zigbee_af_cluster_comman
     goto default_response;
   }
 
-  sl_zigbee_af_identify_cluster_println("RX identify:trigger effect 0x%x variant 0x%x", cmd_data.effectId, cmd_data.effectVariant);
+  sl_zigbee_af_identify_cluster_println("RX identify:trigger effect 0x%02X variant 0x%02X", cmd_data.effectId, cmd_data.effectVariant);
 
   if (state->active) {
     switch (state->effectId) {
@@ -189,8 +193,7 @@ bool sl_zigbee_af_identify_cluster_trigger_effect_cb(sl_zigbee_af_cluster_comman
   }
 
   default_response:
-  sl_zigbee_af_send_immediate_default_response(status);
-  return true;
+  return status;
 }
 
 void sli_zigbee_af_zll_identify_server_blink_effect(uint8_t endpoint)
@@ -203,10 +206,18 @@ void sli_zigbee_af_zll_identify_server_blink_effect(uint8_t endpoint)
   }
 
 #ifndef EZSP_HOST
-  halToggleLed(BOARDLED0);
-  halToggleLed(BOARDLED1);
-  halToggleLed(BOARDLED2);
-  halToggleLed(BOARDLED3);
+#ifdef SL_CATALOG_SIMPLE_LED_LED0_PRESENT
+  sl_led_toggle(&sl_led_led0);
+#endif // SL_CATALOG_SIMPLE_LED_LED0_PRESENT
+#ifdef SL_CATALOG_SIMPLE_LED_LED1_PRESENT
+  sl_led_toggle(&sl_led_led1);
+#endif // SL_CATALOG_SIMPLE_LED_LED1_PRESENT
+#ifdef SL_CATALOG_SIMPLE_LED_LED2_PRESENT
+  sl_led_toggle(&sl_led_led2);
+#endif // SL_CATALOG_SIMPLE_LED_LED2_PRESENT
+#ifdef SL_CATALOG_SIMPLE_LED_LED3_PRESENT
+  sl_led_toggle(&sl_led_led3);
+#endif // SL_CATALOG_SIMPLE_LED_LED3_PRESENT
 #endif
 
   state->eventsRemaining = state->eventsRemaining - 1;
@@ -231,15 +242,13 @@ uint32_t sl_zigbee_af_zll_identify_cluster_server_command_parse(sl_service_opcod
                                                                 sl_service_function_context_t *context)
 {
   (void)opcode;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
   if (!cmd->mfgSpecific) {
     if (cmd->commandId == ZCL_TRIGGER_EFFECT_COMMAND_ID) {
-      wasHandled = sl_zigbee_af_identify_cluster_trigger_effect_cb(cmd);
+      status = sl_zigbee_af_identify_cluster_trigger_effect_cb(cmd);
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

@@ -20,18 +20,37 @@ class CALC_Demodulator_panther(CALC_Demodulator_nixi):
 
         var = self._addModelVariable(model, 'zigbee_feature', Enum, ModelVariableFormat.DECIMAL, 'Zigbee Feature')
         member_data = [
-            ['STANDARD', 0, 'Standard'],
-            ['LEGACY', 1, 'Legacy Demod'],
-            ['COHERENT', 2, 'Coherent Demod'],
-            ['ANTDIV', 3, 'Antenna Diversity'],
-            ['FEM', 4, 'External LNA'],
-            ['ANTDIV_FEM', 5, 'Antenna Diversity with External LNA'],
-            ['FCS', 6, 'Fast channel switch'],
+            ['NONE', 0, 'None'],
+            ['STANDARD', 1, 'Standard'],
+            ['LEGACY', 2, 'Legacy Demod'],
+            ['COHERENT', 3, 'Coherent Demod'],
+            ['ANTDIV', 4, 'Antenna Diversity'],
+            ['FEM', 5, 'External LNA'],
+            ['ANTDIV_FEM', 6, 'Antenna Diversity with External LNA'],
+            ['FCS', 7, 'Fast channel switch'],
         ]
         var.var_enum = CreateModelVariableEnum(
             'ZigbeeFeatureEnum',
             'List of supported zigbee PHY features',
             member_data)
+
+        var = self._addModelVariable(model, 'ble_feature', Enum, ModelVariableFormat.DECIMAL, 'Bluetooth LE Feature')
+        member_data = [
+            ['NONE', 0, 'None'],
+            ['LE_1M', 1, 'Bluetooth LE 1Mbps'],
+            ['LE_2M', 2, 'Bluetooth LE 2Mbps'],
+            ['CODED_500K', 3, 'Bluetooth LE Coded 500Kbps'],
+            ['CODED_125K', 4, 'Bluetooth LE Coded 125Kbps'],
+            ['AOX_1M', 5, 'Bluetooth LE AoX 1Mbps'],
+        ]
+        var.var_enum = CreateModelVariableEnum(
+            'BleFeatureEnum',
+            'List of supported Bluetooth LE PHY features',
+            member_data)
+
+    def calc_default_feature_mode(self, model):
+        model.vars.zigbee_feature.value = model.vars.zigbee_feature.var_enum.NONE
+        model.vars.ble_feature.value = model.vars.ble_feature.var_enum.NONE
 
     def _add_demod_select_variable(self, model):
         model.vars.demod_select.var_enum = CreateModelVariableEnum(
@@ -44,10 +63,6 @@ class CALC_Demodulator_panther(CALC_Demodulator_nixi):
                 ['TRECS_SLICER', 3, 'TRecS + HD Demod'],
                 ['LONGRANGE', 5, 'BLE Long Range Demod'],
             ])
-
-    def calc_zigbee_feature_mode(self, model):
-        # : calculate default
-        model.vars.zigbee_feature.value = model.vars.zigbee_feature.var_enum.STANDARD
 
     def calc_demod_sel(self, model):
         flag_using_Viterbi_demod = (model.vars.MODEM_VITERBIDEMOD_VTDEMODEN.value == 1)
@@ -69,14 +84,15 @@ class CALC_Demodulator_panther(CALC_Demodulator_nixi):
         model.vars.demod_select.value = demod_select
 
     def calc_fxo_or_fdec8(self, model):
-        if (model.phy.name.find("CTUNE") > 0) or (model.phy.name.find("CW") > 0):
-            # Leaving the legacy EFR32 90nm calculation here so the utility PHYs will calculate
-            # Otherwise the utility PHYs will never resolve model.vars.xtal_frequency.value, so many, many calculations will never run.
-            # TODO: Likely need a better solution here long term
-            model.vars.fxo_or_fdec8.value = model.vars.xtal_frequency.value * 1.0
+        if model.phy is not None:
+            if (model.phy.name.find("CTUNE") > 0) or (model.phy.name.find("CW") > 0):
+                # Leaving the legacy EFR32 90nm calculation here so the utility PHYs will calculate
+                # Otherwise the utility PHYs will never resolve model.vars.xtal_frequency.value, so many, many calculations will never run.
+                # TODO: Likely need a better solution here long term
+                model.vars.fxo_or_fdec8.value = model.vars.xtal_frequency.value * 1.0
 
-            # FIXME: Some 40nm PHYs must specify phy.profile_inputs.if_frequency_hz.value
-            # Seems connected to a circular dependency in calc_fxo_or_fdec8 needing  model.vars.rx_synth_freq_actual
+                # FIXME: Some 40nm PHYs must specify phy.profile_inputs.if_frequency_hz.value
+                # Seems connected to a circular dependency in calc_fxo_or_fdec8 needing  model.vars.rx_synth_freq_actual
 
         # Note Panther will overload this to LO / 64
         # EFR32 90nm parts (Dumbo, Jumbo, Nerio, Nixi) use fxo here.

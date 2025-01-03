@@ -42,6 +42,12 @@ extern "C" {
  * Initialize the RAIL DMA Utility.
  *
  * @note: This function should be called during application initialization.
+ *
+ * @warning If TrustZone is enabled and LDMA is configured as secure
+ *   peripheral, this function must be called by the secure application.
+ *   Non-secure application call is unnecessary because RAIL knows it must work
+ *   with secure LDMA when \ref RAIL_TZ_Config_t::radioPerformM2mLdmaCallback
+ *   is provided to \ref RAIL_TZ_InitNonSecure().
  */
 void sl_rail_util_dma_init(void);
 

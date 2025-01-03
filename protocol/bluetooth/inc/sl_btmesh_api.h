@@ -29,6 +29,24 @@ extern "C" {
 #include "sl_status.h"
 #include "sl_bgapi.h"
 
+/**
+ * @addtogroup sl_btmesh_event_masks BT Event System Event Masks
+ * @{
+ *
+ * @brief Event Mask values used with Event System
+ *
+ * When the component `bluetooth_event_system_ipc` is included in the
+ * application, the Bluetooth mesh stack events are published using the Event
+ * System provided by the `event_system` component. The constants in this group
+ * define the event masks used for Bluetooth mesh stack events.
+ */
+
+/**
+ * @brief Event mask bit set in all public Bluetooth mesh events
+ */
+#define SL_BTMESH_EVENT_MASK_PUBLIC ((uint32_t) 0x01)
+
+/** @} */ // end addtogroup sl_btmesh_event_masks
 
 
 
@@ -521,8 +539,22 @@ PACKSTRUCT( struct sl_btmesh_evt_node_display_output_oob_s
   uint8_t    output_action; /**< Enum @ref sl_btmesh_node_oob_output_action_t.
                                  Selected output action */
   uint8_t    output_size;   /**< Size of data to output in characters. */
-  uint8array data;          /**< Raw 16-byte array containing the output data
-                                 value. */
+  uint8array data;          /**< Raw 16-byte or 32-byte array containing the
+                                 output authentication data. The length of the
+                                 data depends on the chosen provisioning
+                                 algorithm; see the @ref
+                                 sl_btmesh_evt_node_start_received event for
+                                 details on how the stack indicates the
+                                 Provisioner's choice of provisioning algorithm
+                                 to the application.
+
+                                 Note that the raw data is encoded in the manner
+                                 described in the Mesh Protocol 1.1 specifcation
+                                 Section 5.4.2.4, and must be converted to a
+                                 human-readable format for displaying. Whether
+                                 the data should be treated as Numeric or
+                                 Alphanumeric depends on the selected output
+                                 action. */
 });
 
 typedef struct sl_btmesh_evt_node_display_output_oob_s sl_btmesh_evt_node_display_output_oob_t;
@@ -1158,7 +1190,18 @@ sl_status_t sl_btmesh_node_get_rssi(int8_t *rssi);
  * Provisioner is displaying.
  *
  * @param[in] data_len Length of data in @p data
- * @param[in] data Raw 16-byte array containing the authentication data.
+ * @param[in] data @parblock
+ *   Raw 16-byte or 32-byte array containing the input authentication data. The
+ *   length of the data depends on the chosen provisioning algorithm; see the
+ *   @ref sl_btmesh_evt_node_start_received event for details on how the stack
+ *   indicates the Provisioner's choice of provisioning algorithm to the
+ *   application.
+ *
+ *   Note that the raw data given to the stack must be encoded in the manner
+ *   described in the Mesh Protocol 1.1 specifcation Section 5.4.2.4. Whether
+ *   the data should be treated as Numeric or Alphanumeric depends on the
+ *   selected input action.
+ *   @endparblock
  *
  * @return SL_STATUS_OK if successful. Error code otherwise.
  *
@@ -1467,7 +1510,17 @@ sl_status_t sl_btmesh_node_get_element_address(uint16_t elem_index,
  * stack requested.
  *
  * @param[in] data_len Length of data in @p data
- * @param[in] data Raw 16-byte array containing the authentication data
+ * @param[in] data @parblock
+ *   Raw 16-byte or 32-byte array containing the static authentication data. The
+ *   length of the data depends on the chosen provisioning algorithm; see the
+ *   @ref sl_btmesh_evt_node_start_received event for details on how the stack
+ *   indicates the Provisioner's choice of provisioning algorithm to the
+ *   application.
+ *
+ *   Note that the raw data given to the stack must be encoded in the manner
+ *   described in the Mesh Protocol 1.1 specifcation Section 5.4.2.4. The data
+ *   type for static OOB authentication data is Binary.
+ *   @endparblock
  *
  * @return SL_STATUS_OK if successful. Error code otherwise.
  *
@@ -2397,7 +2450,7 @@ typedef struct sl_btmesh_evt_prov_oob_pkey_request_s sl_btmesh_evt_prov_oob_pkey
  * @addtogroup sl_btmesh_evt_prov_oob_auth_request sl_btmesh_evt_prov_oob_auth_request
  * @{
  * @brief Provide the Provisioner with the device's output or static data using
- * prov_oob_auth_rsp.
+ * the @ref sl_btmesh_prov_send_oob_auth_response command.
  */
 
 /** @brief Identifier of the oob_auth_request event */
@@ -2438,7 +2491,21 @@ PACKSTRUCT( struct sl_btmesh_evt_prov_oob_display_input_s
   uint8_t    input_action; /**< Enum @ref sl_btmesh_node_oob_input_action_t.
                                 Input action type */
   uint8_t    input_size;   /**< Number of digits or characters */
-  uint8array data;         /**< Raw 16-byte array */
+  uint8array data;         /**< Raw 16-byte or 32-byte array containing the
+                                input authentication data. The length of the
+                                data depends on the chosen provisioning
+                                algorithm; see @ref
+                                sl_btmesh_evt_prov_start_sent event for details
+                                on how to determine which provisioning algorithm
+                                was chosen.
+
+                                Note that the raw data is encoded in the manner
+                                described in the Mesh Protocol 1.1 specifcation
+                                Section 5.4.2.4, and must be converted to a
+                                human-readable format for displaying. Whether
+                                the data should be treated as Numeric or
+                                Alphanumeric depends on the selected input
+                                action. */
 });
 
 typedef struct sl_btmesh_evt_prov_oob_display_input_s sl_btmesh_evt_prov_oob_display_input_t;
@@ -3010,7 +3077,18 @@ sl_status_t sl_btmesh_prov_send_oob_pkey_response(uuid_128 uuid,
  *
  * @param[in] uuid UUID of the Device
  * @param[in] data_len Length of data in @p data
- * @param[in] data Output or static OOB data
+ * @param[in] data @parblock
+ *   Raw 16-byte or 32-byte array containing the static or output authentication
+ *   data. The length of the data depends on the chosen provisioning algorithm;
+ *   see @ref sl_btmesh_evt_prov_start_sent event for details on how to
+ *   determine which provisioning algorithm was chosen.
+ *
+ *   Note that the raw data given to the stack must be encoded in the manner
+ *   described in the Mesh Protocol 1.1 specifcation Section 5.4.2.4. Whether
+ *   the output data should be treated as Numeric or Alphanumeric depends on the
+ *   selected output action. The data type for Static OOB authentication data is
+ *   Binary.
+ *   @endparblock
  *
  * @return SL_STATUS_OK if successful. Error code otherwise.
  *
@@ -3036,7 +3114,7 @@ sl_status_t sl_btmesh_prov_send_oob_auth_response(uuid_128 uuid,
  *   Allowed OOB Input Action types
  * @param[in] min_size Minimum input/output OOB size. Values range from 0
  *   (input/output OOB not used) to 8.
- * @param[in] max_size Maximum input/output OOB size. Must be smaller than or
+ * @param[in] max_size Maximum input/output OOB size. Must be larger than or
  *   equal to the minimum size. Values range from 0 (input/output OOB not used)
  *   to 8.
  *

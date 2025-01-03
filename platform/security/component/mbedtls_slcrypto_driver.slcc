@@ -64,9 +64,6 @@ include:
       - path: gcm_alt.h
         condition: [device_has_cryptoacc]
 requires:
-    # emlib_se is not used, but remains to support backwards compatibility
-  - name: emlib_se
-    condition: [device_has_semailbox, device_series_2]
   - name: libcryptosoc
     condition: [device_has_cryptoacc]
   - name: se_manager
@@ -82,3 +79,7 @@ provides:
   - name: mbedtls_slcrypto_driver
 conflicts:
   - name: tz_secure_key_library_ns
+
+metadata:
+  sbom:
+    license: Zlib

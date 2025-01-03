@@ -146,7 +146,7 @@ static void reallyUpdateCoupledColorTemp(uint8_t endpoint)
                                                                     &options,
                                                                     sizeof(options));
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_level_control_cluster_println("Unable to read Options attribute: 0x%X",
+    sl_zigbee_af_level_control_cluster_println("Unable to read Options attribute: 0x%02X",
                                                status);
     return;
   }
@@ -184,7 +184,7 @@ void sl_zigbee_af_level_control_cluster_server_tick_cb(uint8_t endpoint)
                                               (uint8_t *)&currentLevel,
                                               sizeof(currentLevel));
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_level_control_cluster_println("ERR: reading current level %x", status);
+    sl_zigbee_af_level_control_cluster_println("ERR: reading current level %02X", status);
     writeRemainingTime(endpoint, 0);
     return;
   }
@@ -215,7 +215,7 @@ void sl_zigbee_af_level_control_cluster_server_tick_cb(uint8_t endpoint)
                                                (uint8_t *)&currentLevel,
                                                ZCL_INT8U_ATTRIBUTE_TYPE);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_level_control_cluster_println("ERR: writing current level %x", status);
+    sl_zigbee_af_level_control_cluster_println("ERR: writing current level %02X", status);
     writeRemainingTime(endpoint, 0);
     return;
   }
@@ -240,7 +240,7 @@ void sl_zigbee_af_level_control_cluster_server_tick_cb(uint8_t endpoint)
                                                      (uint8_t *)&state->onLevel,
                                                      ZCL_INT8U_ATTRIBUTE_TYPE);
         if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-          sl_zigbee_af_level_control_cluster_println("ERR: writing current level %x",
+          sl_zigbee_af_level_control_cluster_println("ERR: writing current level %02X",
                                                      status);
         } else {
           updateCoupledColorTemp(endpoint);
@@ -255,7 +255,7 @@ void sl_zigbee_af_level_control_cluster_server_tick_cb(uint8_t endpoint)
                                                      (uint8_t *)&storedLevel8u,
                                                      ZCL_INT8U_ATTRIBUTE_TYPE);
         if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-          sl_zigbee_af_level_control_cluster_println("ERR: writing current level %x",
+          sl_zigbee_af_level_control_cluster_println("ERR: writing current level %02X",
                                                      status);
         } else {
           updateCoupledColorTemp(endpoint);
@@ -295,7 +295,7 @@ static void writeRemainingTime(uint8_t endpoint, uint16_t remainingTimeMs)
                                                            (uint8_t *)&remainingTimeDs,
                                                            ZCL_INT16U_ATTRIBUTE_TYPE);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_level_control_cluster_println("ERR: writing remaining time %x", status);
+    sl_zigbee_af_level_control_cluster_println("ERR: writing remaining time %02X", status);
   }
 #endif
 }
@@ -303,7 +303,7 @@ static void writeRemainingTime(uint8_t endpoint, uint16_t remainingTimeMs)
 static void setOnOffValue(uint8_t endpoint, bool onOff)
 {
   if (sl_zigbee_af_contains_server(endpoint, ZCL_ON_OFF_CLUSTER_ID)) {
-    sl_zigbee_af_level_control_cluster_println("Setting on/off to %p due to level change",
+    sl_zigbee_af_level_control_cluster_println("Setting on/off to %s due to level change",
                                                onOff ? "ON" : "OFF");
     sl_zigbee_af_on_off_cluster_set_value_cb(endpoint,
                                              (onOff ? ZCL_ON_COMMAND_ID : ZCL_OFF_COMMAND_ID),
@@ -320,7 +320,7 @@ static bool shouldExecuteIfOff(uint8_t endpoint,
   // From 3.10.2.2.8.1 of ZCL7 document 14-0127-20j-zcl-ch-3-general.docx:
   //   "Command execution SHALL NOT continue beyond the Options processing if
   //    all of these criteria are true:
-  //      - The command is one of the ‘without On/Off’ commands: Move, Move to
+  //      - The command is one of the 'without On/Off' commands: Move, Move to
   //        Level, Stop, or Step.
   //      - The On/Off cluster exists on the same endpoint as this cluster.
   //      - The OnOff attribute of the On/Off cluster, on this endpoint, is 0x00
@@ -341,7 +341,7 @@ static bool shouldExecuteIfOff(uint8_t endpoint,
                                                                     &options,
                                                                     sizeof(options));
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_level_control_cluster_println("Unable to read Options attribute: 0x%X",
+    sl_zigbee_af_level_control_cluster_println("Unable to read Options attribute: 0x%02X",
                                                status);
     // If we can't read the attribute, then we should just assume that it has its
     // default value.
@@ -355,7 +355,7 @@ static bool shouldExecuteIfOff(uint8_t endpoint,
                                               (uint8_t *)&on,
                                               sizeof(on));
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_level_control_cluster_println("Unable to read OnOff attribute: 0x%X",
+    sl_zigbee_af_level_control_cluster_println("Unable to read OnOff attribute: 0x%02X",
                                                status);
     return true;
   }
@@ -401,16 +401,16 @@ static bool shouldExecuteIfOff(uint8_t endpoint,
 #endif
 }
 
-bool sl_zigbee_af_level_control_cluster_move_to_level_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_level_control_cluster_move_to_level_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_level_control_cluster_move_to_level_command_t cmd_data;
 
   if (zcl_decode_level_control_cluster_move_to_level_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_level_control_cluster_println("%pMOVE_TO_LEVEL %x %2x %x %x",
+  sl_zigbee_af_level_control_cluster_println("%sMOVE_TO_LEVEL %02X %04X %02X %02X",
                                              "RX level-control:",
                                              cmd_data.level,
                                              cmd_data.transitionTime,
@@ -422,19 +422,19 @@ bool sl_zigbee_af_level_control_cluster_move_to_level_cb(sl_zigbee_af_cluster_co
                      cmd_data.optionMask,
                      cmd_data.optionOverride,
                      INVALID_STORED_LEVEL); // Don't revert to the stored level
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
-bool sl_zigbee_af_level_control_cluster_move_to_level_with_on_off_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_level_control_cluster_move_to_level_with_on_off_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_level_control_cluster_move_to_level_with_on_off_command_t cmd_data;
 
   if (zcl_decode_level_control_cluster_move_to_level_with_on_off_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_level_control_cluster_println("%pMOVE_TO_LEVEL_WITH_ON_OFF %x %2x",
+  sl_zigbee_af_level_control_cluster_println("%sMOVE_TO_LEVEL_WITH_ON_OFF %02X %04X",
                                              "RX level-control:",
                                              cmd_data.level,
                                              cmd_data.transitionTime);
@@ -444,71 +444,71 @@ bool sl_zigbee_af_level_control_cluster_move_to_level_with_on_off_cb(sl_zigbee_a
                      0xFF,
                      0xFF,
                      INVALID_STORED_LEVEL); // Don't revert to the stored level
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
-bool sl_zigbee_af_level_control_cluster_move_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_level_control_cluster_move_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_level_control_cluster_move_command_t cmd_data;
 
   if (zcl_decode_level_control_cluster_move_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_level_control_cluster_println("%pMOVE %x %x",
+  sl_zigbee_af_level_control_cluster_println("%sMOVE %02X %02X",
                                              "RX level-control:",
                                              cmd_data.moveMode,
                                              cmd_data.rate);
   moveHandler(ZCL_MOVE_COMMAND_ID, cmd_data.moveMode, cmd_data.rate, cmd_data.optionMask, cmd_data.optionOverride);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_level_control_cluster_move_with_on_off_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_level_control_cluster_move_with_on_off_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_level_control_cluster_move_with_on_off_command_t cmd_data;
 
   if (zcl_decode_level_control_cluster_move_with_on_off_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_level_control_cluster_println("%pMOVE_WITH_ON_OFF %x %x",
+  sl_zigbee_af_level_control_cluster_println("%sMOVE_WITH_ON_OFF %02X %02X",
                                              "RX level-control:",
                                              cmd_data.moveMode,
                                              cmd_data.rate);
   moveHandler(ZCL_MOVE_WITH_ON_OFF_COMMAND_ID, cmd_data.moveMode, cmd_data.rate, 0xFF, 0xFF);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_level_control_cluster_step_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_level_control_cluster_step_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_level_control_cluster_step_command_t cmd_data;
 
   if (zcl_decode_level_control_cluster_step_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_level_control_cluster_println("%pSTEP %x %x %2x",
+  sl_zigbee_af_level_control_cluster_println("%sSTEP %02X %02X %04X",
                                              "RX level-control:",
                                              cmd_data.stepMode,
                                              cmd_data.stepSize,
                                              cmd_data.transitionTime);
   stepHandler(ZCL_STEP_COMMAND_ID, cmd_data.stepMode, cmd_data.stepSize, cmd_data.transitionTime, cmd_data.optionMask, cmd_data.optionOverride);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_level_control_cluster_step_with_on_off_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_level_control_cluster_step_with_on_off_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_level_control_cluster_step_with_on_off_command_t cmd_data;
 
   if (zcl_decode_level_control_cluster_step_with_on_off_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_level_control_cluster_println("%pSTEP_WITH_ON_OFF %x %x %2x",
+  sl_zigbee_af_level_control_cluster_println("%sSTEP_WITH_ON_OFF %02X %02X %04X",
                                              "RX level-control:",
                                              cmd_data.stepMode,
                                              cmd_data.stepSize,
@@ -519,28 +519,28 @@ bool sl_zigbee_af_level_control_cluster_step_with_on_off_cb(sl_zigbee_af_cluster
               cmd_data.transitionTime,
               0xFF,
               0xFF);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_level_control_cluster_stop_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_level_control_cluster_stop_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_level_control_cluster_stop_command_t cmd_data;
 
   if (zcl_decode_level_control_cluster_stop_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_level_control_cluster_println("%pSTOP", "RX level-control:");
+  sl_zigbee_af_level_control_cluster_println("%sSTOP", "RX level-control:");
   stopHandler(ZCL_STOP_COMMAND_ID, cmd_data.optionMask, cmd_data.optionOverride);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_level_control_cluster_stop_with_on_off_cb(void)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_level_control_cluster_stop_with_on_off_cb(void)
 {
-  sl_zigbee_af_level_control_cluster_println("%pSTOP_WITH_ON_OFF", "RX level-control:");
+  sl_zigbee_af_level_control_cluster_println("%sSTOP_WITH_ON_OFF", "RX level-control:");
   stopHandler(ZCL_STOP_WITH_ON_OFF_COMMAND_ID, 0xFF, 0xFF);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
 static void moveToLevelHandler(uint8_t commandId,
@@ -575,7 +575,7 @@ static void moveToLevelHandler(uint8_t commandId,
                                               (uint8_t *)&currentLevel,
                                               sizeof(currentLevel));
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_level_control_cluster_println("ERR: reading current level %x", status);
+    sl_zigbee_af_level_control_cluster_println("ERR: reading current level %02X", status);
     goto send_default_response;
   }
 
@@ -625,7 +625,7 @@ static void moveToLevelHandler(uint8_t commandId,
                                                 (uint8_t *)&transitionTimeDs,
                                                 sizeof(transitionTimeDs));
     if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-      sl_zigbee_af_level_control_cluster_println("ERR: reading on/off transition time %x",
+      sl_zigbee_af_level_control_cluster_println("ERR: reading on/off transition time %02X",
                                                  status);
       goto send_default_response;
     }
@@ -703,7 +703,7 @@ static void moveHandler(uint8_t commandId, uint8_t moveMode, uint8_t rate, uint8
                                               (uint8_t *)&currentLevel,
                                               sizeof(currentLevel));
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_level_control_cluster_println("ERR: reading current level %x", status);
+    sl_zigbee_af_level_control_cluster_println("ERR: reading current level %02X", status);
     goto send_default_response;
   }
 
@@ -751,7 +751,7 @@ static void moveHandler(uint8_t commandId, uint8_t moveMode, uint8_t rate, uint8
                                                 (uint8_t *)&defaultMoveRate,
                                                 sizeof(defaultMoveRate));
     if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-      sl_zigbee_af_level_control_cluster_println("ERR: reading default move rate %x",
+      sl_zigbee_af_level_control_cluster_println("ERR: reading default move rate %02X",
                                                  status);
       goto send_default_response;
     }
@@ -816,7 +816,7 @@ static void stepHandler(uint8_t commandId,
                                               (uint8_t *)&currentLevel,
                                               sizeof(currentLevel));
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_level_control_cluster_println("ERR: reading current level %x", status);
+    sl_zigbee_af_level_control_cluster_println("ERR: reading current level %02X", status);
     goto send_default_response;
   }
 
@@ -943,7 +943,7 @@ void sl_zigbee_af_on_off_cluster_level_control_effect_cb(uint8_t endpoint,
                                               (uint8_t *)&temporaryCurrentLevelCache,
                                               sizeof(temporaryCurrentLevelCache));
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_level_control_cluster_println("ERR: reading current level %x", status);
+    sl_zigbee_af_level_control_cluster_println("ERR: reading current level %02X", status);
     return;
   }
 
@@ -955,7 +955,7 @@ void sl_zigbee_af_on_off_cluster_level_control_effect_cb(uint8_t endpoint,
                                               (uint8_t *)&resolvedLevel, // OnLevel value
                                               sizeof(resolvedLevel));
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_level_control_cluster_println("ERR: reading current level %x", status);
+    sl_zigbee_af_level_control_cluster_println("ERR: reading current level %02X", status);
     return;
   }
 
@@ -975,7 +975,7 @@ void sl_zigbee_af_on_off_cluster_level_control_effect_cb(uint8_t endpoint,
                                               (uint8_t *)&currentOnOffTransitionTime,
                                               sizeof(currentOnOffTransitionTime));
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_level_control_cluster_println("ERR: reading current level %x", status);
+    sl_zigbee_af_level_control_cluster_println("ERR: reading current level %02X", status);
     return;
   }
 #else
@@ -991,7 +991,7 @@ void sl_zigbee_af_on_off_cluster_level_control_effect_cb(uint8_t endpoint,
                                                  (uint8_t *)&minimumLevelAllowedForTheDevice,
                                                  ZCL_INT8U_ATTRIBUTE_TYPE);
     if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-      sl_zigbee_af_level_control_cluster_println("ERR: reading current level %x", status);
+      sl_zigbee_af_level_control_cluster_println("ERR: reading current level %02X", status);
       return;
     }
 
@@ -1125,54 +1125,52 @@ uint32_t sl_zigbee_af_level_control_cluster_server_command_parse(sl_service_opco
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_MOVE_TO_LEVEL_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_level_control_cluster_move_to_level_cb(cmd);
+        status = sl_zigbee_af_level_control_cluster_move_to_level_cb(cmd);
         break;
       }
       case ZCL_MOVE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_level_control_cluster_move_cb(cmd);
+        status = sl_zigbee_af_level_control_cluster_move_cb(cmd);
         break;
       }
       case ZCL_STEP_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_level_control_cluster_step_cb(cmd);
+        status = sl_zigbee_af_level_control_cluster_step_cb(cmd);
         break;
       }
       case ZCL_STOP_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_level_control_cluster_stop_cb(cmd);
+        status = sl_zigbee_af_level_control_cluster_stop_cb(cmd);
         break;
       }
       case ZCL_MOVE_TO_LEVEL_WITH_ON_OFF_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_level_control_cluster_move_to_level_with_on_off_cb(cmd);
+        status = sl_zigbee_af_level_control_cluster_move_to_level_with_on_off_cb(cmd);
         break;
       }
       case ZCL_MOVE_WITH_ON_OFF_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_level_control_cluster_move_with_on_off_cb(cmd);
+        status = sl_zigbee_af_level_control_cluster_move_with_on_off_cb(cmd);
         break;
       }
       case ZCL_STEP_WITH_ON_OFF_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_level_control_cluster_step_with_on_off_cb(cmd);
+        status = sl_zigbee_af_level_control_cluster_step_with_on_off_cb(cmd);
         break;
       }
       case ZCL_STOP_WITH_ON_OFF_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_level_control_cluster_stop_with_on_off_cb();
+        status = sl_zigbee_af_level_control_cluster_stop_with_on_off_cb();
         break;
       }
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

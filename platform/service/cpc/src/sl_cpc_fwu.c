@@ -28,6 +28,7 @@
  *
  ******************************************************************************/
 
+#include "sl_cpc_instance_handles.h"
 #include "sl_cpc_weak_prototypes.h"
 #include "sli_cpc_drv.h"
 #include "sli_cpc_fwu.h"

@@ -5,19 +5,7 @@
  */
 /*
  *  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
 #ifndef MBEDTLS_THREADING_H
 #define MBEDTLS_THREADING_H
@@ -40,10 +28,14 @@ extern "C" {
 #include <pthread.h>
 typedef struct mbedtls_threading_mutex_t {
     pthread_mutex_t MBEDTLS_PRIVATE(mutex);
-    /* is_valid is 0 after a failed init or a free, and nonzero after a
-     * successful init. This field is not considered part of the public
-     * API of Mbed TLS and may change without notice. */
-    char MBEDTLS_PRIVATE(is_valid);
+
+    /* WARNING - state should only be accessed when holding the mutex lock in
+     * tests/src/threading_helpers.c, otherwise corruption can occur.
+     * state will be 0 after a failed init or a free, and nonzero after a
+     * successful init. This field is for testing only and thus not considered
+     * part of the public API of Mbed TLS and may change without notice.*/
+    char MBEDTLS_PRIVATE(state);
+
 } mbedtls_threading_mutex_t;
 #endif
 
@@ -98,10 +90,6 @@ extern int (*mbedtls_mutex_unlock)(mbedtls_threading_mutex_t *mutex);
 extern mbedtls_threading_mutex_t mbedtls_threading_readdir_mutex;
 #endif
 
-#if defined(MBEDTLS_PSA_CRYPTO_C)
-extern mbedtls_threading_mutex_t mbedtls_psa_slots_mutex;
-#endif
-
 #if defined(MBEDTLS_HAVE_TIME_DATE) && !defined(MBEDTLS_PLATFORM_GMTIME_R_ALT)
 /* This mutex may or may not be used in the default definition of
  * mbedtls_platform_gmtime_r(), but in order to determine that,
@@ -112,25 +100,36 @@ extern mbedtls_threading_mutex_t mbedtls_psa_slots_mutex;
 extern mbedtls_threading_mutex_t mbedtls_threading_gmtime_mutex;
 #endif /* MBEDTLS_HAVE_TIME_DATE && !MBEDTLS_PLATFORM_GMTIME_R_ALT */
 
+#if defined(MBEDTLS_PSA_CRYPTO_C)
 /*
- * Helper macros for mutex handling
- */
-#define MBEDTLS_MUTEX_LOCK_CHECK( mutex )                 \
-    do                                            \
-    {                                             \
-        if( mbedtls_mutex_lock( mutex ) != 0 )    \
-            return( PSA_ERROR_BAD_STATE );        \
-    } while( 0 )
-#define MBEDTLS_MUTEX_UNLOCK_CHECK( mutex )               \
-    do                                            \
-    {                                             \
-        if( mbedtls_mutex_unlock( mutex ) != 0 )  \
-            return( PSA_ERROR_BAD_STATE );        \
-    } while( 0 )
-#else/* MBEDTLS_THREADING_C */
-#define MBEDTLS_MUTEX_LOCK_CHECK( mutex )
-#define MBEDTLS_MUTEX_UNLOCK_CHECK( mutex )
+ * A mutex used to make the PSA subsystem thread safe.
+ *
+ * key_slot_mutex protects the registered_readers and
+ * state variable for all key slots in &global_data.key_slots.
+ *
+ * This mutex must be held when any read from or write to a state or
+ * registered_readers field is performed, i.e. when calling functions:
+ * psa_key_slot_state_transition(), psa_register_read(), psa_unregister_read(),
+ * psa_key_slot_has_readers() and psa_wipe_key_slot(). */
+extern mbedtls_threading_mutex_t mbedtls_threading_key_slot_mutex;
+
+/*
+ * A mutex used to make the non-rng PSA global_data struct members thread safe.
+ *
+ * This mutex must be held when reading or writing to any of the PSA global_data
+ * structure members, other than the rng_state or rng struct. */
+extern mbedtls_threading_mutex_t mbedtls_threading_psa_globaldata_mutex;
+
+/*
+ * A mutex used to make the PSA global_data rng data thread safe.
+ *
+ * This mutex must be held when reading or writing to the PSA
+ * global_data rng_state or rng struct members. */
+extern mbedtls_threading_mutex_t mbedtls_threading_psa_rngdata_mutex;
 #endif
+
+#endif /* MBEDTLS_THREADING_C */
+
 #ifdef __cplusplus
 }
 #endif

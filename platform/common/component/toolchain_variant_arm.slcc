@@ -11,6 +11,7 @@ tag:
   - toolchain:variant:arm
 provides:
   - name: toolchain_variant
+    condition: [device_arm]
   - name: toolchain_variant_arm
 toolchain_settings:
   - option: split_sections
@@ -19,3 +20,7 @@ toolchain_settings:
     value: enabled
   - option: device_type
     value: embedded
+  - option: gcc_assembler_option
+    value: "-x assembler-with-cpp"
+  - option: gcc_linker_option
+    value: "-Wl,--no-warn-rwx-segments"

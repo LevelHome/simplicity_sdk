@@ -1,7 +1,7 @@
 #ifndef SL_HCI_UART_H
 #define SL_HCI_UART_H
 
-#include "em_common.h"
+#include <stdbool.h>
 
 typedef uint32_t Ecode_t;
 

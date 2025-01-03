@@ -49,7 +49,10 @@ provides:
   - name: app_timer
 requires:
   - name: power_manager
+    condition:
+      - device_efx
   - name: sleeptimer
+  - name: sl_core
 template_contribution:
   - name: component_catalog
     value: app_timer
@@ -74,6 +77,9 @@ template_contribution:
       handler: sli_app_timer_sleep_on_isr_exit
     unless:
       - kernel
+validation_library:
+  - path: ../../validation/autonumber_common.lua
+    name: autonumber_common
 validation_helper:
   - path: freertos/app_timer_freertos_validation.lua
     condition:

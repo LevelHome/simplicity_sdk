@@ -173,9 +173,8 @@ struct bgbuf_t;
 #define MESH_KR_NODE_IS_NOT_BLACKLISTED 0
 
 #define MESH_PLATFORM_MEMPOOL_ID_DDB        0 /**< Device database pool */
-#define MESH_PLATFORM_MEMPOOL_ID_FOUNDATION 1 /**< Foundation command pool */
-#define MESH_PLATFORM_MEMPOOL_ID_DDB_APPKEY 2 /**< DDB appkey blacklist pool */
-#define MESH_PLATFORM_MEMPOOL_COUNT         3 /**< Memory pool count */
+#define MESH_PLATFORM_MEMPOOL_ID_DDB_APPKEY 1 /**< DDB appkey blacklist pool */
+#define MESH_PLATFORM_MEMPOOL_COUNT         2 /**< Memory pool count */
 
 /** Model handle */
 typedef struct __mesh_model *mesh_model_t;
@@ -719,6 +718,8 @@ typedef enum {
 
   mesh_instr_trans_sdu_decryption_failure = 0x29,
   mesh_instr_trans_sdu_decrypted = 0x2a,
+
+  mesh_instr_debug_log = 0x2b,
 } mesh_instr_event_t;
 
 /** Instrumentation result codes for dropping a network PDU */

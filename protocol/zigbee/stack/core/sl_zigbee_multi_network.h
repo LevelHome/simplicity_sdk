@@ -71,6 +71,11 @@ uint8_t sli_zigbee_get_active_always_on_network_index(void);
 bool sli_zigbee_is_network_joined(uint8_t nwkIndex);
 bool sli_zigbee_is_network_always_on(uint8_t nwkIndex);
 
+uint16_t sli_zigbee_stack_current_stack_tasks(void);
+#define sli_zigbee_stack_ok_to_hibernate() (!sli_zigbee_stack_current_stack_tasks())
+#define sli_zigbee_stack_ok_to_nap() \
+  (!(sli_zigbee_stack_current_stack_tasks() & SL_ZIGBEE_HIGH_PRIORITY_TASKS))
+
 //------------------------------------------------------------------------------
 // For saving flash on certain platforms, e.g. EFR32xG1, EFR32xG14, multi-network
 // code is stripped by default. We do not maintain the network info in the

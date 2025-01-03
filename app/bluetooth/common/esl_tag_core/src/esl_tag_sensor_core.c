@@ -27,7 +27,7 @@
  * 3. This notice may not be removed or altered from any source distribution.
  *
  ******************************************************************************/
-#include "em_common.h"
+#include "sl_common.h"
 #include "esl_tag_core_config.h"
 #include "esl_tag_sensor_core.h"
 #include "esl_tag_battery_internal.h"

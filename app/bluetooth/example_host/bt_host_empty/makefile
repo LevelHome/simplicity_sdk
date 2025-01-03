@@ -2,9 +2,9 @@
 # General project settings                                                     #
 ################################################################################
 
-PROJECTNAME = bt_host_empty
-SDK_DIR = ../../../..
-BGBUILD = $(SDK_DIR)/protocol/bluetooth/bin/gatt/bgbuild.py
+PROJECTNAME := bt_host_empty
+PROJ_DIR := $(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
+SDK_DIR := $(realpath $(PROJ_DIR)/../../../..)
 
 
 ################################################################################
@@ -28,11 +28,11 @@ include $(SDK_DIR)/app/bluetooth/component_host/ncp_version.mk
 # Include paths                                                                #
 ################################################################################
 
-override INCLUDEPATHS += . \
+override INCLUDEPATHS += $(PROJ_DIR) \
 $(SDK_DIR)/app/bluetooth/common_host/system \
 $(SDK_DIR)/platform/common/inc \
 $(SDK_DIR)/protocol/bluetooth/inc \
-autogen
+$(PROJ_DIR)/autogen
 
 
 ################################################################################
@@ -41,27 +41,14 @@ autogen
 
 override C_SRC += \
 $(SDK_DIR)/app/bluetooth/common_host/system/system.c \
-autogen/gatt_db.c \
-app.c \
-main.c
+$(PROJ_DIR)/autogen/gatt_db.c \
+$(PROJ_DIR)/app.c \
+$(PROJ_DIR)/main.c
 
-PROJ_FILES += $(wildcard $(SDK_DIR)/protocol/bluetooth/bin/gatt/*)
-PROJ_FILES += config/btconf/gatt_configuration.btconf
+GATT_XML_FILES += $(PROJ_DIR)/config/btconf/gatt_configuration.btconf
 
 ################################################################################
 # Target rules                                                                 #
 ################################################################################
 
 include $(SDK_DIR)/app/bluetooth/component_host/targets.mk
-
-HELP_MESSAGE += "  gattdb  - generate GATT database\n"
-
-.PHONY: gattdb
-gattdb:
-	@echo Generate GATT database
-	@python3 $(BGBUILD) config/btconf -o autogen
-
-autogen/gatt_db.c: config/btconf/gatt_configuration.btconf
-	@echo
-	@echo The GATT database might be outdated. Please run: make gattdb
-	@echo

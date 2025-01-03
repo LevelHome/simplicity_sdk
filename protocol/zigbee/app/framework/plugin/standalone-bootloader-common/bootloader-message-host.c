@@ -71,7 +71,7 @@ void sli_zigbee_af_standalone_bootloader_common_bootload_transmit_complete_callb
     if (messageLength >= 2) {
       commandId = messageContents[1];
     }
-    bootloadPrintln("Bootload message (0x%X) send failed: 0x%X",
+    bootloadPrintln("Bootload message (0x%02X) send failed: 0x%02X",
                     commandId,
                     status);
   }

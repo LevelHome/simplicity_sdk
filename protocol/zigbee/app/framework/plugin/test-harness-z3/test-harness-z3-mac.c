@@ -70,7 +70,7 @@ static void radioControl(bool state)
   } else {
     status = sl_zigbee_stop_scan();
   }
-  sl_zigbee_af_core_println("Radio %p status: 0x%X",
+  sl_zigbee_af_core_println("Radio %s status: 0x%02X",
                             (radioOff ? "OFF" : "ON"),
                             status);
 }
@@ -93,7 +93,7 @@ void sli_zigbee_af_test_harness_z3_beacon_beacon_req_command(SL_CLI_COMMAND_ARG)
                                 sli_zigbee_af_network_steering_primary_channel_mask,
                                 4); // 4 = 261 msec - will cause problems if too short
 
-  sl_zigbee_af_core_println("%s: %s: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "Beacon request",
                             status);
@@ -149,7 +149,7 @@ void sli_zigbee_af_test_harness_z3_beacon_beacons_config_command(SL_CLI_COMMAND_
 #endif /* EZSP_HOST */
 
   // All options are handled in the negative behaviour callbacks
-  sl_zigbee_af_core_println("%s: %s: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "Beacon",
                             status);

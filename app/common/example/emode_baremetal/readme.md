@@ -8,7 +8,9 @@ The required configuration (Emode, Oscillator, and so on) is selected using the 
 
 After the test, reset the board to select and test for different configurations.
 
-#### Note: 
+#### Note:
+>DCDC Boost devices will not enter EM4 mode. 
+>
 > This project is a **demo only** to understand the power consumption for various configurations and **should not be used as a starting point for implementation**.
 >
 >The EMU power configuration register can only be written once after a power-on reset and may be locked to a different configuration. For the emode demo to function properly, a power-on reset may be required to configure the DCDC properly.

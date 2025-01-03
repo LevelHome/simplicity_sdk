@@ -13,6 +13,9 @@ description: >
   This is a Low-Code component. For reference API usage please see
   Bluetooth - SoC ESL Tag example application.
 category: Bluetooth|Application|GATT Services
+metadata:
+  sbom:
+    license: Zlib
 quality: production
 root_path: app/bluetooth/common/esl_tag_nvm_image
 tag:

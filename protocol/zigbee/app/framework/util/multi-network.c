@@ -16,6 +16,7 @@
  ******************************************************************************/
 
 #include "app/framework/include/af.h"
+#include "sl_code_classification.h"
 
 #ifdef SL_CATALOG_ZIGBEE_TEST_HARNESS_Z3_PRESENT
 // This is now non-const, so that the node type may be changed at run-time.
@@ -47,6 +48,7 @@ sl_status_t sl_zigbee_af_push_network_index(uint8_t networkIndex)
   return (networkIndex == 0 ? SL_STATUS_OK : SL_STATUS_INVALID_STATE);
 }
 
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_ZIGBEE_STACK, SL_CODE_CLASS_TIME_CRITICAL)
 sl_status_t sl_zigbee_af_push_callback_network_index(void)
 {
   NETWORK_INDEX_ASSERT(sl_zigbee_get_current_network() == 0);
@@ -164,6 +166,7 @@ sl_status_t sl_zigbee_af_push_network_index(uint8_t networkIndex)
   return status;
 }
 
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_ZIGBEE_STACK, SL_CODE_CLASS_TIME_CRITICAL)
 sl_status_t sl_zigbee_af_push_callback_network_index(void)
 {
   sl_status_t status = sl_zigbee_af_push_network_index(sl_zigbee_get_callback_network());

@@ -376,7 +376,7 @@ bool sl_zigbee_af_configure_reporting_command_cb(const sl_zigbee_af_cluster_comm
   uint8_t frameControl, mask;
   bool failures = false;
 
-  sl_zigbee_af_reporting_print("%p: ", "CFG_RPT");
+  sl_zigbee_af_reporting_print("%s: ", "CFG_RPT");
   sl_zigbee_af_reporting_debug_exec(sl_zigbee_af_decode_and_print_cluster_with_mfg_code(cmd->apsFrame->clusterId, cmd->mfgCode));
   sl_zigbee_af_reporting_println("");
   sl_zigbee_af_reporting_flush();
@@ -420,7 +420,7 @@ bool sl_zigbee_af_configure_reporting_command_cb(const sl_zigbee_af_cluster_comm
                                                                        cmd->bufLen);
     bufIndex += 2;
 
-    sl_zigbee_af_reporting_println(" - direction:%x, attr:%2x", direction, attributeId);
+    sl_zigbee_af_reporting_println(" - direction:%02X, attr:%04X", direction, attributeId);
 
     switch (direction) {
       case SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED:
@@ -439,7 +439,7 @@ bool sl_zigbee_af_configure_reporting_command_cb(const sl_zigbee_af_cluster_comm
         maxInterval = sl_zigbee_af_get_int16u(cmd->buffer, bufIndex, cmd->bufLen);
         bufIndex += 2;
 
-        sl_zigbee_af_reporting_println("   type:%x, min:%2x, max:%2x",
+        sl_zigbee_af_reporting_println("   type:%02X, min:%04X, max:%04X",
                                        dataType,
                                        minInterval,
                                        maxInterval);
@@ -479,7 +479,7 @@ bool sl_zigbee_af_configure_reporting_command_cb(const sl_zigbee_af_cluster_comm
         } else {
           // Add a reporting entry for a reported attribute.  The reports will
           // be sent from us to the source of the Configure Reporting command.
-          sl_zigbee_af_plugin_reporting_entry_t newEntry = { 0 };
+          sl_zigbee_af_plugin_reporting_entry_t newEntry;
           newEntry.direction = SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED;
           newEntry.endpoint = cmd->apsFrame->destinationEndpoint;
           newEntry.clusterId = cmd->apsFrame->clusterId;
@@ -498,7 +498,7 @@ bool sl_zigbee_af_configure_reporting_command_cb(const sl_zigbee_af_cluster_comm
         uint16_t timeout = sl_zigbee_af_get_int16u(cmd->buffer, bufIndex, cmd->bufLen);
         bufIndex += 2;
 
-        sl_zigbee_af_reporting_println("   timeout:%2x", timeout);
+        sl_zigbee_af_reporting_println("   timeout:%04X", timeout);
 
         // Add a reporting entry from a received attribute.  The reports
         // will be sent to us from the source of the Configure Reporting
@@ -537,7 +537,7 @@ bool sl_zigbee_af_configure_reporting_command_cb(const sl_zigbee_af_cluster_comm
 
   sendStatus = sl_zigbee_af_send_response();
   if (SL_STATUS_OK != sendStatus) {
-    sl_zigbee_af_reporting_println("Reporting: failed to send %s response: 0x%x",
+    sl_zigbee_af_reporting_println("Reporting: failed to send %s response: 0x%02X",
                                    "configure_reporting",
                                    sendStatus);
   }
@@ -550,7 +550,7 @@ bool sl_zigbee_af_read_reporting_configuration_command_cb(const sl_zigbee_af_clu
   uint16_t bufIndex = cmd->payloadStartIndex;
   uint8_t frameControl, mask;
 
-  sl_zigbee_af_reporting_print("%p: ", "READ_RPT_CFG");
+  sl_zigbee_af_reporting_print("%s: ", "READ_RPT_CFG");
   sl_zigbee_af_reporting_debug_exec(sl_zigbee_af_decode_and_print_cluster_with_mfg_code(cmd->apsFrame->clusterId, cmd->mfgCode));
   sl_zigbee_af_reporting_println("");
   sl_zigbee_af_reporting_flush();
@@ -670,7 +670,7 @@ bool sl_zigbee_af_read_reporting_configuration_command_cb(const sl_zigbee_af_clu
 
   sendStatus = sl_zigbee_af_send_response();
   if (SL_STATUS_OK != sendStatus) {
-    sl_zigbee_af_reporting_println("Reporting: failed to send %s response: 0x%x",
+    sl_zigbee_af_reporting_println("Reporting: failed to send %s response: 0x%02X",
                                    "read_reporting_configuration",
                                    sendStatus);
   }
@@ -779,7 +779,7 @@ static sl_zigbee_af_status_t readAttributeAndGetLastValue(const sl_zigbee_af_plu
                                                               &dataType);
 
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_reporting_println("ERR: reading cluster 0x%2x attribute 0x%2x: 0x%x",
+    sl_zigbee_af_reporting_println("ERR: reading cluster 0x%04X attribute 0x%04X: 0x%02X",
                                    entry->clusterId,
                                    entry->attributeId,
                                    status);
@@ -789,7 +789,7 @@ static sl_zigbee_af_status_t readAttributeAndGetLastValue(const sl_zigbee_af_plu
   if (sl_zigbee_af_is_long_string_attribute_type(dataType)) {
     // LONG string types are rarely used and even more rarely (never?)
     // reported; ignore and leave ensuing handling of other types unchanged.
-    sl_zigbee_af_reporting_println("ERR: reporting of LONG string attribute type not supported: cluster 0x%2x attribute 0x%2x",
+    sl_zigbee_af_reporting_println("ERR: reporting of LONG string attribute type not supported: cluster 0x%04X attribute 0x%04X",
                                    entry->clusterId,
                                    entry->attributeId);
     return SL_ZIGBEE_ZCL_STATUS_INVALID_DATA_TYPE;
@@ -968,7 +968,7 @@ static void scheduleTick(void)
     }
   }
   if (delayMs != MAX_INT32U_VALUE) {
-    sl_zigbee_af_debug_println("sched report event for: 0x%4x", delayMs);
+    sl_zigbee_af_debug_println("sched report event for: 0x%08X", delayMs);
     sl_zigbee_af_event_set_delay_ms(tickEvent, delayMs);
   } else {
     sl_zigbee_af_debug_println("deactivate report event");

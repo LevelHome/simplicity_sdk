@@ -327,7 +327,7 @@ void sl_zigbee_af_smart_energy_registration_tick_network_event_handler(sl_zigbee
       stopRegistration(state->state == STATE_REGISTRATION_COMPLETE);
       break;
     default:
-      sl_zigbee_af_registration_println("ERR: Invalid state (0x%x)", state->state);
+      sl_zigbee_af_registration_println("ERR: Invalid state (0x%02X)", state->state);
       sl_zigbee_af_registration_abort_cb();
       break;
   }
@@ -410,7 +410,7 @@ static void performKeyEstablishment(void)
   status = sl_zigbee_af_initiate_key_establishment(SL_ZIGBEE_TRUST_CENTER_NODE_ID,
                                                    state->trustCenterKeyEstablishmentEndpoint);
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_registration_println("ERR: Failed to start key establishment (0x%x)",
+    sl_zigbee_af_registration_println("ERR: Failed to start key establishment (0x%02X)",
                                       status);
     resumeAfterFixedDelay(status);
   }
@@ -429,7 +429,7 @@ bool sl_zigbee_af_key_establishment_event_cb(sl_zigbee_af_key_establishment_noti
       transition(NEXT_STATE_AFTER_KE);
     } else if (status >= APP_NOTIFY_ERROR_CODE_START) {
       uint32_t delayMs = delayInSeconds * MILLISECOND_TICKS_PER_SECOND;
-      sl_zigbee_af_registration_println("ERR: Key establishment failed (0x%x)", status);
+      sl_zigbee_af_registration_println("ERR: Key establishment failed (0x%02X)", status);
       resumeAfterDelay(SL_STATUS_FAIL,
                        delayMs);
     }
@@ -516,8 +516,8 @@ static void performPartnerLinkKeyExchange(void)
     sl_status_t status;
 
     retrieveNodeForDiscoveryOrPartnerKeyExchange(state, &nodeId, &endpoint);
-    sl_zigbee_af_registration_println("Perform%p partner link key exchange"
-                                      " with node 0x%2x endpoint 0x%x",
+    sl_zigbee_af_registration_println("Perform%s partner link key exchange"
+                                      " with node 0x%04X endpoint 0x%02X",
                                       "ing",
                                       nodeId,
                                       endpoint);
@@ -525,8 +525,8 @@ static void performPartnerLinkKeyExchange(void)
                                                              endpoint,
                                                              partnerLinkKeyExchangeCallback);
     if (status != SL_STATUS_OK) {
-      sl_zigbee_af_registration_println("ERR: Failed to %p partner link key request"
-                                        " with node 0x%2x endpoint 0x%x (0x%x)",
+      sl_zigbee_af_registration_println("ERR: Failed to %s partner link key request"
+                                        " with node 0x%04X endpoint 0x%02X (0x%02X)",
                                         "initiate",
                                         nodeId,
                                         endpoint,
@@ -554,15 +554,15 @@ static void partnerLinkKeyExchangeCallback(bool success)
   if (state->state == STATE_PERFORM_PARTNER_LINK_KEY_EXCHANGE
       && retrieveNodeForDiscoveryOrPartnerKeyExchange(state, &nodeId, &endpoint)) {
     if (success) {
-      sl_zigbee_af_registration_println("Perform%p partner link key exchange"
-                                        " with node 0x%2x endpoint 0x%x",
+      sl_zigbee_af_registration_println("Perform%s partner link key exchange"
+                                        " with node 0x%04X endpoint 0x%02X",
                                         "ed",
                                         nodeId,
                                         endpoint);
       findNextNodeForDiscoveryOrPartnerKeyExchange(state, true);
     } else {
-      sl_zigbee_af_registration_println("ERR: Failed to %p partner link key exchange"
-                                        " with node 0x%2x endpoint 0x%x",
+      sl_zigbee_af_registration_println("ERR: Failed to %s partner link key exchange"
+                                        " with node 0x%04X endpoint 0x%02X",
                                         "perform",
                                         nodeId,
                                         endpoint);
@@ -605,9 +605,9 @@ static void performBinding(void)
         if (sl_zigbee_af_contains_client(endpoint, clusterId)) {
           sl_status_t status;
           sl_zigbee_af_registration_println("Performing binding"
-                                            " to node 0x%2x endpoint 0x%x"
-                                            " from endpoint 0x%x"
-                                            " for cluster 0x%2x",
+                                            " to node 0x%04X endpoint 0x%02X"
+                                            " from endpoint 0x%02X"
+                                            " for cluster 0x%04X",
                                             state->esiEntry->nodeId,
                                             state->esiEntry->endpoint,
                                             endpoint,
@@ -625,9 +625,9 @@ static void performBinding(void)
             state->clusterIndex++;
           } else {
             sl_zigbee_af_registration_println("ERR: Failed to send bind request"
-                                              " to node 0x%2x endpoint 0x%x"
-                                              " from endpoint 0x%x"
-                                              " for cluster 0x%2x (0x%x)",
+                                              " to node 0x%04X endpoint 0x%02X"
+                                              " from endpoint 0x%02X"
+                                              " for cluster 0x%04X (0x%02X)",
                                               state->esiEntry->nodeId,
                                               state->esiEntry->endpoint,
                                               endpoint,
@@ -681,7 +681,7 @@ static void determineAuthoritativeTimeSource(void)
     sl_status_t status;
     assert(TIME_SOURCE_CANDIDATE(state).nodeId != SL_ZIGBEE_NULL_NODE_ID);
     sl_zigbee_af_registration_println("Requesting time attributes"
-                                      " from node 0x%2x endpoint 0x%x",
+                                      " from node 0x%04X endpoint 0x%02X",
                                       TIME_SOURCE_CANDIDATE(state).nodeId,
                                       TIME_SOURCE_CANDIDATE(state).endpoint);
 
@@ -708,7 +708,7 @@ static void determineAuthoritativeTimeSource(void)
       }
     } else {
       sl_zigbee_af_registration_println("ERR: Failed to request time attributes"
-                                        " from node 0x%2x endpoint 0x%x (0x%x)",
+                                        " from node 0x%04X endpoint 0x%02X (0x%02X)",
                                         TIME_SOURCE_CANDIDATE(state).nodeId,
                                         TIME_SOURCE_CANDIDATE(state).endpoint,
                                         status);
@@ -731,7 +731,7 @@ static void determineAuthoritativeTimeSource(void)
     state->resuming = resumeAfterFixedDelay(SL_STATUS_FAIL);
   } else {
     sl_zigbee_af_registration_println("Determined authoritative time source,"
-                                      " node 0x%2x",
+                                      " node 0x%04X",
                                       state->source.nodeId);
     transition(STATE_REGISTRATION_COMPLETE);
   }
@@ -801,10 +801,10 @@ void sli_zigbee_af_smart_energy_registration_read_attributes_response_callback(u
     }
   }
 
-  sl_zigbee_af_registration_println("Received time attributes from node 0x%2x",
+  sl_zigbee_af_registration_println("Received time attributes from node 0x%04X",
                                     cmd->source);
-  sl_zigbee_af_registration_println("time 0x%4x", time);
-  sl_zigbee_af_registration_println("time status 0x%x", timeStatus);
+  sl_zigbee_af_registration_println("time 0x%08X", time);
+  sl_zigbee_af_registration_println("time status 0x%02X", timeStatus);
 
   // The process for determining the most authoritative time source is outlined
   // in section 3.12.2.2.2 of 07-5123-06 (ZigBee Cluster Library Specification).
@@ -855,7 +855,7 @@ void sli_zigbee_af_smart_energy_registration_read_attributes_response_callback(u
       state->source.validUntilTime = validUntilTime;
       sl_zigbee_af_set_time(time);
 
-      sl_zigbee_af_registration_println("Node 0x%2x chosen as"
+      sl_zigbee_af_registration_println("Node 0x%04X chosen as"
                                         " authoritative time source",
                                         cmd->source);
     }
@@ -894,13 +894,13 @@ static void performDiscovery(void)
   // Establishment cluster.  When searching for ESIs, broadcast for the DRLC
   // server cluster, which only ESIs should have.
   if (state->state == STATE_DISCOVER_KEY_ESTABLISHMENT_CLUSTER) {
-    sl_zigbee_af_registration_println("Discovering %ps", "Key Establishment cluster");
+    sl_zigbee_af_registration_println("Discovering %ss", "Key Establishment cluster");
     state->trustCenterKeyEstablishmentEndpoint = UNDEFINED_ENDPOINT;
     target = SL_ZIGBEE_TRUST_CENTER_NODE_ID;
     clusterId = ZCL_KEY_ESTABLISHMENT_CLUSTER_ID;
 #ifdef SL_ZIGBEE_AF_PLUGIN_SMART_ENERGY_REGISTRATION_ESI_DISCOVERY_REQUIRED
   } else if (state->state == STATE_DISCOVER_ENERGY_SERVICE_INTERFACES) {
-    sl_zigbee_af_registration_println("Discovering %ps", "Energy Service Interface");
+    sl_zigbee_af_registration_println("Discovering %ss", "Energy Service Interface");
     // Aging the entries in the ESI table before starting the discovery process.
     sl_zigbee_af_esi_management_age_all_entries();
     target = SL_ZIGBEE_RX_ON_WHEN_IDLE_BROADCAST_ADDRESS;
@@ -908,7 +908,7 @@ static void performDiscovery(void)
 #endif
 #ifdef ALLOW_NON_ESI_TIME_SERVERS
   } else if (state->state == STATE_DISCOVER_TIME_SERVERS) {
-    sl_zigbee_af_registration_println("Discovering %ps", "Time server");
+    sl_zigbee_af_registration_println("Discovering %ss", "Time server");
     state->totalCandidates = 0;
     state->currentCandidate = 0;
     target = SL_ZIGBEE_RX_ON_WHEN_IDLE_BROADCAST_ADDRESS;
@@ -920,13 +920,13 @@ static void performDiscovery(void)
     retrieveNodeForDiscoveryOrPartnerKeyExchange(state, &target, &ep);
     assert(target != SL_ZIGBEE_NULL_NODE_ID);
     sl_zigbee_af_registration_println("Discovering IEEE address"
-                                      " for node 0x%2x",
+                                      " for node 0x%04X",
                                       target);
     status = sl_zigbee_af_find_ieee_address(target, discoveryCallback);
     goto kickout;
 #endif
   } else {
-    sl_zigbee_af_registration_println("ERR: Invalid state for discovery (0x%x)",
+    sl_zigbee_af_registration_println("ERR: Invalid state for discovery (0x%02X)",
                                       state->state);
     sl_zigbee_af_registration_abort_cb();
     return;
@@ -944,7 +944,7 @@ static void performDiscovery(void)
   kickout:
 #endif
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_registration_println("ERR: Failed to start discovery (0x%x)", status);
+    sl_zigbee_af_registration_println("ERR: Failed to start discovery (0x%02X)", status);
     resumeAfterFixedDelay(status);
   }
 }
@@ -971,7 +971,7 @@ static void discoveryCallback(const sl_zigbee_af_service_discovery_result_t *res
           // beyond the first endpoint that responds.
           if (state->trustCenterKeyEstablishmentEndpoint
               == UNDEFINED_ENDPOINT) {
-            sl_zigbee_af_registration_println("%p %p on node 0x%2x endpoint 0x%x%p",
+            sl_zigbee_af_registration_println("%s %s on node 0x%04X endpoint 0x%02X%s",
                                               "Discovered",
                                               "Key Establishment cluster",
                                               result->matchAddress,
@@ -979,7 +979,7 @@ static void discoveryCallback(const sl_zigbee_af_service_discovery_result_t *res
                                               "");
             state->trustCenterKeyEstablishmentEndpoint = endpointList->list[i];
           } else {
-            sl_zigbee_af_registration_println("%p %p on node 0x%2x endpoint 0x%x%p",
+            sl_zigbee_af_registration_println("%s %s on node 0x%04X endpoint 0x%02X%s",
                                               "INFO: Ignored",
                                               "Key Establishment cluster",
                                               result->matchAddress,
@@ -988,7 +988,7 @@ static void discoveryCallback(const sl_zigbee_af_service_discovery_result_t *res
           }
 #ifdef SL_ZIGBEE_AF_PLUGIN_SMART_ENERGY_REGISTRATION_ESI_DISCOVERY_REQUIRED
         } else if (state->state == STATE_DISCOVER_ENERGY_SERVICE_INTERFACES) {
-          sl_zigbee_af_registration_println("%p %p on node 0x%2x endpoint 0x%x%p",
+          sl_zigbee_af_registration_println("%s %s on node 0x%04X endpoint 0x%02X%s",
                                             "Discovered",
                                             "Energy Server Interface",
                                             result->matchAddress,
@@ -1007,7 +1007,7 @@ static void discoveryCallback(const sl_zigbee_af_service_discovery_result_t *res
             state->esiEntry->endpoint = endpointList->list[i];
             state->esiEntry->age = 0;
           } else {
-            sl_zigbee_af_registration_println("%p %p on node 0x%2x endpoint 0x%x%p",
+            sl_zigbee_af_registration_println("%s %s on node 0x%04X endpoint 0x%02X%s",
                                               "INFO: Ignored",
                                               "Energy Server Interface",
                                               result->matchAddress,
@@ -1017,7 +1017,7 @@ static void discoveryCallback(const sl_zigbee_af_service_discovery_result_t *res
 #endif //SL_ZIGBEE_AF_PLUGIN_SMART_ENERGY_REGISTRATION_ESI_DISCOVERY_REQUIRED
 #ifdef ALLOW_NON_ESI_TIME_SERVERS
         } else if (state->state == STATE_DISCOVER_TIME_SERVERS) {
-          sl_zigbee_af_registration_println("%p %p on node 0x%2x endpoint 0x%x%p",
+          sl_zigbee_af_registration_println("%s %s on node 0x%04X endpoint 0x%02X%s",
                                             "Discovered",
                                             "Time server",
                                             result->matchAddress,
@@ -1029,7 +1029,7 @@ static void discoveryCallback(const sl_zigbee_af_service_discovery_result_t *res
             state->timeSourceCandidates[state->totalCandidates].endpoint = endpointList->list[i];
             state->totalCandidates++;
           } else {
-            sl_zigbee_af_registration_println("%p %p on node 0x%2x endpoint 0x%x%p",
+            sl_zigbee_af_registration_println("%s %s on node 0x%04X endpoint 0x%02X%s",
                                               "INFO: Ignored",
                                               "Time server",
                                               result->matchAddress,
@@ -1044,7 +1044,7 @@ static void discoveryCallback(const sl_zigbee_af_service_discovery_result_t *res
 
   if (state->state == STATE_DISCOVER_KEY_ESTABLISHMENT_CLUSTER) {
     if (state->trustCenterKeyEstablishmentEndpoint == UNDEFINED_ENDPOINT) {
-      sl_zigbee_af_registration_println("ERR: Failed to find %p",
+      sl_zigbee_af_registration_println("ERR: Failed to find %s",
                                         "Key Establishment cluster");
       resumeAfterFixedDelay(SL_STATUS_FAIL);
     } else {
@@ -1065,14 +1065,14 @@ static void discoveryCallback(const sl_zigbee_af_service_discovery_result_t *res
       // authorized, we can skip key establishment and move on to ESI discovery.
       if (sl_zigbee_af_is_full_smart_energy_security_present() == SL_ZIGBEE_AF_INVALID_KEY_ESTABLISHMENT_SUITE) {
         sl_zigbee_af_registration_flush();
-        sl_zigbee_af_registration_println("%pSkipping key establishment%p",
+        sl_zigbee_af_registration_println("%sSkipping key establishment%s",
                                           "WARN: ",
                                           " due to missing libraries or certificate"
                                           " - see 'info' command for more detail");
         sl_zigbee_af_registration_flush();
         transition(NEXT_STATE_AFTER_KE);
       } else if ((key_data.bitmask & SL_ZIGBEE_KEY_IS_AUTHORIZED) != 0U) {
-        sl_zigbee_af_registration_println("%pSkipping key establishment%p",
+        sl_zigbee_af_registration_println("%sSkipping key establishment%s",
                                           "",
                                           " because key is already authorized");
         transition(NEXT_STATE_AFTER_KE);
@@ -1090,7 +1090,7 @@ static void discoveryCallback(const sl_zigbee_af_service_discovery_result_t *res
       if (state->esiEntry == NULL) {
         // TODO: For now we just return an error. We might consider checking if
         // we have an ESI in the table "young enough" before returning an error.
-        sl_zigbee_af_registration_println("ERR: Failed to find %p",
+        sl_zigbee_af_registration_println("ERR: Failed to find %s",
                                           "Energy Service Interfaces");
         resumeAfterFixedDelay(SL_STATUS_FAIL);
       } else {
@@ -1106,7 +1106,7 @@ static void discoveryCallback(const sl_zigbee_af_service_discovery_result_t *res
   } else if (state->state == STATE_DISCOVER_TIME_SERVERS) {
     if (result->status == SL_ZIGBEE_AF_BROADCAST_SERVICE_DISCOVERY_COMPLETE) {
       if (state->totalCandidates == 0) {
-        sl_zigbee_af_registration_println("ERR: Failed to find %p",
+        sl_zigbee_af_registration_println("ERR: Failed to find %s",
                                           "Time servers");
         resumeAfterFixedDelay(SL_STATUS_FAIL);
       } else {
@@ -1123,7 +1123,7 @@ static void discoveryCallback(const sl_zigbee_af_service_discovery_result_t *res
     if (nodeId != SL_ZIGBEE_NULL_NODE_ID
         && nodeId == result->matchAddress
         && result->status == SL_ZIGBEE_AF_UNICAST_SERVICE_DISCOVERY_COMPLETE_WITH_RESPONSE) {
-      sl_zigbee_af_registration_println("%p IEEE address for node 0x%2x",
+      sl_zigbee_af_registration_println("%s IEEE address for node 0x%04X",
                                         "Discovered",
                                         nodeId);
   #ifdef SL_ZIGBEE_AF_PLUGIN_SMART_ENERGY_REGISTRATION_ESI_DISCOVERY_REQUIRED
@@ -1137,7 +1137,7 @@ static void discoveryCallback(const sl_zigbee_af_service_discovery_result_t *res
       if (sl_zigbee_af_add_address_table_entry((uint8_t*)result->responseData, nodeId)
           == SL_ZIGBEE_NULL_ADDRESS_TABLE_INDEX) {
         sl_zigbee_af_registration_println("WARN: Could not add address table entry"
-                                          " for node 0x%2x",
+                                          " for node 0x%04X",
                                           nodeId);
       }
       if (!findNextNodeForDiscoveryOrPartnerKeyExchange(state, true)) {
@@ -1154,7 +1154,7 @@ static void discoveryCallback(const sl_zigbee_af_service_discovery_result_t *res
       }
     } else {
       sl_zigbee_af_registration_println("ERR: Failed to discover IEEE address"
-                                        " for node 0x%2x",
+                                        " for node 0x%04X",
                                         nodeId);
       resumeAfterFixedDelay(SL_STATUS_FAIL);
     }

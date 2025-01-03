@@ -1,8 +1,15 @@
-Platform 5.0.1
-- Added missing EFR32xG26 devices to pintool.
-- Added support for EFR32BG27C320F768IJ39.
-- Gecko Bootloader
-  - Added Delta DFU for Application upgrade.
-- RAIL 5.0.1
-  - Added support of automatic LNA bypass on the EFR32xG25 parts.
+Platform 5.1.0
+- CMSIS Device
+  - Added support for new EFR32xG27 OPN, EFR32xG26 OPN's, Module OPN's(MGM260PB22VNA2,MGM260PB32VNA2,MGM260PB32VNN2)
+- CPC
+  - Experimental support of NETLINK-SDIO interface on the SiWx917m platform
+- Security
+  - Mbed TLS upgraded to latest version 3.6.2
+- Boards and External Devices
+  - Added support for board OPN's BRD2709A, BRD2711A, BRD4350A, BRD4351A, BRD4412A, BRD4413A.
+- RAIL 5.1.0
+  - Added support for Bluetooth Low Energy (BLE) Channel Sounding (CS) on the EFR32xG24. 
+    This feature enables accurate distance measurement between two devices when used with the Silicon Labs BLE stack and distance measurement libraries.
+  - Added support for Concurrent listening feature on the EFR32xG26 part.
+  - Added support for 1 Mbps and 2 Mbps custom 802.15.4 SUN PHYs on the EFR32xG26 part.
 

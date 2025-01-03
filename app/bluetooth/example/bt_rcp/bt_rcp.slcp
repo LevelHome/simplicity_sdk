@@ -34,10 +34,12 @@ component:
   - id: sl_system
   - id: clock_manager
   - id: device_init
+  - id: sl_common
 
 source:
-  - path: app.c
   - path: main.c
+  - path: app.c
+  - path: app_bm.c
 
 include:
   - path: .
@@ -55,6 +57,8 @@ other_file:
   - path: image/readme_img4.png
 
 configuration:
+  - name: SL_STACK_SIZE
+    value: 2752
   - name: SL_BT_CONTROLLER_BUFFER_MEMORY
     value: 7168
   - name: SL_BT_CONFIG_USER_ADVERTISERS

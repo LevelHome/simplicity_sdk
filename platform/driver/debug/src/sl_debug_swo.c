@@ -34,11 +34,11 @@
 #if defined(__CORTEX_M) && (__CORTEX_M >= 3)
 
 #if _SILICON_LABS_32B_SERIES <= 2
-#include "em_gpio.h"
 #include "em_cmu.h"
-#else
-#include "sl_hal_gpio.h"
 #endif
+
+#include "sl_hal_gpio.h"
+#include "sl_gpio.h"
 
 #include "sl_clock_manager.h"
 #include "sl_debug_swo_config.h"
@@ -53,39 +53,14 @@ sl_status_t sl_debug_swo_init(void)
 
   sl_clock_manager_enable_bus_clock(SL_BUS_CLOCK_GPIO);
 
-#if _SILICON_LABS_32B_SERIES == 2
-  unsigned int location = 0U;
-
-#if defined(_GPIO_ROUTE_SWOPEN_MASK)
-  // Series 0
-  location = SL_DEBUG_ROUTE_LOC;
-  GPIO_PinModeSet(SL_DEBUG_SWO_PORT, SL_DEBUG_SWO_PIN, gpioModePushPull, 1);
-#elif defined(_GPIO_ROUTEPEN_SWVPEN_MASK)
-  // Series 1
-  location = SL_DEBUG_SWV_LOC;
-  GPIO_PinModeSet(SL_DEBUG_SWV_PORT, SL_DEBUG_SWV_PIN, gpioModePushPull, 1);
-#elif defined(GPIO_SWV_PORT)
-  // Series 2
-  // SWO location is not configurable
-  GPIO_PinModeSet((GPIO_Port_TypeDef)GPIO_SWV_PORT, GPIO_SWV_PIN, gpioModePushPull, 1);
-#endif
-
-  // Set SWO location
-  GPIO_DbgLocationSet(location);
-
-  // Enable SWO pin
-  GPIO_DbgSWOEnable(true);
-
-#else
+  // Setup GPIO
 #if defined(GPIO_SWV_PORT)
   sl_gpio_t gpio_swv;
   gpio_swv.port = (sl_gpio_port_t)GPIO_SWV_PORT;
   gpio_swv.pin = GPIO_SWV_PIN;
-  sl_hal_gpio_set_pin_mode(&gpio_swv, SL_HAL_GPIO_MODE_PUSH_PULL, 1);
+  sl_gpio_set_pin_mode(&gpio_swv, SL_GPIO_MODE_PUSH_PULL, 1);
 #endif
-
   sl_hal_gpio_enable_debug_swo(true);
-#endif
 
 #if (_SILICON_LABS_32B_SERIES == 2) && !defined(SL_CATALOG_CLOCK_MANAGER_PRESENT)
 #if defined(_CMU_TRACECLKCTRL_CLKSEL_MASK)
@@ -102,6 +77,7 @@ sl_status_t sl_debug_swo_init(void)
 #endif
 #endif
 
+  // Setup clock
   status = sl_clock_manager_get_clock_branch_frequency(SL_CLOCK_BRANCH_TRACECLK, &freq);
   if (status != SL_STATUS_OK) {
     return status;

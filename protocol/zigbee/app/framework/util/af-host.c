@@ -80,7 +80,7 @@ void sli_zigbee_af_init_cb(void)
   //Initialize the hal
   halInit();
 
-  sl_zigbee_af_app_println("Reset info: %d (%p)",
+  sl_zigbee_af_app_println("Reset info: %d (%s)",
                            halGetResetInfo(),
                            halGetResetString());
   sl_zigbee_af_core_flush();
@@ -294,7 +294,7 @@ sl_status_t sl_zigbee_af_set_ezsp_config_value(sl_zigbee_ezsp_config_id_t config
     status = sl_zigbee_ezsp_set_configuration_value(configId, value);
   }
   sl_zigbee_af_app_flush();
-  sl_zigbee_af_app_print("Ezsp Config: set %p to 0x%2x:", configIdName, value);
+  sl_zigbee_af_app_print("Ezsp Config: set %s to 0x%04X:", configIdName, value);
 
   sl_zigbee_af_app_debug_exec(sli_zigbee_af_print_status("set", status));
   sl_zigbee_af_app_flush();
@@ -319,7 +319,7 @@ sl_status_t sl_zigbee_af_set_ezsp_policy(sl_zigbee_ezsp_policy_id_t policyId,
 {
   UNUSED sl_status_t status = sl_zigbee_ezsp_set_policy(policyId,
                                                         decisionId);
-  sl_zigbee_af_app_print("Ezsp Policy: set %p to \"%p\":",
+  sl_zigbee_af_app_print("Ezsp Policy: set %s to \"%s\":",
                          policyName,
                          decisionName);
   sl_zigbee_af_app_debug_exec(sli_zigbee_af_print_status("set",
@@ -338,22 +338,22 @@ sl_status_t sl_zigbee_af_set_ezsp_value(sl_zigbee_ezsp_value_id_t valueId,
 {
   UNUSED sl_status_t status = sl_zigbee_ezsp_set_value(valueId, valueLength, value);
 
-  sl_zigbee_af_app_print("Ezsp Value : set %p to ", valueName);
+  sl_zigbee_af_app_print("Ezsp Value : set %s to ", valueName);
 
   // print the value based on the length of the value
   // for length 1/2/4 bytes, fetch int of that length and promote to 32 bits for printing
   switch (valueLength) {
     case 1:
-      sl_zigbee_af_app_print("0x%4x:", (uint32_t)(*value));
+      sl_zigbee_af_app_print("0x%08X:", (uint32_t)(*value));
       break;
     case 2:
-      sl_zigbee_af_app_print("0x%4x:", (uint32_t)(*((uint16_t *)value)));
+      sl_zigbee_af_app_print("0x%08X:", (uint32_t)(*((uint16_t *)value)));
       break;
     case 4:
-      sl_zigbee_af_app_print("0x%4x:", (uint32_t)(*((uint32_t *)value)));
+      sl_zigbee_af_app_print("0x%08X:", (uint32_t)(*((uint32_t *)value)));
       break;
     default:
-      sl_zigbee_af_app_print("{val of len %x}:", valueLength);
+      sl_zigbee_af_app_print("{val of len %02X}:", valueLength);
       break;
   }
 
@@ -415,7 +415,7 @@ void sli_zigbee_af_reset_and_init_ncp(void)
   ezspStatus = sl_zigbee_ezsp_init();
 
   if (ezspStatus != SL_ZIGBEE_EZSP_SUCCESS) {
-    sl_zigbee_af_core_println("ERROR: ezspForceReset 0x%x", ezspStatus);
+    sl_zigbee_af_core_println("ERROR: ezspForceReset 0x%02X", ezspStatus);
     sl_zigbee_af_core_flush();
     assert(false);
   }
@@ -614,25 +614,25 @@ void sli_zigbee_af_cli_version_command(void)
 
   // verify that the stack type is what is expected
   if (ncpStackType != EZSP_STACK_TYPE_MESH) {
-    sl_zigbee_af_app_print("ERROR: stack type 0x%x is not expected!",
+    sl_zigbee_af_app_print("ERROR: stack type 0x%02X is not expected!",
                            ncpStackType);
     assert(false);
   }
 
   // verify that the NCP EZSP Protocol version is what is expected
   if (ncpEzspProtocolVer != EZSP_PROTOCOL_VERSION) {
-    sl_zigbee_af_app_print("ERROR: NCP EZSP protocol version of 0x%x does not match Host version 0x%x\r\n",
+    sl_zigbee_af_app_print("ERROR: NCP EZSP protocol version of 0x%02X does not match Host version 0x%02X\r\n",
                            ncpEzspProtocolVer,
                            hostEzspProtocolVer);
     assert(false);
   }
 
-  sl_zigbee_af_app_print("ezsp ver 0x%x stack type 0x%x ",
+  sl_zigbee_af_app_print("ezsp ver 0x%02X stack type 0x%02X ",
                          ncpEzspProtocolVer, ncpStackType, ncpStackVer);
 
   if (SL_STATUS_OK != sl_zigbee_ezsp_get_version_struct(&versionStruct)) {
     // NCP has Old style version number
-    sl_zigbee_af_app_println("stack ver [0x%2x]", ncpStackVer);
+    sl_zigbee_af_app_println("stack ver [0x%04X]", ncpStackVer);
   } else {
     // NCP has new style version number
     sli_zigbee_af_parse_and_print_version(versionStruct);
@@ -787,7 +787,7 @@ static void createEndpoint(uint8_t endpointIndex)
   {
     sl_status_t status = sl_zigbee_af_push_endpoint_network_index(endpoint);
     if (status != SL_STATUS_OK) {
-      sl_zigbee_af_app_println("Error in creating endpoint %d: 0x%x", endpoint, status);
+      sl_zigbee_af_app_println("Error in creating endpoint %d: 0x%02X", endpoint, status);
       return;
     }
   }
@@ -814,13 +814,13 @@ static void createEndpoint(uint8_t endpointIndex)
       if (initiallyDisabled) {
         sl_zigbee_af_endpoint_enable_disable(endpoint, false);
       }
-      sl_zigbee_af_app_println("Ezsp Endpoint %d added, profile 0x%2x, in clusters: %d, out clusters %d",
+      sl_zigbee_af_app_println("Ezsp Endpoint %d added, profile 0x%04X, in clusters: %d, out clusters %d",
                                endpoint,
                                sl_zigbee_af_profile_id_from_index(endpointIndex),
                                inClusterCount,
                                outClusterCount);
     } else {
-      sl_zigbee_af_app_println("Error in creating endpoint %d: 0x%x", endpoint, status);
+      sl_zigbee_af_app_println("Error in creating endpoint %d: 0x%02X", endpoint, status);
     }
   }
 
@@ -839,7 +839,7 @@ static uint8_t ezspNextSequence(void)
 void sl_zigbee_ezsp_error_handler(sl_zigbee_ezsp_status_t status)
 {
   if ( status != SL_ZIGBEE_EZSP_ERROR_QUEUE_FULL ) {
-    sl_zigbee_af_core_println("ERROR: sl_zigbee_ezsp_error_handler 0x%x", status);
+    sl_zigbee_af_core_println("ERROR: sl_zigbee_ezsp_error_handler 0x%02X", status);
   } else {
     ezsp_error_queue_full_counter++;
   }
@@ -874,7 +874,7 @@ void sli_zigbee_af_incoming_message_callback(sl_zigbee_incoming_message_type_t t
                                          message);
 
   // Invalidate the sourceRouteOverhead cached at the end of the current incomingMessageHandler
-  sl_zigbee_af_set_source_route_overhead_cb(sender, SL_ZIGBEE_EZSP_SOURCE_ROUTE_OVERHEAD_UNKNOWN);
+  sl_zigbee_af_set_source_route_overhead_cb(sender, SL_ZIGBEE_SOURCE_ROUTE_OVERHEAD_UNKNOWN);
   (void) sl_zigbee_af_pop_network_index();
 }
 
@@ -932,7 +932,7 @@ void sli_zigbee_af_fragmentation_message_sent_handler(sl_status_t status,
                                                       uint16_t bufLen)
 {
   // the fragmented message is no longer in process
-  sl_zigbee_af_debug_println("%pend.", "Fragmentation:");
+  sl_zigbee_af_debug_println("%send.", "Fragmentation:");
 
   sli_zigbee_af_message_sent_handler(status,
                                      type,

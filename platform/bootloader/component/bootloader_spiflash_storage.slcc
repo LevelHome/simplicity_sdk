@@ -34,3 +34,6 @@ config_file:
     file_id: btl_spiflash_storage_cfg
 validation_helper:
   - path: platform/bootloader/component/scripts/bootloader_spiflash_validation.lua
+metadata:
+  sbom:
+    license: MSLA AND Zlib

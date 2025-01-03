@@ -35,3 +35,7 @@ template_contribution:
 documentation:
   docset: wifi/wf200/rtos
   document: group-secure-link
+
+metadata:
+  sbom:
+    license: MSLA

@@ -52,16 +52,19 @@
 #endif
 
 // System timer / sleeptimer
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_LEGACY_HAL, SL_CODE_CLASS_TIME_CRITICAL)
 uint16_t halCommonGetInt16uMillisecondTick(void)
 {
   return (uint16_t)halCommonGetInt64uMillisecondTick();
 }
 
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_LEGACY_HAL, SL_CODE_CLASS_TIME_CRITICAL)
 uint32_t halCommonGetInt32uMillisecondTick(void)
 {
   return (uint32_t)halCommonGetInt64uMillisecondTick();
 }
 
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_LEGACY_HAL, SL_CODE_CLASS_TIME_CRITICAL)
 uint64_t halCommonGetInt64uMillisecondTick(void)
 {
   uint64_t ms;
@@ -76,11 +79,6 @@ uint16_t halCommonGetInt16uQuarterSecondTick(void)
   uint32_t ticks = halCommonGetInt32uMillisecondTick();
   ticks /= MILLISECOND_TICKS_PER_QUARTERSECOND;
   return (uint16_t)ticks;
-}
-
-bool sl_legacy_hal_is_ok_to_sleep(void)
-{
-  return true;
 }
 
 sl_power_manager_on_isr_exit_t sl_legacy_hal_sleep_on_isr_exit(void)
@@ -153,20 +151,6 @@ void halReboot(void)
   halInternalSysReset(RESET_SOFTWARE_REBOOT);
 }
 
-void halStackRadioPowerUpBoard(void)
-{
-  // Intentionally empty.
-  // This function is defined here only to provide compatibility for code that
-  // may also link against legacy RF coexistence implementations.
-}
-
-void halStackRadioPowerDownBoard(void)
-{
-  // Intentionally empty.
-  // This function is defined here only to provide compatibility for code that
-  // may also link against legacy RF coexistence implementations.
-}
-
 #if !defined(BOARD_ACTIVITY_LED)
   #if defined(SL_CATALOG_BOARD_ACTIVITY_PRESENT)
     #define BOARD_ACTIVITY_LED  sl_led_board_activity
@@ -175,6 +159,7 @@ void halStackRadioPowerDownBoard(void)
   #endif
 #endif
 
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_LEGACY_HAL, SL_CODE_CLASS_TIME_CRITICAL)
 void halStackIndicateActivity(bool turnOn)
 {
   (void)turnOn;
@@ -186,21 +171,6 @@ void halStackIndicateActivity(bool turnOn)
     sl_led_turn_off(&BOARD_ACTIVITY_LED);
   }
 #endif
-}
-
-void halSetLed(HalBoardLed led)
-{
-  (void)led;
-}
-
-void halClearLed(HalBoardLed led)
-{
-  (void)led;
-}
-
-void halToggleLed(HalBoardLed led)
-{
-  (void)led;
 }
 
 void halStackProcessBootCount(void)
@@ -431,16 +401,6 @@ sl_status_t sli_legacy_serial_guaranteed_printf(uint8_t port,
 #endif // SL_CATALOG_LEGACY_PRINTF_PRESENT
 }
 
-void halInternalSetCtune(uint16_t tune)
-{
-  (void)RAIL_SetTune(RAIL_EFR32_HANDLE, tune);
-}
-
-uint16_t halInternalGetCtune(void)
-{
-  return (uint16_t)RAIL_GetTune(RAIL_EFR32_HANDLE);
-}
-
 #if defined(SL_CATALOG_SIMPLE_BUTTON_PRESENT)
   #define BUTTON_COUNT (SL_SIMPLE_BUTTON_COUNT)
 #else
@@ -451,52 +411,6 @@ uint16_t halInternalGetCtune(void)
 #if BUTTON_COUNT > 256U
   #error Legacy HAL can not accomodate more than 256 buttons!
 #endif
-
-void halInternalInitButton(void)
-{
-  #if defined(SL_CATALOG_SIMPLE_BUTTON_PRESENT)
-  sl_simple_button_init_instances();
-  #endif
-}
-
-uint8_t halButtonState(uint8_t button)
-{
-  #if BUTTON_COUNT > 0
-  assert(button < BUTTON_COUNT);
-  const sl_button_t * ptr = SL_SIMPLE_BUTTON_INSTANCE(button);
-  sl_button_state_t state = sl_button_get_state(ptr);
-  assert(state != (sl_button_state_t)BUTTON_ERROR
-         && state != SL_SIMPLE_BUTTON_DISABLED);
-
-  return (state == SL_SIMPLE_BUTTON_PRESSED) ? BUTTON_PRESSED : BUTTON_RELEASED;
-  #else
-  (void)button;
-  assert(false);
-  // The assert above should prevent us from getting here, but this return
-  // prevents warnings or errors from compilers and static analyzers.
-  return (0U);
-  #endif
-}
-
-uint8_t halButtonPinState(uint8_t button)
-{
-  #if BUTTON_COUNT > 0
-  assert(button < BUTTON_COUNT);
-  assert(SL_SIMPLE_BUTTON_INSTANCE(button) != NULL);
-  sl_simple_button_context_t * context = SL_SIMPLE_BUTTON_INSTANCE(button)->context;
-  assert(context != NULL);
-  GPIO_Port_TypeDef port = SL_SIMPLE_BUTTON_GET_PORT(context);
-  uint8_t pin = SL_SIMPLE_BUTTON_GET_PIN(context);
-  uint8_t state = (uint8_t)GPIO_PinInGet(port, pin);
-  return (state == SL_SIMPLE_BUTTON_POLARITY) ? BUTTON_PRESSED : BUTTON_RELEASED;
-  #else
-  (void)button;
-  assert(false);
-  // The assert above should prevent us from getting here, but this return
-  // prevents warnings or errors from compilers and static analyzers.
-  return (0U);
-  #endif
-}
 
 #if (BUTTON_COUNT > 0) && LEGACY_HAL_TRANSLATE_BUTTON_INTERRUPT
 

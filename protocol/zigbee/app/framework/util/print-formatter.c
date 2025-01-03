@@ -17,8 +17,6 @@
 
 #include "app/framework/include/af.h"
 
-#include "app/util/serial/sl_zigbee_command_interpreter.h"
-
 //------------------------------------------------------------------------------
 
 static void sli_zigbee_af_print_buffer(uint16_t area,
@@ -39,7 +37,7 @@ void sl_zigbee_af_print_buffer(uint16_t area,
                                uint16_t bufferLen,
                                bool withSpace)
 {
-  sli_zigbee_af_print_buffer(area, buffer, bufferLen, (withSpace ? "%x " : "%x"));
+  sli_zigbee_af_print_buffer(area, buffer, bufferLen, (withSpace ? "%02X " : "%02X"));
 }
 
 void sl_zigbee_af_print_string(uint16_t area, const uint8_t *buffer)
@@ -55,7 +53,7 @@ void sl_zigbee_af_print_long_string(uint16_t area, const uint8_t *buffer)
 void sl_zigbee_af_print_little_endian_eui64(const sl_802154_long_addr_t eui64)
 {
   sl_zigbee_af_print(sl_zigbee_af_print_active_area,
-                     "(%c)%X%X%X%X%X%X%X%X",
+                     "(%c)%02X%02X%02X%02X%02X%02X%02X%02X",
                      '<',
                      eui64[0],
                      eui64[1],
@@ -70,7 +68,7 @@ void sl_zigbee_af_print_little_endian_eui64(const sl_802154_long_addr_t eui64)
 void sl_zigbee_af_print_big_endian_eui64(const sl_802154_long_addr_t eui64)
 {
   sl_zigbee_af_print(sl_zigbee_af_print_active_area,
-                     "(%c)%X%X%X%X%X%X%X%X",
+                     "(%c)%02X%02X%02X%02X%02X%02X%02X%02X",
                      '>',
                      eui64[7],
                      eui64[6],
@@ -101,7 +99,7 @@ void sl_zigbee_af_print_key(bool publicKey, const uint8_t *key)
 
   sl_zigbee_af_print_zigbee_key(key);
   sl_zigbee_af_print_buffer(sl_zigbee_af_print_active_area, key + 16, 5, true);
-  sl_zigbee_af_println(sl_zigbee_af_print_active_area, (publicKey ? "%X" : ""), key[21]);
+  sl_zigbee_af_println(sl_zigbee_af_print_active_area, (publicKey ? "%02X" : ""), key[21]);
 }
 
 void sl_zigbee_af_print_key_283k1(bool publicKey, const uint8_t *key)
@@ -110,14 +108,14 @@ void sl_zigbee_af_print_key_283k1(bool publicKey, const uint8_t *key)
   // ECC Private 283k1 Keys are 36 bytes
   sl_zigbee_af_print8_byte_blocks(4, key, true);
   sl_zigbee_af_print_buffer(sl_zigbee_af_print_active_area, key + 32, 4, true);
-  sl_zigbee_af_println(sl_zigbee_af_print_active_area, (publicKey ? "%X" : ""), key[36]);
+  sl_zigbee_af_println(sl_zigbee_af_print_active_area, (publicKey ? "%02X" : ""), key[36]);
 }
 
 void sl_zigbee_af_print_cert_283k1(const uint8_t *cert)
 {
   // ECC 283k1 certificates are 74 bytes long
   sl_zigbee_af_print8_byte_blocks(9, cert, true);
-  sl_zigbee_af_println(sl_zigbee_af_print_active_area, "%X %X", cert[72], cert[73]);
+  sl_zigbee_af_println(sl_zigbee_af_print_active_area, "%02X %02X", cert[72], cert[73]);
 }
 
 void sl_zigbee_af_print_ieee_line(const sl_802154_long_addr_t ieee)
@@ -128,7 +126,7 @@ void sl_zigbee_af_print_ieee_line(const sl_802154_long_addr_t ieee)
 
 void sl_zigbee_af_print_text_line(const char * text)
 {
-  sl_zigbee_af_println(sl_zigbee_af_print_active_area, "%p", text);
+  sl_zigbee_af_println(sl_zigbee_af_print_active_area, "%s", text);
 }
 
 void sl_zigbee_af_print8_byte_blocks(uint8_t numBlocks,
@@ -138,11 +136,11 @@ void sl_zigbee_af_print8_byte_blocks(uint8_t numBlocks,
   uint8_t i;
   for (i = 0; i < numBlocks; i++) {
     sl_zigbee_af_print_buffer(sl_zigbee_af_print_active_area, block + 8 * i, 8, true);
-    // By moving the '%p' to a separate function call, we can
+    // By moving the '%s' to a separate function call, we can
     // save CONST space.  The above string is duplicated elsewhere in the
     // code and therefore will be deadstripped.
     sl_zigbee_af_print(sl_zigbee_af_print_active_area,
-                       " %p",
+                       " %s",
                        (crBetweenBlocks || ((i + 1) == numBlocks) ? "\r\n" : ""));
   }
 }

@@ -63,15 +63,15 @@
 // #define IOT_PWM_CFG_INSTANCE_PERIPHERAL           TIMER0
 // #define IOT_PWM_CFG_INSTANCE_PERIPHERAL_NO        0
 
-// #define IOT_PWM_CFG_INSTANCE_CC0_PORT             gpioPortB
+// #define IOT_PWM_CFG_INSTANCE_CC0_PORT             SL_GPIO_PORT_B
 // #define IOT_PWM_CFG_INSTANCE_CC0_PIN              0
 // #define IOT_PWM_CFG_INSTANCE_CC0_LOC              0
 
-// #define IOT_PWM_CFG_INSTANCE_CC1_PORT             gpioPortB
+// #define IOT_PWM_CFG_INSTANCE_CC1_PORT             SL_GPIO_PORT_B
 // #define IOT_PWM_CFG_INSTANCE_CC1_PIN              1
 // #define IOT_PWM_CFG_INSTANCE_CC1_LOC              0
 
-// #define IOT_PWM_CFG_INSTANCE_CC2_PORT             gpioPortB
+// #define IOT_PWM_CFG_INSTANCE_CC2_PORT             SL_GPIO_PORT_B
 // #define IOT_PWM_CFG_INSTANCE_CC2_PIN              2
 // #define IOT_PWM_CFG_INSTANCE_CC2_LOC              0
 // [TIMER_IOT_PWM_CFG_INSTANCE]$

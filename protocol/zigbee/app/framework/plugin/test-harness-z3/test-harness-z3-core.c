@@ -254,7 +254,7 @@ sl_zigbee_packet_action_t sl_zigbee_af_incoming_packet_filter_cb(sl_zigbee_zigbe
     case SL_ZIGBEE_ZIGBEE_PACKET_TYPE_BEACON: {
       if (printingMask & PRINTING_MASK_BEACONS) {
         uint16_t panId = *(uint16_t*) data;
-        sl_zigbee_af_core_print("beacon:rx 0x%2X, AP 0x%p, EP ",
+        sl_zigbee_af_core_print("beacon:rx 0x%04X, AP 0x%s, EP ",
                                 panId,
                                 ((packetData[1] & BEACON_ASSOCIATION_PERMIT_BIT)
                                  ? "1"
@@ -291,7 +291,7 @@ sl_zigbee_packet_action_t sl_zigbee_af_incoming_packet_filter_cb(sl_zigbee_zigbe
       uint8_t networkHeaderSize = *(uint8_t *)data;
       commandId = packetData[networkHeaderSize];
       if (printingMask & PRINTING_MASK_NWK) {
-        sl_zigbee_af_core_print("nwk:rx seq AC sec 28 cmd %X payload[",
+        sl_zigbee_af_core_print("nwk:rx seq AC sec 28 cmd %02X payload[",
                                 commandId);
         sl_zigbee_af_core_print_buffer(packetData, packetLength, true); // spaces?
         sl_zigbee_af_core_println("]");
@@ -334,7 +334,7 @@ sl_zigbee_packet_action_t sl_zigbee_af_incoming_packet_filter_cb(sl_zigbee_zigbe
           uint8_t source_ep = *finger++;
           uint8_t seq = *finger++;
 
-          sl_zigbee_af_core_println("APS header: fc %X grp %2X dst_ep %X clst %2X pfl %2X src_ep %X seq %X",
+          sl_zigbee_af_core_println("APS header: fc %02X grp %04X dst_ep %02X clst %04X pfl %04X src_ep %02X seq %02X",
                                     fc, group_address, dest_ep, cluster, profile, source_ep, seq);
         }
       }
@@ -343,7 +343,7 @@ sl_zigbee_packet_action_t sl_zigbee_af_incoming_packet_filter_cb(sl_zigbee_zigbe
     case SL_ZIGBEE_ZIGBEE_PACKET_TYPE_APS_COMMAND: {
       if (printingMask & PRINTING_MASK_APS) {
         uint8_t fc = *(uint8_t*) data;
-        sl_zigbee_af_core_print("aps:rx seq AC fc %X cmd %X payload[",
+        sl_zigbee_af_core_print("aps:rx seq AC fc %02X cmd %02X payload[",
                                 fc,
                                 commandId);
         sl_zigbee_af_core_print_buffer(packetData + 1, packetLength - 1, true); // spaces?
@@ -353,7 +353,7 @@ sl_zigbee_packet_action_t sl_zigbee_af_incoming_packet_filter_cb(sl_zigbee_zigbe
     }
 
     case SL_ZIGBEE_ZIGBEE_PACKET_TYPE_APS_DATA: {
-      sl_zigbee_af_debug_println("Error: unsupported incoming sl_zigbee_zigbee_packet_type_t %X.", packetType);
+      sl_zigbee_af_debug_println("Error: unsupported incoming sl_zigbee_zigbee_packet_type_t %02X.", packetType);
       break;
     }
 
@@ -361,7 +361,7 @@ sl_zigbee_packet_action_t sl_zigbee_af_incoming_packet_filter_cb(sl_zigbee_zigbe
       sl_status_t status;
       sl_zigbee_aps_frame_t *apsFrame = (sl_zigbee_aps_frame_t *) data;
       if (printingMask & PRINTING_MASK_ZDO) {
-        sl_zigbee_af_core_print("zdo:t%4X:%p seq %X cmd %2X payload[",
+        sl_zigbee_af_core_print("zdo:t%08X:%s seq %02X cmd %04X payload[",
                                 sl_zigbee_af_get_current_time(),
                                 "rx",
                                 packetData[0],
@@ -375,7 +375,7 @@ sl_zigbee_packet_action_t sl_zigbee_af_incoming_packet_filter_cb(sl_zigbee_zigbe
                                                                           packetLength,
                                                                           apsFrame);
       if (status != SL_STATUS_INVALID_STATE) {
-        sl_zigbee_af_core_println("%p: %p: cluster: 0x%02X status: 0x%X",
+        sl_zigbee_af_core_println("%s: %s: cluster: 0x%02X status: 0x%02X",
                                   TEST_HARNESS_Z3_PRINT_NAME,
                                   "ZDO negative command",
                                   apsFrame->clusterId | 0x8000,
@@ -386,7 +386,11 @@ sl_zigbee_packet_action_t sl_zigbee_af_incoming_packet_filter_cb(sl_zigbee_zigbe
     case SL_ZIGBEE_ZIGBEE_PACKET_TYPE_INTERPAN:
     case SL_ZIGBEE_ZIGBEE_PACKET_TYPE_ZCL: {
       if (printingMask & PRINTING_MASK_ZCL) {
-        sl_zigbee_af_core_print("t%4x:rx len %d, ep %X, clus 0x1000 (ZLL Commissioning) FC %X seq %X cmd %X payload[",
+        // Incoming ZLL Packet requires a senderEui64 attached
+        if (data == NULL) {
+          break;
+        }
+        sl_zigbee_af_core_print("t%08X:rx len %d, ep %02X, clus 0x1000 (ZLL Commissioning) FC %02X seq %02X cmd %02X payload[",
                                 sl_zigbee_af_get_current_time(),
                                 packetLength,
                                 1,      // fake endpoint 1 for zll
@@ -408,7 +412,7 @@ sl_zigbee_packet_action_t sl_zigbee_af_incoming_packet_filter_cb(sl_zigbee_zigbe
         break;
     }
     default:
-      sl_zigbee_af_debug_println("Error: unsupported incoming sl_zigbee_zigbee_packet_type_t %X.", packetType);
+      sl_zigbee_af_debug_println("Error: unsupported incoming sl_zigbee_zigbee_packet_type_t %02X.", packetType);
       break;
   }
   return act;
@@ -463,7 +467,7 @@ sl_zigbee_packet_action_t sl_zigbee_af_outgoing_packet_filter_cb(sl_zigbee_zigbe
     }
     // Nothing to modify
     default:
-      sl_zigbee_af_debug_println("Error: unsupported outgoing sl_zigbee_zigbee_packet_type_t %X.", packetType);
+      sl_zigbee_af_debug_println("Error: unsupported outgoing sl_zigbee_zigbee_packet_type_t %02X.", packetType);
       break;
   }
   return act;
@@ -521,14 +525,9 @@ void sl_zigbee_af_test_harness_z3_stack_status_cb(sl_status_t status)
 {
   if (status == SL_STATUS_NETWORK_UP) {
     if (sl_zigbee_af_get_node_id() == SL_ZIGBEE_TRUST_CENTER_NODE_ID) {
-      // Set the key request policy here, once (so it can be overridden), depending
-      // on whether we are a WWAH client (which will usually be true now).
-      uint8_t keyRequestPolicy;
-#ifdef ZCL_USING_SL_WWAH_CLUSTER_CLIENT
-      keyRequestPolicy = SL_ZIGBEE_ALLOW_TC_LINK_KEY_REQUEST_AND_GENERATE_NEW_KEY;
-#else
-      keyRequestPolicy = SL_ZIGBEE_ALLOW_TC_LINK_KEY_REQUEST_AND_SEND_CURRENT_KEY;
-#endif
+      // WWAH is what introduced the original requirement for being able to (re)generate arbitrarily many APS link keys.
+      // BDB 3.1 should be making it the default behavior
+      uint8_t keyRequestPolicy = SL_ZIGBEE_ALLOW_TC_LINK_KEY_REQUEST_AND_GENERATE_NEW_KEY;
 #ifdef EZSP_HOST
       sl_zigbee_ezsp_set_policy(SL_ZIGBEE_EZSP_TC_KEY_REQUEST_POLICY, keyRequestPolicy);
       sl_zigbee_ezsp_get_configuration_value(SL_ZIGBEE_EZSP_CONFIG_TRANSIENT_KEY_TIMEOUT_S,
@@ -602,7 +601,7 @@ void sli_zigbee_af_test_harness_z3_reset_command(SL_CLI_COMMAND_ARG)
   // without waiting for a network down.
   sl_zigbee_af_zll_reset_to_factory_new();
 
-  sl_zigbee_af_core_println("%s: %s: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "Reset",
                             SL_STATUS_OK);
@@ -632,12 +631,12 @@ void sli_zigbee_af_test_harness_z3_set_device_mode_command(SL_CLI_COMMAND_ARG)
     } else if ((mode & 0xFE) == EM_AF_PLUGIN_TEST_HARNESS_Z3_DEVICE_MODE_ZED_NOT_ADDRESS_ASSIGNABLE) {
       sli_zigbee_af_current_zigbee_pro_network->nodeType = SL_ZIGBEE_END_DEVICE;
 #ifdef SL_CATALOG_ZIGBEE_END_DEVICE_SUPPORT_PRESENT
-      sli_zigbee_af_end_device_support_polling_init();
+      sli_zigbee_af_end_device_support_polling_init(SL_ZIGBEE_INIT_LEVEL_EVENT);
 #endif
     } else {
       sli_zigbee_af_current_zigbee_pro_network->nodeType = SL_ZIGBEE_SLEEPY_END_DEVICE;
 #ifdef SL_CATALOG_ZIGBEE_END_DEVICE_SUPPORT_PRESENT
-      sli_zigbee_af_end_device_support_polling_init();
+      sli_zigbee_af_end_device_support_polling_init(SL_ZIGBEE_INIT_LEVEL_EVENT);
 #endif
     }
 
@@ -661,7 +660,7 @@ void sli_zigbee_af_test_harness_z3_set_device_mode_command(SL_CLI_COMMAND_ARG)
                               sli_zigbee_af_current_zigbee_pro_network->nodeType);
   }
 
-  sl_zigbee_af_core_println("%s: %s: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "Set device mode",
                             status);
@@ -670,7 +669,7 @@ void sli_zigbee_af_test_harness_z3_set_device_mode_command(SL_CLI_COMMAND_ARG)
 // plugin test-harness z3 set-short-address
 void sli_zigbee_af_test_harness_z3_set_short_address_command(SL_CLI_COMMAND_ARG)
 {
-  sl_zigbee_af_core_println("%s: %s: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "Set short address",
                             SL_STATUS_INVALID_STATE);
@@ -691,7 +690,7 @@ void sli_zigbee_af_test_harness_set_network_creator_pan_id(SL_CLI_COMMAND_ARG)
 #ifdef SL_CATALOG_ZIGBEE_ZLL_COMMISSIONING_CLIENT_PRESENT
   sli_zigbee_af_zll_set_pan_id(panId);
 #endif // SL_CATALOG_ZIGBEE_ZLL_COMMISSIONING_CLIENT_PRESENT
-  sl_zigbee_af_core_println("Network Creator PAN ID = 0x%2X", panId);
+  sl_zigbee_af_core_println("Network Creator PAN ID = 0x%04X", panId);
 }
 
 // plugin test-harness z3 platform
@@ -729,7 +728,7 @@ void sli_zigbee_af_test_harness_z3_install_code_clear_or_set_command(SL_CLI_COMM
         sl_zigbee_app_debug_println("ERR: Install Code must be 8, 10, 14, or 18 bytes in "
                                     "length");
       } else {
-        sl_zigbee_app_debug_println("ERR: AES-MMO hash failed: 0x%X", status);
+        sl_zigbee_app_debug_println("ERR: AES-MMO hash failed: 0x%02X", status);
       }
       return;
     }
@@ -750,7 +749,7 @@ void sli_zigbee_af_test_harness_z3_install_code_clear_or_set_command(SL_CLI_COMM
   sl_zigbee_app_debug_println("Security Core Library must be included to use this command.");
 #endif
 #else
-  sl_zigbee_af_core_println("%s: %s %s: 0x%X",
+  sl_zigbee_af_core_println("%s: %s %s: 0x%02X",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "Install code",
                             (doClear ? "clear" : "set"),
@@ -799,7 +798,7 @@ void sli_zigbee_test_harness_z3_layer_select(SL_CLI_COMMAND_ARG)
     CLEARBITS(confirmationMask, tempCfmMask);
   }
 
-  sl_zigbee_af_core_println("layer-select-cfm 0x%X 0x%X 0x%X",
+  sl_zigbee_af_core_println("layer-select-cfm 0x%02X 0x%02X 0x%02X",
                             dropMask, indicationMask, confirmationMask);
 }
 static void printApsdeCfm(uint8_t dstMode,
@@ -810,13 +809,13 @@ static void printApsdeCfm(uint8_t dstMode,
 {
   if (confirmationMask & CONFIRMATION_LAYER_APSDE) {
     sl_zigbee_af_core_println("");
-    sl_zigbee_af_core_print("apsde-cfm 0x%X {", dstMode);                // Dst Mode
+    sl_zigbee_af_core_print("apsde-cfm 0x%02X {", dstMode);                // Dst Mode
     if (dstMode == 3) {
       sl_zigbee_af_core_print_buffer(dstAddrStr, 8, false);
     } else {
-      sl_zigbee_af_core_print("%X%X", (uint8_t)dstAddr, (uint8_t)(dstAddr >> 8));
+      sl_zigbee_af_core_print("%02X%02X", (uint8_t)dstAddr, (uint8_t)(dstAddr >> 8));
     }
-    sl_zigbee_af_core_println("} 0x%X 0x%X 0x%X",
+    sl_zigbee_af_core_println("} 0x%02X 0x%02X 0x%02X",
                               apsFrame->destinationEndpoint,    // Dst Endpoint
                               apsFrame->sourceEndpoint,         // Src Endpoint
                               status);                          // Status
@@ -913,7 +912,7 @@ void sl_zigbee_test_harness_z3_apsde_data_request(SL_CLI_COMMAND_ARG)
                                 aliasSequence); //uint8_t sequence);
   }
   // Synchronous confirm to ensure packet is submitted to network successfully.
-  sl_zigbee_af_core_println("apsde-syncfm 0x%X", status);
+  sl_zigbee_af_core_println("apsde-syncfm 0x%02X", status);
   // In case of a send submission failure the confirm is called here immediately
   if (status != SL_STATUS_OK) {
     printApsdeCfm(dstMode, dstAddrStr, dstAddr, &apsFrame, status);
@@ -990,7 +989,7 @@ void sl_zigbee_af_raw_transmit_complete_cb(
     return; // if cfm mask not enabled , return;
   }
   if (msduHandle != 0xFF) {
-    sl_zigbee_af_core_println("mcpsd-cfm 0x%X 0x%X", msduHandle, status);
+    sl_zigbee_af_core_println("mcpsd-cfm 0x%02X 0x%02X", msduHandle, status);
   }
 }
 
@@ -1024,7 +1023,7 @@ bool sl_zigbee_af_message_sent_cb(sl_zigbee_outgoing_message_type_t type,
   // Print NL confirmation first, if enabled!
   if (confirmationMask & CONFIRMATION_LAYER_NLDE) {
     sl_zigbee_af_core_println("");
-    sl_zigbee_af_core_println("nlde-cfm 0x%X 0x%X", currentSentMessageTag, status);
+    sl_zigbee_af_core_println("nlde-cfm 0x%02X 0x%02X", currentSentMessageTag, status);
   }
   uint8_t mode = 0;
   uint8_t dstAddrStr[8];
@@ -1156,7 +1155,7 @@ void sl_zigbee_test_harness_z3_nlde_data_request(SL_CLI_COMMAND_ARG)
                                           &messageTag, //uint16_t *messageTag,
                                           aliasSrcAddr, //sl_802154_short_addr_t alias,
                                           aliasSeqNo); //uint8_t sequence);
-  sl_zigbee_af_core_println("nlde-syncfm 0x%X 0x%X", messageTag, status); // Synchronous confirm to ensure packet is submitted to network successfully.
+  sl_zigbee_af_core_println("nlde-syncfm 0x%02X 0x%02X", nsduHandle, status); // Synchronous confirm to ensure packet is submitted to network successfully.
   UNUSED_VAR(dstAddrMode);
   UNUSED_VAR(nonmemberRadius);
   UNUSED_VAR(securityEnable);
@@ -1174,6 +1173,7 @@ void sl_zigbee_test_harness_z3_mcps_data_request(SL_CLI_COMMAND_ARG)
   //0 x 03 = 64 bit extended address.
   uint16_t srcPanId = (uint16_t)sl_cli_get_argument_uint16(arguments, 1);
   uint8_t srcAddrStr[8] = { 0 }; //this could be a 16 bit address or ieee address depending on the address mode
+  static uint8_t addrFilter[8] = { 0 };
   sl_zigbee_copy_hex_arg(arguments, 2, srcAddrStr, 8, true);
   uint8_t dstMode = (uint8_t)sl_cli_get_argument_uint8(arguments, 3);
   uint16_t dstPanId = (uint16_t)sl_cli_get_argument_uint16(arguments, 4);
@@ -1236,8 +1236,22 @@ void sl_zigbee_test_harness_z3_mcps_data_request(SL_CLI_COMMAND_ARG)
 #else
   status = sl_zigbee_send_raw_message(message, index, SL_802154_TRANSMIT_PRIORITY_NORMAL, true);
   msduHandle = message[0];
+  // When the TH sends an MCPS-DATA.request with Long Source address mode
+  // e.g a Commissioning GPDF with GPD IEEE address
+  // We need to add that source address to ieee802154LongAddr in Rail filter
+  // to avoid the response is dropped at Rail.
+  // e.g a Commissioning Reply that has long destination address matches with GPD IEEE address,
+  // but not with the TestHarness EUI64 ID itself will be dropped
+  if (srcMode == 3 && status == 0) {
+    if (memcmp(srcAddrStr, addrFilter, EUI64_SIZE)) {
+      // 0: mac_index which will be unused
+      // 2: address_filter_index. The indices 0 and 1 may have been used for radio 0 and 1
+      sli_mac_lower_mac_set_eui64(0, 2, srcAddrStr);
+      memcpy(addrFilter, srcAddrStr, EUI64_SIZE);
+    }
+  }
 #endif
-  sl_zigbee_af_core_println("mcpsd-syncfm 0x%X 0x%X", msduHandle, status); // Synchronous confirm to ensure packet is submitted to network successfully.
+  sl_zigbee_af_core_println("mcpsd-syncfm 0x%02X 0x%02X", msduHandle, status); // Synchronous confirm to ensure packet is submitted to network successfully.
 }
 
 //NWK Layer Attribute Get
@@ -1282,7 +1296,7 @@ void sl_zigbee_test_harness_z3_nwk_pib_get_request(SL_CLI_COMMAND_ARG)
     }
   }
   sl_zigbee_af_core_println("");
-  sl_zigbee_af_core_print("nlme-get-cfm 0x%X 0x%X 0x%X {", status, pibNumber, pibValueLength);
+  sl_zigbee_af_core_print("nlme-get-cfm 0x%02X 0x%02X 0x%02X {", status, pibNumber, pibValueLength);
   sl_zigbee_af_core_print_buffer(pibValue, pibValueLength, false);
   sl_zigbee_af_core_println("}");
 }
@@ -1294,7 +1308,7 @@ void sl_zigbee_test_harness_z3_mac_pib_get_request(SL_CLI_COMMAND_ARG)
   uint8_t pibValueLength = 0;
   uint8_t pibValue[20] = { 0 };
   sl_zigbee_af_core_println("");
-  sl_zigbee_af_core_print("mlme-get-cfm 0x%X 0x%X 0x%X {", status, pibNumber, pibValueLength);
+  sl_zigbee_af_core_print("mlme-get-cfm 0x%02X 0x%02X 0x%02X {", status, pibNumber, pibValueLength);
   sl_zigbee_af_core_print_buffer(pibValue, pibValueLength, false);
   sl_zigbee_af_core_println("}");
 }
@@ -1334,7 +1348,7 @@ void sli_zigbee_test_harness_z3_mac_pib_set_request(SL_CLI_COMMAND_ARG)
     default:
       break;
   }
-  sl_zigbee_af_core_println("mlme-set-cfm 0x%X 0x%X", status, pibNumber);
+  sl_zigbee_af_core_println("mlme-set-cfm 0x%02X 0x%02X", status, pibNumber);
 }
 
 // PHY Layer Attribute Get
@@ -1354,7 +1368,7 @@ void sli_zigbee_test_harness_z3_pib_get_request(SL_CLI_COMMAND_ARG)
       break;
   }
   sl_zigbee_af_core_println("");
-  sl_zigbee_af_core_print("plme-get-cfm 0x%X 0x%X 0x%X {", status, pibNumber, pibValueLength);
+  sl_zigbee_af_core_print("plme-get-cfm 0x%02X 0x%02X 0x%02X {", status, pibNumber, pibValueLength);
   sl_zigbee_af_core_print_buffer(pibValue, pibValueLength, false);
   sl_zigbee_af_core_println("}");
 }
@@ -1379,7 +1393,7 @@ void sli_zigbee_test_harness_z3_pib_set_request(SL_CLI_COMMAND_ARG)
     default:
       break;
   }
-  sl_zigbee_af_core_println("plme-set-cfm 0x%X 0x%X", status, pibNumber);
+  sl_zigbee_af_core_println("plme-set-cfm 0x%02X 0x%02X", status, pibNumber);
 }
 // Does the indication printing and return TRUE if the packet need to be dropped
 static bool layeredHandlingMode(sl_zigbee_zigbee_packet_type_t packetType,
@@ -1400,15 +1414,15 @@ static bool layeredHandlingMode(sl_zigbee_zigbee_packet_type_t packetType,
         uint8_t nwkSeqNumber = emZigbeeSequence(frame);
         bool securityUse = (((frame)[1]) & 0x02u);
         sl_zigbee_af_core_println("");
-        sl_zigbee_af_core_print("nlde-ind 0x%X ", nwkSeqNumber);
-        sl_zigbee_af_core_print("0x%X 0x%2X 0x%2X 0x%X {",
+        sl_zigbee_af_core_print("nlde-ind 0x%02X ", nwkSeqNumber);
+        sl_zigbee_af_core_print("0x%02X 0x%04X 0x%04X 0x%02X {",
                                 2, zigbeeDestination, zigbeeSource, (*size_p - NWK_MAC_HEADER_SIZE));
         sl_zigbee_af_core_print_buffer((packetData + NWK_MAC_HEADER_SIZE), (*size_p - NWK_MAC_HEADER_SIZE), false);   // spaces?
         sl_zigbee_af_core_print("}");
 
         extern uint8_t sli_zigbee_current_lqi;
         uint8_t linkQuality = sli_zigbee_current_lqi;
-        sl_zigbee_af_core_println(" 0x%X 0x%X", linkQuality, securityUse);
+        sl_zigbee_af_core_println(" 0x%02X 0x%02X", linkQuality, securityUse);
       }
       if (dropMask & DROP_NLDE) {
         drop = true;
@@ -1464,9 +1478,9 @@ static bool layeredHandlingMode(sl_zigbee_zigbee_packet_type_t packetType,
           uint16_t srcAddress = zigbeeSource; // get current sender from the nwk frame
           if (*size_p >= (finger - packetData)) {
             sl_zigbee_af_core_println("");
-            sl_zigbee_af_core_print("apsde-ind 0x%X ", apsCounter);
+            sl_zigbee_af_core_print("apsde-ind 0x%02X ", apsCounter);
             // DstAddMode: 0=RESER, 1=GCAST, 2=UCAST, 3=EUI64, 4= EUI64withOutEp
-            sl_zigbee_af_core_print("0x%X {%X%X} 0x%X 0x%X {%X%X} 0x%X 0x%2X 0x%2X 0x%X {",
+            sl_zigbee_af_core_print("0x%02X {%02X%02X} 0x%02X 0x%02X {%02X%02X} 0x%02X 0x%04X 0x%04X 0x%02X {",
                                     dstMode, (uint8_t)dstAddress, (uint8_t)(dstAddress >> 8), dest_ep,
                                     srcMode, (uint8_t)srcAddress, (uint8_t)(srcAddress >> 8), source_ep,
                                     profile, cluster, (*size_p - (finger - packetData)));
@@ -1478,7 +1492,7 @@ static bool layeredHandlingMode(sl_zigbee_zigbee_packet_type_t packetType,
             // before calling the packethandoff function with type = SL_ZIGBEE_ZIGBEE_PACKET_TYPE_NWK_DATA. So lets us just use that.
             extern uint8_t sli_zigbee_current_lqi;
             uint8_t linkQuality = sli_zigbee_current_lqi;
-            sl_zigbee_af_core_println(" 0x%X 0x%X 0x%X", status, securityStatus, linkQuality);
+            sl_zigbee_af_core_println(" 0x%02X 0x%02X 0x%02X", status, securityStatus, linkQuality);
           }
         }
       }
@@ -1533,40 +1547,40 @@ static bool layeredHandlingMode(sl_zigbee_zigbee_packet_type_t packetType,
           }
         }
         sl_zigbee_af_core_println("");
-        sl_zigbee_af_core_print("mcpsd-ind 0x%X ", macSeqNo);
+        sl_zigbee_af_core_print("mcpsd-ind 0x%02X ", macSeqNo);
         // Print Source addressing details
-        sl_zigbee_af_core_print("0x%X ", srcMode);
-        sl_zigbee_af_core_print("0x%2X ", srcPanId);
+        sl_zigbee_af_core_print("0x%02X ", srcMode);
+        sl_zigbee_af_core_print("0x%04X ", srcPanId);
         sl_zigbee_af_core_print("{");
         if (srcMode == 2) {
           sl_zigbee_af_core_print_buffer(srcAddr, 2, false);
         } else if (srcMode == 3) {
           sl_zigbee_af_core_print_buffer(srcAddr, 8, false);
         } else {
-          sl_zigbee_af_core_print("%X", 0);
+          sl_zigbee_af_core_print("%02X", 0);
         }
         sl_zigbee_af_core_print("} ");
         // Print Destination addressing details
-        sl_zigbee_af_core_print("0x%X ", dstMode);
-        sl_zigbee_af_core_print("0x%2X ", dstPanId);
+        sl_zigbee_af_core_print("0x%02X ", dstMode);
+        sl_zigbee_af_core_print("0x%04X ", dstPanId);
         sl_zigbee_af_core_print("{");
         if (dstMode == 2) {
           sl_zigbee_af_core_print_buffer(dstAddr, 2, false);
         } else if (dstMode == 3) {
           sl_zigbee_af_core_print_buffer(dstAddr, 8, false);
         } else {
-          sl_zigbee_af_core_print("%X", 0);
+          sl_zigbee_af_core_print("%02X", 0);
         }
         sl_zigbee_af_core_print("} ");
         uint8_t msduLength = (packetLength - index - NWK_MAC_HEADER_SIZE);  // Packet Length -  header (i.e index) - 8 bytes of PHY Added Info
-        sl_zigbee_af_core_print("0x%X {", msduLength);
+        sl_zigbee_af_core_print("0x%02X {", msduLength);
         sl_zigbee_af_core_print_buffer(&packetData[index], msduLength, false);
         sl_zigbee_af_core_print("} ");
         uint8_t *appndedInfoBytes = &packetData[packetLength - NWK_MAC_HEADER_SIZE];
         uint8_t linkQuality = appndedInfoBytes[3]; // Appended Info byte array index 3 holds the LQI - ref: phy-appended-info.h
-        sl_zigbee_af_core_print("0x%X ", linkQuality); // Link Quality
-        sl_zigbee_af_core_print("0x%X ", securityUse); // Security Use
-        sl_zigbee_af_core_println("0x%X", 8); // ACL Entry Index
+        sl_zigbee_af_core_print("0x%02X ", linkQuality); // Link Quality
+        sl_zigbee_af_core_print("0x%02X ", securityUse); // Security Use
+        sl_zigbee_af_core_println("0x%02X", 8); // ACL Entry Index
       }
       if (dropMask & DROP_MCPSD) {
         drop = true;
@@ -1592,7 +1606,7 @@ void sli_zigbee_test_harness_z3_set_network_key_command(SL_CLI_COMMAND_ARG)
                            SL_ZIGBEE_ENCRYPTION_KEY_SIZE,
                            true);
   }
-  sl_zigbee_af_core_println("test-harness z3 set-network-key-cfm 0x%X", status);
+  sl_zigbee_af_core_println("test-harness z3 set-network-key-cfm 0x%02X", status);
 }
 
 bool sl_zigbee_af_network_creator_security_get_key_callback(sl_zigbee_key_data_t * keyData)
@@ -1616,12 +1630,12 @@ void sli_zigbee_test_harness_z3_network_key_with_options_command(SL_CLI_COMMAND_
   uint8_t keySequenceNumber = (uint8_t)sl_cli_get_argument_uint8(arguments, 1);
   bool current = (bool)sl_cli_get_argument_uint8(arguments, 2);
   sli_zigbee_set_network_key(&keyData, keySequenceNumber, current);
-  sl_zigbee_af_core_println("%p: %p: 0x%X",
+  sl_zigbee_af_core_println("%s: %s: 0x%02X",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "Set network key with options",
                             SL_STATUS_OK);
 #else
-  sl_zigbee_af_core_println("%p: %p : %p : 0x%X",
+  sl_zigbee_af_core_println("%s: %s : %s : 0x%02X",
                             TEST_HARNESS_Z3_PRINT_NAME,
                             "Set network key",
                             "Not supported on host",
@@ -1634,7 +1648,7 @@ void zdoUserCommand(sl_cli_command_arg_t *args)
   sl_802154_short_addr_t target = (sl_802154_short_addr_t)sl_cli_get_argument_uint16(args, 0);
   sl_status_t status = sl_zigbee_user_descriptor_request(target,
                                                          SL_ZIGBEE_AF_DEFAULT_APS_OPTIONS);
-  sl_zigbee_app_debug_println("ZDO user desc req %x", status);
+  sl_zigbee_app_debug_println("ZDO user desc req %02X", status);
 }
 
 #define APP_ZDO_BUFFER_SIZE 32
@@ -1650,7 +1664,7 @@ void zdoRawCommand(sl_cli_command_arg_t *args)
                                                       SL_ZIGBEE_AF_DEFAULT_APS_OPTIONS,
                                                       zdoRawBuffer,
                                                       size + 1); // incl overhead (seq no)
-  sl_zigbee_app_debug_println("ZDO raw req %x, %d bytes", status, size);
+  sl_zigbee_app_debug_println("ZDO raw req %02X, %d bytes", status, size);
 }
 
 sl_status_t sl_zigbee_user_descriptor_request(sl_802154_short_addr_t target,

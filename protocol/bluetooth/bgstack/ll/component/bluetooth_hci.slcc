@@ -6,15 +6,17 @@ description: "Provides HCI for Bluetooth Controller"
 category: Bluetooth|Host Controller Interface (HCI)
 quality: production
 root_path: protocol/bluetooth/bgstack/ll
+source:
+  - path: utils/hci_packet/src/sl_btctrl_hci_reset.c
 include:
   - path: inc
     file_list:
       - path: sl_btctrl_hci.h
       - path: sl_hci_common_transport.h
       - path: sl_btctrl_hci_handler.h
-  - path: src/hci
+  - path: utils/hci_packet/inc
     file_list:
-      - path: hci_reset.h
+      - path: sl_btctrl_hci_reset.h
 provides:
   - name: "bluetooth_hci"
 requires:
@@ -22,6 +24,12 @@ requires:
   - name: bluetooth_hci_sleep
     condition:
       - power_manager
+  - name: emlib_rmu
+    condition:
+      - device_series_2
+  - name: hal_emu
+    condition:
+      - device_series_3
 conflicts:
   - name: bluetooth_stack
 template_contribution:
@@ -108,6 +116,13 @@ template_contribution:
       handler: sl_btctrl_hci_parser_init_cs
     priority: 14
     condition: [bluetooth_feature_cs_test]
+  - name: event_handler
+    value:
+      event: internal_app_init
+      include: sl_btctrl_hci.h
+      handler: sl_btctrl_hci_parser_init_subrate
+    priority: 15
+    condition: [bluetooth_feature_connection_subrating]
 metadata:
   sbom:
     license: MSLA

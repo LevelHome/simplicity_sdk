@@ -3,6 +3,9 @@ label: Ambient light and UV index sensor (Mock)
 package: Bluetooth
 description: Ambient light and UV index sensor (Mock) driver abstraction.
 category: Bluetooth|Application|Miscellaneous
+metadata:
+  sbom:
+    license: Zlib
 quality: production
 root_path: app/bluetooth/common/sensor_light
 tag:

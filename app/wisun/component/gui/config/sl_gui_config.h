@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief LCD GUI configuration header.
+ * @file sl_gui_config.h
+ * @brief LCD GUI configuration
  *******************************************************************************
  * # License
  * <b>Copyright 2022 Silicon Laboratories Inc. www.silabs.com</b>
@@ -46,4 +46,4 @@
 
 // <<< end of configuration section >>>
 
-#endif
+#endif // SL_GUI_CONFIG_H

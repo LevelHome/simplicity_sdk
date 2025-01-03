@@ -21,7 +21,9 @@
 
 #include "gbl/btl_gbl_format.h"
 
+#ifdef BOOTLOADER_SUPPORT_STORAGE
 #include "storage/btl_storage.h"
+#endif
 
 #include <string.h>
 
@@ -196,7 +198,10 @@ extern uint8_t parserBuffer[PARSER_BUFFER_SIZE];
 int32_t gbl_lz4ReadMemory(size_t backtrackOffset, uint8_t *data, size_t length)
 {
   uint32_t dataOffset = 0;
-  uint32_t startWithheld, endWithheld, withheldSrcOffset, withheldDstOffset;
+  uint32_t startWithheld;
+  uint32_t endWithheld;
+  uint32_t withheldSrcOffset;
+  uint32_t withheldDstOffset;
   uint32_t programmingAddress = lz4ParserContext.parserContext->programmingAddress
                                 + lz4ParserContext.outputOffset - backtrackOffset;
   uint32_t startOfAppSpace = (uint32_t) mainBootloaderTable->startOfAppSpace;
@@ -429,10 +434,18 @@ int32_t gbl_lz4ParseProgTag(ParserContext_t *ctx,
 
 size_t gbl_lz4NumBytesRequired(ParserContext_t *ctx)
 {
-  // If this is the first data in the tag, we need a full word to
-  // set the programming address correctly
   if (ctx->offsetInTag == 0) {
-    return 4UL;
+    if (ctx->customTagId == GBL_TAG_ID_DELTA_LZ4) {
+      // For delta gbl we need full word of length 12UL
+      // - full word that contains programming address
+      // - 4 bytes containing newFwCRC
+      // - 4 bytes containing newFwSize
+      return 12UL;
+    } else {
+      // If this is the first data in the tag, we need a full word to
+      // set the programming address correctly
+      return 4UL;
+    }
   } else {
     return 1UL;
   }

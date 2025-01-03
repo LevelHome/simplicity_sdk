@@ -1,5 +1,5 @@
 /***************************************************************************//**
- * @file
+ * @file sl_widget.h
  * @brief Widget
  *******************************************************************************
  * # License
@@ -27,8 +27,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  *
  ******************************************************************************/
-#ifndef __SL_WIDGET_H__
-#define __SL_WIDGET_H__
+#ifndef SL_WIDGET_H
+#define SL_WIDGET_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,11 +37,9 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include "sl_display.h"
 #include "sl_status.h"
 #include "sl_wisun_types.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -428,4 +426,5 @@ sl_status_t sl_widget_textbox_scroll_up(sl_widget_textbox_t * const textbox);
 #ifdef __cplusplus
 }
 #endif
-#endif
+
+#endif // SL_WIDGET_H

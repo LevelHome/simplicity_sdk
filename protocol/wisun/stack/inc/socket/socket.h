@@ -136,8 +136,8 @@ typedef int ssize_t;
  *
  * | opt_name              | data type         | set/get         | sendmsg | recvmsg |
  * | :-------------------: | :---------- ----: | :-------------: | :-----: | :-------|
- * | SO_EVENT_MODE         | int16_t           |     Set only    |   No    | Yes     |
- * | SO_NONBLOCK           | int16_t           |     Set only    |   Yes   | Yes     |
+ * | SO_EVENT_MODE         | uint32_t          |     Set only    |   No    | Yes     |
+ * | SO_NONBLOCK           | uint32_t          |     Set only    |   Yes   | Yes     |
  */
 
 ///@{
@@ -261,7 +261,7 @@ typedef int ssize_t;
  * | IPV6_RCVPKTINFO       | int               |     Set/Get     |   No    | No      |
  * | IPV6_RECVTCLASS       | int               |     Set/Get     |   No    | No      |
  * | IPV6_DONTFRAG         | int               |     Set/Get     |   Yes   | No      |
- * | SO_EDFE_MODE          | uint32_t          |     Set only    |   Yes   | No      |
+ * | SO_EDFE_MODE          | int32_t           |     Set only    |   Yes   | No      |
  */
 
 ///@{
@@ -328,6 +328,9 @@ typedef int ssize_t;
 
 /// Size of an IPv6 address
 #define IPV6_ADDR_SIZE 16
+
+/// Size of 64 bit IPv6 prefix byte array
+#define IPV6_PREFIX_SIZE 8
 
 /// When bitwise ored with socket's type,
 /// it sets the O_NONBLOCK status flag on the opened socket file description

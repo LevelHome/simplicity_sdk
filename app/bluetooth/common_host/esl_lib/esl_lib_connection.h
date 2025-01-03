@@ -67,14 +67,14 @@ typedef struct {
   bool                            command_complete;  ///< Finished command
   bool                            established;       ///< Connection opened & established
   uint8_t                         connection_handle; ///< Connection handle
-  uint8_t                         address_type;      ///< Address type
   uint8_t                         max_payload;       ///< Max payload
   uint8_t                         security;          ///< Security level
   uint8_t                         config_index;      ///< Current config index
+  uint8_t                         address_type;      ///< Address type
+  bd_addr                         address;           ///< Address
   esl_lib_connection_state_t      state;             ///< State of the connection
   esl_lib_image_transfer_handle_t ots_handle;        ///< OTS handle
   aes_key_128                     ltk;               ///< LTK for the connection
-  bd_addr                         address;           ///< Address
   app_timer_t                     timer;             ///< Connection timer
   app_timer_t                     gatt_timer;        ///< GATT timer
   sl_status_t                     last_error;        ///< Last error
@@ -87,6 +87,43 @@ typedef struct {
 
 // -----------------------------------------------------------------------------
 // Public functions
+
+/**************************************************************************//**
+ * Check current connection mode and core status.
+ * @param[out] core_state Pointer to status response output. Can be NULL if
+ *                        the caller is not interested in core status.
+ * @param[out] connections Pointer to active connection handle count variable.
+ *                         Can be NULL if the caller is not interested in
+ *                         active connection handles count
+ * @param[out] initiator_busy Pointer to a bool variable to indicate if the
+ *                            initiator list is busy at Link Layer level
+ *                            (i.e. it's currently unable to accept new items).
+ *                            Can be NULL if the caller is not interested in
+ *                            the LL initiator list state.
+ * @return ESL library connection mode
+ *****************************************************************************/
+esl_lib_connection_mode_t esl_lib_get_connection_mode_and_status(esl_lib_core_state_t *core_state,
+                                                                 uint8_t *connections,
+                                                                 bool *initiator_busy);
+
+/**************************************************************************//**
+ * Change connection mode.
+ * @param[in] mode The connection mode to be set: either @ref
+ *                 ESL_LIB_CONNECTION_MODE_SINGLE for manual, or @ref
+ *                 ESL_LIB_CONNECTION_MODE_LIST for automatic connection
+ *                 initiation based on the Initiator Filter Policy using
+ *                 the Filter Accept List stack feature.
+ *
+ * @return Status code
+ *****************************************************************************/
+sl_status_t esl_lib_change_connection_mode(esl_lib_connection_mode_t mode);
+
+/**************************************************************************//**
+ * Get current list size of Filter Accept List for auto connection initiator.
+ *
+ * @return ESL library initiator list (Filter Accept List) size
+ *****************************************************************************/
+size_t esl_lib_get_initiator_filter_size(void);
 
 /**************************************************************************//**
  * Add a connection to the list.
@@ -125,9 +162,22 @@ sl_status_t esl_lib_connection_remove_ptr(esl_lib_connection_t *ptr);
 bool esl_lib_connection_contains(esl_lib_connection_t *ptr);
 
 /**************************************************************************//**
- * Clean all relationship data.
+ * Close any ongoing connection and clean all related data.
  *****************************************************************************/
 void esl_lib_connection_cleanup(void);
+
+/**************************************************************************//**
+ * Clear all Filter Accept List data for the Initiator Filter policy.
+ *
+ * @return Status code from stack.
+ *****************************************************************************/
+sl_status_t esl_lib_initiator_filter_cleanup(void);
+
+/**************************************************************************//**
+ * Clear all Filter Accept List data for the Initiator Filter policy and
+ * release its resources.
+ *****************************************************************************/
+void esl_lib_auto_initiator_deinit(void);
 
 /**************************************************************************//**
  * Add a command to the command list of the connection.
@@ -163,15 +213,23 @@ void esl_lib_connection_on_bt_event(sl_bt_msg_t *evt);
 sl_status_t esl_lib_connection_check_gattdb_handles(esl_lib_gattdb_handles_t *gattdb_handles);
 
 /**************************************************************************//**
- * Open a connection.
+ * Request connection initiation.
  *
- * @param[in] cmd    Connection open library command.
- * @param[in] handle Valid connection handle in case of retry or
- *                   NULL for new connection requests.
+ * @param[in] cmd Connection open library command.
  *
- * @return SL_STATUS_OK if the configuration is valid.
+ * @return SL_STATUS_OK if initiating the connection was successful.
+ *
+ * @note In manual connection mode or in the case of a connection request via
+ *       PAwR, the initiation occurs immediately upon success, but in automatic
+ *       initiator mode, the action is slightly delayed by Initiator Filter
+ *       Policy actions performed at the library and then at the Link Layer.
+ *       Furthermore, even in auto mode, an immediate connection request will
+ *       be issued if the command is associated with a foreign identity address
+ *       and/or passkey TLV(s). In the latter case, however, there is an
+ *       increased chance of the request being rejected, since in auto mode
+ *       the stack may be busy at the moment the request is processed.
  *****************************************************************************/
-sl_status_t esl_lib_connection_open(esl_lib_command_list_cmd_t *cmd);
+sl_status_t esl_lib_initiate_connection(esl_lib_command_list_cmd_t *cmd);
 
 #ifdef __cplusplus
 };

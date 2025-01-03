@@ -1,6 +1,6 @@
 id: connect_csp
 label: Connect Serialization Protocol component
-package: Flex
+package: Connect
 description: Provides source files for components requiring CSP
 category: Connect
 quality: production
@@ -16,10 +16,12 @@ requires:
 source:
   - path: "protocol/flex/csp/csp-format.c"
   - path: "protocol/flex/csp/csp-command-app.c"
-    condition: 
+    condition:
         - "connect_cmsis_stack_ipc"
   - path: "protocol/flex/csp/csp-command-vncp.c"
-  - path: "protocol/flex/csp/csp-command-callbacks.c"
+  - path: "protocol/flex/csp/csp-command-callbacks-app.c"
+    unless: [connect_ncp]
+  - path: "protocol/flex/csp/csp-command-callbacks-vncp.c"
   - path: "protocol/flex/ncp/ncp-stubs.c"
     unless: [connect_ncp]
 

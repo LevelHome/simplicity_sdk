@@ -35,7 +35,7 @@ static EmberStatus import_psa_key(uint8_t *keyContents, uint8_t keyLength, psa_k
   psa_set_key_type(&key_attr, PSA_KEY_TYPE_AES);
   psa_set_key_bits(&key_attr, 128);
   psa_set_key_usage_flags(&key_attr, PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT);
-  psa_set_key_algorithm(&key_attr, PSA_ALG_ECB_NO_PADDING);
+  psa_set_key_algorithm(&key_attr, PSA_ALG_AEAD_WITH_SHORTENED_TAG(PSA_ALG_CCM, 4));
   if (key_lifetime == PSA_KEY_LIFETIME_PERSISTENT) {
     psa_set_key_id(&key_attr, *key_id);
   }

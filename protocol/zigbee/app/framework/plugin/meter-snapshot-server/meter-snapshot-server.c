@@ -21,13 +21,13 @@
 
 #include "zap-cluster-command-parser.h"
 
-bool sl_zigbee_af_simple_metering_cluster_schedule_snapshot_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_simple_metering_cluster_schedule_snapshot_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_simple_metering_cluster_schedule_snapshot_command_t cmd_data;
 
   if (zcl_decode_simple_metering_cluster_schedule_snapshot_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
   uint8_t responsePayload[2];
 
@@ -43,15 +43,15 @@ bool sl_zigbee_af_simple_metering_cluster_schedule_snapshot_cb(sl_zigbee_af_clus
                                                                                2);
 
   sl_zigbee_af_send_response();
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_simple_metering_cluster_take_snapshot_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_simple_metering_cluster_take_snapshot_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_simple_metering_cluster_take_snapshot_command_t cmd_data;
   if (zcl_decode_simple_metering_cluster_take_snapshot_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   uint8_t endpoint = sl_zigbee_af_current_endpoint();
@@ -66,15 +66,15 @@ bool sl_zigbee_af_simple_metering_cluster_take_snapshot_cb(sl_zigbee_af_cluster_
   sl_zigbee_af_fill_command_simple_metering_cluster_take_snapshot_response(snapshotId,
                                                                            snapshotConfirmation);
   sl_zigbee_af_send_response();
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
-bool sl_zigbee_af_simple_metering_cluster_get_snapshot_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_simple_metering_cluster_get_snapshot_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_simple_metering_cluster_get_snapshot_command_t cmd_data;
   if (zcl_decode_simple_metering_cluster_get_snapshot_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   uint8_t snapshotCriteria[13];
@@ -94,7 +94,7 @@ bool sl_zigbee_af_simple_metering_cluster_get_snapshot_cb(sl_zigbee_af_cluster_c
                                                      cmd->source,
                                                      (uint8_t *)snapshotCriteria);
 
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
 uint32_t sl_zigbee_af_simple_metering_cluster_server_snapshot_command_parse(sl_service_opcode_t opcode,
@@ -103,25 +103,23 @@ uint32_t sl_zigbee_af_simple_metering_cluster_server_snapshot_command_parse(sl_s
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_TAKE_SNAPSHOT_COMMAND_ID:
-        wasHandled = sl_zigbee_af_simple_metering_cluster_take_snapshot_cb(cmd);
+        status = sl_zigbee_af_simple_metering_cluster_take_snapshot_cb(cmd);
         break;
       case ZCL_GET_SNAPSHOT_COMMAND_ID:
-        wasHandled = sl_zigbee_af_simple_metering_cluster_get_snapshot_cb(cmd);
+        status = sl_zigbee_af_simple_metering_cluster_get_snapshot_cb(cmd);
         break;
       case ZCL_SCHEDULE_SNAPSHOT_COMMAND_ID:
-        wasHandled = sl_zigbee_af_simple_metering_cluster_schedule_snapshot_cb(cmd);
+        status = sl_zigbee_af_simple_metering_cluster_schedule_snapshot_cb(cmd);
         break;
       default:
         break;
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

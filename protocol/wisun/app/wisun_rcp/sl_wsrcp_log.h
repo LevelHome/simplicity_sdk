@@ -193,7 +193,7 @@ char *bytes_str(const void *in_start, size_t in_len, const void **in_done, char 
         if (COLOR != 0 && g_enable_color_traces)                     \
             printf("\x1B[" #COLOR "m" MSG "\x1B[0m\n", ##__VA_ARGS__); \
         else                                                         \
-            printf(MSG "\n", ##__VA_ARGS__);                \
+            printf(MSG "\n", ##__VA_ARGS__);                         \
     } while(0)
 
 #define __PRINT_WITH_TIME(COLOR, MSG, ...) \

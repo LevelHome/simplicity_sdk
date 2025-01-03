@@ -37,6 +37,7 @@
 // <o SL_BTMESH_SENSOR_CLIENT_DISPLAYED_SENSORS_CFG_VAL> How many sensors can fit on screen
 // <i> Default: 5
 // <i> Defines the number of sensors which can fit on the LCD screen.
+// <i> Note: Incrementing this value will increase stack consumption
 #define SL_BTMESH_SENSOR_CLIENT_DISPLAYED_SENSORS_CFG_VAL   (5)
 
 // <e SL_BTMESH_SENSOR_CLIENT_LOGGING_CFG_VAL> Enable Logging

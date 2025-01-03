@@ -14,9 +14,9 @@ requires:
   - name: hal_generic_common
   - name: clock_manager_runtime
   - name: hal_keyscan
-  - name: clock_manager_runtime
   - name: device_manager
   - name: status
+  - name: gpio
   - name: slist
 include:
   - path: inc

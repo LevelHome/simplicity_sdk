@@ -113,7 +113,7 @@ void sl_wisun_on_event(sl_wisun_evt_t *evt);
  * This function initiates connection to a Wi-SUN network. Completion of the
  * request is indicated with a #SL_WISUN_MSG_CONNECTED_IND_ID event.
  *
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_join(const uint8_t *name, sl_wisun_phy_config_t *phy_config);
 
@@ -129,7 +129,7 @@ sl_status_t sl_wisun_join(const uint8_t *name, sl_wisun_phy_config_t *phy_config
  * @param[out] address IP address to read
  * @return SL_STATUS_OK if successful, an error code otherwise.
  *
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_get_ip_address(sl_wisun_ip_address_type_t address_type,
                                     in6_addr_t *address);
@@ -142,7 +142,7 @@ sl_status_t sl_wisun_get_ip_address(sl_wisun_ip_address_type_t address_type,
  * This function disconnects an active connection or cancels an ongoing
  * connection attempt.
  *
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_disconnect();
 
@@ -158,7 +158,7 @@ sl_status_t sl_wisun_disconnect();
  * @param[in] certificate Pointer to the certificate data
  * @return SL_STATUS_OK if successful, an error code otherwise
  *
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, LFN, BR (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_set_trusted_certificate(uint16_t certificate_options,
                                              uint16_t certificate_length,
@@ -177,7 +177,7 @@ sl_status_t sl_wisun_set_trusted_certificate(uint16_t certificate_options,
  * @param[in] certificate Pointer to the certificate data
  * @return SL_STATUS_OK if successful, an error code otherwise
  *
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_set_device_certificate(uint16_t certificate_options,
                                             uint16_t certificate_length,
@@ -193,7 +193,7 @@ sl_status_t sl_wisun_set_device_certificate(uint16_t certificate_options,
  * @param[in] key Pointer to the private key data
  * @return SL_STATUS_OK if successful, an error code otherwise
  *
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, LFN, BR (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_set_device_private_key(uint16_t key_options,
                                             uint16_t key_length,
@@ -217,7 +217,7 @@ sl_status_t sl_wisun_set_device_private_key(uint16_t key_options,
  * cumulative and reset when a connection is initiated or by calling
  * sl_wisun_reset_statistics().
  *
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, LFN, BR (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_get_statistics(sl_wisun_statistics_type_t statistics_type,
                                     sl_wisun_statistics_t *statistics);
@@ -233,7 +233,7 @@ sl_status_t sl_wisun_get_statistics(sl_wisun_statistics_type_t statistics_type,
  * will never exceed the given value.
  * The function must be called before initiating a connection.
  *
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, LFN, BR (see @ref API_AVAILABILITY)
  * @deprecated This function will be removed in the future versions of the
  *             Wi-SUN stack, use sl_wisun_set_tx_power_ddbm() instead.
  *****************************************************************************/
@@ -251,10 +251,11 @@ sl_status_t sl_wisun_set_tx_power(int8_t tx_power) SL_DEPRECATED_API_SDK_2024_6;
  * Channels outside the channel plan or channels internally excluded are
  * ignored. This mask will be used in the following connections.
  *
+ * Available in libraries: Full, FFN, LFN, BR (see @ref API_AVAILABILITY)
+ *
  * @warning By comparison to the Wi-SUN FAN specification, the channel mask
  *          logic is inverted. The specification references a mask of excluded
  *          channels.
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_set_allowed_channel_mask(const sl_wisun_channel_mask_t *channel_mask);
 
@@ -270,7 +271,7 @@ sl_status_t sl_wisun_set_allowed_channel_mask(const sl_wisun_channel_mask_t *cha
  * Channels outside the channel plan or channels internally excluded are
  * ignored. This mask will be used in the following connections.
  *
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, LFN, BR (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_set_channel_mask(const sl_wisun_channel_mask_t *channel_mask);
 
@@ -290,7 +291,7 @@ sl_status_t sl_wisun_set_channel_mask(const sl_wisun_channel_mask_t *channel_mas
  * The access list affects only directly connected nodes such as parents,
  * children, and neighbors.
  *
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, LFN, BR (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_allow_mac_address(const sl_wisun_mac_address_t *address);
 
@@ -310,7 +311,7 @@ sl_status_t sl_wisun_allow_mac_address(const sl_wisun_mac_address_t *address);
  * The access list affects only directly connected nodes such as parents,
  * children, and neighbors.
  *
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, LFN, BR (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_deny_mac_address(const sl_wisun_mac_address_t *address);
 
@@ -323,7 +324,7 @@ sl_status_t sl_wisun_deny_mac_address(const sl_wisun_mac_address_t *address);
  * This function retrieves the current state of the connection process. The
  * function can only be used once a connection has been initiated.
  *
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_get_join_state(sl_wisun_join_state_t *join_state);
 
@@ -337,7 +338,7 @@ sl_status_t sl_wisun_get_join_state(sl_wisun_join_state_t *join_state);
  * clearing the credential cache may prevent the node from reconnecting to the
  * same parent until the corresponding cache entry has expired on the parent.
  *
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, LFN, BR (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_clear_credential_cache();
 
@@ -347,7 +348,7 @@ sl_status_t sl_wisun_clear_credential_cache();
  * @param[out] address MAC address
  * @return SL_STATUS_OK if successful, an error code otherwise
  *
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, LFN, BR (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_get_mac_address(sl_wisun_mac_address_t *address);
 
@@ -361,7 +362,7 @@ sl_status_t sl_wisun_get_mac_address(sl_wisun_mac_address_t *address);
  * By default, the device will use the built-in unique device MAC address.
  * The address is reset to the built-in value upon power up.
  *
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, LFN, BR (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_set_mac_address(const sl_wisun_mac_address_t *address);
 
@@ -376,7 +377,7 @@ sl_status_t sl_wisun_set_mac_address(const sl_wisun_mac_address_t *address);
  *   - #SL_WISUN_STATISTICS_TYPE_NETWORK: 6LoWPAN/IP stack statistics
  * @return SL_STATUS_OK if successful, an error code otherwise.
  *
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, LFN, BR (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_reset_statistics(sl_wisun_statistics_type_t statistics_type);
 
@@ -386,7 +387,7 @@ sl_status_t sl_wisun_reset_statistics(sl_wisun_statistics_type_t statistics_type
  * @param[out] neighbor_count Number of neighbors
  * @return SL_STATUS_OK if successful, an error code otherwise
  *
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, LFN, BR (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_get_neighbor_count(uint8_t *neighbor_count);
 
@@ -399,7 +400,7 @@ sl_status_t sl_wisun_get_neighbor_count(uint8_t *neighbor_count);
  *                                    MAC addresses
  * @return SL_STATUS_OK if successful, an error code otherwise
  *
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, LFN, BR (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_get_neighbors(uint8_t *neighbor_count,
                                    sl_wisun_mac_address_t *neighbor_mac_addresses);
@@ -411,7 +412,7 @@ sl_status_t sl_wisun_get_neighbors(uint8_t *neighbor_count,
  * @param[out] neighbor_info Pointer to where the read information is stored
  * @return SL_STATUS_OK if successful, an error code otherwise
  *
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, LFN, BR (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_get_neighbor_info(const sl_wisun_mac_address_t *neighbor_mac_address,
                                        sl_wisun_neighbor_info_t *neighbor_info);
@@ -427,7 +428,7 @@ sl_status_t sl_wisun_get_neighbor_info(const sl_wisun_mac_address_t *neighbor_ma
  * which the node will listen to a channel within its listening schedule.
  * The default value is 255 ms.
  *
- * @note Available in libraries: Full, FFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, BR (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_set_unicast_settings(uint8_t dwell_interval_ms);
 
@@ -444,7 +445,7 @@ sl_status_t sl_wisun_set_unicast_settings(uint8_t dwell_interval_ms);
  * Wi-SUN FAN Security Concepts and Design Considerations document for
  * details.
  *
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, LFN, BR (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_set_device_private_key_id(uint32_t key_id);
 
@@ -459,7 +460,7 @@ sl_status_t sl_wisun_set_device_private_key_id(uint32_t key_id);
  * stack performance and its behavior. See regulation standards for details.
  * No regulation is set by default.
  *
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, LFN, BR (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_set_regulation(sl_wisun_regulation_t regulation);
 
@@ -475,7 +476,7 @@ sl_status_t sl_wisun_set_regulation(sl_wisun_regulation_t regulation);
  * while lowering it means reduced RAM consumption.
  * The default value is 22.
  *
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, LFN, BR (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_set_neighbor_table_size(uint8_t size);
 
@@ -494,7 +495,7 @@ sl_status_t sl_wisun_set_neighbor_table_size(uint8_t size);
  * allowed in the regional regulation. Thresholds are defined as a percentage
  * of the maximum transmission duration permitted by the regional regulation.
  *
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, LFN, BR (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_set_regulation_tx_thresholds(int8_t warning_threshold,
                                                   int8_t alert_threshold);
@@ -517,7 +518,7 @@ sl_status_t sl_wisun_set_regulation_tx_thresholds(int8_t warning_threshold,
  *
  * By default, the maximum fragment duration is set to 500 ms.
  *
- * @note Available in libraries: Full, FFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, BR (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_set_advert_fragment_duration(uint32_t fragment_duration_ms);
 
@@ -529,8 +530,9 @@ sl_status_t sl_wisun_set_advert_fragment_duration(uint32_t fragment_duration_ms)
  *
  * This function sets the operational mode of the node.
  *
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
- * @note This is a no-op with FFN and LFN libraries.
+ * Available in libraries: Full, FFN, LFN, BR (see @ref API_AVAILABILITY)
+ *
+ * @note This is a no-op with BR, FFN and LFN libraries.
  *****************************************************************************/
 sl_status_t sl_wisun_set_device_type(sl_wisun_device_type_t device_type);
 
@@ -550,7 +552,7 @@ sl_status_t sl_wisun_set_device_type(sl_wisun_device_type_t device_type);
  * @param[in] reserved Reserved for future use, set to false.
  * @return SL_STATUS_OK if successful, an error code otherwise
  *
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, LFN, BR (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_config_mode_switch(uint8_t mode,
                                         uint8_t phy_mode_id,
@@ -572,7 +574,7 @@ sl_status_t sl_wisun_config_mode_switch(uint8_t mode,
  *                             non-configured neighbors.
  * @return SL_STATUS_OK if successful, an error code otherwise
  *
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, LFN, BR (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_set_mode_switch(uint8_t mode,
                                      uint8_t phy_mode_id,
@@ -589,7 +591,7 @@ sl_status_t sl_wisun_set_mode_switch(uint8_t mode,
  * parameter set is recommended (@ref SL_WISUN_FFN_PARAMETER_SETS).
  * The function must be called before initiating a connection.
  *
- * @note Available in libraries: Full, FFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_set_connection_parameters(const sl_wisun_connection_params_t *params);
 
@@ -607,7 +609,7 @@ sl_status_t sl_wisun_set_connection_parameters(const sl_wisun_connection_params_
  * nodes. By default the PhyModeId list contains the first fifteen PhyModeId listed
  * in radio multi-PHY configuration, MAC mode switch is disabled.
  *
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, LFN, BR (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_set_pom_ie(uint8_t phy_mode_id_count,
                                 uint8_t phy_mode_ids[SL_WISUN_MAX_PHY_MODE_ID_COUNT],
@@ -626,7 +628,7 @@ sl_status_t sl_wisun_set_pom_ie(uint8_t phy_mode_id_count,
  * This function retrieves the PHY operating mode information advertised
  * to neighboring nodes.
  *
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, LFN, BR (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_get_pom_ie(uint8_t *phy_mode_id_count,
                                 uint8_t *phy_mode_ids,
@@ -641,7 +643,7 @@ sl_status_t sl_wisun_get_pom_ie(uint8_t *phy_mode_id_count,
  * @param[out] build Build number, set to 0 in public versions
  * @return SL_STATUS_OK if successful, an error code otherwise
  *
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, LFN, BR (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_get_stack_version(uint8_t *major,
                                        uint8_t *minor,
@@ -660,20 +662,22 @@ sl_status_t sl_wisun_get_stack_version(uint8_t *major,
  * (@ref SL_WISUN_LFN_PARAMETER_SETS).
  * The function must be called before initiating a connection.
  *
- * @note Available in libraries: Full, LFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, LFN (see @ref API_AVAILABILITY)
  ******************************************************************************/
 sl_status_t sl_wisun_set_lfn_parameters(const sl_wisun_lfn_params_t *params);
 
 /**************************************************************************//**
- * Set the maximum number of LFN children.
+ * Configure LFN parenting support.
  *
- * @param[in] lfn_limit Maximum number of LFN children [0, 10]
+ * @param[in] lfn_limit Maximum number of LFN children
+ *   - **0**: LFN parenting is disabled in the node
+ *   - **1 - 10**: Maximum number of LFN children the node can parent
  * @return SL_STATUS_OK if successful, an error code otherwise
  *
  * This function sets the maximum number of LFN children this node can
  * parent.
  *
- * @note Available in libraries: Full, FFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN (see @ref API_AVAILABILITY)
  ******************************************************************************/
 sl_status_t sl_wisun_set_lfn_support(uint8_t lfn_limit);
 
@@ -688,7 +692,7 @@ sl_status_t sl_wisun_set_lfn_support(uint8_t lfn_limit);
  * This function sets Packet Trace Interface (PTI) state. PTI is enabled
  * by default.
  *
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, LFN, BR (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_set_pti_state(bool pti_state);
 
@@ -709,7 +713,7 @@ sl_status_t sl_wisun_set_pti_state(bool pti_state);
  * state, i.e. the associated trickle timer must be running. The function is
  * intended for test purposes.
  *
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, LFN, BR (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_trigger_frame(sl_wisun_frame_type_t frame_type);
 
@@ -724,9 +728,10 @@ sl_status_t sl_wisun_trigger_frame(sl_wisun_frame_type_t frame_type);
  * This function sets the connection security state. By default, authentication
  * and link encryption are enabled. The function is intended for test purposes.
  *
+ * Available in libraries: Full, FFN, LFN, BR (see @ref API_AVAILABILITY)
+ *
  * @note Authentication and link encryption can only be disabled when the
  *       application is linked against a library supporting this option.
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_set_security_state(uint32_t security_state);
 
@@ -736,7 +741,7 @@ sl_status_t sl_wisun_set_security_state(uint32_t security_state);
  * @param[out] network_info Pointer where network information is written
  * @return SL_STATUS_OK if successful, an error code otherwise
  *
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, LFN, BR (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_get_network_info(sl_wisun_network_info_t *network_info);
 
@@ -746,7 +751,7 @@ sl_status_t sl_wisun_get_network_info(sl_wisun_network_info_t *network_info);
  * @param[out] rpl_info Pointer where RPL information is written
  * @return SL_STATUS_OK if successful, an error code otherwise
  *
- * @note Available in libraries: Full, FFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, BR (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_get_rpl_info(sl_wisun_rpl_info_t *rpl_info);
 
@@ -758,18 +763,16 @@ sl_status_t sl_wisun_get_rpl_info(sl_wisun_rpl_info_t *rpl_info);
  * @param[out] channel_count Number of channels in the mask
  * @return SL_STATUS_OK if successful, an error code otherwise
  *
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, LFN, BR (see @ref API_AVAILABILITY)
  *****************************************************************************/
 sl_status_t sl_wisun_get_excluded_channel_mask(sl_wisun_channel_mask_type_t type,
                                                sl_wisun_channel_mask_t *channel_mask,
                                                uint8_t *channel_count);
 
-/** @} (end SL_WISUN_API) */
-
 /**************************************************************************//**
  * Set the maximum TX power.
  *
- * @param[in] tx_power_ddbm TX power in ddBm
+ * @param[in] tx_power_ddbm TX power in deci-dBm
  * @return SL_STATUS_OK if successful, an error code otherwise
  *
  * This function sets the maximum TX power. The device may use
@@ -777,9 +780,94 @@ sl_status_t sl_wisun_get_excluded_channel_mask(sl_wisun_channel_mask_type_t type
  * will never exceed the given value.
  * The function must be called before initiating a connection.
  *
- * @note Available in libraries: Full, FFN, LFN (see @ref API_AVAILABILITY)
+ * Available in libraries: Full, FFN, LFN, BR (see @ref API_AVAILABILITY)
+ *
+ * @note When replacing sl_wisun_set_tx_power() function calls with this
+ *       function, note the change from dBm units to deci-dBm units.
  *****************************************************************************/
 sl_status_t sl_wisun_set_tx_power_ddbm(int16_t tx_power_ddbm);
+
+/**************************************************************************//**
+ * Set the RPL leaf mode.
+ *
+ * @param[in] is_leaf RPL leaf mode
+ *   - **true**: RPL leaf mode is enabled
+ *   - **false**: RPL leaf mode is disabled
+ * @return SL_STATUS_OK if successful, an error code otherwise
+ *
+ * This function configures RPL leaf mode on FFNs. When enabled, it prevents
+ * the FFN from parenting other nodes (FFN or LFN).
+ *
+ * Available in libraries: Full, FFN (see @ref API_AVAILABILITY)
+ *****************************************************************************/
+sl_status_t sl_wisun_set_leaf(bool is_leaf);
+
+/**************************************************************************//**
+ * Enable/disable Direct Connect.
+ *
+ * @param[in] is_enabled Direct Connect status
+ *   - **true**: Direct Connect is enabled
+ *   - **false**: Direct Connect is disabled
+ * @return SL_STATUS_OK if successful, an error code otherwise
+ *
+ * Available in libraries: Full, FFN (see @ref API_AVAILABILITY)
+ *
+ * @note Enabling this feature may increase connection time.
+ *****************************************************************************/
+sl_status_t sl_wisun_set_direct_connect_state(bool is_enabled);
+
+/**************************************************************************//**
+ * Accept a Direct Connect link.
+ *
+ * @param[in] link_local_ipv6 Link-Local IPv6 address of the client
+ * @return SL_STATUS_OK if successful, an error code otherwise
+ *
+ * Available in libraries: Full, FFN (see @ref API_AVAILABILITY)
+ *****************************************************************************/
+sl_status_t sl_wisun_accept_direct_connect_link(in6_addr_t *link_local_ipv6);
+
+/**************************************************************************//**
+ * Set the radio sensitivity for the given PHY.
+ *
+ * @param[in] phy_mode_id PHY mode ID
+ * @param[in] sensitivity_dbm Sensitivity in dBm
+ * @return SL_STATUS_OK if successful,
+ *         SL_STATUS_INVALID_PARAMETER if the PHY mode ID is invalid,
+ *         SL_STATUS_FULL if you a have already set SL_WISUN_MAX_PHY_MODE_ID_COUNT different entries
+ *
+ * This function sets the radio sensitivity for RX state. It allows to fine tune it
+ * according to the user's hardware and needs. The stack possesses a set of default
+ * values for each PHY mode, but the user can override them with this function.
+ * User's modifications generated by this API are not saved in the NVM.
+ *
+ * Available in libraries: Full, FFN, LFN, BR (see @ref API_AVAILABILITY)
+ *
+ * @warning Changing the RX sensitivity can have a significant impact on the network's
+ *          behavior and performance and should be done with caution.
+ *          The stack follows the Wi-SUN specification, and as such, takes a margin around
+ *          the given sensitivity (hysteresis).
+ *          It is strongly advised to only use this API when using a Low-noise amplifier
+ *          with an FEM.
+ *****************************************************************************/
+sl_status_t sl_wisun_set_phy_sensitivity(uint8_t phy_mode_id, int16_t sensitivity_dbm);
+
+/**************************************************************************//**
+ * Set the Pairwise Master Key (PMK) to use for Direct Connect.
+ *
+ * @param[in] pmk_key_id The Pairwise Master Key (PMK) ID to use.
+ * @return SL_STATUS_OK if successful, an error code otherwise
+ *
+ * This function sets the Direct Connect PMK using a key identifier,
+ * referencing a key stored in PSA cryptography module.
+ * The stored key must have correct PSA key attributes, see the
+ * Wi-SUN FAN Security Concepts and Design Considerations document for
+ * details.
+ *
+ * Available in libraries: Full, FFN (see @ref API_AVAILABILITY)
+ *****************************************************************************/
+sl_status_t sl_wisun_set_direct_connect_pmk(const uint32_t pmk_key_id);
+
+/** @} (end SL_WISUN_API) */
 
 #ifdef __cplusplus
 }

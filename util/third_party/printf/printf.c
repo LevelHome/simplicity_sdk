@@ -864,7 +864,7 @@ static int _vsnprintf(out_fct_type out, char* buffer, const size_t maxlen, const
 
 
 ///////////////////////////////////////////////////////////////////////////////
-
+#if !defined(__unix__)
 int printf(const char* format, ...)
 {
   va_list va;
@@ -922,7 +922,7 @@ int vsnprintf(char* buffer, size_t count, const char* format, va_list va)
 {
   return _vsnprintf(_out_buffer, buffer, count, format, va);
 }
-
+#endif
 
 int fctprintf(void (*out)(char character, void* arg), void* arg, const char* format, ...)
 {

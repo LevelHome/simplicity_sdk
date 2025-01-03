@@ -3,7 +3,7 @@
  * @brief Certificate Based Authentication and Pairing implementation
  *******************************************************************************
  * # License
- * <b>Copyright 2022 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -27,875 +27,500 @@
  * 3. This notice may not be removed or altered from any source distribution.
  *
  ******************************************************************************/
-
 #include <stdbool.h>
-#include "em_common.h"
+#include <string.h>
+#include "sl_common.h"
 #include "em_system.h"
 
-#include "app_assert.h"
-#include "gatt_db.h"
-#include "sl_bluetooth.h"
-#include "app_timer.h"
-#include "sl_bt_cbap_config.h"
+#include "ecode.h"
+#include "nvm3.h"
+#include "mbedtls/pk.h"
+#include "mbedtls/x509.h"
+#include "mbedtls/x509_csr.h"
+#include "mbedtls/entropy.h"
+#include "mbedtls/ctr_drbg.h"
+#include "mbedtls/oid.h"
+#include "mbedtls/x509_crt.h"
+#include "mbedtls/base64.h"
+#include "psa/crypto.h"
+#include "psa/crypto_values.h"
+
 #include "sl_bt_cbap_root_cert.h"
 #include "sl_bt_cbap.h"
-#include "sl_bt_cbap_lib.h"
-
-#include "sl_component_catalog.h"
-#ifdef SL_CATALOG_APP_LOG_PRESENT
-#include "app_log.h"
-#endif // SL_CATALOG_APP_LOG_PRESENT
 
 // -----------------------------------------------------------------------------
 // Defines
 
-#if defined(SL_CATALOG_APP_LOG_PRESENT) && SL_BT_CBAP_LOG
-#define sl_bt_cbap_log_debug(...)           app_log_debug(__VA_ARGS__)
-#define sl_bt_cbap_log_info(...)            app_log_info(__VA_ARGS__)
-#define sl_bt_cbap_log_error(...)           app_log_error(__VA_ARGS__)
-#define sl_bt_cbap_log_hexdump(p_data, len) app_log_hexdump_debug(p_data, len)
-#else
-#define sl_bt_cbap_log_debug(...)
-#define sl_bt_cbap_log_info(...)
-#define sl_bt_cbap_log_error(...)
-#define sl_bt_cbap_log_hexdump(p_data, len)
-#endif
+#define NVM3_HANDLE                   (nvm3_defaultHandle)
+#define CHAIN_LINK_DATA_LEN           192                    // Length of an NVM3 chunk
+#define CHAIN_LINK_DATA_NUM           4                      // Number of how many chunks needed for a certificate
+#define NUMBER_OF_CERTIFIACTE_RECORDS 3                      // Number of certificate records
 
-#define IS_PERIPHERAL_IN_PROGRESS (cbap_peripheral_state > 0 && cbap_peripheral_state < SL_BT_CBAP_PERIPHERAL_STATE_NUM - 1)
-#define IS_CENTRAL_IN_PROGRESS    (cbap_central_state > 0 && cbap_central_state < SL_BT_CBAP_CENTRAL_STATE_NUM - 1)
+#define POS_DEVICE_CERTIFICATE        0                      // Device certificate position in the record control block
+#define POS_DEVICE_EC_KEY             1                      // EC Key pair position in the record control block
 
-#define UUID_16_LEN                   2
-#define UUID_128_LEN                  16
-#define HANDLE_NOT_INITIALIZED        0
-
-#define GAP_INCOMPLETE_16B_UUID       0x02 // Incomplete List of 16-bit Service Class UUIDs
-#define GAP_COMPLETE_16B_UUID         0x03 // Complete List of 16-bit Service Class UUIDs
-#define GAP_INCOMPLETE_128B_UUID      0x06 // Incomplete List of 128-bit Service Class UUIDs
-#define GAP_COMPLETE_128B_UUID        0x07 // Complete List of 128-bit Service Class UUIDs
-
-#define CHAIN_LINK_DATA_LEN           192  // Length of an NVM3 chunk
-#define CHAIN_LINK_DATA_NUM           4    // Number of how many chunks needed for a certificate
+#define CBAP_NVM3_REGION              0x40000                // NVM3 region used for CBAP
+#define CONTROL_BLOCK_KEY             0x0400                 // Next control block NVM3 ID (points to itself if last)
+#define DEVICE_EC_KEY_PAIR_ID         (CBAP_NVM3_REGION | 0x00FE)
 
 #define OOB_SIGNATURE_LEN             64
 #define CERT_IND_CHUNK_LEN            100
 #define EC_PUB_KEY_LEN                65
 #define PUB_KEY_OFFSET                26
 
-#define OOB_RANDOM_LEN                (sizeof(aes_key_128))
+#define OOB_RANDOM_LEN                (16)
 #define OOB_DATA_LEN                  (2 * OOB_RANDOM_LEN)
 #define SIGNED_OOB_DATA_LEN           (OOB_DATA_LEN + OOB_SIGNATURE_LEN)
 
-#define TIMEOUT                       5000 // ms
-#define NO_CALLBACK_DATA              (void *)NULL // Callback has no parameters
+// -----------------------------------------------------------------------------
+// Type definitions
+
+// Certificate record control block
+typedef struct __attribute__((__packed__)) control_block_s {
+  uint16_t header;
+  uint16_t next;
+  uint64_t bitmap;
+  uint8_t nvm3_key[NUMBER_OF_CERTIFIACTE_RECORDS];
+  uint16_t max_link_data_len;
+} control_block_t;
+
+typedef struct certificate_chunk_s {
+  uint16_t header;
+  uint16_t entry_id;
+  uint16_t data_lenght;
+  uint8_t data[CHAIN_LINK_DATA_LEN];
+} certificate_chunk_t;
 
 // -----------------------------------------------------------------------------
-// Type definitions.
+// Module variables
 
-typedef struct characteristic_128_ref_s {
-  uint16_t handle;
-  uint8_t uuid[UUID_128_LEN];
-} characteristic_128_ref_t;
-
-typedef enum {
-  CHAR_CENTRAL_CERT,
-  CHAR_PERIPHERAL_CERT,
-  CHAR_CENTRAL_OOB,
-  CHAR_PERIPHERAL_OOB,
-  CHAR_NUM
-} characteristics_t;
-
-// -----------------------------------------------------------------------------
-// Module variables.
-
-// Device role
-static sl_bt_cbap_role_t role;
-
-// Handle of the active connection.
-static uint8_t connection = SL_BT_INVALID_CONNECTION_HANDLE;
-
-// Root certificate in PEM format.
+// Root certificate in PEM format
 const char *root_certificate_pem = SL_BT_CBAP_ROOT_CERT;
+// MBEDTLS certificate contexts
+static mbedtls_x509_crt root_certificate_context;
 
-// Reference to the CBAP service.
-static uint32_t cbap_service_handle = HANDLE_NOT_INITIALIZED;
-static const uint8_t cbap_service_uuid[] = {
-  0x10, 0x56, 0x28, 0xd0, 0x40, 0xdd, 0x8e, 0x91,
-  0x4d, 0x41, 0x47, 0x81, 0xc6, 0x8c, 0x81, 0xd8
-};
-
-// Reference to the CBAP characteristics.
-static characteristic_128_ref_t cbap_characteristics[] = {
-  {   // CHAR_CENTRAL_CERT
-    .handle = HANDLE_NOT_INITIALIZED,
-    .uuid = {
-      0xca, 0x25, 0xf3, 0xa2, 0xf6, 0xda, 0xbd, 0xb6,
-      0x69, 0x4a, 0xaa, 0x08, 0xf9, 0xd0, 0x5f, 0x31
-    }
-  },
-  {   // CHAR_PERIPHERAL_CERT
-    .handle = HANDLE_NOT_INITIALIZED,
-    .uuid = {
-      0x66, 0x50, 0xfd, 0x84, 0x4d, 0xad, 0xa2, 0x99,
-      0xc9, 0x4f, 0xf5, 0x16, 0x9e, 0xda, 0xf6, 0x0c
-    }
-  },
-  {   // CHAR_CENTRAL_OOB
-    .handle = HANDLE_NOT_INITIALIZED,
-    .uuid = {
-      0x2c, 0x19, 0xf1, 0xeb, 0x85, 0xcd, 0xb6, 0x8a,
-      0x2c, 0x4e, 0x7d, 0x89, 0x51, 0x57, 0xd3, 0xe8
-    }
-  },
-  {   // CHAR_PERIPHERAL_OOB
-    .handle = HANDLE_NOT_INITIALIZED,
-    .uuid = {
-      0xab, 0x69, 0xb2, 0x5e, 0xb8, 0x41, 0xb3, 0x8b,
-      0x82, 0x41, 0x51, 0xa2, 0x41, 0xcb, 0x91, 0x69
-    }
-  }
-};
-
-// State of the central device
-static sl_bt_cbap_central_state_t cbap_central_state = SL_BT_CBAP_CENTRAL_SCANNING;
-// Pointing to the characteristic that shall be discovered next
-static characteristics_t char_state = (characteristics_t)0;
-// State of the peripheral device
-static sl_bt_cbap_peripheral_state_t cbap_peripheral_state = SL_BT_CBAP_PERIPHERAL_IDLE;
-
-// Timer handle
-static app_timer_t state_timer;
-
-// Remote certificate which was sent over GATT in DER format
-static uint8_t remote_certificate_der[CHAIN_LINK_DATA_LEN * CHAIN_LINK_DATA_NUM] = { 0 };
-static uint32_t remote_certificate_der_len = 0;
-static bool remote_cert_arrived = false;
-
-// Device certificate in DER format
-static uint8_t device_certificate_der[CHAIN_LINK_DATA_LEN * CHAIN_LINK_DATA_NUM] = { 0 };
-static uint32_t device_certificate_der_len = 0;
-static uint32_t dev_cert_sending_progression = 0;
-static bool device_cert_sent = false;
-
-static uint8_t signed_device_oob_data[SIGNED_OOB_DATA_LEN];
-static size_t signed_device_oob_len = 0;
+// Public key ID of the remote device
+static mbedtls_svc_key_id_t remote_pub_key_id = 0;
 
 // -----------------------------------------------------------------------------
 // Private function declarations
 
-// Central device bluetooth event handler.
-static void on_event_peripheral(sl_bt_msg_t *evt);
-// Peripheral device bluetooth event handler.
-static void on_event_central(sl_bt_msg_t *evt);
+// Read the certificate record control block from NVM3.
+static sl_status_t get_control_block(control_block_t *control_block);
+// Read data chunks from NVM3 and reconstruct the certificate.
+static sl_status_t get_certificate(uint8_t *cert, uint32_t *cert_len, uint32_t nvm3_key);
 
-// Reset CBAP process states, flags and timers.
-static void cbap_reset(void);
+// Read data from NVM3 located at a specified NVM3 key.
+static sl_status_t get_nvm3_object(uint32_t key, uint8_t *buf, size_t *len, size_t maxlen);
 
-// Search for a Service UUID in scan report.
-static bool find_service_in_advertisement(const uint8_t *scan_data,
-                                          uint8_t scan_data_len,
-                                          const uint8_t *uuid,
-                                          uint8_t uuid_len);
-
-// Start or stop timer for timeout check.
-static void set_timeout(bool activate);
-// Timer callback.
-static void state_timer_cb(app_timer_t *handle, void *data);
+// Converts NVM3 status codes to SL status codes.
+static sl_status_t nvm3_status_to_sl_status(Ecode_t sc);
+// Converts PSA status code to SL status code.
+static sl_status_t psa_status_to_sl_status(psa_status_t sc);
 
 // -----------------------------------------------------------------------------
 // Public function definitions
 
-// Initialize the component. Import and validate the device and root certificate.
-void sl_bt_cbap_init(void)
+/******************************************************************************
+ * Imports and validates the device with root certificate.
+ *
+ * @param[out] device_certificate_der device certificate in DER format.
+ * @param[out] device_certificate_der_len device certificate length.
+ *
+ * @return SL_STATUS_OK if device certificate is validated, error code otherwise.
+ *****************************************************************************/
+sl_status_t sl_bt_cbap_init(uint8_t *device_certificate_der, uint32_t *device_certificate_der_len)
 {
   sl_status_t sc;
-  sc = sl_bt_cbap_lib_init(root_certificate_pem,
-                           device_certificate_der,
-                           &device_certificate_der_len);
-  app_assert_status(sc);
-  sl_bt_cbap_log_info("Device certificate verified." APP_LOG_NL);
+  int mbedtls_ret = 0;
+  mbedtls_x509_crt dev_certificate_context;
 
-  cbap_reset();
-}
-
-// Start CBAP procedure.
-sl_status_t sl_bt_cbap_start(sl_bt_cbap_role_t cbap_role,
-                             uint8_t connection_handle)
-{
-  sl_status_t sc;
-  if (IS_PERIPHERAL_IN_PROGRESS || IS_CENTRAL_IN_PROGRESS) {
-    return SL_STATUS_IN_PROGRESS;
+  if (root_certificate_pem == NULL || device_certificate_der == NULL || device_certificate_der_len == NULL) {
+    return SL_STATUS_NULL_POINTER;
   }
 
-  role = cbap_role;
-  connection = connection_handle;
-
-  if (role == SL_BT_CBAP_ROLE_CENTRAL) {
-    // Discover CBAP service on the peripheral device
-    sc = sl_bt_gatt_discover_primary_services_by_uuid(connection,
-                                                      sizeof(cbap_service_uuid),
-                                                      (const uint8_t *)cbap_service_uuid);
-    app_assert_status(sc);
-    cbap_central_state = SL_BT_CBAP_CENTRAL_DISCOVER_SERVICES;
-    sl_bt_cbap_central_on_event(cbap_central_state);
+  SYSTEM_SecurityCapability_TypeDef capability;
+  capability = SYSTEM_GetSecurityCapability();
+  if (capability != securityCapabilityRoT
+      && capability != securityCapabilitySE
+      && capability != securityCapabilityVault) {
+    return SL_STATUS_NOT_SUPPORTED;
   }
 
-  set_timeout(true);
+  sc = psa_status_to_sl_status(psa_crypto_init());
+  if (sc != SL_STATUS_OK) {
+    return sc;
+  }
+
+  // Get control block
+  control_block_t control_block;
+  sc = get_control_block(&control_block);
+  if (sc != SL_STATUS_OK) {
+    return sc;
+  }
+
+  // Get device certificate
+  uint32_t dev_cert_nvm3_key = CBAP_NVM3_REGION | CONTROL_BLOCK_KEY | control_block.nvm3_key[POS_DEVICE_CERTIFICATE];
+  sc = get_certificate(device_certificate_der, device_certificate_der_len, dev_cert_nvm3_key);
+
+  if (sc != SL_STATUS_OK) {
+    return sc;
+  }
+
+  mbedtls_x509_crt_init(&dev_certificate_context);
+  mbedtls_ret = mbedtls_x509_crt_parse(&dev_certificate_context,
+                                       (const unsigned char *)device_certificate_der,
+                                       *device_certificate_der_len);
+  if (mbedtls_ret != 0) {
+    return SL_STATUS_FAIL;
+  }
+
+  // Get root certificate
+  if (strlen(root_certificate_pem) == 0) {
+    return SL_STATUS_FAIL;
+  }
+  mbedtls_x509_crt_init(&root_certificate_context);
+
+  uint8_t root_certificate_der[CHAIN_LINK_DATA_LEN * CHAIN_LINK_DATA_NUM] = { 0 };
+  size_t root_certificate_der_len;
+  mbedtls_ret = mbedtls_base64_decode(root_certificate_der,
+                                      sizeof(root_certificate_der),
+                                      &root_certificate_der_len,
+                                      (const unsigned char *)root_certificate_pem,
+                                      strlen(root_certificate_pem));
+  if (mbedtls_ret != 0) {
+    return SL_STATUS_FAIL;
+  }
+  mbedtls_ret = mbedtls_x509_crt_parse(&root_certificate_context,
+                                       (const unsigned char *)root_certificate_der,
+                                       root_certificate_der_len);
+  if (mbedtls_ret != 0) {
+    return SL_STATUS_FAIL;
+  }
+
+  // Validate device certificate with the root certificate
+  uint32_t flags;
+  mbedtls_ret = mbedtls_x509_crt_verify(&dev_certificate_context,
+                                        &root_certificate_context,
+                                        NULL,
+                                        NULL,
+                                        &flags,
+                                        NULL,
+                                        NULL);
+  (void)flags;
+  if (mbedtls_ret != 0) {
+    return SL_STATUS_FAIL;
+  }
+
+  // Check the presence of the EC key pair.
+  if ((control_block.bitmap & (1 << POS_DEVICE_EC_KEY)) == 0) {
+    return SL_STATUS_FAIL;
+  }
+
   return SL_STATUS_OK;
 }
 
-// Bluetooth stack event handler.
-void sli_bt_cbap_on_event(sl_bt_msg_t *evt)
+/*******************************************************************************
+ * Parse and validate remote certificate and extract remote public key.
+ *
+ * @param[in] remote_certificate_der Certificate from remote device in DER.
+ * @param[in] remote_certificate_der_len Length of the remote certificate.
+ *
+ * @return SL_STATUS_OK if remote certificate is verified, error code otherwise.
+ ******************************************************************************/
+sl_status_t sl_bt_cbap_process_remote_cert(uint8_t *remote_certificate_der, uint32_t remote_certificate_der_len)
 {
-  switch (role) {
-    case SL_BT_CBAP_ROLE_PERIPHERAL:
-      on_event_peripheral(evt);
-      break;
-    case SL_BT_CBAP_ROLE_CENTRAL:
-      on_event_central(evt);
-      break;
+  sl_status_t sc;
+  int mbedtls_ret = 0;
+  mbedtls_x509_crt remote_certificate_context;
+
+  if (remote_certificate_der == NULL || remote_certificate_der_len == 0) {
+    return SL_STATUS_NULL_POINTER;
   }
+
+  // Initialize and parse remote certificate
+  mbedtls_x509_crt_init(&remote_certificate_context);
+  mbedtls_ret = mbedtls_x509_crt_parse(&remote_certificate_context,
+                                       (const unsigned char *)remote_certificate_der,
+                                       remote_certificate_der_len);
+  if (mbedtls_ret != 0) {
+    return SL_STATUS_FAIL;
+  }
+
+  unsigned char buf[1024];
+  size_t olen;
+
+  // Log
+  mbedtls_ret = mbedtls_base64_encode(buf,
+                                      sizeof(buf),
+                                      &olen,
+                                      remote_certificate_context.raw.p,
+                                      remote_certificate_context.raw.len);
+  (void)olen;
+  if (mbedtls_ret != 0) {
+    return SL_STATUS_FAIL;
+  }
+
+  // Validate it with the root certificate
+  uint32_t flags;
+  mbedtls_ret = mbedtls_x509_crt_verify(&remote_certificate_context,
+                                        &root_certificate_context,
+                                        NULL,
+                                        NULL,
+                                        &flags,
+                                        NULL,
+                                        NULL);
+  (void)flags;
+  if (mbedtls_ret != 0) {
+    return SL_STATUS_FAIL;
+  }
+
+  // Get the public key from the remote certificate and set attributes
+  psa_key_attributes_t remote_pub_key_attr = PSA_KEY_ATTRIBUTES_INIT;
+  psa_set_key_algorithm(&remote_pub_key_attr, PSA_ALG_ECDSA(PSA_ALG_SHA_256));
+  psa_set_key_type(&remote_pub_key_attr, PSA_KEY_TYPE_ECC_PUBLIC_KEY(PSA_ECC_FAMILY_SECP_R1));
+  psa_set_key_usage_flags(&remote_pub_key_attr, PSA_KEY_USAGE_VERIFY_MESSAGE);
+
+  sc = psa_status_to_sl_status(psa_import_key(&remote_pub_key_attr,
+                                              &remote_certificate_context.pk_raw.p[PUB_KEY_OFFSET],
+                                              EC_PUB_KEY_LEN,
+                                              &remote_pub_key_id));
+
+  if (sc != SL_STATUS_OK) {
+    return sc;
+  }
+
+  mbedtls_x509_crt_free(&remote_certificate_context);
+
+  return SL_STATUS_OK;
 }
 
-// Search for a the CBAP Service UUID in scan report.
-bool sl_bt_cbap_find_service_in_advertisement(const uint8_t *scan_data,
-                                              uint8_t scan_data_len)
+/*******************************************************************************
+ * Signs and combines OOB data.
+ *
+ * @param[in] device_random OOB data generated by the bt stack.
+ * @param[in] device_confirm OOB data generated by the bt stack.
+ * @param[out] output_data The signed OOB data
+ * @param[out] output_len The signed OOB data length
+ *
+ * @return SL_STATUS_OK if OOB data signed, error code otherwise.
+ ******************************************************************************/
+sl_status_t sl_bt_cbap_sign_device_oob_data(uint8_t *device_random,
+                                            uint8_t *device_confirm,
+                                            uint8_t *output_data,
+                                            size_t *output_len)
 {
-  return find_service_in_advertisement(scan_data,
-                                       scan_data_len,
-                                       cbap_service_uuid,
-                                       sizeof(cbap_service_uuid));
+  sl_status_t sc;
+  uint8_t input_data[OOB_DATA_LEN];
+  uint8_t signature[OOB_SIGNATURE_LEN];
+  size_t signature_length;
+
+  if (output_data == NULL || output_len == NULL || device_random == NULL || device_confirm == NULL) {
+    return SL_STATUS_NULL_POINTER;
+  }
+
+  memcpy(input_data, device_random, OOB_RANDOM_LEN);
+  memcpy(&input_data[OOB_RANDOM_LEN], device_confirm, OOB_RANDOM_LEN);
+
+  // Sign the OOB
+  sc = psa_status_to_sl_status(psa_sign_message(DEVICE_EC_KEY_PAIR_ID,
+                                                PSA_ALG_ECDSA(PSA_ALG_SHA_256),
+                                                input_data,
+                                                sizeof(input_data),
+                                                signature,
+                                                sizeof(signature),
+                                                &signature_length));
+  if (sc != SL_STATUS_OK) {
+    return sc;
+  }
+
+  memcpy(output_data, input_data, OOB_DATA_LEN);
+  memcpy(&output_data[OOB_DATA_LEN], signature, signature_length);
+
+  *output_len = SIGNED_OOB_DATA_LEN;
+  return SL_STATUS_OK;
+}
+
+/*******************************************************************************
+ * Verifies the remote device OOB data signature.
+ *
+ * @param[in] remote_random OOB data from remote device.
+ * @param[in] remote_confirm OOB data from remote device.
+ * @param[in] remote_oob_signature Remote OOB signature.
+ *
+ * @return SL_STATUS_OK if OOB data signature is OK, error code otherwise.
+ ******************************************************************************/
+sl_status_t sl_bt_cbap_verify_remote_oob_data(uint8_t *remote_random,
+                                              uint8_t *remote_confirm,
+                                              uint8_t *remote_oob_signature)
+{
+  uint8_t input_data[OOB_DATA_LEN];
+  sl_status_t sc;
+
+  if (remote_random == NULL || remote_confirm == NULL || remote_oob_signature == NULL) {
+    return SL_STATUS_NULL_POINTER;
+  }
+
+  memcpy(input_data, remote_random, OOB_RANDOM_LEN);
+  memcpy(&input_data[OOB_RANDOM_LEN], remote_confirm, OOB_RANDOM_LEN);
+
+  sc = psa_status_to_sl_status(psa_verify_message(remote_pub_key_id,
+                                                  PSA_ALG_ECDSA(PSA_ALG_SHA_256),
+                                                  input_data,
+                                                  sizeof(input_data),
+                                                  remote_oob_signature,
+                                                  OOB_SIGNATURE_LEN));
+  if (sc != SL_STATUS_OK) {
+    return sc;
+  }
+
+  return SL_STATUS_OK;
+}
+
+/*******************************************************************************
+ * Destroys the keys which were used during the CBAP process.
+ *
+ * @return SL_STATUS_OK if OK, error code otherwise.
+ ******************************************************************************/
+sl_status_t sl_bt_cbap_destroy_key(void)
+{
+  return psa_status_to_sl_status(psa_destroy_key(remote_pub_key_id));
 }
 
 // -----------------------------------------------------------------------------
 // Private function definitions
 
 /*******************************************************************************
- * Peripheral device bluetooth event handler.
- ******************************************************************************/
-static void on_event_peripheral(sl_bt_msg_t *evt)
-{
-  sl_status_t sc;
-  // Handle stack events
-  switch (SL_BT_MSG_ID(evt->header)) {
-    // This event indicates the device has started and the radio is ready.
-    // Do not call any stack command before receiving this boot event!
-    case sl_bt_evt_system_boot_id:
-      // Request OOB data from both device
-      sc = sl_bt_sm_configure(SL_BT_SM_CONFIGURATION_OOB_FROM_BOTH_DEVICES_REQUIRED,
-                              sl_bt_sm_io_capability_noinputnooutput);
-      app_assert_status(sc);
-      break;
-
-    //--------------------------------
-    // Triggered whenever the connection parameters are changed
-    case sl_bt_evt_connection_parameters_id:
-      if (evt->data.evt_connection_parameters.connection != connection) {
-        break;
-      }
-
-      sl_bt_cbap_log_debug("Security mode: %i" APP_LOG_NL,
-                           evt->data.evt_connection_parameters.security_mode);
-      if (evt->data.evt_connection_parameters.security_mode > sl_bt_connection_mode1_level1
-          && cbap_peripheral_state != SL_BT_CBAP_PERIPHERAL_CENTRAL_OOB_OK) {
-        sl_bt_cbap_log_error("The central device increased the security level with " \
-                             "no CBAP. Disconnecting." APP_LOG_NL);
-        sl_bt_on_cbap_error();
-        cbap_reset();
-        break;
-      }
-
-      if (evt->data.evt_connection_parameters.security_mode == sl_bt_connection_mode1_level4) {
-        cbap_peripheral_state = SL_BT_CBAP_PERIPHERAL_DONE;
-        sl_bt_cbap_peripheral_on_event(cbap_peripheral_state);
-        cbap_reset();
-      }
-      break;
-
-    case sl_bt_evt_gatt_server_user_write_request_id:
-      if (evt->data.evt_gatt_server_user_write_request.connection != connection) {
-        break;
-      }
-
-      // Set default response parameters.
-      sc = SL_STATUS_BT_ATT_WRITE_REQUEST_REJECTED;
-      // Receiving Certificate from central device
-      if (evt->data.evt_gatt_server_user_write_request.characteristic == gattdb_central_cert) {
-        if (remote_cert_arrived == false) {
-          // First byte indicates that it is a last packet or not
-          memcpy(&remote_certificate_der[remote_certificate_der_len],
-                 &evt->data.evt_gatt_server_user_write_request.value.data[1],
-                 evt->data.evt_gatt_server_user_write_request.value.len - 1);
-          remote_certificate_der_len += evt->data.evt_gatt_server_user_write_request.value.len - 1;
-          sc = SL_STATUS_OK;
-          if (evt->data.evt_gatt_server_user_write_request.value.data[0] == 0) {
-            // Last packet of the remote cert arrived
-            sl_bt_cbap_log_info("Getting certificate from central." APP_LOG_NL);
-            remote_cert_arrived = true;
-            sc = sl_bt_cbap_lib_process_remote_cert(remote_certificate_der,
-                                                    remote_certificate_der_len);
-            if (sc == SL_STATUS_OK) {
-              app_assert(cbap_peripheral_state == SL_BT_CBAP_PERIPHERAL_IDLE,
-                         "Unexpected peripheral state.");
-              cbap_peripheral_state = SL_BT_CBAP_PERIPHERAL_CENTRAL_CERT_OK;
-              sl_bt_cbap_peripheral_on_event(cbap_peripheral_state);
-              set_timeout(true);
-            } else {
-              sl_bt_cbap_log_error("Remote certificate verification failed. " \
-                                   "Disconnecting." APP_LOG_NL);
-              sl_bt_on_cbap_error();
-              cbap_reset();
-              break;
-            }
-          }
-          // Map status code to a valid attribute error.
-          if (SL_STATUS_OK != sc) {
-            sc = SL_STATUS_BT_ATT_WRITE_REQUEST_REJECTED;
-          }
-        } else {
-          sc = SL_STATUS_BT_ATT_PROCEDURE_ALREADY_IN_PROGRESS;
-        }
-        sl_bt_gatt_server_send_user_write_response(evt->data.evt_gatt_server_user_write_request.connection,
-                                                   evt->data.evt_gatt_server_user_write_request.characteristic,
-                                                   (uint8_t)sc);
-      }
-      // Receiving OOB data from central device
-      else if (evt->data.evt_gatt_server_user_write_request.characteristic == gattdb_central_oob ) {
-        sl_bt_cbap_log_info("Getting OOB data from central." APP_LOG_NL);
-        aes_key_128 remote_random;
-        aes_key_128 remote_confirm;
-        uint8_t remote_oob_signature[OOB_SIGNATURE_LEN];
-        memcpy(&remote_random,
-               &evt->data.evt_gatt_server_user_write_request.value.data[0],
-               sizeof(remote_random));
-        memcpy(&remote_confirm,
-               &evt->data.evt_gatt_server_user_write_request.value.data[16],
-               sizeof(remote_confirm));
-        memcpy(&remote_oob_signature,
-               &evt->data.evt_gatt_server_user_write_request.value.data[32],
-               OOB_SIGNATURE_LEN);
-
-        sc = sl_bt_gatt_server_send_user_write_response(evt->data.evt_gatt_server_user_write_request.connection,
-                                                        evt->data.evt_gatt_server_user_write_request.characteristic,
-                                                        SL_STATUS_OK);
-        app_assert_status(sc);
-
-        sl_bt_cbap_log_debug("Remote OOB data:" APP_LOG_NL);
-        sl_bt_cbap_log_hexdump(&remote_random, sizeof(aes_key_128));
-        sl_bt_cbap_log_debug(APP_LOG_NL);
-        sl_bt_cbap_log_hexdump(&remote_confirm, sizeof(aes_key_128));
-        sl_bt_cbap_log_debug(APP_LOG_NL);
-        sl_bt_cbap_log_debug("Remote OOB signature:" APP_LOG_NL);
-        sl_bt_cbap_log_hexdump(&remote_oob_signature, OOB_SIGNATURE_LEN);
-        sl_bt_cbap_log_debug(APP_LOG_NL);
-
-        sc = sl_bt_cbap_lib_verify_remote_oob_data(remote_random.data,
-                                                   remote_confirm.data,
-                                                   remote_oob_signature);
-        app_assert_status(sc);
-        sl_bt_cbap_log_info("Remote OOB data verified." APP_LOG_NL);
-        sc = sl_bt_sm_set_remote_oob(1, remote_random, remote_confirm);
-        app_assert_status(sc);
-        sc = sl_bt_cbap_destroy_key();
-        app_assert_status(sc);
-
-        app_assert(cbap_peripheral_state == SL_BT_CBAP_PERIPHERAL_CENTRAL_CERT_OK,
-                   "Unexpected peripheral state.");
-        cbap_peripheral_state = SL_BT_CBAP_PERIPHERAL_CENTRAL_OOB_OK;
-        sl_bt_cbap_peripheral_on_event(cbap_peripheral_state);
-        set_timeout(true);
-      }
-      break;
-
-    case sl_bt_evt_gatt_server_characteristic_status_id:
-      if (evt->data.evt_gatt_server_characteristic_status.connection != connection) {
-        break;
-      }
-
-      if (gattdb_peripheral_cert == evt->data.evt_gatt_server_characteristic_status.characteristic) {
-        if (sl_bt_gatt_server_client_config == (sl_bt_gatt_server_characteristic_status_flag_t)evt->data.evt_gatt_server_characteristic_status.status_flags) {
-          if (sl_bt_gatt_indication == (sl_bt_gatt_client_config_flag_t)evt->data.evt_gatt_server_characteristic_status.client_config_flags
-              && device_cert_sent == false) {
-            uint8_t buff[CERT_IND_CHUNK_LEN + 1];
-            buff[0] = 1;
-            memcpy(&buff[1], device_certificate_der, CERT_IND_CHUNK_LEN);
-            sc = sl_bt_gatt_server_send_indication(connection,
-                                                   gattdb_peripheral_cert,
-                                                   CERT_IND_CHUNK_LEN + 1,
-                                                   buff);
-            app_assert_status(sc);
-            dev_cert_sending_progression += CERT_IND_CHUNK_LEN;
-          }
-        }
-        // Sending Peripheral certificate to Central device
-        else if (sl_bt_gatt_server_confirmation == (sl_bt_gatt_server_characteristic_status_flag_t)evt->data.evt_gatt_server_characteristic_status.status_flags) {
-          if (device_cert_sent == false) {
-            uint32_t remaining = device_certificate_der_len - dev_cert_sending_progression;
-            uint8_t buff[CERT_IND_CHUNK_LEN + 1];
-            uint8_t len = 0;
-            if (remaining > CERT_IND_CHUNK_LEN) {
-              buff[0] = 1;
-              len = CERT_IND_CHUNK_LEN + 1;
-            } else {
-              // Send last chunk
-              buff[0] = 0;
-              len = remaining + 1;
-              device_cert_sent = true;
-            }
-            memcpy(&buff[1], &device_certificate_der[dev_cert_sending_progression], len - 1);
-            dev_cert_sending_progression += len - 1;
-            sc = sl_bt_gatt_server_send_indication(connection,
-                                                   gattdb_peripheral_cert,
-                                                   len,
-                                                   buff);
-            app_assert_status(sc);
-          }
-        }
-      }
-      // Sending Peripheral OOB data to Central device
-      else if (gattdb_peripheral_oob == evt->data.evt_gatt_server_characteristic_status.characteristic ) {
-        if (sl_bt_gatt_server_client_config == (sl_bt_gatt_server_characteristic_status_flag_t)evt->data.evt_gatt_server_characteristic_status.status_flags
-            && sl_bt_gatt_indication == (sl_bt_gatt_client_config_flag_t)evt->data.evt_gatt_server_characteristic_status.client_config_flags) {
-          aes_key_128 device_random;
-          aes_key_128 device_confirm;
-          // Generate device oob data and send over GATT
-          sc = sl_bt_sm_set_oob(1, &device_random, &device_confirm);
-          app_assert_status(sc);
-
-          sl_bt_cbap_log_debug("Device OOB Data:" APP_LOG_NL);
-          sl_bt_cbap_log_hexdump(&device_random, OOB_RANDOM_LEN);
-          sl_bt_cbap_log_debug(APP_LOG_NL);
-          sl_bt_cbap_log_hexdump(&device_confirm, OOB_RANDOM_LEN);
-          sl_bt_cbap_log_debug(APP_LOG_NL);
-
-          sc = sl_bt_cbap_lib_sign_device_oob_data(device_random.data,
-                                                   device_confirm.data,
-                                                   signed_device_oob_data,
-                                                   &signed_device_oob_len);
-          app_assert_status(sc);
-
-          sl_bt_cbap_log_debug("Device OOB Signature:" APP_LOG_NL);
-          sl_bt_cbap_log_hexdump(&signed_device_oob_data[OOB_DATA_LEN],
-                                 OOB_SIGNATURE_LEN);
-
-          sl_bt_cbap_log_debug(APP_LOG_NL);
-
-          sc = sl_bt_gatt_server_send_indication(connection,
-                                                 gattdb_peripheral_oob,
-                                                 signed_device_oob_len,
-                                                 signed_device_oob_data);
-          app_assert_status(sc);
-        }
-      }
-      break;
-  }
-}
-
-/*******************************************************************************
- * Central device bluetooth event handler.
- ******************************************************************************/
-static void on_event_central(sl_bt_msg_t *evt)
-{
-  sl_status_t sc;
-  // Handle stack events
-  switch (SL_BT_MSG_ID(evt->header)) {
-    //--------------------------------
-    // Triggered whenever the connection parameters are changed
-    case sl_bt_evt_connection_parameters_id:
-      if (evt->data.evt_connection_parameters.connection != connection) {
-        break;
-      }
-
-      sl_bt_cbap_log_debug("Security mode: %i" APP_LOG_NL, evt->data.evt_connection_parameters.security_mode);
-      if (evt->data.evt_connection_parameters.security_mode > sl_bt_connection_mode1_level1
-          && cbap_central_state != SL_BT_CBAP_CENTRAL_INCREASE_SECURITY) {
-        sl_bt_cbap_log_error("Security level has been increased with no CBAP. " \
-                             "Disconnecting." APP_LOG_NL);
-        sl_bt_on_cbap_error();
-        cbap_reset();
-        break;
-      }
-
-      if (evt->data.evt_connection_parameters.security_mode == sl_bt_connection_mode1_level4) {
-        cbap_central_state = SL_BT_CBAP_CENTRAL_DONE;
-        sl_bt_cbap_central_on_event(cbap_central_state);
-        cbap_reset();
-      }
-      break;
-
-    // -------------------------------
-    // This event is generated when a new service is discovered
-    case sl_bt_evt_gatt_service_id:
-      if (evt->data.evt_gatt_service.connection != connection) {
-        break;
-      }
-
-      if (cbap_service_handle == HANDLE_NOT_INITIALIZED) {
-        // Save service handle for future reference
-        cbap_service_handle = evt->data.evt_gatt_service.service;
-        sl_bt_cbap_log_debug("Service handle found: %i" APP_LOG_NL,
-                             (int)cbap_service_handle);
-      }
-      break;
-
-    // -------------------------------
-    // This event is generated when a new characteristic is discovered
-    case sl_bt_evt_gatt_characteristic_id:
-      if (evt->data.evt_gatt_characteristic.connection != connection) {
-        break;
-      }
-
-      if (cbap_characteristics[char_state].handle == HANDLE_NOT_INITIALIZED) {
-        // Save characteristic handle for future reference
-        cbap_characteristics[char_state].handle = evt->data.evt_gatt_characteristic.characteristic;
-        sl_bt_cbap_log_debug("Characteristic handle found: %i" APP_LOG_NL,
-                             cbap_characteristics[char_state].handle);
-      }
-      break;
-
-    // -------------------------------
-    // This event is generated for various procedure completions, e.g. when a
-    // write procedure is completed, or service discovery is completed
-    case sl_bt_evt_gatt_procedure_completed_id:
-      if (evt->data.evt_gatt_procedure_completed.connection != connection) {
-        break;
-      }
-
-      // Check result
-      if (evt->data.evt_gatt_procedure_completed.result != 0) {
-        sl_bt_cbap_log_error("GATT procedure failed [E:%i]. Disconnecting." APP_LOG_NL,
-                             evt->data.evt_gatt_procedure_completed.result);
-        sl_bt_on_cbap_error();
-        cbap_reset();
-        break;
-      }
-
-      switch (cbap_central_state) {
-        case SL_BT_CBAP_CENTRAL_DISCOVER_SERVICES: {
-          // Continue by finding the characteristics under the CBAP service.
-          char_state = (characteristics_t)0; // Start with the first characteristic
-          sc = sl_bt_gatt_discover_characteristics_by_uuid(evt->data.evt_gatt_procedure_completed.connection,
-                                                           cbap_service_handle,
-                                                           sizeof(cbap_characteristics[char_state].uuid),
-                                                           (const uint8_t *)cbap_characteristics[char_state].uuid);
-          app_assert_status(sc);
-          cbap_central_state = SL_BT_CBAP_CENTRAL_DISCOVER_CHARACTERISTICS;
-          sl_bt_cbap_central_on_event(cbap_central_state);
-          set_timeout(true);
-          break;
-        }
-
-        case SL_BT_CBAP_CENTRAL_DISCOVER_CHARACTERISTICS: {
-          char_state++;
-          if (char_state < CHAR_NUM) {
-            // Find the next characteristic
-            sc = sl_bt_gatt_discover_characteristics_by_uuid(evt->data.evt_gatt_procedure_completed.connection,
-                                                             cbap_service_handle,
-                                                             sizeof(cbap_characteristics[char_state].uuid),
-                                                             (const uint8_t *)cbap_characteristics[char_state].uuid);
-            app_assert_status(sc);
-          } else {
-            // Get Peripheral certificates
-            sc = sl_bt_gatt_set_characteristic_notification(evt->data.evt_gatt_procedure_completed.connection,
-                                                            cbap_characteristics[CHAR_PERIPHERAL_CERT].handle,
-                                                            sl_bt_gatt_indication);
-            app_assert_status(sc);
-            cbap_central_state = SL_BT_CBAP_CENTRAL_GET_PERIPHERAL_CERT;
-            sl_bt_cbap_central_on_event(cbap_central_state);
-            set_timeout(true);
-          }
-          break;
-        }
-
-        case SL_BT_CBAP_CENTRAL_SEND_CENTRAL_CERT: {
-          if (!device_cert_sent) {
-            uint32_t remaining = device_certificate_der_len
-                                 - dev_cert_sending_progression;
-            uint8_t buff[CERT_IND_CHUNK_LEN + 1];
-            uint8_t len = 0;
-            if (remaining > CERT_IND_CHUNK_LEN) {
-              buff[0] = 1;
-              memcpy(&buff[1],
-                     &device_certificate_der[dev_cert_sending_progression],
-                     CERT_IND_CHUNK_LEN);
-              dev_cert_sending_progression += CERT_IND_CHUNK_LEN;
-              len = CERT_IND_CHUNK_LEN + 1;
-            } else {
-              // Last chunk
-              buff[0] = 0;
-              memcpy(&buff[1],
-                     &device_certificate_der[dev_cert_sending_progression],
-                     remaining);
-              len = remaining + 1;
-              device_cert_sent = true;
-            }
-            sc = sl_bt_gatt_write_characteristic_value(connection,
-                                                       cbap_characteristics[CHAR_CENTRAL_CERT].handle,
-                                                       len,
-                                                       buff);
-            app_assert_status(sc);
-          } else {
-            // If certificate exchange completed get OOB data. Enable indication.
-            sc = sl_bt_gatt_set_characteristic_notification(evt->data.evt_gatt_procedure_completed.connection,
-                                                            cbap_characteristics[CHAR_PERIPHERAL_OOB].handle,
-                                                            sl_bt_gatt_indication);
-            app_assert_status(sc);
-            aes_key_128 device_random;
-            aes_key_128 device_confirm;
-            // Generate device oob data and send over GATT
-            sc = sl_bt_sm_set_oob(1, &device_random, &device_confirm);
-            app_assert_status(sc);
-
-            sl_bt_cbap_log_debug("Device OOB Data:" APP_LOG_NL);
-            sl_bt_cbap_log_hexdump(&device_random, OOB_RANDOM_LEN);
-            sl_bt_cbap_log_debug(APP_LOG_NL);
-            sl_bt_cbap_log_hexdump(&device_confirm, OOB_RANDOM_LEN);
-            sl_bt_cbap_log_debug(APP_LOG_NL);
-
-            sc = sl_bt_cbap_lib_sign_device_oob_data(device_random.data,
-                                                     device_confirm.data,
-                                                     signed_device_oob_data,
-                                                     &signed_device_oob_len);
-            app_assert_status(sc);
-
-            sl_bt_cbap_log_debug("Device OOB Signature:" APP_LOG_NL);
-            sl_bt_cbap_log_hexdump(&signed_device_oob_data[OOB_DATA_LEN],
-                                   OOB_SIGNATURE_LEN);
-            sl_bt_cbap_log_debug(APP_LOG_NL);
-
-            cbap_central_state = SL_BT_CBAP_CENTRAL_GET_PERIPHERAL_OOB;
-            sl_bt_cbap_central_on_event(cbap_central_state);
-            set_timeout(true);
-          }
-          break;
-        }
-
-        case SL_BT_CBAP_CENTRAL_SEND_OOB: {
-          sc = sl_bt_gatt_write_characteristic_value(connection,
-                                                     cbap_characteristics[CHAR_CENTRAL_OOB].handle,
-                                                     signed_device_oob_len,
-                                                     signed_device_oob_data);
-          app_assert_status(sc);
-
-          // Request OOB data from both device
-          sc = sl_bt_sm_configure(SL_BT_SM_CONFIGURATION_OOB_FROM_BOTH_DEVICES_REQUIRED,
-                                  sl_bt_sm_io_capability_noinputnooutput);
-          app_assert_status(sc);
-          sc = sl_bt_sm_increase_security(connection);
-          app_assert_status(sc);
-
-          cbap_central_state = SL_BT_CBAP_CENTRAL_INCREASE_SECURITY;
-          sl_bt_cbap_central_on_event(cbap_central_state);
-          set_timeout(true);
-          break;
-        }
-
-        default: {
-          break;
-        }
-      }
-      break;
-
-    // -------------------------------
-    // This event is generated when a characteristic value was received e.g. an indication
-    case sl_bt_evt_gatt_characteristic_value_id:
-      if (evt->data.evt_gatt_characteristic_value.connection != connection) {
-        break;
-      }
-
-      if (cbap_central_state == SL_BT_CBAP_CENTRAL_GET_PERIPHERAL_CERT) {
-        memcpy(&remote_certificate_der[remote_certificate_der_len],
-               &evt->data.evt_gatt_characteristic_value.value.data[1],
-               evt->data.evt_gatt_characteristic_value.value.len - 1);
-        remote_certificate_der_len += evt->data.evt_gatt_characteristic_value.value.len - 1;
-        sc = sl_bt_gatt_send_characteristic_confirmation(evt->data.evt_gatt_characteristic_value.connection);
-        app_assert_status(sc);
-        if (evt->data.evt_gatt_characteristic_value.value.data[0] == 0) {
-          // Last chunk stop indication
-          sc = sl_bt_gatt_set_characteristic_notification(connection,
-                                                          cbap_characteristics[CHAR_PERIPHERAL_CERT].handle,
-                                                          sl_bt_gatt_disable);
-          app_assert_status(sc);
-
-          remote_cert_arrived = true;
-          cbap_central_state = SL_BT_CBAP_CENTRAL_SEND_CENTRAL_CERT;
-          sl_bt_cbap_central_on_event(cbap_central_state);
-          set_timeout(true);
-
-          sc = sl_bt_cbap_lib_process_remote_cert(remote_certificate_der,
-                                                  remote_certificate_der_len);
-          if (sc == SL_STATUS_OK) {
-            sl_bt_cbap_log_info("Remote certificate verified." APP_LOG_NL);
-          } else {
-            sl_bt_cbap_log_error("Remote certificate verification failed. " \
-                                 "Disconnecting." APP_LOG_NL);
-            sl_bt_on_cbap_error();
-            cbap_reset();
-            break;
-          }
-        }
-      } else if (cbap_central_state == SL_BT_CBAP_CENTRAL_GET_PERIPHERAL_OOB) {
-        aes_key_128 remote_random;
-        aes_key_128 remote_confirm;
-        uint8_t remote_oob_signature[OOB_SIGNATURE_LEN];
-        memcpy(&remote_random,
-               &evt->data.evt_gatt_characteristic_value.value.data[0],
-               sizeof(aes_key_128));
-        memcpy(&remote_confirm,
-               &evt->data.evt_gatt_characteristic_value.value.data[16],
-               sizeof(aes_key_128));
-        memcpy(&remote_oob_signature,
-               &evt->data.evt_gatt_server_user_write_request.value.data[32],
-               OOB_SIGNATURE_LEN);
-        sc = sl_bt_gatt_send_characteristic_confirmation(evt->data.evt_gatt_characteristic_value.connection);
-        app_assert_status(sc);
-        cbap_central_state = SL_BT_CBAP_CENTRAL_SEND_OOB;
-        sl_bt_cbap_central_on_event(cbap_central_state);
-        set_timeout(true);
-        sc = sl_bt_gatt_set_characteristic_notification(connection,
-                                                        cbap_characteristics[CHAR_PERIPHERAL_OOB].handle,
-                                                        sl_bt_gatt_disable);
-        app_assert_status(sc);
-
-        sl_bt_cbap_log_debug("Remote OOB data:" APP_LOG_NL);
-        sl_bt_cbap_log_hexdump(&remote_random, sizeof(aes_key_128));
-        sl_bt_cbap_log_debug(APP_LOG_NL);
-        sl_bt_cbap_log_hexdump(&remote_confirm, sizeof(aes_key_128));
-        sl_bt_cbap_log_debug(APP_LOG_NL);
-        sl_bt_cbap_log_debug("Remote OOB signature:" APP_LOG_NL);
-        sl_bt_cbap_log_hexdump(&remote_oob_signature, OOB_SIGNATURE_LEN);
-        sl_bt_cbap_log_debug(APP_LOG_NL);
-
-        sc = sl_bt_cbap_lib_verify_remote_oob_data(remote_random.data,
-                                                   remote_confirm.data,
-                                                   remote_oob_signature);
-        app_assert_status(sc);
-        sl_bt_cbap_log_info("Remote OOB data verified." APP_LOG_NL);
-        sc = sl_bt_sm_set_remote_oob(1, remote_random, remote_confirm);
-        app_assert_status(sc);
-        sc = sl_bt_cbap_destroy_key();
-        app_assert_status(sc);
-      }
-      break;
-  }
-}
-
-/***************************************************************************//**
- * Reset CBAP process states, flags and timers.
- ******************************************************************************/
-static void cbap_reset(void)
-{
-  set_timeout(false); // Make sure timer is stopped
-  connection = SL_BT_INVALID_CONNECTION_HANDLE; // Clear connection handle
-  // Reset states
-  cbap_peripheral_state = (sl_bt_cbap_peripheral_state_t)0;
-  sl_bt_cbap_peripheral_on_event(cbap_peripheral_state);
-  cbap_central_state = (sl_bt_cbap_central_state_t)0;
-  sl_bt_cbap_central_on_event(cbap_central_state);
-  char_state = (characteristics_t)0;
-  // Reset flags
-  remote_cert_arrived = false;
-  device_cert_sent = false;
-  remote_certificate_der_len = 0;
-  dev_cert_sending_progression = 0;
-}
-
-/*******************************************************************************
- * Search for a Service UUID in scan report.
+ * Read the certificate record control block from NVM3.
  *
- * @param[in] scan_data Data received in scanner advertisement report event
- * @param[in] scan_data_len Length of the scan data
- * @param[in] uuid Service UUID to search for
- * @param[in] uuid_len Service UUID length
- * @return true if the service is found
+ * @param[out] control_block pointer to the control block structure
+ * @return SL_STATUS_OK - if successful, error code otherwise.
  ******************************************************************************/
-static bool find_service_in_advertisement(const uint8_t *scan_data,
-                                          uint8_t scan_data_len,
-                                          const uint8_t *uuid,
-                                          uint8_t uuid_len)
+static sl_status_t get_control_block(control_block_t *control_block)
 {
-  uint8_t ad_field_length;
-  uint8_t ad_field_type;
-  uint8_t i = 0;
+  sl_status_t sc;
+  size_t nvm3_obj_len;
 
-  while (i < scan_data_len) {
-    // Parse advertisement packet
-    ad_field_length = scan_data[i];  // Not counting the length byte itself
-    ad_field_type = scan_data[i + 1];
-    if ((uuid_len == UUID_16_LEN && (ad_field_type == GAP_INCOMPLETE_16B_UUID
-                                     || ad_field_type == GAP_COMPLETE_16B_UUID))
-        || (uuid_len == UUID_128_LEN && (ad_field_type == GAP_INCOMPLETE_128B_UUID
-                                         || ad_field_type == GAP_COMPLETE_128B_UUID))) {
-      // Packet containing the list of complete/incomplete 16/128-bit services found.
-      // Loop through the UUID list
-      uint8_t j = 2;
-      while (j < ad_field_length + 1) {
-        // Compare payload.
-        if (memcmp(&scan_data[i + j], uuid, uuid_len) == 0) {
-          return true;
-        }
-        // Advance to the next UUID
-        j += uuid_len;
-      }
+  sc = get_nvm3_object(CBAP_NVM3_REGION | CONTROL_BLOCK_KEY,
+                       (uint8_t *)control_block,
+                       &nvm3_obj_len,
+                       sizeof(control_block_t));
+  (void)nvm3_obj_len;
+  return sc;
+}
+
+/*******************************************************************************
+ * Read data chunks from NVM3 and reconstruct the certificate.
+ *
+ * @param[out] cert Certificate buffer.
+ * @param[out] cert_len Certificate length.
+ * @param[in]  nvm3_key the NVM3 key of the first certificate chunk.
+ ******************************************************************************/
+static sl_status_t get_certificate(uint8_t *cert, uint32_t *cert_len, uint32_t nvm3_key)
+{
+  sl_status_t sc;
+  certificate_chunk_t certificate_chunk;
+  size_t nvm3_obj_len;
+  uint8_t next_chuck_exist = 0;
+  *cert_len = 0;
+  int i = 0;
+
+  do {
+    sc = get_nvm3_object(nvm3_key, (uint8_t *)&certificate_chunk, &nvm3_obj_len, sizeof(certificate_chunk));
+    (void)nvm3_obj_len;
+    if (sc != SL_STATUS_OK) {
+      return sc;
     }
-    // Advance to the next packet
-    i += ad_field_length + 1;
-  }
-  return false;
+
+    memcpy(&cert[i * CHAIN_LINK_DATA_LEN], certificate_chunk.data, CHAIN_LINK_DATA_LEN);
+    next_chuck_exist = (certificate_chunk.header & (1 << 1));
+    *cert_len += certificate_chunk.data_lenght;
+
+    nvm3_key++;
+    i++;
+  } while (next_chuck_exist != 0);
+
+  return SL_STATUS_OK;
 }
 
-/***************************************************************************//**
- * Start or stop timer for timeout check.
- * @param[in] activate If true timer will start for timeout check
+/*******************************************************************************
+ * Read data from NVM3 located at a specified NVM3 key.
+ *
+ * @param[in] key the key of the NVM3 object.
+ * @param[out] buf buffer to write.
+ * @param[out] len the size of the NVM3 object.
+ * @param[in] maxlen maximum size to read.
+ * @return SL_STATUS_OK - if successful, error code otherwise.
  ******************************************************************************/
-static void set_timeout(bool activate)
+static sl_status_t get_nvm3_object(uint32_t key, uint8_t *buf, size_t *len, size_t maxlen)
 {
   sl_status_t sc;
-  if (activate) {
-    // Start or restart timer to timeout check
-    sc = app_timer_start(&state_timer,
-                         TIMEOUT,
-                         state_timer_cb,
-                         NO_CALLBACK_DATA,
-                         false);
-    app_assert_status(sc);
-  } else {
-    // Stop timer
-    sc = app_timer_stop(&state_timer);
-    app_assert_status(sc);
+  uint32_t type;
+  size_t read_len;
+
+  // Clamp read size to maxlen
+  sc = nvm3_status_to_sl_status(nvm3_getObjectInfo(NVM3_HANDLE, key, &type, len));
+  (void)type;
+
+  if (sc != SL_STATUS_OK) {
+    return sc;
+  }
+
+  // Read NVM3 data
+  read_len = (*len > maxlen) ? maxlen : *len;
+  sc = nvm3_status_to_sl_status(nvm3_readData(NVM3_HANDLE, key, buf, read_len));
+  return sc;
+}
+
+/*******************************************************************************
+ * Converts NVM3 status codes to SL status codes.
+ *
+ * @param[in] sc NVM3 status code
+ * @return SL status code.
+ ******************************************************************************/
+static sl_status_t nvm3_status_to_sl_status(Ecode_t sc)
+{
+  switch (sc) {
+    case ECODE_OK:                      return SL_STATUS_OK;
+    case ECODE_NVM3_ERR_PARAMETER:      return SL_STATUS_INVALID_PARAMETER;
+    case ECODE_NVM3_ERR_KEY_INVALID:    return SL_STATUS_INVALID_PARAMETER;
+    case ECODE_NVM3_ERR_KEY_NOT_FOUND:  return SL_STATUS_BT_PS_KEY_NOT_FOUND;
+    case ECODE_NVM3_ERR_STORAGE_FULL:   return SL_STATUS_BT_PS_STORE_FULL;
+    default:                            return (sl_status_t) (SL_STATUS_BLUETOOTH_SPACE + 0x80 + (sc & (~ECODE_EMDRV_NVM3_BASE)));
   }
 }
 
-/***************************************************************************//**
- * Timer Callback.
- * @param[in] handle pointer to handle instance
- * @param[in] data pointer to input data
+/*******************************************************************************
+ * Converts PSA status code to SL status code.
+ *
+ * @param[in] sc PSA status code
+ * @return SL status code.
  ******************************************************************************/
-static void state_timer_cb(app_timer_t *handle, void *data)
+static sl_status_t psa_status_to_sl_status(psa_status_t sc)
 {
-  (void)handle;
-  (void)data;
-
-  sl_bt_cbap_log_error("Timeout error. Disconnecting." APP_LOG_NL);
-  sl_bt_on_cbap_error();
-  cbap_reset();
-}
-
-// CBAP Peripheral event handler WEAK implementation.
-SL_WEAK void sl_bt_cbap_peripheral_on_event(sl_bt_cbap_peripheral_state_t status)
-{
-  (void)status;
-}
-
-// CBAP Central event handler WEAK implementation.
-SL_WEAK void sl_bt_cbap_central_on_event(sl_bt_cbap_central_state_t status)
-{
-  (void)status;
-}
-
-// Callback to handle CBAP process errors.
-SL_WEAK void sl_bt_on_cbap_error(void)
-{
-  sl_status_t sc;
-  sc = sl_bt_connection_close(connection);
-  app_assert_status(sc);
+  switch (sc) {
+    case PSA_SUCCESS:                     return SL_STATUS_OK;
+    case PSA_ERROR_GENERIC_ERROR:         return SL_STATUS_FAIL;
+    case PSA_ERROR_NOT_SUPPORTED:         return SL_STATUS_NOT_SUPPORTED;
+    case PSA_ERROR_NOT_PERMITTED:         return SL_STATUS_PERMISSION;
+    case PSA_ERROR_BUFFER_TOO_SMALL:      return SL_STATUS_WOULD_OVERFLOW;
+    case PSA_ERROR_ALREADY_EXISTS:        return SL_STATUS_ALREADY_EXISTS;
+    case PSA_ERROR_DOES_NOT_EXIST:        return SL_STATUS_FAIL;
+    case PSA_ERROR_BAD_STATE:             return SL_STATUS_INVALID_STATE;
+    case PSA_ERROR_INVALID_ARGUMENT:      return SL_STATUS_INVALID_PARAMETER;
+    case PSA_ERROR_INSUFFICIENT_MEMORY:   return SL_STATUS_NO_MORE_RESOURCE;
+    case PSA_ERROR_INSUFFICIENT_STORAGE:  return SL_STATUS_NO_MORE_RESOURCE;
+    case PSA_ERROR_COMMUNICATION_FAILURE: return SL_STATUS_IO;
+    case PSA_ERROR_STORAGE_FAILURE:       return SL_STATUS_BT_HARDWARE;
+    case PSA_ERROR_HARDWARE_FAILURE:      return SL_STATUS_BT_HARDWARE;
+    case PSA_ERROR_CORRUPTION_DETECTED:   return SL_STATUS_BT_DATA_CORRUPTED;
+    case PSA_ERROR_INSUFFICIENT_ENTROPY:  return SL_STATUS_BT_CRYPTO;
+    case PSA_ERROR_INVALID_SIGNATURE:     return SL_STATUS_INVALID_SIGNATURE;
+    case PSA_ERROR_INVALID_PADDING:       return SL_STATUS_BT_CRYPTO;
+    case PSA_ERROR_INSUFFICIENT_DATA:     return SL_STATUS_BT_CRYPTO;
+    case PSA_ERROR_INVALID_HANDLE:        return SL_STATUS_INVALID_HANDLE;
+    case PSA_ERROR_DATA_CORRUPT:          return SL_STATUS_BT_DATA_CORRUPTED;
+    case PSA_ERROR_DATA_INVALID:          return SL_STATUS_BT_CRYPTO;
+    default:                              return SL_STATUS_BT_UNSPECIFIED;
+  }
 }

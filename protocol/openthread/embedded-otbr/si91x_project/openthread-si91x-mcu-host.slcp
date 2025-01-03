@@ -1,0 +1,68 @@
+project_name: openthread-si91x-mcu-host-ftd
+label: ot-si91x
+package: OpenThread
+description: This platform project is used to generate a CMake library for SiWx917 SoC
+category: OpenThread Examples
+quality: experimental
+
+sdk:
+  id: simplicity_sdk
+  version: 2024.6.2
+sdk_extension:
+  - id: wiseconnect3_sdk
+    version: 3.3.2
+  - id: ot-si91x
+    version: 0.0.1
+component:
+  # ot-si91x components
+  - id: ot_mcu_platform_abstraction
+    from: ot-si91x
+  - id: ot_stack_features_config
+    from: ot-si91x
+  # SDK components
+  - id: sl_system
+  - id: freertos
+  - id: freertos_heap_4
+  - id: app_assert
+  - id: wiseconnect3_common
+    from: wiseconnect3_sdk
+  - id: sl_si91x_lwip_stack
+    from: wiseconnect3_sdk
+  - id: basic_network_config_manager
+    from: wiseconnect3_sdk
+  - id: si917_mem_config_3
+    from: wiseconnect3_sdk
+  - id: sl_si91x_mem_pool_buffers_with_quota
+    from: wiseconnect3_sdk
+  - id: sl_si91x_common_flash_nvm3
+    from: wiseconnect3_sdk
+  - id: sl_si91x_nvm3
+    from: wiseconnect3_sdk
+  - id: cmsis_usart
+    from: wiseconnect3_sdk
+  - id: sl_usart
+    from: wiseconnect3_sdk
+  - id: sl_ulp_uart
+    from: wiseconnect3_sdk
+  - id: sl_clock_manager
+    from: wiseconnect3_sdk
+configuration:
+- {name: SL_USART_MODE, value: SL_USART_MODE_ASYNCHRONOUS}
+- {name: SL_ULPUART_DMA_CONFIG_ENABLE, value: '0'}
+- {name: SL_USART0_DMA_CONFIG_ENABLE, value: '0'}
+
+define:
+  - name: SL_CATALOG_OPENTHREAD_CLI_PRESENT
+
+config_file:
+- path: ../src/mcu/si91x/defaults/sl_net_default_values.h
+  file_id: sl_net_default_values
+- path: ../src/mcu/si91x/defaults/lwipopts.h
+  file_id: lwipopts
+  condition: ["sl_si91x_lwip_stack"]
+
+toolchain_settings:
+  - option: gcc_compiler_option
+    value: -Wall
+  - option: optimize
+    value: debug

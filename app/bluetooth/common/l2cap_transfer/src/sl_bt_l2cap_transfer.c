@@ -28,7 +28,7 @@
  *
  ******************************************************************************/
 #include <string.h>
-#include "em_core.h"
+#include "sl_core.h"
 #include "sl_common.h"
 #include "sl_slist.h"
 #include "sl_bt_l2cap_transfer.h"

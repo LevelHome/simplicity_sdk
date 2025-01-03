@@ -173,7 +173,7 @@ void printKeyInfo(void)
   sl_zigbee_core_debug_println("%s out FC: %08X",
                                "NWK Key",
                                network_key_info.network_key_frame_counter);
-  sl_zigbee_core_debug_println("%s seq num: 0x%x",
+  sl_zigbee_core_debug_println("%s seq num: 0x%02X",
                                "NWK Key",
                                network_key_info.network_key_sequence_number);
   sl_zigbee_core_debug_print("%s: ", "NWK Key");
@@ -215,7 +215,7 @@ void optionSecurityAllowTrustCenterRejoinUsingWellKnownKey(sl_cli_command_arg_t 
 {
   bool allow = (bool)sl_cli_get_argument_uint8(arguments, 0);
   sl_zigbee_set_tc_rejoins_using_well_known_key_allowed(allow);
-  sl_zigbee_af_core_println("Trust Center %p allow trust center rejoins using "
+  sl_zigbee_af_core_println("Trust Center %s allow trust center rejoins using "
                             "well-known key.",
                             allow
                             ? "WILL"
@@ -240,7 +240,7 @@ void optionSecuritySetKeyRequestPolicy(sl_cli_command_arg_t *arguments)
 void changeKeyCommand(sl_cli_command_arg_t *arguments)
 {
   if (SL_ZIGBEE_NO_NETWORK != sl_zigbee_network_state()) {
-    sl_zigbee_af_core_println("%pstack must be down.", "ERROR: ");
+    sl_zigbee_af_core_println("%sstack must be down.", "ERROR: ");
   } else {
     uint8_t position = sl_cli_get_command_count(arguments) - 1;
 

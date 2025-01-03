@@ -33,7 +33,7 @@
 #include <stdio.h>
 
 #include "app_assert.h"
-#include "em_common.h"
+#include "sl_common.h"
 #include "sl_status.h"
 
 #include "app_timer.h"

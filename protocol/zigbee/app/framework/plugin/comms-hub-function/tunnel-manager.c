@@ -152,7 +152,7 @@ bool sli_zigbee_af_comms_hub_function_tunnel_create(sl_802154_long_addr_t remote
   uint8_t tunnelIndex;
   sl_zigbee_af_debug_print("CHF: TunnelCreate ");
   sl_zigbee_af_debug_debug_exec(sl_zigbee_af_print_big_endian_eui64(remoteDeviceId));
-  sl_zigbee_af_debug_println(" 0x%x", remoteEndpoint);
+  sl_zigbee_af_debug_println(" 0x%02X", remoteEndpoint);
 
   // We only support one tunnel to a given remote device/endpoint so if we
   // already have a tunnel lets work with it.
@@ -182,7 +182,7 @@ bool sli_zigbee_af_comms_hub_function_tunnel_create(sl_802154_long_addr_t remote
   // required or the code that is calling this function is in error.  Either way,
   // we'll print the error and return false indicating that the tunnel was
   // not created.
-  sl_zigbee_af_comms_hub_function_println("%p%p%p",
+  sl_zigbee_af_comms_hub_function_println("%s%s%s",
                                           "Error: ",
                                           "Tunnel Create failed: ",
                                           "Too many tunnels");
@@ -230,7 +230,7 @@ bool sli_zigbee_af_comms_hub_function_tunnel_send_data(sl_802154_long_addr_t rem
 
   success = (status == SL_ZIGBEE_ZCL_STATUS_SUCCESS);
   if (!success) {
-    sl_zigbee_af_comms_hub_function_println("%p%p%p0x%x",
+    sl_zigbee_af_comms_hub_function_println("%s%s%s0x%02X",
                                             "Error: ",
                                             "Tunnel SendData failed: ",
                                             "Tunneling Status: ",
@@ -288,7 +288,7 @@ void sli_zigbee_af_comms_hub_function_tunnel_close(sl_802154_long_addr_t remoteD
 {
   uint8_t tunnelId;
   tunnelId = findTunnelByDeviceId(remoteDeviceId);
-  sl_zigbee_af_debug_println("CHF: TunnelClosed:0x%x", tunnelId);
+  sl_zigbee_af_debug_println("CHF: TunnelClosed:0x%02X", tunnelId);
 
   if (tunnelId != EM_AF_PLUGIN_COMMS_HUB_FUNCTION_NULL_TUNNEL_INDEX) {
     tunnels[tunnelId].state = CLOSED_TUNNEL;
@@ -301,14 +301,14 @@ void sli_zigbee_af_comms_hub_function_print(void)
   sl_zigbee_af_comms_hub_function_println("");
   sl_zigbee_af_comms_hub_function_println("#   remNodeId remEp  remDevId             type     tId   timeout      state");
   for (i = 0; i < SL_ZIGBEE_AF_PLUGIN_COMMS_HUB_FUNCTION_TUNNEL_LIMIT; i++) {
-    sl_zigbee_af_comms_hub_function_print("%x: ", i);
+    sl_zigbee_af_comms_hub_function_print("%02X: ", i);
     if (tunnels[i].state != UNUSED_TUNNEL) {
-      sl_zigbee_af_comms_hub_function_print("0x%2x    0x%x   ",
+      sl_zigbee_af_comms_hub_function_print("0x%04X    0x%02X   ",
                                             tunnels[i].remoteNodeId,
                                             tunnels[i].remoteEndpoint);
       sl_zigbee_af_comms_hub_function_debug_exec(sl_zigbee_af_print_big_endian_eui64(tunnels[i].remoteDeviceId));
-      sl_zigbee_af_comms_hub_function_print("  %p  ", (tunnels[i].type == CLIENT_TUNNEL ? "client" : "server"));
-      sl_zigbee_af_comms_hub_function_print(" 0x%x  0x%4x   ",
+      sl_zigbee_af_comms_hub_function_print("  %s  ", (tunnels[i].type == CLIENT_TUNNEL ? "client" : "server"));
+      sl_zigbee_af_comms_hub_function_print(" 0x%02X  0x%08X   ",
                                             tunnels[i].tunnelId,
                                             tunnels[i].timeoutMSec);
       switch (tunnels[i].state) {
@@ -357,7 +357,7 @@ static void tunnelEventHandler(sl_zigbee_af_event_t * event)
         // JIRA EMAPPFWKV2-1392: Event handler was not registered and was not working properly
         // if timeout time has passed, then request a tunnel, else retry after least time remaining
         if (timeGTorEqualInt32u(timeNowMs, tunnels[tunnelIndex].timeoutMSec)) {
-          sl_zigbee_af_comms_hub_function_println("Retrying tunnel creation to node ID 0x%2x",
+          sl_zigbee_af_comms_hub_function_println("Retrying tunnel creation to node ID 0x%04X",
                                                   tunnels[tunnelIndex].remoteNodeId);
           if (requestTunnel(tunnelIndex)) {
             sl_zigbee_af_event_set_delay_ms(tunnelEventControl,
@@ -394,7 +394,7 @@ void sl_zigbee_af_tunneling_client_tunnel_opened_cb(uint8_t tunnelId,
                                                     sl_zigbee_af_plugin_tunneling_client_status_t tunnelStatus,
                                                     uint16_t maximumIncomingTransferSize)
 {
-  sl_zigbee_af_debug_println("CHF: ClientTunnelOpened:0x%x,0x%x,0x%2x", tunnelId, tunnelStatus, maximumIncomingTransferSize);
+  sl_zigbee_af_debug_println("CHF: ClientTunnelOpened:0x%02X,0x%02X,0x%04X", tunnelId, tunnelStatus, maximumIncomingTransferSize);
 
   if (responsePendingIndex != EM_AF_PLUGIN_COMMS_HUB_FUNCTION_NULL_TUNNEL_INDEX) {
     uint8_t tunnelIndex = responsePendingIndex;
@@ -452,7 +452,7 @@ void sl_zigbee_af_tunneling_client_data_received_cb(uint8_t tunnelId,
 {
   uint8_t tunnelIndex;
 
-  sl_zigbee_af_debug_print("CHF: ClientDataReceived:%x,[", tunnelId);
+  sl_zigbee_af_debug_print("CHF: ClientDataReceived:%02X,[", tunnelId);
   sl_zigbee_af_debug_print_buffer(data, dataLen, false);
   sl_zigbee_af_debug_println("]");
 
@@ -477,7 +477,7 @@ void sl_zigbee_af_tunneling_client_data_received_cb(uint8_t tunnelId,
 void sl_zigbee_af_tunneling_client_tunnel_closed_cb(uint8_t tunnelId)
 {
   uint8_t tunnelIndex;
-  sl_zigbee_af_debug_println("CHF: ClientTunnelClosed:0x%x", tunnelId);
+  sl_zigbee_af_debug_println("CHF: ClientTunnelClosed:0x%02X", tunnelId);
 
   tunnelIndex = findTunnelByTunnelId(tunnelId, CLIENT_TUNNEL);
   if (tunnelIndex != EM_AF_PLUGIN_COMMS_HUB_FUNCTION_NULL_TUNNEL_INDEX) {
@@ -505,7 +505,7 @@ bool sl_zigbee_af_tunneling_server_is_protocol_supported_cb(uint8_t protocolId,
 {
   sl_802154_long_addr_t remoteDeviceId;
 
-  sl_zigbee_af_debug_println("CHF: ServerIsProtocolSupported:0x%x 0x%2x", protocolId, manufacturerCode);
+  sl_zigbee_af_debug_println("CHF: ServerIsProtocolSupported:0x%02X 0x%04X", protocolId, manufacturerCode);
 
   // Since the tunneling cluster server code does not pass the EUI64 or the
   // node ID of the remote end of the tunnel so we need to look them up.
@@ -544,7 +544,7 @@ void sl_zigbee_af_tunneling_server_tunnel_opened_cb(uint16_t tunnelId,
   sl_802154_short_addr_t remoteNodeId;
   uint8_t tunnelIndex;
 
-  sl_zigbee_af_debug_println("CHF: ServerTunnelOpened:0x%x,0x%2x", tunnelId, maximumIncomingTransferSize);
+  sl_zigbee_af_debug_println("CHF: ServerTunnelOpened:0x%02X,0x%04X", tunnelId, maximumIncomingTransferSize);
 
   // Since the tunneling cluster server code does not pass the EUI64 or the
   // node ID of the remote end of the tunnel so we need to look them up.
@@ -590,7 +590,7 @@ void sl_zigbee_af_tunneling_server_tunnel_opened_cb(uint16_t tunnelId,
   // required or the code that is calling this function is in error.  Either way,
   // we'll print the error and return false indicating that the tunnel was
   // not created.
-  sl_zigbee_af_comms_hub_function_println("%p%p%p",
+  sl_zigbee_af_comms_hub_function_println("%s%s%s",
                                           "Error: ",
                                           "Tunnel Opened failed: ",
                                           "Too many tunnels");
@@ -611,7 +611,7 @@ void sl_zigbee_af_tunneling_server_data_received_cb(uint16_t tunnelId,
                                                     uint16_t dataLen)
 {
   uint8_t tunnelIndex;
-  sl_zigbee_af_debug_print("CHF: ServerDataReceived:%x,[", tunnelId);
+  sl_zigbee_af_debug_print("CHF: ServerDataReceived:%02X,[", tunnelId);
   sl_zigbee_af_debug_print_buffer(data, dataLen, false);
   sl_zigbee_af_debug_println("]");
 
@@ -638,7 +638,7 @@ void sl_zigbee_af_tunneling_server_tunnel_closed_cb(uint16_t tunnelId,
                                                     bool clientInitiated)
 {
   uint8_t tunnelIndex;
-  sl_zigbee_af_debug_println("CHF: ServerTunnelClosed:0x%x", tunnelId);
+  sl_zigbee_af_debug_println("CHF: ServerTunnelClosed:0x%02X", tunnelId);
 
   tunnelIndex = findTunnelByTunnelId(tunnelId, SERVER_TUNNEL);
   if (tunnelIndex != EM_AF_PLUGIN_COMMS_HUB_FUNCTION_NULL_TUNNEL_INDEX) {
@@ -659,7 +659,7 @@ void sl_zigbee_af_tunneling_server_tunnel_closed_cb(uint16_t tunnelId,
 void sl_zigbee_af_tunneling_server_data_error_cb(uint16_t tunnelIndex,
                                                  sl_zigbee_af_tunneling_transfer_data_status_t transferDataStatus)
 {
-  sl_zigbee_af_comms_hub_function_println("CHF: ServerDataError: 0x%x, 0x%x", tunnelIndex, transferDataStatus);
+  sl_zigbee_af_comms_hub_function_println("CHF: ServerDataError: 0x%02X, 0x%02X", tunnelIndex, transferDataStatus);
 }
 
 /** @brief Data Error
@@ -677,7 +677,7 @@ void sl_zigbee_af_tunneling_client_data_error_cb(uint8_t tunnelIndex,
 {
   uint8_t tunnelId;
   tunnelId = findTunnelByTunnelId(tunnelIndex, CLIENT_TUNNEL);
-  sl_zigbee_af_comms_hub_function_println("CHF: ClientDataError: 0x%x, 0x%x", tunnelIndex, transferDataStatus);
+  sl_zigbee_af_comms_hub_function_println("CHF: ClientDataError: 0x%02X, 0x%02X", tunnelIndex, transferDataStatus);
   if (transferDataStatus == SL_ZIGBEE_ZCL_TUNNELING_TRANSFER_DATA_STATUS_NO_SUCH_TUNNEL) {
     sl_zigbee_af_comms_hub_function_println("No Tunnel Found: New tunnel is requested for the device.");
     sli_zigbee_af_comms_hub_function_tunnel_cleanup(tunnels[tunnelId].remoteDeviceId);
@@ -734,7 +734,7 @@ static bool handleRequestTunnelFailure(uint8_t tunnelIndex, sl_zigbee_af_plugin_
 {
   uint8_t i;
 
-  sl_zigbee_af_debug_println("CHF: handleRequestTunnelFailure 0x%x, 0x%x",
+  sl_zigbee_af_debug_println("CHF: handleRequestTunnelFailure 0x%02X, 0x%02X",
                              tunnelIndex, status);
 
   if (status == SL_ZIGBEE_AF_PLUGIN_TUNNELING_CLIENT_BUSY) {
@@ -743,7 +743,7 @@ static bool handleRequestTunnelFailure(uint8_t tunnelIndex, sl_zigbee_af_plugin_
     tunnels[tunnelIndex].timeoutMSec = halCommonGetInt32uMillisecondTick()
                                        + (MILLISECOND_TICKS_PER_SECOND * 180);
     sl_zigbee_af_event_set_active(tunnelEventControl);
-    sl_zigbee_af_comms_hub_function_println("CHF: Busy status received from node ID 0x%2x", tunnels[tunnelIndex].remoteNodeId);
+    sl_zigbee_af_comms_hub_function_println("CHF: Busy status received from node ID 0x%04X", tunnels[tunnelIndex].remoteNodeId);
     return true;
   } else if (status == SL_ZIGBEE_AF_PLUGIN_TUNNELING_CLIENT_NO_MORE_TUNNEL_IDS) {
     // Per GBCS close any other tunnels we may have with the device
@@ -765,7 +765,7 @@ static bool handleRequestTunnelFailure(uint8_t tunnelIndex, sl_zigbee_af_plugin_
       return true;
     }
     // no tunnels were closed so nothing more we can do
-    sl_zigbee_af_comms_hub_function_println("%p%p%p",
+    sl_zigbee_af_comms_hub_function_println("%s%s%s",
                                             "Error: ",
                                             "Tunnel Create failed: ",
                                             "No more tunnel ids");
@@ -775,7 +775,7 @@ static bool handleRequestTunnelFailure(uint8_t tunnelIndex, sl_zigbee_af_plugin_
 
   // All other errors are either due to mis-configuration or errors that we
   // cannot recover from so print the error and return false.
-  sl_zigbee_af_comms_hub_function_println("%p%p%p0x%x",
+  sl_zigbee_af_comms_hub_function_println("%s%s%s0x%02X",
                                           "Error: ",
                                           "Tunnel Create failed: ",
                                           "Tunneling Client Status: ",
@@ -794,7 +794,7 @@ static uint8_t findTunnelByDeviceId(sl_802154_long_addr_t remoteDeviceId)
   // sl_zigbee_af_debug_println("");
 
   for (tunnelIndex = 0; tunnelIndex < SL_ZIGBEE_AF_PLUGIN_COMMS_HUB_FUNCTION_TUNNEL_LIMIT; tunnelIndex++) {
-    // sl_zigbee_af_debug_print("CHF: findTunnelByDeviceId compare to 0x%x ",
+    // sl_zigbee_af_debug_print("CHF: findTunnelByDeviceId compare to 0x%02X ",
     //                   tunnels[tunnelIndex].state);
     // sl_zigbee_af_debug_debug_exec(sl_zigbee_af_print_big_endian_eui64(tunnels[tunnelIndex].remoteDeviceId));
     // sl_zigbee_af_debug_println("");
@@ -811,11 +811,11 @@ static uint8_t findTunnelByTunnelId(uint8_t tunnelId, sli_zigbee_af_comms_hub_fu
 {
   uint8_t tunnelIndex;
 
-  // sl_zigbee_af_debug_println("CHF: findTunnelByTunnelId 0x%x 0x%x",
+  // sl_zigbee_af_debug_println("CHF: findTunnelByTunnelId 0x%02X 0x%02X",
   //                     tunnelId, type);
 
   for (tunnelIndex = 0; tunnelIndex < SL_ZIGBEE_AF_PLUGIN_COMMS_HUB_FUNCTION_TUNNEL_LIMIT; tunnelIndex++) {
-    // sl_zigbee_af_debug_println("CHF: findTunnelByTunnelId compare to 0x%x 0x%x 0x%x",
+    // sl_zigbee_af_debug_println("CHF: findTunnelByTunnelId compare to 0x%02X 0x%02X 0x%02X",
     //                     tunnels[tunnelIndex].state, tunnels[tunnelIndex].tunnelId, tunnels[tunnelIndex].type);
     if (tunnels[tunnelIndex].state != UNUSED_TUNNEL
         && tunnels[tunnelIndex].tunnelId == tunnelId

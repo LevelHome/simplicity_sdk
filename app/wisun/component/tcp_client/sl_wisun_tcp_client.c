@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_wisun_tcp_client.c
+ * @brief Wi-SUN TCP client
  *******************************************************************************
  * # License
  * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
@@ -31,12 +31,11 @@
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <string.h>
 #include <stdio.h>
+
 #include "socket/socket.h"
 #include "sl_wisun_tcp_client.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -58,22 +57,22 @@
 // -----------------------------------------------------------------------------
 
 /* create tcp client */
-void sl_wisun_tcp_client_create(const char *ip_address, uint16_t port)
+int32_t sl_wisun_tcp_client_create(const char *ip_address, uint16_t port)
 {
-  int32_t sockid = SOCKET_RETVAL_ERROR; // client socket id
+  int32_t sockid = SOCKET_INVALID_ID; // client socket id
   sockaddr_in6_t server_addr;
 
   if (ip_address == NULL) {
     printf("[Failed: IP address is NULL ptr]\n");
-    return;
+    return SOCKET_INVALID_ID;
   }
 
   // create client socket
-  sockid = socket(AF_INET6, SOCK_STREAM, IPPROTO_IP);
+  sockid = socket(AF_INET6, SOCK_STREAM | SOCK_NONBLOCK, IPPROTO_TCP);
 
-  if (sockid == SOCKET_RETVAL_ERROR) {
+  if (sockid == SOCKET_INVALID_ID) {
     printf("[Failed to create socket: %ld]\n", sockid);
-    return;
+    return SOCKET_INVALID_ID;
   } else {
     printf("[Socket created: %ld]\n", sockid);
   }
@@ -85,15 +84,19 @@ void sl_wisun_tcp_client_create(const char *ip_address, uint16_t port)
   if (inet_pton(AF_INET6, ip_address,
                 &server_addr.sin6_addr) != 1) {
     printf("[Invalid IP address: %s]\n", ip_address);
-    return;
+    sl_wisun_tcp_client_close(sockid);
+    return SOCKET_INVALID_ID;
   }
 
   // connect to the server
   if (connect(sockid, (const struct sockaddr *)&server_addr,
               sizeof(server_addr)) == SOCKET_RETVAL_ERROR) {
     printf("[Failed to connect to the server: %s]\n", ip_address);
-    return;
+    sl_wisun_tcp_client_close(sockid);
+    return SOCKET_INVALID_ID;
   }
+
+  return sockid;
 }
 
 /* close tcp client socket */
@@ -101,6 +104,8 @@ void sl_wisun_tcp_client_close(const int32_t sockid)
 {
   if (close(sockid) == SOCKET_RETVAL_ERROR) {
     printf("[Failed to close socket: %ld]\n", sockid);
+  } else {
+    printf("[Socket closed: %ld]\n", sockid);
   }
 }
 

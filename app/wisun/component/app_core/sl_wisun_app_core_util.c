@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief Wi-SUN Application Core utility functions
+ * @file sl_wisun_app_core_util.c
+ * @brief Wi-SUN Application Core utility
  *******************************************************************************
  * # License
  * <b>Copyright 2019 Silicon Laboratories Inc. www.silabs.com</b>

@@ -63,8 +63,6 @@ typedef struct {
 
 static sl_status_t enable_context(app_rta_internal_context_t *ctx_int,
                                   bool                       enable);
-static sl_status_t acquire(void);
-static sl_status_t release(void);
 
 // -----------------------------------------------------------------------------
 // Private variables
@@ -154,19 +152,7 @@ sl_status_t app_rta_enable_context(app_rta_context_t ctx, bool enable)
     return SL_STATUS_INVALID_STATE;
   }
 
-  sc = acquire();
-  if (sc != SL_STATUS_OK) {
-    return sc;
-  }
-
   sc = enable_context(ctx_int, enable);
-
-  if (sc != SL_STATUS_OK
-      || !enable
-      || !ctx_int->config.requirement.guard) {
-    release();
-  }
-
   return sc;
 }
 
@@ -187,18 +173,16 @@ sl_status_t app_rta_proceed(app_rta_context_t ctx)
   if (!ctx_int->enabled) {
     return SL_STATUS_INVALID_STATE;
   }
-  // Increment variable
-  sc = acquire();
-  if (sc != SL_STATUS_OK) {
-    return sc;
-  }
 
+  CORE_DECLARE_IRQ_STATE;
+  CORE_ENTER_CRITICAL();
   if (ctx_int->run == UINT32_MAX) {
     sc = SL_STATUS_FAIL;
   } else {
     ctx_int->run++;
   }
-  (void)release();
+  CORE_EXIT_CRITICAL();
+
   return sc;
 }
 
@@ -216,9 +200,8 @@ sl_status_t app_rta_acquire(app_rta_context_t ctx)
   if (!(((app_rta_internal_context_t *)ctx)->enabled)) {
     return SL_STATUS_INVALID_STATE;
   }
-  // Acquire guard
-  sl_status_t sc = acquire();
-  return sc;
+  // There are no tasks to protect shared resources from.
+  return SL_STATUS_OK;
 }
 
 sl_status_t app_rta_release(app_rta_context_t ctx)
@@ -235,9 +218,8 @@ sl_status_t app_rta_release(app_rta_context_t ctx)
   if (!(((app_rta_internal_context_t *)ctx)->enabled)) {
     return SL_STATUS_INVALID_STATE;
   }
-  // Release guard
-  sl_status_t sc = release();
-  return sc;
+  // There are no tasks to protect shared resources from.
+  return SL_STATUS_OK;
 }
 
 sl_status_t app_rta_signal(app_rta_context_t ctx)
@@ -257,13 +239,11 @@ sl_status_t app_rta_signal(app_rta_context_t ctx)
     return SL_STATUS_INVALID_STATE;
   }
   // Set signal and proceed
-  sc = acquire();
-  if (sc != SL_STATUS_OK) {
-    return sc;
-  }
+  CORE_DECLARE_IRQ_STATE;
+  CORE_ENTER_CRITICAL();
   // Check overflow
   if (ctx_int->signal == UINT16_MAX) {
-    (void)release();
+    CORE_EXIT_CRITICAL();
     return SL_STATUS_WOULD_OVERFLOW;
   }
   ctx_int->signal++;
@@ -275,7 +255,7 @@ sl_status_t app_rta_signal(app_rta_context_t ctx)
       ctx_int->run++;
     }
   }
-  (void)release();
+  CORE_EXIT_CRITICAL();
   return sc;
 }
 
@@ -296,18 +276,15 @@ sl_status_t app_rta_signal_check(app_rta_context_t ctx)
     return SL_STATUS_INVALID_STATE;
   }
 
-  sc = acquire();
-  if (sc != SL_STATUS_OK) {
-    return sc;
-  }
-
+  CORE_DECLARE_IRQ_STATE;
+  CORE_ENTER_CRITICAL();
   if (ctx_int->signal) {
     ctx_int->signal--;
     sc = SL_STATUS_OK;
   } else {
     sc = SL_STATUS_EMPTY;
   }
-  (void)release();
+  CORE_EXIT_CRITICAL();
 
   return sc;
 }
@@ -334,22 +311,16 @@ sl_status_t app_rta_signal_check_and_acquire(app_rta_context_t ctx)
     return SL_STATUS_INVALID_STATE;
   }
 
-  // Acquire
-  sc = acquire();
-  if (sc != SL_STATUS_OK) {
-    return sc;
-  }
-
+  CORE_DECLARE_IRQ_STATE;
+  CORE_ENTER_CRITICAL();
   // Check signal
   if (ctx_int->signal) {
     ctx_int->signal--;
     sc = SL_STATUS_OK;
   } else {
     sc = SL_STATUS_EMPTY;
-    // Release since no signal present
-    (void)release();
   }
-
+  CORE_EXIT_CRITICAL();
   return sc;
 }
 
@@ -381,12 +352,10 @@ sl_status_t app_rta_queue_push(app_rta_context_t ctx,
   if (!ctx_int->enabled) {
     return SL_STATUS_INVALID_STATE;
   }
-  sc = acquire();
-  if (sc != SL_STATUS_OK) {
-    return sc;
-  }
 
   // Add data to the queue
+  CORE_DECLARE_IRQ_STATE;
+  CORE_ENTER_CRITICAL();
   sc = app_queue_add(&ctx_int->queue_handle->queue, data);
   // Proceed
   if (sc == SL_STATUS_OK) {
@@ -396,7 +365,7 @@ sl_status_t app_rta_queue_push(app_rta_context_t ctx,
       ctx_int->run++;
     }
   }
-  (void)release();
+  CORE_EXIT_CRITICAL();
   return sc;
 }
 
@@ -422,18 +391,14 @@ sl_status_t app_rta_queue_read(app_rta_context_t ctx,
   if (!ctx_int->enabled) {
     return SL_STATUS_INVALID_STATE;
   }
-  sc = acquire();
-  if (sc != SL_STATUS_OK) {
-    return sc;
-  }
 
+  CORE_DECLARE_IRQ_STATE;
+  CORE_ENTER_CRITICAL();
   sc = app_queue_remove(&ctx_int->queue_handle->queue, data);
   if (sc == SL_STATUS_OK) {
     *size = ctx_int->config.queue_element_size;
   }
-
-  (void)release();
-
+  CORE_EXIT_CRITICAL();
   return sc;
 }
 
@@ -464,21 +429,13 @@ sl_status_t app_rta_queue_read_and_acquire(app_rta_context_t ctx,
     return SL_STATUS_INVALID_STATE;
   }
 
-  // Acquire
-  sc = acquire();
-  if (sc != SL_STATUS_OK) {
-    return sc;
-  }
-
+  CORE_DECLARE_IRQ_STATE;
+  CORE_ENTER_CRITICAL();
   sc = app_queue_remove(&ctx_int->queue_handle->queue, data);
-
   if (sc == SL_STATUS_OK) {
     *size = ctx_int->config.queue_element_size;
-  } else {
-    // Release since queue is empty (or error occurred).
-    (void)release();
   }
-
+  CORE_EXIT_CRITICAL();
   return sc;
 }
 
@@ -497,25 +454,17 @@ void app_rta_internal_init(void)
 bool app_rta_is_ok_to_sleep(void)
 {
   sl_slist_node_t *ctx_iterator;
-  sl_status_t sc;
 
   SL_SLIST_FOR_EACH(ctx_list, ctx_iterator) {
-    app_rta_internal_context_t *ctx
-      = (app_rta_internal_context_t *)ctx_iterator;
+    CORE_DECLARE_IRQ_STATE;
+    CORE_ENTER_CRITICAL();
+    app_rta_internal_context_t *ctx = (app_rta_internal_context_t *)ctx_iterator;
     // Check context
-    sc = acquire();
-    if (sc != SL_STATUS_OK) {
-      if (ctx->config.error != NULL) {
-        ctx->config.error(APP_RTA_ERROR_ACQUIRE_FAILED, sc);
-      }
-      return false;
-    }
     if (ctx->enabled && (ctx->run > 0)) {
-      (void)release();
+      CORE_EXIT_CRITICAL();
       return false;
-    } else {
-      (void)release();
     }
+    CORE_EXIT_CRITICAL();
   }
   return true;
 }
@@ -523,25 +472,17 @@ bool app_rta_is_ok_to_sleep(void)
 sl_power_manager_on_isr_exit_t app_rta_on_isr_exit(void)
 {
   sl_slist_node_t *ctx_iterator;
-  sl_status_t sc;
 
   SL_SLIST_FOR_EACH(ctx_list, ctx_iterator) {
-    app_rta_internal_context_t *ctx
-      = (app_rta_internal_context_t *)ctx_iterator;
+    CORE_DECLARE_IRQ_STATE;
+    CORE_ENTER_CRITICAL();
+    app_rta_internal_context_t *ctx = (app_rta_internal_context_t *)ctx_iterator;
     // Check context
-    sc = acquire();
-    if (sc != SL_STATUS_OK) {
-      if (ctx->config.error != NULL) {
-        ctx->config.error(APP_RTA_ERROR_ACQUIRE_FAILED, sc);
-      }
-      return SL_POWER_MANAGER_WAKEUP;
-    }
     if (ctx->enabled && (ctx->run > 0)) {
-      (void)release();
+      CORE_EXIT_CRITICAL();
       return SL_POWER_MANAGER_WAKEUP;
-    } else {
-      (void)release();
     }
+    CORE_EXIT_CRITICAL();
   }
 
   return SL_POWER_MANAGER_IGNORE;
@@ -549,30 +490,24 @@ sl_power_manager_on_isr_exit_t app_rta_on_isr_exit(void)
 
 void app_rta_step(void)
 {
-  sl_status_t sc;
   sl_slist_node_t *ctx_iterator;
   // Iterate over context list.
   SL_SLIST_FOR_EACH(ctx_list, ctx_iterator) {
     app_rta_internal_context_t *ctx
       = (app_rta_internal_context_t *)ctx_iterator;
-    // Acquire guard.
-    sc = acquire();
-    if (sc != SL_STATUS_OK) {
-      if (ctx->config.error != NULL) {
-        ctx->config.error(APP_RTA_ERROR_ACQUIRE_FAILED, sc);
-      }
-      break;
-    }
+    // Disable interrupts.
+    CORE_DECLARE_IRQ_STATE;
+    CORE_ENTER_CRITICAL();
     // Check context.
     if ((ctx->enabled) && (ctx->run > 0)) {
       ctx->run--;
-      // Release guard.
-      (void)release();
+      // Enable interrupts.
+      CORE_EXIT_CRITICAL();
       // Execute step function of the context.
       ctx->config.step();
     } else {
-      // Just release the guard, no execution is required.
-      (void)release();
+      // Enable interrupts, no execution is required.
+      CORE_EXIT_CRITICAL();
     }
   }
 }
@@ -618,16 +553,4 @@ static sl_status_t enable_context(app_rta_internal_context_t *ctx_int,
     ctx_int->enabled = true;
   }
   return sc;
-}
-
-static sl_status_t acquire(void)
-{
-  // There are no tasks to protect shared resources from.
-  return SL_STATUS_OK;
-}
-
-static sl_status_t release(void)
-{
-  // There are no tasks to protect shared resources from.
-  return SL_STATUS_OK;
 }

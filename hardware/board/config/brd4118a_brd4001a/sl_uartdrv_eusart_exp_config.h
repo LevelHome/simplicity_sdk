@@ -99,11 +99,11 @@
 #define SL_UARTDRV_EUSART_EXP_PERIPHERAL_NO      1
 
 // EUSART1 TX on PC12
-#define SL_UARTDRV_EUSART_EXP_TX_PORT            gpioPortC
+#define SL_UARTDRV_EUSART_EXP_TX_PORT            SL_GPIO_PORT_C
 #define SL_UARTDRV_EUSART_EXP_TX_PIN             12
 
 // EUSART1 RX on PC13
-#define SL_UARTDRV_EUSART_EXP_RX_PORT            gpioPortC
+#define SL_UARTDRV_EUSART_EXP_RX_PORT            SL_GPIO_PORT_C
 #define SL_UARTDRV_EUSART_EXP_RX_PIN             13
 
 

@@ -175,14 +175,14 @@ void sl_zigbee_af_sub_ghz_cluster_client_tick_cb(uint8_t endpoint)
   sl_zigbee_af_trust_center_keepalive_enable();
 #endif
 
-  sl_zigbee_af_debug_println("%p resumed",
+  sl_zigbee_af_debug_println("%s resumed",
                              "Sub-GHz client: sending of ZCL messages");
 }
 
 //-----------------------
 // ZCL commands callbacks
 
-bool sl_zigbee_af_sub_ghz_cluster_suspend_zcl_messages_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_sub_ghz_cluster_suspend_zcl_messages_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_sub_g_hz_cluster_suspend_zcl_messages_command_t cmd_data;
   // Check we are on the sub-GHz interface
@@ -190,15 +190,15 @@ bool sl_zigbee_af_sub_ghz_cluster_suspend_zcl_messages_cb(sl_zigbee_af_cluster_c
   sl_zigbee_network_parameters_t parameters;
   if (sl_zigbee_af_get_network_parameters(&nodeType, &parameters) != SL_STATUS_OK) {
     sl_zigbee_af_debug_println("Error: Could not determine node type");
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   } else if (parameters.radioChannel < 128) {
     sl_zigbee_af_debug_println("Ignoring SuspendZclMessages received on a 2.4GHz channel");
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   if (zcl_decode_sub_g_hz_cluster_suspend_zcl_messages_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   if (!sl_zigbee_af_sub_ghz_suspend_zcl_messages_cb(cmd_data.period)) {
@@ -208,7 +208,7 @@ bool sl_zigbee_af_sub_ghz_cluster_suspend_zcl_messages_cb(sl_zigbee_af_cluster_c
     sl_zigbee_af_trust_center_keepalive_disable();
 #endif
 
-    sl_zigbee_af_debug_println("%p suspended for %d minutes",
+    sl_zigbee_af_debug_println("%s suspended for %d minutes",
                                "Sub-GHz client: sending of ZCL messages",
                                cmd_data.period);
 
@@ -220,12 +220,9 @@ bool sl_zigbee_af_sub_ghz_cluster_suspend_zcl_messages_cb(sl_zigbee_af_cluster_c
 
   if (cmd_data.period == 0) {
     // Send Default Response
-    sl_zigbee_af_cluster_command_t * const cmd = sl_zigbee_af_current_command();
-    if (cmd) {  // sanity, in case sl_zigbee_af_current_command() returns NULL
-      sl_zigbee_af_send_default_response(cmd, SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-    }
+    return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
   }
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
 uint32_t sl_zigbee_af_sub_ghz_cluster_client_command_parse(sl_service_opcode_t opcode,
@@ -234,13 +231,11 @@ uint32_t sl_zigbee_af_sub_ghz_cluster_client_command_parse(sl_service_opcode_t o
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific && cmd->commandId == ZCL_SUSPEND_ZCL_MESSAGES_COMMAND_ID) {
-    wasHandled = sl_zigbee_af_sub_ghz_cluster_suspend_zcl_messages_cb(cmd);
+    status = sl_zigbee_af_sub_ghz_cluster_suspend_zcl_messages_cb(cmd);
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

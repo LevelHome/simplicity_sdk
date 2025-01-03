@@ -29,7 +29,6 @@ ui_hints:
 tag:
   - hardware:device:ram:8
 component:
-   - id: emlib_chip
    - id: mbedtls_aes
    - id: mbedtls_hash
    - id: mbedtls_sha

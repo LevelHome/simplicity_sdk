@@ -82,7 +82,7 @@ static sl_zigbee_af_calendar_struct_t * findCalendarByCalId(uint32_t issuerCalen
       return cal;
     }
   }
-  sl_zigbee_af_calendar_cluster_println("ERR: Unable to find calendar with id(0x%4X) ", issuerCalendarId);
+  sl_zigbee_af_calendar_cluster_println("ERR: Unable to find calendar with id(0x%08X) ", issuerCalendarId);
   return NULL;
 }
 
@@ -305,7 +305,7 @@ bool sl_zigbee_af_calendar_common_add_special_days_info(uint32_t issuerCalendarI
         cal->specialDays[cal->numberOfSpecialDayProfiles].flags = 0;
         cal->specialDays[cal->numberOfSpecialDayProfiles].startDate = startDate;
 
-        sl_zigbee_af_calendar_cluster_println("Updated: Calendar(calId=0x%4X)",
+        sl_zigbee_af_calendar_cluster_println("Updated: Calendar(calId=0x%08X)",
                                               cal->calendarId);
         sl_zigbee_af_calendar_cluster_println("         SpecialDays[%d]", cal->numberOfSpecialDayProfiles);
         sl_zigbee_af_calendar_cluster_print("           startDate: ");
@@ -336,7 +336,7 @@ bool sl_zigbee_af_calendar_common_add_day_prof_info(uint32_t issuerCalendarId,
   uint8_t scheduleEntryIndex = 0;
 
   if (cal == NULL) {
-    sl_zigbee_af_calendar_cluster_println("ERR: Unable to find calendar with id(0x%4X)",
+    sl_zigbee_af_calendar_cluster_println("ERR: Unable to find calendar with id(0x%08X)",
                                           issuerCalendarId);
     status = false;
     goto kickout;
@@ -375,9 +375,9 @@ bool sl_zigbee_af_calendar_common_add_day_prof_info(uint32_t issuerCalendarId,
     normalDay->data =  priceTier;
     sl_zigbee_af_calendar_cluster_println("           ScheduledEntries[%d]",
                                           scheduleEntryIndex);
-    sl_zigbee_af_calendar_cluster_println("             startTime: 0x%2X from midnight",
+    sl_zigbee_af_calendar_cluster_println("             startTime: 0x%04X from midnight",
                                           minutesFromMidnight);
-    sl_zigbee_af_calendar_cluster_println("             price tier: 0x%X",
+    sl_zigbee_af_calendar_cluster_println("             price tier: 0x%02X",
                                           priceTier);
   }
 

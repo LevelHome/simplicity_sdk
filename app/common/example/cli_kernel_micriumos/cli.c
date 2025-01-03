@@ -38,7 +38,9 @@
 
 void echo_str(sl_cli_command_arg_t *arguments);
 void echo_int(sl_cli_command_arg_t *arguments);
+#if SL_SIMPLE_LED_COUNT > 0
 void led_cmd(sl_cli_command_arg_t *arguments);
+#endif
 
 /*******************************************************************************
  ***************************  LOCAL VARIABLES   ********************************
@@ -56,11 +58,13 @@ static const sl_cli_command_info_t cmd__echoint = \
                  "Just a number...",
                  { SL_CLI_ARG_INT8, SL_CLI_ARG_ADDITIONAL, SL_CLI_ARG_END, });
 
+#if SL_SIMPLE_LED_COUNT > 0
 static const sl_cli_command_info_t cmd__led = \
   SL_CLI_COMMAND(led_cmd,
                  "Change an led status",
                  "led number: 0 or 1"SL_CLI_UNIT_SEPARATOR "instruction: on, off, or toggle",
                  { SL_CLI_ARG_UINT8, SL_CLI_ARG_WILDCARD, SL_CLI_ARG_END, });
+#endif
 
 static sl_cli_command_entry_t a_table[] = {
   { "echo_str", &cmd__echostr, false },
@@ -125,6 +129,7 @@ void echo_int(sl_cli_command_arg_t *arguments)
   }
 }
 
+#if SL_SIMPLE_LED_COUNT > 0
 /***************************************************************************//**
  * Callback for the led
  *
@@ -145,13 +150,17 @@ void led_cmd(sl_cli_command_arg_t *arguments)
 
   // Read the provided led number and verify it is valid
   led_number = sl_cli_get_argument_uint8(arguments, 0);
-  if (led_number > 1) {
-    printf("Invalid led. Only led 0 and 1 present.\r\n");
+  if (led_number > SL_SIMPLE_LED_COUNT - 1) {
+    printf("Invalid led. Only led(s) available: 0 to %d\r\n", SL_SIMPLE_LED_COUNT - 1);
     return;
   }
 
-  // Get an handle to the appropriate led
-  led = led_number == 0 ? sl_led_led0 : sl_led_led1;
+  // Get a handle to the appropriate LED
+#if SL_SIMPLE_LED_COUNT > 1  // Check if more than one LED is available
+  led = (led_number == 0) ? sl_led_led0 : sl_led_led1;
+#else
+  led = sl_led_led0; // Only one LED is available, so always use sl_led_led0
+#endif
 
   // Get the instruction provided
   instruction = sl_cli_get_argument_string(arguments, 1);
@@ -170,6 +179,7 @@ void led_cmd(sl_cli_command_arg_t *arguments)
     printf("Incorrect instruction. Please use on, off or toggle\r\n");
   }
 }
+#endif
 
 /*******************************************************************************
  **************************   GLOBAL FUNCTIONS   *******************************

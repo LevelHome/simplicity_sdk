@@ -68,6 +68,20 @@
 #define NVM3_DEFAULT_NVM_SIZE  40960
 #endif
 
+#if defined(NVM3_SECURITY)
+#ifndef NVM3_DEFAULT_SECURITY_TYPE
+// <o NVM3_DEFAULT_SECURITY_TYPE> NVM3 Default Instance Security Type
+// <i> Security type will only take effect when initializing the NVM for the
+// <i> first time or if the NVM is completely erased. In that case, all pages
+// <i> will be initialized with the supplied security type. After nvm3_open is
+// <i> called, security type will be consumed and will have no effect on further
+// <i> calls to nvm3_open. Currently, only authenticated encryption is supported.
+// <NVM3_SECURITY_AEAD=> Authenticated Encryption
+// <i> Default: NVM3_SECURITY_AEAD
+#define NVM3_DEFAULT_SECURITY_TYPE  NVM3_SECURITY_AEAD
+#endif
+#endif
+
 // </h>
 
 // <<< end of configuration section >>>

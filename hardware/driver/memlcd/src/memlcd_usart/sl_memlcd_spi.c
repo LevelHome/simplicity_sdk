@@ -28,9 +28,10 @@
  *
  ******************************************************************************/
 
+#include "sl_common.h"
 #include "sl_clock_manager.h"
 #include "sl_memlcd_spi.h"
-#include "em_gpio.h"
+#include "sl_gpio.h"
 
 sl_status_t sli_memlcd_spi_init(sli_memlcd_spi_handle_t *handle, int baudrate, USART_ClockMode_TypeDef mode)
 {
@@ -51,11 +52,20 @@ sl_status_t sli_memlcd_spi_init(sli_memlcd_spi_handle_t *handle, int baudrate, U
   uint32_t rxpen = GPIO->USARTROUTE[usart_index].ROUTEEN & _GPIO_USART_ROUTEEN_RXPEN_MASK;
 #endif
 
+  sl_gpio_t clk_gpio = {
+    .port = (sl_gpio_port_t)handle->clk_port,
+    .pin = handle->clk_pin,
+  };
+  sl_gpio_t mosi_gpio = {
+    .port = (sl_gpio_port_t)handle->mosi_port,
+    .pin = handle->mosi_pin,
+  };
+
   sl_clock_manager_enable_bus_clock(SL_BUS_CLOCK_GPIO);
   sl_clock_manager_enable_bus_clock(handle->clock);
 
-  GPIO_PinModeSet((GPIO_Port_TypeDef)handle->clk_port, handle->clk_pin, gpioModePushPull, 0);
-  GPIO_PinModeSet((GPIO_Port_TypeDef)handle->mosi_port, handle->mosi_pin, gpioModePushPull, 0);
+  sl_gpio_set_pin_mode(&clk_gpio, SL_GPIO_MODE_PUSH_PULL, 0);
+  sl_gpio_set_pin_mode(&mosi_gpio, SL_GPIO_MODE_PUSH_PULL, 0);
 
   init.baudrate = baudrate;
   init.clockMode = mode;

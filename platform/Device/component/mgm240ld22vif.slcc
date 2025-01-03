@@ -8,6 +8,10 @@
   - name: MGM240LD22VIF
     unless:
     - device_content_override
+  - name: SL_CODE_COMPONENT_SYSTEM
+    unless:
+    - device_content_override
+    value: system
 - source:
   - path: platform/Device/SiliconLabs/MGM24/Source/startup_mgm24.c
     unless:
@@ -175,6 +179,8 @@
   - id: trustzone_unaware
 - requires:
   - name: cmsis_core
+  - name: code_classification
+  - name: component_catalog
   - name: MGM240LD22VIF_config
 - template_contribution:
   - name: device_opn
@@ -225,6 +231,8 @@
       count: '2'
       mask: '0x0003'
       name: gpio_port_d
+  - name: code_classification_components
+    value: system
 - tag:
   - device:opn:mgm240ld22vif
 - toolchain_settings:

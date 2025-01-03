@@ -88,11 +88,11 @@
 #define IOT_I2C_CFG_EXP_PERIPHERAL_NO            1
 
 // I2C1 SCL on PC04
-#define IOT_I2C_CFG_EXP_SCL_PORT                 gpioPortC
+#define IOT_I2C_CFG_EXP_SCL_PORT                 SL_GPIO_PORT_C
 #define IOT_I2C_CFG_EXP_SCL_PIN                  4
 
 // I2C1 SDA on PC05
-#define IOT_I2C_CFG_EXP_SDA_PORT                 gpioPortC
+#define IOT_I2C_CFG_EXP_SDA_PORT                 SL_GPIO_PORT_C
 #define IOT_I2C_CFG_EXP_SDA_PIN                  5
 
 // [I2C_IOT_I2C_CFG_EXP]$

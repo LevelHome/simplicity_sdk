@@ -20,11 +20,13 @@
 #include "stack/include/sl_zigbee_types_internal.h"
 
 void sli_zigbee_handle_ieee_joining_list_request(sl_802154_short_addr_t source,
+                                                 sl_zigbee_aps_frame_t *apsFrame,
                                                  sli_zigbee_packet_header_t header,
                                                  bool broadcastRequest,
                                                  uint8_t *contents)
 {
   (void)source;
+  (void)apsFrame;
   (void)header;
   (void)broadcastRequest;
   (void)contents;

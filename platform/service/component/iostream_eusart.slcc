@@ -20,6 +20,8 @@ config_file:
     file_id: iostream_eusart_config
     condition: [device_series_3]
 provides:
+  - name: iostream_console_support
+    allow_multiple: true
   - name: iostream_eusart
     allow_multiple: true
   - name: iostream_transport
@@ -27,6 +29,7 @@ provides:
 requires:
   - name: dmadrv
   - name: iostream_eusart_core
+  - name: iostream
 template_contribution:
   - name: iostream_eusart_instances
     value: "{{instance}}"

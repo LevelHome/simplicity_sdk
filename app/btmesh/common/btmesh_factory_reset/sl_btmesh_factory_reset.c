@@ -29,9 +29,10 @@
  ******************************************************************************/
 
 #include "sl_status.h"
+#include "sl_udelay.h"
 #include "sl_bt_api.h"
 #include "sl_btmesh_api.h"
-#include "em_common.h"
+#include "sl_common.h"
 #include "app_assert.h"
 
 #include "sl_component_catalog.h"
@@ -39,10 +40,6 @@
 #ifdef SL_CATALOG_CLI_PRESENT
 #include "sl_cli.h"
 #endif // SL_CATALOG_CLI_PRESENT
-
-#ifdef SL_CATALOG_SLEEPTIMER_PRESENT
-#include "sl_sleeptimer.h"
-#endif
 
 #include "sl_btmesh_factory_reset.h"
 #include "sl_btmesh_node_reset_handler.h"
@@ -72,7 +69,7 @@ void sl_btmesh_initiate_node_reset()
   sl_btmesh_app_node_reset_handler();
 
   // Small delay before reboot
-  sl_sleeptimer_delay_millisecond(100);
+  sl_udelay_wait(100000);
 
   // Reboot
   sl_bt_system_reboot();
@@ -96,7 +93,7 @@ void sl_btmesh_initiate_full_reset()
   sl_btmesh_factory_reset_on_full_reset();
 
   // Small delay before reboot
-  sl_sleeptimer_delay_millisecond(100);
+  sl_udelay_wait(100000);
 
   // Reboot
   sl_bt_system_reboot();

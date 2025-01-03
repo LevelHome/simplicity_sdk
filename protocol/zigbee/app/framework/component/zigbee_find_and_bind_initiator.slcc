@@ -33,13 +33,13 @@ template_contribution:
       service_function: sl_zigbee_af_identify_cluster_client_command_parse
   - name: cli_group
     value:
-      name: find_and_bind
+      name: find-and-bind
       group: plugin
       help: Find and bind related commands.
   - name: cli_command
     value:
       name: initiator
-      group: find_and_bind
+      group: find-and-bind
       handler: sl_zigbee_af_find_and_bind_initiator_start_command
       help: Makes this node start the initiator part of the finding and binding process.
       argument:

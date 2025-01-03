@@ -1017,6 +1017,8 @@ enum
  *@{
  */
 
+/** An inactive concentrator. */
+#define SL_ZIGBEE_INACTIVE_CONCENTRATOR 0xFFFFu
 /** A concentrator with insufficient memory to store source routes for
  * the entire network. Route records are sent to the concentrator prior
  * to every inbound APS unicast. */
@@ -1696,22 +1698,29 @@ enum
    */
   SL_ZIGBEE_COUNTER_ADDRESS_CONFLICT_SENT = 40,
 
+  /** The number of times CSL failed to schedule Rx on target
+   */
+  SL_ZIGBEE_COUNTER_CSL_RX_SCHEDULE_FAILED = 41,
+
   /** A placeholder giving the number of Ember counter types. */
-  SL_ZIGBEE_COUNTER_TYPE_COUNT = 41,
+  SL_ZIGBEE_COUNTER_TYPE_COUNT = 42,
 };
 
 /**
  * @ brief Struct used to specify priorities for Zigbee radio operations
- *         in multiprotocol
  */
-typedef struct {
+typedef struct sl_802154_radio_priorities {
   /** The priority of a Zigbee RX operation while not receiving a packet. */
-  uint8_t backgroundRx;
-  /** The priority of a Zigbee TX operation. */
-  uint8_t tx;
-  /** The priority of a Zigbee RX operation while receiving a packet. */
-  uint8_t activeRx;
-} sl_zigbee_multiprotocol_priorities_t;
+  uint8_t background_rx;
+  /** Starting priority of a Zigbee TX operation. The first transmit of the packet, before retries, uses this priority */
+  uint8_t min_tx_priority;
+  /** The increase in TX priority (which is a decrement in value) for each retry */
+  uint8_t tx_step;
+  /** Maximum priority of a Zigbee TX operation. Retried messages have priorities bumped by tx_step, up to a maximum of max_tx_priority */
+  uint8_t max_tx_priority;
+  /** The priority of a Zigbee RX operation while receiving a packet */
+  uint8_t active_rx;
+} sl_802154_radio_priorities_t;
 
 /**
  * @ brief Defines the CLI enumerations for the ::sl_zigbee_counter_type_t enum.
@@ -1758,6 +1767,7 @@ typedef struct {
   "PTA Lo Pri Tx Abrt",              \
   "PTA Hi Pri Tx Abrt",              \
   "Address Conflict Sent",           \
+  "CSL Rx schedule failed",          \
   NULL
 
 typedef struct {
@@ -2896,6 +2906,7 @@ typedef uint16_t sl_zigbee_beacon_classification_flags_t;
 enum
 #endif
 {
+  NO_PARENT_CLASSIFICATION_AND_NO_TC_CONNECTIVITY_PRIORITY = 0x0000, // this indicates that the classification mode is disabled
   PRIORITIZE_BEACONS_BASED_ON_PARENT_CLASSIFICATION  = 0x0001,  // this means we also advertise the TC connectivity and long/short uptime
   PRIORITIZE_BEACONS_BASED_ON_TC_CONNECTVITY  = 0x0002,   //this means we also advertise TC connectivity
   // The following two bits are only ADVERTISED in a beacon if Parent Classification
@@ -3044,6 +3055,11 @@ enum
   /** reschedule */
   SL_ZIGBEE_SOURCE_ROUTE_DISCOVERY_RESCHEDULE = 0x02,
 };
+
+/**
+ * @brief Source route overhead unknown
+ */
+#define SL_ZIGBEE_SOURCE_ROUTE_OVERHEAD_UNKNOWN 0xFFu
 
 /**
  * @brief Packet transmit priorities in terms of getting into the MAC queue.

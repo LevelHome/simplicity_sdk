@@ -14,6 +14,7 @@ source:
   - path: protocol/zigbee/app/util/common/app_properties.c
     unless:
       - bootloader_app_properties
+      - btl_app_properties
 template_contribution:
   - name: component_catalog
     value: zigbee_application_bootloader

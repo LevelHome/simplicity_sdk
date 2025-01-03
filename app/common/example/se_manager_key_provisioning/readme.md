@@ -1,6 +1,6 @@
 # SE Manager Key Provisioning
 
-This example uses the SE Manager API to perform the key provisioning and OTP initialization on the supported Series 2 device.
+This example uses the SE Manager API to perform the key provisioning and OTP initialization on the supported device.
 
 The following items can be programmed to the SE OTP:
 

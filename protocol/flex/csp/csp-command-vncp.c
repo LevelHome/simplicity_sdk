@@ -785,6 +785,49 @@ static void usingLongMessagesCommandHandler(uint8_t *apiCommandData)
   sendResponse(apiCommandBuffer, commandLength);
 }
 
+// setRadioPriority
+static void setRadioPriorityCommandHandler(uint8_t *apiCommandData)
+{
+  (void)apiCommandData;
+  sl_connect_radio_priority_t radio_priority;
+  fetchApiParams(apiCommandData,
+                 "uuu",
+                 &radio_priority.rx,
+                 &radio_priority.starting_tx,
+                 &radio_priority.tx_step);
+  EmberStatus status = emApiSetRadioPriority(&radio_priority);
+  uint8_t *apiCommandBuffer = getApiCommandPointer();
+  uint16_t commandLength = formatResponseCommand(apiCommandBuffer,
+                                                 MAX_STACK_API_COMMAND_SIZE,
+                                                 EMBER_SET_RADIO_PRIORITY_IPC_COMMAND_ID,
+                                                 "u",
+                                                 status);
+  sendResponse(apiCommandBuffer, commandLength);
+}
+
+// getRadioPriority
+static void getRadioPriorityCommandHandler(uint8_t *apiCommandData)
+{
+  (void)apiCommandData;
+  sl_connect_radio_priority_t radio_priority;
+  fetchApiParams(apiCommandData,
+                 "uuu",
+                 &radio_priority.rx,
+                 &radio_priority.starting_tx,
+                 &radio_priority.tx_step);
+  EmberStatus status = emApiGetRadioPriority(&radio_priority);
+  uint8_t *apiCommandBuffer = getApiCommandPointer();
+  uint16_t commandLength = formatResponseCommand(apiCommandBuffer,
+                                                 MAX_STACK_API_COMMAND_SIZE,
+                                                 EMBER_GET_RADIO_PRIORITY_IPC_COMMAND_ID,
+                                                 "uuuu",
+                                                 status,
+                                                 radio_priority.rx,
+                                                 radio_priority.starting_tx,
+                                                 radio_priority.tx_step);
+  sendResponse(apiCommandBuffer, commandLength);
+}
+
 // messageSend
 static void messageSendCommandHandler(uint8_t *apiCommandData)
 {
@@ -1662,6 +1705,12 @@ void handleIncomingApiCommand(uint16_t commandId, uint8_t *apiCommandData)
       break;
     case EMBER_USING_LONG_MESSAGES_IPC_COMMAND_ID:
       usingLongMessagesCommandHandler(apiCommandData);
+      break;
+    case EMBER_SET_RADIO_PRIORITY_IPC_COMMAND_ID:
+      setRadioPriorityCommandHandler(apiCommandData);
+      break;
+    case EMBER_GET_RADIO_PRIORITY_IPC_COMMAND_ID:
+      getRadioPriorityCommandHandler(apiCommandData);
       break;
     case EMBER_MESSAGE_SEND_IPC_COMMAND_ID:
       messageSendCommandHandler(apiCommandData);

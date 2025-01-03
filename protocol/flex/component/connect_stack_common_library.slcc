@@ -1,6 +1,6 @@
 id: "connect_stack_common_library"
 label: "Stack Common (Library)"
-package: "Flex"
+package: "Connect"
 category: "Connect"
 quality: "production"
 ui_hints:

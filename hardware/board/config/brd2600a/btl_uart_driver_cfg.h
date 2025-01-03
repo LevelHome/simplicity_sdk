@@ -56,11 +56,11 @@
 #define SL_SERIAL_UART_PERIPHERAL_NO             0
 
 // USART0 TX on PA09
-#define SL_SERIAL_UART_TX_PORT                   gpioPortA
+#define SL_SERIAL_UART_TX_PORT                   SL_GPIO_PORT_A
 #define SL_SERIAL_UART_TX_PIN                    9
 
 // USART0 RX on PA10
-#define SL_SERIAL_UART_RX_PORT                   gpioPortA
+#define SL_SERIAL_UART_RX_PORT                   SL_GPIO_PORT_A
 #define SL_SERIAL_UART_RX_PIN                    10
 
 

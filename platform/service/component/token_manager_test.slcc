@@ -4,6 +4,18 @@ package: platform
 description: Tester component to satisfy the required compatible stack.
 category: Services|Token Manager
 quality: production
+metadata:
+  sbom:
+    license: MSLA
+
 provides:
-  - name: "wireless_stack"
+  - name: wireless_stack
     allow_multiple: true
+
+requires:
+  - name: test_framework_unity
+
+define:
+  - name: TOKEN_MANAGER_TEST
+  - name: "STACK_TYPES_HEADER"
+    value: "\"../test/stack/include/sl_zigbee_types.h\""

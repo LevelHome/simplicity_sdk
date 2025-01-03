@@ -134,6 +134,10 @@ typedef void(*sl_interrupt_manager_irq_handler_t)(void);
  * @brief
  *   Initialize interrupt controller hardware and initialise vector table
  *   in RAM.
+ *
+ * @note
+ *   The interrupt manager init function will perform the initialization only
+ *   once even if it's called multiple times.
  ******************************************************************************/
 void sl_interrupt_manager_init(void);
 
@@ -295,6 +299,75 @@ uint32_t sl_interrupt_manager_get_irq_priority(int32_t irqn);
  *   Value 0 denotes the highest priority.
  ******************************************************************************/
 void sl_interrupt_manager_set_irq_priority(int32_t irqn, uint32_t priority);
+
+/***************************************************************************//**
+ * @brief
+ *   Increase the interrupt preemption priority of an interrupt source.
+ *   relative to the default priority.
+ *
+ * @details
+ *   This function is useful to be architecture agnostic with priority values.
+ *
+ *   Usage:
+ *   new_prio = sl_interrupt_manager_increase_irq_priority_from_default(IRQn, 1);
+ *
+ *   This will increase the priority of IRQn by 1.
+ *
+ * @param[in] irqn
+ *   The irq to change the priority.
+ *
+ * @param[in] diff
+ *   The relative difference.
+ ******************************************************************************/
+void sl_interrupt_manager_increase_irq_priority_from_default(int32_t irqn, uint32_t diff);
+
+/***************************************************************************//**
+ * @brief
+ *   Decrease the interrupt preemption priority of an interrupt source
+ *   relative to the default priority.
+ *
+ * @details
+ *   This function is useful to be architecture agnostic with priority values.
+ *
+ *   Usage:
+ *   new_prio = sl_interrupt_manager_decrease_irq_priority_from_default(IRQn, 1);
+ *
+ *   This will decrease the priority of IRQn by 1.
+ *
+ * @param[in] irqn
+ *   The irq to change the priority.
+ *
+ * @param[in] diff
+ *   The relative difference.
+ ******************************************************************************/
+void sl_interrupt_manager_decrease_irq_priority_from_default(int32_t irqn, uint32_t diff);
+
+/***************************************************************************//**
+ * @brief
+ *   Get the default interrupt preemption priority value.
+ *
+ * @return
+ *   The default priority.
+ ******************************************************************************/
+uint32_t sl_interrupt_manager_get_default_priority(void);
+
+/***************************************************************************//**
+ * @brief
+ *   Get the highest interrupt preemption priority value.
+ *
+ * @return
+ *   The highest priority value.
+ ******************************************************************************/
+uint32_t sl_interrupt_manager_get_highest_priority(void);
+
+/***************************************************************************//**
+ * @brief
+ *   Get the lowest interrupt preemption priority value.
+ *
+ * @return
+ *   The lowest priority value.
+ ******************************************************************************/
+uint32_t sl_interrupt_manager_get_lowest_priority(void);
 
 /***************************************************************************//**
  * @brief

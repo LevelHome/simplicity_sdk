@@ -15,9 +15,8 @@ provides:
 requires:
   - name: clock_manager_runtime
   - name: emlib_core
-  - name: emlib_gpio
+  - name: gpio
   - name: emlib_eusart
-  - name: gpiointerrupt
   - name: spidrv_core
 include:
   - path: inc

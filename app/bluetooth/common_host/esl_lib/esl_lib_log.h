@@ -43,7 +43,7 @@ extern "C" {
 
 #define ESL_LIB_LOG_BUFFER_SIZE      2048
 #define ESL_LIB_LOG_ADDR_FORMAT      "type %u %s address: %02X:%02X:%02X:%02X:%02X:%02X"
-#define ESL_LIB_LOG_HANDLE_FORMAT    "[0x%p] "
+#define ESL_LIB_LOG_HANDLE_FORMAT    "[%#06hx] "
 #define ESL_LIB_LOG_ADDR(_addr)                 \
   (_addr).address_type,                         \
   ((_addr).address_type ? "random" : "public"), \
@@ -62,10 +62,21 @@ extern "C" {
   (_bd_addr).addr[1],                 \
   (_bd_addr).addr[0]
 
+// Create a custom pointer printer format to avoid revealing the exact memory address in traces
+// A NULL pointer will be printed as all zeroes
+#define ESL_LIB_LOG_PTR(ptr)    (uint16_t)(((uintptr_t)(ptr) >> 16) ^ ((uintptr_t)(ptr) & UINT16_MAX))
+
 /// Logging structure type
 typedef struct {
   esl_lib_log_callback_t callback;
 } esl_lib_log_t;
+
+// Try to print only the file name or fall back to the old macro for GCC v.<12.
+#ifndef __FILE_NAME__
+  #define _FILENAME __FILE__
+#else
+  #define _FILENAME __FILE_NAME__
+#endif // __FILE_NAME__
 
 #define esl_lib_log(level, module, ...)      \
   do {                                       \
@@ -77,7 +88,7 @@ typedef struct {
       esl_lib_log.callback(level,            \
                            module,           \
                            (char*)buffer,    \
-                           (char*)__FILE__,  \
+                           (char*)_FILENAME, \
                            (int)__LINE__,    \
                            (char*)__func__); \
     }                                        \

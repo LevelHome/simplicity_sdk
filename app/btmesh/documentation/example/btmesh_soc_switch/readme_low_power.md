@@ -2,7 +2,7 @@
 
 The **Bluetooth Mesh - SoC Switch Low Power** example is a working example application that you can use as a template for Bluetooth Mesh Switch Low Power applications.
 
-The example is an out-of-the-box Software Demo optimized for low current consumption where the device acts as a switch. It has disabled CLI, logging, and LCD. Button presses on the mainboard can control the state, lightness, and color temperature of the LEDs as well as scenes on a remote device (Bluetooth Mesh - SoC Light). The example also acts as an Low Power Node and tries to establish friendship. The example is based on the Bluetooth Mesh Generic On/Off Client Model, the Light Lightness Client Model, the Light CTL Client Model, and the Scene Client Model. This example requires one of the Internal Storage Bootloader (single image) variants, depending on device memory.
+The example is an out-of-the-box Software Demo optimized for low current consumption where the device acts as a switch. It has disabled CLI, logging, and LCD. Button presses on the mainboard can control the state, lightness, and color temperature of the LEDs as well as scenes on a remote device (for example **Bluetooth Mesh - SoC Light**). The example also acts as an Low Power Node and tries to establish friendship. The example is based on the Bluetooth Mesh Generic On/Off Client Model, the Light Lightness Client Model, the Light CTL Client Model, and the Scene Client Model. This example requires one of the Internal Storage Bootloader (single image) variants, depending on device memory.
 
 In typical cases use the **Bluetooth Mesh - SoC Switch** example, as it is easier to get feedback about the state and operations. But if you want to have the optimal power consumption, use the **Bluetooth Mesh - SoC Switch Low Power** example, which does not have LCD, CLI or logging. Use that especially for the power consumption measurements.
 
@@ -66,7 +66,7 @@ To test the application, do the following:
 
 1. Make sure a bootloader is installed. See the Troubleshooting section.
 2. Build and flash the **Bluetooth Mesh - SoC Switch Low Power** example to the device.
-3. Reset the device by pressing and releasing the reset button on the mainboard while pressing BTN0. The message "Factory reset" should appear on the LCD screen.
+3. Reset the device by pressing and releasing the reset button on the mainboard while pressing BTN0.
 4. Provision the device in one of three ways:
 
    - NCP Host provisioner examples, see for example an SDK folder `app/btmesh/example_host/btmesh_host_provisioner` or [github](https://github.com/SiliconLabs/bluetooth_mesh_stack_features/tree/master/provisioning)

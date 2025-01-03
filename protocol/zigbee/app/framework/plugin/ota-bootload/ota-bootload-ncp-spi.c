@@ -168,7 +168,7 @@ bool sli_zigbee_af_start_ncp_bootloader_communications(void)
     halResetWatchdog();
     halCommonDelayMicroseconds(100);
   }
-  DBGPRINT("loops 0x%2x\n", j);
+  DBGPRINT("loops 0x%04X\n", j);
 
   // the first call is expected to fail right after a reset,
   //  since the SPI is reporting the error that a reset occurred.
@@ -226,7 +226,7 @@ bool sli_zigbee_af_bootload_send_data(const uint8_t *data, uint16_t length)
   // I really prefer to not do this sort of hacky test here, but the ezsp-spi
   //  bootloader protocol isn't very consistent in the way it handles initial
   //  acknowledgement
-  DBGPRINT("SNDRSP %x,%x\n", data[0], response[1]);
+  DBGPRINT("SNDRSP %02X,%02X\n", data[0], response[1]);
   return  ( ( (data[0] == XMODEM_SOH) && (response[1] == XMODEM_BLOCKOK) )
             || ( (data[0] == XMODEM_EOT) && (response[1] == XMODEM_FILEDONE) ) );
 }
@@ -249,7 +249,7 @@ bool sli_zigbee_af_bootload_wait_char(uint8_t *data, bool expect, uint8_t expect
   //  the xmodem protocol, the rest of the result may be useful for debugging
   //  but isn't used by xmodem
   *data = response[1];
-  DBGPRINT("WCHAR 0x%x\n", response[1]);
+  DBGPRINT("WCHAR 0x%02X\n", response[1]);
 
   if (expect) {
     return ((*data) == expected);

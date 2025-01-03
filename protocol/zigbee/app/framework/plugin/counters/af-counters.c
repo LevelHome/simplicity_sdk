@@ -15,8 +15,8 @@
  *
  ******************************************************************************/
 
+#include "sl_code_classification.h"
 #include "app/framework/include/af.h"
-#include "app/util/serial/sl_zigbee_command_interpreter.h"
 #include "app/util/common/common.h"
 #include "counters.h"
 #include "counters-ota.h"
@@ -32,6 +32,7 @@ void sl_zigbee_af_counters_init_cb(uint8_t init_level)
   sl_zigbee_af_counters_reset_thresholds();
 }
 
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_ZIGBEE_STACK, SL_CODE_CLASS_TIME_CRITICAL)
 void sli_zigbee_af_counter_rollover_callback(sl_zigbee_counter_type_t type)
 {
 }
@@ -52,7 +53,6 @@ void sl_zigbee_af_counters_clear(void)
 void sl_zigbee_af_counters_reset_thresholds(void)
 {
   //Clear local copy of thresholds.
-
   sl_status_t status;
   #ifdef EZSP_HOST
   status = sl_zigbee_ezsp_set_value(SL_ZIGBEE_EZSP_VALUE_RESET_COUNTER_THRESHOLDS, 0, NULL);

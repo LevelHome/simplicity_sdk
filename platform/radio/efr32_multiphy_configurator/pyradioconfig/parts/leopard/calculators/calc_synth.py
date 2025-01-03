@@ -42,18 +42,6 @@ class calc_synth_leopard(CALC_Synth_lynx):
         else:
             model.vars.adc_clock_mode_actual.value = model.vars.adc_clock_mode.var_enum.VCODIV
 
-    def calc_adc_rate_mode_actual(self, model):
-        #This function calculates the actual value of the adc rate mode based on the reg value used
-        ifadcenhalfmode = model.vars.RAC_IFADCTRIM0_IFADCENHALFMODE.value
-
-        if ifadcenhalfmode == 1:
-            adc_rate_mode_actual = model.vars.adc_rate_mode.var_enum.HALFRATE
-        else:
-            adc_rate_mode_actual = model.vars.adc_rate_mode.var_enum.FULLRATE
-
-        #Write the variable
-        model.vars.adc_rate_mode_actual.value = adc_rate_mode_actual
-
     def calc_adc_clock_config(self, model):
         # This function calculates both the ADC mode (e.g. fullrate, halfrate, etc) as well as the ADC clock divider path
 

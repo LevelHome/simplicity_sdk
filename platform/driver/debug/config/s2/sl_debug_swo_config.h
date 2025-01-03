@@ -91,7 +91,7 @@
 // $[GPIO_SL_DEBUG]
 #define SL_DEBUG_PERIPHERAL                     GPIO
 
-#define SL_DEBUG_SWV_PORT                       gpioPortA
+#define SL_DEBUG_SWV_PORT                       SL_GPIO_PORT_A
 #define SL_DEBUG_SWV_PIN                        3
 // [GPIO_SL_DEBUG]$
 // <<< sl:end pin_tool >>>

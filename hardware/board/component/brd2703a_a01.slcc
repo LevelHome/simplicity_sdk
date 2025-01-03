@@ -17,6 +17,7 @@
   - name: hardware_board
   - name: hardware_board_tb
   - name: hardware_board_has_vcom
+  - name: board_config_clock_manager
   - name: hardware_board_has_hfxo_freq_39mhz
   - name: hardware_board_has_hfxo
   - name: hardware_board_has_lfxo

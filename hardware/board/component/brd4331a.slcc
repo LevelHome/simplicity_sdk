@@ -18,6 +18,7 @@
   - name: hardware_board_rb
   - name: hardware_board_from_stk
   - name: hardware_board_has_vcom
+  - name: board_config_clock_manager
   - name: hardware_board_has_lfxo
   - name: hardware_board_supports_rf_band_2400
   - name: hardware_board_supports_1_rf_band

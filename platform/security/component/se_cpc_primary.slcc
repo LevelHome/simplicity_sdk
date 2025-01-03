@@ -19,7 +19,7 @@ provides:
 
   # We don't want to unconditionally provide this, since that could lead to
   # conflicts for non-cpc-se apps requiring this. We only provide this for the
-  # convenience of not having to repeat conditions (see psa_driver_source).
+  # convenience of not having to repeat conditions.
   - name: device_has_semailbox
     condition: [se_cpc_primary]
 
@@ -40,3 +40,7 @@ define:
 template_contribution:
   - name: component_catalog
     value: se_cpc_primary
+
+metadata:
+ sbom:
+    license: Zlib

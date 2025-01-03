@@ -80,7 +80,7 @@ class RailTest_rmrConfigGenerator:
     # self.jinja_env.filters['unrollAppendIndexLength'] = self.unrollAppendIndexLength
     self.jinja_env.globals['firstDictValue'] = firstDictValue
     self.jinja_env.globals['len'] = len
-    self.template_path_railtest = "railtest_multiphy_rmr.j2"
+    self.template_path_railtest = "railtest_multiphy_rmr_{}x.j2".format(self.rail_version)
 
     # We need the railAdapter object to be populated before we can generate the
     # context. If the railAdapter object is not populated by the caller, we can

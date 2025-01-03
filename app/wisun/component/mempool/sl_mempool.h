@@ -1,5 +1,5 @@
 /***************************************************************************//**
- * @file
+ * @file sl_mempool.h
  * @brief Memory Pool
  *******************************************************************************
  * # License
@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef __SL_MEMPOOL_H__
-#define __SL_MEMPOOL_H__
+#ifndef SL_MEMPOOL_H
+#define SL_MEMPOOL_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,12 +38,11 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <stddef.h>
 #include <stdbool.h>
+
 #include "sl_status.h"
 #include "sl_common.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -142,4 +141,4 @@ __STATIC_INLINE size_t sl_mempool_get_free_block_count(const sl_mempool_t * cons
 }
 #endif
 
-#endif // __SL_MEMPOOL_H__
+#endif // SL_MEMPOOL_H

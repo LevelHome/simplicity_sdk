@@ -50,7 +50,7 @@ extern "C" {
 
 // ESL host library command codes
 typedef enum {
-  ESL_LIB_CMD_CONNECT                      = 0,   // Connect to a tag (address or PAwR)
+  ESL_LIB_CMD_CONNECT                      = 0,   // Connect to a tag (by BLE device address or via PAwR)
   ESL_LIB_CMD_CLOSE_CONNECTION             = 1,   // Close an existing connection
   ESL_LIB_CMD_GET_TAG_INFO                 = 2,   // Get tag info
   ESL_LIB_CMD_CONFIGURE_TAG                = 3,   // Configure tag
@@ -65,6 +65,10 @@ typedef enum {
   ESL_LIB_CMD_WRITE_CONTROL_POINT          = 12,  // Write ESL Control Point
   ESL_LIB_CMD_GET_SCAN_STATUS              = 13,  // Get scan status
   ESL_LIB_CMD_GET_PAWR_STATUS              = 14,  // Get PAwR status
+  ESL_LIB_CMD_SET_CONNECTION_MODE          = 15,  // Initiate connections to tags one at a time, or by Initiator Filter Policy using Filter Accept List
+  ESL_LIB_CMD_GET_CONNECTION_MODE          = 16,  // Check connections mode if it's single or by accept list (using Filter Accept List with Initiator Filter Policy)
+  ESL_LIB_CMD_REMOVE_FILTER_ACCEPT_LIST    = 17,  // Remove address from Filter Accept List (return void as idempotent)
+  ESL_LIB_CMD_CLEAR_FILTER_ACCEPT_LIST     = 18,  // Remove all addresses from the Filter Accept List. Suspends the Initiator Filter Policy without reverting to single connection mode.
   ESL_LIB_CMD_AP_CONTROL_ADV_ENABLE        = 101, // Enable/disable AP control advertising
   ESL_LIB_CMD_AP_CONTROL_CP_RESPONSE       = 102, // Notify AP control control point
   ESL_LIB_CMD_AP_CONTROL_IT_RESPONSE       = 103  // Notify AP control image transfer
@@ -90,10 +94,14 @@ typedef struct {
 /// Connect parameters
 typedef struct {
   esl_lib_address_t    address;         ///< Bluetooth address
-  esl_lib_connection_handle_t conn_hnd; ///< Connection handle
   uint8_t              retries_left;    ///< Number of remaining retries
   esl_lib_long_array_t tlv_data;        ///< Data containing Connect TLVs
 } esl_lib_command_list_cmd_connect_t;
+
+/// Set connection mode
+typedef struct {
+  esl_lib_connection_mode_t mode; ///< Connection mode to set
+} esl_lib_command_list_cmd_set_connection_mode_t;
 
 /// Write ESL Control Point
 typedef struct {
@@ -105,14 +113,14 @@ typedef struct {
 /// Configure tag
 typedef struct {
   esl_lib_connection_handle_t connection_handle; ///< Connection handle
-  esl_lib_bool_t              att_response;      ///< Write with response
   esl_lib_long_array_t        tlv_data;          ///< TLV Data
 } esl_lib_command_list_cmd_configure_tag_t;
 
 /// Start periodic advertisement
 typedef struct {
   esl_lib_pawr_handle_t pawr_handle; ///< PAwR handle
-  esl_lib_bool_t        enable;      ///< Enable or disable
+  esl_lib_bool_t        enable;      ///< Enable or disable train
+  esl_lib_bool_t        advertise;   ///< Enable or disable ext.adv.
 } esl_lib_command_list_cmd_pawr_enable_t;
 
 /// Set PAwR data
@@ -150,9 +158,9 @@ typedef struct {
   uint8_t                     img_index;         ///< Image index
 } esl_lib_command_list_cmd_get_image_type_t;
 
-/// Write image
+/// Enable scan
 typedef struct {
-  esl_lib_bool_t enable; ///< Connection handle
+  esl_lib_bool_t enable; ///< True for enable, false for disable scanning
 } esl_lib_command_list_cmd_scan_enable_t;
 
 /// Command ID
@@ -161,6 +169,7 @@ typedef uint32_t esl_lib_cmd_id_t;
 ///< Command data union type
 typedef union {
   esl_lib_command_list_cmd_connect_t             cmd_connect;               ///< Connect
+  esl_lib_command_list_cmd_set_connection_mode_t cmd_set_connection_mode;   ///< Connection mode
   esl_lib_connection_handle_t                    cmd_close_connection;      ///< Close connection
   esl_lib_connection_handle_t                    cmd_get_tag_info;          ///< Get tag info / gatt values
   esl_lib_command_list_cmd_configure_tag_t       cmd_configure_tag;         ///< Configure tag

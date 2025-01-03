@@ -165,10 +165,8 @@ void sli_hfxo_manager_init_hardware(void)
 /***************************************************************************//**
  * Updates sleepy crystal settings in specific hardware registers.
  ******************************************************************************/
-sl_status_t sli_hfxo_manager_update_sleepy_xtal_settings_hardware(sl_hfxo_manager_sleepy_xtal_settings_t *settings)
+sl_status_t sli_hfxo_manager_update_sleepy_xtal_settings_hardware(const sl_hfxo_manager_sleepy_xtal_settings_t *settings)
 {
-  (void)settings;
-
 #if (SL_HFXO_MANAGER_SLEEPY_CRYSTAL_SUPPORT == 1)
   EFM_ASSERT(settings->ana_ctune <= (_HFXO_XTALCTRL_CTUNEXIANA_MASK >> _HFXO_XTALCTRL_CTUNEXIANA_SHIFT));
   EFM_ASSERT(settings->core_bias_current <= (_HFXO_XTALCTRL_COREBIASANA_MASK >> _HFXO_XTALCTRL_COREBIASANA_SHIFT));
@@ -178,6 +176,7 @@ sl_status_t sli_hfxo_manager_update_sleepy_xtal_settings_hardware(sl_hfxo_manage
 
   return SL_STATUS_OK;
 #else
+  (void)settings;
   return SL_STATUS_NOT_AVAILABLE;
 #endif
 }
@@ -234,7 +233,10 @@ void sl_hfxo_manager_irq_handler(void)
     HFXO0->IF_CLR = irq_flag & HFXO_IF_PRSRDY;
     HFXO0->CTRL_CLR = HFXO_CTRL_EM23ONDEMAND;
 
-    sli_hfxo_manager_retrieve_begining_startup_measurement();
+    // Only retrieve start of measurement if HFXO is not already ready.
+    if ((HFXO0->STATUS & HFXO_STATUS_RDY) == 0) {
+      sli_hfxo_manager_retrieve_begining_startup_measurement();
+    }
 
     // Notify power manager HFXO is ready
     sli_hfxo_notify_ready_for_power_manager_from_prs();

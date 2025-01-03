@@ -1,6 +1,6 @@
 id: "connect_ota_broadcast_bootloader_server"
 label: "OTA Broadcast Bootloader Server"
-package: "Flex"
+package: "Connect"
 category: "Connect|OTA"
 quality: "production"
 description: "Implements the server side of the Connect OTA Broadcast Bootloader protocol. The OTA Broadcast Bootloader Server component should be used to distribute an image from the server to a set of target devices (clients) in a reliable broadcast fashion, to retrieve the status of a set of target devices and to instruct a set of target devices to initiate a bootload."

@@ -66,15 +66,6 @@ extern sli_bt_host_wakeup_t *const sli_bt_host_adaptation_host_wakeup;
 void sli_bt_host_adaptation_init_interrupts(void);
 
 /**
- * @brief Get the hardware version information
- *
- * @param[out] hw_major_version Set to the HW revision major version number
- * @param[out] hw_major_version Set to the HW revision minor version number
- */
-void sli_bt_host_adaptation_get_hardware_version(uint8_t *hw_major_version,
-                                                 uint8_t *hw_minor_version);
-
-/**
  * @brief Get the bootloader version information
  *
  * @param[out] bootloader_version Set to the bootloader version number if a
@@ -92,6 +83,40 @@ sl_status_t sli_bt_host_adaptation_get_bootloader_version(uint32_t *bootloader_v
  * This function never returns.
  */
 void sli_bt_host_adaptation_chip_reset(void);
+
+/**
+ * @brief Write a custom Bluetooth identity address into the Bluetooth region of NVM3
+ *
+ * @param[in] address_type Address type sl_bt_gap_public_address or sl_bt_gap_static_address
+ * @param[in] address Pointer to the address to write into NVM3
+ * @return SL_STATUS_OK if the operation succeeded
+ */
+sl_status_t sli_bt_host_adaptation_write_custom_address(uint8_t address_type,
+                                                        const uint8_t *address);
+
+/**
+ * @brief Load custom Bluetooth identity address from NVM3
+ *
+ * The operation succeeds if both the custom address and address type entries exist in NVM3.
+ *
+ * @param[out] address_type Pointer to return the address type value read from NVM3. Value 0
+ *             indicates the address is a public device address, and 1 indicates the address
+ *             is a static device address.
+ * @param[out] address Pointer to return the address read from NVM3
+ * @return SL_STATUS_OK if the operation succeeded
+ */
+sl_status_t sli_bt_host_adaptation_read_custom_address(uint8_t *address_type,
+                                                       uint8_t *address);
+
+/**
+ * @brief Set HFXO CTUNE using the value stored in the Bluetooth space of NVM3
+ *
+ * Setting the HFXO CTUNE with this method is deprecated. Currently the functionality is
+ * provided for keeping backwards compatibility with legacy SDKs, and the support will be
+ * discontinued in future SDK releases. The recommended method is to store CTUNE value in the
+ * MFG_CTUNE token.
+ */
+void sli_bt_host_adaptation_read_and_set_ctune();
 
 /** @} end sli_bt_host_adaptation */
 

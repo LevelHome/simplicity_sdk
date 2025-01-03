@@ -34,20 +34,30 @@
 #include "cmsis_compiler.h"
 #include "dmadrv.h"
 #include "sl_cpc_drv_uart_config.h"
+#include "sli_cpc_assert.h"
 #include "sli_cpc_reboot_sequence.h"
 #include "sli_cpc_fwu.h"
 #include "sli_cpc_drv.h"
 #include "sli_cpc_crc.h"
 #include "sli_cpc_trace.h"
 #include "sli_cpc_xmodem.h"
+
+#if defined(_SILICON_LABS_32B_SERIES_2)
+// Series 2
+#include "em_gpio.h"
 #if defined(SL_CPC_DRV_PERIPH_IS_EUSART)
 #include "em_eusart.h"
 #else
 #include "em_usart.h"
 #endif
+#else
+// Series 3
+#include "sl_hal_eusart.h"
+#include "sl_hal_gpio.h"
+#endif
+
 #include "sl_udelay.h"
 #include "sl_cpc_primary_config.h"
-#include "em_gpio.h"
 
 #if (SL_CPC_PRIMARY_FIRMWARE_UPGRADE_SUPPORT_ENABLED >= 1)
 
@@ -119,7 +129,7 @@ static void fwu_send_input_char_and_receive_prompt(char input)
                                              &fwu_receive_prompt_descriptor,
                                              NULL, // no callback
                                              0);
-    EFM_ASSERT(ecode == ECODE_OK);
+    SLI_CPC_ASSERT(ecode == ECODE_OK);
   }
 
   // Now that the LDMA is setup to receive the prompt from the bootloader, send the CR character that will
@@ -216,7 +226,7 @@ static sl_status_t btl_send_frame_step(void)
                                              &fwu_frame_descriptor,
                                              NULL, // no callback
                                              0);
-    EFM_ASSERT(ecode == ECODE_OK);
+    SLI_CPC_ASSERT(ecode == ECODE_OK);
   }
 
   if (last_chunk) {
@@ -334,7 +344,7 @@ sl_status_t sli_cpc_drv_fwu_step(void)
           fwu_state = FWU_SEND_XMODEM_FRAME;
         } else if (c == XMODEM_CMD_NAK) {
           TRACE_FWU("Frame Nack'ed !!");
-          EFM_ASSERT(false);
+          SLI_CPC_ASSERT(0);
         } else {
           TRACE_FWU("Frame response : %02hhX", c);
         }
@@ -360,7 +370,7 @@ sl_status_t sli_cpc_drv_fwu_step(void)
           fwu_state = FWU_DONE;
         } else if (c == XMODEM_CMD_NAK) {
           TRACE_FWU("Frame Nack'ed!");
-          EFM_ASSERT(false);
+          SLI_CPC_ASSERT(0);
         } else {
           TRACE_FWU("Frame response : %02hhX", c);
         }
@@ -375,7 +385,7 @@ sl_status_t sli_cpc_drv_fwu_step(void)
       break;
 
     default:
-      EFM_ASSERT(false);
+      SLI_CPC_ASSERT(0);
       break;
   }
 
@@ -426,7 +436,7 @@ bool sli_cpc_is_bootloader_running(void)
                                            NULL, // no callback
                                            0);
   if (ecode != ECODE_OK) {
-    EFM_ASSERT(false);
+    SLI_CPC_ASSERT(0);
     is_bootloader_running = false;
     goto end_of_function;
   }

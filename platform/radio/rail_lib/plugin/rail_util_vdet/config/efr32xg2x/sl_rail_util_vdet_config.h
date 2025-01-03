@@ -31,7 +31,7 @@
 #ifndef SL_RAIL_UTIL_VDET_CONFIG_H
 #define SL_RAIL_UTIL_VDET_CONFIG_H
 
-#include "em_gpio.h"
+#include "sl_gpio.h"
 
 // <<< Use Configuration Wizard in Context Menu >>>
 

@@ -183,3 +183,12 @@ void CORE_clear_max_time_atomic_section(void)
 {
   return;
 }
+
+/***************************************************************************//**
+ * @brief
+ *   Reset chip routine.
+ ******************************************************************************/
+void CORE_ResetSystem(void)
+{
+  return;
+}

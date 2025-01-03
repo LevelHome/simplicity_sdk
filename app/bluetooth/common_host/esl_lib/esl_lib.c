@@ -98,6 +98,11 @@ sl_status_t esl_lib_start(char                   *config,
   // Deinitialize the library
   esl_lib_deinit();
 
+  event_handler_step(); // process the last event
+
+  // Log memory status
+  esl_lib_memory_log();
+
   return SL_STATUS_OK;
 }
 
@@ -175,14 +180,14 @@ sl_status_t esl_lib_connect(esl_lib_address_t         address,
   // Allocate memory for the command
   cmd = (esl_lib_command_list_cmd_t *)esl_lib_memory_allocate(size + tlv_size);
   if (cmd != NULL) {
-    cmd->data.cmd_connect.retries_left = ESL_LIB_CONNECTION_RETRY_COUNT_MAX;
+    cmd->data.cmd_connect.retries_left = ESL_LIB_CONNECTION_RETRY_COUNT_MAX + 1;
     cmd->cmd_code = ESL_LIB_CMD_CONNECT;
-    cmd->data.cmd_connect.conn_hnd = ESL_LIB_INVALID_HANDLE;
     // Set address and type
+    cmd->data.cmd_connect.address.u64 = 0;
     cmd->data.cmd_connect.address.address_type = address.address_type;
     memcpy(cmd->data.cmd_connect.address.addr,
            address.addr,
-           sizeof(address.addr));
+           sizeof(cmd->data.cmd_connect.address.addr));
 
     // Set TLV data length
     cmd->data.cmd_connect.tlv_data.len = tlv_size;
@@ -287,6 +292,59 @@ sl_status_t esl_lib_close_connection(esl_lib_connection_handle_t connection_hand
   return sc;
 }
 
+sl_status_t esl_lib_set_connection_mode(esl_lib_connection_mode_t requested_mode)
+{
+  sl_status_t sc;
+  esl_lib_command_list_cmd_t *cmd;
+  esl_lib_core_state_t core_state;
+  size_t size = ESL_LIB_COMMAND_LIST_HEADER_LEN + sizeof(esl_lib_connection_mode_t);
+
+  (void)esl_lib_get_connection_mode_and_status(&core_state, NULL, NULL);
+  esl_lib_log_api_debug("Requested: Set Connection Mode: %s" APP_LOG_NL,
+                        requested_mode == ESL_LIB_CONNECTION_MODE_SINGLE ? "single" : "accept list");
+
+  if (core_state != ESL_LIB_CORE_STATE_CONNECTING) {
+    // Allocate memory for the command
+    cmd = (esl_lib_command_list_cmd_t *)esl_lib_memory_allocate(size);
+    if (cmd != NULL) {
+      cmd->cmd_code = ESL_LIB_CMD_SET_CONNECTION_MODE;
+      cmd->data.cmd_set_connection_mode.mode = requested_mode;
+      // Send command
+      sc = esl_lib_core_add_command(cmd);
+      if (sc != SL_STATUS_OK) {
+        esl_lib_memory_free(cmd);
+      }
+    } else {
+      sc = SL_STATUS_ALLOCATION_FAILED;
+    }
+  } else {
+    sc = SL_STATUS_BUSY;
+  }
+  return sc;
+}
+
+sl_status_t esl_lib_get_connection_mode(void)
+{
+  sl_status_t sc;
+  esl_lib_command_list_cmd_t *cmd;
+  esl_lib_log_api_debug("Requested: Get Connection Mode" APP_LOG_NL);
+
+  size_t size = ESL_LIB_COMMAND_LIST_HEADER_LEN;
+  // Allocate memory for the command
+  cmd = (esl_lib_command_list_cmd_t *)esl_lib_memory_allocate(size);
+  if (cmd != NULL) {
+    cmd->cmd_code = ESL_LIB_CMD_GET_CONNECTION_MODE;
+    // Send command
+    sc = esl_lib_core_add_command(cmd);
+    if (sc != SL_STATUS_OK) {
+      esl_lib_memory_free(cmd);
+    }
+  } else {
+    sc = SL_STATUS_ALLOCATION_FAILED;
+  }
+  return sc;
+}
+
 // -------------------------------
 // ESL information
 
@@ -325,14 +383,12 @@ sl_status_t esl_lib_get_tag_info(esl_lib_connection_handle_t connection_handle)
 }
 
 sl_status_t esl_lib_configure_tag(esl_lib_connection_handle_t connection_handle,
-                                  esl_lib_long_array_t        *tlv_data,
-                                  esl_lib_bool_t              att_response)
+                                  esl_lib_long_array_t        *tlv_data)
 {
   sl_status_t sc = SL_STATUS_INVALID_PARAMETER;
   esl_lib_command_list_cmd_t *cmd;
 
-  esl_lib_log_api_debug("Requested: Configure Tag %s response" APP_LOG_NL,
-                        (att_response == ESL_LIB_TRUE) ? "with" : "without");
+  esl_lib_log_api_debug("Requested: Configure Tag with response" APP_LOG_NL);
 
   if (tlv_data == NULL) {
     return SL_STATUS_NULL_POINTER;
@@ -351,7 +407,6 @@ sl_status_t esl_lib_configure_tag(esl_lib_connection_handle_t connection_handle,
   if (cmd != NULL) {
     cmd->cmd_code = ESL_LIB_CMD_CONFIGURE_TAG;
     cmd->data.cmd_configure_tag.connection_handle = connection_handle;
-    cmd->data.cmd_configure_tag.att_response = att_response;
     // Copy array
     cmd->data.cmd_configure_tag.tlv_data.len = tlv_data->len;
     memcpy(cmd->data.cmd_configure_tag.tlv_data.data,
@@ -377,8 +432,8 @@ sl_status_t esl_lib_write_control_point(esl_lib_connection_handle_t connection_h
   sl_status_t sc = SL_STATUS_INVALID_PARAMETER;
   esl_lib_command_list_cmd_t *cmd;
 
-  esl_lib_log_api_debug("Requested: Write Control Point %s response" APP_LOG_NL,
-                        (att_response == ESL_LIB_TRUE) ? "with" : "without");
+  esl_lib_log_api_debug("Requested: Write Control Point with%s response" APP_LOG_NL,
+                        (att_response == ESL_LIB_TRUE) ? "" : "out");
   if (data == NULL) {
     return SL_STATUS_NULL_POINTER;
   }
@@ -455,7 +510,8 @@ sl_status_t esl_lib_pawr_remove(esl_lib_pawr_handle_t pawr_handle)
 }
 
 sl_status_t esl_lib_pawr_enable(esl_lib_pawr_handle_t pawr_handle,
-                                esl_lib_bool_t        enable)
+                                esl_lib_bool_t        enable,
+                                esl_lib_bool_t        advertise)
 {
   sl_status_t sc = SL_STATUS_INVALID_HANDLE;
   esl_lib_command_list_cmd_t *cmd;
@@ -475,6 +531,7 @@ sl_status_t esl_lib_pawr_enable(esl_lib_pawr_handle_t pawr_handle,
       // Copy data
       cmd->data.cmd_pawr_enable.pawr_handle = pawr_handle;
       cmd->data.cmd_pawr_enable.enable      = enable;
+      cmd->data.cmd_pawr_enable.advertise   = advertise;
       // Send command
       sc = esl_lib_pawr_add_command(pawr_handle, cmd);
       if (sc != SL_STATUS_OK) {

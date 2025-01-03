@@ -31,25 +31,25 @@
 #include "FreeRTOSConfig.h"
 #include "task.h"
 #include "rail.h"
-#include "em_common.h"
+#include "sl_common.h"
 #include "app_assert.h"
 #include "app_proprietary.h"
 #include "sl_component_catalog.h"
-#ifdef SL_CATALOG_FLEX_IEEE802154_SUPPORT_PRESENT
-#include "sl_flex_util_802154_protocol_types.h"
-#include "sl_flex_util_802154_init_config.h"
-#include "sl_flex_rail_ieee802154_config.h"
-#include "sl_flex_ieee802154_support.h"
-#include "sl_flex_util_802154_init.h"
-#elif defined SL_CATALOG_FLEX_BLE_SUPPORT_PRESENT
-#include "sl_flex_util_ble_protocol_config.h"
-#include "sl_flex_util_ble_init_config.h"
-#include "sl_flex_util_ble_init.h"
+#ifdef SL_CATALOG_RAIL_SDK_IEEE802154_SUPPORT_PRESENT
+#include "sl_rail_sdk_util_802154_protocol_types.h"
+#include "sl_rail_sdk_util_802154_init_config.h"
+#include "sl_rail_sdk_ieee802154_config.h"
+#include "sl_rail_sdk_ieee802154_support.h"
+#include "sl_rail_sdk_util_802154_init.h"
+#elif defined SL_CATALOG_RAIL_SDK_BLE_SUPPORT_PRESENT
+#include "sl_rail_sdk_util_ble_protocol_config.h"
+#include "sl_rail_sdk_util_ble_init_config.h"
+#include "sl_rail_sdk_util_ble_init.h"
 #else
 #endif
 // -----------------------------------------------------------------------------
 // Constant definitions and macros
-#ifdef SL_CATALOG_FLEX_BLE_SUPPORT_PRESENT
+#ifdef SL_CATALOG_RAIL_SDK_BLE_SUPPORT_PRESENT
 /// BLE channel number
 #define BLE_CHANNEL ((uint8_t) 0)
 #endif
@@ -128,12 +128,12 @@ static void app_proprietary_task(void *p_arg)
   // CONSUMPTION OF YOUR PRODUCT.                                            //
   //                                                                         //
   // For further examples on sending / recieving in a DMP application, and   //
-  // also on reducing the overall power demand, the following Flex projects  //
-  // could serve as a good starting point:                                   //
+  // also on reducing the overall power demand, the following Connect and    //
+  // RAIL projects could serve as a good starting point:                     //
   //                                                                         //
-  //  - Flex (Connect) - Soc Empty Example DMP                               //
-  //  - Flex (RAIL) - Range Test DMP                                         //
-  //  - Flex (RAIL) - Energy Mode                                            //
+  //  - Connect Bluetooth DMP - SoC Empty                                    //
+  //  - RAIL Bluetooth DMP - SoC Range Test                                  //
+  //  - RAIL - SoC Energy Mode                                               //
   //                                                                         //
   // See also: AN1134: Dynamic Multiprotocol Development with Bluetooth and  //
   //                   Proprietary Protocols on RAIL in GSDK v2.x            //
@@ -143,13 +143,13 @@ static void app_proprietary_task(void *p_arg)
    RAIL_Handle_t rail_handle;
    RAIL_Status_t status;
 
-   rail_handle = sl_flex_util_get_handle();
- #ifdef SL_CATALOG_FLEX_IEEE802154_SUPPORT_PRESENT
+   rail_handle = sl_rail_sdk_util_get_handle();
+ #ifdef SL_CATALOG_RAIL_SDK_IEEE802154_SUPPORT_PRESENT
    // init the selected protocol for IEEE, first
-   sl_flex_ieee802154_protocol_init(rail_handle, SL_FLEX_UTIL_INIT_PROTOCOL_INSTANCE_DEFAULT);
+   sl_rail_sdk_ieee802154_protocol_init(rail_handle, SL_RAIL_SDK_UTIL_INIT_PROTOCOL_INSTANCE_DEFAULT);
    // Start reception.
-   status = RAIL_StartRx(rail_handle, sl_flex_ieee802154_get_channel(), NULL);
- #elif defined SL_CATALOG_FLEX_BLE_SUPPORT_PRESENT
+   status = RAIL_StartRx(rail_handle, sl_rail_sdk_ieee802154_get_channel(), NULL);
+ #elif defined SL_CATALOG_RAIL_SDK_BLE_SUPPORT_PRESENT
    status = RAIL_StartRx(rail_handle, BLE_CHANNEL, NULL);
  #else
  #endif
@@ -190,7 +190,7 @@ void sl_rail_util_on_event(RAIL_Handle_t rail_handle,
   /////////////////////////////////////////////////////////////////////////////
   // Add event handlers here as your application requires!                   //
   //                                                                         //
-  // Flex (RAIL) - Simple TRX Standards might serve as a good example on how //
+  // RAIL - SoC Simple TRX    Standards might serve as a good example on how //
   // to implement this event handler properly.                               //
   /////////////////////////////////////////////////////////////////////////////
 }

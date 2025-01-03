@@ -16,7 +16,3 @@ class ProfileIEEE802154OQPSKLeopard(ProfileIEEE802154OQPSKLynx):
 
     def build_register_profile_outputs(self, model, profile):
         build_modem_regs_leopard(model, profile)
-
-    def _build_legacy_settings(self, model):
-        super()._build_legacy_settings(model)
-        model.vars.RAC_SYNTHCTRL_MMDPOWERBALANCEDISABLE.value_forced = None

@@ -29,19 +29,24 @@
  ******************************************************************************/
 
 #include "ecode.h"
-#include "sl_sleeptimer.h"
-#include "sli_cpc_system_common.h"
-
+#include "dmadrv.h"
+#include "sl_atomic.h"
 #include "sl_core.h"
-#include "em_core.h"
-#include "sl_assert.h"
+#include "sl_cpc_config.h"
+#include "sl_cpc_drv_uart_config.h"
+#include "sl_cpc_instance_handles.h"
+#include "sl_clock_manager.h"
+#include "sl_device_peripheral.h"
+#include "sl_sleeptimer.h"
+#include "sl_slist.h"
+#include "sl_status.h"
+
+#if defined(SL_CATALOG_POWER_MANAGER_PRESENT)
+#include "sl_power_manager.h"
+#endif
 #if defined(SL_COMPONENT_CATALOG_PRESENT)
 #include "sl_component_catalog.h"
 #endif
-
-#include "sl_cpc_drv_uart_config.h"
-#include "sl_clock_manager.h"
-#include "sl_device_peripheral.h"
 
 #if defined(_SILICON_LABS_32B_SERIES_2)
 #include "em_gpio.h"
@@ -56,28 +61,20 @@
 #include "em_cmu.h"
 #endif
 #else // Series 3 and up
+#include "sl_gpio.h"
 #include "sl_hal_eusart.h"
 #include "sl_hal_gpio.h"
 #endif // Series 2-3 compatibility
 
-#include "dmadrv.h"
-
-#include "sl_status.h"
-#include "sl_atomic.h"
-#include "sl_slist.h"
-
-#if defined(SL_CATALOG_POWER_MANAGER_PRESENT)
-#include "sl_power_manager.h"
-#endif
-
+#include "sli_cpc.h"
+#include "sli_cpc_assert.h"
+#include "sli_cpc_crc.h"
+#include "sli_cpc_debug.h"
 #include "sli_cpc_drv.h"
 #include "sli_cpc_hdlc.h"
-#include "sli_cpc_debug.h"
-#include "sli_cpc_crc.h"
 #include "sli_cpc_instance.h"
 #include "sli_cpc_memory.h"
-#include "sl_cpc_config.h"
-#include "sli_cpc.h"
+#include "sli_cpc_system_common.h"
 
 #if defined(SL_CATALOG_CPC_PRIMARY_PRESENT)
 #include "sl_cpc_primary_config.h"
@@ -87,106 +84,150 @@
  *********************************   DEFINES   *********************************
  ******************************************************************************/
 
+// Generic (E)USART defines
+#define CPC_UART_ISR_TX_HANDLER(periph_nbr) SL_CONCAT_PASTER_3(SL_CPC_DRV_PERIPH_NAME, periph_nbr, _TX_IRQHandler)
+#define CPC_UART_TX_IRQn(periph_nbr)        SL_CONCAT_PASTER_3(SL_CPC_DRV_PERIPH_NAME, periph_nbr, _TX_IRQn)
+#define CPC_UART_CLOCK                      SL_CONCAT_PASTER_3(SL_BUS_CLOCK_, SL_CPC_DRV_PERIPH_NAME, SL_CPC_DRV_UART_PERIPHERAL_NO)
+
+// EUSART defines
 #if defined(SL_CPC_DRV_PERIPH_IS_EUSART)
-#define WITH_HWFC eusartHwFlowControlCtsAndRts_D
-#define WITHOUT_HWFC eusartHwFlowControlNone_D
-#define SL_CPC_UART_CLEAR_CMD()                    SL_CPC_DRV_UART_PERIPHERAL->CMD_SET = EUSART_CMD_CLEARTX
-#define SL_CPC_UART_INT_CLEAR                 SL_CONCAT_PASTER_2(EUSART, _IntClear)
-#define SL_CPC_UART_INT_ENABLE                SL_CONCAT_PASTER_2(EUSART, _IntEnable)
-#define SL_CPC_UART_IF_TXC                    SL_CONCAT_PASTER_2(EUSART, _IF_TXC)
+#define WITH_HWFC              eusartHwFlowControlCtsAndRts_D
+#define WITHOUT_HWFC           eusartHwFlowControlNone_D
+#define CPC_UART_IF_TXC        SL_CONCAT_PASTER_2(EUSART, _IF_TXC)
+#define CPC_UART_CLEAR_CMD()   SL_CPC_DRV_UART_PERIPHERAL->CMD_SET = EUSART_CMD_CLEARTX
 #else
-#define WITH_HWFC usartHwFlowControlCtsAndRts_D
-#define WITHOUT_HWFC usartHwFlowControlNone_D
-#define SL_CPC_UART_CLEAR_CMD()                    SL_CPC_DRV_UART_PERIPHERAL->CMD = USART_CMD_CLEARRX | USART_CMD_CLEARTX
-#define SL_CPC_UART_INT_CLEAR                 SL_CONCAT_PASTER_2(USART, _IntClear)
-#define SL_CPC_UART_INT_ENABLE                SL_CONCAT_PASTER_2(USART, _IntEnable)
-#define SL_CPC_UART_IF_TXC                    SL_CONCAT_PASTER_2(USART, _IF_TXC)
-#endif // UART peripheral
+// USART defines
+#define WITH_HWFC              usartHwFlowControlCtsAndRts_D
+#define WITHOUT_HWFC           usartHwFlowControlNone_D
+#define CPC_UART_IF_TXC        SL_CONCAT_PASTER_2(USART, _IF_TXC)
+#define CPC_UART_CLEAR_CMD()   SL_CPC_DRV_UART_PERIPHERAL->CMD = USART_CMD_CLEARRX | USART_CMD_CLEARTX
+#endif
 
-// Generic UART peripheral defines
-#define SL_CPC_ISR_TX_HANDLER(periph_nbr)          SL_CONCAT_PASTER_3(SL_CPC_DRV_PERIPH_NAME, periph_nbr, _TX_IRQHandler)
-#define SL_CPC_TX_IRQn(periph_nbr)                 SL_CONCAT_PASTER_3(SL_CPC_DRV_PERIPH_NAME, periph_nbr, _TX_IRQn)
-#define SL_CPC_UART_CLOCK                          SL_CONCAT_PASTER_3(SL_BUS_CLOCK_, SL_CPC_DRV_PERIPH_NAME, SL_CPC_DRV_UART_PERIPHERAL_NO)
+// Generic LDMA defines
+#define RX_DMA_DESCRIPTOR_QTY (2)
 
-#define RX_DMA_DESCRIPTOR_QTY      (2)
-
-#if ((SLI_CPC_RX_DATA_MAX_LENGTH > 2048) \
+// Configuration validation
+#if ((SLI_CPC_DRV_UART_RX_DATA_MAX_LENGTH > 2048) \
   && (SL_CPC_DRV_UART_FLOW_CONTROL_TYPE == WITHOUT_HWFC))
 #error  Buffer larger than 2048 bytes without Hardware Flow Control is not supported
 #endif
 
-#if (SL_CPC_DRV_UART_RX_QUEUE_SIZE > SL_CPC_RX_BUFFER_MAX_COUNT)
-#error  Invalid configuration SL_CPC_RX_BUFFER_MAX_COUNT must be greater than SL_CPC_DRV_UART_RX_QUEUE_SIZE
+#if (SL_CPC_DRV_UART_RX_QUEUE_SIZE > SL_CPC_DRV_UART_RX_BUFFER_MAX_COUNT)
+#error  Invalid configuration SL_CPC_DRV_UART_RX_BUFFER_MAX_COUNT must be greater than SL_CPC_DRV_UART_RX_QUEUE_SIZE
 #endif
 
-#define SL_CPC_DRV_UART_RX_MAX_BUFFER_SIZE (SL_MIN(SLI_CPC_RX_FRAME_MAX_LENGTH, LDMA_DESCRIPTOR_MAX_XFER_SIZE))
-
-// Compatibility layer for peripheral and em_lib
-#if defined(_SILICON_LABS_32B_SERIES_2) // em_lib
-// LDMA
-#if defined(SL_CPC_DRV_PERIPH_IS_EUSART) // EUSART signal
-#define SL_CPC_LDMA_RX_PERIPH_TRIGGER(periph_nbr)  SL_CONCAT_PASTER_3(SL_CONCAT_PASTER_2(ldmaPeripheralSignal_, SL_CPC_DRV_PERIPH_NAME), periph_nbr, _RXFL)
-#define SL_CPC_LDMA_TX_PERIPH_TRIGGER(periph_nbr)  SL_CONCAT_PASTER_3(SL_CONCAT_PASTER_2(ldmaPeripheralSignal_, SL_CPC_DRV_PERIPH_NAME), periph_nbr, _TXFL)
-#else // USART signal
-#define SL_CPC_LDMA_RX_PERIPH_TRIGGER(periph_nbr)  SL_CONCAT_PASTER_3(SL_CONCAT_PASTER_2(ldmaPeripheralSignal_, SL_CPC_DRV_PERIPH_NAME), periph_nbr, _RXDATAV)
-#define SL_CPC_LDMA_TX_PERIPH_TRIGGER(periph_nbr)  SL_CONCAT_PASTER_3(SL_CONCAT_PASTER_2(ldmaPeripheralSignal_, SL_CPC_DRV_PERIPH_NAME), periph_nbr, _TXBL)
-#endif
-#define SL_CPC_LDMA_DESCRIPTOR_T                   LDMA_Descriptor_t
-#define SL_CPC_LDMA_DESCRIPTOR_LINKREL_M2P_BYTE(src, dest, cnt, link_jmp) LDMA_DESCRIPTOR_LINKREL_M2P_BYTE(src, dest, cnt, link_jmp)
-#define SL_CPC_LDMA_DESCRIPTOR_LINKREL_P2M_BYTE(src, dest, cnt, link_jmp) LDMA_DESCRIPTOR_LINKREL_P2M_BYTE(src, dest, cnt, link_jmp)
-#define SL_CPC_LDMA_DESCRIPTOR_SINGLE_M2P_BYTE(src, dest, cnt)  LDMA_DESCRIPTOR_SINGLE_M2P_BYTE(src, dest, cnt)
-#define SL_CPC_LDMA_DESCRIPTOR_SINGLE_P2M_BYTE(src, dest, cnt)  LDMA_DESCRIPTOR_SINGLE_P2M_BYTE(src, dest, cnt)
-#define SL_CPC_LDMA_DESCRIPTOR_MAX_XFER_SIZE  LDMA_DESCRIPTOR_MAX_XFER_SIZE
-#define SL_CPC_LDMA_DESCRIPTOR_XFER_CNT xferCnt
-#define SL_CPC_LDMA_DESCRIPTOR_DONE_IFS doneIfs
-#define SL_CPC_LDMA_DESCRIPTOR_DST_ADDR dstAddr
-#define SL_CPC_LDMA_DESCRIPTOR_LINK_ADDR linkAddr
-// GPIO
-#define SL_CPC_GPIO_SET_PIN_MODE              GPIO_PinModeSet
-#define SL_CPC_GPIO_MODE_PUSH_PULL            gpioModePushPull
-#define SL_CPC_GPIO_MODE_INPUT_PULL           gpioModeInputPull
-
+// Series 2/3 compatibility layer
+#if defined(_SILICON_LABS_32B_SERIES_2)
+// Series 2 uses EMLib
+// UART
 #if defined(SL_CPC_DRV_PERIPH_IS_EUSART)
-#define SL_CPC_UART_ENABLE(peripheral)        EUSART_Enable(peripheral, eusartEnable)
+// EUSART
+#define cpc_uart_enable(peripheral)              EUSART_Enable(peripheral, eusartEnable)
+#define cpc_uart_disable(peripheral)             EUSART_Enable(peripheral, eusartDisable)
+#define cpc_uart_int_clear                       SL_CONCAT_PASTER_2(EUSART, _IntClear)
+#define cpc_uart_int_enable                      SL_CONCAT_PASTER_2(EUSART, _IntEnable)
+#define cpc_uart_int_disable                     SL_CONCAT_PASTER_2(EUSART, _IntDisable)
+#define cpc_uart_int_get                         SL_CONCAT_PASTER_2(EUSART, _IntGet)
+#define CPC_LDMA_RX_PERIPH_TRIGGER(periph_nbr)   SL_CONCAT_PASTER_3(SL_CONCAT_PASTER_2(ldmaPeripheralSignal_, SL_CPC_DRV_PERIPH_NAME), periph_nbr, _RXFL)
+#define CPC_LDMA_TX_PERIPH_TRIGGER(periph_nbr)   SL_CONCAT_PASTER_3(SL_CONCAT_PASTER_2(ldmaPeripheralSignal_, SL_CPC_DRV_PERIPH_NAME), periph_nbr, _TXFL)
 #else
-#define SL_CPC_UART_ENABLE(peripheral)        USART_Enable(peripheral, usartEnable)
+// USART
+#define cpc_uart_enable(peripheral)              USART_Enable(peripheral, usartEnable)
+#define cpc_uart_disable(peripheral)             USART_Enable(peripheral, usartDisable)
+#define cpc_uart_int_clear                       SL_CONCAT_PASTER_2(USART, _IntClear)
+#define cpc_uart_int_enable                      SL_CONCAT_PASTER_2(USART, _IntEnable)
+#define cpc_uart_int_disable                     SL_CONCAT_PASTER_2(USART, _IntDisable)
+#define cpc_uart_int_get                         SL_CONCAT_PASTER_2(USART, _IntGet)
+#define CPC_LDMA_RX_PERIPH_TRIGGER(periph_nbr)   SL_CONCAT_PASTER_3(SL_CONCAT_PASTER_2(ldmaPeripheralSignal_, SL_CPC_DRV_PERIPH_NAME), periph_nbr, _RXDATAV)
+#define CPC_LDMA_TX_PERIPH_TRIGGER(periph_nbr)   SL_CONCAT_PASTER_3(SL_CONCAT_PASTER_2(ldmaPeripheralSignal_, SL_CPC_DRV_PERIPH_NAME), periph_nbr, _TXBL)
 #endif
 
-#else // peripheral
-
 // LDMA
-#define SL_CPC_LDMA_RX_PERIPH_TRIGGER(periph_nbr)  SL_CONCAT_PASTER_3(dmadrvPeripheralSignal_EUSART, periph_nbr, _RXDATAV)
-#define SL_CPC_LDMA_TX_PERIPH_TRIGGER(periph_nbr)  SL_CONCAT_PASTER_3(dmadrvPeripheralSignal_EUSART, periph_nbr, _TXBL)
-#define SL_CPC_LDMA_DESCRIPTOR_T                   sl_hal_ldma_descriptor_t
-#define SL_CPC_LDMA_DESCRIPTOR_LINKREL_M2P_BYTE(src, dest, cnt, link_jmp) SL_HAL_LDMA_DESCRIPTOR_LINKREL_M2P(1, src, dest, cnt, link_jmp)
-#define SL_CPC_LDMA_DESCRIPTOR_LINKREL_P2M_BYTE(src, dest, cnt, link_jmp) SL_HAL_LDMA_DESCRIPTOR_LINKREL_P2M(1, src, dest, cnt, link_jmp)
-#define SL_CPC_LDMA_DESCRIPTOR_SINGLE_M2P_BYTE(src, dest, cnt)  SL_HAL_LDMA_DESCRIPTOR_SINGLE_M2P(1, src, dest, cnt)
-#define SL_CPC_LDMA_DESCRIPTOR_SINGLE_P2M_BYTE(src, dest, cnt)  SL_HAL_LDMA_DESCRIPTOR_SINGLE_P2M(1, src, dest, cnt)
-#define SL_CPC_LDMA_DESCRIPTOR_MAX_XFER_SIZE  SL_HAL_LDMA_DESCRIPTOR_MAX_XFER_SIZE
-#define SL_CPC_LDMA_DESCRIPTOR_XFER_CNT xfer_count
-#define SL_CPC_LDMA_DESCRIPTOR_DONE_IFS done_ifs
-#define SL_CPC_LDMA_DESCRIPTOR_DST_ADDR dst_addr
-#define SL_CPC_LDMA_DESCRIPTOR_LINK_ADDR link_addr
+#define LDMA_PERIPH                                                    LDMA
+typedef LDMA_Descriptor_t                                              cpc_ldma_descriptor_t;
+#define CPC_LDMA_DESCRIPTOR_LINKREL_M2P_BYTE(src, dest, cnt, link_jmp) LDMA_DESCRIPTOR_LINKREL_M2P_BYTE(src, dest, cnt, link_jmp)
+#define CPC_LDMA_DESCRIPTOR_LINKREL_P2M_BYTE(src, dest, cnt, link_jmp) LDMA_DESCRIPTOR_LINKREL_P2M_BYTE(src, dest, cnt, link_jmp)
+#define CPC_LDMA_DESCRIPTOR_SINGLE_M2P_BYTE(src, dest, cnt)            LDMA_DESCRIPTOR_SINGLE_M2P_BYTE(src, dest, cnt)
+#define CPC_LDMA_DESCRIPTOR_SINGLE_P2M_BYTE(src, dest, cnt)            LDMA_DESCRIPTOR_SINGLE_P2M_BYTE(src, dest, cnt)
+#define CPC_LDMA_DESCRIPTOR_MAX_XFER_SIZE                              LDMA_DESCRIPTOR_MAX_XFER_SIZE
+#define CPC_LDMA_DESCRIPTOR_LINKABS_LINKADDR_TO_ADDR                   LDMA_DESCRIPTOR_LINKABS_LINKADDR_TO_ADDR
+#define CPC_LDMA_DESCRIPTOR_LINKABS_ADDR_TO_LINKADDR                   LDMA_DESCRIPTOR_LINKABS_ADDR_TO_LINKADDR
+#define CPC_LDMA_DESCRIPTOR_XFER_CNT                                   xferCnt
+#define CPC_LDMA_DESCRIPTOR_DONE_IFS                                   doneIfs
+#define CPC_LDMA_DESCRIPTOR_DST_ADDR                                   dstAddr
+#define CPC_LDMA_DESCRIPTOR_LINK_ADDR                                  linkAddr
+#define CPC_LDMA_DESCRIPTOR_LINK_MODE                                  linkMode
+#define CPC_LDMA_DESCRIPTOR_LINK_MODE_ABS                              ldmaLinkModeAbs
+#define cpc_ldma_int_clear                                             LDMA_IntClear
+#define cpc_ldma_int_enable                                            LDMA_IntEnable
+
 // GPIO
-#define SL_CPC_GPIO_SET_PIN_MODE              sl_gpio_set_pin_mode
-#define SL_CPC_GPIO_MODE_PUSH_PULL            SL_GPIO_MODE_PUSH_PULL
-#define SL_CPC_GPIO_MODE_INPUT_PULL           SL_GPIO_MODE_INPUT_PULL
-// UART Peripheral
-#define SL_CPC_UART_INT_CLEAR                 sl_hal_eusart_clear_interrupts
-#define SL_CPC_UART_INT_ENABLE                sl_hal_eusart_enable_interrupts
-#define SL_CPC_UART_ENABLE(peripheral)   \
+#define cpc_gpio_set_pin_mode      GPIO_PinModeSet
+#define CPC_GPIO_MODE_PUSH_PULL    gpioModePushPull
+#define CPC_GPIO_MODE_INPUT_PULL   gpioModeInputPull
+
+#else
+// Series 3 uses sl_hal
+// LDMA
+#define LDMA_PERIPH                                                    LDMA(0)
+#define CPC_LDMA_RX_PERIPH_TRIGGER(periph_nbr)                         SL_CONCAT_PASTER_3(dmadrvPeripheralSignal_EUSART, periph_nbr, _RXDATAV)
+#define CPC_LDMA_TX_PERIPH_TRIGGER(periph_nbr)                         SL_CONCAT_PASTER_3(dmadrvPeripheralSignal_EUSART, periph_nbr, _TXBL)
+typedef sl_hal_ldma_descriptor_t                                       cpc_ldma_descriptor_t;
+#define CPC_LDMA_DESCRIPTOR_LINKREL_M2P_BYTE(src, dest, cnt, link_jmp) SL_HAL_LDMA_DESCRIPTOR_LINKREL_M2P(SL_HAL_LDMA_CTRL_SIZE_BYTE, src, dest, cnt, link_jmp)
+#define CPC_LDMA_DESCRIPTOR_LINKREL_P2M_BYTE(src, dest, cnt, link_jmp) SL_HAL_LDMA_DESCRIPTOR_LINKREL_P2M(SL_HAL_LDMA_CTRL_SIZE_BYTE, src, dest, cnt, link_jmp)
+#define CPC_LDMA_DESCRIPTOR_SINGLE_M2P_BYTE(src, dest, cnt)            SL_HAL_LDMA_DESCRIPTOR_SINGLE_M2P(SL_HAL_LDMA_CTRL_SIZE_BYTE, src, dest, cnt)
+#define CPC_LDMA_DESCRIPTOR_SINGLE_P2M_BYTE(src, dest, cnt)            SL_HAL_LDMA_DESCRIPTOR_SINGLE_P2M(SL_HAL_LDMA_CTRL_SIZE_BYTE, src, dest, cnt)
+#define CPC_LDMA_DESCRIPTOR_MAX_XFER_SIZE                              SL_HAL_LDMA_DESCRIPTOR_MAX_XFER_SIZE
+#define CPC_LDMA_DESCRIPTOR_LINKABS_LINKADDR_TO_ADDR                   SL_HAL_LDMA_DESCRIPTOR_LINKABS_LINKADDR_TO_ADDR
+#define CPC_LDMA_DESCRIPTOR_LINKABS_ADDR_TO_LINKADDR                   SL_HAL_LDMA_DESCRIPTOR_LINKABS_ADDR_TO_LINKADDR
+#define CPC_LDMA_DESCRIPTOR_XFER_CNT                                   xfer_count
+#define CPC_LDMA_DESCRIPTOR_DONE_IFS                                   done_ifs
+#define CPC_LDMA_DESCRIPTOR_DST_ADDR                                   dst_addr
+#define CPC_LDMA_DESCRIPTOR_LINK_ADDR                                  link_addr
+#define CPC_LDMA_DESCRIPTOR_LINK_MODE                                  link_mode
+#define CPC_LDMA_DESCRIPTOR_LINK_MODE_ABS                              SL_HAL_LDMA_LINK_MODE_ABS
+#define cpc_ldma_int_clear(flags)                                      sl_hal_ldma_clear_interrupts(LDMA_PERIPH, flags)
+#define cpc_ldma_int_enable(flags)                                     sl_hal_ldma_enable_interrupts(LDMA_PERIPH, flags)
+
+// GPIO
+static inline void cpc_gpio_set_pin_mode(uint8_t port, uint8_t pin, uint8_t mode, bool val)
+{
+  sl_gpio_t gpio = {
+    .port = port,
+    .pin = pin
+  };
+  sl_gpio_set_pin_mode(&gpio, mode, val);
+}
+#define CPC_GPIO_MODE_PUSH_PULL            SL_GPIO_MODE_PUSH_PULL
+#define CPC_GPIO_MODE_INPUT_PULL           SL_GPIO_MODE_INPUT_PULL
+
+// UART (Series 3 only supports EUSART)
+#define CPC_UART_PERIPHERAL(periph_no)     SL_CONCAT_PASTER_2(SL_PERIPHERAL_EUSART, periph_no)
+#define cpc_uart_int_clear                 sl_hal_eusart_clear_interrupts
+#define cpc_uart_int_enable                sl_hal_eusart_enable_interrupts
+#define cpc_uart_int_disable               sl_hal_eusart_disable_interrupts
+#define cpc_uart_int_get                   sl_hal_eusart_get_pending_interrupts
+#define cpc_uart_enable(peripheral)      \
   {                                      \
     sl_hal_eusart_enable(peripheral);    \
     sl_hal_eusart_enable_tx(peripheral); \
     sl_hal_eusart_enable_rx(peripheral); \
   }
-#endif // Compatibility layer for peripheral and em lib
+#define cpc_uart_disable(peripheral)     \
+  {                                      \
+    sl_hal_eusart_disable_rx(peripheral) \
+    sl_hal_eusart_disable_tx(peripheral) \
+    sl_hal_eusart_disable(peripheral);   \
+  }
+#endif // Series 2/3 compatibility layer
+
+#define SL_CPC_DRV_UART_RX_MAX_BUFFER_SIZE  (SL_MIN(SLI_CPC_DRV_UART_RX_FRAME_MAX_LENGTH, CPC_LDMA_DESCRIPTOR_MAX_XFER_SIZE))
 
 /*******************************************************************************
  ***************************  LOCAL VARIABLES   ********************************
  ******************************************************************************/
 
-static sli_cpc_instance_t *driver_instance;
+static sli_cpc_instance_t * driver_instance;
 
 // read/write channel and tx/rx config are non-static because the xmodem driver reuses those values
 unsigned int read_channel;
@@ -195,14 +236,14 @@ unsigned int write_channel;
 #if defined(_SILICON_LABS_32B_SERIES_2)
 LDMA_TransferCfg_t rx_config;
 LDMA_TransferCfg_t tx_config;
-static LDMA_Descriptor_t rx_descriptor[RX_DMA_DESCRIPTOR_QTY];
-static LDMA_Descriptor_t *rx_descriptor_head = NULL;
+static cpc_ldma_descriptor_t rx_descriptor[RX_DMA_DESCRIPTOR_QTY];
+static cpc_ldma_descriptor_t *rx_descriptor_head = NULL;
 
 #if (SL_CPC_ENDPOINT_SECURITY_ENABLED >= 1)
 /* An extra DMA descriptor is needed for the security tag */
-static LDMA_Descriptor_t tx_descriptor[5u];
+static cpc_ldma_descriptor_t tx_descriptor[5u];
 #else
-static LDMA_Descriptor_t tx_descriptor[4u];
+static cpc_ldma_descriptor_t tx_descriptor[4u];
 #endif
 
 #else // Series 3
@@ -275,8 +316,8 @@ static void recovery(void *data);
 
 static void swap_descriptors(void);
 
-static void update_dma_desc_link_abs(LDMA_Descriptor_t *current_dma_desc,
-                                     LDMA_Descriptor_t *next_dma_desc,
+static void update_dma_desc_link_abs(cpc_ldma_descriptor_t *current_dma_desc,
+                                     cpc_ldma_descriptor_t *next_dma_desc,
                                      bool enable_link);
 
 #else
@@ -299,7 +340,7 @@ static sl_status_t uart_drv_init(sli_cpc_drv_t *drv, sli_cpc_instance_t *inst);
 static sl_status_t uart_drv_get_capabilities(sli_cpc_drv_t *drv,
                                              sli_cpc_drv_capabilities_t *capabilities);
 static sl_status_t uart_drv_start_rx(sli_cpc_drv_t *drv);
-#if defined(SL_CATALOG_CPC_PRIMARY_PRESENT)
+#if defined(SL_CATALOG_CPC_PRIMARY_PRESENT) && (SL_CPC_PRIMARY_FIRMWARE_UPGRADE_SUPPORT_ENABLED >= 1)
 static void uart_drv_deinit_for_firmware_upgrade(sli_cpc_drv_t *drv);
 #endif
 static sl_status_t uart_drv_read_data(sli_cpc_drv_t *drv, sl_cpc_buffer_handle_t **buffer_handle);
@@ -310,13 +351,13 @@ static uint32_t uart_drv_get_bus_max_bitrate(sli_cpc_drv_t *drv);
 static void uart_drv_on_rx_buffer_handle_free(sli_cpc_drv_t *drv);
 static void uart_drv_on_rx_buffer_free(sli_cpc_drv_t *drv);
 
-static sli_cpc_drv_t uart_driver = {
+sli_cpc_drv_t uart_driver = {
   .ops = {
     .hw_init = uart_drv_hw_init,
     .init = uart_drv_init,
     .get_capabilities = uart_drv_get_capabilities,
     .start_rx = uart_drv_start_rx,
-#if defined(SL_CATALOG_CPC_PRIMARY_PRESENT)
+#if defined(SL_CATALOG_CPC_PRIMARY_PRESENT) && (SL_CPC_PRIMARY_FIRMWARE_UPGRADE_SUPPORT_ENABLED >= 1)
     .deinit = uart_drv_deinit_for_firmware_upgrade,
 #endif
     .read = uart_drv_read_data,
@@ -333,6 +374,7 @@ static sli_cpc_drv_t uart_driver = {
  **************************   GLOBAL FUNCTIONS   *******************************
  ******************************************************************************/
 
+#if defined(SL_CATALOG_CPC_PRIMARY_PRESENT)
 /***************************************************************************/ /**
  * Return a pointer to the UART driver instance.
  ******************************************************************************/
@@ -340,6 +382,7 @@ sli_cpc_drv_t* sli_cpc_drv_get_driver(void)
 {
   return &uart_driver;
 }
+#endif
 
 /***************************************************************************/ /**
  * Initialize only the UART peripheral to be used in a standalone manner
@@ -356,11 +399,11 @@ static sl_status_t uart_drv_hw_init(sli_cpc_drv_t *drv)
   {
     sl_clock_manager_enable_bus_clock(SL_BUS_CLOCK_GPIO);
 
-    SL_CPC_GPIO_SET_PIN_MODE(SL_CPC_DRV_UART_TX_PORT, SL_CPC_DRV_UART_TX_PIN, SL_CPC_GPIO_MODE_PUSH_PULL, 1);
-    SL_CPC_GPIO_SET_PIN_MODE(SL_CPC_DRV_UART_RX_PORT, SL_CPC_DRV_UART_RX_PIN, SL_CPC_GPIO_MODE_INPUT_PULL, 1);
+    cpc_gpio_set_pin_mode(SL_CPC_DRV_UART_TX_PORT, SL_CPC_DRV_UART_TX_PIN, CPC_GPIO_MODE_PUSH_PULL, 1);
+    cpc_gpio_set_pin_mode(SL_CPC_DRV_UART_RX_PORT, SL_CPC_DRV_UART_RX_PIN, CPC_GPIO_MODE_INPUT_PULL, 1);
   #if (SL_CPC_DRV_UART_FLOW_CONTROL_TYPE == WITH_HWFC)
-    SL_CPC_GPIO_SET_PIN_MODE(SL_CPC_DRV_UART_CTS_PORT, SL_CPC_DRV_UART_CTS_PIN, SL_CPC_GPIO_MODE_INPUT_PULL, 0);
-    SL_CPC_GPIO_SET_PIN_MODE(SL_CPC_DRV_UART_RTS_PORT, SL_CPC_DRV_UART_RTS_PIN, SL_CPC_GPIO_MODE_PUSH_PULL, 0);
+    cpc_gpio_set_pin_mode(SL_CPC_DRV_UART_CTS_PORT, SL_CPC_DRV_UART_CTS_PIN, CPC_GPIO_MODE_INPUT_PULL, 0);
+    cpc_gpio_set_pin_mode(SL_CPC_DRV_UART_RTS_PORT, SL_CPC_DRV_UART_RTS_PIN, CPC_GPIO_MODE_PUSH_PULL, 0);
   #endif
   }
 
@@ -381,16 +424,21 @@ static sl_status_t uart_drv_hw_init(sli_cpc_drv_t *drv)
 
     EUSART_UartInitHf(SL_CPC_DRV_UART_PERIPHERAL, &init);
 
-    SL_CPC_UART_CLEAR_CMD();
+    CPC_UART_CLEAR_CMD();
   #elif defined(_SILICON_LABS_32B_SERIES_3)
     sl_hal_eusart_uart_config_t init = SL_HAL_EUSART_UART_INIT_DEFAULT_HF;
-    sl_hal_eusart_spi_advanced_config_t advancedSettings = SL_HAL_EUSART_UART_ADVANCED_INIT_DEFAULT;
+    sl_hal_eusart_uart_advanced_config_t advancedSettings = SL_HAL_EUSART_UART_ADVANCED_INIT_DEFAULT;
+    #if (SL_CPC_DRV_UART_FLOW_CONTROL_TYPE == WITHOUT_HWFC)
+    advancedSettings.hw_flow_control_mode = SL_HAL_EUSART_HW_FLOW_CONTROL_NONE;
+    #elif (SL_CPC_DRV_UART_FLOW_CONTROL_TYPE == WITH_HWFC)
+    advancedSettings.hw_flow_control_mode = SL_HAL_EUSART_HW_FLOW_CONTROL_CTS_RTS;
+    #endif
 
     // Compute clock div for baudrate
     uint32_t freq;
-    sl_clock_branch_t clock_branch = sl_device_peripheral_get_clock_branch(SL_CPC_DRV_UART_PERIPHERAL);
+    sl_clock_branch_t clock_branch = sl_device_peripheral_get_clock_branch(CPC_UART_PERIPHERAL(SL_CPC_DRV_UART_PERIPHERAL_NO));
     sl_status_t status = sl_clock_manager_get_clock_branch_frequency(clock_branch, &freq);
-    EFM_ASSERT(status == SL_STATUS_OK);
+    SLI_CPC_ASSERT(status == SL_STATUS_OK);
 
     init.clock_div = sl_hal_eusart_uart_calculate_clock_div(freq,
                                                             SL_CPC_DRV_UART_BAUDRATE,
@@ -478,38 +526,38 @@ static sl_status_t uart_drv_hw_init(sli_cpc_drv_t *drv)
     // Init DMA
     ecode = DMADRV_Init();
     if (ecode != ECODE_EMDRV_DMADRV_OK && ecode != ECODE_EMDRV_DMADRV_ALREADY_INITIALIZED) {
-      EFM_ASSERT(false);
+      SLI_CPC_ASSERT(0);
     }
 
     // Allocate read and write channel
     ecode = DMADRV_AllocateChannel(&read_channel, NULL);
     if (ecode != ECODE_OK) {
-      EFM_ASSERT(false);
+      SLI_CPC_ASSERT(0);
     }
 
     ecode = DMADRV_AllocateChannel(&write_channel, NULL);
     if (ecode != ECODE_OK) {
       DMADRV_FreeChannel(read_channel);
-      EFM_ASSERT(false);
+      SLI_CPC_ASSERT(0);
     }
 
     // Configure DMA transfer
     #if defined(_SILICON_LABS_32B_SERIES_2)
-    rx_config = (LDMA_TransferCfg_t)LDMA_TRANSFER_CFG_PERIPHERAL(SL_CPC_LDMA_RX_PERIPH_TRIGGER(SL_CPC_DRV_UART_PERIPHERAL_NO));
-    tx_config = (LDMA_TransferCfg_t)LDMA_TRANSFER_CFG_PERIPHERAL(SL_CPC_LDMA_TX_PERIPH_TRIGGER(SL_CPC_DRV_UART_PERIPHERAL_NO));
+    rx_config = (LDMA_TransferCfg_t)LDMA_TRANSFER_CFG_PERIPHERAL(CPC_LDMA_RX_PERIPH_TRIGGER(SL_CPC_DRV_UART_PERIPHERAL_NO));
+    tx_config = (LDMA_TransferCfg_t)LDMA_TRANSFER_CFG_PERIPHERAL(CPC_LDMA_TX_PERIPH_TRIGGER(SL_CPC_DRV_UART_PERIPHERAL_NO));
     rx_config.ldmaDbgHalt = true;
     tx_config.ldmaDbgHalt = true;
     #else
-    rx_config = (sl_hal_ldma_transfer_config_t)SL_HAL_LDMA_TRANSFER_CFG_PERIPHERAL(SL_CPC_LDMA_RX_PERIPH_TRIGGER(SL_CPC_DRV_UART_PERIPHERAL_NO));
-    tx_config = (sl_hal_ldma_transfer_config_t)SL_HAL_LDMA_TRANSFER_CFG_PERIPHERAL(SL_CPC_LDMA_TX_PERIPH_TRIGGER(SL_CPC_DRV_UART_PERIPHERAL_NO));
+    rx_config = (sl_hal_ldma_transfer_config_t)SL_HAL_LDMA_TRANSFER_CFG_PERIPHERAL(CPC_LDMA_RX_PERIPH_TRIGGER(SL_CPC_DRV_UART_PERIPHERAL_NO));
+    tx_config = (sl_hal_ldma_transfer_config_t)SL_HAL_LDMA_TRANSFER_CFG_PERIPHERAL(CPC_LDMA_TX_PERIPH_TRIGGER(SL_CPC_DRV_UART_PERIPHERAL_NO));
     rx_config.debug_halt_en = true;
     tx_config.debug_halt_en = true;
     #endif
   }
 
-#if (SL_CPC_PRIMARY_FIRMWARE_UPGRADE_RECOVERY_PINS_SUPPORT_ENABLED >= 1)
-  SL_CPC_GPIO_SET_PIN_MODE(SL_CPC_DRV_UART_RESET_PORT, SL_CPC_DRV_UART_RESET_PIN, gpioModePushPull, 1);
-  SL_CPC_GPIO_SET_PIN_MODE(SL_CPC_DRV_UART_WAKE_PORT, SL_CPC_DRV_UART_WAKE_PORT, gpioModePushPull, 1);
+#if defined(SL_CPC_PRIMARY_FIRMWARE_UPGRADE_RECOVERY_PINS_SUPPORT_ENABLED) && (SL_CPC_PRIMARY_FIRMWARE_UPGRADE_RECOVERY_PINS_SUPPORT_ENABLED >= 1)
+  cpc_gpio_set_pin_mode(SL_CPC_DRV_UART_RESET_PORT, SL_CPC_DRV_UART_RESET_PIN, gpioModePushPull, 1);
+  cpc_gpio_set_pin_mode(SL_CPC_DRV_UART_WAKE_PORT, SL_CPC_DRV_UART_WAKE_PORT, gpioModePushPull, 1);
 #endif
 
   return SL_STATUS_OK;
@@ -542,7 +590,7 @@ static sl_status_t uart_drv_init(sli_cpc_drv_t *drv, sli_cpc_instance_t *inst)
 
   for (buf_cnt = 0; buf_cnt < SL_CPC_DRV_UART_RX_QUEUE_SIZE; buf_cnt++) {
     if (sli_cpc_get_buffer_handle_for_rx(inst, &buffer_handle, false) != SL_STATUS_OK) {
-      EFM_ASSERT(false);
+      SLI_CPC_ASSERT(0);
       return SL_STATUS_ALLOCATION_FAILED;
     }
     push_free_rx_buffer_handle(buffer_handle);
@@ -550,32 +598,32 @@ static sl_status_t uart_drv_init(sli_cpc_drv_t *drv, sli_cpc_instance_t *inst)
 
   free_tx_items = SL_CPC_DRV_UART_TX_QUEUE_SIZE;
 
-  NVIC_EnableIRQ(SL_CPC_TX_IRQn(SL_CPC_DRV_UART_PERIPHERAL_NO));
+  NVIC_EnableIRQ(CPC_UART_TX_IRQn(SL_CPC_DRV_UART_PERIPHERAL_NO));
 
   // Discard false frames and/or IRQs
-  SL_CPC_UART_CLEAR_CMD();
+  CPC_UART_CLEAR_CMD();
 
-  SL_CPC_UART_INT_CLEAR(SL_CPC_DRV_UART_PERIPHERAL, 0xFFFFFFFF);
-  SL_CPC_UART_INT_ENABLE(SL_CPC_DRV_UART_PERIPHERAL, SL_CPC_UART_IF_TXC);
+  cpc_uart_int_clear(SL_CPC_DRV_UART_PERIPHERAL, 0xFFFFFFFF);
+  cpc_uart_int_enable(SL_CPC_DRV_UART_PERIPHERAL, CPC_UART_IF_TXC);
 
-  SL_CPC_UART_ENABLE(SL_CPC_DRV_UART_PERIPHERAL);
+  cpc_uart_enable(SL_CPC_DRV_UART_PERIPHERAL);
 
 #if (SL_CPC_DRV_UART_FLOW_CONTROL_TYPE == WITHOUT_HWFC)
   uint8_t * buffer_ptr;
 
   if (sli_cpc_get_raw_rx_buffer(driver_instance, &buffer_ptr) != SL_STATUS_OK) {
-    EFM_ASSERT(false);
+    SLI_CPC_ASSERT(0);
     return SL_STATUS_ALLOCATION_FAILED;
   }
-  rx_descriptor[0] = (LDMA_Descriptor_t)LDMA_DESCRIPTOR_SINGLE_P2M_BYTE(&(SL_CPC_DRV_UART_PERIPHERAL->RXDATA), buffer_ptr, SL_MIN(SLI_CPC_RX_FRAME_MAX_LENGTH, LDMA_DESCRIPTOR_MAX_XFER_SIZE));
+  rx_descriptor[0] = (cpc_ldma_descriptor_t)CPC_LDMA_DESCRIPTOR_SINGLE_P2M_BYTE(&(SL_CPC_DRV_UART_PERIPHERAL->RXDATA), buffer_ptr, SL_MIN(SLI_CPC_DRV_UART_RX_FRAME_MAX_LENGTH, CPC_LDMA_DESCRIPTOR_MAX_XFER_SIZE));
 
   if (sli_cpc_get_raw_rx_buffer(driver_instance, &buffer_ptr) != SL_STATUS_OK) {
-    EFM_ASSERT(false);
+    SLI_CPC_ASSERT(0);
     return SL_STATUS_ALLOCATION_FAILED;
   }
-  rx_descriptor[1] = (LDMA_Descriptor_t)LDMA_DESCRIPTOR_SINGLE_P2M_BYTE(&(SL_CPC_DRV_UART_PERIPHERAL->RXDATA), buffer_ptr, SL_MIN(SLI_CPC_RX_FRAME_MAX_LENGTH, LDMA_DESCRIPTOR_MAX_XFER_SIZE));
-  rx_descriptor[0].xfer.SL_CPC_LDMA_DESCRIPTOR_DONE_IFS = 0;
-  rx_descriptor[1].xfer.SL_CPC_LDMA_DESCRIPTOR_DONE_IFS = 0;
+  rx_descriptor[1] = (cpc_ldma_descriptor_t)CPC_LDMA_DESCRIPTOR_SINGLE_P2M_BYTE(&(SL_CPC_DRV_UART_PERIPHERAL->RXDATA), buffer_ptr, SL_MIN(SLI_CPC_DRV_UART_RX_FRAME_MAX_LENGTH, CPC_LDMA_DESCRIPTOR_MAX_XFER_SIZE));
+  rx_descriptor[0].xfer.CPC_LDMA_DESCRIPTOR_DONE_IFS = 0;
+  rx_descriptor[1].xfer.CPC_LDMA_DESCRIPTOR_DONE_IFS = 0;
 
   update_dma_desc_link_abs(&rx_descriptor[0], &rx_descriptor[1], false);
   update_dma_desc_link_abs(&rx_descriptor[1], &rx_descriptor[0], false);
@@ -615,7 +663,7 @@ static sl_status_t uart_drv_start_rx(sli_cpc_drv_t *drv)
   return SL_STATUS_OK;
 }
 
-#if defined(SL_CATALOG_CPC_PRIMARY_PRESENT)
+#if defined(SL_CATALOG_CPC_PRIMARY_PRESENT) && (SL_CPC_PRIMARY_FIRMWARE_UPGRADE_SUPPORT_ENABLED >= 1)
 static void uart_drv_deinit_for_firmware_upgrade(sli_cpc_drv_t *drv)
 {
   MCU_DECLARE_IRQ_STATE;
@@ -625,18 +673,12 @@ static void uart_drv_deinit_for_firmware_upgrade(sli_cpc_drv_t *drv)
   MCU_ENTER_ATOMIC();
 
   {
-    NVIC_DisableIRQ(SL_CPC_TX_IRQn(SL_CPC_DRV_UART_PERIPHERAL_NO));
-    NVIC_ClearPendingIRQ(SL_CPC_TX_IRQn(SL_CPC_DRV_UART_PERIPHERAL_NO));
+    NVIC_DisableIRQ(CPC_UART_TX_IRQn(SL_CPC_DRV_UART_PERIPHERAL_NO));
+    NVIC_ClearPendingIRQ(CPC_UART_TX_IRQn(SL_CPC_DRV_UART_PERIPHERAL_NO));
 
-#if defined(SL_CPC_DRV_PERIPH_IS_EUSART)
-    EUSART_IntDisable(SL_CPC_DRV_UART_PERIPHERAL, EUSART_IEN_TXC);
-    EUSART_IntClear(SL_CPC_DRV_UART_PERIPHERAL, EUSART_IEN_TXC);
-    EUSART_Enable(SL_CPC_DRV_UART_PERIPHERAL, eusartDisable);
-#else
-    USART_IntDisable(SL_CPC_DRV_UART_PERIPHERAL, USART_IEN_TXC);
-    USART_IntClear(SL_CPC_DRV_UART_PERIPHERAL, USART_IEN_TXC);
-    USART_Enable(SL_CPC_DRV_UART_PERIPHERAL, usartDisable);
-#endif
+    cpc_uart_int_disable(SL_CPC_DRV_UART_PERIPHERAL, CPC_UART_IF_TXC);
+    cpc_uart_int_clear(SL_CPC_DRV_UART_PERIPHERAL, CPC_UART_IF_TXC);
+    cpc_uart_disable(SL_CPC_DRV_UART_PERIPHERAL);
 
     DMADRV_StopTransfer(read_channel);
     DMADRV_StopTransfer(write_channel);
@@ -686,9 +728,9 @@ static sl_status_t uart_drv_read_data(sli_cpc_drv_t *drv,
   MCU_ENTER_ATOMIC();
 
 #if defined(SL_CATALOG_CPC_PRIMARY_PRESENT)
-  EFM_ASSERT(deinited_for_firmware_upgrade == false);
+  SLI_CPC_ASSERT(deinited_for_firmware_upgrade == false);
 #endif
-  EFM_ASSERT(buffer_handle != NULL);
+  SLI_CPC_ASSERT(buffer_handle != NULL);
 
   *buffer_handle = sli_cpc_pop_driver_buffer_handle(&rx_pending_list_head);
 
@@ -716,7 +758,7 @@ static sl_status_t uart_drv_transmit_data(sli_cpc_drv_t *drv,
   MCU_ENTER_ATOMIC();
 
 #if defined(SL_CATALOG_CPC_PRIMARY_PRESENT)
-  EFM_ASSERT(deinited_for_firmware_upgrade == false);
+  SLI_CPC_ASSERT(deinited_for_firmware_upgrade == false);
 #endif
 
   if (free_tx_items == 0) {
@@ -726,7 +768,7 @@ static sl_status_t uart_drv_transmit_data(sli_cpc_drv_t *drv,
 
   --free_tx_items;
 
-  EFM_ASSERT(buffer_handle->hdlc_header != NULL);
+  SLI_CPC_ASSERT(buffer_handle->hdlc_header != NULL);
 
   sli_cpc_push_back_driver_buffer_handle(&tx_submitted_list_head, buffer_handle);
 
@@ -746,7 +788,7 @@ static bool uart_drv_is_transmit_ready(sli_cpc_drv_t *drv)
   (void)drv;
 
 #if defined(SL_CATALOG_CPC_PRIMARY_PRESENT)
-  EFM_ASSERT(deinited_for_firmware_upgrade == false);
+  SLI_CPC_ASSERT(deinited_for_firmware_upgrade == false);
 #endif
 
   MCU_ATOMIC_SECTION(ready = tx_ready && free_tx_items > 0; );
@@ -804,8 +846,8 @@ static void init_clocks(void)
 #endif // SL_CATALOG_CLOCK_MANAGER_PRESENT
 
   // Enable peripheral clocks
-  status = sl_clock_manager_enable_bus_clock(SL_CPC_UART_CLOCK);
-  EFM_ASSERT(status == SL_STATUS_OK);
+  status = sl_clock_manager_enable_bus_clock(CPC_UART_CLOCK);
+  SLI_CPC_ASSERT(status == SL_STATUS_OK);
 }
 
 /***************************************************************************/ /**
@@ -827,7 +869,7 @@ static sl_cpc_buffer_handle_t* pop_free_rx_buffer_handle(void)
   }
   buffer_handle = sli_cpc_pop_driver_buffer_handle(&rx_free_buffer_handle_list_head);
   if (buffer_handle == NULL) {
-    EFM_ASSERT(false); // Should not have reached this point, free_rx_buffer_handles == 0
+    SLI_CPC_ASSERT(0); // Should not have reached this point, free_rx_buffer_handles == 0
     MCU_EXIT_ATOMIC();
     return NULL;
   }
@@ -845,7 +887,7 @@ static void push_free_rx_buffer_handle(sl_cpc_buffer_handle_t* buffer_handle)
 
   MCU_ENTER_ATOMIC();
   if (free_rx_buffer_handles >= SL_CPC_DRV_UART_RX_QUEUE_SIZE) {
-    EFM_ASSERT(false);
+    SLI_CPC_ASSERT(0);
     MCU_EXIT_ATOMIC();
     return;
   }
@@ -882,13 +924,13 @@ static sl_status_t prepare_next_tx(void)
   payload_len = buffer_handle->data_length;
 
   if (buffer_handle->hdlc_header == NULL) {
-    EFM_ASSERT(false);
+    SLI_CPC_ASSERT(0);
     return SL_STATUS_FAIL;
   }
 
   if (payload_len > 0u) {
     /* First TX descriptor is for the header */
-    tx_descriptor[idx++] = (SL_CPC_LDMA_DESCRIPTOR_T)SL_CPC_LDMA_DESCRIPTOR_LINKREL_M2P_BYTE(
+    tx_descriptor[idx++] = (cpc_ldma_descriptor_t)CPC_LDMA_DESCRIPTOR_LINKREL_M2P_BYTE(
       buffer_handle->hdlc_header,
       &(SL_CPC_DRV_UART_PERIPHERAL->TXDATA),
       SLI_CPC_HDLC_HEADER_RAW_SIZE,
@@ -896,18 +938,18 @@ static sl_status_t prepare_next_tx(void)
 
     /* next descriptor(s) are for the payload */
     if (payload_len <= DMADRV_MAX_XFER_COUNT) {
-      tx_descriptor[idx++] = (SL_CPC_LDMA_DESCRIPTOR_T)SL_CPC_LDMA_DESCRIPTOR_LINKREL_M2P_BYTE(
+      tx_descriptor[idx++] = (cpc_ldma_descriptor_t)CPC_LDMA_DESCRIPTOR_LINKREL_M2P_BYTE(
         buffer_handle->data,
         &(SL_CPC_DRV_UART_PERIPHERAL->TXDATA),
         payload_len,
         1u);
     } else if (payload_len <= (DMADRV_MAX_XFER_COUNT * 2)) {
-      tx_descriptor[idx++] = (SL_CPC_LDMA_DESCRIPTOR_T)SL_CPC_LDMA_DESCRIPTOR_LINKREL_M2P_BYTE(
+      tx_descriptor[idx++] = (cpc_ldma_descriptor_t)CPC_LDMA_DESCRIPTOR_LINKREL_M2P_BYTE(
         buffer_handle->data,
         &(SL_CPC_DRV_UART_PERIPHERAL->TXDATA),
         DMADRV_MAX_XFER_COUNT,
         1u);
-      tx_descriptor[idx++] = (SL_CPC_LDMA_DESCRIPTOR_T)SL_CPC_LDMA_DESCRIPTOR_LINKREL_M2P_BYTE(
+      tx_descriptor[idx++] = (cpc_ldma_descriptor_t)CPC_LDMA_DESCRIPTOR_LINKREL_M2P_BYTE(
         &((uint8_t *)buffer_handle->data)[DMADRV_MAX_XFER_COUNT],
         &(SL_CPC_DRV_UART_PERIPHERAL->TXDATA),
         (payload_len - DMADRV_MAX_XFER_COUNT),
@@ -923,7 +965,7 @@ static sl_status_t prepare_next_tx(void)
      * before the FCS.
      */
     if (buffer_handle->security_tag) {
-      tx_descriptor[idx++] = (LDMA_Descriptor_t)SL_CPC_LDMA_DESCRIPTOR_LINKREL_M2P_BYTE(
+      tx_descriptor[idx++] = (cpc_ldma_descriptor_t)CPC_LDMA_DESCRIPTOR_LINKREL_M2P_BYTE(
         (uint8_t *)buffer_handle->security_tag,
         &(SL_CPC_DRV_UART_PERIPHERAL->TXDATA),
         SLI_SECURITY_TAG_LENGTH_BYTES,
@@ -932,7 +974,7 @@ static sl_status_t prepare_next_tx(void)
 #endif
 
     /* Caution: last descriptor, don't increment idx */
-    tx_descriptor[idx] = (SL_CPC_LDMA_DESCRIPTOR_T)SL_CPC_LDMA_DESCRIPTOR_SINGLE_M2P_BYTE(
+    tx_descriptor[idx] = (cpc_ldma_descriptor_t)CPC_LDMA_DESCRIPTOR_SINGLE_M2P_BYTE(
       &buffer_handle->fcs,
       &(SL_CPC_DRV_UART_PERIPHERAL->TXDATA),
       SLI_CPC_HDLC_FCS_SIZE);
@@ -941,7 +983,7 @@ static sl_status_t prepare_next_tx(void)
      * This buffer has no payload, header only.
      * Caution: last descriptor, don't increment idx
      */
-    tx_descriptor[idx] = (SL_CPC_LDMA_DESCRIPTOR_T)SL_CPC_LDMA_DESCRIPTOR_SINGLE_M2P_BYTE(
+    tx_descriptor[idx] = (cpc_ldma_descriptor_t)CPC_LDMA_DESCRIPTOR_SINGLE_M2P_BYTE(
       buffer_handle->hdlc_header,
       &(SL_CPC_DRV_UART_PERIPHERAL->TXDATA),
       SLI_CPC_HDLC_HEADER_RAW_SIZE);
@@ -949,7 +991,7 @@ static sl_status_t prepare_next_tx(void)
 
   /* Clear doneIfs */
   for (uint8_t doneIfIndex = 0; doneIfIndex <= idx; doneIfIndex++) {
-    tx_descriptor[doneIfIndex].xfer.SL_CPC_LDMA_DESCRIPTOR_DONE_IFS = 0u;
+    tx_descriptor[doneIfIndex].xfer.CPC_LDMA_DESCRIPTOR_DONE_IFS = 0u;
   }
 
   tx_ready = false;
@@ -959,7 +1001,7 @@ static sl_status_t prepare_next_tx(void)
                                   tx_descriptor,
                                   NULL,
                                   NULL);
-  EFM_ASSERT(code == ECODE_OK);
+  SLI_CPC_ASSERT(code == ECODE_OK);
 
   MCU_EXIT_ATOMIC();
 
@@ -977,7 +1019,7 @@ static void uart_drv_on_rx_buffer_free(sli_cpc_drv_t *drv)
 
   MCU_ENTER_ATOMIC();
 
-  SL_CPC_JOURNAL_RECORD_TRACE("[TRACE] uart_drv_on_rx_buffer_free", __LINE__);
+  SL_CPC_JOURNAL_RECORD_DEBUG("uart_drv_on_rx_buffer_free", __LINE__);
   // Restart DMA if we previously ran out of buffers
   if (need_rx_buffer && (rx_free_buffer_handle_list_head != NULL)) {
     need_rx_buffer = false;
@@ -1002,7 +1044,7 @@ static void uart_drv_on_rx_buffer_handle_free(sli_cpc_drv_t *drv)
 
   sl_cpc_buffer_handle_t *buffer_handle;
 
-  SL_CPC_JOURNAL_RECORD_TRACE("[TRACE] uart_drv_on_rx_buffer_handle_free", __LINE__);
+  SL_CPC_JOURNAL_RECORD_DEBUG("uart_drv_on_rx_buffer_handle_free", __LINE__);
   if (free_rx_buffer_handles < SL_CPC_DRV_UART_RX_QUEUE_SIZE) {
     status = sli_cpc_get_buffer_handle_for_rx(driver_instance, &buffer_handle, false);
     if (status == SL_STATUS_OK) {
@@ -1010,7 +1052,7 @@ static void uart_drv_on_rx_buffer_handle_free(sli_cpc_drv_t *drv)
     }
   } else {
     SL_CPC_JOURNAL_RECORD_ERROR("Possible memory leak, free_rx_buffer_handles >= SL_CPC_DRV_UART_RX_QUEUE_SIZE", __LINE__);
-    EFM_ASSERT(false);
+    SLI_CPC_ASSERT(0);
   }
 
   MCU_EXIT_ATOMIC();
@@ -1055,25 +1097,18 @@ static void sli_cpc_drv_dispatch_function(void *data)
 /***************************************************************************//**
  * TX IRQ handler.
  ******************************************************************************/
-void SL_CPC_ISR_TX_HANDLER(SL_CPC_DRV_UART_PERIPHERAL_NO)(void)
+void CPC_UART_ISR_TX_HANDLER(SL_CPC_DRV_UART_PERIPHERAL_NO)(void)
 {
   MCU_DECLARE_IRQ_STATE;
-#if defined(SL_CPC_DRV_PERIPH_IS_EUSART)
-  uint32_t flag = EUSART_IntGet(SL_CPC_DRV_UART_PERIPHERAL);
-  EUSART_IntClear(SL_CPC_DRV_UART_PERIPHERAL, flag & EUSART_IF_TXC);
-#else
-  uint32_t flag = USART_IntGet(SL_CPC_DRV_UART_PERIPHERAL);
-  USART_IntClear(SL_CPC_DRV_UART_PERIPHERAL, flag & USART_IF_TXC);
-#endif
+  bool done;
+  uint32_t flag = cpc_uart_int_get(SL_CPC_DRV_UART_PERIPHERAL);
+  cpc_uart_int_clear(SL_CPC_DRV_UART_PERIPHERAL, flag & CPC_UART_IF_TXC);
 
-#if defined(SL_CPC_DRV_PERIPH_IS_EUSART)
-  if (flag & EUSART_IF_TXC) {
-#else
-  if (flag & USART_IF_TXC) {
-#endif
+  if (flag & CPC_UART_IF_TXC) {
     sl_cpc_buffer_handle_t *buffer_handle;
 
-    EFM_ASSERT(LDMA_TransferDone(write_channel));
+    DMADRV_TransferDone(write_channel, &done);
+    SLI_CPC_ASSERT(done);
 
     tx_ready = true;
 
@@ -1081,7 +1116,7 @@ void SL_CPC_ISR_TX_HANDLER(SL_CPC_DRV_UART_PERIPHERAL_NO)(void)
     // and prevent it from being dropped by the core
     MCU_ENTER_ATOMIC();
     buffer_handle = sli_cpc_pop_driver_buffer_handle(&tx_submitted_list_head);
-    EFM_ASSERT(buffer_handle != NULL);
+    SLI_CPC_ASSERT(buffer_handle != NULL);
     sli_cpc_push_back_driver_buffer_handle(&tx_complete_list_head, buffer_handle);
     MCU_EXIT_ATOMIC();
 
@@ -1102,17 +1137,17 @@ void SL_CPC_ISR_TX_HANDLER(SL_CPC_DRV_UART_PERIPHERAL_NO)(void)
 #if (SL_CPC_DRV_UART_FLOW_CONTROL_TYPE == WITHOUT_HWFC)
 static void get_already_received_cnt(uint32_t *already_recvd_cnt)
 {
-  *already_recvd_cnt = LDMA->CH[read_channel].DST - rx_descriptor_head->xfer.SL_CPC_LDMA_DESCRIPTOR_DST_ADDR;
+  *already_recvd_cnt = LDMA_PERIPH->CH[read_channel].DST - rx_descriptor_head->xfer.CPC_LDMA_DESCRIPTOR_DST_ADDR;
 
   if (*already_recvd_cnt > SL_CPC_DRV_UART_RX_MAX_BUFFER_SIZE) {
-    EFM_ASSERT(false); // Should never happen
+    SLI_CPC_ASSERT(0); // Should never happen
     *already_recvd_cnt = SL_CPC_DRV_UART_RX_MAX_BUFFER_SIZE;
   }
 }
 
 static void swap_descriptors(void)
 {
-  rx_descriptor_head = LDMA_DESCRIPTOR_LINKABS_LINKADDR_TO_ADDR(rx_descriptor_head->xfer.SL_CPC_LDMA_DESCRIPTOR_LINK_ADDR);
+  rx_descriptor_head = CPC_LDMA_DESCRIPTOR_LINKABS_LINKADDR_TO_ADDR(rx_descriptor_head->xfer.CPC_LDMA_DESCRIPTOR_LINK_ADDR);
 }
 #endif
 
@@ -1120,7 +1155,7 @@ static bool find_valid_header(uint8_t *buffer, uint16_t buffer_size, uint16_t *h
 {
   uint16_t hcs = 0;
 
-  EFM_ASSERT(buffer_size >= SLI_CPC_HDLC_HEADER_RAW_SIZE);
+  SLI_CPC_ASSERT(buffer_size >= SLI_CPC_HDLC_HEADER_RAW_SIZE);
 
   for (uint16_t i = 0; i <= buffer_size - SLI_CPC_HDLC_HEADER_RAW_SIZE; i++) {
     if (buffer[i] == SLI_CPC_HDLC_FLAG_VAL) {
@@ -1144,20 +1179,20 @@ static void dispatch_recovery(void)
   sl_status_t dispatch_status = SL_STATUS_FAIL;
 
   dispatch_status = sli_cpc_dispatcher_push(&recovery_dispatcher_handle, recovery, NULL);
-  EFM_ASSERT(dispatch_status == SL_STATUS_OK);
+  SLI_CPC_ASSERT(dispatch_status == SL_STATUS_OK);
 
-  LDMA->CH[read_channel].LINK &= ~LDMA_CH_LINK_LINK;
+  LDMA_PERIPH->CH[read_channel].LINK &= ~LDMA_CH_LINK_LINK;
 
   // Disable interrupts
 #ifdef _LDMA_CH_CTRL_DONEIFSEN_MASK
-  LDMA->CH[read_channel].CTRL &= ~_LDMA_CH_CTRL_DONEIFSEN_MASK;
+  LDMA_PERIPH->CH[read_channel].CTRL &= ~_LDMA_CH_CTRL_DONEIFSEN_MASK;
 #else
-  LDMA->CH[read_channel].CTRL &= ~_LDMA_CH_CTRL_DONEIEN_MASK;
+  LDMA_PERIPH->CH[read_channel].CTRL &= ~_LDMA_CH_CTRL_DONEIEN_MASK;
 #endif
-  LDMA->IEN &= ~chMask;
+  LDMA_PERIPH->IEN &= ~chMask;
 
   // Clear any pending ISR
-  LDMA_IntClear(chMask);
+  cpc_ldma_int_clear(chMask);
 }
 
 static void recovery(void *data)
@@ -1192,7 +1227,7 @@ static void recovery(void *data)
     exit = true;
     notify_core = false;
 
-    EFM_ASSERT(recovery_context.spilled_buffer != NULL);
+    SLI_CPC_ASSERT(recovery_context.spilled_buffer != NULL);
 
     // Allocate a RX entry if necessary
     if (recovery_context.buffer_handle == NULL && header_expected_next) {
@@ -1292,11 +1327,13 @@ static void recovery(void *data)
                 // Remember the offset to skip bytes in the spill buffer
                 recovery_context.offset = i;
 
-                // Resync was a success, reset the sliding window
+                // Resync was a success
                 memset(recovery_context.hdlc_header_out_of_sync_sliding_window, 0x00, sizeof(recovery_context.hdlc_header_out_of_sync_sliding_window));
-
                 recovery_context.out_of_sync = false;
                 resynced = true; // We will be using this header
+
+                // There is no unused bytes in the resync window buffer
+                recovery_context.out_of_sync_extra_bytes_len = 0;
                 break;
               }
             }
@@ -1423,7 +1460,7 @@ static void recovery(void *data)
         }
       } while (false); // Used for breaking out of if(recovery_context.out_of_sync)
     }
-    EFM_ASSERT(recovery_context.out_of_sync_extra_bytes_len <= SLI_CPC_HDLC_HEADER_RAW_SIZE);
+    SLI_CPC_ASSERT(recovery_context.out_of_sync_extra_bytes_len <= SLI_CPC_HDLC_HEADER_RAW_SIZE);
 
     //===========================================================================
     //
@@ -1448,7 +1485,7 @@ static void recovery(void *data)
           if (already_recvd_cnt >= (uint8_t)(SLI_CPC_HDLC_HEADER_RAW_SIZE - recovery_context.out_of_sync_extra_bytes_len)) {
             // A resync previously occured, and there was extra bytes in the sliding window.
             // We need to recover them by prepending them to the spill buffer
-            EFM_ASSERT(recovery_context.out_of_sync_extra_bytes_len < SLI_CPC_HDLC_HEADER_RAW_SIZE);
+            SLI_CPC_ASSERT(recovery_context.out_of_sync_extra_bytes_len < SLI_CPC_HDLC_HEADER_RAW_SIZE);
 
             memcpy(recovery_context.buffer_handle->hdlc_header,
                    recovery_context.out_of_sync_extra_bytes,
@@ -1485,7 +1522,7 @@ static void recovery(void *data)
           recovery_state = RECOVERY_FOUND_HEADER_NO_PAYLOAD;
           sli_cpc_push_back_driver_buffer_handle(&rx_pending_list_head, recovery_context.buffer_handle);
           notify_core = true;
-        } else if (recovery_context.buffer_handle->data_length > SLI_CPC_RX_DATA_MAX_LENGTH) {
+        } else if (recovery_context.buffer_handle->data_length > SLI_CPC_DRV_UART_RX_DATA_MAX_LENGTH) {
           notify_core_error(recovery_context.buffer_handle, SL_CPC_REJECT_ERROR);
         } else {
           recovery_state = RECOVERY_FOUND_HEADER;
@@ -1546,7 +1583,7 @@ static void recovery(void *data)
         //                       Payload (part 1 & 2)
         //
         //===========================================================================
-        EFM_ASSERT(recovery_context.buffer_handle->data_length > recovery_context.out_of_sync_extra_bytes_len);
+        SLI_CPC_ASSERT(recovery_context.buffer_handle->data_length > recovery_context.out_of_sync_extra_bytes_len);
 
         memmove(recovery_context.spilled_buffer + recovery_context.out_of_sync_extra_bytes_len,
                 recovery_context.spilled_buffer + recovery_context.offset,
@@ -1607,8 +1644,8 @@ static void recovery(void *data)
     }
 
     if (recovery_state == RECOVERY_FOUND_HEADER) {
-      EFM_ASSERT(header_expected_next == false);
-      EFM_ASSERT(recovery_context.buffer_handle != NULL);
+      SLI_CPC_ASSERT(header_expected_next == false);
+      SLI_CPC_ASSERT(recovery_context.buffer_handle != NULL);
 
       if (recovery_context.buffer_handle->data_length + recovery_context.offset > SL_CPC_DRV_UART_RX_MAX_BUFFER_SIZE) {
         recovery_state = RECOVERY_FAILED;
@@ -1635,6 +1672,7 @@ static void recovery(void *data)
         if (status == SL_STATUS_OK) {
           recovery_context.spilled_buffer = NULL; // Will be reused by the ISR
           recovery_context.recovery_completed = true;
+          recovery_context.out_of_sync_extra_bytes_len = 0;
         } else if (status == SL_STATUS_ALREADY_EXISTS) {
           exit = false;
         }
@@ -1642,7 +1680,7 @@ static void recovery(void *data)
     }
 
     if (notify_core) {
-      sli_cpc_notify_rx_data_from_drv();
+      sli_cpc_notify_rx_data_from_drv(driver_instance);
       recovery_context.buffer_handle = NULL;
     }
 
@@ -1672,7 +1710,7 @@ static bool rx_dma_complete_hwfc(unsigned int channel,
   MCU_DECLARE_IRQ_STATE;
 
   static sl_cpc_buffer_handle_t *active_dma_rx_buffer_handle = NULL;
-  SL_CPC_LDMA_DESCRIPTOR_T *completed_desc = NULL;
+  cpc_ldma_descriptor_t *completed_desc = NULL;
   uint8_t *rx_buffer = NULL;
   uint8_t *active_rx_buffer = NULL;
   bool notify_core = false;
@@ -1689,14 +1727,14 @@ static bool rx_dma_complete_hwfc(unsigned int channel,
 
   MCU_ENTER_ATOMIC();
   completed_desc = rx_descriptor_head;
-  EFM_ASSERT(completed_desc != NULL);
+  SLI_CPC_ASSERT(completed_desc != NULL);
 
   if (was_out_of_sync) {
-    active_rx_buffer = (uint8_t *)(completed_desc->xfer.SL_CPC_LDMA_DESCRIPTOR_DST_ADDR) - out_of_sync_extra_bytes;
+    active_rx_buffer = (uint8_t *)(completed_desc->xfer.CPC_LDMA_DESCRIPTOR_DST_ADDR) - out_of_sync_extra_bytes;
     out_of_sync_extra_bytes = 0;
     was_out_of_sync = false;
   } else {
-    active_rx_buffer = (uint8_t *)(completed_desc->xfer.SL_CPC_LDMA_DESCRIPTOR_DST_ADDR);
+    active_rx_buffer = (uint8_t *)(completed_desc->xfer.CPC_LDMA_DESCRIPTOR_DST_ADDR);
   }
 
   //===========================================================================
@@ -1739,7 +1777,7 @@ static bool rx_dma_complete_hwfc(unsigned int channel,
   //
   //===========================================================================
   if (header_expected_next) {
-    EFM_ASSERT(out_of_sync == false);
+    SLI_CPC_ASSERT(out_of_sync == false);
     active_dma_rx_buffer_handle = pop_free_rx_buffer_handle();
 
     if (active_dma_rx_buffer_handle == NULL) {
@@ -1752,7 +1790,7 @@ static bool rx_dma_complete_hwfc(unsigned int channel,
 
     // Validate HCS
     if (!was_out_of_sync && !find_valid_header(active_rx_buffer, SLI_CPC_HDLC_HEADER_RAW_SIZE, NULL)) {
-      EFM_ASSERT(!was_out_of_sync); // If we just resynced, the header should be valid
+      SLI_CPC_ASSERT(!was_out_of_sync); // If we just resynced, the header should be valid
 
       // Remember this invalid header when we will attempt a resync
       memcpy(hdlc_header_sliding_window, active_rx_buffer, SLI_CPC_HDLC_HEADER_RAW_SIZE);
@@ -1779,8 +1817,8 @@ static bool rx_dma_complete_hwfc(unsigned int channel,
       notify_core = true;
       header_expected_next = true;
       next_rx_size = SLI_CPC_HDLC_HEADER_RAW_SIZE;
-    } else if (active_dma_rx_buffer_handle->data_length > SLI_CPC_RX_DATA_MAX_LENGTH) {
-      SLI_CPC_DEBUG_TRACE_CORE_DRIVER_PACKET_DROPPED(&g_instance);
+    } else if (next_rx_size > SLI_CPC_DRV_UART_RX_DATA_MAX_LENGTH) {
+      SLI_CPC_DEBUG_TRACE_CORE_DRIVER_PACKET_DROPPED(driver_instance);
       notify_core_error(active_dma_rx_buffer_handle, SL_CPC_REJECT_ERROR);
       header_expected_next = true;
       active_dma_rx_buffer_handle = NULL;
@@ -1800,7 +1838,7 @@ static bool rx_dma_complete_hwfc(unsigned int channel,
         out_of_sync_extra_bytes = (2 * SLI_CPC_HDLC_HEADER_RAW_SIZE) - (header_flag_position + SLI_CPC_HDLC_HEADER_RAW_SIZE);
 
         if (out_of_sync_extra_bytes >= next_rx_size) {
-          EFM_ASSERT(active_dma_rx_buffer_handle->data_length > 0);
+          SLI_CPC_ASSERT(active_dma_rx_buffer_handle->data_length > 0);
 
           // We already have all the bytes that we need to process a payload, no need to resize the DMA
           out_of_sync_extra_bytes -= next_rx_size;
@@ -1809,7 +1847,7 @@ static bool rx_dma_complete_hwfc(unsigned int channel,
           memcpy(rx_buffer, hdlc_header_sliding_window + SLI_CPC_HDLC_HEADER_RAW_SIZE + header_flag_position, next_rx_size);
 
           // Add to current rx handle
-          EFM_ASSERT(active_dma_rx_buffer_handle != NULL);
+          SLI_CPC_ASSERT(active_dma_rx_buffer_handle != NULL);
           notify_core = true;
           active_dma_rx_buffer_handle->data = rx_buffer;
 
@@ -1850,7 +1888,7 @@ static bool rx_dma_complete_hwfc(unsigned int channel,
       } else {
         // Could not allocate a buffer for the next payload
         SLI_CPC_DEBUG_TRACE_CORE_DRIVER_ERROR(driver_instance);
-        EFM_ASSERT(0);
+        SLI_CPC_ASSERT(0);
         SL_CPC_JOURNAL_RECORD_DEBUG("[DRV] stopping DMA", __LINE__);
         DMADRV_StopTransfer(read_channel);
         out_of_sync_extra_bytes = 0;
@@ -1871,7 +1909,7 @@ static bool rx_dma_complete_hwfc(unsigned int channel,
     //===========================================================================
   } else {
     // Add to current rx handle
-    EFM_ASSERT(active_dma_rx_buffer_handle != NULL);
+    SLI_CPC_ASSERT(active_dma_rx_buffer_handle != NULL);
     for (uint16_t i = 0; i < active_dma_rx_buffer_handle->data_length; ++i) {
     }
     active_dma_rx_buffer_handle->data = active_rx_buffer;
@@ -1890,7 +1928,7 @@ static bool rx_dma_complete_hwfc(unsigned int channel,
     sli_cpc_push_back_driver_buffer_handle(&rx_pending_list_head, active_dma_rx_buffer_handle);
 
     // Notify core
-    sli_cpc_notify_rx_data_from_drv();
+    sli_cpc_notify_rx_data_from_drv(driver_instance);
   }
 
   MCU_EXIT_ATOMIC();
@@ -1907,7 +1945,7 @@ static bool rx_dma_complete_no_hwfc(unsigned int channel,
 
   static sl_cpc_buffer_handle_t *active_dma_rx_buffer_handle = NULL;
   sl_status_t update_status = SL_STATUS_FAIL;
-  LDMA_Descriptor_t *completed_desc = NULL;
+  cpc_ldma_descriptor_t *completed_desc = NULL;
   uint8_t *active_rx_buffer = NULL;
   uint8_t *rx_data = NULL;
   uint8_t *spill_buffer;
@@ -1918,16 +1956,16 @@ static bool rx_dma_complete_no_hwfc(unsigned int channel,
   (void)userParam;
 
   MCU_ENTER_ATOMIC();
-  EFM_ASSERT(recovery_dispatcher_handle.submitted == false);
+  SLI_CPC_ASSERT(recovery_dispatcher_handle.submitted == false);
 
   completed_desc = rx_descriptor_head;
-  EFM_ASSERT(completed_desc != NULL);
+  SLI_CPC_ASSERT(completed_desc != NULL);
 
-  active_rx_buffer = (uint8_t *)(completed_desc->xfer.SL_CPC_LDMA_DESCRIPTOR_DST_ADDR);
+  active_rx_buffer = (uint8_t *)(completed_desc->xfer.CPC_LDMA_DESCRIPTOR_DST_ADDR);
   rx_data = active_rx_buffer;
 
   if (recovery_context.recovery_completed || recovery_context.out_of_sync) {
-    EFM_ASSERT(header_expected_next);
+    SLI_CPC_ASSERT(header_expected_next);
     rx_data += recovery_context.offset;
     next_rx_size = SLI_CPC_HDLC_HEADER_RAW_SIZE;
   }
@@ -1937,12 +1975,12 @@ static bool rx_dma_complete_no_hwfc(unsigned int channel,
   // so that our rx_descriptor_head matches the descriptor currently being used
   // The previously active descriptor now becomes the spill descriptor and vice versa
   swap_descriptors();
-  spill_buffer = (uint8_t *)(rx_descriptor_head->xfer.SL_CPC_LDMA_DESCRIPTOR_DST_ADDR);
+  spill_buffer = (uint8_t *)(rx_descriptor_head->xfer.CPC_LDMA_DESCRIPTOR_DST_ADDR);
 
   uint8_t *new_buffer;
   sl_status_t status = sli_cpc_get_raw_rx_buffer(driver_instance, &new_buffer);
   if (status == SL_STATUS_OK) {
-    completed_desc->xfer.SL_CPC_LDMA_DESCRIPTOR_DST_ADDR = (uint32_t)new_buffer;
+    completed_desc->xfer.CPC_LDMA_DESCRIPTOR_DST_ADDR = (uint32_t)new_buffer;
   } else {
     // We always need two buffers, one active and one used for spillage.
     // There is no point in going any further here..
@@ -2012,9 +2050,9 @@ static bool rx_dma_complete_no_hwfc(unsigned int channel,
       SL_CPC_JOURNAL_RECORD_DEBUG("[DRV] need_rx_buffer = false", __LINE__);
       sl_status_t status = sli_cpc_get_raw_rx_buffer(driver_instance, &new_buffer);
       if (status == SL_STATUS_OK) {
-        completed_desc->xfer.SL_CPC_LDMA_DESCRIPTOR_DST_ADDR = (uint32_t)new_buffer;
+        completed_desc->xfer.CPC_LDMA_DESCRIPTOR_DST_ADDR = (uint32_t)new_buffer;
       } else {
-        EFM_ASSERT(false); //This should not happen.. we just freed a buffer
+        SLI_CPC_ASSERT(0); //This should not happen.. we just freed a buffer
       }
     }
 
@@ -2044,7 +2082,7 @@ static bool rx_dma_complete_no_hwfc(unsigned int channel,
       header_expected_next = true;
       notify_core = true;
       next_rx_size = SLI_CPC_HDLC_HEADER_RAW_SIZE;
-    } else if (active_dma_rx_buffer_handle->data_length > SLI_CPC_RX_DATA_MAX_LENGTH) {
+    } else if (active_dma_rx_buffer_handle->data_length > SLI_CPC_DRV_UART_RX_DATA_MAX_LENGTH) {
       SLI_CPC_DEBUG_TRACE_CORE_DRIVER_PACKET_DROPPED(driver_instance);
       notify_core_error(active_dma_rx_buffer_handle, SL_CPC_REJECT_ERROR);
       active_dma_rx_buffer_handle = NULL;
@@ -2066,7 +2104,7 @@ static bool rx_dma_complete_no_hwfc(unsigned int channel,
         sli_cpc_push_back_driver_buffer_handle(&rx_pending_list_head, active_dma_rx_buffer_handle);
 
         // Notify core
-        sli_cpc_notify_rx_data_from_drv();
+        sli_cpc_notify_rx_data_from_drv(driver_instance);
         recovery_context.buffer_handle = NULL;
       } else {
         if (header_expected_next) {
@@ -2090,7 +2128,7 @@ static bool rx_dma_complete_no_hwfc(unsigned int channel,
     //===========================================================================
   } else {
     // Add to current rx handle
-    EFM_ASSERT(active_dma_rx_buffer_handle != NULL);
+    SLI_CPC_ASSERT(active_dma_rx_buffer_handle != NULL);
 
     active_dma_rx_buffer_handle->data = rx_data;
     notify_core = true;
@@ -2115,7 +2153,7 @@ static bool rx_dma_complete_no_hwfc(unsigned int channel,
     sli_cpc_push_back_driver_buffer_handle(&rx_pending_list_head, active_dma_rx_buffer_handle);
 
     // Notify core
-    sli_cpc_notify_rx_data_from_drv();
+    sli_cpc_notify_rx_data_from_drv(driver_instance);
     active_dma_rx_buffer_handle = NULL;
   }
 
@@ -2133,12 +2171,12 @@ static bool rx_dma_complete_no_hwfc(unsigned int channel,
  *
  * @param next_dma_desc DMA descriptor to link to.
  ******************************************************************************/
-static void update_dma_desc_link_abs(LDMA_Descriptor_t *current_dma_desc,
-                                     LDMA_Descriptor_t *next_dma_desc,
+static void update_dma_desc_link_abs(cpc_ldma_descriptor_t *current_dma_desc,
+                                     cpc_ldma_descriptor_t *next_dma_desc,
                                      bool enable_link)
 {
-  current_dma_desc->sync.linkAddr = LDMA_DESCRIPTOR_LINKABS_ADDR_TO_LINKADDR(next_dma_desc);
-  current_dma_desc->sync.linkMode = ldmaLinkModeAbs;
+  current_dma_desc->sync.CPC_LDMA_DESCRIPTOR_LINK_ADDR = CPC_LDMA_DESCRIPTOR_LINKABS_ADDR_TO_LINKADDR(next_dma_desc);
+  current_dma_desc->sync.CPC_LDMA_DESCRIPTOR_LINK_MODE = CPC_LDMA_DESCRIPTOR_LINK_MODE_ABS;
   current_dma_desc->sync.link = enable_link ? 1 : 0;
 }
 
@@ -2158,8 +2196,8 @@ static sl_status_t resize_current_dma_descriptor(uint16_t new_length)
   uint32_t chMask = 1UL << (uint8_t)read_channel;
   uint32_t ctrl;
 
-  if (new_length > LDMA_DESCRIPTOR_MAX_XFER_SIZE) {
-    EFM_ASSERT(false);
+  if (new_length > CPC_LDMA_DESCRIPTOR_MAX_XFER_SIZE) {
+    SLI_CPC_ASSERT(0);
   }
 
   uint32_t already_recvd_cnt;
@@ -2171,7 +2209,7 @@ static sl_status_t resize_current_dma_descriptor(uint16_t new_length)
   // sure there are not higher priority interrupt until we resume it.
   DMADRV_PauseTransfer(read_channel);
 
-  ctrl = LDMA->CH[read_channel].CTRL;
+  ctrl = LDMA_PERIPH->CH[read_channel].CTRL;
   get_already_received_cnt(&already_recvd_cnt);
 
   if (already_recvd_cnt >= new_length) {
@@ -2185,27 +2223,27 @@ static sl_status_t resize_current_dma_descriptor(uint16_t new_length)
   // Update xfercnt
   ctrl &= ~_LDMA_CH_CTRL_XFERCNT_MASK;
   ctrl |= ((remaining - 1) << _LDMA_CH_CTRL_XFERCNT_SHIFT) & _LDMA_CH_CTRL_XFERCNT_MASK;
-  LDMA->CH[read_channel].CTRL = ctrl;
+  LDMA_PERIPH->CH[read_channel].CTRL = ctrl;
 
-  LDMA->CH[read_channel].LINK |= LDMA_CH_LINK_LINK;
+  LDMA_PERIPH->CH[read_channel].LINK |= LDMA_CH_LINK_LINK;
 
   // Enable interrupts
 #ifdef _LDMA_CH_CTRL_DONEIEN_MASK
-  LDMA->CH[read_channel].CTRL |= LDMA_CH_CTRL_DONEIEN;
+  LDMA_PERIPH->CH[read_channel].CTRL |= LDMA_CH_CTRL_DONEIEN;
 #else
-  LDMA->CH[read_channel].CTRL |= LDMA_CH_CTRL_DONEIFSEN;
+  LDMA_PERIPH->CH[read_channel].CTRL |= LDMA_CH_CTRL_DONEIFSEN;
 #endif
 
-  LDMA_IntEnable(chMask);
+  cpc_ldma_int_enable(chMask);
 
   // Disable linking from the next descriptor
-  LDMA_Descriptor_t *next = (LDMA_Descriptor_t *)(LDMA->CH[read_channel].LINK & _LDMA_CH_LINK_LINKADDR_MASK);
+  cpc_ldma_descriptor_t *next = (cpc_ldma_descriptor_t *)(LDMA_PERIPH->CH[read_channel].LINK & _LDMA_CH_LINK_LINKADDR_MASK);
   next->xfer.link = 0;
   next_rx_size = new_length;
 
   DMADRV_ResumeTransfer(read_channel);
 
-  EFM_ASSERT(already_recvd_cnt + remaining <= SL_CPC_DRV_UART_RX_MAX_BUFFER_SIZE);
+  SLI_CPC_ASSERT(already_recvd_cnt + remaining <= SL_CPC_DRV_UART_RX_MAX_BUFFER_SIZE);
 
   MCU_EXIT_ATOMIC();
   return SL_STATUS_OK;
@@ -2217,7 +2255,7 @@ static void resize_current_dma_descriptor(void *pre_loaded_rx_buffer, uint16_t o
   uint8_t *buffer_ptr;
   sl_status_t status;
 
-  EFM_ASSERT(new_length > offset);
+  SLI_CPC_ASSERT(new_length > offset);
   next_rx_size = (new_length - offset);
 
   if (pre_loaded_rx_buffer == NULL) {
@@ -2233,13 +2271,13 @@ static void resize_current_dma_descriptor(void *pre_loaded_rx_buffer, uint16_t o
     buffer_ptr = pre_loaded_rx_buffer;
   }
 
-  if (new_length <= SL_CPC_LDMA_DESCRIPTOR_MAX_XFER_SIZE) {
-    rx_descriptor[0u] = (SL_CPC_LDMA_DESCRIPTOR_T)SL_CPC_LDMA_DESCRIPTOR_SINGLE_P2M_BYTE(&(SL_CPC_DRV_UART_PERIPHERAL->RXDATA), (uint8_t *)buffer_ptr + offset, new_length - offset);
+  if (new_length <= CPC_LDMA_DESCRIPTOR_MAX_XFER_SIZE) {
+    rx_descriptor[0u] = (cpc_ldma_descriptor_t)CPC_LDMA_DESCRIPTOR_SINGLE_P2M_BYTE(&(SL_CPC_DRV_UART_PERIPHERAL->RXDATA), (uint8_t *)buffer_ptr + offset, new_length - offset);
   } else {
-    rx_descriptor[0u] = (SL_CPC_LDMA_DESCRIPTOR_T)SL_CPC_LDMA_DESCRIPTOR_LINKREL_P2M_BYTE(&(SL_CPC_DRV_UART_PERIPHERAL->RXDATA), (uint8_t *)buffer_ptr + offset, SL_CPC_LDMA_DESCRIPTOR_MAX_XFER_SIZE - offset, 1u);
-    rx_descriptor[1u] = (SL_CPC_LDMA_DESCRIPTOR_T)SL_CPC_LDMA_DESCRIPTOR_SINGLE_P2M_BYTE(&(SL_CPC_DRV_UART_PERIPHERAL->RXDATA), &((uint8_t *)buffer_ptr)[SL_CPC_LDMA_DESCRIPTOR_MAX_XFER_SIZE], (new_length - SL_CPC_LDMA_DESCRIPTOR_MAX_XFER_SIZE));
-    rx_descriptor[0u].xfer.SL_CPC_LDMA_DESCRIPTOR_DONE_IFS = 0u;
-    rx_descriptor[1u].xfer.SL_CPC_LDMA_DESCRIPTOR_DONE_IFS = 1u;
+    rx_descriptor[0u] = (cpc_ldma_descriptor_t)CPC_LDMA_DESCRIPTOR_LINKREL_P2M_BYTE(&(SL_CPC_DRV_UART_PERIPHERAL->RXDATA), (uint8_t *)buffer_ptr + offset, CPC_LDMA_DESCRIPTOR_MAX_XFER_SIZE - offset, 1u);
+    rx_descriptor[1u] = (cpc_ldma_descriptor_t)CPC_LDMA_DESCRIPTOR_SINGLE_P2M_BYTE(&(SL_CPC_DRV_UART_PERIPHERAL->RXDATA), &((uint8_t *)buffer_ptr)[CPC_LDMA_DESCRIPTOR_MAX_XFER_SIZE], (new_length - CPC_LDMA_DESCRIPTOR_MAX_XFER_SIZE));
+    rx_descriptor[0u].xfer.CPC_LDMA_DESCRIPTOR_DONE_IFS = 0u;
+    rx_descriptor[1u].xfer.CPC_LDMA_DESCRIPTOR_DONE_IFS = 1u;
   }
 
   // Start read channel
@@ -2248,7 +2286,7 @@ static void resize_current_dma_descriptor(void *pre_loaded_rx_buffer, uint16_t o
                                    rx_descriptor_head,
                                    rx_dma_complete_hwfc,
                                    0);
-  EFM_ASSERT(ecode == ECODE_OK);
+  SLI_CPC_ASSERT(ecode == ECODE_OK);
 
   return;
 }
@@ -2267,7 +2305,7 @@ static void notify_core_error(sl_cpc_buffer_handle_t *buffer_handle, sl_cpc_reje
   sli_cpc_push_back_driver_buffer_handle(&rx_pending_list_head, buffer_handle);
 
   // Notify core
-  sli_cpc_notify_rx_data_from_drv();
+  sli_cpc_notify_rx_data_from_drv(driver_instance);
 }
 
 /***************************************************************************/ /**
@@ -2297,12 +2335,12 @@ static void restart_dma(void)
   }
   initial_start = false;
 
-  EFM_ASSERT(recovery_dispatcher_handle.submitted == false);
-  EFM_ASSERT(recovery_context.misaligned_payload == false);
+  SLI_CPC_ASSERT(recovery_dispatcher_handle.submitted == false);
+  SLI_CPC_ASSERT(recovery_context.misaligned_payload == false);
 
   memset(&recovery_context, 0x00, sizeof(recovery_context));
 
-  EFM_ASSERT(need_rx_buffer == false);
+  SLI_CPC_ASSERT(need_rx_buffer == false);
 #endif
 
 #if (SL_CPC_DRV_UART_FLOW_CONTROL_TYPE == WITH_HWFC)
@@ -2315,7 +2353,7 @@ static void restart_dma(void)
     return;
   }
 
-  rx_descriptor[0u] = (SL_CPC_LDMA_DESCRIPTOR_T)SL_CPC_LDMA_DESCRIPTOR_SINGLE_P2M_BYTE(&(SL_CPC_DRV_UART_PERIPHERAL->RXDATA), buffer_ptr, next_rx_size);
+  rx_descriptor[0u] = (cpc_ldma_descriptor_t)CPC_LDMA_DESCRIPTOR_SINGLE_P2M_BYTE(&(SL_CPC_DRV_UART_PERIPHERAL->RXDATA), buffer_ptr, next_rx_size);
 #endif
   rx_descriptor_head = &rx_descriptor[0];
 
@@ -2326,7 +2364,7 @@ static void restart_dma(void)
   // i.g. we could be in the middle of a payload
   header_expected_next = true;
   next_rx_size = SLI_CPC_HDLC_HEADER_RAW_SIZE;
-  rx_descriptor_head->xfer.SL_CPC_LDMA_DESCRIPTOR_XFER_CNT = SLI_CPC_HDLC_HEADER_RAW_SIZE - 1;
+  rx_descriptor_head->xfer.CPC_LDMA_DESCRIPTOR_XFER_CNT = SLI_CPC_HDLC_HEADER_RAW_SIZE - 1;
 #endif
 
   Ecode_t ecode = DMADRV_LdmaStartTransfer(read_channel,
@@ -2338,23 +2376,23 @@ static void restart_dma(void)
                                            rx_dma_complete_no_hwfc,
 #endif
                                            0);
-  EFM_ASSERT(ecode == ECODE_OK);
+  SLI_CPC_ASSERT(ecode == ECODE_OK);
 
   // Restore xferCnt
-  rx_descriptor_head->xfer.SL_CPC_LDMA_DESCRIPTOR_XFER_CNT = SL_MIN(SLI_CPC_RX_FRAME_MAX_LENGTH, SL_CPC_LDMA_DESCRIPTOR_MAX_XFER_SIZE) - 1;
+  rx_descriptor_head->xfer.CPC_LDMA_DESCRIPTOR_XFER_CNT = SL_MIN(SLI_CPC_DRV_UART_RX_FRAME_MAX_LENGTH, CPC_LDMA_DESCRIPTOR_MAX_XFER_SIZE) - 1;
 
 #if (SL_CPC_DRV_UART_FLOW_CONTROL_TYPE == WITHOUT_HWFC)
-  LDMA->CH[read_channel].LINK |= LDMA_CH_LINK_LINK;
+  LDMA_PERIPH->CH[read_channel].LINK |= LDMA_CH_LINK_LINK;
 
   // Enable interrupts
 #ifdef _LDMA_CH_CTRL_DONEIEN_MASK
-  LDMA->CH[read_channel].CTRL |= LDMA_CH_CTRL_DONEIEN;
+  LDMA_PERIPH->CH[read_channel].CTRL |= LDMA_CH_CTRL_DONEIEN;
 #else
-  LDMA->CH[read_channel].CTRL |= LDMA_CH_CTRL_DONEIFSEN;
+  LDMA_PERIPH->CH[read_channel].CTRL |= LDMA_CH_CTRL_DONEIFSEN;
 #endif
 
   uint32_t chMask = 1UL << (uint8_t)read_channel;
-  LDMA_IntEnable(chMask);
+  cpc_ldma_int_enable(chMask);
 #endif
 
   SL_CPC_JOURNAL_RECORD_DEBUG("[DRV] Restarted DMA", __LINE__);

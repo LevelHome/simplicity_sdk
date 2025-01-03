@@ -4,6 +4,11 @@ description: Utility to aid with Protocol-Specific Configurations
 package: platform
 category: Platform|Radio
 quality: production
+metadata:
+  sbom:
+    id: rail_util_protocol
+    name: RAIL Utility, Protocol
+    license: Zlib
 documentation:
   docset: rail
   document: rail-api/rail-util-protocol
@@ -44,6 +49,10 @@ config_file:
     condition:
       - device_series_2
       - device_sdid_235
+  - path: platform/radio/rail_lib/plugin/rail_util_protocol/config/efr32xg29/sl_rail_util_protocol_config.h
+    condition:
+      - device_series_2
+      - device_sdid_240
   - path: platform/radio/rail_lib/plugin/rail_util_protocol/config/sixg301/sl_rail_util_protocol_config.h
     condition:
       - device_series_3

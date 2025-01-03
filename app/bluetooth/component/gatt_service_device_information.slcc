@@ -5,6 +5,9 @@ description: >
   This component provides the default values for the characteristics under the
   Device Information service upon boot event.
 category: Bluetooth|Application|GATT Services
+metadata:
+  sbom:
+    license: Zlib
 quality: production
 root_path: app/bluetooth/common/gatt_service_device_information
 tag:
@@ -21,6 +24,7 @@ provides:
   - name: gatt_service_device_information
 requires:
   - name: bluetooth_stack
+  - name: bluetooth_feature_gap
   - name: gatt_configuration
   - name: app_assert
 template_contribution:

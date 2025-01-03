@@ -19,6 +19,7 @@
 //                                   Includes
 // -----------------------------------------------------------------------------
 #include "app_se_manager_key_provisioning.h"
+#include "sli_se_manager_mailbox.h"
 
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
@@ -251,7 +252,7 @@ sl_status_t init_se_otp_conf(void)
   otp_init.tamper_levels[SL_SE_TAMPER_SIGNAL_DPLL_LOCK_FAIL_HIGH] =
     SL_SE_TAMPER_LEVEL_FILTER;
 
-#if defined(_SILICON_LABS_32B_SERIES_2_CONFIG_5)
+#if defined(_SILICON_LABS_32B_SERIES_2_CONFIG_5) || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_9)
   otp_init.tamper_levels[SL_SE_TAMPER_SIGNAL_ETAMPDET] =
     SL_SE_TAMPER_LEVEL_FILTER;
 #endif
@@ -265,7 +266,7 @@ sl_status_t init_se_otp_conf(void)
   otp_init.tamper_levels[SL_SE_TAMPER_SIGNAL_PRS4] = SL_SE_TAMPER_LEVEL_RESET;
   otp_init.tamper_levels[SL_SE_TAMPER_SIGNAL_PRS5] = SL_SE_TAMPER_LEVEL_RESET;
 
-#if !defined(_SILICON_LABS_32B_SERIES_2_CONFIG_5)
+#if !defined(_SILICON_LABS_32B_SERIES_2_CONFIG_5) && !defined(_SILICON_LABS_32B_SERIES_2_CONFIG_9)
   otp_init.tamper_levels[SL_SE_TAMPER_SIGNAL_PRS6] = SL_SE_TAMPER_LEVEL_RESET;
 #endif
 
@@ -348,10 +349,10 @@ sl_status_t check_executed_command(void)
 sl_status_t get_executed_command_response(uint8_t *buf, uint32_t buf_len)
 {
   // Allocate buffer for reading the executed command response
-  SE_DataTransfer_t out_buf = SE_DATATRANSFER_DEFAULT(buf, buf_len);
+  sli_se_datatransfer_t out_buf = SLI_SE_DATATRANSFER_DEFAULT(buf, buf_len);
 
   // Set executed command and buffer to run sl_se_ack_command()
-  SE_addDataOutput(&cmd_ctx.command, &out_buf);
+  sli_se_mailbox_command_add_output(&cmd_ctx.command, &out_buf);
 
   // Acknowledge and get status and output data of an executed command
   print_error_cycle(sl_se_ack_command(&cmd_ctx), NULL);

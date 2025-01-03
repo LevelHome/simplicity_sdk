@@ -8,7 +8,7 @@
 #define BT_OK             0 //Command was succesful
 #define BT_ERR_INVALID 0x12 //Used as a generic error
 
-sl_btctrl_command_handler_t sli_bt_hci_command_handler;
+static sl_btctrl_command_handler_t sli_bt_hci_command_handler;
 bool sli_bt_hci_handle_coex_command(struct sl_btctrl_hci_message * hcimsg);
 
 void sli_bt_hci_init_coex(void)
@@ -56,7 +56,7 @@ bool sli_bt_hci_handle_coex_command(struct sl_btctrl_hci_message * hcimsg)
       if (length == 0) {
         sl_bt_ll_coex_config_t params;
         sl_bt_coex_get_config(&params);
-        sl_btctrl_hci_message_set_response(hcimsg, BT_OK, &params, sizeof(params));
+        sl_btctrl_hci_message_set_response(hcimsg, BT_OK, (uint8_t*)&params, sizeof(params));
         return true;
       }
       //Invalid parameters or some other error

@@ -105,11 +105,11 @@
 #define IOT_UART_CFG_EXP_PERIPHERAL_NO           0
 
 // USART0 TX on PB05
-#define IOT_UART_CFG_EXP_TX_PORT                 gpioPortB
+#define IOT_UART_CFG_EXP_TX_PORT                 SL_GPIO_PORT_B
 #define IOT_UART_CFG_EXP_TX_PIN                  5
 
 // USART0 RX on PB06
-#define IOT_UART_CFG_EXP_RX_PORT                 gpioPortB
+#define IOT_UART_CFG_EXP_RX_PORT                 SL_GPIO_PORT_B
 #define IOT_UART_CFG_EXP_RX_PIN                  6
 
 

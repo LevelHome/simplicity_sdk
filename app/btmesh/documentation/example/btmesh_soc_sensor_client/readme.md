@@ -2,7 +2,7 @@
 
 The **Bluetooth Mesh - SoC Sensor Client** example is a working example application that you can use as a template for Bluetooth Mesh Sensor Client applications.
 
-The example demonstrates the Bluetooth Mesh Sensor Client Model. It collects and displays sensor measurement data from remote device(s) (for example **Bluetooth Mesh - SoC Sensor Server**). The current status is displayed on the LCD (if one is present on the mainboard) and also sent to UART. CLI commands may substitute for button presses if the mainboard has only one button available. This example requires one of the Internal Storage Bootloader (single image) variants depending on device memory.
+The example demonstrates the Bluetooth Mesh Sensor Client Model. It collects and displays sensor measurement data from remote device(s) (**Bluetooth Mesh - NLC Occupancy Sensor**, **Bluetooth Mesh - SoC Sensor Thermometer** or **Bluetooth Mesh - NLC Ambient Light Sensor**). The current status is displayed on the LCD (if one is present on the mainboard) and also sent to UART. CLI commands may substitute for button presses if the mainboard has only one button available. This example requires one of the Internal Storage Bootloader (single image) variants depending on device memory.
 
 ![Bluetooth Mesh sensor system - Client](readme_img7.png)
 
@@ -14,7 +14,7 @@ To get started with Bluetooth Mesh and Simplicity Studio, see [QSG176: Bluetooth
 
 The term SoC stands for "System on Chip", meaning that this is a standalone application that runs on the EFR32/BGM and does not require any external MCU or other active components to operate.
 
-**Bluetooth Mesh - SoC Sensor Client** example collects sensor data from the sensor server. If it is used together with the soc-btmesh-sensor-server example then it will display occupancy (people count) sensor data, temperature data and illuminance (on Thunderboard Sense 2).
+**Bluetooth Mesh - SoC Sensor Client** example collects sensor data from the sensor server. If it is used together with the **Bluetooth Mesh - NLC Occupancy Sensor**, **Bluetooth Mesh - SoC Sensor Thermometer** or **Bluetooth Mesh - NLC Ambient Light Sensor** example then it will display occupancy (people count) sensor data, temperature data or illuminance (on Thunderboard Sense 2) respectively.
 
 To add or remove features from the example, follow this process:
 

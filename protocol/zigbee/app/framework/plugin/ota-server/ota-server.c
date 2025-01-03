@@ -109,11 +109,11 @@ void sl_zigbee_af_ota_server_tick(void)
 // -------------------------------------------------------
 // OTA Server Handler functions
 // -------------------------------------------------------
-bool sl_zigbee_af_ota_server_incoming_message_raw_cb(sl_zigbee_af_cluster_command_t* command)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_ota_server_incoming_message_raw_cb(sl_zigbee_af_cluster_command_t* command)
 {
   sl_status_t status;
   if (!commandParse(command)) {
-    sl_zigbee_af_ota_bootload_cluster_println("ClusterError: failed parsing cmd 0x%x",
+    sl_zigbee_af_ota_bootload_cluster_println("ClusterError: failed parsing cmd 0x%02X",
                                               command->commandId);
     sl_zigbee_af_ota_bootload_cluster_flush();
     status = sl_zigbee_af_send_default_response(command, SL_ZIGBEE_ZCL_STATUS_INVALID_FIELD);
@@ -123,20 +123,20 @@ bool sl_zigbee_af_ota_server_incoming_message_raw_cb(sl_zigbee_af_cluster_comman
     // ota-server-page-request.c, we don't sendResponse() again here.
     if (command->commandId == ZCL_IMAGE_PAGE_REQUEST_COMMAND_ID
         && sl_zigbee_af_ota_page_request_server_policy_cb() == SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-      return true;
+      return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
     }
     status = sl_zigbee_af_send_response();
   }
 
   if (SL_STATUS_OK != status) {
-    sl_zigbee_af_ota_bootload_cluster_println("OTA: failed sending response to cmd 0x%x:"
-                                              " error 0x%x",
+    sl_zigbee_af_ota_bootload_cluster_println("OTA: failed sending response to cmd 0x%02X:"
+                                              " error 0x%02X",
                                               command->commandId,
                                               status);
   }
 
   // Always return true to indicate we processed the message.
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
 }
 
 static uint8_t queryNextImageRequestHandler(const sl_zigbee_af_ota_image_id_t* currentImageId,
@@ -223,7 +223,7 @@ static void printBlockRequestInfo(const sl_zigbee_af_ota_image_id_t* id,
   }
   memmove(&lastImageId, id, sizeof(sl_zigbee_af_ota_image_id_t));
 
-  sl_zigbee_af_ota_bootload_cluster_println("NEW ImageBlockReq mfgId:%2x imageTypeId:%2x, file:%4x, maxDataSize:%d, offset:0x%4x",
+  sl_zigbee_af_ota_bootload_cluster_println("NEW ImageBlockReq mfgId:%04X imageTypeId:%04X, file:%08X, maxDataSize:%d, offset:0x%08X",
                                             id->manufacturerId,
                                             id->imageTypeId,
                                             id->firmwareVersion,
@@ -378,7 +378,7 @@ static void upgradeEndRequestHandler(sl_802154_short_addr_t source,
   uint32_t upgradeTime;
   bool goAhead;
   sl_zigbee_af_status_t defaultRespStatus = SL_ZIGBEE_ZCL_STATUS_SUCCESS;
-  sl_zigbee_af_ota_bootload_cluster_println("RX UpgradeEndReq status:%x",
+  sl_zigbee_af_ota_bootload_cluster_println("RX UpgradeEndReq status:%02X",
                                             status);
 
   // This callback is considered only informative when the status
@@ -607,7 +607,7 @@ void sl_zigbee_af_ota_server_send_upgrade_command_cb(sl_802154_short_addr_t dest
   status = sl_zigbee_af_send_response();
   if (SL_STATUS_OK != status) {
     sl_zigbee_af_ota_bootload_cluster_println("OTA: failed sending upgrade response: "
-                                              "error 0x%x", status);
+                                              "error 0x%02X", status);
   }
 }
 
@@ -617,9 +617,7 @@ uint32_t sl_zigbee_af_ota_cluster_server_command_parse(sl_service_opcode_t opcod
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = sl_zigbee_af_ota_server_incoming_message_raw_cb(cmd);
+  sl_zigbee_af_zcl_request_status_t status = sl_zigbee_af_ota_server_incoming_message_raw_cb(cmd);
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

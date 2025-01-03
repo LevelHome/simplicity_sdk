@@ -1,4 +1,4 @@
-/***************************************************************************//**
+/*******************************************************************************
  * @file
  * @brief SSED application logic.
  *******************************************************************************
@@ -29,11 +29,13 @@
  ******************************************************************************/
 
 // Define module name for Power Manager debuging feature.
-#define CURRENT_MODULE_NAME    "OPENTHREAD_SAMPLE_APP"
+#define CURRENT_MODULE_NAME "OPENTHREAD_SAMPLE_APP"
 
-#include <string.h>
 #include <assert.h>
+#include <string.h>
 
+#include <common/code_utils.hpp>
+#include <common/logging.hpp>
 #include <openthread/cli.h>
 #include <openthread/dataset_ftd.h>
 #include <openthread/instance.h>
@@ -41,17 +43,12 @@
 #include <openthread/thread.h>
 #include <openthread/udp.h>
 #include <openthread/platform/logging.h>
-#include <common/code_utils.hpp>
-#include <common/logging.hpp>
 
 #include "sl_button.h"
 #include "sl_simple_button.h"
 #include "sl_simple_button_instances.h"
 
 #include "sl_component_catalog.h"
-#ifdef SL_CATALOG_POWER_MANAGER_PRESENT
-#include "sl_power_manager.h"
-#endif
 
 #ifdef SL_CATALOG_KERNEL_PRESENT
 #include "sl_ot_rtos_adaptation.h"
@@ -61,14 +58,14 @@
 #define MULTICAST_ADDR "ff03::1"
 #define MULTICAST_PORT 123
 #define RECV_PORT 234
-#define SSED_CSL_PERIOD_US   500000   // 500000 us.
-#define SSED_CSL_TIMEOUT_SEC 20       // 20 seconds.
+#define SSED_CSL_PERIOD_US 500000 // 500000 us.
+#define SSED_CSL_TIMEOUT_SEC 20   // 20 seconds.
 #define FTD_MESSAGE "ftd button"
 #define SSED_MESSAGE "ssed button"
 
 // Forward declarations
 otInstance *otGetInstance(void);
-void ssedReceiveCallback(void *aContext, otMessage *aMessage, const otMessageInfo *aMessageInfo);
+void        ssedReceiveCallback(void *aContext, otMessage *aMessage, const otMessageInfo *aMessageInfo);
 extern void otSysEventSignalPending(void);
 
 // Variables
@@ -144,8 +141,8 @@ void setNetworkConfiguration(void)
     aDataset.mComponents.mIsExtendedPanIdPresent = true;
 
     /* Set network key to 1234C0DE1AB51234C0DE1AB51234C0DE */
-    uint8_t key[OT_NETWORK_KEY_SIZE] = {0x12, 0x34, 0xC0, 0xDE, 0x1A, 0xB5, 0x12, 0x34,
-                                        0xC0, 0xDE, 0x1A, 0xB5, 0x12, 0x34, 0xC0, 0xDE};
+    uint8_t key[OT_NETWORK_KEY_SIZE] =
+        {0x12, 0x34, 0xC0, 0xDE, 0x1A, 0xB5, 0x12, 0x34, 0xC0, 0xDE, 0x1A, 0xB5, 0x12, 0x34, 0xC0, 0xDE};
     memcpy(aDataset.mNetworkKey.m8, key, sizeof(aDataset.mNetworkKey));
     aDataset.mComponents.mIsNetworkKeyPresent = true;
 
@@ -206,7 +203,7 @@ void sl_button_on_change(const sl_button_t *handle)
         otSysEventSignalPending();
     }
 #ifdef SL_CATALOG_KERNEL_PRESENT
-        sl_ot_rtos_set_pending_event(SL_OT_RTOS_EVENT_APP);
+    sl_ot_rtos_set_pending_event(SL_OT_RTOS_EVENT_APP);
 #endif
 }
 
@@ -216,9 +213,9 @@ void sl_button_on_change(const sl_button_t *handle)
 
 void applicationTick(void)
 {
-    otMessageInfo    messageInfo;
-    otMessage       *message = NULL;
-    const char      *payload = SSED_MESSAGE;
+    otMessageInfo messageInfo;
+    otMessage    *message = NULL;
+    const char   *payload = SSED_MESSAGE;
 
     if (sPrintState)
     {
@@ -232,17 +229,6 @@ void applicationTick(void)
         sRxOnIdleButtonPressed = false;
         sAllowSleep            = !sAllowSleep;
         sPrintState            = true;
-
-#if (defined(SL_CATALOG_KERNEL_PRESENT) && defined(SL_CATALOG_POWER_MANAGER_PRESENT))
-        if (sAllowSleep)
-        {
-            sl_power_manager_remove_em_requirement(SL_POWER_MANAGER_EM1);
-        }
-        else
-        {
-            sl_power_manager_add_em_requirement(SL_POWER_MANAGER_EM1);
-        }
-#endif
     }
 
     // Check for BTN1 button press

@@ -4,6 +4,11 @@ description: Utility to aid with RAIL Direct Memory Access (DMA) Support
 package: platform
 category: Platform|Radio
 quality: production
+metadata:
+  sbom:
+    id: rail_util_dma
+    name: RAIL Utility, DMA
+    license: Zlib
 documentation:
   docset: rail
   document: rail-api/rail-util-dma

@@ -24,10 +24,14 @@
 
 void sli_mac_stack_lower_mac_set_high_datarate_csma_params(RAIL_CsmaConfig_t *csma_params);
 
-void sli_mac_stack_lower_mac_set_high_datarate_phy_radio_priorities(sl_zigbee_multiprotocol_priorities_t *priorities);
+void sli_mac_stack_lower_mac_set_high_datarate_phy_radio_priorities(sl_802154_radio_priorities_t *priorities);
 
 sl_status_t sli_mac_stack_send_raw_high_datarate_phy_message(uint8_t nwk_index,
                                                              uint8_t *payload);
+
+sl_status_t sli_mac_stack_send_raw_high_datarate_phy_scheduled_message(uint8_t nwk_index,
+                                                                       uint8_t *payload,
+                                                                       RAIL_Time_t timestamp);
 
 RAIL_Status_t sli_mac_stack_set_mode_switch_sync_detect(bool enable_f);
 
@@ -35,7 +39,8 @@ RAIL_Status_t sli_mac_stack_set_mode_switch_sync_detect(bool enable_f);
 
 void sli_mac_stack_high_datarate_phy_rx_callback(uint8_t *packet,
                                                  uint8_t linkQuality,
-                                                 int8_t rssi);
+                                                 int8_t rssi,
+                                                 uint32_t pkt_rx_timestamp);
 
 void sli_mac_stack_high_datarate_phy_tx_callback(uint8_t mac_index,
                                                  sl_status_t status,

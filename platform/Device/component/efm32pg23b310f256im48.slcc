@@ -8,6 +8,10 @@
   - name: EFM32PG23B310F256IM48
     unless:
     - device_content_override
+  - name: SL_CODE_COMPONENT_SYSTEM
+    unless:
+    - device_content_override
+    value: system
 - source:
   - path: platform/Device/SiliconLabs/EFM32PG23/Source/startup_efm32pg23.c
     unless:
@@ -159,6 +163,8 @@
   - id: trustzone_unaware
 - requires:
   - name: cmsis_core
+  - name: code_classification
+  - name: component_catalog
 - template_contribution:
   - name: device_opn
     value: EFM32PG23B310F256IM48
@@ -208,6 +214,8 @@
       count: '6'
       mask: '0x003F'
       name: gpio_port_d
+  - name: code_classification_components
+    value: system
 - tag:
   - device:opn:efm32pg23b310f256im48
 - toolchain_settings:

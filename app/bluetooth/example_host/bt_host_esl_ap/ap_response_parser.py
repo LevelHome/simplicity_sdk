@@ -25,15 +25,16 @@ ESL AP response parser.
 # 3. This notice may not be removed or altered from any source distribution.
 
 from ap_constants import *
-from ap_logger import getLogger,log
+from ap_logger import getLogger, log
 from ap_sensor import SensorResponseParser
 
-class ResponseParser():
+
+class ResponseParser:
     def __init__(self, data, sensor_info):
-        """ Parser class for ESL response
-            input:
-                - data: ESL response data
-                - sensor_info: ESL tag sensor information
+        """Parser class for ESL response
+        input:
+            - data: ESL response data
+            - sensor_info: ESL tag sensor information
         """
         if data[0] == TLV_RESPONSE_ERROR:
             self.process_error_response(data)
@@ -50,7 +51,9 @@ class ResponseParser():
             # Mask upper 4 bit because sensor response can have vendor-specific values
             SensorResponseParser(data, sensor_info)
         else:
-            self.log.warning("Unspecified response received" + " (0x" + str(data.hex()) + ")")
+            self.log.warning(
+                "Unspecified response received" + " (0x" + str(data.hex()) + ")"
+            )
 
     # Logger
     @property
@@ -58,46 +61,83 @@ class ResponseParser():
         return getLogger("RSP")
 
     def process_error_response(self, data):
-        """ Process error response """
+        """Process error response"""
         resp_param = data[1]
         if resp_param in ERROR_RESPONSE_STRINGS:
             if resp_param == ERROR_RESPONSE_RETRY:
-                self.log.warning(RESPONSE_STRINGS[TLV_RESPONSE_ERROR] + ": " \
-                                 + ERROR_RESPONSE_STRINGS[resp_param] + " (0x" + str(data.hex()) + ")")
+                self.log.warning(
+                    RESPONSE_STRINGS[TLV_RESPONSE_ERROR]
+                    + ": "
+                    + ERROR_RESPONSE_STRINGS[resp_param]
+                    + " (0x"
+                    + str(data.hex())
+                    + ")"
+                )
             else:
-                self.log.error(RESPONSE_STRINGS[TLV_RESPONSE_ERROR] + ": " \
-                               + ERROR_RESPONSE_STRINGS[resp_param] + " (0x" + str(data.hex()) + ")")
+                self.log.error(
+                    RESPONSE_STRINGS[TLV_RESPONSE_ERROR]
+                    + ": "
+                    + ERROR_RESPONSE_STRINGS[resp_param]
+                    + " (0x"
+                    + str(data.hex())
+                    + ")"
+                )
         else:
-            self.log.warning("Unspecified or vendor-specific error code" + " (0x" + str(data.hex()) + ")")
+            self.log.warning(
+                "Unspecified or vendor-specific error code"
+                + " (0x"
+                + str(data.hex())
+                + ")"
+            )
 
     def process_led_state_response(self, data):
-        """ Process LED state response """
+        """Process LED state response"""
         self.log.info("Led State Response received")
-        log(RESPONSE_STRINGS[TLV_RESPONSE_LED_STATE] + ": LED_Index: " \
-                    + str(data[1]) + " (0x" + str(data.hex()) + ")")
+        log(
+            RESPONSE_STRINGS[TLV_RESPONSE_LED_STATE]
+            + ": LED_Index: "
+            + str(data[1])
+            + " (0x"
+            + str(data.hex())
+            + ")"
+        )
 
     def process_basic_state_response(self, data):
-        """ Process basic state response """
+        """Process basic state response"""
         self.log.info("Basic State Response received")
         bs_bitmap = int.from_bytes(data[1:], byteorder="little")
-        bs_string = ", ".join([value for key, value in BASIC_STATE_STRINGS.items() if bs_bitmap & key])
+        bs_string = ", ".join(
+            [value for key, value in BASIC_STATE_STRINGS.items() if bs_bitmap & key]
+        )
         if len(bs_string) == 0:
             bs_string = "No Basic State flag is set"
-        log(RESPONSE_STRINGS[TLV_RESPONSE_BASIC_STATE] + ": " + bs_string \
-                    + " (0x" + str(data.hex()) + ")")
+        log(
+            RESPONSE_STRINGS[TLV_RESPONSE_BASIC_STATE]
+            + ": "
+            + bs_string
+            + " (0x"
+            + str(data.hex())
+            + ")"
+        )
 
     def process_display_state_response(self, data):
-        """ Process display state response """
+        """Process display state response"""
         self.log.info("Display State Response received")
         display_idx = data[1]
         image_idx = data[2]
-        log(RESPONSE_STRINGS[TLV_RESPONSE_DISPLAY_STATE] + ": Display_Index: " \
-                    + str(display_idx) + " Image_Index: " + str(image_idx) \
-                    + " (0x" + str(data.hex()) + ")")
+        log(
+            RESPONSE_STRINGS[TLV_RESPONSE_DISPLAY_STATE]
+            + ": Display_Index: "
+            + str(display_idx)
+            + " Image_Index: "
+            + str(image_idx)
+            + " (0x"
+            + str(data.hex())
+            + ")"
+        )
 
     def process_silabs_skip_response(self, data):
-        """ Process Silabs Skip (vendor opcode) response """
+        """Process Silabs Skip (vendor opcode) response"""
         self.log.info("Silabs PAwR Skip Response received")
         skip_value = data[1]
-        log(RESPONSE_STRINGS[TLV_RESPONSE_SILABS_SKIP] + ": " \
-                    + str(skip_value))
+        log(RESPONSE_STRINGS[TLV_RESPONSE_SILABS_SKIP] + ": " + str(skip_value))

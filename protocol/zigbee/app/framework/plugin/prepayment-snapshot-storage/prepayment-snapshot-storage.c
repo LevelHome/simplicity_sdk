@@ -144,7 +144,7 @@ uint32_t sl_zigbee_af_prepayment_snapshot_storage_take_snapshot(uint8_t endpoint
     // TODO:  Should snapshotType be passed in as a parameter to this function?
     snapshot->snapshotType = SNAPSHOT_PAYLOAD_TYPE_DEBT_CREDIT_STATUS;
 
-    sl_zigbee_af_app_println("Storing Snapshot, addr=%d, id=%d, bitmap=0x%2x, type=%d, time=0x%4x", (size_t)snapshot,
+    sl_zigbee_af_app_println("Storing Snapshot, addr=%d, id=%d, bitmap=0x%04X, type=%d, time=0x%08X", (size_t)snapshot,
                              snapshot->snapshotId, snapshot->snapshotCauseBitmap, snapshot->snapshotType, snapshot->snapshotTime);
 
     sl_zigbee_af_read_attribute(endpoint, ZCL_PREPAYMENT_CLUSTER_ID, ZCL_ACCUMULATED_DEBT_ATTRIBUTE_ID,
@@ -228,7 +228,7 @@ uint8_t sl_zigbee_af_prepayment_server_get_snapshot_cb(sl_802154_short_addr_t no
   snapshot = findSnapshot(startTime, endTime, snapshotOffset, snapshotCause, &totalMatchesFound);
   if ( snapshot != NULL ) {
     payloadSize = fillSnapshotPayloadBuffer(snapshotPayload, snapshot);
-    sl_zigbee_af_app_println("Found Snapshot, addr=%d, id=%d, matches=%d, bitmap=0x%2x, type=%d, time=0x%4x",
+    sl_zigbee_af_app_println("Found Snapshot, addr=%d, id=%d, matches=%d, bitmap=0x%04X, type=%d, time=0x%08X",
                              (size_t)snapshot,
                              snapshot->snapshotId,
                              totalMatchesFound,
@@ -251,7 +251,7 @@ uint8_t sl_zigbee_af_prepayment_server_get_snapshot_cb(sl_802154_short_addr_t no
     sl_zigbee_af_set_command_endpoints(srcEndpoint, dstEndpoint);
     sl_zigbee_af_send_command_unicast(SL_ZIGBEE_OUTGOING_DIRECT, nodeId);
   } else {
-    sl_zigbee_af_app_println("Snapshot not found, st=0x%4x, end=0x%4x, cause=0x%4x", startTime, endTime, snapshotCause);
+    sl_zigbee_af_app_println("Snapshot not found, st=0x%08X, end=0x%08X, cause=0x%08X", startTime, endTime, snapshotCause);
     sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_NOT_FOUND);
   }
   return payloadSize;
@@ -261,8 +261,8 @@ static void snapshotPrintInfo(sl_zigbee_af_prepayment_snapshot_payload_t *snapsh
 {
   sl_zigbee_af_app_println("= Prepayment Snapshot =");
   sl_zigbee_af_app_println(" id=%d", snapshot->snapshotId);
-  sl_zigbee_af_app_println(" bitmap=0x%2x", snapshot->snapshotCauseBitmap);
-  sl_zigbee_af_app_println(" time=0x%4x", snapshot->snapshotTime);
+  sl_zigbee_af_app_println(" bitmap=0x%04X", snapshot->snapshotCauseBitmap);
+  sl_zigbee_af_app_println(" time=0x%08X", snapshot->snapshotTime);
   sl_zigbee_af_app_println(" type=%d", snapshot->snapshotType);
   sl_zigbee_af_app_println(" accumDebt=%d", snapshot->accumulatedDebt);
   sl_zigbee_af_app_println(" type1Debt=%d", snapshot->type1DebtRemaining);

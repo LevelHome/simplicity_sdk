@@ -24,7 +24,7 @@
 #include "rail_types.h"
 #include "em_chip.h"
 #include "sl_clock_manager.h"
-#include "em_gpio.h"
+#include "sl_gpio.h"
 #include "em_emu.h"
 //rail ieee 802.15.4
 #include  "rail_ieee802154.h"

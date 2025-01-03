@@ -3,7 +3,7 @@
  * @brief main() function.
  *******************************************************************************
  * # License
- * <b>Copyright 2023 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -57,6 +57,10 @@ int main(void)
   // task(s) if the kernel is present.
   app_init();
 
+  // Initialize the application runtime. For example create task(s) if a
+  // kernel is present.
+  app_init_runtime();
+
 #if defined(SL_CATALOG_KERNEL_PRESENT)
   // Start the kernel. Task(s) created in app_init() will start running.
   sl_system_kernel_start();
@@ -72,7 +76,7 @@ int main(void)
 #if defined(SL_CATALOG_POWER_MANAGER_PRESENT)
     // Let the CPU go to sleep if the system allows it.
     sl_power_manager_sleep();
-#endif
+#endif // SL_CATALOG_POWER_MANAGER_PRESENT
   }
 #endif // SL_CATALOG_KERNEL_PRESENT
 }

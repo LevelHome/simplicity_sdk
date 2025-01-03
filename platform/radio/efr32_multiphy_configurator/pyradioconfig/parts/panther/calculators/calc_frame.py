@@ -239,6 +239,9 @@ class CALC_Frame_panther(CALC_Frame_common):
         """
         #Outputs
         """
+        self._build_frame_regs(model)
+
+    def _build_frame_regs(self, model):
         self._addModelRegister(model, 'FRC.CTRL.BITSPERWORD', int, ModelVariableFormat.HEX)
         self._addModelRegister(model, 'FRC.CTRL.RXFCDMODE', int, ModelVariableFormat.HEX)
         self._addModelRegister(model, 'FRC.CTRL.TXFCDMODE', int, ModelVariableFormat.HEX)

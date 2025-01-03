@@ -99,7 +99,7 @@ void networkLeaveCommand(sl_cli_command_arg_t *arguments)
   status = sl_zigbee_leave_network(SL_ZIGBEE_LEAVE_NWK_WITH_NO_OPTION);
 #endif
   UNUSED_VAR(status);
-  sl_zigbee_core_debug_print("%s 0x%X\n", "leave", status);
+  sl_zigbee_core_debug_print("%s 0x%02X\n", "leave", status);
 }
 
 // network rejoin <haveCurrentNetworkKey:1> <channelMask:4>
@@ -123,7 +123,7 @@ void networkRejoinCommand(sl_cli_command_arg_t *arguments)
                                                          channelMask,
                                                          SL_ZIGBEE_AF_REJOIN_DUE_TO_CLI_COMMAND,
                                                          SL_ZIGBEE_DEVICE_TYPE_UNCHANGED);
-  sl_zigbee_app_debug_println("%s 0x%x", "rejoin", status);
+  sl_zigbee_app_debug_println("%s 0x%02X", "rejoin", status);
 }
 
 void networkRejoinDiffDeviceTypeCommand(sl_cli_command_arg_t *arguments)
@@ -135,7 +135,7 @@ void networkRejoinDiffDeviceTypeCommand(sl_cli_command_arg_t *arguments)
                                                          channelMask,
                                                          SL_ZIGBEE_REJOIN_DUE_TO_APP_EVENT_1,
                                                          sl_zigbee_node_type);
-  sl_zigbee_app_debug_println("%p 0x%x", "rejoinDiffDeviceType", status);
+  sl_zigbee_app_debug_println("%s 0x%02X", "rejoinDiffDeviceType", status);
 }
 
 // network extpanid <8 BYTES>

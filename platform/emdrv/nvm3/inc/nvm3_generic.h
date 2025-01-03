@@ -35,7 +35,13 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#include "sl_status.h"
+#include "ecode.h"
 #include "nvm3_hal.h"
+
+#if defined(NVM3_SECURITY)
+#include "nvm3_hal_crypto.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,37 +52,37 @@ extern "C" {
  * @{
  ******************************************************************************/
 
-#define ECODE_NVM3_OK                               (ECODE_OK)                                   ///< Success return value
-#define ECODE_NVM3_ERR_ALIGNMENT_INVALID            (ECODE_EMDRV_NVM3_BASE | 0x00000001U)        ///< Invalid data alignment
-#define ECODE_NVM3_ERR_SIZE_TOO_SMALL               (ECODE_EMDRV_NVM3_BASE | 0x00000002U)        ///< Not enough NVM memory specified
-#define ECODE_NVM3_ERR_NO_VALID_PAGES               (ECODE_EMDRV_NVM3_BASE | 0x00000003U)        ///< Initialization aborted, no valid page found
-#define ECODE_NVM3_ERR_PAGE_SIZE_NOT_SUPPORTED      (ECODE_EMDRV_NVM3_BASE | 0x00000004U)        ///< The page size is not supported
-#define ECODE_NVM3_ERR_OBJECT_SIZE_NOT_SUPPORTED    (ECODE_EMDRV_NVM3_BASE | 0x00000005U)        ///< The object size is not supported
-#define ECODE_NVM3_ERR_STORAGE_FULL                 (ECODE_EMDRV_NVM3_BASE | 0x00000006U)        ///< No more NVM space available
-#define ECODE_NVM3_ERR_NOT_OPENED                   (ECODE_EMDRV_NVM3_BASE | 0x00000007U)        ///< The module has not been successfully opened
-#define ECODE_NVM3_ERR_OPENED_WITH_OTHER_PARAMETERS (ECODE_EMDRV_NVM3_BASE | 0x00000008U)        ///< The module has already been opened with other parameters
-#define ECODE_NVM3_ERR_PARAMETER                    (ECODE_EMDRV_NVM3_BASE | 0x00000009U)        ///< Illegal parameter
-#define ECODE_NVM3_ERR_KEY_INVALID                  (ECODE_EMDRV_NVM3_BASE | 0x0000000AU)        ///< Invalid key value
-#define ECODE_NVM3_ERR_KEY_NOT_FOUND                (ECODE_EMDRV_NVM3_BASE | 0x0000000BU)        ///< Key not found
-#define ECODE_NVM3_ERR_OBJECT_IS_NOT_DATA           (ECODE_EMDRV_NVM3_BASE | 0x0000000CU)        ///< Trying to access a data object which is currently a counter object
-#define ECODE_NVM3_ERR_OBJECT_IS_NOT_A_COUNTER      (ECODE_EMDRV_NVM3_BASE | 0x0000000DU)        ///< Trying to access a counter object which is currently a data object
-#define ECODE_NVM3_ERR_ERASE_FAILED                 (ECODE_EMDRV_NVM3_BASE | 0x0000000EU)        ///< Erase failed
-#define ECODE_NVM3_ERR_WRITE_DATA_SIZE              (ECODE_EMDRV_NVM3_BASE | 0x0000000FU)        ///< The object is too large
-#define ECODE_NVM3_ERR_WRITE_FAILED                 (ECODE_EMDRV_NVM3_BASE | 0x00000010U)        ///< Error in the write operation
-#define ECODE_NVM3_ERR_READ_DATA_SIZE               (ECODE_EMDRV_NVM3_BASE | 0x00000011U)        ///< Trying to read with a length different from actual object size
-#define ECODE_NVM3_ERR_READ_FAILED                  (ECODE_EMDRV_NVM3_BASE | 0x00000012U)        ///< Error in the read operation
-#define ECODE_NVM3_ERR_INIT_WITH_FULL_NVM           (ECODE_EMDRV_NVM3_BASE | 0x00000013U)        ///< The module was opened with a full NVM
-#define ECODE_NVM3_ERR_RESIZE_PARAMETER             (ECODE_EMDRV_NVM3_BASE | 0x00000014U)        ///< Illegal parameter
-#define ECODE_NVM3_ERR_RESIZE_NOT_ENOUGH_SPACE      (ECODE_EMDRV_NVM3_BASE | 0x00000015U)        ///< Not enough NVM to complete resize
-#define ECODE_NVM3_ERR_ERASE_COUNT_ERROR            (ECODE_EMDRV_NVM3_BASE | 0x00000016U)        ///< Erase counts are not valid
-#define ECODE_NVM3_ERR_ADDRESS_RANGE                (ECODE_EMDRV_NVM3_BASE | 0x00000017U)        ///< Address and size is out of range of available NVM
-#define ECODE_NVM3_ERR_NVM_ACCESS                   (ECODE_EMDRV_NVM3_BASE | 0x00000019U)        ///< A NVM function call was failing
-#define ECODE_NVM3_ERR_INT_WRITE_TO_NOT_ERASED      (ECODE_EMDRV_NVM3_BASE | 0x00000020U)        ///< Write to memory that is not erased
-#define ECODE_NVM3_ERR_INT_ADDR_INVALID             (ECODE_EMDRV_NVM3_BASE | 0x00000021U)        ///< Internal error trying to access invalid memory
-#define ECODE_NVM3_ERR_INT_KEY_MISMATCH             (ECODE_EMDRV_NVM3_BASE | 0x00000022U)        ///< Key validation failure
-#define ECODE_NVM3_ERR_INT_SIZE_ERROR               (ECODE_EMDRV_NVM3_BASE | 0x00000023U)        ///< Internal size mismatch error
-#define ECODE_NVM3_ERR_INT_EMULATOR                 (ECODE_EMDRV_NVM3_BASE | 0x00000024U)        ///< Internal Emulator error
-#define ECODE_NVM3_ERR_INT_TEST                     (ECODE_EMDRV_NVM3_BASE | 0x00000030U)        ///< Internal Test error
+#define ECODE_NVM3_OK                                 (SL_STATUS_OK)                                     ///< Success return value
+#define ECODE_NVM3_ERR_ALIGNMENT_INVALID              (SL_STATUS_NVM3_ALIGNMENT_INVALID)                 ///< Invalid data alignment
+#define ECODE_NVM3_ERR_SIZE_TOO_SMALL                 (SL_STATUS_NVM3_SIZE_TOO_SMALL)                    ///< Not enough NVM memory specified
+#define ECODE_NVM3_ERR_NO_VALID_PAGES                 (SL_STATUS_NVM3_NO_VALID_PAGES)                    ///< Initialization aborted, no valid page found
+#define ECODE_NVM3_ERR_PAGE_SIZE_NOT_SUPPORTED        (SL_STATUS_NVM3_PAGE_SIZE_NOT_SUPPORTED)           ///< The page size is not supported
+#define ECODE_NVM3_ERR_OBJECT_SIZE_NOT_SUPPORTED      (SL_STATUS_NVM3_OBJECT_SIZE_NOT_SUPPORTED)         ///< The object size is not supported
+#define ECODE_NVM3_ERR_STORAGE_FULL                   (SL_STATUS_FULL)                                   ///< No more NVM space available
+#define ECODE_NVM3_ERR_NOT_OPENED                     (SL_STATUS_NOT_INITIALIZED)                        ///< The module has not been successfully opened
+#define ECODE_NVM3_ERR_OPENED_WITH_OTHER_PARAMETERS   (SL_STATUS_NVM3_OPENED_WITH_OTHER_PARAMETERS)      ///< The module has already been opened with other parameters
+#define ECODE_NVM3_ERR_PARAMETER                      (SL_STATUS_INVALID_PARAMETER)                      ///< Illegal parameter
+#define ECODE_NVM3_ERR_KEY_INVALID                    (SL_STATUS_INVALID_KEY)                            ///< Invalid key value
+#define ECODE_NVM3_ERR_KEY_NOT_FOUND                  (SL_STATUS_NOT_FOUND)                              ///< Key not found
+#define ECODE_NVM3_ERR_OBJECT_IS_NOT_DATA             (SL_STATUS_NVM3_OBJECT_IS_NOT_DATA)                ///< Trying to access a data object which is currently a counter object
+#define ECODE_NVM3_ERR_OBJECT_IS_NOT_A_COUNTER        (SL_STATUS_NVM3_OBJECT_IS_NOT_A_COUNTER)           ///< Trying to access a counter object which is currently a data object
+#define ECODE_NVM3_ERR_ERASE_FAILED                   (SL_STATUS_FLASH_ERASE_FAILED)                     ///< Erase failed
+#define ECODE_NVM3_ERR_WRITE_DATA_SIZE                (SL_STATUS_NVM3_WRITE_DATA_SIZE)                   ///< The object is too large
+#define ECODE_NVM3_ERR_WRITE_FAILED                   (SL_STATUS_FLASH_PROGRAM_FAILED)                   ///< Error in the write operation
+#define ECODE_NVM3_ERR_READ_DATA_SIZE                 (SL_STATUS_NVM3_READ_DATA_SIZE)                    ///< Trying to read with a length different from actual object size
+#define ECODE_NVM3_ERR_READ_FAILED                    (SL_STATUS_OBJECT_READ)                            ///< Error in the read operation
+#define ECODE_NVM3_ERR_INIT_WITH_FULL_NVM             (SL_STATUS_NVM3_INIT_WITH_FULL_NVM)                ///< The module was opened with a full NVM
+#define ECODE_NVM3_ERR_RESIZE_PARAMETER               (SL_STATUS_NVM3_RESIZE_PARAMETER)                  ///< Illegal parameter
+#define ECODE_NVM3_ERR_RESIZE_NOT_ENOUGH_SPACE        (SL_STATUS_NVM3_RESIZE_NOT_ENOUGH_SPACE)           ///< Not enough NVM to complete resize
+#define ECODE_NVM3_ERR_ERASE_COUNT_ERROR              (SL_STATUS_NVM3_ERASE_COUNT_ERROR)                 ///< Erase counts are not valid
+#define ECODE_NVM3_ERR_INT_WRITE_TO_NOT_ERASED        (SL_STATUS_NVM3_WRITE_TO_NOT_ERASED)               ///< Write to memory that is not erased
+#define ECODE_NVM3_ERR_INT_ADDR_INVALID               (SL_STATUS_NVM3_INVALID_ADDR)                      ///< Invalid NVM address
+#define ECODE_NVM3_ERR_INT_KEY_MISMATCH               (SL_STATUS_NVM3_KEY_MISMATCH)                      ///< Key validation failure
+#define ECODE_NVM3_ERR_INT_SIZE_ERROR                 (SL_STATUS_NVM3_SIZE_ERROR)                        ///< Size mismatch error
+#define ECODE_NVM3_ERR_INT_EMULATOR                   (SL_STATUS_NVM3_EMULATOR)                          ///< Emulator error
+#define ECODE_NVM3_ERR_INT_TEST                       (SL_STATUS_FAIL)                                   ///< Internal Test error
+#define ECODE_NVM3_ERR_NVM_ACCESS                     (SL_STATUS_NVM3_NVM_ACCESS)                        ///< A NVM function call was failing
+#define ECODE_NVM3_ERR_ADDRESS_RANGE                  (SL_STATUS_NVM3_INVALID_ADDR)                      ///< Address and size is out of range of available NVM
 
 /***************************************************************************//**
  *  @brief Definitions of NVM3 constraints.
@@ -88,6 +94,11 @@ extern "C" {
 
 #if !defined(NVM3_MAX_OBJECT_SIZE)
 #define NVM3_MAX_OBJECT_SIZE            NVM3_MAX_OBJECT_SIZE_DEFAULT    ///< The maximum object size
+#endif
+
+#if defined(NVM3_SECURITY)
+#define NVM3_NONCE_SIZE                 (12U)
+#define NVM3_GCM_TAG_SIZE               (4U)
 #endif
 
 /***************************************************************************//**
@@ -112,6 +123,21 @@ extern "C" {
  *  @n Call @ref nvm3_open() after this macro to initialize NVM3. See @ref
  *  nvm3_example section for code examples.
  ******************************************************************************/
+#if defined(NVM3_SECURITY)
+#define NVM3_DEFINE_SECTION_INIT_DATA(name, flashHandle, cryptoHandle) \
+  nvm3_Init_t name =                                                   \
+  {                                                                    \
+    (nvm3_HalPtr_t)name##_nvm,                                         \
+    sizeof(name##_nvm),                                                \
+    name##_cache,                                                      \
+    sizeof(name##_cache) / sizeof(nvm3_CacheEntry_t),                  \
+    NVM3_MAX_OBJECT_SIZE,                                              \
+    0,                                                                 \
+    flashHandle,                                                       \
+    cryptoHandle,                                                      \
+    NVM3_DEFAULT_SECURITY_TYPE,                                        \
+  }
+#else
 #define NVM3_DEFINE_SECTION_INIT_DATA(name, flashHandle) \
   nvm3_Init_t name =                                     \
   {                                                      \
@@ -123,6 +149,7 @@ extern "C" {
     0,                                                   \
     flashHandle,                                         \
   }
+#endif
 
 #define NVM3_KEY_INVALID            0xFFFFFFFFU                   ///< Invalid key identifier
 #define NVM3_KEY_SIZE               20U                           ///< Unique object key identifier size in number of bits
@@ -145,9 +172,12 @@ typedef struct nvm3_CacheEntry {
 /// @cond DO_NOT_INCLUDE_WITH_DOXYGEN
 
 typedef struct nvm3_Cache {
-  nvm3_CacheEntry_t *entryPtr;
-  size_t            entryCount;
-  bool              overflow;
+  nvm3_CacheEntry_t *entryPtr;    // Pointer to cache entry structure
+  size_t            entryCount;   // Total cache size
+  bool              overflow;     // Cache overflow status
+#if defined(NVM3_OPTIMIZATION) && (NVM3_OPTIMIZATION == 1)
+  size_t            usedCount;    // Number of objects in cache
+#endif
 } nvm3_Cache_t;
 
 typedef struct nvm3_ObjFragDetail {
@@ -156,35 +186,52 @@ typedef struct nvm3_ObjFragDetail {
   uint8_t             typ;
 } nvm3_ObjFragDetail_t;
 
+#if defined(NVM3_SECURITY)
+typedef enum {
+  NVM3_SECURITY_INVALID = 0,
+  NVM3_SECURITY_NONE = 1,
+  NVM3_SECURITY_AEAD = 2,
+  NVM3_SECURITY_ENC = 3
+} nvm3_SecurityType_t;
+#endif
+
 typedef struct {
-  nvm3_HalPtr_t nvmAdr;               // NVM address
-  size_t nvmSize;                     // NVM size
-  nvm3_Cache_t cache;                 // Cache management data
-  size_t maxObjectSize;               // The maximum object size in bytes
-  size_t repackHeadroom;              // The size difference between the user and forced repacks
-  size_t totalNvmPageCnt;             // The total number of NVM pages
-  size_t validNvmPageCnt;             // The number of valid NVM pages
-  size_t fifoFirstIdx;                // FIFO bottom page
-  void *fifoFirstObj;                 // The first object location
-  void *fifoNextObj;                  // The next free object location
-  size_t unusedNvmSize;               // The size of the unused NVM
-  bool hasBeenOpened;                 // Open status
-  size_t minUnused;                   // The minimum value of the unusedNvmSize
-  const nvm3_HalHandle_t *halHandle;  // HAL handle
-  nvm3_HalInfo_t halInfo;             // HAL information
+  nvm3_HalPtr_t nvmAdr;                           // NVM address
+  size_t nvmSize;                                 // NVM size
+  nvm3_Cache_t cache;                             // Cache management data
+  size_t maxObjectSize;                           // The maximum object size in bytes
+  size_t repackHeadroom;                          // The size difference between the user and forced repacks
+  size_t totalNvmPageCnt;                         // The total number of NVM pages
+  size_t validNvmPageCnt;                         // The number of valid NVM pages
+  size_t fifoFirstIdx;                            // FIFO bottom page
+  void *fifoFirstObj;                             // The first object location
+  void *fifoNextObj;                              // The next free object location
+  size_t unusedNvmSize;                           // The size of the unused NVM
+  bool hasBeenOpened;                             // Open status
+  size_t minUnused;                               // The minimum value of the unusedNvmSize
+  const nvm3_HalHandle_t *halHandle;              // HAL handle
+  nvm3_HalInfo_t halInfo;                         // HAL information
+#if defined(NVM3_SECURITY)
+  const nvm3_HalCryptoHandle_t *halCryptoHandle;  // HAL crypto handle
+  nvm3_SecurityType_t secType;                    // Security type
+#endif
 } nvm3_Handle_t;
 
 /// @endcond
 
 /// @brief NVM3 initialization data.
 typedef struct {
-  nvm3_HalPtr_t nvmAdr;               ///< NVM memory area base address
-  size_t nvmSize;                     ///< NVM memory area size in bytes
-  nvm3_CacheEntry_t *cachePtr;        ///< A pointer to cache
-  size_t cacheEntryCount;             ///< The size of the cache in number of elements
-  size_t maxObjectSize;               ///< The maximum object size in bytes
-  size_t repackHeadroom;              ///< The size difference between the user and forced repacks
-  const nvm3_HalHandle_t *halHandle;  ///< HAL handle
+  nvm3_HalPtr_t nvmAdr;                           ///< NVM memory area base address
+  size_t nvmSize;                                 ///< NVM memory area size in bytes
+  nvm3_CacheEntry_t *cachePtr;                    ///< A pointer to cache
+  size_t cacheEntryCount;                         ///< The size of the cache in number of elements
+  size_t maxObjectSize;                           ///< The maximum object size in bytes
+  size_t repackHeadroom;                          ///< The size difference between the user and forced repacks
+  const nvm3_HalHandle_t *halHandle;              ///< HAL handle
+#if defined(NVM3_SECURITY)
+  const nvm3_HalCryptoHandle_t *halCryptoHandle;  ///< HAL crypto handle
+  nvm3_SecurityType_t secType;                    ///< Security type
+#endif
 } nvm3_Init_t;
 
 /***************************************************************************//**
@@ -209,9 +256,9 @@ typedef struct {
  *   A pointer to NVM3 driver initialization data.
  *
  * @return
- *   @ref ECODE_NVM3_OK on success and a NVM3 @ref Ecode_t on failure.
+ *   @ref SL_STATUS_OK on success and a NVM3 @ref sl_status_t on failure.
  ******************************************************************************/
-Ecode_t nvm3_open(nvm3_Handle_t *h, const nvm3_Init_t *i);
+sl_status_t nvm3_open(nvm3_Handle_t *h, const nvm3_Init_t *i);
 
 /***************************************************************************//**
  * @brief
@@ -221,9 +268,9 @@ Ecode_t nvm3_open(nvm3_Handle_t *h, const nvm3_Init_t *i);
  *   A pointer to the NVM3 driver handle.
  *
  * @return
- *   @ref ECODE_NVM3_OK is always returned.
+ *   @ref SL_STATUS_OK is always returned.
  ******************************************************************************/
-Ecode_t nvm3_close(nvm3_Handle_t *h);
+sl_status_t nvm3_close(nvm3_Handle_t *h);
 
 /***************************************************************************//**
  * @brief
@@ -245,9 +292,9 @@ Ecode_t nvm3_close(nvm3_Handle_t *h);
  *   The size of the object data in number of bytes.
  *
  * @return
- *   @ref ECODE_NVM3_OK on success or a NVM3 @ref Ecode_t on failure.
+ *   @ref SL_STATUS_OK on success or a NVM3 @ref sl_status_t on failure.
  ******************************************************************************/
-Ecode_t nvm3_writeData(nvm3_Handle_t *h, nvm3_ObjectKey_t key, const void *value, size_t len);
+sl_status_t nvm3_writeData(nvm3_Handle_t *h, nvm3_ObjectKey_t key, const void *value, size_t len);
 
 /***************************************************************************//**
  * @brief
@@ -268,9 +315,9 @@ Ecode_t nvm3_writeData(nvm3_Handle_t *h, nvm3_ObjectKey_t key, const void *value
  *   can be used to find the actual size.
  *
  * @return
- *   @ref ECODE_NVM3_OK on success or a NVM3 @ref Ecode_t on failure.
+ *   @ref SL_STATUS_OK on success or a NVM3 @ref sl_status_t on failure.
  ******************************************************************************/
-Ecode_t nvm3_readData(nvm3_Handle_t *h, nvm3_ObjectKey_t key, void *value, size_t len);
+sl_status_t nvm3_readData(nvm3_Handle_t *h, nvm3_ObjectKey_t key, void *value, size_t len);
 
 /***************************************************************************//**
  * @brief
@@ -293,9 +340,9 @@ Ecode_t nvm3_readData(nvm3_Handle_t *h, nvm3_ObjectKey_t key, void *value, size_
  *   The number of bytes to read.
  *
  * @return
- *   @ref ECODE_NVM3_OK on success or a NVM3 @ref Ecode_t on failure.
+ *   @ref SL_STATUS_OK on success or a NVM3 @ref sl_status_t on failure.
  ******************************************************************************/
-Ecode_t nvm3_readPartialData(nvm3_Handle_t* h, nvm3_ObjectKey_t key, void* value, size_t ofs, size_t len);
+sl_status_t nvm3_readPartialData(nvm3_Handle_t* h, nvm3_ObjectKey_t key, void* value, size_t ofs, size_t len);
 
 /***************************************************************************//**
  * @brief
@@ -315,10 +362,10 @@ Ecode_t nvm3_readPartialData(nvm3_Handle_t* h, nvm3_ObjectKey_t key, void* value
  *   A pointer to the location where NVM3 writes the object size.
  *
  * @return
- *   @ref ECODE_NVM3_OK on success or a NVM3 @ref Ecode_t on failure.
+ *   @ref SL_STATUS_OK on success or a NVM3 @ref sl_status_t on failure.
  ******************************************************************************/
-Ecode_t nvm3_getObjectInfo(nvm3_Handle_t *h, nvm3_ObjectKey_t key,
-                           uint32_t *type, size_t *len);
+sl_status_t nvm3_getObjectInfo(nvm3_Handle_t *h, nvm3_ObjectKey_t key,
+                               uint32_t *type, size_t *len);
 
 /***************************************************************************//**
  * @brief
@@ -399,9 +446,9 @@ size_t  nvm3_enumDeletedObjects(nvm3_Handle_t *h,
  *   A 20-bit object identifier.
  *
  * @return
- *   @ref ECODE_NVM3_OK on success or a NVM3 @ref Ecode_t on failure.
+ *   @ref SL_STATUS_OK on success or a NVM3 @ref sl_status_t on failure.
  ******************************************************************************/
-Ecode_t nvm3_deleteObject(nvm3_Handle_t *h, nvm3_ObjectKey_t key);
+sl_status_t nvm3_deleteObject(nvm3_Handle_t *h, nvm3_ObjectKey_t key);
 
 /***************************************************************************//**
  * @brief
@@ -417,9 +464,9 @@ Ecode_t nvm3_deleteObject(nvm3_Handle_t *h, nvm3_ObjectKey_t key);
  *   The counter value to write.
  *
  * @return
- *   @ref ECODE_NVM3_OK on success or a NVM3 @ref Ecode_t on failure.
+ *   @ref SL_STATUS_OK on success or a NVM3 @ref sl_status_t on failure.
  ******************************************************************************/
-Ecode_t nvm3_writeCounter(nvm3_Handle_t *h, nvm3_ObjectKey_t key, uint32_t value);
+sl_status_t nvm3_writeCounter(nvm3_Handle_t *h, nvm3_ObjectKey_t key, uint32_t value);
 
 /***************************************************************************//**
  * @brief
@@ -436,9 +483,9 @@ Ecode_t nvm3_writeCounter(nvm3_Handle_t *h, nvm3_ObjectKey_t key, uint32_t value
  *   the counter value to this location.
  *
  * @return
- *   @ref ECODE_NVM3_OK on success or a NVM3 @ref Ecode_t on failure.
+ *   @ref SL_STATUS_OK on success or a NVM3 @ref sl_status_t on failure.
  ******************************************************************************/
-Ecode_t nvm3_readCounter(nvm3_Handle_t *h, nvm3_ObjectKey_t key, uint32_t *value);
+sl_status_t nvm3_readCounter(nvm3_Handle_t *h, nvm3_ObjectKey_t key, uint32_t *value);
 
 /***************************************************************************//**
  * @brief
@@ -455,9 +502,9 @@ Ecode_t nvm3_readCounter(nvm3_Handle_t *h, nvm3_ObjectKey_t key, uint32_t *value
  *   is written to this location. Set this value to NULL to ignore readout.
  *
  * @return
- *   @ref ECODE_NVM3_OK on success or a NVM3 @ref Ecode_t on failure.
+ *   @ref SL_STATUS_OK on success or a NVM3 @ref sl_status_t on failure.
  ******************************************************************************/
-Ecode_t nvm3_incrementCounter(nvm3_Handle_t *h, nvm3_ObjectKey_t key, uint32_t *newValue);
+sl_status_t nvm3_incrementCounter(nvm3_Handle_t *h, nvm3_ObjectKey_t key, uint32_t *newValue);
 
 /***************************************************************************//**
  * @brief
@@ -475,9 +522,9 @@ Ecode_t nvm3_incrementCounter(nvm3_Handle_t *h, nvm3_ObjectKey_t key, uint32_t *
  *   A pointer to an NVM3 driver handle.
  *
  * @return
- *   @ref ECODE_NVM3_OK on success or a NVM3 @ref Ecode_t on failure.
+ *   @ref SL_STATUS_OK on success or a NVM3 @ref sl_status_t on failure.
  ******************************************************************************/
-Ecode_t nvm3_eraseAll(nvm3_Handle_t *h);
+sl_status_t nvm3_eraseAll(nvm3_Handle_t *h);
 
 /***************************************************************************//**
  * @brief
@@ -496,9 +543,9 @@ Ecode_t nvm3_eraseAll(nvm3_Handle_t *h);
  *   erasure counter value.
  *
  * @return
- *   @ref ECODE_NVM3_OK on success or a NVM3 @ref Ecode_t on failure.
+ *   @ref SL_STATUS_OK on success or a NVM3 @ref sl_status_t on failure.
  ******************************************************************************/
-Ecode_t nvm3_getEraseCount(nvm3_Handle_t *h, uint32_t *eraseCnt);
+sl_status_t nvm3_getEraseCount(nvm3_Handle_t *h, uint32_t *eraseCnt);
 
 /***************************************************************************//**
  * @brief
@@ -538,9 +585,9 @@ void nvm3_setEraseCount(uint32_t eraseCnt);
  *   A pointer to an NVM3 driver handle.
  *
  * @return
- *   @ref ECODE_NVM3_OK on success or a NVM3 @ref Ecode_t on failure.
+ *   @ref SL_STATUS_OK on success or a NVM3 @ref sl_status_t on failure.
  ******************************************************************************/
-Ecode_t nvm3_repack(nvm3_Handle_t *h);
+sl_status_t nvm3_repack(nvm3_Handle_t *h);
 
 /***************************************************************************//**
  * @brief
@@ -566,7 +613,7 @@ bool    nvm3_repackNeeded(nvm3_Handle_t *h);
  *   or keep the address and change the size only.
  *   It is not possible to resize the area by doing changes in both ends of the
  *   NVM address range at the same time.
- *   If the resize operation returns @ref ECODE_NVM3_OK, the instance is still
+ *   If the resize operation returns @ref SL_STATUS_OK, the instance is still
  *   open and can be used to access objects in the resized NVM.
  *   If the resize operation fails, the instance will still be open but with
  *   unchanged size.
@@ -585,9 +632,9 @@ bool    nvm3_repackNeeded(nvm3_Handle_t *h);
  *   The size of the NVM after resize.
  *
  * @return
- *   @ref ECODE_NVM3_OK on success or a NVM3 @ref Ecode_t on failure.
+ *   @ref SL_STATUS_OK on success or a NVM3 @ref sl_status_t on failure.
  ******************************************************************************/
-Ecode_t nvm3_resize(nvm3_Handle_t *h, nvm3_HalPtr_t newAddr, size_t newSize);
+sl_status_t nvm3_resize(nvm3_Handle_t *h, nvm3_HalPtr_t newAddr, size_t newSize);
 
 /***************************************************************************//**
  * @brief
@@ -725,12 +772,9 @@ __STATIC_INLINE size_t nvm3_countDeletedObjects(nvm3_Handle_t *h)
    updated by any subsequent write, read, or delete function call.
 
    # Global Data (variables) {#nvm3_data}
-   The NVM3 library uses global variables to store intermediate data
-   during open, read, write, increment, and delete calls. Because the actual
-   memory configuration is not defined at the time the NVM3 library is built
-   but rather at the time the user application is built, the size of data
-   structures must be determined by the application configuration.
-   Also, the application must set the value of the @ref nvm3_maxFragmentCount
+   The NVM3 service uses global variables to store intermediate data
+   during open, read, write, increment, and delete calls.
+   The application must set the value of the @ref nvm3_maxFragmentCount
    at run-time before any NVM3 functions are called.
 
    NVM3 does not support overlapped calls. If there is any chance that the
@@ -742,14 +786,16 @@ __STATIC_INLINE size_t nvm3_countDeletedObjects(nvm3_Handle_t *h)
    size that is large enough for the largest usage.
 
    # Stack Usage {#nvm3_stack}
-   NVM3 library function calls are nested several levels deep. The stack
-   usage has been measured on some EFM32, and EFR32 targets with library builds
+   NVM3 function calls are nested several levels deep. The stack usage
+   has been measured on some EFM32, and EFR32 targets with NVM3 source
    for IAR and ARM GCC. The maximum stack usage measured was 420 bytes for
    IAR, and 472 bytes for ARM GCC builds. The unit test used to validate the
    stack usage has a 10% margin and uses a stack limit of 462 bytes for IAR
-   and 520 for ARM GCC.
+   and 520 for ARM GCC. The maximum stack usage measured was 715 bytes for ARM
+   GCC builds with security. The unit test used to validate the stack usage has
+   a 10% margin and uses a stack limit of 794 bytes for ARM GCC with security.
    Note that the actual stack usage is a little different on the Cortex
-   M0 Plus, M3, M4, and M33 versions of the library.
+   M0 Plus, M3, M4, and M33 with NVM3 source.
 
    # The API {#nvm3_api}
    The NVM3 API is defined in the nvm3.h file. The application code
@@ -758,8 +804,8 @@ __STATIC_INLINE size_t nvm3_countDeletedObjects(nvm3_Handle_t *h)
 
    This section contains brief descriptions of NVM3 functions. For
    more information about parameters and return values, see the Function
-   documentation section. Most functions return an @ref Ecode_t that has the
-   value @ref ECODE_NVM3_OK on success, or see nvm3.h for other values.
+   documentation section. Most functions return an @ref sl_status_t that has the
+   value @ref SL_STATUS_OK on success, or see nvm3.h for other values.
 
    @ref nvm3_open() and @ref nvm3_close().
    @n These functions open and close an NVM3 instance. @ref nvm3_open() takes a handle
@@ -850,7 +896,7 @@ __STATIC_INLINE size_t nvm3_countDeletedObjects(nvm3_Handle_t *h)
    error are copied to the next free page before the page is marked as BAD and
    the write operation resumes. If the recovery operation is successful, the
    operation is regarded as complete, and the function will return @ref
-   ECODE_NVM3_OK status.
+   SL_STATUS_OK status.
 
    @note Erase and write errors may not be detected by NVM3 if the device is
    used until End-of-Life (EOL), where the failure mode can be that the NVM content is
@@ -888,53 +934,65 @@ __STATIC_INLINE size_t nvm3_countDeletedObjects(nvm3_Handle_t *h)
    @n The "driver" for internal Flash is selected by setting the halHandle in
    the nvm3_open initialization structure to point to nvm3_halFlashHandle.
 
-   # NVM3 Libraries {#nvm3_libraries}
-   The NVM3 comes with pre-compiled libraries for Cortex M0, M3, M4, and M33
-   compiled with either Arm GCC or IAR toolchains.
+   # Storing Objects in External Flash {#nvm3_support_external_flash}
+   NVM3 has support for writing and reading objects in external Flash by using
+   the nvm3_hal_flash_ext.c "driver". The nvm3_hal_flash_ext.c is using the SE
+   manager functions to write and erase data while using regular memory
+   functions to read data from external Flash.
+
+   @n The "driver" for external Flash is selected by setting the halHandle in
+   the nvm3_open initialization structure to point to nvm3_halFlashHandle.
+
+   @n All data objects are authenticated + encrypted using AES-GCM mode and
+   counter objects are stored in plain. NVM3 encryption key is stored in SE
+   MTP region. Reading the external memory alone will not give access to the
+   unencrypted data objects.
+
+   @n HAL for crypto is added to have the flexibility to use available crypto
+   which can be selected by setting the halCryptoHandle in the nvm3_open
+   initialization structure to point to desired crypto handle.
+
+   # NVM3 Source code {#nvm3_source_code}
+   The NVM3 source code can be compiled for Cortex M0, M3, M4, and M33 with either
+   Arm GCC or IAR toolchains. In addition, the NVM3 driver provides a means to
+   securely store and retrieve the objects in external Flash using authenticated
+   encryption. Objects in internal Flash need not be encrypted, while objects
+   in external Flash must always be encrypted.
 
    # Storage Capacity {#nvm3_capacity}
    Basic storage is defined as the size of on instance of all objects, including
    any overhead stored with the data. For NVM3 the maximum amount of data you
    can store is dependent on the number of flash pages used for storage and the
    max object size used for NVM3. The following table shows the maximum allowed
-   basic storage for a varying number of 2 kB or 8 kB flash pages and the minimum
-   (208 bytes), default (254 bytes), high (1900 bytes) and maximum (4096 bytes)
+   basic storage for a varying number of 4 kB or 8 kB flash pages and the minimum
+   (204 bytes), default (254 bytes), high (1900 bytes) and maximum (4096 bytes)
    max object size. Note that this is a theoretical limit, and if the basic storage
    is at this limit, no space is left for wear-levelling, and page erases will be
    forced for every object written. The NVM3 instance should therefore be configured
    with enough flash pages to put the maximum allowed basic storage significantly
    higher than the actual basic storage.
 
-   ## Max Allowed Basic Storage with 2 kB page size
-
-   |                Flash pages    |                Total size (bytes)    |    Max allowed basic storage (bytes)    |                                     |                                      |                                      |
-   |-------------------------------|--------------------------------------|-----------------------------------------|-------------------------------------|--------------------------------------|--------------------------------------|
-   |                               |                                      |    Max   object size = 208 bytes        |    Max   object size = 254 bytes    |    Max   object size = 1900 bytes    |    Max   object size = 4096 bytes    |
-   |    3                          |    6144                              |    1596                                 |    1504                             |    0                                 |    0                                 |
-   |    4                          |    8192                              |    3624                                 |    3532                             |    240                               |    0                                 |
-   |    5                          |    10240                             |    5652                                 |    5560                             |    2268                              |    0                                 |
-   |    6                          |    12288                             |    7680                                 |    7588                             |    4296                              |    0                                 |
-   |    7                          |    14336                             |    9708                                 |    9616                             |    6324                              |    0                                 |
-   |    8                          |    16384                             |    11736                                |    11644                            |    8352                              |    0                                 |
-   |    9                          |    18432                             |    13764                                |    13672                            |    10380                             |    1900                              |
-   |    10                         |    20480                             |    15792                                |    15700                            |    12408                             |    3928                              |
-   |    11                         |    22528                             |    17820                                |    17728                            |    14436                             |    5956                              |
-   |    12                         |    24576                             |    19848                                |    19756                            |    16464                             |    7984                              |
-   |    13                         |    26624                             |    21876                                |    21784                            |    18492                             |    10012                             |
-   |    14                         |    28672                             |    23904                                |    23812                            |    20520                             |    12040                             |
-   |    15                         |    30720                             |    25932                                |    25840                            |    22548                             |    14068                             |
-   |    16                         |    32768                             |    27960                                |    27868                            |    24576                             |    16096                             |
-   |    17                         |    34816                             |    29988                                |    29896                            |    26604                             |    18124                             |
-   |    18                         |    36864                             |    32016                                |    31924                            |    28632                             |    20152                             |
-
    ## Max Allowed Basic Storage with 8 kB page size
    |                Flash pages    |                Total size (bytes)    |    Max allowed basic storage (bytes)    |                                     |                                      |                                      |
    |-------------------------------|--------------------------------------|-----------------------------------------|-------------------------------------|--------------------------------------|--------------------------------------|
-   |                               |                                      |    Max   object size = 208 bytes        |    Max   object size = 254 bytes    |    Max   object size = 1900 bytes    |    Max   object size = 4096 bytes    |
-   |    3                          |    24516                             |    7740                                 |    7648                             |    4356                              |    0                                 |
-   |    4                          |    32688                             |    15912                                |    15820                            |    12528                             |    8136                              |
-   |    5                          |    40860                             |    24084                                |    23992                            |    20700                             |    16308                             |
-   |    6                          |    49032                             |    32256                                |    32164                            |    28872                             |    24480                             |
+   |                               |                                      |    Max object size = 204 bytes          |    Max object size = 254 bytes      |    Max object size = 1900 bytes      |    Max object size = 4096 bytes      |
+   |    3                          |    24516                             |    7748                                 |    7648                             |    4356                              |    0                                 |
+   |    4                          |    32688                             |    15920                                |    15820                            |    12528                             |    8136                              |
+   |    5                          |    40860                             |    24092                                |    23992                            |    20700                             |    16308                             |
+   |    6                          |    49032                             |    32264                                |    32164                            |    28872                             |    24480                             |
+
+   ## Max Allowed Basic Storage with 4 kB page size
+   |                Flash pages    |                Total size (bytes)    |    Max allowed basic storage (bytes)    |                                     |                                      |                                      |
+   |-------------------------------|--------------------------------------|-----------------------------------------|-------------------------------------|--------------------------------------|--------------------------------------|
+   |                               |                                      |    Max object size = 204 bytes          |    Max object size = 254 bytes      |    Max object size = 1900 bytes      |    Max object size = 4096 bytes      |
+   |    3                          |    12228                             |    3652                                 |    3552                             |    260                               |    0                                 |
+   |    4                          |    16304                             |    7728                                 |    7628                             |    4336                              |    0                                 |
+   |    5                          |    20380                             |    11804                                |    11704                            |    8412                              |    4020                              |
+   |    6                          |    24456                             |    15880                                |    15780                            |    12488                             |    8096                              |
+   |    7                          |    28532                             |    19956                                |    19856                            |    16564                             |    12172                             |
+   |    8                          |    32608                             |    24032                                |    23932                            |    20640                             |    16248                             |
+   |    9                          |    36684                             |    28108                                |    28008                            |    24716                             |    20324                             |
+   |    10                         |    40760                             |    32184                                |    32084                            |    28792                             |    24400                             |
 
    # Default Instance {#nvm3_default}
    Several NVM3 instances can be created on a device and live independently of each other,

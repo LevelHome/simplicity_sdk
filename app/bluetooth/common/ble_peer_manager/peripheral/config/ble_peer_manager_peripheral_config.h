@@ -95,6 +95,14 @@
 #define BLE_PEER_MANAGER_PERIPHERAL_CONFIG_ADV_TIMING_MAX_EVENTS              0
 #endif
 
+// <q BLE_PEER_MANAGER_PERIPHERAL_CONFIG_ADV_PHY> Advertiser PHY
+// <sl_bt_gap_phy_1m=> 1Mbps PHY
+// <sl_bt_gap_phy_2m=> 2Mbps PHY
+// <i> Default: 1Mbps PHY
+#ifndef BLE_PEER_MANAGER_PERIPHERAL_CONFIG_ADV_PHY
+#define BLE_PEER_MANAGER_PERIPHERAL_CONFIG_ADV_PHY                            sl_bt_gap_phy_1m
+#endif
+
 // <<< end of configuration section >>>
 
 /** @} (end addtogroup ble_peer_manager_peripheral) */

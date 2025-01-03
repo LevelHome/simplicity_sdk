@@ -821,7 +821,7 @@ typedef union {
     uint32_t                : 17; // B79-95
   } bits;
   uint32_t word[3];
-#elif defined(_SILICON_LABS_32B_SERIES_3_CONFIG_1)
+#elif defined(_SILICON_LABS_32B_SERIES_3_CONFIG_301)
     // These come from sixg301m114lih.h
     uint32_t SETAMPERHOST_IRQn      : 1;  /*!<  0 Si SETAMPERHOST Interrupt */
     uint32_t SEMBRX_IRQn            : 1;  /*!<  1 Si SEMBRX Interrupt */

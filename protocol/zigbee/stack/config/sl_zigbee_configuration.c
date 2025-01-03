@@ -54,10 +54,6 @@ const uint8_t sli_zigbee_api_version
 //------------------------------------------------------------------------------
 // Multi PAN globals
 
-#ifndef UC_BUILD
-#define SL_ZIGBEE_ZC_AND_ZR_DEVICE_COUNT SL_ZIGBEE_AF_ZC_AND_ZR_DEVICE_COUNT
-#endif // UC_BUILD
-
 #define NUM_MULTI_PAN_FORKS    (SL_ZIGBEE_ZC_AND_ZR_DEVICE_COUNT == 0 \
                                 ? 1                                   \
                                 : SL_ZIGBEE_ZC_AND_ZR_DEVICE_COUNT)
@@ -235,7 +231,7 @@ uint8_t sli_zigbee_store_and_forward_queue_size = SL_ZIGBEE_STORE_AND_FORWARD_QU
 //------------------------------------------------------------------------------
 // Green Power stack tables
 uint8_t sli_zigbee_gp_incoming_fc_token_table_size = SL_ZIGBEE_GP_INCOMING_FC_TOKEN_TABLE_SIZE;
-uint8_t sli_zigbee_gp_incoming_fc_token_timeout = SL_ZIGBEE_GP_INCOMING_FC_TOKEN_TIMEOUT;
+uint32_t sli_zigbee_gp_incoming_fc_token_timeout = SL_ZIGBEE_GP_INCOMING_FC_TOKEN_TIMEOUT;
 
 sl_zigbee_gp_proxy_table_entry_t sli_zigbee_gp_proxy_table[SL_ZIGBEE_GP_PROXY_TABLE_SIZE];
 uint8_t sli_zigbee_gp_proxy_table_size = SL_ZIGBEE_GP_PROXY_TABLE_SIZE;
@@ -453,11 +449,31 @@ sl_zigbee_mac_filter_match_data_t sli_zigbee_custom_mac_filter_match_list_data[S
 
 #endif // SL_ZIGBEE_AF_NCP || SL_CATALOG_ZIGBEE_NCP_FRAMEWORK_PRESENT || SL_ZIGBEE_TEST
 
-// Stubs that apply to both SoC and NCP
+#ifdef SL_CATALOG_RADIO_PRIORITY_15_4_PRESENT
+#include "sl_802154_radio_priority_config.h"
+#endif // SL_CATALOG_RADIO_PRIORITY_15_4_PRESENT
 
-// This whole if block can be removed once UC_BUILD is removed
-#ifndef UC_BUILD
-#ifndef SL_ZIGBEE_AF_PLUGIN_ZIGBEE_EVENT_LOGGER
-#include "stack/framework/zigbee-event-logger-stub-gen.c"
-#endif // !SL_ZIGBEE_AF_PLUGIN_ZIGBEE_EVENT_LOGGER
-#endif // UC_BUILD
+#ifdef CSL_SUPPORT
+// TODO: EMZIGBEE-8554: Change the Tx Default Priority to use a macro to set the priority based on the
+// BLE Advertisement priorities
+//
+// EMZIGBEE-8549
+// Set the Tx priority to 25 which is in between the default calculated BLE advertisement priority range of 23-26
+// This is needed to allow Zigbee to transmit reliably and not get pre-empted by BLE advertisement priorities.
+#undef SL_802154_RADIO_PRIO_TX_MIN
+#define SL_802154_RADIO_PRIO_TX_MIN       25
+#undef SL_802154_RADIO_PRIO_TX_MAX
+#define SL_802154_RADIO_PRIO_TX_MAX       25
+#endif // CSL_SUPPORT
+
+#ifdef SL_CATALOG_RADIO_PRIORITY_15_4_PRESENT
+sl_802154_radio_priorities_t radioSchedulerPriorityTable = {
+  .background_rx = SL_802154_RADIO_PRIO_BACKGROUND_RX_VALUE,
+  .min_tx_priority = SL_802154_RADIO_PRIO_TX_MIN,
+  .tx_step = SL_802154_RADIO_PRIO_TX_STEP,
+  .max_tx_priority = SL_802154_RADIO_PRIO_TX_MAX,
+  .active_rx = SL_802154_RADIO_PRIO_ACTIVE_RX_VALUE,
+};
+#endif //SL_CATALOG_RADIO_PRIORITY_15_4_PRESENT
+
+// Stubs that apply to both SoC and NCP

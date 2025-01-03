@@ -44,7 +44,7 @@
 #include "sl_rtl_clib_api.h"
 
 #include "cs_initiator_config.h"
-#include "cs_initiator_configurator.h"
+#include "cs_initiator_client.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,6 +52,21 @@ extern "C" {
 
 // -----------------------------------------------------------------------------
 // Type definitions
+
+/// RTL library calculation result type
+typedef struct {
+  uint8_t connection;                   ///< Connection handle
+  float distance;                       ///< Calculated distance
+  float likeliness;                     ///< Calculated distance likeliness
+  float rssi_distance;                  ///< Distance calculated with RSSI values
+  float bit_error_rate;                 ///< CS bit error rate in RTT mode, NAN otherwise
+} cs_result_t;
+
+/// RTL library intermediate result type
+typedef struct {
+  uint8_t connection;                   ///< Connection handle
+  float progress_percentage;            ///< Progress in percentages
+} cs_intermediate_result_t;
 
 /***************************************************************************//**
  * Initiator error callback type
@@ -70,9 +85,12 @@ typedef void (*cs_error_cb_t)(uint8_t conn_handle, cs_error_event_t evt, sl_stat
  * performed.
  *
  * @param[in] result pointer to the result structure.
+ * @param[in] cs_procedure procedure data that the result was calculated from.
  * @param[in] user_data pointer to additional user data.
  ******************************************************************************/
-typedef void (*cs_result_cb_t)(const cs_result_t *result, const void *user_data);
+typedef void (*cs_result_cb_t)(const cs_result_t *result,
+                               const sl_rtl_cs_procedure *cs_procedure,
+                               const void *user_data);
 
 /***************************************************************************//**
  * Initiator intermediate result callback type
@@ -96,14 +114,31 @@ typedef enum {
 } cs_procedure_action_t;
 
 typedef union {
+  sl_bt_evt_cs_result_t cs_result_raw;
+  sl_bt_evt_cs_result_continue_t cs_result_continue_raw;
+} cs_result_event_t;
+
+typedef struct {
+  cs_result_event_t *cs_result_data;
+  int16_t frequency_compensation;
+  uint16_t procedure_counter;
+  int8_t reference_power_level;
+  uint8_t num_antenna_paths;
+  uint8_t num_steps;
+  uint8_t abort_reason;
+  uint8_t subevent_done_status;
+  uint8_t procedure_done_status;
+  bool first_cs_result;
+  bool initiator_part;
+  uint16_t start_acl_conn_event;
+} cs_result_data_t;
+
+typedef union {
   struct {
     cs_error_event_t error_type;
     sl_status_t sc;
   } evt_error;
-  struct {
-    sl_bt_evt_cs_result_t *cs_result_data;
-    bool initiator_part;
-  } evt_cs_result;
+  cs_result_data_t evt_content;
   bool evt_init_completed;
   bool evt_procedure_enable_starting;
   sl_bt_evt_cs_procedure_enable_complete_t *evt_procedure_enable_completed;
@@ -117,16 +152,10 @@ typedef enum {
   INITIATOR_EVT_PROCEDURE_ENABLE_COMPLETED,
   INITIATOR_EVT_PROCEDURE_DISABLE_COMPLETED,
   INITIATOR_EVT_CS_RESULT,
+  INITIATOR_EVT_CS_RESULT_CONTINUE,
   INITIATOR_EVT_DELETE_INSTANCE,
   INITIATOR_EVT_ERROR
 } state_machine_event_t;
-
-// cs procedure triggering
-typedef enum {
-  CS_PROCEDURE_STATE_IN_PROGRESS = 0u,
-  CS_PROCEDURE_STATE_ABORTED,
-  CS_PROCEDURE_STATE_COMPLETED
-} cs_procedure_state_t;
 
 // -----------------------------------------------------------------------------
 // Function declarations
@@ -135,8 +164,11 @@ typedef enum {
  * Create CS Initiator instance for the given connection handle.
  * @param[in] conn_handle connection handle
  * @param[in] initiator_config pointer to the initiator config
+ * @param[in] rtl_config pointer to the RTL library config
  * @param[in] result_cb callback for result
+ * @param[in] intermediate_result_cb callback for intermediate result
  * @param[in] error_cb callback for error
+ * @param[out] instance_id RTL library instance ID (optional)
  *
  * @return status of the operation.
  *****************************************************************************/
@@ -145,7 +177,8 @@ sl_status_t cs_initiator_create(const uint8_t               conn_handle,
                                 const rtl_config_t          *rtl_config,
                                 cs_result_cb_t              result_cb,
                                 cs_intermediate_result_cb_t intermediate_result_cb,
-                                cs_error_cb_t               error_cb);
+                                cs_error_cb_t               error_cb,
+                                uint8_t                     *instance_id);
 
 /**************************************************************************//**
  * Create and configure initiator instances.

@@ -18,6 +18,17 @@ Table of content:
     - [Pre-steps before building](#pre-steps-before-building)
     - [Building the shared libraries](#building-the-shared-libraries)
     - [Starting AP application](#starting-ap-application)
+  - [Application startup commandline arguments](#application-startup-commandline-arguments)
+    - [Positional parameter](#positional-parameter)
+      - [conn](#conn)
+    - [Optional arguments](#optional-arguments)
+      - [h, --help](#h---help)
+      - [m, --cmd](#m---cmd)
+      - [d, --demo](#d---demo)
+      - [r, --stdout](#r---stdout)
+      - [u, --unsecure](#u---unsecure)
+      - [l, --log {NOTSET,TRACE,DEBUG,INFO,WARNING,ERROR,CRITICAL}](#l---log-notsettracedebuginfowarningerrorcritical)
+      - [e FILE, --exclusive FILE](#e-file---exclusive-file)
   - [Runtime commands](#runtime-commands)
     - [ESL Tag commands](#esl-tag-commands)
       - [ping](#ping)
@@ -38,6 +49,7 @@ Table of content:
     - [Access Point control commands](#access-point-control-commands)
       - [help](#help)
       - [mode](#mode)
+      - [network](#network)
       - [set\_rssi\_threshold](#set_rssi_threshold)
       - [scan](#scan)
       - [list](#list)
@@ -52,6 +64,7 @@ Table of content:
 - Built-in auto conversion for Silabs ESL example devices with image storage and display for any size. 
 - Multiple connections in parallel up to the limits of the Bluetooth stack on the attached ESL Network Co-Processor embedded target.
 - Encrypted communication between the AP script and the embedded target, which can be optionally disabled or completely removed. For more information on building prerequisites of the secure components for the NCP, see chapter 4.2 of the SiLabs application note [AN-1259](https://www.silabs.com/documents/public/application-notes/an1259-bt-ncp-mode-sdk-v3x.pdf).
+- Leverage the Filter Accept List and Initiator Filter Policy Core features for improved ESL network initialization performance compared to traditional connection initiation method.
 - Simple chaining in CLI using `;` (semicolon) as separator between consecutive commands
 - Simple [scripting](#script) capability
 
@@ -61,7 +74,8 @@ Table of content:
 - On Windows, there is also a known issue when running the AP where the debugging trace and command line input can interfere with each other on some terminals if Python's pyreadline3 module is installed, so it is strongly recommended to uninstall it using the command `pip uninstall pyreadline3` before running the AP. To find out if it is installed or not, the command `pip freeze` can be used.
 - MSYS2 MinGW bash is not recommended for running ESL Access Point Python example application due to various compatibility issues between the native Windows Python environment and that of MSYS2. Still, the ESL C library has to be build with it.
 - Sometimes, especially on systems where Python 2 and 3 environments are installed together, the ESL AP script cannot run due to the way these systems handle the default Python environments. If you experience import problems with Python modules that you are sure are installed for the correct Python version, you may need to modify the PATH environment variable.
-- The PAwR response delay should not be set to less than 30 ms if the ESL Tag uses the WSTK memory LCD as its display, as its platform driver does not support non-blocking mode during image transfer. As a result, for a PAwR train required to serve networks of up to 7000 ESLs, it is not possible to set the PAwR interval below 1.54 seconds in our default example settings. For any shorter response delays than 30ms, please write a custom display driver based on the ESL Display implementation recommendations using non-blocking code.
+- The PAwR response delay shall not be set to less than 30 ms when the memory LCD of the WSTK is used as display by the ESL Tag, as its platform driver does not support non-blocking mode during the image display procedure. As a result, for a PAwR train required to serve networks of up to 7000 ESLs, it is not possible to set the PAwR interval below 1.54 seconds in our default example settings. For any shorter response delays than 30ms, please write a custom display driver based on the ESL Display implementation recommendations using non-blocking code.
+- Using the "Filter Accept List" and "Initiator Filter Policy" significantly increases the connection utilization of the ESL AP NCP, and consequently its memory requirements. For this reason, some supported controllers can only be used up to a limited network size of a few hundred ESL devices, larger networks may require an MCU with more memory and a proportional increase of `SL_BT_CONFIG_BUFFER_SIZE` in the ESL AP NCP project configuration.
  
 ## Project structure
 ---
@@ -86,11 +100,10 @@ You can see the logical structure on the following diagram:
 
 ![](images/struct.png)
 
-The application has three operation mode: automated and a (semi-) manual mode. The third one is the demo mode, which is the same as the manual mode with an extra functionality:
-it starts advertising the ESL AP GATT Service with two characteristic. The advertising stops if a remote device (e.g mobile phone) established a connection with the AP as peripheral.
+The application has three operation mode: automated and a (semi-) manual mode. The third is the demo mode, which is similar to the manual mode with an additional functionality: it starts advertising a vendor-specific ESL AP GATT Service with two characteristics. The advertising stops if a remote device (e.g mobile phone) established a connection with the AP as peripheral.
 If the connection is closed the ESL AP will start the advertising again.
 
-In general, in any mode one can control the application via CLI - but it is encouraged to change to manual mode via the [`mode`](#mode) command before typing in any ESL control commands. For details of the possible commands, see the help of the ap\_cli.py file. (Type: [`help`](#help) command in the CLI)
+In general, it is possible to control the application via its built-in CLI in any mode - but it is recommended to switch to manual mode with the [`mode`](#mode) command before typing any ESL control commands, because the automated actions may visually interfere with the input. For details on the possible commands, see the ap\_cli.py help file. (Type: [`help`](#help) command in the CLI)
 
 In automated mode the script executes the following functionality:
 
@@ -134,7 +147,7 @@ Run the `make` command in the project's root folder (*example\_host/bt\_host\_es
 
 On Windows, the PowerShell is the preferred running environment, but it can also run under the basic command line. However, using the MSYS2 MinGW bash is not recommended for this purpose due to known compatibility issues between the native Windows Python running environment and that of MSYS2. On other systems like Linux and macOS any terminal can be used.
  
-AP can be run in manual, demo or automatic mode. Without using the `--cmd` or the `--demo` command line parameter, automatic mode is started.
+AP can be run in manual, demo or automatic mode. Without using the [`--cmd`](#m---cmd) or the [`--demo`](#d---demo) command line parameter, automatic mode is started.
 
 For example to start AP on Windows system where an NCP is connected to COM4, type `python .\app.py COM4` in terminal. If the AP is the only Silabs board connected to the PC via USB there is no need to specify the COM port. Mode can also be set later runtime using the [`mode`](#mode) command.
 
@@ -148,8 +161,75 @@ Assuming the automated mode startup above, the already running AP script will fi
 
 ![](images/02_provisioned.png)
 
+## Application startup commandline arguments
+There are a number of command line arguments that can be used to customize the way the ESL AP Python sample application is launched. The list of available options can be queried by passing the `-h` parameter to `app.py` when running.
+
+### Positional parameter
+
+#### conn
+    Serial or TCP connection parameter.
+
+  Either the IP address of the development kit where the ESL AP NCP application is running or the name of the serial port to which WSTK's USB CPC device is mapped. For serial ports, the naming convention should follow operating system notation.
+  If this parameter is omitted, the application will attempt to find the only Wireless Development Kit running the ESL AP NCP code connected to the machine via the USB CDC port at startup. However, this attempt will fail if there is more than one WDK connected to the host via the USB port, or if the only device does not run the required NCP code. It is therefore recommended, but not mandatory.
+
+### Optional arguments
+
+#### h, --help
+    Show help message and exit
+
+#### m, --cmd
+    Start in command line (manual) mode instead of default ESL Profile (auto) mode
+
+  By default, the ESL AP starts in ESL Profile (auto) mode, i.e. it strictly follows the behavior described in the ESL Profile specification when detecting ESLs advertising in various states. Also, in auto mode, the found nearby ESLs are configured using auto-generated ESL addresses. In manual mode, however, it is possible to do virtually anything - including violating the profile specification, either intentionally or unintentionally - so use this option with care.
+
+#### d, --demo
+    Start in manual mode with Simplicity Connect demo mode enabled
+
+  The Simplicity Connect mobile application offers an ESL demo scene, and this option is designed to streamline the use of that feature. It also enables the `cmd` mode, which allows the Simplicity Connect to act as the management entity.
+
+#### r, --stdout
+    Redirect logging output from default stderr to stdout
+  
+  This might be useful for test systems that can't handle `stderr` but can handle `stdout`. Otherwise, it is recommended to omit this option, in which case the logging will use `stderr` as its default output, while the built-in CLI will use `stdio` for command processing and result feedback.
+  
+#### u, --unsecure
+    Disable encryption for NCP communication
+
+  Not recommended for use in a production environment as it renders the TCP/UART communication between the ESL AP and the NCP wireless target unencrypted. For testing purposes only.
+
+#### l, --log {NOTSET,TRACE,DEBUG,INFO,WARNING,ERROR,CRITICAL}
+    Logging level to start with - can be changed later with verbosity command
+
+  The default logging level is `INFO`, which strikes a balance between useful information and not too much verbosity. Using `NOTSET` will completely flood the terminal with messages, use it only for serious debugging sessions.
+
+#### e FILE, --exclusive FILE
+    Enable exclusive mode based on a JSON file describing an ESL network configuration
+
+  This option allows a complete network configuration to be loaded from an appropriately formatted JSON descriptor file to support automatic addressing logic. Automatic mode can still generate collision-free ESL addresses without this option, but a fully tuned network can only be automatically configured using this method.
+  The provided JSON configuration also acts as an allow list, preventing nearby unlisted advertising ESLs from being automatically added to the network. This latter behavior can be useful for test cases as well as in production.
+  The JSON file shall follow the format below:
+
+    {
+      "group_0": {
+        "id_2": "68:0A:E2:28:7E:50",
+        "id_3": "68:0A:E2:28:7B:7A"
+      },
+      "group_1": {
+        "id_0": "68:0A:E2:28:8B:96",
+        "id_1": "68:0A:E2:28:7E:A3",
+        "id_2": "68:0A:E2:28:7E:A4"
+      }
+    }
+
+A thorough syntactic and semantic analysis of the file will be performed before loading, and the file will only be accepted if it is in the correct format - note, however, that due to some limitations of the JSON format, some (non-fatal) errors such as key duplication will not be detected (e.g. if `group_1` is defined twice in the file, or `id_2` is defined twice in a group, only the later one will be applied). The same 48-bit Bluetooth address cannot occur twice in the file, this will be detected by the validator. The Bluetooth address values are in big-endian format for human readability.
+
+The network behavior can also be controlled at a later time using the built-in CLI command [network](#network) - this startup option just a convenient way to get the AP up and running in exclusive automated mode right away.
+
+It may also be worth mentioning that a given configuration file does not need to be specified over and over again on repeated startups - unless its contents have changed, or the explicit purpose is to use an exclusive startup mode - because after the first successful import and subsequent network configuration, the settings are also recorded in the ESL key database.
+
 ## Runtime commands
----
+Unlike the previously described command line arguments that take effect once at program startup, the following commands are used to control a running AP instance at runtime through its built-in command line interface. These commands are used to tune the overall behavior of the AP and to control the parameters of the ESL network being established.
+
 ### ESL Tag commands
 ---
 
@@ -486,25 +566,44 @@ Examples:
 #### mode
     Changes ESL Access Point operation mode.
 
-Usage: `mode [-h] [{auto,manual}]`
+Usage: `mode [-h] [{auto,manual}] [{single,list}]`
 
 Parameters:
-- `{auto,manual}`:   Switch to automatic or manual mode.
-
+- `{auto,manual}`:   Toggle between automatic and manual mode of AP operation.
+- `{single,list}`:   Toggle ESL library connection initiation behavior between single or list based.
 _Note: To check current mode you can issue the command without argument._
-
+_Disclaimer: Please also note that manual mode gives you full control over the devices on your network, allowing you to easily violate the Profile rules (e.g. setting the same ESL ID and Group ID on two different devices at the same time), so use this option with caution!_
 Examples:
 - `mode manual`
 
-  Change mode to manual mode.
+  Change mode to manual mode, sets the most appropriate library connection initiation method (single) accordingly.
+Examples:
+- `mode auto single`
+
+  Change mode to auto mode, while overriding the best fitting library connection initiation method to single. (Auto mode would prefer the list-based method if the optional second argument were omitted.)
 - `mode`
 
   Ask current mode.
 
+#### network
+    Execute commands related to the network control.
+  
+  Usage: `network [-h] [--save [FILE]] [--load [FILE]] [--exclusive {no,yes}]`
+
+  Parameters:
+  - `--save [FILE], -s [FILE]`: Export the current network configuration (Bluetooth and ESL addresses, grouped) to a JSON formatted file. Use quotation marks if the path contains spaces.
+  - `--load [FILE], -l [FILE]`: Import network configuration in JSON format (e.g. from a previously exported backup)
+  - `--exclusive {no,yes}, -e {no,yes}`: Exclusive mode allows only preconfigured devices to synchronize (otherwise any ESL detected within RSSI limits)
+
+_Notes:_
+- _To check current network exclusivity mode, issue the command without arguments._
+- _If both `--save` and `--load` requests are issued in the same command, the file export operation is done first, regardless of the sequence of arguments._
+
+_Disclaimer: Please also note that importing a pre-defined network configuration from a JSON file gives you full control over the devices on your network in auto (aka ESL profile) mode, potentially overriding your previous / running network configurations, so use this option with caution!_
 #### set\_rssi\_threshold
     Set RSSI filter threshold value. Below this value the device will be ignored during scanning.
 
-Usage: ` set_rssi_threshold [-h] rssi`
+Usage: `set_rssi_threshold [-h] rssi`
 
 Parameters:
 - `rssi`: RSSI value.
@@ -525,35 +624,38 @@ _Notes:_
 - _You can obtain the current status of the scanning by omitting the choice._
 
 #### list
-    List ESL Tag information.
+    List details about known devices by state.
 
-Usage: `list [-h] [--verbose] [--group_id <u7>] state [state ...]`
+Usage: `list [-h] [--verbose | --number] [--group_id <u7>] state [state ...]`
 
 Parameters:
-- `state`:                   {advertising, a, blocked, b, connected, c, synchronized, s, unsynchronized, u} 
-    - `[advertising, a]`:    List advertising Tag information.
-    - `[blocked, b]`:        List blocked (advertising) tag information.
-    - `[connected, c]`:      List connected Tag information.
-    - `[synchronized, s]`:   List synchronized Tag information.
-    - `[unsynchronized, u]`: List unsynchronized Tag information.
-- `[--verbose, -v]`:         List more detailed information (optional).
+- `state`:                   {advertising, a, blocked, b, connected, c, initiating, i, synchronized, s, unsynchronized, u} 
+    - `[advertising, a]`:    List devices that are advertising ESL Service UUID.
+    - `[blocked, b]`:        List blocked devices, see reasoning by adding `-v`.
+    - `[connected, c]`:      List connected ESL information.
+    - `[synchronized, s]`:   List synchronized ESL information.
+    - `[unsynchronized, u]`: List unsynchronized ESL information.
+- `[--verbose, -v]`:         List more detailed information, mutually exclusive with `number` param. (optional).
+- `[--number, -n]`:          Show only the number of devices in given state(s), mutually exclusive with `verbose` param. (optional).
 - `[--group_id, -g <u7>]`:   ESL group ID filter (optional - default: all group).
 
 Examples:
 - `list synchronized -v`
-- `list a c`
+- `list b a s i c`
+- `list c a -n`
 
-_Note: To reset the list of advertising and blocked lists you may want to issue a `scan start` command at any time._
+_Note: To reset the content of advertising and blocked lists you may want to issue a `scan start` command at any time._
 
 #### sync
      Start / stop sending synchronization packets.
 
 Usage:
-  - `sync [-h] [--millis] [--in_max <int>] [--in_min <int>] [--se_count <int>] [--se_interval <int>] [--rs_delay <int>] [--rs_spacing <int>] [--rs_count <int>] {start,stop,config}`
+  - `sync [-h] [--millis] [--advertise] [--in_max <int>] [--in_min <int>] [--se_count <int>] [--se_interval <int>] [--rs_delay <int>] [--rs_spacing <int>] [--rs_count <int>] [{start,stop,config}]`
 
 Parameters:
 - `{start,stop,config}`:              Start/Stop sending periodic synchronization packets or set PAWR parameters.
 - `[--millis, -ms]`:                  Specify timing parameters in milliseconds.
+- `--advertise, -a`:                  Enable extended advertising of PAwR train parameters for sync scanners*
 - `[--in_max <int>, -max <int>]`:     Maximum periodic advertising interval in ms if -ms was given, otherwise in units of 1.25ms.
 - `[--in_min <int>, -min <int>]`:     Minimum periodic advertising interval in ms if -ms was given, otherwise in units of 1.25ms.
 - `[--se_count <int>, -sc <int>]`:    Number of subevents.
@@ -568,7 +670,10 @@ _Notes:_
 - _Using the optional `-ms` argument with the 'config' subcommand allows you to specify timing parameters in milliseconds instead of their natural units, but this may introduce rounding errors. Please also note that with this option the fractional milliseconds can't be specified precisely._
 - _You can ask for the current status of the PAwR train by omitting the choice._
 - _If a configuration attempt is made with an implausible parameter set, the previous working configuration is restored._
-- 
+
+_\*Disclaimer:_
+- _Extended advertisement of PAwR train parameters, when initiated with a `--advertise` request, does not start immediately when the sync signal is activated. Instead, the parameter advertisement is started only after the first PAST procedure is SUCCESSFULLY initiated on a connected device. This delay ensures that if the PAwR train is intentionally restarted, the ESLs will enter the Unsynchronized state and advertise according to the ESL specification, rather than just silently resynchronizing to another sync signal._
+
 Examples:
 - `sync start`
 
@@ -584,12 +689,12 @@ Examples:
   Start sync with current PAwR parameters, but temporarily override the interval to a value between 2.0 and 2.1 seconds. Please note that this short form is only for convenience to quickly change the interval, but its effect on the current configuration is not permanent and the value is always interpreted in milliseconds - so it may also introduce rounding errors.
 
 #### demo
-     Control the built-in advertising feature of the ESL NCP AP target for the ESL demo in the EFR Connect mobile application.
+     Control the built-in advertising feature of the ESL NCP AP target for the ESL demo in the Simplicity Connect mobile application.
 
 Usage:  `demo [-h] {on,off}`
 
 Parameters:
-- `{on,off}`: Turn AP advertising on or off for ESL Demo in EFR Connect mobile app.
+- `{on,off}`: Turn AP advertising on or off for ESL Demo in Simplicity Connect mobile app.
 
 _Note: You can obtain the current status of the demo mode by omitting the choice._
 

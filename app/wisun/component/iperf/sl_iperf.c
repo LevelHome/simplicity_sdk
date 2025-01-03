@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sl_iperf.c
+ * @brief iPerf
  *******************************************************************************
  * # License
  * <b>Copyright 2022 Silicon Laboratories Inc. www.silabs.com</b>
@@ -31,7 +31,6 @@
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <assert.h>
 #include <string.h>
 #include <stddef.h>
@@ -48,21 +47,12 @@
 #include "sl_status.h"
 #include "sl_cmsis_os2_common.h"
 #endif
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
 
 // -----------------------------------------------------------------------------
 //                          Static Function Declarations
-// -----------------------------------------------------------------------------
-
-// -----------------------------------------------------------------------------
-//                                Static Variables
-// -----------------------------------------------------------------------------
-
-// -----------------------------------------------------------------------------
-//                          Public Function Definitions
 // -----------------------------------------------------------------------------
 
 #if !defined(SL_IPERF_CMSIS_RTOS_DISABLED)
@@ -93,12 +83,16 @@ __STATIC_INLINE void _iperf_mutex_release(void);
  *****************************************************************************/
 __STATIC_INLINE bool _os_status_to_bool(const osStatus_t status);
 
+// -----------------------------------------------------------------------------
+//                                Static Variables
+// -----------------------------------------------------------------------------
+
 /// Thread ID
 static osThreadId_t _iperf_thr = NULL;
 
 /// iPerf task attribute
 static const osThreadAttr_t _iperf_thr_attr = {
-  .name        = "IperfThread",
+  .name        = "iPerfThread",
   .attr_bits   = osThreadDetached,
   .cb_mem      = NULL,
   .cb_size     = 0,
@@ -113,7 +107,7 @@ static osMessageQueueId_t _iperf_test_req_msg_queue = NULL;
 
 /// Test request message queue attributes
 static const osMessageQueueAttr_t _iperf_test_req_msg_queue_attr = {
-  .name = "IperfReqMsgQueue",
+  .name = "iPerfReqMsgQueue",
   .attr_bits = 0,
   .cb_mem = NULL,
   .cb_size = 0,
@@ -126,7 +120,7 @@ static osMessageQueueId_t _iperf_test_res_msg_queue = NULL;
 
 /// Test result message queue attributes
 static const osMessageQueueAttr_t _iperf_test_res_msg_queue_attr = {
-  .name = "IperfResMsgQueue",
+  .name = "iPerfResMsgQueue",
   .attr_bits = 0,
   .cb_mem = NULL,
   .cb_size = 0,
@@ -139,7 +133,7 @@ static osMutexId_t _iperf_mtx = NULL;
 
 /// Mutex attribute
 static const osMutexAttr_t _iperf_mtx_attr = {
-  .name      = "IperfUdpSrvMtx",
+  .name      = "iPerfUdpSrvMtx",
   .attr_bits = osMutexRecursive,
   .cb_mem    = NULL,
   .cb_size   = 0
@@ -184,15 +178,19 @@ void sl_iperf_service_init(void)
   sl_iperf_log_init(&_def_log);
 }
 
+// -----------------------------------------------------------------------------
+//                          Public Function Definitions
+// -----------------------------------------------------------------------------
+
 void sl_iperf_test_init(sl_iperf_test_t * const test, sl_iperf_mode_t mode, sl_iperf_protocol_t protocol)
 {
-  static uint32_t test_id = 0;
+  static uint16_t test_id = 0U;
 
   if (test == NULL) {
     return;
   }
   // clear structure
-  memset(test, 0, sizeof(sl_iperf_test_t));
+  memset(test, 0U, sizeof(sl_iperf_test_t));
 
   // set test id
   test->id = test_id++;
@@ -255,6 +253,10 @@ bool sl_iperf_test_get(sl_iperf_test_t * const test, const uint32_t timeout_ms)
   return _os_status_to_bool(status);
 }
 
+// -----------------------------------------------------------------------------
+//                          Static Function Definitions
+// -----------------------------------------------------------------------------
+
 __STATIC_INLINE void _iperf_mutex_acquire(void)
 {
   assert(osMutexAcquire(_iperf_mtx, osWaitForever) == osOK);
@@ -300,16 +302,13 @@ static void _iperf_thr_fnc(void * args)
       break;
     }
 
-    // Lock reasources, execute particular test
+    // Lock resources, execute particular test
     _iperf_mutex_acquire();
     switch (test.opt.mode) {
       case SL_IPERF_MODE_CLIENT:
         if (sl_iperf_test_is_udp_clnt(&test)) {
-          // TODO
           sl_iperf_test_udp_client(&test);
         } else if (sl_iperf_test_is_tcp_clnt(&test)) {
-          // TODO
-          // Call TCP Client
           (void) 0L;
         } else {
           sl_iperf_test_log(pt, "Wrong Client mode/protocol setting.\n");
@@ -318,10 +317,9 @@ static void _iperf_thr_fnc(void * args)
       case SL_IPERF_MODE_SERVER:
         if (sl_iperf_test_is_udp_srv(&test)) {
           /// Call UDP Server
+          sl_iperf_delay_ms(100UL);
           sl_iperf_test_udp_server(&test);
         } else if (sl_iperf_test_is_tcp_srv(&test)) {
-          // TODO
-          // Call TCP Server
           (void) 0L;
         } else {
           sl_iperf_test_log(pt, "Wrong Server mode/protocol setting.\n");
@@ -348,7 +346,3 @@ __STATIC_INLINE bool _os_status_to_bool(const osStatus_t status)
 }
 
 #endif
-
-// -----------------------------------------------------------------------------
-//                          Static Function Definitions
-// -----------------------------------------------------------------------------

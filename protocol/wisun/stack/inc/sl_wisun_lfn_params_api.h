@@ -86,7 +86,10 @@ typedef struct {
   /// Specification range [1440, 5040]
   uint16_t lfn_registration_lifetime_m;
   /// Duration for which an LFN waits for a registration confirmation (minutes).
-  /// Specification range [30, 120]
+  /// This value is administratively configured and should be consistent throughout
+  /// the network.
+  /// Make sure that the value is equal to or greather than the corresponding field on FFNs.
+  /// Specification range [30, 120] (set lower for test purposes)
   uint8_t lfn_na_wait_duration_m;
   /// Reserved, set to zero
   uint8_t reserved;
@@ -160,7 +163,7 @@ static const sl_wisun_lfn_params_t SL_WISUN_PARAMS_LFN_TEST = {
   },
   .network = {
     .lfn_registration_lifetime_m = HOUR_TO_MIN(36),
-    .lfn_na_wait_duration_m = 30,
+    .lfn_na_wait_duration_m = 1,
     .reserved = 0
   },
   .power = {

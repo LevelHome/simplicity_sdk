@@ -10,11 +10,13 @@ provides:
   - name: ot_stack_mtd
 requires:
   - name: ot_stack_implementation
+  - name: ot_stack_tcp_implementation
   - name: ot_platform_abstraction
   - name: ot_mbedtls
   - name: ot_psa_crypto
 recommends:
   - id: ot_stack_source
+  - id: ot_stack_tcp
   - id: ot_platform_abstraction
 config_file:
   - path: protocol/openthread/config/sl_openthread_features_config.h

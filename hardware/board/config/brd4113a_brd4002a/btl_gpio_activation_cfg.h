@@ -37,7 +37,7 @@
 // <gpio> SL_BTL_BUTTON
 
 // $[GPIO_SL_BTL_BUTTON]
-#define SL_BTL_BUTTON_PORT                       gpioPortC
+#define SL_BTL_BUTTON_PORT                       SL_GPIO_PORT_C
 #define SL_BTL_BUTTON_PIN                        5
 
 // [GPIO_SL_BTL_BUTTON]$

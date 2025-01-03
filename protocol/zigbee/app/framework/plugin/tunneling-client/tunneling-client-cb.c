@@ -98,6 +98,6 @@ WEAK(void sl_zigbee_af_tunneling_client_transfer_data_failure_cb(uint16_t indexO
                                                                  uint8_t*message,
                                                                  sl_status_t status))
 {
-  sl_zigbee_af_core_println("ERR: ClientTransferData failure (0x%X) for APS SEQ %d",
+  sl_zigbee_af_core_println("ERR: ClientTransferData failure (0x%04X) for APS SEQ %d",
                             status, apsFrame->sequence);
 }

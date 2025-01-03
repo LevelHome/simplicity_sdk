@@ -30,7 +30,7 @@
 
 #include "sl_clock_manager.h"
 #include "em_usart.h"
-#include "em_gpio.h"
+#include "sl_gpio.h"
 #include "sl_udelay.h"
 #include "sl_mx25_flash_shutdown.h"
 
@@ -49,12 +49,20 @@
 #ifdef SL_MX25_FLASH_SHUTDOWN_PERIPHERAL
 static void cs_low(void)
 {
-  GPIO_PinOutClear(SL_MX25_FLASH_SHUTDOWN_CS_PORT, SL_MX25_FLASH_SHUTDOWN_CS_PIN);
+  sl_gpio_t mx25_flash_shutdown_cs_gpio = {
+    .port = SL_MX25_FLASH_SHUTDOWN_CS_PORT,
+    .pin = SL_MX25_FLASH_SHUTDOWN_CS_PIN,
+  };
+  sl_gpio_clear_pin(&mx25_flash_shutdown_cs_gpio);
 }
 
 static void cs_high(void)
 {
-  GPIO_PinOutSet(SL_MX25_FLASH_SHUTDOWN_CS_PORT, SL_MX25_FLASH_SHUTDOWN_CS_PIN);
+  sl_gpio_t mx25_flash_shutdown_cs_gpio = {
+    .port = SL_MX25_FLASH_SHUTDOWN_CS_PORT,
+    .pin = SL_MX25_FLASH_SHUTDOWN_CS_PIN,
+  };
+  sl_gpio_set_pin(&mx25_flash_shutdown_cs_gpio);
 }
 #endif
 
@@ -66,6 +74,22 @@ void sl_mx25_flash_shutdown(void)
 #ifdef SL_MX25_FLASH_SHUTDOWN_PERIPHERAL
   // Init flash
   USART_InitSync_TypeDef init = USART_INITSYNC_DEFAULT;
+  sl_gpio_t mx25_flash_shutdown_tx_gpio = {
+    .port = SL_MX25_FLASH_SHUTDOWN_TX_PORT,
+    .pin = SL_MX25_FLASH_SHUTDOWN_TX_PIN,
+  };
+  sl_gpio_t mx25_flash_shutdown_rx_gpio = {
+    .port = SL_MX25_FLASH_SHUTDOWN_RX_PORT,
+    .pin = SL_MX25_FLASH_SHUTDOWN_RX_PIN,
+  };
+  sl_gpio_t mx25_flash_shutdown_clk_gpio = {
+    .port = SL_MX25_FLASH_SHUTDOWN_CLK_PORT,
+    .pin = SL_MX25_FLASH_SHUTDOWN_CLK_PIN,
+  };
+  sl_gpio_t mx25_flash_shutdown_cs_gpio = {
+    .port = SL_MX25_FLASH_SHUTDOWN_CS_PORT,
+    .pin = SL_MX25_FLASH_SHUTDOWN_CS_PIN,
+  };
 
   sl_clock_manager_enable_bus_clock(SL_BUS_CLOCK_GPIO);
   sl_clock_manager_enable_bus_clock(SL_MX25_FLASH_SHUTDOWN_CLK);
@@ -75,11 +99,11 @@ void sl_mx25_flash_shutdown(void)
 
   USART_InitSync(SL_MX25_FLASH_SHUTDOWN_PERIPHERAL, &init);
 
-  // IO config
-  GPIO_PinModeSet(SL_MX25_FLASH_SHUTDOWN_TX_PORT, SL_MX25_FLASH_SHUTDOWN_TX_PIN, gpioModePushPull, 1);
-  GPIO_PinModeSet(SL_MX25_FLASH_SHUTDOWN_RX_PORT, SL_MX25_FLASH_SHUTDOWN_RX_PIN, gpioModeInput, 0);
-  GPIO_PinModeSet(SL_MX25_FLASH_SHUTDOWN_CLK_PORT, SL_MX25_FLASH_SHUTDOWN_CLK_PIN, gpioModePushPull, 1);
-  GPIO_PinModeSet(SL_MX25_FLASH_SHUTDOWN_CS_PORT, SL_MX25_FLASH_SHUTDOWN_CS_PIN, gpioModePushPull, 1);
+  // IO configs
+  sl_gpio_set_pin_mode(&mx25_flash_shutdown_tx_gpio, SL_GPIO_MODE_PUSH_PULL, 1);
+  sl_gpio_set_pin_mode(&mx25_flash_shutdown_rx_gpio, SL_GPIO_MODE_INPUT, 0);
+  sl_gpio_set_pin_mode(&mx25_flash_shutdown_clk_gpio, SL_GPIO_MODE_PUSH_PULL, 1);
+  sl_gpio_set_pin_mode(&mx25_flash_shutdown_cs_gpio, SL_GPIO_MODE_PUSH_PULL, 1);
 
 #ifdef _GPIO_USART_ROUTEEN_MASK
   GPIO->USARTROUTE[SL_MX25_FLASH_SHUTDOWN_PERIPHERAL_NO].CLKROUTE  = ((SL_MX25_FLASH_SHUTDOWN_CLK_PORT << _GPIO_USART_CLKROUTE_PORT_SHIFT)
@@ -119,18 +143,18 @@ void sl_mx25_flash_shutdown(void)
   cs_high();
 
   // Deinit flash
-  GPIO_PinModeSet(SL_MX25_FLASH_SHUTDOWN_TX_PORT, SL_MX25_FLASH_SHUTDOWN_TX_PIN, gpioModeDisabled, 0);
-  GPIO_PinModeSet(SL_MX25_FLASH_SHUTDOWN_RX_PORT, SL_MX25_FLASH_SHUTDOWN_RX_PIN, gpioModeDisabled, 0);
-  GPIO_PinModeSet(SL_MX25_FLASH_SHUTDOWN_CLK_PORT, SL_MX25_FLASH_SHUTDOWN_CLK_PIN, gpioModeDisabled, 1);
-  GPIO_PinModeSet(SL_MX25_FLASH_SHUTDOWN_CS_PORT, SL_MX25_FLASH_SHUTDOWN_CS_PIN, gpioModeDisabled, 1);
+  sl_gpio_set_pin_mode(&mx25_flash_shutdown_tx_gpio, SL_GPIO_MODE_DISABLED, 0);
+  sl_gpio_set_pin_mode(&mx25_flash_shutdown_rx_gpio, SL_GPIO_MODE_DISABLED, 0);
+  sl_gpio_set_pin_mode(&mx25_flash_shutdown_clk_gpio, SL_GPIO_MODE_DISABLED, 1);
+  sl_gpio_set_pin_mode(&mx25_flash_shutdown_cs_gpio, SL_GPIO_MODE_DISABLED, 1);
 
   USART_Reset(SL_MX25_FLASH_SHUTDOWN_PERIPHERAL);
 
 #ifdef _GPIO_USART_ROUTEEN_MASK
+  GPIO->USARTROUTE[SL_MX25_FLASH_SHUTDOWN_PERIPHERAL_NO].ROUTEEN  = _GPIO_USART_ROUTEEN_RESETVALUE;
   GPIO->USARTROUTE[SL_MX25_FLASH_SHUTDOWN_PERIPHERAL_NO].CLKROUTE = _GPIO_USART_CLKROUTE_RESETVALUE;
   GPIO->USARTROUTE[SL_MX25_FLASH_SHUTDOWN_PERIPHERAL_NO].RXROUTE  = _GPIO_USART_RXROUTE_RESETVALUE;
   GPIO->USARTROUTE[SL_MX25_FLASH_SHUTDOWN_PERIPHERAL_NO].TXROUTE  = _GPIO_USART_TXROUTE_RESETVALUE;
-  GPIO->USARTROUTE[SL_MX25_FLASH_SHUTDOWN_PERIPHERAL_NO].ROUTEEN  = _GPIO_USART_ROUTEEN_RESETVALUE;
 #else
   SL_MX25_FLASH_SHUTDOWN_PERIPHERAL->ROUTELOC0 = _USART_ROUTELOC0_RESETVALUE;
   SL_MX25_FLASH_SHUTDOWN_PERIPHERAL->ROUTEPEN  = _USART_ROUTEPEN_RESETVALUE;

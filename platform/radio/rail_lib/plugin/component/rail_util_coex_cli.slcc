@@ -4,6 +4,11 @@ description: Coexistence CLI
 package: platform
 category: Platform|Radio
 quality: production
+metadata:
+  sbom:
+    id: rail_util_coex_cli
+    name: RAIL Utility, Coexistence CLI
+    license: Zlib
 requires:
   - name: cli
   - name: rail_util_coex

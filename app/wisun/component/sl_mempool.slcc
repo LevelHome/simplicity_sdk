@@ -4,7 +4,7 @@ package: "wisun"
 description: >
   The component provides a memory pool implementation for bare metal and RTOS
   applications.
-category: "Wi-SUN|Application"
+category: "Wi-SUN|Wi-SUN Services"
 quality: "production"
 metadata:
   sbom:

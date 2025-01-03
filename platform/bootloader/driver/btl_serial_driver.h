@@ -53,7 +53,7 @@ void uart_deinit(void);
  *
  * @return BOOTLOADER_OK if successful, error code otherwise
  ******************************************************************************/
-int32_t uart_sendBuffer(uint8_t* buffer, size_t length, bool blocking);
+int32_t uart_sendBuffer(const uint8_t* buffer, size_t length, bool blocking);
 
 /***************************************************************************//**
  * Write one byte to the UART in a blocking fashion.

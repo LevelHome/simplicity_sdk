@@ -35,37 +35,6 @@ static constexpr uint16_t kEntropyMinThreshold = 16;
 using namespace ot;
 using namespace Utils;
 
-static Error ParseDigit(char aDigitChar, uint8_t &aValue)
-{
-    Error error = kErrorNone;
-
-    VerifyOrExit(('0' <= aDigitChar) && (aDigitChar <= '9'), error = kErrorInvalidArgs);
-    aValue = static_cast<uint8_t>(aDigitChar - '0');
-
-exit:
-    return error;
-}
-
-static Error ParseHexDigit(char aHexChar, uint8_t &aValue)
-{
-    Error error = kErrorNone;
-
-    if (('A' <= aHexChar) && (aHexChar <= 'F'))
-    {
-        ExitNow(aValue = static_cast<uint8_t>(aHexChar - 'A' + 10));
-    }
-
-    if (('a' <= aHexChar) && (aHexChar <= 'f'))
-    {
-        ExitNow(aValue = static_cast<uint8_t>(aHexChar - 'a' + 10));
-    }
-
-    error = ParseDigit(aHexChar, aValue);
-
-exit:
-    return error;
-}
-
 enum HexStringParseMode
 {
     kModeExtactSize,   // Parse hex string expecting an exact size (number of bytes when parsed).
@@ -382,6 +351,16 @@ void otInstanceFinalize(otInstance *aInstance)
 {
 }
 
+uint32_t otLinkGetFrameCounter(otInstance *aInstance)
+{
+    return UINT32_MAX;
+}
+
+otError otSetStateChangedCallback(otInstance *aInstance, otStateChangedCallback aCallback, void *aContext)
+{
+    return OT_ERROR_NONE;
+}
+
 namespace ot {
     OT_DEFINE_ALIGNED_VAR(gInstanceRaw, sizeof(Instance), uint64_t);
 
@@ -391,3 +370,8 @@ namespace ot {
         return (otInstance *)gInstanceRaw;
     }
 } // namespace ot
+
+bool otIp6IsEnabled(otInstance *aInstance)
+{
+    return true;
+}

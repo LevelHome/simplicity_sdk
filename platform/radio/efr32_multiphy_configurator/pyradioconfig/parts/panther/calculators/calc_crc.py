@@ -109,6 +109,12 @@ class CALC_CRC(CALC_CRC_common):
         """
         #Outputs
         """
+        self._build_crc_regs(model)
+
+        self._addModelVariable(model, 'crc_polynomial', long, ModelVariableFormat.HEX, 'CRC polynomial')
+        self._addModelVariable(model, 'crc_size', int, ModelVariableFormat.HEX, 'Size of CRC in bytes')
+
+    def _build_crc_regs(self, model):
         self._addModelRegister(model, 'RFCRC.CTRL.PADCRCINPUT', int, ModelVariableFormat.HEX)
         self._addModelRegister(model, 'RFCRC.CTRL.BITSPERWORD', int, ModelVariableFormat.HEX)
         self._addModelRegister(model, 'RFCRC.CTRL.BITREVERSE', int, ModelVariableFormat.HEX)
@@ -118,9 +124,6 @@ class CALC_CRC(CALC_CRC_common):
         self._addModelRegister(model, 'RFCRC.CTRL.OUTPUTINV', int, ModelVariableFormat.HEX)
         self._addModelRegister(model, 'RFCRC.INIT.INIT', long, ModelVariableFormat.HEX)
         self._addModelRegister(model, 'RFCRC.POLY.POLY', long, ModelVariableFormat.HEX)
-
-        self._addModelVariable(model, 'crc_polynomial', long, ModelVariableFormat.HEX, 'CRC polynomial')
-        self._addModelVariable(model, 'crc_size', int, ModelVariableFormat.HEX, 'Size of CRC in bytes')
 
     def _calc_init(self, model):
         """_calc_init

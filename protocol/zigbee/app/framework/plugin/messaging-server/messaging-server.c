@@ -66,7 +66,7 @@ void sl_zigbee_af_messaging_cluster_server_init_cb(uint8_t endpoint)
 //----------------------
 // ZCL command callbacks
 
-bool sl_zigbee_af_messaging_cluster_get_last_message_cb(void)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_messaging_cluster_get_last_message_cb(void)
 {
   uint8_t endpoint = sl_zigbee_af_current_endpoint();
   sl_zigbee_af_plugin_messaging_server_message_t message;
@@ -80,13 +80,12 @@ bool sl_zigbee_af_messaging_cluster_get_last_message_cb(void)
                                                                 message.extendedMessageControl);
     sl_zigbee_af_get_command_aps_frame()->options |= SL_ZIGBEE_APS_OPTION_SOURCE_EUI64;
     sl_zigbee_af_send_response();
-  } else {
-    sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_NOT_FOUND);
+    return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
   }
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_NOT_FOUND;
 }
 
-bool sl_zigbee_af_messaging_cluster_message_confirmation_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_messaging_cluster_message_confirmation_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   (void)cmd;
 
@@ -95,16 +94,15 @@ bool sl_zigbee_af_messaging_cluster_message_confirmation_cb(sl_zigbee_af_cluster
 
   if (zcl_decode_messaging_cluster_message_confirmation_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_messaging_cluster_println("RX: MessageConfirmation 0x%4x, 0x%4x",
+  sl_zigbee_af_messaging_cluster_println("RX: MessageConfirmation 0x%08X, 0x%08X",
                                          cmd_data.messageId,
                                          cmd_data.confirmationTime);
 #endif // SL_CATALOG_ZIGBEE_DEBUG_PRINT_PRESENT
 
-  sl_zigbee_af_send_immediate_default_response(SL_ZIGBEE_ZCL_STATUS_SUCCESS);
-  return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
 bool sl_zigbee_af_messaging_server_get_message(uint8_t endpoint,
@@ -179,14 +177,14 @@ void sli_zigbee_af_messaging_server_print_info(uint8_t endpoint)
   sl_zigbee_af_messaging_cluster_println(" act: %s", (messageIsCurrentOrScheduled(endpoint)
                                                       ? "YES"
                                                       : "NO"));
-  sl_zigbee_af_messaging_cluster_println("  id: 0x%4x", msgTable[ep].messageId);
-  sl_zigbee_af_messaging_cluster_println("  mc: 0x%x",
+  sl_zigbee_af_messaging_cluster_println("  id: 0x%08X", msgTable[ep].messageId);
+  sl_zigbee_af_messaging_cluster_println("  mc: 0x%02X",
                                          (msgTable[ep].messageControl
                                           & ~ZCL_MESSAGING_CLUSTER_RESERVED_MASK));
-  sl_zigbee_af_messaging_cluster_println("  st: 0x%4x", msgTable[ep].startTime);
+  sl_zigbee_af_messaging_cluster_println("  st: 0x%08X", msgTable[ep].startTime);
   sl_zigbee_af_messaging_cluster_println(" now: %s", (messageIsNow(ep) ? "YES" : "NO"));
-  sl_zigbee_af_messaging_cluster_println("time: 0x%4x", sl_zigbee_af_get_current_time());
-  sl_zigbee_af_messaging_cluster_println(" dur: 0x%2x", msgTable[ep].durationInMinutes);
+  sl_zigbee_af_messaging_cluster_println("time: 0x%08X", sl_zigbee_af_get_current_time());
+  sl_zigbee_af_messaging_cluster_println(" dur: 0x%04X", msgTable[ep].durationInMinutes);
   sl_zigbee_af_messaging_cluster_flush();
   sl_zigbee_af_messaging_cluster_print(" mes: \"");
   sl_zigbee_af_messaging_cluster_print_string(msgTable[ep].message);
@@ -215,7 +213,7 @@ void sl_zigbee_af_messaging_server_display_message(sl_802154_short_addr_t nodeId
   sl_zigbee_af_get_command_aps_frame()->options |= SL_ZIGBEE_APS_OPTION_SOURCE_EUI64;
   status = sl_zigbee_af_send_command_unicast(SL_ZIGBEE_OUTGOING_DIRECT, nodeId);
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_messaging_cluster_println("Error in display %x", status);
+    sl_zigbee_af_messaging_cluster_println("Error in display %02X", status);
   }
 }
 
@@ -238,7 +236,7 @@ void sl_zigbee_af_messaging_server_cancel_message(sl_802154_short_addr_t nodeId,
   sl_zigbee_af_get_command_aps_frame()->options |= SL_ZIGBEE_APS_OPTION_SOURCE_EUI64;
   status = sl_zigbee_af_send_command_unicast(SL_ZIGBEE_OUTGOING_DIRECT, nodeId);
   if (status != SL_STATUS_OK) {
-    sl_zigbee_af_messaging_cluster_println("Error in cancel %x", status);
+    sl_zigbee_af_messaging_cluster_println("Error in cancel %02X", status);
   }
 }
 
@@ -248,18 +246,18 @@ uint32_t sl_zigbee_af_messaging_cluster_server_command_parse(sl_service_opcode_t
   (void)opcode;
 
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
-  bool wasHandled = false;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_GET_LAST_MESSAGE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_messaging_cluster_get_last_message_cb();
+        status = sl_zigbee_af_messaging_cluster_get_last_message_cb();
         break;
       }
       case ZCL_MESSAGE_CONFIRMATION_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_messaging_cluster_message_confirmation_cb(cmd);
+        status = sl_zigbee_af_messaging_cluster_message_confirmation_cb(cmd);
         break;
       }
       default:
@@ -267,7 +265,5 @@ uint32_t sl_zigbee_af_messaging_cluster_server_command_parse(sl_service_opcode_t
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

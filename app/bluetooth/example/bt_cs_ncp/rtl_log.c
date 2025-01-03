@@ -1,6 +1,6 @@
 /***************************************************************************//**
  * @file
- * @brief Log RTL events (NCP target).
+ * @brief RTL log.
  *******************************************************************************
  * # License
  * <b>Copyright 2024 Silicon Laboratories Inc. www.silabs.com</b>
@@ -28,27 +28,17 @@
  *
  ******************************************************************************/
 
-#include "sl_rtl_clib_api.h"
-#include "sl_bt_api.h"
-#include "sl_bt_version.h"
-#include "sl_common.h"
-#include "sl_power_manager.h"
-#include "cs_acp.h"
-#include "app_assert.h"
-#include "app_log.h"
-#include <stdint.h>
-#include <stdio.h>
-#include <string.h>
+#include "rtl_log.h"
+#include "cs_initiator_config.h"
 
-#define LOG_DATA_BUFFER_MAX_SIZE 4096
-#define LOG_EVENT_OVERHEAD       (sizeof(cs_acp_event_id_t) + sizeof(cs_acp_src_t) + 3)
-#define LOG_EVENT_MAX_DATA       (UINT8_MAX - LOG_EVENT_OVERHEAD)
+#if CS_INITIATOR_RTL_LOG
+#include "sl_rtl_clib_api.h"
+#include "sl_bt_version.h"
+#include "sli_bgapi_trace.h"
+#include "app_assert.h"
+#include <stdio.h>
 
 static void rtl_log_callback(uint8_t *log_data, size_t log_data_len);
-
-static uint8_t log_data_buffer[LOG_DATA_BUFFER_MAX_SIZE];
-static size_t log_data_buffer_len = 0;
-static uint8_t *log_data_ptr;
 
 void rtl_log_init(void)
 {
@@ -82,50 +72,27 @@ void rtl_log_init(void)
   app_assert(ec == SL_RTL_ERROR_SUCCESS, "sl_rtl_log_configure failed");
 }
 
-void rtl_log_step(void)
+void rtl_log_deinit(void)
 {
-  if (log_data_buffer_len == 0) {
-    return;
-  }
-
-  // Avoid big buffer allocation on the stack by using static variable.
-  static uint8_t evt_data[UINT8_MAX];
-  uint8_t evt_data_len = (uint8_t)SL_MIN(log_data_buffer_len, (size_t)LOG_EVENT_MAX_DATA);
-  cs_acp_event_t *evt = (cs_acp_event_t *)evt_data;
-  evt->connection_id = SL_BT_INVALID_CONNECTION_HANDLE;
-  evt->acp_evt_id = CS_ACP_EVT_LOG_DATA_ID;
-  evt->data.log.src = LOG_SRC_RTL;
-  memcpy(evt->data.log.log_data.data, log_data_ptr, evt_data_len);
-  evt->data.log.log_data.len = evt_data_len;
-  log_data_buffer_len -= evt_data_len;
-  // Calculate remaining number of fragments using ceiling division.
-  evt->data.log.fragments_left = (uint8_t)((log_data_buffer_len + LOG_EVENT_MAX_DATA - 1) / LOG_EVENT_MAX_DATA);
-  if (log_data_ptr == log_data_buffer) {
-    // First fragment
-    evt->data.log.fragments_left |= CS_LOG_FIRST_FRAGMENT_MASK;
-  }
-  log_data_ptr += evt_data_len;
-  sl_bt_send_evt_user_cs_service_message_to_host(evt_data_len + LOG_EVENT_OVERHEAD, evt_data);
-
-  if (log_data_buffer_len == 0) {
-    sl_power_manager_remove_em_requirement(SL_POWER_MANAGER_EM1);
-  }
+  enum sl_rtl_error_code ec = sl_rtl_log_deinit();
+  app_assert(ec == SL_RTL_ERROR_SUCCESS, "sl_rtl_log_deinit failed");
 }
 
 static void rtl_log_callback(uint8_t *log_data, size_t log_data_len)
 {
-  if (log_data_len > LOG_DATA_BUFFER_MAX_SIZE) {
-    app_log_error("Log data buffer too small: %zu > %zu" APP_LOG_NL, log_data_len, LOG_DATA_BUFFER_MAX_SIZE);
-    return;
+  while (log_data_len > 0) {
+    size_t log_written = sli_bgapi_trace_log_custom_message(log_data, log_data_len);
+    log_data_len -= log_written;
+    log_data += log_written;
   }
-  if (log_data_buffer_len > 0) {
-    app_log_error("Log data buffer busy" APP_LOG_NL);
-    return;
-  }
-
-  memcpy(log_data_buffer, log_data, log_data_len);
-  log_data_buffer_len = log_data_len;
-  log_data_ptr = log_data_buffer;
-  // Keep the MCU awake until all fragments are sent.
-  sl_power_manager_add_em_requirement(SL_POWER_MANAGER_EM1);
 }
+
+#else // CS_INITIATOR_RTL_LOG
+void rtl_log_init(void)
+{
+}
+
+void rtl_log_deinit(void)
+{
+}
+#endif // CS_INITIATOR_RTL_LOG

@@ -1,0 +1,9 @@
+id: ot-si91x
+version: 0.0.1
+description: "ot-si91x extension for Simplicity SDK Suite"
+label: "Silicon Labs OpenThread"
+sdk:
+  id: simplicity_sdk
+  version: 2024.6.0
+component_path:
+  - path: si91x_component

@@ -43,10 +43,6 @@
   #include "cryptoacc_management.h"
 #endif // SLI_MBEDTLS_DEVICE_VSE
 
-#if defined(SLI_MBEDTLS_DEVICE_S1)
-  #include "sli_crypto_transparent_functions.h"
-#endif // SLI_MBEDTLS_DEVICE_S1
-
 // -----------------------------------------------------------------------------
 // Driver entry points
 
@@ -111,20 +107,6 @@ psa_status_t sli_cryptoacc_transparent_driver_init(void)
 }
 
 psa_status_t sli_cryptoacc_transparent_driver_deinit(void)
-{
-  return PSA_SUCCESS;
-}
-
-#elif defined(SLI_MBEDTLS_DEVICE_S1)
-
-psa_status_t sli_crypto_transparent_driver_init(void)
-{
-  // Leave this function empty for now. Consider moving the clock init and etc.
-  // here, which is performed by the management functions.
-  return PSA_SUCCESS;
-}
-
-psa_status_t sli_crypto_transparent_driver_deinit(void)
 {
   return PSA_SUCCESS;
 }

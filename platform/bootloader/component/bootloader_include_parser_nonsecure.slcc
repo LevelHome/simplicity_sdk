@@ -21,3 +21,6 @@ include:
 provides:
   - name: bootloader_include_parser
   - name: bootloader_include_parser_nonsecure
+metadata:
+  sbom:
+    license: MSLA

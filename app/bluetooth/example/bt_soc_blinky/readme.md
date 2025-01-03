@@ -10,7 +10,7 @@ To get started with Silicon Labs Bluetooth and Simplicity Studio, see [QSG169: B
 
 This example implements a simple custom GATT service with two characteristics. One characteristic controls the state of the LED (ON/OFF) via write operations from a GATT client, and the second characteristic sends notifications to subscribed clients when the button state changes (pressed or released).
 
-To test this demo, install EFR Connect for [Android](https://play.google.com/store/apps/details?id=com.siliconlabs.bledemo&hl=en&gl=US) or [iOS](https://apps.apple.com/us/app/efr-connect/id1030932759). Source code for the mobile app is available on [Github](https://github.com/SiliconLabs?q=efrconnect&type=&language=&sort=).
+To test this demo, install Simplicity Connect for [Android](https://play.google.com/store/apps/details?id=com.siliconlabs.bledemo&hl=en&gl=US) or [iOS](https://apps.apple.com/us/app/simplicity-connect/id1030932759). Source code for the mobile app is available on Github for [Android](https://github.com/SiliconLabs/SimplicityConnect-android) and [iOS](https://github.com/SiliconLabs/SimplicityConnect-ios).
 
 After launching the app go to the demo view and select the Blinky demo. A pop-up will show all the devices around you that are running the SoC-Blinky firmware. Tap on the device to go into the demo view.
 
@@ -20,9 +20,9 @@ Tap the light on the mobile app to toggle the LED on the mainboard. When you pre
 
 ![Blinky all off](image/readme_img3.jpg) ![Blinky all on](image/readme_img4.jpg)
 
-The animation below showcases the demo running on a BGM220 Explorer Kit (BGM220-EK4314A) with the mobile app running on an Android device.
+The animation below showcases the demo running on an EFR32xG21 Wireless Starter Kit with the mobile app running on an Android device.
 
-![Radio board power supply switch](image/readme_img5.gif)
+![Blinky animation](image/readme_img5.gif)
 
 ## Troubleshooting
 

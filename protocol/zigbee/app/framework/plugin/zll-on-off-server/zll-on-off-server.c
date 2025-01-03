@@ -38,7 +38,7 @@ static sl_zigbee_af_status_t readBoolean(uint8_t endpoint, sl_zigbee_af_attribut
                                                                     (uint8_t *)value,
                                                                     sizeof(bool));
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_on_off_cluster_println("ERR: %ping %p %x", "read", name, status);
+    sl_zigbee_af_on_off_cluster_println("ERR: %sing %s %02X", "read", name, status);
   }
   return status;
 }
@@ -51,7 +51,7 @@ static sl_zigbee_af_status_t writeBoolean(uint8_t endpoint, sl_zigbee_af_attribu
                                                                      (uint8_t *)&value,
                                                                      ZCL_BOOLEAN_ATTRIBUTE_TYPE);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_on_off_cluster_println("ERR: %ping %p %x", "writ", name, status);
+    sl_zigbee_af_on_off_cluster_println("ERR: %sing %s %02X", "writ", name, status);
   }
   return status;
 }
@@ -64,7 +64,7 @@ static sl_zigbee_af_status_t readInt16u(uint8_t endpoint, sl_zigbee_af_attribute
                                                                     (uint8_t *)value,
                                                                     sizeof(uint16_t));
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_on_off_cluster_println("ERR: %ping %p %x", "read", name, status);
+    sl_zigbee_af_on_off_cluster_println("ERR: %sing %s %02X", "read", name, status);
   }
   return status;
 }
@@ -77,7 +77,7 @@ static sl_zigbee_af_status_t writeInt16u(uint8_t endpoint, sl_zigbee_af_attribut
                                                                      (uint8_t *)&value,
                                                                      ZCL_INT16U_ATTRIBUTE_TYPE);
   if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    sl_zigbee_af_on_off_cluster_println("ERR: %ping %p %x", "writ", name, status);
+    sl_zigbee_af_on_off_cluster_println("ERR: %sing %s %02X", "writ", name, status);
   }
   return status;
 }
@@ -132,7 +132,7 @@ void sl_zigbee_af_on_off_cluster_server_tick_cb(uint8_t endpoint)
                                      MILLISECOND_TICKS_PER_SECOND / 10);
 }
 
-bool sl_zigbee_af_on_off_cluster_on_with_recall_global_scene_cb(void)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_on_off_cluster_on_with_recall_global_scene_cb(void)
 {
   sl_zigbee_af_status_t status;
   bool globalSceneControl;
@@ -147,7 +147,7 @@ bool sl_zigbee_af_on_off_cluster_on_with_recall_global_scene_cb(void)
                                                                ZCL_SCENES_GLOBAL_SCENE_GROUP_ID,
                                                                ZCL_SCENES_GLOBAL_SCENE_SCENE_ID);
     if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-      sl_zigbee_af_on_off_cluster_println("ERR: %ping %p %x", "recall", "global scene", status);
+      sl_zigbee_af_on_off_cluster_println("ERR: %sing %s %02X", "recall", "global scene", status);
       goto kickout;
     }
     globalSceneControl = true;
@@ -170,11 +170,10 @@ bool sl_zigbee_af_on_off_cluster_on_with_recall_global_scene_cb(void)
   }
 
   kickout:
-  sl_zigbee_af_send_immediate_default_response(status);
-  return true;
+  return status;
 }
 
-bool sl_zigbee_af_on_off_cluster_off_with_effect_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_on_off_cluster_off_with_effect_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_on_off_cluster_off_with_effect_command_t cmd_data;
   sl_zigbee_af_status_t status = SL_ZIGBEE_ZCL_STATUS_INVALID_VALUE;
@@ -183,7 +182,7 @@ bool sl_zigbee_af_on_off_cluster_off_with_effect_cb(sl_zigbee_af_cluster_command
 
   if (zcl_decode_on_off_cluster_off_with_effect_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS ) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   // Ensure parameters have values withing proper range.
@@ -205,7 +204,7 @@ bool sl_zigbee_af_on_off_cluster_off_with_effect_cb(sl_zigbee_af_cluster_command
                                                                 ZCL_SCENES_GLOBAL_SCENE_GROUP_ID,
                                                                 ZCL_SCENES_GLOBAL_SCENE_SCENE_ID);
     if (status != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-      sl_zigbee_af_on_off_cluster_println("ERR: %ping %p %x", "stor", "global scene", status);
+      sl_zigbee_af_on_off_cluster_println("ERR: %sing %s %02X", "stor", "global scene", status);
       goto kickout;
     }
     globalSceneControl = false;
@@ -230,11 +229,10 @@ bool sl_zigbee_af_on_off_cluster_off_with_effect_cb(sl_zigbee_af_cluster_command
   }
 
   kickout:
-  sl_zigbee_af_send_immediate_default_response(status);
-  return true;
+  return status;
 }
 
-bool sl_zigbee_af_on_off_cluster_on_with_timed_off_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_on_off_cluster_on_with_timed_off_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_on_off_cluster_on_with_timed_off_command_t cmd_data;
   sl_zigbee_af_status_t status;
@@ -244,7 +242,7 @@ bool sl_zigbee_af_on_off_cluster_on_with_timed_off_cb(sl_zigbee_af_cluster_comma
 
   if (zcl_decode_on_off_cluster_on_with_timed_off_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS ) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   // The valid range of the OnTime and OffWaitTime fields is 0x0000 to 0xFFFF.
@@ -321,8 +319,7 @@ bool sl_zigbee_af_on_off_cluster_on_with_timed_off_cb(sl_zigbee_af_cluster_comma
   }
 
   kickout:
-  sl_zigbee_af_send_immediate_default_response(status);
-  return true;
+  return status;
 }
 
 sl_zigbee_af_status_t sl_zigbee_af_zll_on_off_server_off_zll_extensions(const sl_zigbee_af_cluster_command_t *cmd)
@@ -415,30 +412,28 @@ uint32_t sl_zigbee_af_zll_on_off_cluster_server_command_parse(sl_service_opcode_
 {
   (void)opcode;
 
-  bool wasHandled = false;
   sl_zigbee_af_cluster_command_t *cmd = (sl_zigbee_af_cluster_command_t *)context->data;
+  sl_zigbee_af_zcl_request_status_t status = SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
 
   if (!cmd->mfgSpecific) {
     switch (cmd->commandId) {
       case ZCL_OFF_WITH_EFFECT_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_on_off_cluster_off_with_effect_cb(cmd);
+        status = sl_zigbee_af_on_off_cluster_off_with_effect_cb(cmd);
         break;
       }
       case ZCL_ON_WITH_RECALL_GLOBAL_SCENE_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_on_off_cluster_on_with_recall_global_scene_cb();
+        status = sl_zigbee_af_on_off_cluster_on_with_recall_global_scene_cb();
         break;
       }
       case ZCL_ON_WITH_TIMED_OFF_COMMAND_ID:
       {
-        wasHandled = sl_zigbee_af_on_off_cluster_on_with_timed_off_cb(cmd);
+        status = sl_zigbee_af_on_off_cluster_on_with_timed_off_cb(cmd);
         break;
       }
     }
   }
 
-  return ((wasHandled)
-          ? SL_ZIGBEE_ZCL_STATUS_SUCCESS
-          : SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND);
+  return status;
 }

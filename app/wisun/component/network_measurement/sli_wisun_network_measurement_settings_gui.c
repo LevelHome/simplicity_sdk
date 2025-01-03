@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief
+ * @file sli_wisun_network_measurement_settings_gui.c
+ * @brief Wi-SUN Network Measurement Settings GUI
  *******************************************************************************
  * # License
  * <b>Copyright 2022 Silicon Laboratories Inc. www.silabs.com</b>
@@ -31,11 +31,11 @@
 // -----------------------------------------------------------------------------
 //                                   Includes
 // -----------------------------------------------------------------------------
-
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 #include <assert.h>
+
 #include "sl_status.h"
 #include "sl_component_catalog.h"
 #include "sl_wisun_trace_util.h"
@@ -46,7 +46,6 @@
 #include "sli_wisun_network_measurement_settings_gui.h"
 #include "sl_display.h"
 #include "sl_gui.h"
-
 // -----------------------------------------------------------------------------
 //                              Macros and Typedefs
 // -----------------------------------------------------------------------------
@@ -128,13 +127,13 @@ static sl_status_t _add_domain_to_list(const phy_domain_list_t * const domain);
 // -----------------------------------------------------------------------------
 
 /// FAN 1.0 profile
-static const uint8_t profile_fan10 = SL_WISUN_PHY_CONFIG_FAN10;
+static const uint8_t _profile_fan10 = SL_WISUN_PHY_CONFIG_FAN10;
 
 /// FAN 1.1 profile
-static const uint8_t profile_fan11 = SL_WISUN_PHY_CONFIG_FAN11;
+static const uint8_t _profile_fan11 = SL_WISUN_PHY_CONFIG_FAN11;
 
 /// Filterable parameters
-static filterable_t filter_params = {
+static filterable_t _filter_params = {
   .profile = SL_WISUN_PHY_CONFIG_FAN10,
   .domain = SL_WISUN_REGULATORY_DOMAIN_NA
 };
@@ -151,7 +150,6 @@ static app_wisun_phy_list_t *_phy_list = NULL;
 
 void sli_wisun_nwm_phy_select_form(void *args)
 {
-  // const char *profile_str        = NULL;
   (void) args;
 
   _full_cleanup();
@@ -162,9 +160,9 @@ void sli_wisun_nwm_phy_select_form(void *args)
   sl_gui_optionlist_add_item("Back", sli_wisun_settings_form, NULL);
 
   sl_gui_optionlist_add_item(app_wisun_trace_util_phy_cfg_type_to_str(SL_WISUN_PHY_CONFIG_FAN10),
-                             _phy_fan_form, (void *)&profile_fan10);
+                             _phy_fan_form, (void *)&_profile_fan10);
   sl_gui_optionlist_add_item(app_wisun_trace_util_phy_cfg_type_to_str(SL_WISUN_PHY_CONFIG_FAN11),
-                             _phy_fan_form, (void *)&profile_fan11);
+                             _phy_fan_form, (void *)&_profile_fan11);
 
   sl_gui_optionlist_assign_event_hnd_to_btn(SL_GUI_BUTTON0);
   sl_gui_optionlist_update();
@@ -188,13 +186,13 @@ static void _phy_fan_form(void *args)
 
   uint8_t *profile               = NULL;
   app_wisun_phy_list_t *tmp_list = NULL;
-  app_enum_t *iter               = NULL;
+  const app_enum_t *iter         = NULL;
   phy_domain_list_t domain       = { 0 };
 
   profile = (uint8_t *)args;
   (void) args;
 
-  filter_params.profile = *profile;
+  _filter_params.profile = *profile;
 
   // destroy domain list
   _destroy_domain_list();
@@ -206,9 +204,9 @@ static void _phy_fan_form(void *args)
   sl_gui_optionlist_add_item("Back", sli_wisun_nwm_phy_select_form, NULL);
 
   // find available domains
-  iter = (app_enum_t *)app_wisun_phy_reg_domain_enum;
+  iter = app_wisun_phy_reg_domain_enum;
   while (iter != NULL && iter->value_str != NULL) {
-    filter_params.domain = iter->value;
+    _filter_params.domain = iter->value;
     tmp_list = app_wisun_get_phy_list(filter_profile);
     if (tmp_list != NULL) {
       domain.domain = iter->value;
@@ -219,10 +217,10 @@ static void _phy_fan_form(void *args)
     ++iter;
   }
 
-  for (phy_domain_list_t *iter = _domain_list; iter != NULL; iter = iter->next) {
-    sl_gui_optionlist_add_item(iter->str, _phy_domain_form,
-                               iter);
+  for (phy_domain_list_t *phy_domain = _domain_list; phy_domain != NULL; phy_domain = phy_domain->next) {
+    sl_gui_optionlist_add_item(phy_domain->str, _phy_domain_form, phy_domain);
   }
+
   sl_gui_optionlist_assign_event_hnd_to_btn(SL_GUI_BUTTON0);
   sl_gui_optionlist_update();
   sl_gui_button_set_label(SL_GUI_BUTTON1, "Down");
@@ -242,7 +240,7 @@ static void _phy_domain_form(void *args)
   phy_domain_list_t *domain = NULL;
 
   domain = (phy_domain_list_t *)args;
-  filter_params.domain = domain->domain;
+  _filter_params.domain = domain->domain;
 
   // get phy list
   _phy_list = app_wisun_get_phy_list(filter_profile);
@@ -299,13 +297,13 @@ static void _set_phy(void *args)
 
 __STATIC_INLINE bool filter_profile(sl_wisun_phy_config_t *phy_cfg)
 {
-  switch (filter_params.profile) {
+  switch (_filter_params.profile) {
     case SL_WISUN_PHY_CONFIG_FAN10:
       return (bool) (phy_cfg->type == SL_WISUN_PHY_CONFIG_FAN10
-                     && phy_cfg->config.fan10.reg_domain == filter_params.domain);
+                     && phy_cfg->config.fan10.reg_domain == _filter_params.domain);
     case SL_WISUN_PHY_CONFIG_FAN11:
       return (bool) (phy_cfg->type == SL_WISUN_PHY_CONFIG_FAN11
-                     && phy_cfg->config.fan11.reg_domain == filter_params.domain);
+                     && phy_cfg->config.fan11.reg_domain == _filter_params.domain);
     default:
       return false;
   }

@@ -12,16 +12,16 @@ requires:
   - name: bluetooth_stack
 
 source:
-  - path: protocol/zigbee/app/framework/scenarios/multiprotocol/common/sl_ble_event_handler.c
+  - path: protocol/zigbee/app/projects/multiprotocol/common/sl_ble_event_handler.c
     project:
       transfer_ownership: true
 
 include:
-  - path: protocol/zigbee/app/framework/scenarios/multiprotocol/common/
+  - path: protocol/zigbee/app/projects/multiprotocol/common/
     file_list:
       - path: sl_ble_event_handler.h
 
-  - path: protocol/zigbee/app/framework/scenarios/multiprotocol/common/
+  - path: protocol/zigbee/app/projects/multiprotocol/common/
     file_list:
       - path: sl_dmp_ui_stub.h
 

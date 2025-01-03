@@ -19,7 +19,7 @@ requires:
   - name: hal_generic_common
   - name: clock_manager_runtime
   - name: emlib_core
-  - name: emlib_gpio
+  - name: gpio
   - name: i2cspm_core
   - name: status
   - name: se_manager

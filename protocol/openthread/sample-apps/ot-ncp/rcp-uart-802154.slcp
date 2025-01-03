@@ -10,7 +10,7 @@ description: >
   Co-Processor Communication protocol (CPC), which acts as a protocol multiplexer
   and serial transport layer. The host applications connect to the CPC daemon,
   which in turn connects to the EFR via a UART link.
-  Refer to *AN1333: Running Zigbee, OpenThread, and Bluetooth Concurrently on a
+  Refer to *docs.silabs.com Multiprotocol section- Multiprotocol on Linux Solution: Running Zigbee, OpenThread, and Bluetooth Concurrently on a
   Linux Host with a Multiprotocol Co-processor* for more information on running
   the multiprotocol RCP with different host applications.
 category: OpenThread Examples
@@ -27,6 +27,9 @@ component:
   - id: bootloader_interface
   - id: ot_gp_interface
   - id: clock_manager
+  - id: ot_diags
+  # Platform - Enable LTO for gcc by installing the following component
+  # - id: toolchain_gcc_lto
 
 include:
   - path: .
@@ -51,8 +54,6 @@ configuration:
     value: usartHwFlowControlCtsAndRts
   - name: OPENTHREAD_CONFIG_HEAP_EXTERNAL_ENABLE
     value: 0
-  - name: OPENTHREAD_CONFIG_DIAG_ENABLE
-    value: 1
   - name: OPENTHREAD_CONFIG_LOG_OUTPUT
     value: OPENTHREAD_CONFIG_LOG_OUTPUT_NONE
   - name: OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE

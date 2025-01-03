@@ -30,10 +30,6 @@
 #ifndef ESL_TAG_INTERNAL_H
 #define ESL_TAG_INTERNAL_H
 
-/******************************************************************************
- * @addtogroup esl_tag_core
- * @{
- *****************************************************************************/
 #include <stdint.h>
 #include "sl_status.h"
 #include "sl_bt_api.h"
@@ -123,7 +119,7 @@ extern void esl_reschedule_delayed_commands(uint32_t current_absolute_time);
 
 /******************************************************************************
  * Get sync handle.
- * @return The PAwR sync hanle or @ref SL_BT_INVALID_SYNC_HANDLE if ESL is
+ * @return The PAwR sync handle or @ref SL_BT_INVALID_SYNC_HANDLE if ESL is
  *         out of sync.
  * @note: Called by esl core internally on opcodes parsing.
  *        The function is defined in esl_tag_core.c
@@ -171,5 +167,4 @@ extern void esl_core_bt_on_event(sl_bt_msg_t *evt);
  *****************************************************************************/
 extern void esl_core_step(void);
 
-/** @} (end addtogroup esl_tag_core) */
 #endif // ESL_TAG_INTERNAL_H

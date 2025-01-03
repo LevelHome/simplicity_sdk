@@ -41,6 +41,12 @@
 /// Maximum size for the node info frame contained in the SReceiveNodeUpdate struct.
 #define MAX_NODE_INFO_LENGTH 159
 
+#define PROTOCOL_METADATA_SPEED_IDX       0
+#define PROTOCOL_METADATA_TX_POWER_IDX    1
+#define PROTOCOL_METADATA_TX_OPTIONS_IDX  2
+#define PROTOCOL_METADATA_CALLBACK_ID_IDX 6
+#define PROTOCOL_METADATA_LENGTH (sizeof(uint8_t) + sizeof(uint8_t) + sizeof(TxOptions_t) + sizeof(uint8_t)) // rfSpeed | txPower | txOptions | Callback ID
+
 #define APPLICATION_INTERFACE_TRANSMIT_ENUM_OFFSET  (0x00)
 #define APPLICATION_INTERFACE_COMMAND_ENUM_OFFSET   (0x40)
 #define APPLICATION_INTERFACE_RECEIVE_ENUM_OFFSET   (0x80)
@@ -106,14 +112,13 @@ typedef enum EZwaveTransmitType
   EZWAVETRANSMITTYPE_SENDSUCNODEID,                                   /**< EZWAVETRANSMITTYPE_SENDSUCNODEID */
   EZWAVETRANSMITTYPE_ASSIGNRETURNROUTE,                               /**< EZWAVETRANSMITTYPE_ASSIGNRETURNROUTE */
   EZWAVETRANSMITTYPE_DELETERETURNROUTE,                               /**< EZWAVETRANSMITTYPE_DELETERETURNROUTE */
-  EZWAVETRANSMITTYPE_SENDREPLICATION,                                 /**< EZWAVETRANSMITTYPE_SENDREPLICATION */
-  EZWAVETRANSMITTYPE_SENDREPLICATIONRECEIVECOMPLETE,                  /**< EZWAVETRANSMITTYPE_SENDREPLICATIONRECEIVECOMPLETE */
   EZWAVETRANSMITTYPE_REQUESTNEWROUTEDESTINATIONS,                     /**< EZWAVETRANSMITTYPE_REQUESTNEWROUTEDESTINATIONS */
   EZWAVETRANSMITTYPE_SEND_SLAVE_NODE_INFORMATION,                     /**< EZWAVETRANSMITTYPE_SEND_SLAVE_NODE_INFORMATION */
   EZWAVETRANSMITTYPE_SEND_SLAVE_DATA,                                 /**< EZWAVETRANSMITTYPE_SEND_SLAVE_DATA */
   EZWAVETRANSMITTYPE_INCLUDEDNODEINFORMATION,                         /**< EZWAVETRANSMITTYPE_INCLUDEDNODEINFORMATION */
   EZWAVETRANSMITTYPE_SECURE,                                          /**< EZWAVETRANSMITTYPE_SECURE */
   EZWAVETRANSMITTYPE_NON_SECURE,                                      /**< EZWAVETRANSMITTYPE_NON_SECURE */
+  EZWAVETRANSMITTYPE_NLS,                                             /**< EZWAVETRANSMITTYPE_NLS */
   NUM_EZWAVETRANSMITTYPE                                              /**< NUM_EZWAVETRANSMITTYPE */
 } EZwaveTransmitType;
 
@@ -653,7 +658,6 @@ typedef enum EZwaveCommandType
    */
   EZWAVECOMMANDTYPE_IS_PRIMARY_CTRL, // 88
 
-  // TODO:
   /**
    * @brief Add any type of node to the network.
    *
@@ -675,7 +679,6 @@ typedef enum EZwaveCommandType
    */
   EZWAVECOMMANDTYPE_ADD_NODE_TO_NETWORK, // 89
 
-  // TODO:
   /**
    * @brief
    *
@@ -799,7 +802,6 @@ typedef enum EZwaveCommandType
   EZWAVECOMMANDTYPE_PM_CANCEL, // 96 - OBSOLETED
   EZWAVECOMMANDTYPE_PM_REGISTER, // 97 - OBSOLETED
 
-  // TODO:
   /**
    * @brief
    *
@@ -850,7 +852,6 @@ typedef enum EZwaveCommandType
    */
   EZWAVECOMMANDTYPE_ZW_SET_LBT_THRESHOLD, // 99
 
-  // TODO:
   /**
    * @brief
    *
@@ -943,7 +944,6 @@ typedef enum EZwaveCommandType
    */
   EZWAVECOMMANDTYPE_ZW_SET_MAX_INCL_REQ_INTERVALS, // 105
 
-  // TODO:
   /**
    * @brief
    *
@@ -954,7 +954,6 @@ typedef enum EZwaveCommandType
    */
   EZWAVECOMMANDTYPE_NVM_BACKUP_OPEN, // 106
 
-  // TODO:
   /**
    * @brief
    * @param[in] NvmBackupRestore.offset
@@ -978,7 +977,6 @@ typedef enum EZwaveCommandType
    */
   EZWAVECOMMANDTYPE_NVM_BACKUP_WRITE, // 108
 
-  // TODO:
   /**
    * @brief
    *
@@ -1010,21 +1008,18 @@ typedef enum EZwaveCommandType
    */
   EZWAVECOMMANDTYPE_SET_SECURITY_KEYS, // 111
 
-  // TODO:
   /**
    * @brief Perform a soft reset
    *
    */
   EZWAVECOMMANDTYPE_SOFT_RESET, // 112
 
-  // TODO:
   /**
    * @brief
    *
    */
   EZWAVECOMMANDTYPE_BOOTLOADER_REBOOT, // 113
 
-  // TODO:
   /**
    * @brief Remove a specific node from a Z-Wave network
    *
@@ -1183,7 +1178,12 @@ typedef enum EZwaveCommandType
    */
   EZWAVECOMMANDTYPE_ZW_GET_TX_POWER_MAX_SUPPORTED,
   EZWAVECOMMANDTYPE_REQUESTNODETYPE_NEIGHBORUPDATE, // 134
+  EZWAVECOMMANDTYPE_TRANSFER_PROTOCOL_CC,
 
+  EZWAVECOMMANDTYPE_ENABLE_NODE_NLS,
+  EZWAVECOMMANDTYPE_GET_NODE_NLS_STATE,
+
+  EZWAVECOMMANDTYPE_SEND_PROTOCOL_DATA_CB,
   NUM_EZWAVECOMMANDTYPE
 } EZwaveCommandType;
 
@@ -1247,6 +1247,8 @@ typedef enum EZwaveCommandStatusType
   EZWAVECOMMANDSTATUS_SECURE_ON_RX_FRAME_RECEIVED_INDICATOR,        ///< Frame received from NodeID indicator
   EZWAVECOMMANDSTATUS_ZW_SET_LR_CHANNEL,                            /**< EZWAVECOMMANDSTATUS_ZW_SET_LR_CHANNEL */
   EZWAVECOMMANDSTATUS_ZW_GET_TX_POWER_MAX_SUPPORTED,                /**< EZWAVECOMMANDSTATUS_ZW_GET_TX_POWER_MAX_SUPPORTED */
+  EZWAVECOMMANDSTATUS_GET_NODE_NLS_STATE,                           /**< EZWAVECOMMANDSTATUS_GET_NODE_NLS_STATE */
+  EZWAVECOMMANDSTATUS_ENABLE_NODE_NLS,                              /**< EZWAVECOMMANDSTATUS_ENABLE_NODE_NLS */
   NUM_EZWAVECOMMANDSTATUS,                                          /**< NUM_EZWAVECOMMANDSTATUS */
   EZWAVECOMMANDSTATUS_INVALID = 0xFF
 } EZwaveCommandStatusType;
@@ -1262,9 +1264,41 @@ typedef enum EZwaveReceiveType
   EZWAVERECEIVETYPE_SECURITY_EVENT,                                    /**< EZWAVERECEIVETYPE_SECURITY_EVENT */
   EZWAVERECEIVETYPE_STAY_AWAKE,                                        /**< EZWAVERECEIVETYPE_STAY_AWAKE */
   EZWAVERECEIVETYPE_SECURE_FRAME_RECEIVED,                             /**< Event received from the SECURE module. */
+  EZWAVERECEIVETYPE_REQUEST_ENCRYPTION_FRAME,                          /**< EZWAVERECEIVETYPE_REQUEST_ENCRYPTION_FRAME */
   NUM_EZWAVERECEIVETYPE,                                               /**< NUM_EZWAVERECEIVETYPE */
   EZWAVERECEIVETYPE_INVALID = 0xFF
 } EZwaveReceiveType;
+
+// Prioritized events that can wakeup protocol thread.
+typedef enum EProtocolEvent
+{
+  EPROTOCOLEVENT_RFRXBEAM = 0,
+  EPROTOCOLEVENT_RFTXCOMPLETE,
+  EPROTOCOLEVENT_RFRX,
+  EPROTOCOLEVENT_RFTXBEAM,
+  EPROTOCOLEVENT_RFTXFAILLBT,
+  EPROTOCOLEVENT_RFTXFAIL,
+  EPROTOCOLEVENT_RFRXABORT,
+  EPROTOCOLEVENT_TIMER,
+  EPROTOCOLEVENT_EXPLORE,
+  EPROTOCOLEVENT_APP_TX,
+  EPROTOCOLEVENT_APP_COMMAND,
+  EPROTOCOLEVENT_NETWORKID_UPDATE,
+  EPROTOCOLEVENT_CHANGE_RADIO_PHY,
+  EPROTOCOLEVENT_RADIO_ASSERT,
+  EPROTOCOLEVENT_RADIO_TX_TIMEOUT,
+  EPROTOCOLEVENT_RADIO_CALIBRATE,
+#ifdef ZW_SECURITY_PROTOCOL
+  EPROTOCOLEVENT_SECURITY_RUN,
+#endif
+  NUM_EPROTOCOLEVENT
+} EProtocolEvent;
+
+typedef enum ERequestEncryptionEvent
+{
+  ERPCCEEVENT_SERIALAPI_FAIL = NUM_EPROTOCOLEVENT,
+  ERPCCEEVENT_SERIALAPI_OK,
+} ERequestEncryptionEvent;
 
 /**
  * Network Update Request
@@ -1524,6 +1558,20 @@ typedef struct SCommandSetSecurityKeys
   uint8_t keys;
 } SCommandSetSecurityKeys;
 
+typedef struct SCommandEnableNodeNLS {
+  node_id_t nodeID;
+} SCommandEnableNodeNLS;
+
+typedef struct SCommandGetNodeNLSState {
+  node_id_t nodeID;
+} SCommandGetNodeNLSState;
+
+typedef struct SCommandSendProtocolDataCb {
+  uint8_t callback_id;
+  uint8_t tx_status;
+  TX_STATUS_TYPE extended_tx_status;
+} SCommandSendProtocolDataCb;
+
 // Command structures END ---------------------------------------------
 
 typedef struct SProtocolVersion
@@ -1651,6 +1699,15 @@ typedef struct STransmitFrameConfig
   uint8_t aFrame[TX_BUFFER_SIZE];
 } STransmitFrameConfig;
 
+typedef struct STransmitProtocolFrameConfig
+{
+  void (*Handle) (uint8_t txStatus, TX_STATUS_TYPE* extendedTxStatus);
+  uint8_t protocolMetadataLength;
+  uint8_t protocolMetadata[PROTOCOL_METADATA_LENGTH];
+  uint8_t FrameLength;
+  uint8_t aFrame[TX_BUFFER_SIZE];
+} STransmitProtocolFrameConfig;
+
 // Basis API
 typedef struct SExploreInclusionRequest
 {
@@ -1729,6 +1786,12 @@ typedef struct SSendDataMultiBridge
   bool lr_nodeid_list;
 } SSendDataMultiBridge;
 
+typedef struct SSendProtocolData
+{
+  STransmitProtocolFrameConfig FrameConfig;
+  node_id_t DestNodeID;
+} SSendProtocolData;
+
 // Controller  API
 typedef struct SCommandNetworkManagement
 {
@@ -1739,18 +1802,6 @@ typedef struct SCommandNetworkManagement
   node_id_t nodeID;
 } SCommandNetworkManagement;
 
-
-typedef struct SSendReplication
-{
-
-  STransmitFrameConfig FrameConfig;
-  node_id_t DestNodeId;           // Destination NodeId - Single cast only.
-} SSendReplication;
-
-typedef struct SSendReplicationReceiveComplete
-{
-  uint8_t Reserved;             // Not required set
-} SSendReplicationReceiveComplete;
 
 // Slave API
 typedef struct SRequestNewRouteDestinations
@@ -1897,6 +1948,14 @@ typedef struct SNvmBackupRestoreStatus
   uint8_t status;
 } SNvmBackupRestoreStatus;
 
+typedef struct SCommandGetNodeNLSStateStatus {
+  uint8_t nlsState;
+} SCommandGetNodeNLSStateStatus;
+
+typedef struct SCommandEnableNodeNLSStatus {
+  uint8_t status;
+} SCommandEnableNodeNLSStatus;
+
 typedef struct SZWaveGetIncludedNodes
 {
   NODE_MASK_TYPE node_id_list;
@@ -1911,6 +1970,14 @@ typedef struct SZWaveTxPowerMaxSupported
 {
   zpal_tx_power_t tx_power_max_supported;
 } SZWaveTxPowerMaxSupported;
+
+typedef struct SCommandTransferProtocolCC
+{
+  node_id_t srcNodeId;
+  security_key_t decryptionKey;
+  uint8_t payloadLength;
+  uint8_t payload[ZW_MAX_PAYLOAD_SIZE];
+} SCommandTransferProtocolCC;
 
 // Receive structures -----------------------------------
 
@@ -2019,13 +2086,12 @@ typedef union UTransmitParameters
   SSendDataMulti                  SendDataMulti;
   SSendDataMultiEx                SendDataMultiEx;
   SSendDataMultiBridge            SendDataMultiBridge;
+  SSendProtocolData               SendProtocolData;
   // Controller API
   SSetSucNodeId                   SetSucNodeId;
   SSendSucNodeId                  SendSucNodeId;
   SAssignReturnRoute              AssignReturnRoute;
   SDeleteReturnRoute              DeleteReturnRoute;
-  SSendReplication                SendReplication;
-  SSendReplicationReceiveComplete SendReplicationReceiveComplete;
   SSendSlaveNodeInformation       SendSlaveNodeInformation;
   // Slave API
   SRequestNewRouteDestinations    RequestNewRouteDestinations;
@@ -2074,6 +2140,8 @@ typedef union UCommandStatus
   SZWaveGeneric8bStatus         GetPTIconfig;
   SZWaveGenericBoolStatus       SetTxAttenuation;
   SZWaveTxPowerMaxSupported     GetTxPowerMaximumSupported;
+  SCommandGetNodeNLSStateStatus GetNodeNlsStateStatus;
+  SCommandEnableNodeNLSStatus   EnableNodeNlsStatus;
 } UCommandStatus;
 
 typedef union UReceiveCmdPayload
@@ -2123,6 +2191,10 @@ typedef union UCommandParameters
   SCommandGeniric8bParameter          SetLRVirtualNodeIDs;
   SCommandGeniric8bParameter          SetTxAttenuation;
   SCommandSetSecurityFlags            SetSecurityFlags;
+  SCommandTransferProtocolCC          TransferProtocolCC;
+  SCommandEnableNodeNLS               EnableNodeNls;
+  SCommandGetNodeNLSState             GetNodeNlsState;
+  SCommandSendProtocolDataCb            SendProtocolDataCb;
 } UCommandParameters;
 
 /**************************************************************************
@@ -2168,6 +2240,25 @@ typedef struct SReceiveMulti
   RECEIVE_OPTIONS_TYPE RxOptions;
 } SReceiveMulti;
 
+typedef struct SProtocolTxOptions
+{
+  uint8_t rfSpeed;
+  uint8_t txPower;
+  TxOptions_t txOptions;
+
+} SProtocolTxOptions;
+
+typedef struct SRequestEncryption
+{
+  node_id_t destNodeID;
+  uint8_t payloadLength;
+  UReceiveCmdPayload Payload;
+  uint8_t protocolMetadataLength;
+  uint8_t protocolMetadata[PROTOCOL_METADATA_LENGTH];
+  uint8_t useSupervision:1;
+  uint8_t reserved:7;
+} SRequestEncryption;
+
 // This one union is dependent on the structures above it.
 typedef union UReceiveParameters
 {
@@ -2175,6 +2266,7 @@ typedef union UReceiveParameters
   SReceiveMulti RxMulti;
   SReceiveNodeUpdate RxNodeUpdate;
   SReceiveSecurityEvent RxSecurityEvent;
+  SRequestEncryption RequestEncryption;
 } UReceiveParameters;
 
 typedef struct SZwaveReceivePackage

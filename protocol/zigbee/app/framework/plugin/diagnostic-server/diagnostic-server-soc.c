@@ -262,8 +262,8 @@ bool sl_zigbee_af_pre_message_received_cb(sl_zigbee_af_incoming_message_t* incom
         ZCL_INT8U_ATTRIBUTE_TYPE);
 
       if (SL_ZIGBEE_ZCL_STATUS_SUCCESS != afStatus) {
-        sl_zigbee_af_core_println("Diagnostic Server (SOC): failed to write value 0x%x "
-                                  " to cluster 0x%2x attribute ID 0x%2x: error 0x%x",
+        sl_zigbee_af_core_println("Diagnostic Server (SOC): failed to write value 0x%02X "
+                                  " to cluster 0x%04X attribute ID 0x%04X: error 0x%02X",
                                   lqi,
                                   ZCL_DIAGNOSTICS_CLUSTER_ID,
                                   ZCL_LAST_MESSAGE_LQI_ATTRIBUTE_ID,
@@ -271,7 +271,7 @@ bool sl_zigbee_af_pre_message_received_cb(sl_zigbee_af_incoming_message_t* incom
       }
     } else {
       sl_zigbee_af_core_println("Diagnostic Server (SOC): failed to get last hop LQI: "
-                                "error 0x%x", status);
+                                "error 0x%02X", status);
     }
   }
 #endif // ZCL_USING_DIAGNOSTICS_CLUSTER_LAST_MESSAGE_LQI_ATTRIBUTE
@@ -289,8 +289,8 @@ bool sl_zigbee_af_pre_message_received_cb(sl_zigbee_af_incoming_message_t* incom
         ZCL_INT8S_ATTRIBUTE_TYPE);
 
       if (SL_ZIGBEE_ZCL_STATUS_SUCCESS != afStatus) {
-        sl_zigbee_af_core_println("Diagnostic Server (SOC): failed to write value 0x%x "
-                                  " to cluster 0x%2x attribute ID 0x%2x: error 0x%x",
+        sl_zigbee_af_core_println("Diagnostic Server (SOC): failed to write value 0x%02X "
+                                  " to cluster 0x%04X attribute ID 0x%04X: error 0x%02X",
                                   (uint8_t)rssi,
                                   ZCL_DIAGNOSTICS_CLUSTER_ID,
                                   ZCL_LAST_MESSAGE_RSSI_ATTRIBUTE_ID,
@@ -298,7 +298,7 @@ bool sl_zigbee_af_pre_message_received_cb(sl_zigbee_af_incoming_message_t* incom
       }
     } else {
       sl_zigbee_af_core_println("Diagnostic Server (SOC): failed to get last hop RSSI: "
-                                "error 0x%x", status);
+                                "error 0x%02X", status);
     }
   }
 #endif // ZCL_USING_DIAGNOSTICS_CLUSTER_LAST_MESSAGE_RSSI_ATTRIBUTE
@@ -323,8 +323,8 @@ bool sl_zigbee_af_pre_message_received_cb(sl_zigbee_af_incoming_message_t* incom
       ZCL_INT16U_ATTRIBUTE_TYPE);
 
     if (SL_ZIGBEE_ZCL_STATUS_SUCCESS != afStatus) {
-      sl_zigbee_af_core_println("Diagnostic Server (SOC): failed to write value 0x%2x "
-                                " to cluster 0x%2x attribute ID 0x%2x: error 0x%x",
+      sl_zigbee_af_core_println("Diagnostic Server (SOC): failed to write value 0x%04X "
+                                " to cluster 0x%04X attribute ID 0x%04X: error 0x%02X",
                                 macRetriesPerAps,
                                 ZCL_DIAGNOSTICS_CLUSTER_ID,
                                 ZCL_AVERAGE_MAC_RETRY_PER_APS_MSG_SENT_ATTRIBUTE_ID,

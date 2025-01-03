@@ -108,7 +108,7 @@ WEAK_TEST sl_zigbee_ezsp_status_t serialResponseReceived(void)
   if (status != SL_ZIGBEE_EZSP_SUCCESS
       && status != SL_ZIGBEE_EZSP_ASH_IN_PROGRESS
       && status != SL_ZIGBEE_EZSP_NO_RX_DATA) {
-    sl_zigbee_ezsp_trace_ezsp_verbose("serialResponseReceived(): ashReceiveExec(): 0x%x",
+    sl_zigbee_ezsp_trace_ezsp_verbose("serialResponseReceived(): ashReceiveExec(): 0x%02X",
                                       status);
     return status;
   }
@@ -136,7 +136,7 @@ WEAK_TEST sl_zigbee_ezsp_status_t serialResponseReceived(void)
       }
       buffer = ezspQueuePrecedingEntry(&rxQueue, buffer);
     } else {
-      sl_zigbee_ezsp_trace_ezsp_verbose("serialResponseReceived(): ID=0x%x Seq=0x%x Buffer=%u",
+      sl_zigbee_ezsp_trace_ezsp_verbose("serialResponseReceived(): ID=0x%02X Seq=0x%02X Buffer=%u",
                                         buffer->data[EZSP_FRAME_ID_INDEX],
                                         buffer->data[EZSP_SEQUENCE_INDEX],
                                         buffer);
@@ -173,11 +173,11 @@ WEAK_TEST sl_zigbee_ezsp_status_t serialSendCommand(void)
   sl_zigbee_ezsp_trace_ezsp_frame_id("send command", ezspFrameContents);
   status = ashSend(ezspFrameLength, ezspFrameContents);
   if (status != SL_ZIGBEE_EZSP_SUCCESS) {
-    sl_zigbee_ezsp_trace_ezsp_verbose("serialSendCommand(): ashSend(): 0x%x", status);
+    sl_zigbee_ezsp_trace_ezsp_verbose("serialSendCommand(): ashSend(): 0x%02X", status);
     return status;
   }
   waitingForResponse = true;
-  sl_zigbee_ezsp_trace_ezsp_verbose("serialSendCommand(): ID=0x%x Seq=0x%x",
+  sl_zigbee_ezsp_trace_ezsp_verbose("serialSendCommand(): ID=0x%02X Seq=0x%02X",
                                     ezspFrameContents[EZSP_FRAME_ID_INDEX],
                                     ezspFrameContents[EZSP_SEQUENCE_INDEX]);
   waitStartTime = halCommonGetInt16uMillisecondTick();

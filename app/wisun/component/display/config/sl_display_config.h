@@ -1,6 +1,6 @@
 /***************************************************************************//**
- * @file
- * @brief Display configuration header.
+ * @file sl_display_config.h
+ * @brief Display configuration
  *******************************************************************************
  * # License
  * <b>Copyright 2022 Silicon Laboratories Inc. www.silabs.com</b>
@@ -46,4 +46,4 @@
 
 // <<< end of configuration section >>>
 
-#endif
+#endif // SL_DISPLAY_CONFIG_H

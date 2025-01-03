@@ -17,18 +17,24 @@ override INCLUDEPATHS += $(RTL_DIR)/inc
 
 override CFLAGS += -DRTL_LIB
 
+ifeq ($(UNAME_M), x86_64)
+DEVICE_ARCH = x86-64
+else
+DEVICE_ARCH = $(UNAME_M)
+endif
+
 ifeq ($(OS),posix)
 override LDFLAGS += \
--L$(RTL_DIR)/lib/release/gcc/$(UNAME_M)/$(UNAME) \
+-L$(RTL_DIR)/lib/gcc/$(UNAME)/$(DEVICE_ARCH)/release \
 -l$(LIBNAME) \
 -lm \
 -lstdc++ \
 -lpthread
 else
 override LDFLAGS += \
-"$(RTL_DIR)/lib/release/gcc/$(UNAME_M)/windows/lib$(LIBNAME).a" \
+"$(RTL_DIR)/lib/gcc/windows/$(DEVICE_ARCH)/release/lib$(LIBNAME).a" \
 -lstdc++ \
 -lpthread
 endif
 
-PROJ_FILES += $(wildcard $(RTL_DIR)/lib/release/gcc/*/*/lib$(LIBNAME).a)
+PROJ_FILES += $(wildcard $(RTL_DIR)/lib/gcc/*/*/release/lib$(LIBNAME).a)

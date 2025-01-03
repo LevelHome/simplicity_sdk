@@ -19,3 +19,7 @@ include:
     file_list:
       - path: sli_tz_iovec.h
       - path: sli_tz_s_interface.h
+
+metadata:
+  sbom:
+    license: Zlib

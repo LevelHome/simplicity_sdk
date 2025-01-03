@@ -4,9 +4,14 @@ description: Utility to aid with RAIL Packet Trace Interface (PTI) Support
 package: platform
 category: Platform|Radio
 quality: production
+metadata:
+  sbom:
+    id: rail_util_pti
+    name: RAIL Utility, PTI
+    license: Zlib
 requires:
   - name: rail_lib
-  - name: hal_generic_gpio
+  - name: gpio
 provides:
   - name: rail_util_pti
 documentation:

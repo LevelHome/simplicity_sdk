@@ -46,10 +46,10 @@
 #warning "Microphone PDM peripheral not configured"
 // #define SL_MIC_PDM_PERIPHERAL                    PDM
 
-// #define SL_MIC_PDM_DAT0_PORT                     gpioPortC
+// #define SL_MIC_PDM_DAT0_PORT                     SL_GPIO_PORT_C
 // #define SL_MIC_PDM_DAT0_PIN                      7
 
-// #define SL_MIC_PDM_CLK_PORT                      gpioPortC
+// #define SL_MIC_PDM_CLK_PORT                      SL_GPIO_PORT_C
 // #define SL_MIC_PDM_CLK_PIN                       6
 // [PDM_SL_MIC_PDM]$
 // <<< sl:end pin_tool >>>

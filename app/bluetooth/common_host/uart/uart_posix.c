@@ -45,6 +45,14 @@
 #error "**** Unsupported OS! This UART driver works on OSX and Linux only! ****"
 #endif // __APPLE__ != 1 && __linux != 1 && __CYGWIN__ != 1
 
+#ifndef B460800
+#define B460800 460800
+#endif // B460800
+
+#ifndef B921600
+#define B921600 921600
+#endif // B921600
+
 // -----------------------------------------------------------------------------
 // Local Variables
 
@@ -61,6 +69,9 @@ static struct {
   { B38400, 38400  },
   { B57600, 57600  },
   { B115200, 115200 },
+  { B230400, 230400 },
+  { B460800, 460800 },
+  { B921600, 921600 },
   { 0, 0 }
 };
 

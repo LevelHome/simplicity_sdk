@@ -12,6 +12,8 @@ class Calc_Global_Sol(CALC_Global_ocelot):
         # new actual variables for Ocelot
         self._addModelActual(model,    'srcsrd'            , int,   ModelVariableFormat.DECIMAL)
 
+    def _add_common_regs(self, model):
+        super()._add_common_regs(model)
         # new model variables for Sol
         self._addModelRegister(model, 'RFFPLL0.RFFPLLCTRL1.DIVXADCSEL', int, ModelVariableFormat.HEX)
         self._addModelRegister(model, 'RFFPLL0.RFFPLLCTRL1.DIVXDACSEL', int, ModelVariableFormat.HEX)

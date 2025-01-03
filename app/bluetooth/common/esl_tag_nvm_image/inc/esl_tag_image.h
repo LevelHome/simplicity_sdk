@@ -32,6 +32,7 @@
 #include <stdint.h>
 #include "sl_bt_api.h"
 #include "esl_tag_image_core.h"
+#include "sl_bt_ots_datatypes.h"
 
 /**************************************************************************//**
  * Add an ESL Tag image to the list of available images. Any images on a Tag
@@ -41,12 +42,14 @@
  * @param[in] uint16_t width Image width in pixels
  * @param[in] uint16_t height Image height in pixels
  * @param[in] uint8_t bits_per_pixel Number of bits representing single pixel of
- *                                   the image.
+ *                                   the image, for storage size calculation.
+ * @param[in] type Pointer to ESL Image storage OTS UUID.
  * @return sl_status_t
  *****************************************************************************/
 sl_status_t esl_image_add(uint16_t width,
                           uint16_t height,
-                          uint8_t bits_per_pixel);
+                          uint8_t bits_per_pixel,
+                          sl_bt_ots_object_type_t *type);
 
 /**************************************************************************//**
  * Select an ESL Tag image object to write.

@@ -34,7 +34,6 @@
  * @{
  */
 
-
 typedef struct cc_multilevel_switch_t {
   RECEIVE_OPTIONS_TYPE_EX rxOpt;            // Contains information required for Supervision and
                                             // True Status. Must be the first element in this
@@ -42,6 +41,12 @@ typedef struct cc_multilevel_switch_t {
   uint8_t endpoint;                         // The switch must be tied to an endpoint. (0 if no endpoints)
   s_Actuator actuator;                      // Defined in ZAF_Actuator.h
 } cc_multilevel_switch_t;
+
+typedef enum cc_multilevel_switch_event_t {
+  CC_MULTILEVEL_SWITCH_EVENT_START_LEVEL_CHANGE, ///< The switch pointed to by the event data has started changing level
+  CC_MULTILEVEL_SWITCH_EVENT_STOP_LEVEL_CHANGE,  ///< The switch pointed to by the event data has stopped changing level
+  CC_MULTILEVEL_SWITCH_EVENT_REACHED_FINAL_VALUE ///< The switch pointed to by the event data has reached its final value
+} cc_multilevel_switch_event_t;
 
 typedef void (*cc_multilevel_switch_callback_t)(struct cc_multilevel_switch_t * p_switch);
 

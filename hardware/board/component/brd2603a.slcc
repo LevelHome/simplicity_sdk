@@ -3,7 +3,7 @@
 - label: BRD2603A
 - package: platform
 - description: Board support for BRD2603A.
-- category: Platform|Board|Starter Kit
+- category: Platform|Board|Thunderboard
 - quality: production
 - metadata:
     sbom:
@@ -14,8 +14,8 @@
 - provides:
   - name: brd2603a
   - name: hardware_board
-  - name: hardware_board_stk
-  - name: hardware_board_from_stk
+  - name: hardware_board_tb
+  - name: hardware_board_from_tb
   - name: hardware_board_from_slwstk6050c
   - name: hardware_board_from_zgm230-dk2603a
   - name: hardware_board_from_zwave-pk800b
@@ -24,6 +24,10 @@
   - name: hardware_board_has_rgb
   - name: hardware_board_has_vcom
   - name: hardware_board_has_spiflash
+  - name: hardware_board_has_spi
+  - name: hardware_board_has_uart
+  - name: hardware_board_has_i2c
+  - name: board_config_clock_manager
   - name: hardware_board_has_lfxo
 - recommends:
   - id: iostream_eusart

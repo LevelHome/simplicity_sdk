@@ -247,6 +247,7 @@ def build_modem_regs_ocelot_shared(model, profile):
         profile.outputs.append(ModelOutput(model.vars.MODEM_DCCOMP_DCGAINGEAREN, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.DCCOMP.DCGAINGEAREN'           ))
         profile.outputs.append(ModelOutput(model.vars.MODEM_DCCOMP_DCGAINGEAR, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.DCCOMP.DCGAINGEAR'           ))
         profile.outputs.append(ModelOutput(model.vars.MODEM_DCCOMP_DCGAINGEARSMPS, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.DCCOMP.DCGAINGEARSMPS'           ))
+    if model.part_family.lower() in ["ocelot", "bobcat", "margay", "caracal", "rainier"]:
         profile.outputs.append(ModelOutput(model.vars.MODEM_CTRL5_BBSS, '',         ModelOutputType.SVD_REG_FIELD, readable_name='MODEM.CTRL5.BBSS'           ))
 
     # Not in Bobcat.

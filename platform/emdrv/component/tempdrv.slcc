@@ -13,6 +13,9 @@ description: >
   application note AN1027. 
 category: "Platform|Driver"
 quality: "production"
+metadata:
+  sbom:
+    license: Zlib
 config_file:
 - path: "platform/emdrv/tempdrv/config/tempdrv_config.h"
 source:

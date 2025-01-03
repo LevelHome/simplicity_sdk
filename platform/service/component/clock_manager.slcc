@@ -39,198 +39,90 @@ requires:
   - name: status
 root_path: platform/service/clock_manager
 config_file:
-  - path: config/BGM21/sl_clock_manager_oscillator_config.h
+  - path: config/EFX32XG21/sl_clock_manager_oscillator_config.h
     file_id: clock_manager_oscillator_config
-    condition: [device_family_bgm21]
-  - path: config/BGM21/sl_clock_manager_tree_config.h
+    condition: [device_generic_family_efr32xg21]
+  - path: config/EFX32XG21/sl_clock_manager_tree_config.h
     file_id: clock_manager_tree_config
-    condition: [device_family_bgm21]
-  - path: config/BGM22/sl_clock_manager_oscillator_config.h
+    condition: [device_generic_family_efr32xg21]
+  - path: config/EFX32XR21/sl_clock_manager_oscillator_config.h
     file_id: clock_manager_oscillator_config
-    condition: [device_family_bgm22]
-  - path: config/BGM22/sl_clock_manager_tree_config.h
+    condition: [device_generic_family_efr32xr21]
+  - path: config/EFX32XR21/sl_clock_manager_tree_config.h
     file_id: clock_manager_tree_config
-    condition: [device_family_bgm22]
-  - path: config/BGM24/sl_clock_manager_oscillator_config.h
+    condition: [device_generic_family_efr32xr21]
+  - path: config/EFX32XG22/sl_clock_manager_oscillator_config.h
     file_id: clock_manager_oscillator_config
-    condition: [device_family_bgm24]
-  - path: config/BGM24/sl_clock_manager_tree_config.h
+    condition: [device_generic_family_efr32xg22]
+  - path: config/EFX32XG22/sl_clock_manager_tree_config.h
     file_id: clock_manager_tree_config
-    condition: [device_family_bgm24]
-  - path: config/EFM32PG22/sl_clock_manager_oscillator_config.h
+    condition: [device_generic_family_efr32xg22]
+  - path: config/EFX32XG22/sl_clock_manager_oscillator_config.h
     file_id: clock_manager_oscillator_config
     condition: [device_family_efm32pg22]
-  - path: config/EFM32PG22/sl_clock_manager_tree_config.h
+  - path: config/EFX32XG22/sl_clock_manager_tree_config.h
     file_id: clock_manager_tree_config
     condition: [device_family_efm32pg22]
-  - path: config/EFM32PG23/sl_clock_manager_oscillator_config.h
+  - path: config/EFX32XG23/sl_clock_manager_oscillator_config.h
+    file_id: clock_manager_oscillator_config
+    condition: [device_generic_family_efr32xg23]
+  - path: config/EFX32XG23/sl_clock_manager_tree_config.h
+    file_id: clock_manager_tree_config
+    condition: [device_generic_family_efr32xg23]
+  - path: config/EFX32XG23/sl_clock_manager_oscillator_config.h
     file_id: clock_manager_oscillator_config
     condition: [device_family_efm32pg23]
-  - path: config/EFM32PG23/sl_clock_manager_tree_config.h
+  - path: config/EFX32XG23/sl_clock_manager_tree_config.h
     file_id: clock_manager_tree_config
     condition: [device_family_efm32pg23]
-  - path: config/EFM32PG28/sl_clock_manager_oscillator_config.h
+  - path: config/EFX32XG24/sl_clock_manager_oscillator_config.h
     file_id: clock_manager_oscillator_config
-    condition: [device_family_efm32pg28]
-  - path: config/EFM32PG28/sl_clock_manager_tree_config.h
+    condition: [device_generic_family_efr32xg24]
+  - path: config/EFX32XG24/sl_clock_manager_tree_config.h
     file_id: clock_manager_tree_config
-    condition: [device_family_efm32pg28]
-  - path: config/EFR32BG21/sl_clock_manager_oscillator_config.h
+    condition: [device_generic_family_efr32xg24]
+  - path: config/EFX32XG25/sl_clock_manager_oscillator_config.h
     file_id: clock_manager_oscillator_config
-    condition: [device_family_efr32bg21]
-  - path: config/EFR32BG21/sl_clock_manager_tree_config.h
+    condition: [device_generic_family_efr32xg25]
+  - path: config/EFX32XG25/sl_clock_manager_tree_config.h
     file_id: clock_manager_tree_config
-    condition: [device_family_efr32bg21]
-  - path: config/EFR32BG22/sl_clock_manager_oscillator_config.h
+    condition: [device_generic_family_efr32xg25]
+  - path: config/EFX32XG26/sl_clock_manager_oscillator_config.h
     file_id: clock_manager_oscillator_config
-    condition: [device_family_efr32bg22]
-  - path: config/EFR32BG22/sl_clock_manager_tree_config.h
+    condition: [device_generic_family_efr32xg26]
+  - path: config/EFX32XG26/sl_clock_manager_tree_config.h
     file_id: clock_manager_tree_config
-    condition: [device_family_efr32bg22]
-  - path: config/EFR32BG24/sl_clock_manager_oscillator_config.h
-    file_id: clock_manager_oscillator_config
-    condition: [device_family_efr32bg24]
-  - path: config/EFR32BG24/sl_clock_manager_tree_config.h
-    file_id: clock_manager_tree_config
-    condition: [device_family_efr32bg24]
-  - path: config/EFR32BG26/sl_clock_manager_oscillator_config.h
-    file_id: clock_manager_oscillator_config
-    condition: [device_family_efr32bg26]
-  - path: config/EFR32BG26/sl_clock_manager_tree_config.h
-    file_id: clock_manager_tree_config
-    condition: [device_family_efr32bg26]
-  - path: config/EFR32BG27/sl_clock_manager_oscillator_config.h
-    file_id: clock_manager_oscillator_config
-    condition: [device_family_efr32bg27]
-  - path: config/EFR32BG27/sl_clock_manager_tree_config.h
-    file_id: clock_manager_tree_config
-    condition: [device_family_efr32bg27]
-  - path: config/EFR32FG22/sl_clock_manager_oscillator_config.h
-    file_id: clock_manager_oscillator_config
-    condition: [device_family_efr32fg22]
-  - path: config/EFR32FG22/sl_clock_manager_tree_config.h
-    file_id: clock_manager_tree_config
-    condition: [device_family_efr32fg22]
-  - path: config/EFR32FG23/sl_clock_manager_oscillator_config.h
-    file_id: clock_manager_oscillator_config
-    condition: [device_family_efr32fg23]
-  - path: config/EFR32FG23/sl_clock_manager_tree_config.h
-    file_id: clock_manager_tree_config
-    condition: [device_family_efr32fg23]
-  - path: config/EFR32FG25/sl_clock_manager_oscillator_config.h
-    file_id: clock_manager_oscillator_config
-    condition: [device_family_efr32fg25]
-  - path: config/EFR32FG25/sl_clock_manager_tree_config.h
-    file_id: clock_manager_tree_config
-    condition: [device_family_efr32fg25]
-  - path: config/EFR32FG28/sl_clock_manager_oscillator_config.h
-    file_id: clock_manager_oscillator_config
-    condition: [device_family_efr32fg28]
-  - path: config/EFR32FG28/sl_clock_manager_tree_config.h
-    file_id: clock_manager_tree_config
-    condition: [device_family_efr32fg28]
-  - path: config/EFR32MG21/sl_clock_manager_oscillator_config.h
-    file_id: clock_manager_oscillator_config
-    condition: [device_family_efr32mg21]
-  - path: config/EFR32MG21/sl_clock_manager_tree_config.h
-    file_id: clock_manager_tree_config
-    condition: [device_family_efr32mg21]
-  - path: config/EFR32MG22/sl_clock_manager_oscillator_config.h
-    file_id: clock_manager_oscillator_config
-    condition: [device_family_efr32mg22]
-  - path: config/EFR32MG22/sl_clock_manager_tree_config.h
-    file_id: clock_manager_tree_config
-    condition: [device_family_efr32mg22]
-  - path: config/EFR32MG24/sl_clock_manager_oscillator_config.h
-    file_id: clock_manager_oscillator_config
-    condition: [device_family_efr32mg24]
-  - path: config/EFR32MG24/sl_clock_manager_tree_config.h
-    file_id: clock_manager_tree_config
-    condition: [device_family_efr32mg24]
-  - path: config/EFR32MG26/sl_clock_manager_oscillator_config.h
-    file_id: clock_manager_oscillator_config
-    condition: [device_family_efr32mg26]
-  - path: config/EFR32MG26/sl_clock_manager_tree_config.h
-    file_id: clock_manager_tree_config
-    condition: [device_family_efr32mg26]
-  - path: config/EFR32MG27/sl_clock_manager_oscillator_config.h
-    file_id: clock_manager_oscillator_config
-    condition: [device_family_efr32mg27]
-  - path: config/EFR32MG27/sl_clock_manager_tree_config.h
-    file_id: clock_manager_tree_config
-    condition: [device_family_efr32mg27]
-  - path: config/EFR32MG29/sl_clock_manager_oscillator_config.h
-    file_id: clock_manager_oscillator_config
-    condition: [device_sdid_240]
-  - path: config/EFR32MG29/sl_clock_manager_tree_config.h
-    file_id: clock_manager_tree_config
-    condition: [device_sdid_240]
-  - path: config/EFR32MR21/sl_clock_manager_oscillator_config.h
-    file_id: clock_manager_oscillator_config
-    condition: [device_family_efr32mr21]
-  - path: config/EFR32MR21/sl_clock_manager_tree_config.h
-    file_id: clock_manager_tree_config
-    condition: [device_family_efr32mr21]
-  - path: config/EFM32PG26/sl_clock_manager_oscillator_config.h
+    condition: [device_generic_family_efr32xg26]
+  - path: config/EFX32XG26/sl_clock_manager_oscillator_config.h
     file_id: clock_manager_oscillator_config
     condition: [device_family_efm32pg26]
-  - path: config/EFM32PG26/sl_clock_manager_tree_config.h
+  - path: config/EFX32XG26/sl_clock_manager_tree_config.h
     file_id: clock_manager_tree_config
-    condition: [device_family_efm32pg26]
-  - path: config/EFR32SG23/sl_clock_manager_oscillator_config.h
+    condition: [device_family_efm32pg26]    
+  - path: config/EFX32XG27/sl_clock_manager_oscillator_config.h
     file_id: clock_manager_oscillator_config
-    condition: [device_family_efr32sg23]
-  - path: config/EFR32SG23/sl_clock_manager_tree_config.h
+    condition: [device_generic_family_efr32xg27]
+  - path: config/EFX32XG27/sl_clock_manager_tree_config.h
     file_id: clock_manager_tree_config
-    condition: [device_family_efr32sg23]
-  - path: config/EFR32SG28/sl_clock_manager_oscillator_config.h
+    condition: [device_generic_family_efr32xg27]
+  - path: config/EFX32XG28/sl_clock_manager_oscillator_config.h
     file_id: clock_manager_oscillator_config
-    condition: [device_family_efr32sg28]
-  - path: config/EFR32SG28/sl_clock_manager_tree_config.h
+    condition: [device_generic_family_efr32xg28]
+  - path: config/EFX32XG28/sl_clock_manager_tree_config.h
     file_id: clock_manager_tree_config
-    condition: [device_family_efr32sg28]
-  - path: config/EFR32ZG23/sl_clock_manager_oscillator_config.h
+    condition: [device_generic_family_efr32xg28]
+  - path: config/EFX32XG28/sl_clock_manager_oscillator_config.h
     file_id: clock_manager_oscillator_config
-    condition: [device_family_efr32zg23]
-  - path: config/EFR32ZG23/sl_clock_manager_tree_config.h
+    condition: [device_family_efm32pg28]
+  - path: config/EFX32XG28/sl_clock_manager_tree_config.h
     file_id: clock_manager_tree_config
-    condition: [device_family_efr32zg23]
-  - path: config/EFR32ZG28/sl_clock_manager_oscillator_config.h
-    file_id: clock_manager_oscillator_config
-    condition: [device_family_efr32zg28]
-  - path: config/EFR32ZG28/sl_clock_manager_tree_config.h
+    condition: [device_family_efm32pg28]
+  - path: config/EFX32XG29/sl_clock_manager_oscillator_config.h
+    file_id: clock_manager_oscillator_config  
+    condition: [device_generic_family_efr32xg29]
+  - path: config/EFX32XG29/sl_clock_manager_tree_config.h
     file_id: clock_manager_tree_config
-    condition: [device_family_efr32zg28]
-  - path: config/FGM23/sl_clock_manager_oscillator_config.h
-    file_id: clock_manager_oscillator_config
-    condition: [device_family_fgm23]
-  - path: config/FGM23/sl_clock_manager_tree_config.h
-    file_id: clock_manager_tree_config
-    condition: [device_family_fgm23]
-  - path: config/MGM21/sl_clock_manager_oscillator_config.h
-    file_id: clock_manager_oscillator_config
-    condition: [device_family_mgm21]
-  - path: config/MGM21/sl_clock_manager_tree_config.h
-    file_id: clock_manager_tree_config
-    condition: [device_family_mgm21]
-  - path: config/MGM22/sl_clock_manager_oscillator_config.h
-    file_id: clock_manager_oscillator_config
-    condition: [device_family_mgm22]
-  - path: config/MGM22/sl_clock_manager_tree_config.h
-    file_id: clock_manager_tree_config
-    condition: [device_family_mgm22]
-  - path: config/MGM24/sl_clock_manager_oscillator_config.h
-    file_id: clock_manager_oscillator_config
-    condition: [device_family_mgm24]
-  - path: config/MGM24/sl_clock_manager_tree_config.h
-    file_id: clock_manager_tree_config
-    condition: [device_family_mgm24]
-  - path: config/ZGM23/sl_clock_manager_oscillator_config.h
-    file_id: clock_manager_oscillator_config
-    condition: [device_family_zgm23]
-  - path: config/ZGM23/sl_clock_manager_tree_config.h
-    file_id: clock_manager_tree_config
-    condition: [device_family_zgm23]
+    condition: [device_generic_family_efr32xg29]
 source:
   - path: src/sl_clock_manager_init.c
 include:

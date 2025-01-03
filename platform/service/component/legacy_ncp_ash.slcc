@@ -4,6 +4,9 @@ package: platform
 category: Services|Ember Legacy
 description: Legacy Ember ASH implementation for NCP.
 quality: production
+metadata:
+  sbom:
+    license: MSLA
 root_path: platform/service/legacy_ncp_ash
 provides:
   - name: legacy_ncp_ash

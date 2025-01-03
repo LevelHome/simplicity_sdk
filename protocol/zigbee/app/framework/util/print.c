@@ -18,7 +18,9 @@
 
 #include "app/framework/include/af.h"
 #include "app/framework/plugin/debug-print/sl_zigbee_debug_print.h"
-
+#ifdef SL_COMPONENT_CATALOG_PRESENT
+#include "sl_component_catalog.h"
+#endif
 //------------------------------------------------------------------------------
 // Globals
 
@@ -95,7 +97,7 @@ static void reallyPrintAreaName(uint16_t area)
 
   if (area != 0xFFFF
       && index < EMBER_AF_PRINT_NAME_NUMBER) {
-    sl_zigbee_core_debug_print("%p:", areaNames[index]);
+    sl_zigbee_core_debug_print("%s:", areaNames[index]);
   }
 #endif // SL_ZIGBEE_AF_PRINT_NAMES
 }
@@ -111,11 +113,13 @@ static void sli_zigbee_af_print_internal_var_arg(uint16_t area,
     return;
   }
   printAreaName(area);
-
-  (void) sli_legacy_serial_printf_var_arg(SL_ZIGBEE_AF_PRINT_OUTPUT, formatString, ap);
-
+#ifdef SL_CATALOG_ZIGBEE_SIMULATION_PRESENT
+  (void) local_vprintf(formatString, ap);
+#else
+  (void) vprintf(formatString, ap);
+#endif // SL_CATALOG_ZIGBEE_SIMULATION_PRESENT
   if (newLine) {
-    sl_zigbee_core_debug_println("\r\n");
+    sl_zigbee_core_debug_println("");
   }
   sl_zigbee_af_print_active_area = area;
 }
@@ -141,7 +145,7 @@ void sl_zigbee_af_print_status(void)
 #ifdef SL_ZIGBEE_AF_PRINT_NAMES
   uint8_t i;
   for (i = 0; i < EMBER_AF_PRINT_NAME_NUMBER; i++) {
-    sl_zigbee_core_debug_println("[%d] %p : %p",
+    sl_zigbee_core_debug_println("[%d] %s : %s",
                                  i,
                                  areaNames[i],
                                  (sl_zigbee_af_print_enabled(

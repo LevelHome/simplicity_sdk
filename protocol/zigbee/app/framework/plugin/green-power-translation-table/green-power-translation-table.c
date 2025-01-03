@@ -449,7 +449,7 @@ static void updateSwitchCurrentContact(sl_zigbee_gp_address_t *gpdAddr)
 
 WEAK(void sl_zigbee_af_green_power_translation_table_stack_status_cb(sl_status_t status))
 {
-  sl_zigbee_af_green_power_cluster_println("Green Power Translation Table Stack Status Callback status = %x", status);
+  sl_zigbee_af_green_power_cluster_println("Green Power Translation Table Stack Status Callback status = %02X", status);
   if (status == SL_STATUS_NETWORK_DOWN
       && sl_zigbee_is_performing_rejoin() == FALSE) {
     // Clear the additional info, translation table and sink table in order.
@@ -1776,7 +1776,7 @@ void sli_zigbee_af_gp_forward_gpd_command_based_on_translation_table(sl_zigbee_g
   }
 }
 
-bool sl_zigbee_af_green_power_cluster_gp_translation_table_update_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_green_power_cluster_gp_translation_table_update_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_green_power_cluster_gp_translation_table_update_command_t cmd_data;
   uint8_t retval = 0;
@@ -1802,12 +1802,12 @@ bool sl_zigbee_af_green_power_cluster_gp_translation_table_update_cb(sl_zigbee_a
 
   if (zcl_decode_green_power_cluster_gp_translation_table_update_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   gpApplicationId = (cmd_data.options & 0x0007);
   if (!sli_zigbee_af_gp_make_addr(&gpdAddr, gpApplicationId, cmd_data.gpdSrcId, cmd_data.gpdIeee, cmd_data.endpoint)) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
   action = ((cmd_data.options >> 3) & 0x0003); //3..4bits
   noOfTranslations = ((cmd_data.options >> 5) & 0x0003); //5..7 bits
@@ -1912,15 +1912,15 @@ bool sl_zigbee_af_green_power_cluster_gp_translation_table_update_cb(sl_zigbee_a
         }
       }
     } else {
-      goto kickout;
+      return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
     }
     translationsEntryPtr += payloadOffset; //If successful move the pointer to the next translation
     payloadOffset = 0;
   }
-  kickout: return true;
+  return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
-bool sl_zigbee_af_green_power_cluster_gp_translation_table_request_cb(sl_zigbee_af_cluster_command_t *cmd)
+sl_zigbee_af_zcl_request_status_t sl_zigbee_af_green_power_cluster_gp_translation_table_request_cb(sl_zigbee_af_cluster_command_t *cmd)
 {
   sl_zcl_green_power_cluster_gp_translation_table_request_command_t cmd_data;
   uint8_t retval;
@@ -1930,27 +1930,27 @@ bool sl_zigbee_af_green_power_cluster_gp_translation_table_request_cb(sl_zigbee_
 
   if (zcl_decode_green_power_cluster_gp_translation_table_request_command(cmd, &cmd_data)
       != SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
-    return false;
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
-  sl_zigbee_af_green_power_cluster_println("Got translation table request with index %x sli_zigbee_gp_translation_table->totalNoOfEntries = %d",
+  sl_zigbee_af_green_power_cluster_println("Got translation table request with index %02X sli_zigbee_gp_translation_table->totalNoOfEntries = %d",
                                            cmd_data.startIndex,
                                            sli_zigbee_gp_translation_table->totalNoOfEntries);
   // only respond to unicast messages.
   if (sl_zigbee_af_current_command()->type != SL_ZIGBEE_INCOMING_UNICAST) {
     sl_zigbee_af_green_power_cluster_println("Not unicast");
-    goto kickout;
+    return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
   }
 
   // the device SHALL check if it implements a Translation Table.
   if (SL_ZIGBEE_AF_PLUGIN_GREEN_POWER_TRANSLATION_TABLE_TRANSLATION_TABLE_SIZE == 0) {
     sl_zigbee_af_green_power_cluster_println("Unsup cluster command");
-    goto kickout;
+    return SL_ZIGBEE_ZCL_STATUS_INTERNAL_COMMAND_HANDLED;
   }
 
   if (sl_zigbee_af_current_endpoint() != SL_ZIGBEE_GP_ENDPOINT) {
-    sl_zigbee_af_green_power_cluster_println("Drop frame due to unknown endpoint: %X", sl_zigbee_af_current_endpoint());
-    return false;
+    sl_zigbee_af_green_power_cluster_println("Drop frame due to unknown endpoint: %02X", sl_zigbee_af_current_endpoint());
+    return SL_ZIGBEE_ZCL_STATUS_UNSUP_COMMAND;
   }
 
   if ((sli_zigbee_gp_translation_table->totalNoOfEntries == 0)
@@ -2053,7 +2053,7 @@ bool sl_zigbee_af_green_power_cluster_gp_translation_table_request_cb(sl_zigbee_
       }
     }
   }           //end of else
-  kickout: return true;
+  kickout: return SL_ZIGBEE_ZCL_STATUS_SUCCESS;
 }
 
 uint8_t sli_zigbee_af_gp_find_matching_generic_translation_table_entry(uint8_t entryType,

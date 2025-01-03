@@ -313,9 +313,14 @@ void soft_reset_target(void)
  ******************************************************************************/
 void hard_reset_target(void)
 {
-  GPIO_PinOutClear((GPIO_Port_TypeDef)RESET_PORT, RESET_PIN);
+  sl_gpio_t reset_gpio = {
+    .port = (sl_gpio_port_t)RESET_PORT,
+    .pin = RESET_PIN,
+  };
+
+  sl_gpio_clear_pin(&reset_gpio);
   sl_udelay_wait(RESET_PULSE);
-  GPIO_PinOutSet((GPIO_Port_TypeDef)RESET_PORT, RESET_PIN);
+  sl_gpio_set_pin(&reset_gpio);
   sl_udelay_wait(RESET_DELAY);
 }
 

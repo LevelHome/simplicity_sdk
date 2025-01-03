@@ -4,6 +4,11 @@ package: platform
 description: Silabs core is a collection of basic application utilities.
 category: Platform|Utilities
 quality: production
+metadata:
+  sbom:
+    id: silabs_core_memory_manager
+    name: Memory Manager
+    license: MSLA
 include:
   - path: util/silicon_labs/silabs_core/memory_manager
     file_list:

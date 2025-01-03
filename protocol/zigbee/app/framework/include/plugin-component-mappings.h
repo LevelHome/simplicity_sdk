@@ -23,7 +23,7 @@
 // Commented out lines correspond to plugins present in the AppBuilder-generared files for the
 // given sample app that have no corresponding componenents enabled in the UC version of the app
 
-// Z3Light Section
+// zigbee_z3_light Section
 
 // #define SL_ZIGBEE_AF_PLUGIN_ADC
 // #define SL_ZIGBEE_AF_PLUGIN_AES_CMAC
@@ -179,7 +179,7 @@
 #define SL_ZIGBEE_AF_PLUGIN_ZLL_UTILITY_SERVER
 #endif
 
-// Z3Switch Section
+// zigbee_z3_switch Section
 
 // #define SL_ZIGBEE_AF_PLUGIN_ADC
 // #define SL_ZIGBEE_AF_PLUGIN_ANTENNA_STUB
